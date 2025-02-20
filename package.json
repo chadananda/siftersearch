@@ -1,0 +1,40 @@
+{
+  "name": "siftersearch",
+  "version": "1.0.0",
+  "description": "SifterSearch - An intelligent search and chat system",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "node server/index.js",
+    "build": "echo 'No build yet'",
+    "test": "echo 'No tests yet'",
+    "deploy": "npm run test && node scripts/deploy.js"
+  },
+  "dependencies": {
+    "fastify": "^4.24.3",
+    "@fastify/cors": "^8.4.1",
+    "@fastify/rate-limit": "^8.0.3",
+    "@fastify/static": "^6.12.0",
+    "@libsql/client": "^0.4.0",
+    "clerk-sdk-node": "^4.12.16"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.4",
+    "playwright": "^1.40.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chadananda/siftersearch.git"
+  },
+  "keywords": [
+    "rag",
+    "chatbot",
+    "agent",
+    "api"
+  ],
+  "author": "Chad Jones <chadananda@gmail.com> (http://bahai-education.org/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chadananda/siftersearch/issues"
+  },
+  "homepage": "https://github.com/chadananda/siftersearch#readme"
+}
