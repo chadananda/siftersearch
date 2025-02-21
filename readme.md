@@ -41,9 +41,9 @@
 - [x] **Install Dependencies**
    - In root:
      ```bash
-     npm install fastify @fastify/cors @fastify/rate-limit @fastify/static
-     npm install @libsql/client clerk-sdk-node
-     npm install --save-dev vitest playwright
+         npm install fastify@latest @fastify/cors@latest @fastify/rate-limit@latest @fastify/static@latest
+         npm install @libsql/client@latest @clerk/clerk-sdk-node@latest
+         npm install --save-dev vitest@latest @playwright/test@latest
      ```
 - [x] **Basic Folders**
    - `server/` (Fastify)

@@ -4,22 +4,27 @@
   "description": "SifterSearch - An intelligent search and chat system",
   "main": "server/index.js",
   "scripts": {
-    "dev": "node server/index.js",
-    "build": "echo 'No build yet'",
-    "test": "echo 'No tests yet'",
+    "dev": "concurrently \"nodemon server/index.js\" \"cd site && npm run dev\"",
+    "build": "cd site && npm run build",
+    "test": "vitest run && cd site && npm run test",
     "deploy": "npm run test && node scripts/deploy.js"
   },
   "dependencies": {
-    "fastify": "^4.24.3",
-    "@fastify/cors": "^8.4.1",
-    "@fastify/rate-limit": "^8.0.3",
+    "@clerk/backend": "^1.24.2",
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/rate-limit": "^8.1.1",
     "@fastify/static": "^6.12.0",
-    "@libsql/client": "^0.4.0",
-    "clerk-sdk-node": "^4.12.16"
+    "@libsql/client": "^0.4.3",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.4.7",
+    "fastify": "^4.29.0",
+    "nodemon": "^3.0.2",
+    "vite": "^6.1.1"
   },
   "devDependencies": {
-    "vitest": "^1.0.4",
-    "playwright": "^1.40.1"
+    "playwright": "^1.40.1",
+    "vitest": "^1.0.4"
   },
   "repository": {
     "type": "git",
@@ -36,5 +41,6 @@
   "bugs": {
     "url": "https://github.com/chadananda/siftersearch/issues"
   },
-  "homepage": "https://github.com/chadananda/siftersearch#readme"
+  "homepage": "https://github.com/chadananda/siftersearch#readme",
+  "type": "module"
 }
