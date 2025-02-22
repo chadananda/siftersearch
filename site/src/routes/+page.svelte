@@ -1,2 +1,7 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script>
+  import Chat from '$lib/components/ui/Chat.svelte';
+</script>
+
+<div class="h-[calc(100vh-8rem)] overflow-hidden">
+  <Chat />
+</div>

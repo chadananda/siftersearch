@@ -29,7 +29,7 @@ Below is an **updated** solution incorporating:
 |
 ├── /server                              # Fastify API & business logic
 │   ├── db.js                            # Single code path for DB open/attach if needed
-│   ├── /routes
+│   ├── /api                             # API endpoints
 │   │   ├── tools.js                    # /api/tools for agentic tools
 │   │   ├── content.js                  # /api/content for doc editing
 │   │   ├── users.js                    # /api/users for user mgmt

@@ -1,6 +1,6 @@
 # SifterSearch Development Instructions
 
-IMPORTANT INSTRUCTIONS!! This project uses Fastify backend, Sveltekit (Svelte 5 Runes) admin interface: bare-metal ES6 JS/module, Tailwind. Zero abstraction. Direct logic. Minimal classes. Pure functions. Horizontal, chainable code. README.md as living design doc. No unnecessary files. Remove working logs. Constant README alignment.
+IMPORTANT INSTRUCTIONS!! This project uses bare-metal ES6 JS/module, Fastify backend, Sveltekit (Svelte 5 Runes): Tailwind v4 with color variables and CSS Color Module Level 5 using light-dark() for theming. Zero abstraction. Direct logic. Minimal classes. Pure functions. Horizontal, chainable code. Use the project readme.md as living design doc, constant alignment. No unnecessary files. Keep error logs, remove working logs. Never create files without permission.
 
 
 

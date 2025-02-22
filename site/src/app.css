@@ -1,3 +1,184 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Theme Variables */
+:root {
+  /* Base colors - Ocean theme */
+  --ocean-blue-50: hsl(200, 85%, 95%);  /* Lightest surface */
+  --ocean-blue-100: hsl(200, 85%, 90%);
+  --ocean-blue-200: hsl(200, 75%, 85%);
+  --ocean-blue-300: hsl(200, 65%, 75%);
+  --ocean-blue-400: hsl(200, 60%, 65%);
+  --ocean-blue-500: hsl(200, 55%, 55%);  /* Primary */
+  --ocean-blue-600: hsl(200, 50%, 45%);
+  --ocean-blue-700: hsl(200, 45%, 35%);
+  --ocean-blue-800: hsl(200, 40%, 25%);
+  --ocean-blue-900: hsl(200, 35%, 15%);  /* Darkest surface */
+  
+  /* Complementary accent - Coral */
+  --coral-500: hsl(20, 55%, 55%);
+  --coral-600: hsl(20, 50%, 45%);
+  
+  /* Light theme colors */
+  --surface: var(--ocean-blue-50);
+  --surface-2: hsl(200, 85%, 97%);  /* Slightly lighter than ocean-blue-50 */
+  --surface-3: var(--ocean-blue-100);
+  --surface-4: var(--ocean-blue-200);
+  
+  --text-primary: var(--ocean-blue-900);
+  --text-secondary: var(--ocean-blue-700);
+  --text-tertiary: var(--ocean-blue-600);
+  
+  --border-subtle: var(--ocean-blue-200);
+  --border-strong: var(--ocean-blue-300);
+  
+  --accent: var(--ocean-blue-500);
+  --accent-hover: var(--ocean-blue-600);
+  
+  /* Semantic colors */
+  --success: hsl(160, 55%, 45%);  /* Teal-ish green */
+  --warning: hsl(40, 55%, 55%);   /* Warm yellow */
+  --error: hsl(0, 55%, 55%);      /* Soft red */
+  --info: var(--ocean-blue-500);
+  
+  /* Chart colors - Ocean palette */
+  --chart-blue: var(--ocean-blue-500);
+  --chart-red: var(--coral-500);
+  --chart-yellow: var(--warning);
+  --chart-green: var(--success);
+  
+  /* Toolbar specific */
+  --toolbar-bg: hsl(200, 85%, 97%, 0.85);
+  --toolbar-border: var(--ocean-blue-200);
+}
+
+/* Dark theme colors */
+.dark {
+  --surface: var(--ocean-blue-900);
+  --surface-2: hsl(200, 35%, 18%);  /* Slightly lighter than ocean-blue-900 */
+  --surface-3: hsl(200, 35%, 22%);
+  --surface-4: hsl(200, 35%, 25%);
+  
+  --text-primary: var(--ocean-blue-50);
+  --text-secondary: var(--ocean-blue-200);
+  --text-tertiary: var(--ocean-blue-300);
+  
+  --border-subtle: var(--ocean-blue-700);
+  --border-strong: var(--ocean-blue-600);
+  
+  --accent: var(--ocean-blue-400);
+  --accent-hover: var(--ocean-blue-300);
+  
+  /* Semantic colors - Brightened for dark mode */
+  --success: hsl(160, 65%, 55%);
+  --warning: hsl(40, 65%, 65%);
+  --error: hsl(0, 65%, 65%);
+  --info: var(--ocean-blue-400);
+  
+  /* Chart colors - Brightened for dark mode */
+  --chart-blue: var(--ocean-blue-400);
+  --chart-red: var(--coral-500);
+  --chart-yellow: var(--warning);
+  --chart-green: var(--success);
+  
+  /* Toolbar specific */
+  --toolbar-bg: hsl(200, 35%, 18%, 0.85);
+  --toolbar-border: var(--ocean-blue-700);
+}
+
+/* Base styles */
+body {
+  background-color: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Toolbar and footer styles */
+.toolbar-blur {
+  background-color: var(--toolbar-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-color: var(--toolbar-border);
+}
+
+/* For browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+  .toolbar-blur {
+    background-color: var(--surface-2);
+  }
+}
+
+/* Chart styles */
+.chart-up {
+  color: var(--success);
+}
+
+.chart-down {
+  color: var(--error);
+}
+
+/* Text colors */
+.text-text-primary {
+  color: var(--text-primary);
+}
+
+.text-text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-text-tertiary {
+  color: var(--text-tertiary);
+}
+
+/* Background colors */
+.bg-surface-1 {
+  background-color: var(--surface);
+}
+
+.bg-surface-2 {
+  background-color: var(--surface-2);
+}
+
+.bg-surface-3 {
+  background-color: var(--surface-3);
+}
+
+/* Border colors */
+.border-subtle {
+  border-color: var(--border-subtle);
+}
+
+/* Shadows */
+.sidebar-shadow {
+  box-shadow: 4px 0 6px -2px var(--surface-4);
+}
+
+.header-shadow {
+  box-shadow: 0 4px 6px -2px var(--surface-4);
+}
+
+.footer-shadow {
+  box-shadow: 0 -4px 6px -2px var(--surface-4);
+}
+
+/* Card styles */
+.card {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+}
+
+/* Sidebar collapse states */
+aside {
+  width: 16rem;
+}
+
+aside.collapsed {
+  width: 4rem;
+}
+
+main.collapsed {
+  margin-left: 4rem;
+}
+
+main {
+  margin-left: 16rem;
+}
