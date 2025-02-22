@@ -3,6 +3,7 @@
   import Header from '$lib/components/ui/Header.svelte';
   import Sidebar from '$lib/components/ui/Sidebar.svelte';
   import Footer from '$lib/components/ui/Footer.svelte';
+  import ChatFob from '$lib/components/ui/ChatFob.svelte';
   import { browser } from '$app/environment';
   import { writable } from 'svelte/store';
 
@@ -47,7 +48,7 @@
 
 <div class="min-h-screen bg-surface text-text-primary" >
   <header class="fixed top-0 left-0 right-0 h-16 bg-surface-2 backdrop-blur-md z-50 header-shadow">
-    <Header on:toggleSidebar={handleSidebarToggle} />
+    <Header on:toggleSidebar={handleSidebarToggle} sidebarCollapsed={$sidebarCollapsed} />
   </header>
 
   <div class="flex min-h-screen pt-16 pb-16">
@@ -63,6 +64,8 @@
       <slot />
     </main>
   </div>
+
+  <ChatFob />
 
   <footer class="fixed bottom-0 left-0 right-0 h-16 bg-surface-2 backdrop-blur-md z-50 footer-shadow">
     <Footer />

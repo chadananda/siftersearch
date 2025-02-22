@@ -112,21 +112,26 @@ How may I assist you today?`
     <div class="max-w-3xl mx-auto">
       <div class="border-t border-subtle bg-surface-2 rounded-lg px-4 py-3">
         <form on:submit|preventDefault={handleSubmit} class="flex gap-2 items-end">
-          <textarea
-            id="chat-input"
-            bind:value={inputMessage}
-            bind:this={inputElement}
-            placeholder="Ask me anything about the library..."
-            rows="1"
-            class="flex-1 bg-surface-1 text-text-primary border border-subtle rounded-lg px-4 py-3 min-h-[2.75rem] max-h-[8rem] focus:outline-none focus:ring-2 focus:ring-accent resize-none overflow-auto"
-            on:input={adjustTextareaHeight}
-            on:keydown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-          />
+          <div 
+            role="textbox"
+            tabindex="0"
+            on:keydown={handleKeydown}
+          >
+            <textarea
+              id="chat-input"
+              rows="1"
+              placeholder="Ask me anything about the library..."
+              class="w-full resize-none bg-transparent border-none focus:outline-none text-text-primary placeholder-text-tertiary"
+              bind:value={inputMessage}
+              on:input={adjustTextareaHeight}
+              on:keydown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+            ></textarea>
+          </div>
           <button
             type="submit"
             class="text-text-secondary hover:text-text-primary p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors h-11"
