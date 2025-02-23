@@ -2,18 +2,11 @@
   const year = new Date().getFullYear();
 </script>
 
-<footer class="h-full flex items-center">
-  <div class="container mx-auto px-4">
-    <div class="flex justify-between items-center">
-      <div class="text-sm text-text-tertiary">{year} SifterSearch. All rights reserved.</div>
-      <div class="flex space-x-6">
-        <a href="/privacy" class="text-sm text-text-tertiary hover:text-text-secondary">Privacy Policy</a>
-        <a href="/terms" class="text-sm text-text-tertiary hover:text-text-secondary">Terms of Service</a>
-        <a href="/contact" class="text-sm text-text-tertiary hover:text-text-secondary">Contact</a>
-      </div>
-    </div>
-  </div>
-</footer>
+<div class="fixed bottom-0 left-0 right-0 h-16 bg-surface-2 z-40 footer-shadow">
+  <footer class="h-full flex items-center justify-center text-sm text-text-secondary">
+    <p>&copy; {year} SifterSearch. All rights reserved.</p>
+  </footer>
+</div>
 
 <style>
   a, div {

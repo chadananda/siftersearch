@@ -20,6 +20,7 @@
     "@libsql/client": "^0.4.3",
     "backblaze-b2": "^1.7.0",
     "chai": "^5.0.0",
+    "clerk-sveltekit": "^0.4.2",
     "concurrently": "^8.2.2",
     "dotenv": "^16.4.1",
     "fastify": "^4.26.1",

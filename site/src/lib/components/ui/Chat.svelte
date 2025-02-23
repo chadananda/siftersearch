@@ -90,7 +90,12 @@ How may I assist you today?`
 </script>
 
 <div class="flex flex-col h-full" bind:this={chatContainer} on:keydown={handleKeydown}>
-  <div class="flex-1 overflow-y-auto p-6 space-y-6" bind:this={messageContainer}>
+  <div 
+    class="flex-1 overflow-y-auto p-6 space-y-6"
+    role="log"
+    aria-label="Chat messages"
+    bind:this={messageContainer}
+  >
     <div class="max-w-3xl mx-auto">
       {#each messages as message}
         {#if message.speaker === 'user'}
@@ -111,18 +116,15 @@ How may I assist you today?`
   <div class="p-6 pt-0">
     <div class="max-w-3xl mx-auto">
       <div class="border-t border-subtle bg-surface-2 rounded-lg px-4 py-3">
-        <form on:submit|preventDefault={handleSubmit} class="flex gap-2 items-end">
-          <div 
-            role="textbox"
-            tabindex="0"
-            on:keydown={handleKeydown}
-          >
+        <form on:submit|preventDefault={handleSubmit} class="flex gap-2 items-center">
+          <div class="flex-1">
             <textarea
               id="chat-input"
               rows="1"
               placeholder="Ask me anything about the library..."
               class="w-full resize-none bg-transparent border-none focus:outline-none text-text-primary placeholder-text-tertiary"
               bind:value={inputMessage}
+              bind:this={inputElement}
               on:input={adjustTextareaHeight}
               on:keydown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -134,7 +136,7 @@ How may I assist you today?`
           </div>
           <button
             type="submit"
-            class="text-text-secondary hover:text-text-primary p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors h-11"
+            class="text-text-secondary hover:text-text-primary p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors h-11 flex-shrink-0"
             title="Send message"
           >
             <Icon path="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
@@ -150,7 +152,7 @@ How may I assist you today?`
   :global(.prose) {
     color: rgb(var(--text-primary));
   }
-  
+
   :global(.prose strong) {
     color: rgb(var(--text-primary));
   }

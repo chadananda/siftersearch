@@ -1,10 +1,11 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import ThemeToggle from './ThemeToggle.svelte';
+  import { page } from '$app/stores';
+
   const dispatch = createEventDispatcher();
 
   let searchQuery = '';
-  export let userRole = 'Admin';
   export let sidebarCollapsed = false;
   
   function handleSearch() {
@@ -14,6 +15,8 @@
   function toggleSidebar() {
     dispatch('toggleSidebar');
   }
+
+  $: user = $page.data.user;
 </script>
 
 <div class="h-full flex items-center justify-between px-4">
@@ -64,22 +67,25 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-3">
-    <button class="p-2 rounded-lg hover:bg-surface-3 text-text-secondary transition-colors" aria-label="Search">
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-      </svg>
-    </button>
-    
-    <div class="flex items-center gap-4">
-      <ThemeToggle />
-      <a href="https://github.com/chadananda/siftersearch" target="_blank" rel="noopener noreferrer" class="p-2 text-text-secondary hover:text-text-primary">
-        <span class="sr-only">GitHub</span>
-        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+  <div class="flex items-center gap-4">
+    <ThemeToggle />
+    {#if user}
+      <div class="flex items-center gap-2">
+        <span class="text-sm">{user.firstName || user.email}</span>
+        <form action="/auth/signout" method="POST">
+          <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors">
+            Sign out
+          </button>
+        </form>
+      </div>
+    {:else}
+      <a href="/auth/signin" class="p-2 text-text-secondary hover:text-text-primary">
+        <span class="sr-only">Sign in</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </a>
-    </div>
+    {/if}
   </div>
 </div>
 
