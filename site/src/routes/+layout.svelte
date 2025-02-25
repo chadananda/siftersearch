@@ -27,6 +27,10 @@
 
   // Get Clerk key from environment
   const publishableKey = import.meta.env.VITE_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  // Allow pages to control scrolling
+  export let data;
+  $: pageScrollable = data?.scrollable ?? true;
 </script>
 
 <ClerkProvider publishableKey={publishableKey}>
@@ -44,7 +48,7 @@
       </nav>
 
       <!-- Main content -->
-      <main class="flex-1 overflow-auto" style="margin-left: 0;">
+      <main class="flex-1" class:overflow-auto={pageScrollable}>
         <slot />
       </main>
     </div>
