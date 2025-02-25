@@ -1,89 +1,127 @@
 <script>
-  import Toolbar from '$lib/components/ui/Toolbar.svelte';
-  import { Chart, StatCard } from '$lib/components/ui/dashboard';
-  import Icon from '$lib/components/ui/Icon.svelte';
-  
-  const breadcrumbs = [
-    { text: 'Home', href: '/' },
-    { text: 'Analytics', href: '/analytics' }
-  ];
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
 
   // Mock data - will be replaced with real data from API
-  const stats = {
+  let timeRange = '7d';
+  let stats = {
     totalQueries: 12543,
     averageResponseTime: '1.2s',
     activeUsers: 234,
-    documentViews: 5678
+    documentViews: 5678,
+    crawledPages: 45678,
+    indexedDocuments: 8765,
+    totalStorage: '234.5 GB',
+    errorRate: '0.12%'
   };
 
-  const queryData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    data: [1200, 1900, 3000, 5000, 8000, 12543]
+  let queryData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Queries',
+        data: [1200, 1900, 3000, 5000, 8000, 12543, 11000]
+      }
+    ]
   };
 
-  const responseTimeData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    data: [2.1, 1.8, 1.5, 1.3, 1.2, 1.2]
-  };
+  let topSearches = [
+    { term: "ocean of light", count: 234 },
+    { term: "revelation", count: 189 },
+    { term: "mysticism", count: 156 },
+    { term: "prayer", count: 145 },
+    { term: "meditation", count: 123 }
+  ];
+
+  let recentErrors = [
+    { time: "2024-02-23T17:45:23", type: "Crawl Error", site: "bahai-library.com", message: "Connection timeout" },
+    { time: "2024-02-23T16:32:11", type: "Parse Error", site: "ocean.org", message: "Invalid document structure" },
+    { time: "2024-02-23T15:15:45", type: "API Error", site: "N/A", message: "Rate limit exceeded" }
+  ];
+
+  function handleTimeRangeChange() {
+    // TODO: Fetch new data based on timeRange
+  }
 </script>
 
-<div class="flex flex-col h-full">
-  <Toolbar {breadcrumbs} title="Analytics Dashboard" />
+<div class="h-full flex flex-col">
+  <!-- Header -->
+  <div class="p-6 pb-0">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Analytics Dashboard</h1>
+      <select
+        bind:value={timeRange}
+        on:change={handleTimeRangeChange}
+        class="px-3 py-2 bg-surface-3 rounded-lg border border-subtle"
+      >
+        <option value="24h">Last 24 Hours</option>
+        <option value="7d">Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+        <option value="90d">Last 90 Days</option>
+      </select>
+    </div>
+  </div>
 
-  <div class="p-6 space-y-6">
+  <!-- Dashboard Content -->
+  <div class="flex-1 p-6 space-y-6 overflow-auto">
     <!-- Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatCard
-        title="Total Queries"
-        value={stats.totalQueries.toLocaleString()}
-        change={15}
-      >
-        <Icon path="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </StatCard>
-      <StatCard
-        title="Avg Response Time"
-        value={stats.averageResponseTime}
-        change={-8}
-      >
-        <Icon path="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </StatCard>
-      <StatCard
-        title="Active Users"
-        value={stats.activeUsers}
-        change={5}
-      >
-        <Icon path="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </StatCard>
-      <StatCard
-        title="Document Views"
-        value={stats.documentViews.toLocaleString()}
-        change={12}
-      >
-        <Icon path="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </StatCard>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {#each Object.entries(stats) as [key, value]}
+        <div class="bg-surface-2 rounded-lg p-4">
+          <div class="text-sm text-text-secondary capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
+          <div class="text-2xl font-semibold mt-1">{value}</div>
+        </div>
+      {/each}
     </div>
 
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="card p-6">
-        <Chart
-          type="line"
-          title="Queries Over Time"
-          data={queryData.data}
-          labels={queryData.labels}
-        />
+      <div class="bg-surface-2 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Queries Over Time</h2>
+        <div class="h-64 bg-surface-3 rounded-lg">
+          <!-- Chart will be rendered here -->
+        </div>
       </div>
       
-      <div class="card p-6">
-        <Chart
-          type="line"
-          title="Average Response Time"
-          data={responseTimeData.data}
-          labels={responseTimeData.labels}
-        />
+      <div class="bg-surface-2 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Storage Usage</h2>
+        <div class="h-64 bg-surface-3 rounded-lg">
+          <!-- Chart will be rendered here -->
+        </div>
       </div>
     </div>
 
-    <!-- Additional metrics can be added here -->
+    <!-- Additional Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Top Searches -->
+      <div class="bg-surface-2 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Top Searches</h2>
+        <div class="space-y-3">
+          {#each topSearches as search}
+            <div class="flex justify-between items-center">
+              <span class="text-text-secondary">{search.term}</span>
+              <span class="px-2 py-1 bg-surface-3 rounded-full text-sm">{search.count}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <!-- Recent Errors -->
+      <div class="bg-surface-2 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Recent Errors</h2>
+        <div class="space-y-3">
+          {#each recentErrors as error}
+            <div class="bg-surface-3 rounded-lg p-3">
+              <div class="flex justify-between text-sm">
+                <span class="text-error">{error.type}</span>
+                <span class="text-text-tertiary">{new Date(error.time).toLocaleTimeString()}</span>
+              </div>
+              <div class="text-sm mt-1">{error.site}</div>
+              <div class="text-sm text-text-secondary mt-1">{error.message}</div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
   </div>
 </div>

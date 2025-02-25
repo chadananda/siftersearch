@@ -1,6 +1,5 @@
 <script>
-  export let title = '';
-  export let subtitle = '';
+  const { title, subtitle } = $props();
 </script>
 
 <div class="mb-6">

@@ -113,6 +113,7 @@ This version refines the **UI** for SifterSearch, with **roles** cascading (Supe
 This revised UI ensures:
 
 - A **public** home with chat & library summary.
++For consistent color theming, define light/dark variables (like `bg-primary`, `bg-accent`, `text-primary`, `text-accent`) in a central file (like `app.css`) for use in components, rather than switching in the component template.
 - A **powerful** doc listing & metadata panel for bulk edits.
 - A **detailed** doc editor with tabs for history, AI suggestions.
 - **Site management** for crawled domains.

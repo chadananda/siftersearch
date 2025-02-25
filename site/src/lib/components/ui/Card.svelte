@@ -1,6 +1,5 @@
 <script>
-  export let padding = true;
-  export let hover = false;
+  const { padding, hover } = $props();
 </script>
 
 <div 

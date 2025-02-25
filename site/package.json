@@ -25,6 +25,7 @@
     "autoprefixer": "^10.4.20",
     "chart.js": "^4.4.8",
     "marked": "^15.0.7",
-    "postcss": "^8.5.3"
+    "postcss": "^8.5.3",
+    "svelte-clerk": "^0.8.4"
   }
 }

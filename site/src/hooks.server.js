@@ -2,12 +2,17 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { createClerkClient } from '@clerk/backend';
 import { CLERK_SECRET_KEY } from '$env/static/private';
 
-const clerk = CLERK_SECRET_KEY ? createClerkClient({ secretKey: CLERK_SECRET_KEY }) : null;
+// Debug log to check if the key is being loaded
+console.log('Clerk Secret Key exists:', !!CLERK_SECRET_KEY);
+
+const clerk = createClerkClient({ 
+  secretKey: CLERK_SECRET_KEY || '' // Provide empty string as fallback
+});
 
 /** @type {import('@sveltejs/kit').Handle} */
 export const handle = async ({ event, resolve }) => {
   try {
-    if (!clerk) {
+    if (!CLERK_SECRET_KEY) {
       console.warn('Clerk not initialized - missing secret key');
       event.locals.session = null;
       event.locals.user = null;
