@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+/* Theme Variables */
+:root {
+  /* Enable automatic light/dark mode switching */
+  color-scheme: light dark;
+
+  /* Base color - This is the single source of truth for the color palette */
+  --base-color: hsl(200, 55%, 55%); /* Ocean blue */
+  --accent-color: hsl(20, 55%, 55%); /* Coral accent */
+  
+  /* Palette generation - Light mode */
+  --light-surface-1: color-mix(in hsl, var(--base-color), white 90%);
+  --light-surface-2: color-mix(in hsl, var(--base-color), white 80%);
+  --light-surface-3: color-mix(in hsl, var(--base-color), white 70%);
+  --light-primary: color-mix(in hsl, var(--base-color), white 15%);
+  --light-accent: color-mix(in hsl, var(--accent-color), white 15%);
+  --light-primary-dark: color-mix(in hsl, var(--base-color), black 20%);
+  --light-text: hsl(200, 15%, 15%);
+  --light-text-secondary: hsl(200, 15%, 35%);
+  --light-text-tertiary: hsl(200, 15%, 55%);
+  --light-border: color-mix(in hsl, var(--base-color), var(--light-surface-3) 15%);
+  
+  /* Palette generation - Dark mode */
+  --dark-surface-1: color-mix(in hsl, var(--base-color), black 70%);
+  --dark-surface-2: color-mix(in hsl, var(--base-color), black 60%);
+  --dark-surface-3: color-mix(in hsl, var(--base-color), black 50%);
+  --dark-primary: color-mix(in hsl, var(--base-color), black 15%);
+  --dark-accent: color-mix(in hsl, var(--accent-color), black 15%);
+  --dark-primary-dark: color-mix(in hsl, var(--base-color), black 40%);
+  --dark-text: hsl(200, 15%, 90%);
+  --dark-text-secondary: hsl(200, 15%, 70%);
+  --dark-text-tertiary: hsl(200, 15%, 50%);
+  --dark-border: color-mix(in hsl, var(--base-color), var(--dark-surface-3) 15%);
+  
+  /* Semantic colors - consistent across themes */
+  --success-base: hsl(160, 55%, 45%);
+  --warning-base: hsl(40, 55%, 55%);
+  --error-base: hsl(0, 55%, 55%);
+  --info-base: var(--base-color);
+  
+  /* Application variables using light-dark() for automatic theme switching */
+  --surface: light-dark(var(--light-surface-1), var(--dark-surface-1));
+  --surface-2: light-dark(var(--light-surface-2), var(--dark-surface-2));
+  --surface-3: light-dark(var(--light-surface-3), var(--dark-surface-3));
+  --primary: light-dark(var(--light-primary), var(--dark-primary));
+  --primary-dark: light-dark(var(--light-primary-dark), var(--dark-primary-dark));
+  --accent: light-dark(var(--light-accent), var(--dark-accent));
+  --text: light-dark(var(--light-text), var(--dark-text));
+  --text-secondary: light-dark(var(--light-text-secondary), var(--dark-text-secondary));
+  --text-tertiary: light-dark(var(--light-text-tertiary), var(--dark-text-tertiary));
+  --border: light-dark(var(--light-border), var(--dark-border));
+  
+  /* Semantic application variables */
+  --success: light-dark(
+    color-mix(in hsl, var(--success-base), white 15%),
+    color-mix(in hsl, var(--success-base), black 15%)
+  );
+  --warning: light-dark(
+    color-mix(in hsl, var(--warning-base), white 15%),
+    color-mix(in hsl, var(--warning-base), black 15%)
+  );
+  --error: light-dark(
+    color-mix(in hsl, var(--error-base), white 15%),
+    color-mix(in hsl, var(--error-base), black 15%)
+  );
+  --info: light-dark(
+    color-mix(in hsl, var(--info-base), white 15%),
+    color-mix(in hsl, var(--info-base), black 15%)
+  );
+  
+  /* Shadow */
+  --shadow-color: light-dark(
+    hsl(200, 15%, 15%, 0.1),
+    hsl(200, 15%, 90%, 0.1)
+  );
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color);
+  --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px var(--shadow-color);
+  --shadow-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
+  
+  /* Border */
+  --border-subtle: var(--border);
+  --border-subtle-light: color-mix(in hsl, var(--border), transparent 70%);
+  
+  /* Aliases for backward compatibility */
+  --text-primary: var(--text);
+  --text-accent: light-dark(hsl(0, 0%, 98%), hsl(0, 0%, 5%));
+  --bg-primary: var(--surface);
+  --bg-surface-2: var(--surface-2);
+  --bg-surface-3: var(--surface-3);
+  --bg-tertiary: var(--surface-3);
+  --border-border-subtle: var(--border);
+  
+  /* Chat message colors */
+  --user-message-bg: var(--primary-dark);
+  --user-message-text: white;
+  
+  /* Chart colors */
+  --chart-blue: var(--primary);
+  --chart-green: var(--success);
+  --chart-red: var(--error);
+  --chart-yellow: var(--warning);
+}
+
+/* Base styles */
+@layer base {
+  body {
+    @apply bg-[var(--surface)] text-[var(--text)];
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .bg-primary {
+    background-color: var(--primary);
+  }
+  .bg-accent {
+    background-color: var(--accent);
+  }
+  .bg-surface {
+    background-color: var(--surface);
+  }
+  .bg-surface-2 {
+    background-color: var(--surface-2);
+  }
+  .bg-surface-3 {
+    background-color: var(--surface-3);
+  }
+  .text-primary {
+    color: var(--text);
+  }
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+  .text-tertiary {
+    color: var(--text-tertiary);
+  }
+  .text-accent {
+    color: var(--text-accent);
+  }
+  .border-subtle {
+    border-color: var(--border-subtle);
+  }
+  .border-subtle-light {
+    border-color: var(--border-subtle-light);
+  }
+  .shadow-app-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-app-md {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-app-lg {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+/* Toolbar blur effect */
+.toolbar-blur {
+  @apply bg-[var(--surface-2)] backdrop-blur-[10px];
+}
+
+/* For browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+  .toolbar-blur {
+    @apply bg-[var(--surface-2)];
+  }
+}
+
+/* For non-chat pages */
+.scroll-layout > main {
+  @apply overflow-y-auto;
+}
+
+/* Global scrollbar styling */
+*::-webkit-scrollbar {
+  width: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--text-tertiary);
+  border-radius: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
