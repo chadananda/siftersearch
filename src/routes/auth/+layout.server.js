@@ -1,9 +1,9 @@
 import { redirect } from '@sveltejs/kit';
-import { getAuth } from 'svelte-clerk/server';
 
 /** @type {import('./$types').LayoutServerLoad} */
 export async function load({ locals, url }) {
-  const { userId } = getAuth(locals);
+  // Access the session from locals which is populated by the handleClerk middleware
+  const userId = locals.session?.userId;
   
   // Only the callback route is needed for Google One Tap
   // Redirect to home if trying to access other auth routes

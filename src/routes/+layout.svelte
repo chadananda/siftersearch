@@ -12,7 +12,10 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { ClerkProvider } from 'svelte-clerk';
+  // Import Clerk components
+  import SignedIn from 'clerk-sveltekit/client/SignedIn.svelte';
+  import SignedOut from 'clerk-sveltekit/client/SignedOut.svelte';
+  import UserButton from 'clerk-sveltekit/client/UserButton.svelte';
   import GoogleOneTapWrapper from '$lib/components/auth/GoogleOneTapWrapper.svelte';
   import EnvDebug from '$lib/components/debug/EnvDebug.svelte';
   import Header from '$lib/components/ui/header/Header.svelte';
@@ -72,79 +75,65 @@
       localStorage.setItem('theme', theme);
     }
   }
+  
+  // Development mode flag
+  const isDevelopment = import.meta.env.DEV;
 </script>
 
-<ClerkProvider 
-  publishableKey={publishableKey || 'pk_test_cHJvcGVyLXB5dGhvbi0zNi5jbGVyay5hY2NvdW50cy5kZXYk'}
-  options={{
-    // Enable Google One Tap
-    googleOneTap: {
-      enabled: true
-    },
-    // Appearance configuration
-    appearance: {
-      elements: {
-        rootBox: 'rounded-lg shadow-lg',
-        card: 'bg-surface-1 border border-surface-3',
-        formButtonPrimary: 'bg-primary-500 hover:bg-primary-600 text-white',
-        formFieldInput: 'bg-surface-2 border-surface-3',
-        footerActionLink: 'text-primary-500 hover:text-primary-600',
-        headerTitle: 'text-2xl font-bold text-text-1',
-        headerSubtitle: 'text-text-2'
-      }
-    }
-  }}
->
+<!-- Main application layout -->
+<div class="h-screen flex flex-col overflow-hidden">
+  <!-- Header -->
+  <header class="h-16 bg-surface-2 z-[100] relative isolate shadow-app-sm">
+    <Header 
+      sidebarCollapsed={sidebarCollapsed} 
+      toggleTheme={toggleTheme}
+      onsidebarCollapsed={handleSidebarCollapsed} 
+    />
+    
+    <!-- Clerk auth components -->
+    <div class="absolute right-4 top-1/2 -translate-y-1/2">
+      <SignedIn>
+        <UserButton afterSignOutUrl="/" />
+      </SignedIn>
+      <SignedOut>
+        <a href="/sign-in" class="text-sm font-medium text-primary hover:text-primary-dark mr-2">Sign in</a>
+        <a href="/sign-up" class="text-sm font-medium text-primary hover:text-primary-dark">Sign up</a>
+      </SignedOut>
+    </div>
+  </header>
+
   <!-- Google One Tap component - invisible but enables One Tap functionality -->
-  <div id="google-one-tap">
+  <div id="google-one-tap" class="hidden">
     <GoogleOneTapWrapper />
   </div>
 
-  {#if !isAuthPage}
+  <!-- Middle section with sidebar and main content -->
+  <div class="flex-1 flex min-h-0">
+    <!-- Sidebar -->
+    <nav class="bg-surface-2 transition-all duration-300 z-40 relative isolate overflow-y-auto shadow-app-sm" style:width={sidebarCollapsed ? 'min(48px, 15vw)' : '256px'}>
+      <Sidebar collapsed={sidebarCollapsed} />
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1" class:overflow-auto={pageScrollable}>
+      {@render children?.()}
+    </main>
+  </div>
+
+  <!-- Footer -->
+  {#if !isHomePage}
+    <footer class="h-12 bg-surface-2 z-10 relative border-t border-subtle-light">
+      <Footer />
+    </footer>
+  {/if}
+  
+  <!-- Debug component -->
+  {#if !isAuthPage && isDevelopment}
     <div class="fixed bottom-4 right-4 z-[1000] max-w-md opacity-70 hover:opacity-100">
       <EnvDebug />
     </div>
   {/if}
-
-  {#if isAuthPage}
-    <!-- Auth layout -->
-    <div class="min-h-screen bg-surface">
-      {@render children?.()}
-    </div>
-  {:else}
-    <!-- Main application layout -->
-    <div class="h-screen flex flex-col overflow-hidden">
-      <!-- Header -->
-      <header class="h-16 bg-surface-2 z-[100] relative isolate shadow-app-sm">
-        <Header 
-          sidebarCollapsed={sidebarCollapsed} 
-          toggleTheme={toggleTheme}
-          onsidebarCollapsed={handleSidebarCollapsed} 
-        />
-      </header>
-
-      <!-- Middle section with sidebar and main content -->
-      <div class="flex-1 flex min-h-0">
-        <!-- Sidebar -->
-        <nav class="bg-surface-2 transition-all duration-300 z-40 relative isolate overflow-y-auto shadow-app-sm" style:width={sidebarCollapsed ? 'min(48px, 15vw)' : '256px'}>
-          <Sidebar collapsed={sidebarCollapsed} />
-        </nav>
-
-        <!-- Main content -->
-        <main class="flex-1" class:overflow-auto={pageScrollable}>
-          {@render children?.()}
-        </main>
-      </div>
-
-      <!-- Footer -->
-      {#if !isHomePage}
-        <footer class="h-12 bg-surface-2 z-10 relative border-t border-subtle-light">
-          <Footer />
-        </footer>
-      {/if}
-    </div>
-  {/if}
-</ClerkProvider>
+</div>
 
 <style>
   :global(html) {

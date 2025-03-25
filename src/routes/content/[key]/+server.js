@@ -6,7 +6,7 @@
  */
 
 import { error } from '@sveltejs/kit';
-import { CopyrightStatus, AccessTags } from '$lib/server/storage/r2-storage.js';
+import { CopyrightStatus, AccessTags } from '$lib/server/storage/b2-storage.js';
 
 /**
  * Serve public domain content
@@ -21,9 +21,9 @@ export async function GET({ params, platform, request }) {
       throw error(404, 'Not found');
     }
     
-    // Get the object from R2
-    const r2 = platform.env.STORAGE;
-    const object = await r2.get(decodedKey);
+    // Get the object from B2
+    const b2 = platform.env.STORAGE;
+    const object = await b2.get(decodedKey);
     
     if (!object) {
       throw error(404, 'Not found');

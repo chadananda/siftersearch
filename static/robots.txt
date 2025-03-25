@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and API paths
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://siftersearch.com/sitemap.xml

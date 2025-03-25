@@ -1,6 +1,5 @@
 // Server-side handler for Clerk authentication callbacks
 import { redirect } from '@sveltejs/kit';
-import { withClerkHandler } from 'svelte-clerk/server';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ request, url, locals }) {

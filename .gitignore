@@ -16,6 +16,8 @@ Thumbs.db
 # Env
 .env
 .env.*
+.env-secrets
+!.env-public
 !.env.example
 !.env.test
 

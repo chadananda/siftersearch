@@ -1,16 +1,16 @@
 /**
- * Signed URL Generator for R2 Storage
+ * Signed URL Generator for B2 Storage
  * 
- * This endpoint generates signed URLs for accessing objects in R2 storage
+ * This endpoint generates signed URLs for accessing objects in B2 storage
  * with appropriate permissions based on object tags and user authentication.
  * For public domain content, it redirects to the public content endpoint.
  */
 
 import { json } from '@sveltejs/kit';
-import { CopyrightStatus, AccessTags } from '$lib/server/storage/r2-storage.js';
+import { CopyrightStatus, AccessTags } from '$lib/server/storage/b2-storage.js';
 
 /**
- * Generate a signed URL for accessing an object in R2 storage
+ * Generate a signed URL for accessing an object in B2 storage
  */
 export async function GET({ params, platform, request, locals }) {
   try {
@@ -56,9 +56,9 @@ export async function GET({ params, platform, request, locals }) {
       return new Response('Forbidden', { status: 403 });
     }
     
-    // Get the object from R2 to check its metadata and tags
-    const r2 = platform.env.STORAGE;
-    const object = await r2.head(decodedKey);
+    // Get the object from B2 to check its metadata and tags
+    const b2 = platform.env.STORAGE;
+    const object = await b2.head(decodedKey);
     
     if (!object) {
       return new Response('Not Found', { status: 404 });
@@ -109,7 +109,7 @@ export async function GET({ params, platform, request, locals }) {
     }
     
     // Generate signed URL
-    const signedUrl = await r2.createSignedUrl(decodedKey, urlOptions);
+    const signedUrl = await b2.createSignedUrl(decodedKey, urlOptions);
     
     // Return the signed URL
     return json({

@@ -4,12 +4,14 @@ SifterSearch is a modern document management and search system with powerful RAG
 
 ## Reference Documentation:
 
-* **[1. Technology Stack](/instructions/1-technology.md)** - Core technologies and architecture
-* **[2. Core Concepts](/instructions/2-concepts.md)** - Key design principles and concepts
-* **[3. File Organization](/instructions/3-files.md)** - Project structure and file layout
-* **[4. API Organization](/instructions/4-api.md)** - API endpoints and integration
-* **[5. SifterChat Web Component](/instructions/5-sifterchat.md)** - Chat interface component
-* **[6. Admin UI](/instructions/6-admin-ui.md)** - Admin interface design
+* **[1. Technology Stack](/docs/1-technology.md)** - Core technologies and architecture
+* **[2. Core Concepts](/docs/2-concepts.md)** - Key design principles and concepts
+* **[3. File Organization](/docs/3-files.md)** - Project structure and file layout
+* **[4. API Organization](/docs/4-api.md)** - API endpoints and integration
+* **[5. SifterChat Web Component](/docs/5-sifterchat.md)** - Chat interface component
+* **[6. Admin UI](/docs/6-admin-ui.md)** - Admin interface design
+* **[7. Containers](/docs/7-containers.md)** - Docker container configuration
+* **[8. Storage](/docs/8-storage.md)** - Storage configuration and management
 
 **Read all documentation files above** before starting development.
 
@@ -31,42 +33,78 @@ SifterSearch provides these essential features:
 
 SifterSearch uses a simplified, more scalable architecture with the following key components:
 
-1. **Unified Docker Container**: Both Manticore search engine and the SvelteKit application run in a single Docker container
-2. **Cloudflare Deployment**: Production hosted on Cloudflare for global distribution and performance
-3. **Cloudflare D1 Database**: Primary content store for contextually-upgraded markdown blocks
-4. **Cloudflare R2 Storage**: Storage for original documents, media, and backups
-5. **Manticore Search Engine**: Hybrid search capabilities with both BM25 and vector search, indexing content from D1
-6. **Drizzle ORM**: Database abstraction layer for seamless development-to-production workflow
-7. **SvelteKit**: Unified application handling both frontend UI and API routes with role-based access control
+1. **SvelteKit Application**: The main application deployed directly to Vultr App Platform
+2. **Manticore Search Engine**: Deployed as a standalone Docker container on Vultr for powerful search capabilities
+3. **LibSQL Database**: Uses embedded mode for maximum performance with sync to Turso cloud
+4. **Dual S3-Compatible Storage**: 
+   - **Backblaze B2**: Primary storage for original documents, media, and public content
+   - **Scaleway**: Cheaper, slower storage for backups and archives
+5. **Imgix**: Image transformation and optimization service connected to S3 storage
+
+This architecture separates the SvelteKit application from containerized services where appropriate, while using embedded mode for LibSQL to maximize performance.
+
+---
+
+## Project Structure
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Docker Container                      │
-│                                                         │
-│  ┌─────────────────┐          ┌─────────────────────┐  │
-│  │                 │          │                     │  │
-│  │  Manticore      │◄────────►│  SvelteKit          │  │
-│  │  Search Engine  │          │  (UI + API)         │  │
-│  │                 │          │                     │  │
-│  └─────────┬───────┘          └─────────────────────┘  │
-│            │                            ▲               │
-│            │                            │               │
-└────────────┼────────────────────────────┼───────────────┘
-             │                            │
-             ▼                            ▼
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│                  Cloudflare Services                    │
-│                                                         │
-│  ┌─────────────────────┐    ┌─────────────────────┐    │
-│  │                     │    │                     │    │
-│  │  Cloudflare D1 DB   │    │  Cloudflare R2      │    │
-│  │  (Content Store)    │    │  (File Storage)     │    │
-│  │                     │    │                     │    │
-│  └─────────────────────┘    └─────────────────────┘    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+siftersearch/
+├── config/               # Centralized configuration files
+│   ├── config.js         # Main configuration module
+│   ├── index.js          # Unified export of all configuration
+│   ├── auth.js           # Authentication configuration
+│   ├── site.js           # Site-specific configuration
+│   ├── manticore.conf    # Manticore search configuration
+│   └── ...               # Other domain-specific configs
+├── data/                 # Data storage directory
+├── docs/                 # Documentation files
+├── scripts/              # Utility scripts
+│   ├── clear-cache.js    # Cache clearing utility
+│   ├── deploy.js         # Deployment script
+│   ├── system-check.js   # System health check tool
+│   └── README.md         # Scripts documentation
+├── src/                  # Source code
+│   ├── lib/              # Library code
+│   │   ├── api/          # API routes
+│   │   ├── components/   # UI components
+│   │   ├── db/           # Database access
+│   │   ├── search/       # Search functionality
+│   │   └── ...
+│   ├── routes/           # SvelteKit routes
+│   └── ...
+├── static/               # Static assets
+├── .env-public           # Non-sensitive environment variables (in git)
+├── .env-secrets          # Sensitive environment variables (not in git)
+├── package.json          # Node.js dependencies
+├── svelte.config.js      # SvelteKit configuration
+└── vite.config.js        # Vite configuration
 ```
+
+---
+
+## Configuration Approach
+
+SifterSearch follows a streamlined configuration pattern:
+
+1. **Environment-Based Configuration**:
+   - `.env-public`: Contains all non-sensitive configuration (checked into git)
+   - `.env-secrets`: Contains all sensitive values (not in git)
+   - Application loads both files (secrets only in development)
+
+2. **Unified Configuration Module**:
+   - `config/config.js` dynamically loads and processes all environment variables
+   - Exports both `PUBLIC` and `SECRETS` objects
+   - No default values for configuration to ensure missing values are detected
+
+3. **Security Boundaries**:
+   - PUBLIC values only have PUBLIC fallbacks
+   - SECRETS are never used as fallbacks for PUBLIC values
+   - API keys and sensitive information are only in SECRETS
+
+4. **Configuration Organization**:
+   - `config/index.js` exports a unified configuration object
+   - Domain-specific config files for specialized settings
+   - Build tool configs moved to config directory
 
 ---
 
@@ -74,11 +112,11 @@ SifterSearch uses a simplified, more scalable architecture with the following ke
 
 ### Prerequisites
 
-- **Node.js v18+**
-- **Docker** and **Docker Compose**
-- **Git**
+- Docker and Docker Compose
+- Node.js 18+ and npm
+- Git
 
-### Initial Setup
+### Development Setup
 
 1. **Clone the repository**:
    ```bash
@@ -91,274 +129,75 @@ SifterSearch uses a simplified, more scalable architecture with the following ke
    npm install
    ```
 
-3. **Set up environment variables**:
-   Create a `.env` file based on the `.env.example` template:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration values
-   ```
+3. **Environment Configuration**:
+   - Copy `.env-public.example` to `.env-public` (if not already present)
+   - Create `.env-secrets` with your sensitive configuration values
 
-4. **Start the development environment**:
+4. **Start development server**:
    ```bash
-   # This will start the Docker container with both SvelteKit and Manticore
+   # Start Manticore in Docker and the SvelteKit dev server
    npm run dev
    ```
 
-5. **Access the application**:
-   - UI: `http://localhost:5173/`
-   - API: `http://localhost:3000/api/`
-   - Manticore Admin: `http://localhost:9308/`
-
----
-
-## Development Workflow
-
-### Local Development
-
-The development environment uses Docker to run both SvelteKit and Manticore in a unified container:
-
-```bash
-# Start the development environment
-npm run dev
-
-# Run only the SvelteKit dev server (requires Manticore to be running separately)
-npm run dev:local
-
-# Build the Docker containers without starting them
-npm run docker:build
-
-# Stop the development environment
-npm run docker:down
-
-# Clean up Docker resources (volumes, networks, etc.)
-npm run docker:clean
-```
-
-### Cloudflare Development with Wrangler
-
-SifterSearch uses Cloudflare's Wrangler CLI for local development with D1 and R2:
-
-```bash
-# Install Wrangler globally (already included as a project dependency)
-npm install -g wrangler
-
-# Login to Cloudflare
-npx wrangler login
-
-# Create a local D1 database for development
-npx wrangler d1 create siftersearch-local
-
-# Create local tables from schema
-npx wrangler d1 execute siftersearch-local --local --file=./schema.sql
-
-# Start local development with Wrangler
-npx wrangler dev --local
-
-# Simulate R2 storage locally
-npx wrangler r2 bucket create siftersearch-local
-```
-
-For local development with Cloudflare services:
-
-1. Create a `wrangler.toml` file in the project root:
-   ```toml
-   name = "siftersearch"
-   main = "build/index.js"
-   compatibility_date = "2023-01-01"
-   
-   [[d1_databases]]
-   binding = "DB"
-   database_name = "siftersearch-local"
-   database_id = "local"
-   
-   [[r2_buckets]]
-   binding = "STORAGE"
-   bucket_name = "siftersearch-local"
-   ```
-
-2. Use environment variables to switch between local SQLite and Cloudflare D1/R2:
-   ```
-   # In .env for local development with Wrangler
-   USE_CLOUDFLARE_LOCAL=true
-   ```
-
-3. Update your database and storage services to use the appropriate bindings based on the environment.
-
-### Building and Testing
-
-```bash
-# Run tests
-npm test
-
-# Build the SvelteKit application
-npm run build
-
-# Preview the built application
-npm run preview
-
-# Run deployment prerequisites (tests, build, Manticore check)
-npm run deploy:prerequisites
-```
-
-### Production Deployment
-
-The production deployment uses Cloudflare Tunnels to securely expose the application:
-
-1. **Set up Cloudflare Tunnel**:
-   - Create a Cloudflare Tunnel in the Cloudflare Zero Trust dashboard
-   - Get your tunnel token and set it as `CLOUDFLARE_TUNNEL_TOKEN` in your environment
-
-2. **Deploy the application**:
+5. **Run system check**:
    ```bash
-   # Run deployment with all prerequisites and Cloudflare Tunnel
-   npm run deploy
-   
-   # Stop the production deployment
-   npm run deploy:stop
+   npm run system:check
    ```
 
-The deployment script:
-- Runs all prerequisite checks (tests, build, Manticore connection)
-- Generates the Cloudflare Tunnel configuration
-- Starts the Docker container with production settings
-- Enables the Cloudflare Tunnel service for secure access
+### Deployment
+
+SifterSearch uses a branch-based deployment strategy:
+
+1. **Development Workflow**:
+   - Development work happens on the `main` branch
+   - Changes are tested locally before being committed
+
+2. **Deployment Process**:
+   ```bash
+   # Run the deployment script
+   npm run deploy
+   ```
+
+   This script:
+   - Builds the application to ensure no build errors
+   - Runs all tests to ensure test coverage
+   - If everything passes, pushes to the `production` branch
+   - Vultr automatically deploys from the `production` branch
+
+3. **System Architecture**:
+   - SvelteKit application with embedded LibSQL deployed to Vultr
+   - Manticore Search Engine deployed as a Docker container
+   - Environment variables configured in Vultr dashboard
+
+This approach ensures that only properly tested code makes it to production, while maintaining a clear separation between development and production environments.
 
 ---
 
-## Docker Configuration
+## Utility Scripts
 
-SifterSearch uses a single `docker-compose.yml` file with environment variables to control the configuration for both development and production environments:
+SifterSearch includes several utility scripts to help with development and maintenance:
 
-### Environment Variables
+1. **clear-cache.js**: Utility for clearing build artifacts and cache
+   ```bash
+   npm run clean:cache
+   ```
 
-Key environment variables that control the Docker setup:
+2. **system-check.js**: Comprehensive system health check tool
+   ```bash
+   npm run system:check
+   npm run system:check:verbose  # For detailed output
+   npm run system:check:fix      # To attempt fixing issues
+   ```
 
-- `NODE_ENV`: Set to `development` or `production`
-- `ADAPTER`: Set to `node` for development or `cloudflare` for production
-- `APP_COMMAND`: The command to run in the app container
-- `RESTART_POLICY`: Container restart policy
-- `CLOUDFLARE_TUNNEL_TOKEN`: Token for Cloudflare Tunnel (production only)
+3. **deploy.js**: Simplified deployment script
+   ```bash
+   npm run deploy
+   ```
 
-See `.env.example` for all available configuration options.
-
----
-
-## Content Processing and Storage
-
-SifterSearch processes documents through a sophisticated pipeline:
-
-1. **Document Ingestion**: Original documents (PDF, DOCX, HTML, etc.) are uploaded and stored in Cloudflare R2
-2. **Content Extraction**: Text and metadata are extracted using specialized tools (tesseract.js, pdf-lib, mammoth.js)
-3. **Contextual Enhancement**: Content is converted to enhanced markdown with additional context and metadata
-4. **Block Storage**: The enhanced markdown blocks are stored in Cloudflare D1 database
-5. **Search Indexing**: Manticore indexes the text blocks with both vector embeddings and BM25 for hybrid search
-
-This approach provides:
-- Efficient storage of original documents in R2
-- Structured, queryable content in D1
-- Powerful hybrid search capabilities via Manticore
-
----
-
-## Database Organization
-
-SifterSearch uses SQLite databases locally and Cloudflare D1 in production:
-
-1. **`app.db`**: Application settings, user preferences, and analytics
-2. **`library.db`**: Document metadata, collections, and tags
-3. **`core_content.db`**: Core content that ships with the application
-4. **`content_blocks.db`**: Enhanced markdown blocks (maps to Cloudflare D1 in production)
-
----
-
-## Backup and Restore
-
-The project includes scripts for database backup and restoration:
-
-- **`scripts/backup.js`**: Creates backups of all databases and uploads them to Cloudflare R2
-- **`scripts/restore.js`**: Restores databases from backups in Cloudflare R2
-- **`scripts/deploy.js`**: Handles deployment to production environments
-
----
-
-## User Roles
-
-SifterSearch implements a role-based access control system:
-
-1. **SuperUser**: Full system access, can manage all libraries and users
-2. **Librarian**: Can manage content and users within assigned libraries
-3. **Editor**: Can edit and upload content but cannot manage users
-4. **AuthUser**: Can view content and use search features
-5. **AnonUser**: Limited access to public content only
-
----
-
-## Search Capabilities
-
-SifterSearch leverages Manticore Search for powerful search capabilities:
-
-- **BM25 Search**: Traditional keyword-based search with configurable weight
-- **Vector Search**: Semantic search using embeddings with configurable weight
-- **Hybrid Search**: Combines BM25 and vector search for optimal results
-- **Multilingual Support**: CJK language handling and stemming for multiple languages
-
-The search system indexes content blocks from Cloudflare D1, providing:
-- High-performance full-text search
-- Semantic understanding of content
-- Precise retrieval of relevant information
-- Contextual awareness through metadata
-
----
-
-## API Integration
-
-The API is organized into several categories:
-
-- **`/api/tools`**: Agentic tool endpoints for LLM usage
-- **`/api/content`**: Document editing and content management
-- **`/api/users`**: User and role management
-- **`/api/chat`**: Chat-related endpoints
-- **`/api/v1`**: Public endpoints for external developers
-
----
-
-## Code Style Guidelines
-
-- Use modern JavaScript ES6 modules
-- Keep code horizontal and chainable where possible
-- Avoid unnecessary abstraction layers
-- Maintain clear documentation with JSDoc comments
-- Use descriptive variable names
-- Follow the project's directory structure
-- Keep error logs, remove working logs
-- Use SvelteKit's built-in patterns for routing and API endpoints
-
----
-
-## Testing
-
-Run tests with:
-```bash
-npm run test
-```
-
-The project uses:
-- **Vitest** for unit and integration tests
-- **Playwright** for end-to-end testing
-
----
-
-## Deployment
-
-SifterSearch is designed to be deployed as a Docker container on any platform that supports Docker. For production, we recommend:
-
-1. **Cloudflare D1** for content database
-2. **Cloudflare R2** for file storage and backups
-3. **Any container hosting service** for the Docker container
-4. **Cloudflare Tunnels** for secure access to the application
+For more details on these scripts, see the [scripts/README.md](scripts/README.md) file.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

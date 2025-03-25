@@ -11,26 +11,14 @@ export function load() {
     // These should be populated from .env-public by vite.config.js
     if (typeof import.meta !== 'undefined') {
       env = {
-        CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY || '',
-        APP_NAME: import.meta.env.PUBLIC_APP_NAME || 'SifterSearch',
+        CLERK_PUBLISHABLE_KEY: import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY || '',
+        APP_NAME: import.meta.env.PUBLIC_APP_NAME || '',
       };
       
-      // Log available environment variables in development
-      if (import.meta.env.DEV) {
-        console.log('Available environment variables in layout.js:');
-        Object.keys(import.meta.env)
-          .filter(key => key.startsWith('PUBLIC_') || key.startsWith('VITE_'))
-          .forEach(key => {
-            console.log(`  ${key}: ${import.meta.env[key] ? '[set]' : '[empty]'}`);
-          });
+      // Validate required environment variables
+      if (!env.CLERK_PUBLISHABLE_KEY) {
+        console.error('ERROR: CLERK_PUBLISHABLE_KEY not set. Authentication will not work properly.');
       }
-    }
-    
-    // Add fallback for Clerk key if not set
-    if (!env.CLERK_PUBLISHABLE_KEY) {
-      console.warn('CLERK_PUBLISHABLE_KEY not set. Using development fallback key.');
-      // Use the key from your .env-public file
-      env.CLERK_PUBLISHABLE_KEY = 'pk_test_cHJvcGVyLXB5dGhvbi0zNi5jbGVyay5hY2NvdW50cy5kZXYk';
     }
   } catch (error) {
     console.error('Error loading environment variables:', error);

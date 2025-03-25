@@ -6,7 +6,7 @@
 -->
 <script>
   import { page } from '$app/stores';
-  import { SignIn } from 'svelte-clerk';
+  import SignIn from 'clerk-sveltekit/client/SignIn.svelte';
   
   // Get redirect URL from query params if available
   const redirectUrl = $page.url.searchParams.get('redirect_url') || '/';

@@ -1,24 +1,57 @@
 <!-- 
   GoogleOneTapWrapper.svelte
   Wrapper component for Google One Tap authentication
-  Only shows the Google One Tap component when user is not signed in
+  This component conditionally renders GoogleOneTap when the user is signed out
 -->
 <script>
-  import { SignedOut } from 'svelte-clerk';
-  import GoogleOneTap from './GoogleOneTap.svelte';
+  import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import GoogleOneTap from './GoogleOneTap.svelte';
+  
+  // Development mode detection
+  const isDevelopment = browser && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1'
+  );
+  
+  // State for tracking if user is signed in
+  let isSignedIn = false;
+  let SignedOut;
+  
+  onMount(() => {
+    if (browser && !isDevelopment) {
+      try {
+        // In production, we dynamically import Clerk
+        import('clerk-sveltekit/client').then((clerkModule) => {
+          SignedOut = clerkModule.SignedOut;
+          
+          // Set up a subscription to the clerk auth state if available
+          if (clerkModule.clerk) {
+            clerkModule.clerk.subscribe((state) => {
+              isSignedIn = !!state?.user;
+            });
+          }
+        }).catch(e => {
+          console.warn('Clerk not available for GoogleOneTapWrapper:', e.message);
+          isSignedIn = false;
+        });
+      } catch (e) {
+        console.warn('Error setting up GoogleOneTapWrapper:', e.message);
+      }
+    } else {
+      console.log('GoogleOneTapWrapper running in development mode');
+    }
+  });
 </script>
 
-<SignedOut>
-  <GoogleOneTap />
-</SignedOut>
-
-{#if browser && import.meta.env.DEV}
-  <!-- Debug panel -->
-  <div class="fixed bottom-16 left-4 z-50 bg-surface text-xs p-2 rounded opacity-70 hover:opacity-100">
-    <details>
-      <summary>GoogleOneTapWrapper Debug</summary>
-      <p>Using SignedOut component from svelte-clerk</p>
-    </details>
-  </div>
+{#if browser}
+  {#if !isDevelopment && SignedOut}
+    <!-- Use Clerk's SignedOut component when available in production -->
+    <svelte:component this={SignedOut}>
+      <GoogleOneTap />
+    </svelte:component>
+  {:else if isDevelopment}
+    <!-- In development mode, always show the component -->
+    <GoogleOneTap />
+  {/if}
 {/if}

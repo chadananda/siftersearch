@@ -28,6 +28,18 @@ export async function getDb(dbName = 'app') {
 }
 
 /**
+ * Get database clients for all databases
+ * @returns {object} Object containing database clients
+ */
+export function getDatabaseClients() {
+  // Return an object with methods to access different databases
+  return {
+    app: async () => await getDb('app'),
+    library: async () => await getDb('library')
+  };
+}
+
+/**
  * Generate a new API key
  * @returns {string} Generated API key
  */
@@ -155,23 +167,29 @@ export function authenticateJwt(request) {
  * @param {boolean} params.useVector - Whether vector search was used
  */
 export async function logSearchQuery({ query, apiKeyId, siteId, useVector = false }) {
-  const db = await getDb('app');
-  
-  await db.execute({
-    sql: `
-      INSERT INTO search_logs (
-        id, query, api_key_id, site_id, search_type, created_at
-      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `,
-    args: [
-      uuidv4(),
-      query,
-      apiKeyId,
-      siteId,
-      useVector ? 'vector' : 'basic'
-    ]
-  });
+  try {
+    const db = await getDb('app');
+    const timestamp = new Date().toISOString();
+    
+    await db.execute({
+      sql: `INSERT INTO search_logs (query, api_key_id, site_id, use_vector, created_at) 
+            VALUES (?, ?, ?, ?, ?)`,
+      args: [query, apiKeyId, siteId, useVector ? 1 : 0, timestamp]
+    });
+    
+    return true;
+  } catch (err) {
+    console.error('Error logging search query:', err);
+    // Don't throw - this is a non-critical operation
+    return false;
+  }
 }
+
+/**
+ * Alias for logSearchQuery for backward compatibility
+ * @param {object} params - Search parameters
+ */
+export const logSearch = logSearchQuery;
 
 /**
  * Check if user has superuser role
@@ -218,6 +236,18 @@ export function isSubscriber(user) {
 }
 
 /**
+ * Check if user has admin role
+ * @param {object} user - User object with role information
+ * @returns {boolean} True if user has admin role
+ */
+export function isAdmin(user) {
+  if (!user || !user.role) {
+    return false;
+  }
+  return user.role === 'admin' || user.role === 'superuser';
+}
+
+/**
  * Authorize a user based on required role
  * @param {object} user - User object with role information
  * @param {string} requiredRole - Required role (subscriber, editor, librarian, superuser)
@@ -239,4 +269,51 @@ export function authorizeUser(user, requiredRole) {
   const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
   
   return userRoleLevel >= requiredRoleLevel;
+}
+
+/**
+ * Authenticate a request using Clerk session data in locals
+ * @param {object} locals - SvelteKit locals object containing session data
+ * @returns {object} User data including userId
+ */
+export function authenticateRequest(locals) {
+  // Check if user is authenticated via Clerk
+  if (!locals.auth?.userId) {
+    throw error(401, 'Authentication required');
+  }
+  
+  return {
+    userId: locals.auth.userId,
+    sessionId: locals.auth.sessionId,
+    user: locals.auth.user
+  };
+}
+
+/**
+ * Format an error response for API endpoints
+ * @param {Error|object} err - Error object or error data
+ * @returns {object} Formatted error response
+ */
+export function formatErrorResponse(err) {
+  const errorId = uuidv4();
+  
+  // If it's a SvelteKit error, use its properties
+  if (err.status && err.body) {
+    return {
+      error: {
+        message: err.body.message || 'An error occurred',
+        status: err.status,
+        id: errorId
+      }
+    };
+  }
+  
+  // Default error format
+  return {
+    error: {
+      message: err.message || 'An unexpected error occurred',
+      status: err.status || 500,
+      id: errorId
+    }
+  };
 }
