@@ -52,7 +52,13 @@ const log = {
   header: (message) => console.log(`\n${chalk.blue('▶')} ${chalk.bold(message)}`),
   
   // Title for major sections
-  title: (message) => console.log(chalk.blue(`\n╔════════════════════════════════════════════╗\n║ ${message} ║\n╚════════════════════════════════════════════╝\n`)),
+  title: (message) => {
+    const boxWidth = 50; // Total width of the box
+    const messageWithPadding = `        ${message}`; // 8 spaces before the message
+    const rightPadding = boxWidth - messageWithPadding.length - 4; // 4 for the "║ " on each side
+    const paddedMessage = messageWithPadding + ' '.repeat(rightPadding);
+    console.log(chalk.blue(`\n╔══════════════════════════════════════════════════╗\n║ ${paddedMessage} ║\n╚══════════════════════════════════════════════════╝\n`));
+  },
 };
 
 /**
@@ -103,7 +109,8 @@ async function cleanDocker() {
 async function cleanCache() {
   log.header('Cleaning Build Cache');
   try {
-    exec('node scripts/clear-cache.js');
+    // Run clear-cache.js with silent mode to suppress unnecessary output
+    exec('node scripts/clear-cache.js --silent', { silent: true });
     log.success('Cache cleanup completed');
   } catch (error) {
     log.error(`Failed to clean cache: ${error.message}`);

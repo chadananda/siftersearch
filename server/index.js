@@ -33,7 +33,7 @@ async function registerPlugins() {
   // Clerk authentication
   await fastify.register(clerkPlugin, {
     secretKey: process.env.CLERK_SECRET_KEY,
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY
+    publishableKey: process.env.PUBLIC_CLERK_PUBLISHABLE_KEY
   });
 
   // Register static file serving for SvelteKit build

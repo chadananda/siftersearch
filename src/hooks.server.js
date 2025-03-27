@@ -1,246 +1,276 @@
-import { sequence } from '@sveltejs/kit/hooks';
-import { redirect } from '@sveltejs/kit';
-import authConfig from '../config/auth';
-import { handleClerk } from 'clerk-sveltekit/server';
-
 /**
- * SvelteKit server hooks for authentication and authorization
+ * Server Hooks
  * 
- * This file provides authentication and authorization for all routes.
- * In development mode, it works without requiring any external auth packages.
- * In production, it will use Clerk via clerk-sveltekit.
+ * This file contains hooks that run on the server side for each request.
+ * It's used to initialize server-side resources and middleware.
  */
 
+import { sequence } from '@sveltejs/kit/hooks';
+import { handleClerk } from 'clerk-sveltekit/server';
+import { PUBLIC, SECRETS } from '../config/config.js';
+import db from '$lib/server/db/index.js';
+import { getOrCreateUserFromClerk, transformAuth, userHasRole } from '$lib/server/auth/clerk.js';
+
+// Debug flag - set to false to disable verbose logging
+const DEBUG_MODE = false;
 // Check if we're in development mode
-const isDevelopment = authConfig.isDevelopment;
+const DEV_MODE = process.env.NODE_ENV === 'development';
 
-// Define public routes that don't require authentication
-const PUBLIC_ROUTES = [
-  '/', 
-  '/about', 
-  '/terms', 
-  '/contact', 
-  '/auth/signout', 
-  '/auth/callback',
-  '/api/public', 
-  '/api/health', 
-  '/api-docs',
-  '/assets',
-  '/documents'
-];
-
-// Define API routes that use JWT authentication or API keys
-const API_ROUTES = [
-  '/api/documents',
-  '/api/users',
-  '/api/sites',
-  '/api/analytics',
-  '/api/keys'
-];
-
-// Define role-based page access
-const ROLE_BASED_ACCESS = {
-  '/documents': ['superuser', 'librarian', 'editor', 'subscriber'],
-  '/edit': ['superuser', 'librarian', 'editor'],
-  '/analytics': ['superuser', 'librarian'],
-  '/sites': ['superuser'],
-  '/users': ['superuser'],
-  '/config': ['superuser'],
-  '/activity': ['superuser', 'librarian', 'editor', 'subscriber']
-};
-
-/**
- * Verify API key against the database
- * @param {string} apiKey - The API key to verify
- * @returns {Promise<Object|null>} - User info if valid, null if invalid
- */
-async function verifyApiKey(apiKey) {
-  // In development, accept a test API key for convenience
-  if (isDevelopment && apiKey === 'test-api-key') {
-    console.log('⚠️ Development mode: Using test API key');
-    return {
-      id: 'api-key-user',
-      role: 'api',
-      apiKeyId: 'test-key-id'
-    };
-  }
-  
-  // TODO: In production, verify the API key against the database
-  // This would query your database to check if the API key is valid
-  // and return the associated user information and permissions
-  
-  return null; // Invalid API key
+// Simplified logging function - no object properties
+function log(message) {
+  if (!DEBUG_MODE) return;
+  console.log(message);
 }
 
-// Custom auth handler
-const customAuthHandler = async ({ event, resolve }) => {
+/**
+ * Initialize database and other server resources
+ */
+async function initializeServer() {
   try {
-    // Initialize user/auth state with anonymous role by default
-    event.locals.user = null;
-    event.locals.auth = { userId: null, sessionId: null };
-    
-    const { pathname } = event.url;
-    
-    // Check if the route is public
-    const isPublicRoute = PUBLIC_ROUTES.some(route => 
-      pathname === route || pathname.startsWith(`${route}/`)
-    );
-    
-    if (isPublicRoute) {
-      return await resolve(event);
-    }
-    
-    // Check if the route is an API route
-    const isApiRoute = API_ROUTES.some(route => 
-      pathname === route || pathname.startsWith(`${route}/`)
-    );
-    
-    if (isApiRoute) {
-      // Check for API key in X-API-Key header
-      const apiKey = event.request.headers.get('X-API-Key');
+    await db.initialize();
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
+
+/**
+ * Handle function for SvelteKit
+ */
+async function handleInit({ event, resolve }) {
+  // Initialize database if not already done
+  await initializeServer();
+  
+  return resolve(event);
+}
+
+/**
+ * Handle function for authentication
+ */
+async function handleAuth({ event, resolve }) {
+  const { locals, url, cookies } = event;
+  const path = url.pathname;
+  
+  // Check if route is public (doesn't require authentication)
+  const isPublicRoute = ['/login', '/signup', '/auth', '/api/public', '/about', '/contact', '/'].some(
+    publicPath => path === publicPath || path.startsWith(publicPath)
+  );
+  
+  // Minimal debug logging
+  if (DEBUG_MODE) {
+    log(`[Auth] Path: ${path}, Public: ${isPublicRoute}`);
+  }
+  
+  // Check for superuser session first
+  const superuserToken = cookies.get('__superuser');
+  if (superuserToken) {
+    try {
+      // Verify the superuser session in the database
+      const session = await db.query(
+        'SELECT * FROM sessions WHERE token = ? AND expires_at > ?',
+        [superuserToken, new Date().toISOString()]
+      ).then(rows => rows[0]);
       
-      if (apiKey) {
-        // Verify API key
-        const apiUser = await verifyApiKey(apiKey);
+      if (session) {
+        // Get the superuser from the database
+        const superuser = await db.query(
+          'SELECT * FROM users WHERE id = ? AND role = ?',
+          [session.user_id, 'superuser']
+        ).then(rows => rows[0]);
         
-        if (apiUser) {
-          // Valid API key, set user info and proceed
-          event.locals.user = apiUser;
-          return await resolve(event);
-        } else {
-          // Invalid API key
-          return new Response(JSON.stringify({ error: 'Unauthorized', message: 'Invalid API key' }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
-      
-      // No API key, check for JWT authentication
-      if (isDevelopment) {
-        // In development, check if JWT_SECRET is configured
-        if (!authConfig.jwt.secret) {
-          console.error('❌ JWT_SECRET is not configured in .env file');
-          return new Response(JSON.stringify({ 
-            error: 'Server Configuration Error', 
-            message: 'JWT_SECRET is not configured. Please add it to your .env file.' 
-          }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // In development, allow API access for testing
-        console.log('⚠️ Development mode: JWT verification is simplified for testing');
-      }
-      
-      // Verify JWT token
-      try {
-        const authHeader = event.request.headers.get('Authorization');
-        if (!authHeader) {
-          throw new Error('Authentication required. Provide either JWT token in Authorization header or API key in X-API-Key header');
-        }
-        
-        // Extract and verify the JWT token
-        const token = authHeader.replace('Bearer ', '');
-        
-        // TODO: In production, verify the JWT token and extract user info
-        // const decoded = jwt.verify(token, authConfig.jwt.secret);
-        // event.locals.user = {
-        //   id: decoded.userId,
-        //   email: decoded.email,
-        //   role: decoded.role
-        // };
-        
-        // For now, in development, we'll just proceed
-        if (isDevelopment) {
-          event.locals.user = {
-            id: 'jwt-dev-user',
-            role: 'superuser'
+        if (superuser) {
+          if (DEBUG_MODE) {
+            log(`[Auth] Superuser authenticated: ${superuser.email}`);
+          }
+          
+          // Add superuser to locals for access in routes
+          locals.dbUser = {
+            ...superuser,
+            isSuperuser: true
           };
+          
+          // Continue to the route handler
+          return resolve(event);
+        }
+      }
+      
+      // If session verification failed, clear the superuser cookie
+      cookies.delete('__superuser', { path: '/' });
+    } catch (error) {
+      console.error('Error verifying superuser session:', error);
+      // Clear the superuser cookie on error
+      cookies.delete('__superuser', { path: '/' });
+    }
+  }
+  
+  // Check if user is authenticated through Clerk
+  if (locals.session?.userId || locals.auth?.userId) {
+    try {
+      const clerkUserId = locals.session?.userId || locals.auth?.userId;
+      
+      if (DEBUG_MODE) {
+        log(`[Auth] User authenticated with Clerk ID: ${clerkUserId}`);
+      }
+      
+      // Use the session data or auth data for user retrieval
+      const authData = locals.session || locals.auth;
+      
+      // Get or create user in our database
+      const user = await getOrCreateUserFromClerk(authData);
+      
+      if (!user) {
+        if (DEBUG_MODE) {
+          log('[Auth] Failed to get or create user from Clerk auth data');
         }
         
-        // Check if user has required role for this API endpoint
-        // This would be implemented based on your API's role requirements
-        
-        return await resolve(event);
-      } catch (error) {
-        return new Response(JSON.stringify({ error: 'Unauthorized', message: error.message }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        // Fall back to Clerk data if database retrieval fails
+        locals.dbUser = {
+          id: clerkUserId,
+          clerk_id: clerkUserId,
+          role: authData.sessionClaims?.role || 'visitor',
+          name: authData.sessionClaims?.name || 'Unknown',
+          email: authData.sessionClaims?.email || '',
+          active: true
+        };
+      } else {
+        // Add user to locals for access in routes
+        locals.dbUser = user;
       }
-    }
-    
-    // For protected routes, check if we're in development mode
-    if (isDevelopment) {
-      console.log('⚠️ Development mode: Authentication is simplified for testing');
       
-      // In development, allow access with a development user
-      event.locals.user = {
-        id: 'dev-user-id',
-        role: 'superuser'
+      // Check if route is protected (requires authentication)
+      const protectedRoutes = {
+        '/documents': 'subscriber',
+        '/edit': 'editor',
+        '/analytics': 'librarian',
+        '/sites': 'superuser',
+        '/users': 'superuser',
+        '/config': 'superuser',
+        '/activity': 'subscriber'
       };
       
-      // Check role-based access
-      const requiredRoles = Object.entries(ROLE_BASED_ACCESS).find(([route]) => 
-        pathname === route || pathname.startsWith(`${route}/`)
+      // Check if the current path matches any protected route
+      const requiredRole = Object.entries(protectedRoutes).find(([route, _]) => 
+        path === route || path.startsWith(`${route}/`)
       )?.[1];
       
-      if (requiredRoles && !requiredRoles.includes(event.locals.user.role)) {
-        // User doesn't have required role
-        return new Response(JSON.stringify({ 
-          error: 'Forbidden', 
-          message: `Access denied. Required role: ${requiredRoles.join(' or ')}` 
-        }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json' }
-        });
+      if (requiredRole && (!locals.dbUser || !userHasRole(locals.dbUser, requiredRole))) {
+        if (DEBUG_MODE) {
+          log(`[Auth] Access denied to ${path}, required role: ${requiredRole}, user role: ${locals.dbUser?.role || 'none'}`);
+        }
+        
+        // Redirect to home page if user doesn't have the required role
+        return Response.redirect('/', 303);
+      }
+    } catch (error) {
+      console.error('Error handling auth:', error);
+      
+      // Clear any invalid session cookies
+      if (error.message?.includes('token-expired') || error.message?.includes('invalid')) {
+        if (DEBUG_MODE) {
+          log('[Auth] Clearing invalid session cookies due to:', error.message);
+        }
+        
+        // Clear Clerk cookies
+        const clerkCookies = cookies.getAll()
+          .filter(cookie => cookie.name.startsWith('__clerk') || cookie.name.startsWith('__session'));
+        
+        for (const cookie of clerkCookies) {
+          cookies.delete(cookie.name, { path: '/' });
+        }
+        
+        // Set anonymous user
+        locals.dbUser = {
+          id: null,
+          role: 'anonymous',
+          name: 'Guest',
+          email: '',
+          active: true
+        };
+      }
+    }
+  } else {
+    // User is not authenticated
+    if (DEBUG_MODE) {
+      log(`[Auth] No authenticated user for path: ${path}`);
+    }
+    
+    // In development mode, allow access to all routes
+    if (DEV_MODE) {
+      locals.dbUser = {
+        id: null,
+        role: 'visitor', // Give visitor role in dev mode
+        name: 'Dev Guest',
+        email: '',
+        active: true
+      };
+      
+      if (DEBUG_MODE) {
+        log(`[Auth] Development mode: allowing access to ${path} for unauthenticated user`);
+      }
+    } else {
+      // For API routes that aren't public, return 401
+      if (path.startsWith('/api/') && !path.startsWith('/api/public')) {
+        return new Response('Unauthorized', { status: 401 });
       }
       
-      return await resolve(event);
+      // For protected routes, redirect to login if not public
+      if (!isPublicRoute) {
+        const protectedPaths = ['/documents', '/edit', '/analytics', '/sites', '/users', '/config', '/activity'];
+        if (protectedPaths.some(protectedPath => path.startsWith(protectedPath))) {
+          // Redirect to login
+          return Response.redirect(`/login?redirect=${encodeURIComponent(path)}`, 303);
+        }
+      }
     }
-    
-    // In production, check for Clerk configuration
-    if (!authConfig.clerk.secretKey || !authConfig.clerk.publishableKey) {
-      console.error('❌ Clerk API keys are not configured in .env file');
-      return new Response(JSON.stringify({ 
-        error: 'Server Configuration Error', 
-        message: 'Clerk API keys are not configured. Please add CLERK_SECRET_KEY and CLERK_PUBLISHABLE_KEY to your .env file.' 
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+  }
+  
+  return resolve(event);
+}
+
+/**
+ * Handle function for request logging
+ */
+async function handleLogging({ event, resolve }) {
+  const { request, url } = event;
+  const method = request.method;
+  const path = url.pathname;
+  
+  // Log request (minimal information)
+  console.log(`${method} ${path}`);
+  
+  // Resolve the request
+  const response = await resolve(event);
+  
+  // Log response status
+  console.log(`${method} ${path} - ${response.status}`);
+  
+  return response;
+}
+
+// Clerk middleware with custom transformAuth function
+const clerkMiddleware = handleClerk(
+  SECRETS.CLERK_SECRET_KEY,
+  {
+    // Pass the event to transformAuth so it can access cookies
+    transformAuth: (auth, req) => {
+      // Extract cookies from the request event
+      const cookies = req.event.cookies;
+      console.log('[DEBUG] HOOKS: Clerk middleware transformAuth called');
+      console.log('[DEBUG] HOOKS: auth userId:', auth?.userId);
+      console.log('[DEBUG] HOOKS: cookies object type:', typeof cookies);
+      
+      // Log all cookies for debugging
+      if (typeof cookies?.getAll === 'function') {
+        console.log('[DEBUG] HOOKS: All cookies:', cookies.getAll());
+      } else {
+        console.log('[DEBUG] HOOKS: cookies.getAll is not a function');
+      }
+      
+      // Call our transformAuth function with auth and cookies
+      return transformAuth(auth, cookies);
     }
-    
-    // At this point, authentication should be handled by Clerk
-    // The user should be redirected to sign in if not authenticated
-    return redirect(307, '/auth/signin');
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return new Response(JSON.stringify({ error: 'Authentication Error', message: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
   }
-};
+);
 
-// Clerk handler with proper configuration
-const clerkHandler = handleClerk(process.env.CLERK_SECRET_KEY, {
-  debug: isDevelopment,
-  protectedPaths: ['/admin', '/dashboard', '/api/protected'],
-  signInUrl: '/sign-in',
-  publicRoutes: PUBLIC_ROUTES
-});
-
-// Conditionally use Clerk in production, custom auth in development
-const handleAuth = ({ event, resolve }) => {
-  if (isDevelopment) {
-    return customAuthHandler({ event, resolve });
-  } else {
-    return clerkHandler({ event, resolve });
-  }
-};
-
-// Export the handle function
-export const handle = sequence(handleAuth);
+// Export the handle function as a sequence of middleware
+export const handle = sequence(handleInit, clerkMiddleware, handleAuth, handleLogging);

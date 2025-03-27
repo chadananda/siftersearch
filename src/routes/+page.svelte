@@ -1,5 +1,7 @@
 <script>
   import Chat from '$lib/components/ui/Chat.svelte';
+  import { authStore } from '$lib/client/auth.js';
+  import { browser } from '$app/environment';
 
   const testData = [
     {
@@ -245,6 +247,9 @@ Key principles:
   ];
 
   const messages = $state(testData);
+  
+  // Get authentication status from auth store
+  const isAuthenticated = $derived($authStore.isAuthenticated);
 
   async function handleMessage(event) {
     const userMessage = {
@@ -266,10 +271,22 @@ Key principles:
       messages.push(assistantMessage);
     }, 1000);
   }
+  
+  // Function to handle login request from Chat component
+  function handleLogin() {
+    if (browser && window.Clerk) {
+      window.Clerk.openSignIn();
+    }
+  }
 </script>
 
 <div class="h-full">
-  <Chat {messages} on:message={handleMessage} />
+  <Chat 
+    {messages} 
+    {isAuthenticated}
+    on:message={handleMessage}
+    on:login={handleLogin}
+  />
 </div>
 
 <style>

@@ -5,6 +5,8 @@
   import 'katex/dist/katex.min.css';
 
   export let messages = [];
+  export let isAuthenticated = false;
+
   let messageContainer;
   let textarea;
   let input = '';
@@ -13,7 +15,6 @@
   const dispatch = createEventDispatcher();
 
   function cleanMathInput(text) {
-    // Remove any problematic characters
     return text.replace(/[\f\v\u0000-\u0008\u000b-\u001f]/g, '')
               .trim();
   }
@@ -33,22 +34,18 @@
   }
 
   function parseMarkdown(text) {
-    // First pass: Extract and replace math blocks
     let mathBlocks = [];
     text = text.replace(/\$\$([\s\S]+?)\$\$/g, (match, math) => {
       mathBlocks.push(renderKaTeX(math, true));
       return `@@MATH_BLOCK_${mathBlocks.length - 1}@@`;
     });
 
-    // Handle inline math
     text = text.replace(/\$([^\$]+?)\$/g, (match, math) => {
       return renderKaTeX(math, false);
     });
 
-    // Configure marked
     const renderer = new marked.Renderer();
     
-    // Set basic options
     marked.setOptions({
       renderer,
       gfm: true,
@@ -58,10 +55,8 @@
       smartypants: true
     });
 
-    // Convert markdown to HTML
     let html = marked(text);
 
-    // Restore math blocks
     html = html.replace(/@@MATH_BLOCK_(\d+)@@/g, (match, index) => {
       return mathBlocks[parseInt(index)];
     });
@@ -83,13 +78,19 @@
   }
 
   function handleSubmit() {
-    if (!input.trim()) return;
+    if (!input.trim() || !isAuthenticated) return;
 
     const text = input;
     input = '';
     textarea.style.height = '48px';
     
     dispatch('message', { text });
+  }
+
+  function handleInputClick() {
+    if (!isAuthenticated) {
+      dispatch('login');
+    }
   }
 
   function scrollToBottom() {
@@ -163,14 +164,16 @@
         bind:value={input}
         oninput={handleInput}
         onkeydown={handleKeyDown}
-        placeholder="Ask me anything..."
-        class="flex-1 h-12 bg-surface-3 border-none resize-none text-lg text-primary focus:outline-none focus:ring-0 p-3 m-0 placeholder:text-primary/50 rounded-xl"
+        onclick={handleInputClick}
+        placeholder={isAuthenticated ? "Ask me anything..." : "Sign in to start chatting..."}
+        class="flex-1 h-12 bg-surface-3 border-none resize-none text-lg text-primary focus:outline-none focus:ring-0 p-3 m-0 placeholder:text-primary/50 rounded-xl {!isAuthenticated ? 'cursor-pointer opacity-80' : ''}"
         rows="1"
+        disabled={!isAuthenticated}
       ></textarea>
       <button
         class="shrink-0 p-2 rounded-xl bg-[var(--user-message-bg)] text-[var(--user-message-text)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity sm:hidden"
         onclick={handleSubmit}
-        disabled={!input.trim()}
+        disabled={!input.trim() || !isAuthenticated}
         aria-label="Send message"
       >
         <div class="w-6 h-6">

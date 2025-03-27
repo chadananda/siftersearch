@@ -9,7 +9,8 @@ import { PUBLIC, SECRETS } from './config.js';
 
 // Determine environment
 const NODE_ENV = process.env.NODE_ENV || 'production';
-const isDev = NODE_ENV === 'development';
+const isDev = NODE_ENV === 'dev';
+const isProd = !isDev;
 
 // Clerk authentication configuration
 const clerkConfig = {
@@ -17,7 +18,8 @@ const clerkConfig = {
   secretKey: SECRETS.CLERK_SECRET_KEY,
   perishableKey: SECRETS.CLERK_PERISHABLE_KEY,
   // Non-sensitive value from PUBLIC
-  publishableKey: PUBLIC.CLERK_PUBLISHABLE_KEY,
+  // The PUBLIC_ prefix is already added by config.js for client-side variables
+  publishableKey: PUBLIC.CLERK_PUBLISHABLE_KEY || PUBLIC.PUBLIC_CLERK_PUBLISHABLE_KEY,
 };
 
 // JWT configuration
@@ -31,24 +33,35 @@ const jwtConfig = {
 
 // SuperAdmin user configuration (all sensitive from SECRETS)
 const superAdminConfig = {
-  email: SECRETS.ROOT_SUPERUSER_EMAIL,
-  password: SECRETS.ROOT_SUPERUSER_PASSWORD,
+  username: SECRETS.SUPERADMIN_USERNAME,
+  password: SECRETS.SUPERADMIN_PASSWORD,
 };
 
 // API key configuration for programmatic access
 const apiKeyConfig = {
-  // For development testing
-  testKey: isDev ? 'test-api-key-for-development' : '',
-  // Production keys should be stored in the database
+  // Sensitive values from SECRETS
+  secret: SECRETS.API_KEY_SECRET,
+  // Non-sensitive values from PUBLIC
+  expiresIn: PUBLIC.API_KEY_EXPIRES_IN || '30d',
 };
 
-// Combined authentication configuration
+// Combined auth configuration
 const authConfig = {
   clerk: clerkConfig,
   jwt: jwtConfig,
   superAdmin: superAdminConfig,
   apiKey: apiKeyConfig,
   isDevelopment: isDev
+};
+
+export {
+  clerkConfig,
+  jwtConfig,
+  superAdminConfig,
+  apiKeyConfig,
+  isDev,
+  isProd,
+  authConfig
 };
 
 export default authConfig;

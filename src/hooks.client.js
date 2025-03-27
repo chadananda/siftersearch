@@ -2,21 +2,29 @@
 import { initializeClerkClient } from 'clerk-sveltekit/client';
 
 // Initialize Clerk with publishable key from environment
-// The key will be injected during build time
+// The key will be injected during build time by Vite
 const publishableKey = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 // Check if publishable key is available
 if (!publishableKey) {
-  console.error('ERROR: CLERK_PUBLISHABLE_KEY not set. Authentication will not work properly.');
+  console.error('ERROR: PUBLIC_CLERK_PUBLISHABLE_KEY not set. Authentication will not work properly.');
+} else {
+  console.log('Initializing Clerk with publishable key:', publishableKey.substring(0, 10) + '...');
+  
+  // Initialize Clerk client
+  try {
+    initializeClerkClient(publishableKey, {
+      afterSignInUrl: '/',
+      afterSignUpUrl: '/',
+      signInUrl: '/sign-in',
+      signUpUrl: '/sign-up'
+      // Removed appearance settings that were causing errors
+    });
+    console.log('Clerk client initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Clerk client:', error);
+  }
 }
-
-// Initialize Clerk client
-initializeClerkClient(publishableKey, {
-  afterSignInUrl: '/',
-  afterSignUpUrl: '/',
-  signInUrl: '/sign-in',
-  signUpUrl: '/sign-up',
-});
 
 // Export init function for SvelteKit
 export const init = () => {

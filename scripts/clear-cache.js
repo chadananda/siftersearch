@@ -21,21 +21,29 @@ const cacheDirs = [
   path.join(rootDir, '.vite')
 ];
 
-console.log('🧹 Clearing build cache artifacts...');
+// Silent mode - only log if directories were actually removed
+let removedCount = 0;
+const silent = process.argv.includes('--silent');
+
+if (!silent) {
+  console.log('🧹 Clearing build cache artifacts...');
+}
 
 // Clear cache directories
 cacheDirs.forEach(dir => {
   if (fs.existsSync(dir)) {
-    console.log(`Removing ${path.relative(rootDir, dir)}...`);
+    if (!silent) {
+      console.log(`Removing ${path.relative(rootDir, dir)}...`);
+    }
     try {
       fs.rmSync(dir, { recursive: true, force: true });
-      console.log(`✅ Successfully removed ${path.relative(rootDir, dir)}`);
+      removedCount++;
     } catch (err) {
-      console.error(`❌ Error removing ${path.relative(rootDir, dir)}: ${err.message}`);
+      console.error(`Error removing ${path.relative(rootDir, dir)}: ${err.message}`);
     }
-  } else {
-    console.log(`Directory ${path.relative(rootDir, dir)} does not exist, skipping.`);
   }
 });
 
-console.log('\n🚀 Cache cleared! You can now restart your development server.');
+if (!silent && removedCount > 0) {
+  console.log('\n🚀 Cache cleared! You can now restart your development server.');
+}

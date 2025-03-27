@@ -79,9 +79,9 @@ To get started with SifterSearch, first...`,
 
 <style>
   textarea {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
   }
 
   textarea:focus {
