@@ -1,0 +1,306 @@
+/**
+ * Job Queue Service
+ *
+ * Manages background jobs for translation, audio conversion, etc.
+ * Jobs are processed asynchronously and users are notified via email.
+ */
+
+import { query, queryOne, queryAll } from '../lib/db.js';
+import { logger } from '../lib/logger.js';
+import { nanoid } from 'nanoid';
+import crypto from 'crypto';
+
+// Job types
+export const JOB_TYPES = {
+  TRANSLATION: 'translation',
+  AUDIO: 'audio',
+  EMBEDDING: 'embedding'
+};
+
+// Job statuses
+export const JOB_STATUS = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  COMPLETED: 'completed',
+  FAILED: 'failed'
+};
+
+/**
+ * Create a new job
+ */
+export async function createJob({
+  type,
+  userId,
+  documentId,
+  params,
+  notifyEmail,
+  expiresInDays = 7
+}) {
+  const id = `job_${nanoid(16)}`;
+  const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+
+  await query(
+    `INSERT INTO jobs (id, type, user_id, document_id, params, notify_email, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, type, userId, documentId, JSON.stringify(params), notifyEmail, expiresAt.toISOString()]
+  );
+
+  logger.info({ jobId: id, type, documentId }, 'Job created');
+  return { id, type, status: JOB_STATUS.PENDING };
+}
+
+/**
+ * Get job by ID
+ */
+export async function getJob(jobId) {
+  const job = await queryOne('SELECT * FROM jobs WHERE id = ?', [jobId]);
+  if (job) {
+    job.params = JSON.parse(job.params || '{}');
+  }
+  return job;
+}
+
+/**
+ * Get jobs for a user
+ */
+export async function getUserJobs(userId, options = {}) {
+  const { type, status, limit = 20, offset = 0 } = options;
+
+  let sql = 'SELECT * FROM jobs WHERE user_id = ?';
+  const params = [userId];
+
+  if (type) {
+    sql += ' AND type = ?';
+    params.push(type);
+  }
+
+  if (status) {
+    sql += ' AND status = ?';
+    params.push(status);
+  }
+
+  sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
+  const jobs = await queryAll(sql, params);
+  return jobs.map(job => ({
+    ...job,
+    params: JSON.parse(job.params || '{}')
+  }));
+}
+
+/**
+ * Get next pending job to process
+ */
+export async function getNextPendingJob(type = null) {
+  let sql = `
+    SELECT * FROM jobs
+    WHERE status = 'pending'
+    AND (expires_at IS NULL OR expires_at > datetime('now'))
+  `;
+  const params = [];
+
+  if (type) {
+    sql += ' AND type = ?';
+    params.push(type);
+  }
+
+  sql += ' ORDER BY created_at ASC LIMIT 1';
+
+  const job = await queryOne(sql, params);
+  if (job) {
+    job.params = JSON.parse(job.params || '{}');
+  }
+  return job;
+}
+
+/**
+ * Update job status
+ */
+export async function updateJobStatus(jobId, status, updates = {}) {
+  const setClauses = ['status = ?'];
+  const params = [status];
+
+  if (status === JOB_STATUS.PROCESSING) {
+    setClauses.push('started_at = CURRENT_TIMESTAMP');
+  }
+
+  if (status === JOB_STATUS.COMPLETED || status === JOB_STATUS.FAILED) {
+    setClauses.push('completed_at = CURRENT_TIMESTAMP');
+  }
+
+  if (updates.resultUrl) {
+    setClauses.push('result_url = ?');
+    params.push(updates.resultUrl);
+  }
+
+  if (updates.resultPath) {
+    setClauses.push('result_path = ?');
+    params.push(updates.resultPath);
+  }
+
+  if (updates.errorMessage) {
+    setClauses.push('error_message = ?');
+    params.push(updates.errorMessage);
+  }
+
+  if (updates.progress !== undefined) {
+    setClauses.push('progress = ?');
+    params.push(updates.progress);
+  }
+
+  if (updates.totalItems !== undefined) {
+    setClauses.push('total_items = ?');
+    params.push(updates.totalItems);
+  }
+
+  params.push(jobId);
+
+  await query(
+    `UPDATE jobs SET ${setClauses.join(', ')} WHERE id = ?`,
+    params
+  );
+
+  logger.info({ jobId, status, ...updates }, 'Job status updated');
+}
+
+/**
+ * Mark job as notified
+ */
+export async function markJobNotified(jobId) {
+  await query(
+    'UPDATE jobs SET notified_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [jobId]
+  );
+}
+
+/**
+ * Generate content hash for caching
+ */
+export function generateContentHash(content) {
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 32);
+}
+
+/**
+ * Check cache for existing processed content
+ */
+export async function checkCache({
+  documentId,
+  segmentId = null,
+  processType,
+  targetLanguage = null,
+  voiceId = null,
+  contentHash
+}) {
+  const cached = await queryOne(
+    `SELECT * FROM processed_cache
+     WHERE document_id = ?
+     AND (segment_id = ? OR (segment_id IS NULL AND ? IS NULL))
+     AND process_type = ?
+     AND (target_language = ? OR (target_language IS NULL AND ? IS NULL))
+     AND (voice_id = ? OR (voice_id IS NULL AND ? IS NULL))
+     AND content_hash = ?`,
+    [documentId, segmentId, segmentId, processType, targetLanguage, targetLanguage, voiceId, voiceId, contentHash]
+  );
+
+  if (cached) {
+    // Update access stats
+    await query(
+      `UPDATE processed_cache
+       SET last_accessed_at = CURRENT_TIMESTAMP, access_count = access_count + 1
+       WHERE id = ?`,
+      [cached.id]
+    );
+    logger.info({ documentId, processType, targetLanguage }, 'Cache hit');
+  }
+
+  return cached;
+}
+
+/**
+ * Store processed content in cache
+ */
+export async function storeInCache({
+  documentId,
+  segmentId = null,
+  processType,
+  sourceLanguage = null,
+  targetLanguage = null,
+  voiceId = null,
+  contentHash,
+  resultPath,
+  resultUrl = null,
+  fileSize = null
+}) {
+  try {
+    await query(
+      `INSERT INTO processed_cache
+       (document_id, segment_id, process_type, source_language, target_language, voice_id, content_hash, result_path, result_url, file_size)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [documentId, segmentId, processType, sourceLanguage, targetLanguage, voiceId, contentHash, resultPath, resultUrl, fileSize]
+    );
+    logger.info({ documentId, processType, targetLanguage }, 'Cached processed content');
+  } catch (err) {
+    // Ignore duplicate key errors (race condition)
+    if (!err.message?.includes('UNIQUE constraint')) {
+      throw err;
+    }
+  }
+}
+
+/**
+ * Clean up expired jobs
+ */
+export async function cleanupExpiredJobs() {
+  const result = await query(
+    `DELETE FROM jobs WHERE expires_at < datetime('now') AND status IN ('completed', 'failed')`
+  );
+  if (result.rowsAffected > 0) {
+    logger.info({ count: result.rowsAffected }, 'Cleaned up expired jobs');
+  }
+  return result.rowsAffected;
+}
+
+/**
+ * Get job statistics
+ */
+export async function getJobStats() {
+  const stats = await queryOne(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
+    FROM jobs
+    WHERE created_at > datetime('now', '-30 days')
+  `);
+
+  const cacheStats = await queryOne(`
+    SELECT
+      COUNT(*) as total_cached,
+      SUM(access_count) as total_accesses,
+      SUM(file_size) as total_size_bytes
+    FROM processed_cache
+  `);
+
+  return { jobs: stats, cache: cacheStats };
+}
+
+export const jobs = {
+  JOB_TYPES,
+  JOB_STATUS,
+  createJob,
+  getJob,
+  getUserJobs,
+  getNextPendingJob,
+  updateJobStatus,
+  markJobNotified,
+  generateContentHash,
+  checkCache,
+  storeInCache,
+  cleanupExpiredJobs,
+  getJobStats
+};
+
+export default jobs;
