@@ -10,6 +10,8 @@ import rateLimit from '@fastify/rate-limit';
 import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './lib/errors.js';
 import authRoutes from './routes/auth.js';
+import searchRoutes from './routes/search.js';
+import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
   const server = Fastify({
@@ -20,7 +22,7 @@ export async function createServer(opts = {}) {
 
   // CORS
   await server.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:4321',
+    origin: config.server.corsOrigins.split(','),
     credentials: true
   });
 
@@ -31,10 +33,10 @@ export async function createServer(opts = {}) {
   });
 
   // Rate limiting
-  if (process.env.ENABLE_RATE_LIMITING !== 'false') {
+  if (config.rateLimit.enabled) {
     await server.register(rateLimit, {
-      max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-      timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10)
+      max: config.rateLimit.max,
+      timeWindow: config.rateLimit.windowMs
     });
   }
 
@@ -47,7 +49,7 @@ export async function createServer(opts = {}) {
 
   // API routes
   await server.register(authRoutes, { prefix: '/api/auth' });
-  // await server.register(searchRoutes, { prefix: '/api/search' });
+  await server.register(searchRoutes, { prefix: '/api/search' });
   // await server.register(userRoutes, { prefix: '/api/user' });
   // await server.register(adminRoutes, { prefix: '/api/admin' });
 

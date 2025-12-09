@@ -1,0 +1,27 @@
+# SifterSearch Configuration Overrides
+# Copy to config.yaml to override .env-public defaults
+# This file is optional - .env-public provides sane defaults
+
+# AI Provider Overrides
+# Uncomment to override the default providers
+# ai:
+#   chat:
+#     provider: anthropic
+#     model: claude-sonnet-4-20250514
+#   search:
+#     provider: openai
+#     model: gpt-4o-mini
+#   doc:
+#     provider: ollama
+#     model: qwen2.5:14b
+
+# Search Overrides
+# search:
+#   maxResults: 50
+#   snippetSize: 200
+
+# Rate Limit Overrides (per minute by tier)
+# rateLimit:
+#   verified: 5
+#   approved: 30
+#   patron: 100

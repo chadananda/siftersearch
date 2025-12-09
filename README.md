@@ -87,28 +87,63 @@ siftersearch/
 | `npm run migrate` | Run database migrations |
 | `npm run migrate:create <name>` | Create new migration |
 
-## Environment Variables
+## Configuration
 
-Configuration is split into two files:
+Configuration uses a layered approach (highest priority first):
 
-- **`.env-public`** - Non-sensitive config (checked into git)
-- **`.env-secrets`** - API keys and secrets (gitignored)
+1. **`.env-secrets`** - API keys and secrets (gitignored)
+2. **`config.yaml`** - Optional overrides (gitignored)
+3. **`.env-public`** - Defaults (checked into git)
 
-### Public Config (`.env-public`)
-Contains app metadata, ports, feature flags, model names, etc. See the file for all options.
+### Development Mode
+
+By default, `DEV_MODE=true` uses **remote AI APIs** (OpenAI, Anthropic) for laptop development without needing local GPU/Ollama.
+
+For production, set `DEV_MODE=false` to use **local Ollama** for cost savings.
+
+```bash
+# .env-public (default)
+DEV_MODE=true   # Uses OpenAI/Anthropic APIs
+
+# Production server
+DEV_MODE=false  # Uses local Ollama
+```
 
 ### Secrets (`.env-secrets`)
-Copy from `.env-secrets.example` and fill in your values:
+
+Copy from `.env-secrets.example`:
 
 ```bash
 # Required
 JWT_ACCESS_SECRET=your-64-char-random-string
 JWT_REFRESH_SECRET=another-64-char-random-string
-TURSO_AUTH_TOKEN=your-turso-token  # for production
 
-# AI Providers (at least one required)
+# AI Providers (required for dev mode)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
+
+# Production database
+TURSO_AUTH_TOKEN=your-turso-token
+```
+
+### Optional Overrides (`config.yaml`)
+
+Create `config.yaml` to override specific settings:
+
+```yaml
+# Override AI providers
+ai:
+  chat:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+  search:
+    provider: openai
+    model: gpt-4o-mini
+
+# Override rate limits
+rateLimit:
+  verified: 5
+  patron: 200
 ```
 
 ## API Endpoints
@@ -122,11 +157,13 @@ ANTHROPIC_API_KEY=sk-ant-...
 | POST | `/api/auth/logout` | Revoke tokens |
 | GET | `/api/auth/me` | Get current user |
 
-### Search (coming soon)
+### Search
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/search` | Main search endpoint |
-| GET | `/api/library/state` | Library statistics |
+| POST | `/api/search` | Hybrid search (keyword + semantic) |
+| GET | `/api/search/quick?q=` | Fast keyword-only search |
+| GET | `/api/search/stats` | Index statistics |
+| GET | `/api/search/health` | Search health check |
 
 ## User Tiers
 

@@ -28,6 +28,11 @@ Thumbs.db
 .env-secrets
 !.env.example
 !.env-public
+!.env-secrets.example
+
+# Config overrides
+config.yaml
+!config.yaml.example
 
 # IDE
 .idea/
