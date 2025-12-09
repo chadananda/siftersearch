@@ -1,29 +1,57 @@
-test-results
-node_modules
+# Dependencies
+node_modules/
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+# Build output
+dist/
+.output/
+.astro/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pino-pretty.log
+
+# Test output
+test-results/
+playwright-report/
+coverage/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Env
+# Environment (secrets)
 .env
-.env.*
+.env.local
+.env.*.local
 .env-secrets
-!.env-public
 !.env.example
-!.env.test
+!.env-public
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# Paraglide
-src/lib/paraglide
+# Temp
+tmp/
+.tmp/
+*.tmp
+
+# Data (local dev databases)
+data/*.db
+data/*.db-*
+!data/.gitkeep
+
+# Meilisearch data
+data/meili/
+
+# Cache
+.cache/
+.parcel-cache/
+
+# PWA generated
+public/sw.js
+public/workbox-*.js

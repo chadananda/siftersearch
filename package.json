@@ -1,23 +1,69 @@
 {
   "name": "siftersearch",
   "version": "0.0.1",
-  "description": "SifterSearch",
+  "description": "AI-powered interfaith library search system",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.3.0"
   },
   "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:api": "node --watch api/index.js",
+    "dev:ui": "astro dev",
+    "build": "astro build",
+    "build:api": "echo 'API is runtime JS, no build needed'",
+    "preview": "astro preview",
+    "start": "node api/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:api": "vitest run tests/api",
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --coverage",
+    "migrate": "node scripts/migrate.js",
+    "migrate:create": "node scripts/migrate.js create",
+    "lint": "eslint . --ext .js,.svelte,.astro",
+    "format": "prettier --write ."
   },
   "dependencies": {
+    "astro": "^5.16.4",
+    "@astrojs/svelte": "^7.0.0",
+    "svelte": "^5.45.3",
+    "tailwindcss": "^4.1.0",
+    "@astrojs/tailwind": "^6.0.0",
+    "fastify": "^5.6.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@libsql/client": "^0.15.15",
+    "meilisearch": "^0.54.0",
+    "jsonwebtoken": "^9.0.3",
+    "bcrypt": "^6.0.0",
+    "openai": "^6.2.0",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "ollama": "^0.6.3",
+    "zod": "^4.1.13",
+    "dotenv": "^16.4.5",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.1.3",
+    "nanoid": "^5.0.9"
   },
   "devDependencies": {
+    "@vite-pwa/astro": "^1.1.1",
+    "vitest": "^4.0.15",
+    "@playwright/test": "^1.57.0",
+    "concurrently": "^9.1.2"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chadananda/siftersearch.git"
   },
   "keywords": [
-    "search"
+    "search",
+    "ai",
+    "interfaith",
+    "library",
+    "semantic-search",
+    "meilisearch"
   ],
   "author": "Chad Jones",
   "license": "MIT"
