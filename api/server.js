@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.js';
 import searchRoutes from './routes/search.js';
 import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
+import documentsRoutes from './routes/documents.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -54,6 +55,7 @@ export async function createServer(opts = {}) {
   await server.register(searchRoutes, { prefix: '/api/search' });
   await server.register(userRoutes, { prefix: '/api/user' });
   await server.register(adminRoutes, { prefix: '/api/admin' });
+  await server.register(documentsRoutes, { prefix: '/api/documents' });
 
   // Error handling
   server.setErrorHandler(errorHandler);

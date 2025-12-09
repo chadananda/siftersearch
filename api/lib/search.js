@@ -49,11 +49,13 @@ export async function initializeIndexes() {
       'religion',
       'collection',
       'language',
-      'year'
+      'year',
+      'paragraph_index'
     ],
     sortableAttributes: [
       'year',
-      'created_at'
+      'created_at',
+      'paragraph_index'
     ],
     // Enable vector search
     embedders: {
