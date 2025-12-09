@@ -1,9 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
 import ChatInterface from '../components/ChatInterface.svelte';
 ---
 
 <Layout title="SifterSearch - AI-Powered Interfaith Library">
+  <LiquidBackground client:load />
   <main class="min-h-screen relative">
     <ChatInterface client:load />
   </main>
