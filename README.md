@@ -29,9 +29,9 @@ AI-powered interfaith library search system combining semantic search with tradi
 # Install dependencies
 npm install
 
-# Copy environment file
-cp .env.example .env
-# Edit .env with your configuration
+# Create secrets file from template
+cp .env-secrets.example .env-secrets
+# Edit .env-secrets with your API keys and secrets
 
 # Run database migrations
 npm run migrate
@@ -41,7 +41,7 @@ npm run dev
 ```
 
 The app will be available at:
-- **Frontend**: http://localhost:4321
+- **Frontend**: http://localhost:5173
 - **API**: http://localhost:3000
 
 ## Project Structure
@@ -89,20 +89,26 @@ siftersearch/
 
 ## Environment Variables
 
-See `.env.example` for all configuration options. Key variables:
+Configuration is split into two files:
+
+- **`.env-public`** - Non-sensitive config (checked into git)
+- **`.env-secrets`** - API keys and secrets (gitignored)
+
+### Public Config (`.env-public`)
+Contains app metadata, ports, feature flags, model names, etc. See the file for all options.
+
+### Secrets (`.env-secrets`)
+Copy from `.env-secrets.example` and fill in your values:
 
 ```bash
 # Required
-TURSO_DATABASE_URL=file:./data/sifter.db
-MEILI_HOST=http://localhost:7700
-MEILI_MASTER_KEY=your-key
-JWT_ACCESS_SECRET=your-secret
-JWT_REFRESH_SECRET=your-secret
+JWT_ACCESS_SECRET=your-64-char-random-string
+JWT_REFRESH_SECRET=another-64-char-random-string
+TURSO_AUTH_TOKEN=your-turso-token  # for production
 
-# AI Providers
+# AI Providers (at least one required)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
-OLLAMA_HOST=http://localhost:11434
 ```
 
 ## API Endpoints

@@ -4,7 +4,9 @@
  * Usage: npm run migrate [create <name>]
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env-public' });
+dotenv.config({ path: '.env-secrets' });
 import { createClient } from '@libsql/client';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';

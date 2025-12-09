@@ -4,6 +4,10 @@
  * Starts Astro dev server and API server concurrently
  */
 
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env-public' });
+dotenv.config({ path: '.env-secrets' });
+
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
