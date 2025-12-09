@@ -219,15 +219,76 @@ export async function processTranslationJob(job) {
 }
 
 /**
- * Translate a single text segment
+ * Build translation prompt with style examples for Bahá'í texts
  */
-async function translateText(text, sourceLang, targetLang, quality = 'standard') {
+function buildTranslationPrompt(sourceLang, targetLang, quality) {
   const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
   const targetName = SUPPORTED_LANGUAGES[targetLang] || targetLang;
 
-  const systemPrompt = quality === 'high'
-    ? `You are an expert translator specializing in religious and scholarly texts. Translate the following text from ${sourceName} to ${targetName}. Preserve the meaning, tone, and any technical or religious terminology. Provide only the translation without explanations.`
-    : `Translate the following text from ${sourceName} to ${targetName}. Preserve the meaning and provide only the translation.`;
+  // Standard quality - simple translation
+  if (quality !== 'high') {
+    return `Translate the following text from ${sourceName} to ${targetName}. Preserve the meaning and provide only the translation.`;
+  }
+
+  // High quality - detailed guidance for scholarly/religious texts
+  let prompt = `You are an expert translator specializing in religious and scholarly texts, particularly Bahá'í sacred writings. Translate the following text from ${sourceName} to ${targetName}.
+
+## Translation Guidelines:
+- Preserve the meaning, tone, and spiritual significance
+- Maintain technical and theological terminology
+- Use elevated, formal language appropriate to sacred texts
+- Preserve parallelism and rhetorical devices
+- Provide only the translation without explanations`;
+
+  // Add Shoghi Effendi style guidance for Arabic→English translations
+  if (sourceLang === 'ar' && targetLang === 'en') {
+    prompt += `
+
+## Style Reference: Shoghi Effendi's Translation Style
+When translating Arabic Bahá'í texts to English, emulate the Guardian's distinctive style:
+
+### Vocabulary:
+- Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
+- Employ elevated diction: perceiveth, confesseth, hath, art, doth
+- Render divine attributes formally: sovereignty, dominion, majesty
+
+### Syntax:
+- Use inverted word order for emphasis where appropriate
+- Craft flowing sentences with parallel clauses
+- Link subordinate clauses with "and" and "that"
+
+### Rhetorical Devices:
+- Preserve parallelism (e.g., "The winds of tests... the tempests of trials")
+- Maintain metaphors (e.g., "lamp of Thy love", "ocean of Thy nearness")
+- Repeat divine attributes for emphasis
+
+### Example Correspondences:
+- "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
+- "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
+- "بِأَنْ تَحْفَظَهُمْ" → "to keep them safe"
+- "لا خَوْفٌ عَلَيْهِمْ وَلا هُمْ يَحْزَنُونَ" → "on whom shall come no fear and who shall not be put to grief"`;
+  }
+
+  // Add guidance for English→Arabic (reverse translation)
+  if (sourceLang === 'en' && targetLang === 'ar') {
+    prompt += `
+
+## Style Reference: Classical Arabic Religious Prose
+When translating English Bahá'í texts to Arabic:
+- Use classical Arabic (fuṣḥā) appropriate for religious texts
+- Include proper diacritical marks (tashkīl) for clarity
+- Employ Qur'ānic and classical Arabic rhetorical patterns
+- Preserve the elevated, devotional tone`;
+  }
+
+  return prompt;
+}
+
+/**
+ * Translate a single text segment
+ */
+async function translateText(text, sourceLang, targetLang, quality = 'standard') {
+  const systemPrompt = buildTranslationPrompt(sourceLang, targetLang, quality);
 
   const response = await chatCompletion([
     { role: 'system', content: systemPrompt },
