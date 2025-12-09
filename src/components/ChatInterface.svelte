@@ -1,12 +1,17 @@
 <script>
   import { onMount } from 'svelte';
   import { search } from '../lib/api.js';
+  import { initAuth, logout, getAuthState } from '../lib/auth.js';
+  import AuthModal from './AuthModal.svelte';
 
   let messages = $state([]);
   let input = $state('');
   let loading = $state(false);
   let searchMode = $state('hybrid'); // hybrid, keyword, semantic
+  let showAuthModal = $state(false);
   let inputEl;
+
+  const auth = getAuthState();
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -62,9 +67,12 @@
   }
 
   onMount(() => {
+    initAuth();
     inputEl?.focus();
   });
 </script>
+
+<AuthModal bind:isOpen={showAuthModal} />
 
 <div class="flex flex-col h-screen">
   <!-- Header -->
@@ -84,12 +92,27 @@
         <option value="keyword">Keyword Only</option>
         <option value="semantic">Semantic Only</option>
       </select>
-      <button class="text-sm text-slate-400 hover:text-white transition-colors">
+      <a href="/about" class="text-sm text-slate-400 hover:text-white transition-colors">
         About
-      </button>
-      <button class="text-sm px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors">
-        Sign In
-      </button>
+      </a>
+      {#if auth.isAuthenticated}
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-400">{auth.user?.email}</span>
+          <button
+            onclick={logout}
+            class="text-sm px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      {:else}
+        <button
+          onclick={() => showAuthModal = true}
+          class="text-sm px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-md transition-colors"
+        >
+          Sign In
+        </button>
+      {/if}
     </nav>
   </header>
 

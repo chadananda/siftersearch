@@ -1,0 +1,153 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
+---
+
+<Layout title="About - SifterSearch" description="Learn about SifterSearch, an AI-powered interfaith library search system.">
+  <LiquidBackground client:load />
+  <main class="min-h-screen relative">
+    <div class="flex flex-col min-h-screen">
+      <!-- Header -->
+      <header class="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+        <a href="/" class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-400 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-sm">S</span>
+          </div>
+          <h1 class="text-lg font-semibold">SifterSearch</h1>
+        </a>
+        <nav class="flex items-center gap-4">
+          <a href="/" class="text-sm text-slate-400 hover:text-white transition-colors">
+            Search
+          </a>
+        </nav>
+      </header>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="max-w-3xl mx-auto space-y-8">
+          <!-- Hero -->
+          <section class="text-center py-8">
+            <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-500/20 to-teal-400/20 rounded-2xl flex items-center justify-center">
+              <span class="text-4xl font-bold bg-gradient-to-br from-blue-400 to-teal-300 bg-clip-text text-transparent">S</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold mb-4">About SifterSearch</h1>
+            <p class="text-xl text-slate-400">
+              An AI-powered search engine for exploring sacred texts and interfaith literature.
+            </p>
+          </section>
+
+          <!-- Mission -->
+          <section class="bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700/50 backdrop-blur-sm">
+            <h2 class="text-2xl font-semibold mb-4">Our Mission</h2>
+            <p class="text-slate-300 leading-relaxed mb-4">
+              SifterSearch aims to make the world's sacred texts and interfaith scholarship more accessible
+              through intelligent search. We combine traditional keyword search with AI-powered semantic
+              understanding to help researchers, students, and spiritual seekers find relevant passages
+              across religious and philosophical traditions.
+            </p>
+            <p class="text-slate-300 leading-relaxed">
+              Our goal is to foster understanding and dialogue by making it easier to discover
+              connections and parallels across different faith traditions.
+            </p>
+          </section>
+
+          <!-- Features -->
+          <section class="bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700/50 backdrop-blur-sm">
+            <h2 class="text-2xl font-semibold mb-6">Features</h2>
+            <div class="grid gap-6 md:grid-cols-2">
+              <div>
+                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-3">
+                  <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Hybrid Search</h3>
+                <p class="text-sm text-slate-400">
+                  Combines keyword matching with semantic understanding to find relevant passages
+                  even when exact words differ.
+                </p>
+              </div>
+              <div>
+                <div class="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center mb-3">
+                  <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Multi-Tradition Library</h3>
+                <p class="text-sm text-slate-400">
+                  Search across scriptures, commentaries, and scholarly works from major world
+                  religions and philosophical traditions.
+                </p>
+              </div>
+              <div>
+                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3">
+                  <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Conversational Interface</h3>
+                <p class="text-sm text-slate-400">
+                  Ask questions in natural language and receive contextual responses with
+                  citations from primary sources.
+                </p>
+              </div>
+              <div>
+                <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center mb-3">
+                  <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 class="font-semibold mb-2">Scholarly Sources</h3>
+                <p class="text-sm text-slate-400">
+                  Access academic commentaries and historical analyses alongside primary
+                  religious texts.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Technology -->
+          <section class="bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700/50 backdrop-blur-sm">
+            <h2 class="text-2xl font-semibold mb-4">Technology</h2>
+            <p class="text-slate-300 leading-relaxed mb-4">
+              SifterSearch uses advanced AI technology to understand the meaning behind your queries,
+              not just the keywords. Our hybrid search engine combines:
+            </p>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start gap-3">
+                <span class="text-blue-400 mt-1">&#8226;</span>
+                <span><strong>Semantic search</strong> powered by OpenAI embeddings for meaning-based matching</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-blue-400 mt-1">&#8226;</span>
+                <span><strong>Keyword search</strong> via Meilisearch for precise text matching</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-blue-400 mt-1">&#8226;</span>
+                <span><strong>AI re-ranking</strong> to surface the most relevant results</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Contact -->
+          <section class="bg-slate-800/50 rounded-2xl p-6 md:p-8 border border-slate-700/50 backdrop-blur-sm">
+            <h2 class="text-2xl font-semibold mb-4">Get Involved</h2>
+            <p class="text-slate-300 leading-relaxed mb-4">
+              SifterSearch is an ongoing project. We welcome contributions of texts, translations,
+              and scholarly resources from all faith traditions.
+            </p>
+            <p class="text-slate-300 leading-relaxed">
+              For inquiries, partnerships, or to contribute to the library, please reach out through
+              the contact information on our main site.
+            </p>
+          </section>
+
+          <!-- Footer -->
+          <footer class="text-center py-8 text-sm text-slate-500">
+            <p>&copy; {new Date().getFullYear()} SifterSearch. Built with respect for all traditions.</p>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>

@@ -8,12 +8,17 @@
  * PUT /api/admin/users/:id - Update user (tier, ban, etc.)
  * GET /api/admin/pending - Users awaiting approval
  * POST /api/admin/approve/:id - Approve a user
+ * POST /api/admin/index - Index a document
+ * POST /api/admin/index/batch - Batch index documents
+ * DELETE /api/admin/index/:id - Remove document from index
+ * GET /api/admin/index/status - Get indexing queue status
  */
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier } from '../lib/auth.js';
 import { getStats as getSearchStats } from '../lib/search.js';
+import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus } from '../services/indexer.js';
 
 export default async function adminRoutes(fastify) {
   // All routes require admin tier
@@ -264,5 +269,100 @@ export default async function adminRoutes(fastify) {
     const events = await queryAll(sql, params);
 
     return { events };
+  });
+
+  // ===== Document Indexing Routes =====
+
+  // Index a single document from text
+  fastify.post('/index', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['text'],
+        properties: {
+          text: { type: 'string', minLength: 100 },
+          metadata: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              author: { type: 'string' },
+              religion: { type: 'string' },
+              collection: { type: 'string' },
+              language: { type: 'string' },
+              year: { type: 'integer' },
+              description: { type: 'string' }
+            }
+          }
+        }
+      }
+    }
+  }, async (request) => {
+    const { text, metadata = {} } = request.body;
+
+    try {
+      const result = await indexDocumentFromText(text, metadata);
+      return result;
+    } catch (err) {
+      throw ApiError.internal(`Indexing failed: ${err.message}`);
+    }
+  });
+
+  // Batch index documents from JSON
+  fastify.post('/index/batch', {
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          documents: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['text'],
+              properties: {
+                text: { type: 'string' },
+                metadata: { type: 'object' }
+              }
+            }
+          },
+          // Alternative: structured book format
+          title: { type: 'string' },
+          author: { type: 'string' },
+          chapters: { type: 'array' }
+        }
+      }
+    }
+  }, async (request) => {
+    try {
+      const results = await indexFromJSON(request.body);
+      return {
+        indexed: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        results
+      };
+    } catch (err) {
+      throw ApiError.internal(`Batch indexing failed: ${err.message}`);
+    }
+  });
+
+  // Remove a document from the index
+  fastify.delete('/index/:id', async (request) => {
+    const { id } = request.params;
+
+    try {
+      const result = await removeDocument(id);
+      return result;
+    } catch (err) {
+      throw ApiError.internal(`Failed to remove document: ${err.message}`);
+    }
+  });
+
+  // Get indexing queue status
+  fastify.get('/index/status', async () => {
+    try {
+      return await getIndexingStatus();
+    } catch (err) {
+      throw ApiError.internal(`Failed to get indexing status: ${err.message}`);
+    }
   });
 }
