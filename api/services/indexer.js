@@ -156,7 +156,8 @@ export async function indexDocumentFromText(text, metadata = {}) {
   logger.info({ documentId, chunks: chunks.length }, 'Generating embeddings');
 
   // Generate embeddings for all chunks
-  const embeddings = await createEmbeddings(chunks);
+  const embeddingResult = await createEmbeddings(chunks);
+  const embeddings = embeddingResult.embeddings;
 
   // Create document record
   const document = {
@@ -328,7 +329,8 @@ export async function reindexAll(documents) {
 export async function getIndexingStatus() {
   const meili = getMeili();
 
-  const tasks = await meili.getTasks({
+  // Note: Meilisearch JS v0.50+ uses client.tasks.getTasks() instead of client.getTasks()
+  const tasks = await meili.tasks.getTasks({
     statuses: ['processing', 'enqueued'],
     limit: 20
   });

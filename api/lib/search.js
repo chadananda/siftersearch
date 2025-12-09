@@ -185,12 +185,12 @@ export async function semanticSearch(query, options = {}) {
 export async function indexDocument(document, paragraphs) {
   const meili = getMeili();
 
-  // Index document metadata
-  await meili.index(INDEXES.DOCUMENTS).addDocuments([document]);
+  // Index document metadata (primary key: id)
+  await meili.index(INDEXES.DOCUMENTS).addDocuments([document], { primaryKey: 'id' });
 
-  // Index paragraphs with embeddings
+  // Index paragraphs with embeddings (primary key: id)
   if (paragraphs.length > 0) {
-    await meili.index(INDEXES.PARAGRAPHS).addDocuments(paragraphs);
+    await meili.index(INDEXES.PARAGRAPHS).addDocuments(paragraphs, { primaryKey: 'id' });
   }
 
   logger.info({ documentId: document.id, paragraphCount: paragraphs.length }, 'Document indexed');
