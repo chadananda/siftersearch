@@ -82,12 +82,18 @@
       return value;
     }
 
-    // Simple rotation around center - preserves cloud shapes
-    vec2 rotate(vec2 uv, vec2 center, float angle) {
+    // Gentle spiral coordinates - oscillating swirl that doesn't wind up
+    vec2 spiral(vec2 uv, vec2 center, float time, float strength) {
       vec2 delta = uv - center;
-      float c = cos(angle);
-      float s = sin(angle);
-      return vec2(delta.x * c - delta.y * s, delta.x * s + delta.y * c) + center;
+      float dist = length(delta);
+      float angle = atan(delta.y, delta.x);
+
+      // Oscillating rotation - swings back and forth, never winds up
+      // Uses sine wave so it stays bounded between -strength and +strength
+      float swing = sin(time * 0.3) * strength / (dist + 0.3);
+      angle += swing;
+
+      return vec2(cos(angle), sin(angle)) * dist + center;
     }
 
     // Neural lights - hundreds of tiny flashes, denser toward center
@@ -154,23 +160,23 @@
       vec2 center = vec2(0.5 * aspect, 0.5);
       vec2 uvAspect = vec2(uv.x * aspect, uv.y);
 
-      // Slow rotation speed
-      float t = u_time * 0.02; // Very slow rotation
+      // Time for animation - start with small offset so swirl is visible immediately
+      float t = u_time * 0.08 + 2.0; // small initial offset
 
       // Distance from center
       float distFromCenter = length(uvAspect - center);
 
-      // Rotate the entire cloud field around center - preserves cloud shapes
-      vec2 rotatedUV = rotate(uvAspect, center, t);
+      // Apply gentle spiral transformation - visible swirl around center
+      vec2 spiralUV = spiral(uvAspect, center, t, 0.4);
 
-      // Add soft organic distortion (subtle, doesn't compound)
-      float distort = fbm(rotatedUV * 1.2 + u_time * 0.01) * 0.08;
-      vec2 cloudUV = rotatedUV + vec2(distort, distort * 0.6);
+      // Add soft organic distortion
+      float distort = fbm(spiralUV * 1.2 + t * 0.1) * 0.1;
+      spiralUV += vec2(distort, distort * 0.6);
 
-      // Multiple cloud layers - slow drifting within the rotating field
-      float n1 = fbm(cloudUV * 1.8 + u_time * 0.005);
-      float n2 = fbm(cloudUV * 2.8 - u_time * 0.003 + n1 * 0.25);
-      float n3 = fbm(cloudUV * 1.5 + vec2(u_time * 0.002, -u_time * 0.004) + n2 * 0.15);
+      // Multiple cloud layers - slow and dreamy
+      float n1 = fbm(spiralUV * 1.8 + t * 0.08);
+      float n2 = fbm(spiralUV * 2.8 - t * 0.05 + n1 * 0.25);
+      float n3 = fbm(spiralUV * 1.5 + vec2(t * 0.04, -t * 0.06) + n2 * 0.15);
 
       // Combine cloud layers
       float clouds = (n1 + n2 * 0.5 + n3 * 0.3) / 1.8;
