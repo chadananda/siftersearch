@@ -103,7 +103,8 @@
       vec2 center = vec2(0.5 * aspect, 0.5);
       vec2 uvAspect = vec2(uv.x * aspect, uv.y);
 
-      float t = u_time * 0.08; // Slow base time for gentle motion
+      // Start with time offset so vortex is already formed on load
+      float t = (u_time + 120.0) * 0.08; // +120s offset = starts swirled
 
       // Distance from center
       float distFromCenter = length(uvAspect - center);
