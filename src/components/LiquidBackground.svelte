@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { getThinkingState } from '../lib/stores/thinking.svelte.js';
 
   let canvas;
   let gl;
@@ -9,6 +10,15 @@
   let isVisible = true;
   let isDarkMode = $state(true);
   let themeLocation;
+  let thinkingLocation;
+  let thinkingIntensityLocation;
+
+  // Get thinking state from shared store
+  const thinkingState = getThinkingState();
+
+  // Smooth transition for thinking state
+  let targetThinking = $state(0);
+  let currentThinking = 0;
 
   // Shader sources
   const vertexShaderSource = `#version 300 es
@@ -23,7 +33,8 @@
 
     uniform float u_time;
     uniform vec2 u_resolution;
-    uniform float u_darkMode; // 1.0 = dark, 0.0 = light
+    uniform float u_darkMode;
+    uniform float u_thinking; // 0.0 = idle, 1.0 = thinking
 
     out vec4 fragColor;
 
@@ -71,33 +82,101 @@
       return value;
     }
 
+    // Vortex swirl function
+    vec2 vortex(vec2 uv, vec2 center, float strength, float radius) {
+      vec2 delta = uv - center;
+      float dist = length(delta);
+      float angle = strength / (dist + 0.3) * smoothstep(radius, 0.0, dist);
+      float s = sin(angle);
+      float c = cos(angle);
+      return vec2(
+        delta.x * c - delta.y * s,
+        delta.x * s + delta.y * c
+      ) + center;
+    }
+
+    // Neural flash effect - creates lightning-like pulses
+    float neuralFlash(vec2 uv, float time) {
+      float flash = 0.0;
+
+      // Multiple neural impulse sources
+      for (int i = 0; i < 4; i++) {
+        float fi = float(i);
+        vec2 source = vec2(
+          0.3 + 0.4 * sin(time * 0.7 + fi * 1.57),
+          0.3 + 0.4 * cos(time * 0.5 + fi * 1.23)
+        );
+
+        // Distance from source
+        float dist = length(uv - source);
+
+        // Pulsing rings emanating from source
+        float ring = sin(dist * 15.0 - time * 4.0 + fi * 2.0);
+        ring = pow(max(ring, 0.0), 3.0);
+
+        // Fade with distance
+        float fade = exp(-dist * 3.0);
+
+        // Random timing for each source
+        float pulse = sin(time * (2.0 + fi * 0.5)) * 0.5 + 0.5;
+        pulse = pow(pulse, 4.0); // Sharp pulses
+
+        flash += ring * fade * pulse * 0.3;
+      }
+
+      // Add some chaotic lightning branches
+      float lightning = snoise(uv * 8.0 + time * 2.0);
+      lightning = pow(max(lightning, 0.0), 8.0);
+      float lightningPulse = sin(time * 3.0) * 0.5 + 0.5;
+      flash += lightning * lightningPulse * 0.4;
+
+      return flash;
+    }
+
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution;
       float aspect = u_resolution.x / u_resolution.y;
-      uv.x *= aspect;
+      vec2 uvAspect = uv;
+      uvAspect.x *= aspect;
 
       float t = u_time * 0.15;
 
-      // Multiple layers of flowing noise
-      float n1 = fbm(uv * 2.0 + vec2(t * 0.3, t * 0.2));
-      float n2 = fbm(uv * 3.0 - vec2(t * 0.2, t * 0.15) + n1 * 0.5);
-      float n3 = fbm(uv * 1.5 + vec2(t * 0.1, -t * 0.25) + n2 * 0.3);
+      // Base vortex speed (always present but subtle)
+      float baseVortexSpeed = 0.3;
+      // Increased speed when thinking
+      float thinkingVortexSpeed = 1.2;
+      float vortexSpeed = mix(baseVortexSpeed, thinkingVortexSpeed, u_thinking);
+
+      // Apply vortex swirl - center of screen
+      vec2 center = vec2(aspect * 0.5, 0.5);
+      float vortexStrength = (0.3 + u_thinking * 0.5) * sin(t * vortexSpeed);
+      vec2 swirlUV = vortex(uvAspect, center, vortexStrength, 1.5);
+
+      // Second subtle counter-rotating vortex
+      vec2 center2 = vec2(aspect * 0.5, 0.5);
+      float vortexStrength2 = (0.15 + u_thinking * 0.3) * cos(t * vortexSpeed * 0.7);
+      swirlUV = vortex(swirlUV, center2, -vortexStrength2, 2.0);
+
+      // Multiple layers of flowing noise with swirl
+      float n1 = fbm(swirlUV * 2.0 + vec2(t * 0.3, t * 0.2));
+      float n2 = fbm(swirlUV * 3.0 - vec2(t * 0.2, t * 0.15) + n1 * 0.5);
+      float n3 = fbm(swirlUV * 1.5 + vec2(t * 0.1, -t * 0.25) + n2 * 0.3);
 
       // Combine layers
       float combined = (n1 + n2 * 0.7 + n3 * 0.5) / 2.2;
-      combined = combined * 0.5 + 0.5; // Normalize to 0-1
+      combined = combined * 0.5 + 0.5;
 
       // Dark theme colors - deep blues and teals
-      vec3 dark1 = vec3(0.03, 0.05, 0.12);  // Deep navy
-      vec3 dark2 = vec3(0.05, 0.12, 0.18);  // Dark teal
-      vec3 dark3 = vec3(0.08, 0.18, 0.25);  // Lighter teal
-      vec3 dark4 = vec3(0.12, 0.22, 0.32);  // Accent
+      vec3 dark1 = vec3(0.03, 0.05, 0.12);
+      vec3 dark2 = vec3(0.05, 0.12, 0.18);
+      vec3 dark3 = vec3(0.08, 0.18, 0.25);
+      vec3 dark4 = vec3(0.12, 0.22, 0.32);
 
-      // Light theme colors - soft whites and light blues
-      vec3 light1 = vec3(0.97, 0.98, 1.0);   // Near white
-      vec3 light2 = vec3(0.94, 0.96, 0.99);  // Soft blue-white
-      vec3 light3 = vec3(0.90, 0.94, 0.98);  // Light blue tint
-      vec3 light4 = vec3(0.85, 0.92, 0.97);  // Accent blue
+      // Light theme colors
+      vec3 light1 = vec3(0.97, 0.98, 1.0);
+      vec3 light2 = vec3(0.94, 0.96, 0.99);
+      vec3 light3 = vec3(0.90, 0.94, 0.98);
+      vec3 light4 = vec3(0.85, 0.92, 0.97);
 
       // Select colors based on theme
       vec3 color1 = mix(light1, dark1, u_darkMode);
@@ -115,10 +194,26 @@
         color = mix(color3, color4, (combined - 0.66) * 3.0);
       }
 
-      // Subtle vignette (less intense in light mode)
-      vec2 center = (gl_FragCoord.xy / u_resolution) - 0.5;
+      // Neural flash effect when thinking
+      if (u_thinking > 0.01) {
+        float flash = neuralFlash(uv, u_time);
+
+        // Flash color - cyan/electric blue in dark mode, subtle blue in light
+        vec3 flashColorDark = vec3(0.2, 0.6, 0.9);
+        vec3 flashColorLight = vec3(0.4, 0.6, 0.85);
+        vec3 flashColor = mix(flashColorLight, flashColorDark, u_darkMode);
+
+        // Add flash to color with thinking intensity
+        color += flashColor * flash * u_thinking * 1.5;
+
+        // Subtle overall brightening when thinking
+        color = mix(color, color * 1.15, u_thinking * 0.3);
+      }
+
+      // Subtle vignette
+      vec2 vignetteCenter = (gl_FragCoord.xy / u_resolution) - 0.5;
       float vignetteStrength = mix(0.2, 0.5, u_darkMode);
-      float vignette = 1.0 - dot(center, center) * vignetteStrength;
+      float vignette = 1.0 - dot(vignetteCenter, vignetteCenter) * vignetteStrength;
       color *= vignette;
 
       fragColor = vec4(color, 1.0);
@@ -190,8 +285,9 @@
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // Get theme uniform location
+    // Get uniform locations
     themeLocation = gl.getUniformLocation(program, 'u_darkMode');
+    thinkingLocation = gl.getUniformLocation(program, 'u_thinking');
 
     return true;
   }
@@ -217,7 +313,6 @@
     const theme = document.documentElement.getAttribute('data-theme');
     if (theme === 'light') return false;
     if (theme === 'dark') return true;
-    // System preference
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
@@ -227,8 +322,15 @@
       return;
     }
 
-    // Check theme on each frame for smooth transitions
+    // Check theme on each frame
     isDarkMode = checkTheme();
+
+    // Update target thinking state from shared store
+    targetThinking = thinkingState.isThinking ? 1.0 : 0.0;
+
+    // Smooth transition for thinking state
+    const smoothingFactor = 0.08; // Adjust for faster/slower transitions
+    currentThinking += (targetThinking - currentThinking) * smoothingFactor;
 
     const time = (timestamp - startTime) / 1000;
 
@@ -240,6 +342,7 @@
     gl.uniform1f(timeLocation, time);
     gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
     gl.uniform1f(themeLocation, isDarkMode ? 1.0 : 0.0);
+    gl.uniform1f(thinkingLocation, currentThinking);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 

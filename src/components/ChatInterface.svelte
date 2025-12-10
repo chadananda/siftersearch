@@ -3,6 +3,7 @@
   import { search, session } from '../lib/api.js';
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
+  import { setThinking } from '../lib/stores/thinking.svelte.js';
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
 
@@ -86,6 +87,7 @@
 
     messages = [...messages, { id: `user-${messageId}`, role: 'user', content: userMessage }];
     loading = true;
+    setThinking(true); // Trigger neural activity animation
 
     // Scroll to user message
     scrollToLatestUserMessage();
@@ -110,6 +112,7 @@
       }];
     } finally {
       loading = false;
+      setThinking(false); // Stop neural activity animation
     }
   }
 
