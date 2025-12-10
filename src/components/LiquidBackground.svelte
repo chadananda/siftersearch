@@ -95,66 +95,6 @@
       return vec2(cos(angle), sin(angle)) * dist + center;
     }
 
-    // Random flashing lights scattered throughout
-    float randomFlashes(vec2 uv, float time, float cloudDensity, float thinking) {
-      // Base flash intensity (subtle when idle)
-      float baseIntensity = 0.12;
-      // Much brighter when thinking
-      float thinkingIntensity = 0.7;
-      float intensity = mix(baseIntensity, thinkingIntensity, thinking);
-
-      // Base flash rate (slow when idle)
-      float baseRate = 1.0;
-      // Faster when thinking
-      float thinkingRate = 3.0;
-      float rate = mix(baseRate, thinkingRate, thinking);
-
-      float flash = 0.0;
-
-      // Scattered random flash points
-      for (int i = 0; i < 8; i++) {
-        float fi = float(i);
-
-        // Random-ish positions that slowly drift
-        vec2 flashPos = vec2(
-          0.1 + 0.8 * fract(sin(fi * 127.1) * 43758.5),
-          0.1 + 0.8 * fract(sin(fi * 269.5) * 43758.5)
-        );
-
-        // Slow drift
-        flashPos += vec2(
-          sin(time * 0.1 + fi * 2.0) * 0.05,
-          cos(time * 0.08 + fi * 1.7) * 0.05
-        );
-
-        float flashDist = length(uv - flashPos);
-
-        // Soft glow
-        float glow = exp(-flashDist * 15.0);
-
-        // Random timing - each flash has its own rhythm
-        float phase = fract(sin(fi * 431.2) * 43758.5) * 6.28;
-        float freq = 0.8 + fract(sin(fi * 127.7) * 43758.5) * 1.5;
-        float pulse = sin(time * freq * rate + phase);
-        pulse = smoothstep(0.3, 1.0, pulse); // Only flash on positive peaks
-
-        // Flashes are more visible in cloud areas
-        float cloudMask = smoothstep(0.2, 0.5, cloudDensity);
-
-        flash += glow * pulse * cloudMask;
-      }
-
-      // Extra scattered tiny sparkles
-      float sparkle = snoise(uv * 20.0 + time * rate * 0.5);
-      sparkle = pow(max(sparkle, 0.0), 8.0);
-
-      // More sparkles when thinking
-      float sparkleIntensity = mix(0.2, 0.8, thinking);
-      flash += sparkle * cloudDensity * sparkleIntensity;
-
-      return flash * intensity;
-    }
-
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution;
       float aspect = u_resolution.x / u_resolution.y;
@@ -214,23 +154,6 @@
         color = mix(cloud1, cloud2, (clouds - 0.4) / 0.2);
       } else {
         color = mix(cloud2, cloud3, (clouds - 0.6) / 0.4);
-      }
-
-      // Random flashing lights
-      float flashes = randomFlashes(uv, u_time, clouds, u_thinking);
-
-      // Flash colors - soft cyan/blue
-      vec3 flashColorDark = vec3(0.4, 0.7, 1.0);
-      vec3 flashColorLight = vec3(0.3, 0.5, 0.8);
-      vec3 flashColor = mix(flashColorLight, flashColorDark, u_darkMode);
-
-      // Add flashes to the scene
-      color += flashColor * flashes;
-
-      // Subtle ambient glow when thinking
-      if (u_thinking > 0.01) {
-        // Slight overall brightening
-        color = mix(color, color * 1.08, u_thinking * 0.3);
       }
 
       // Very soft vignette
