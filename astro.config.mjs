@@ -1,16 +1,19 @@
 import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
+import { readFileSync } from 'fs';
+
+// Read version from package.json
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
   output: 'static',
 
   integrations: [
     svelte(),
-    tailwind(),
     AstroPWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'logo.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'SifterSearch',
@@ -72,6 +75,11 @@ export default defineConfig({
   ],
 
   vite: {
+    plugins: [tailwindcss()],
+    define: {
+      'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(pkg.version),
+      'import.meta.env.PUBLIC_API_URL': JSON.stringify(process.env.PUBLIC_API_URL || 'https://api.siftersearch.com')
+    },
     optimizeDeps: {
       exclude: ['@libsql/client']
     }

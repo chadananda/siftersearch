@@ -7,6 +7,8 @@
   let startTime;
   let program;
   let isVisible = true;
+  let isDarkMode = $state(true);
+  let themeLocation;
 
   // Shader sources
   const vertexShaderSource = `#version 300 es
@@ -21,6 +23,7 @@
 
     uniform float u_time;
     uniform vec2 u_resolution;
+    uniform float u_darkMode; // 1.0 = dark, 0.0 = light
 
     out vec4 fragColor;
 
@@ -84,11 +87,23 @@
       float combined = (n1 + n2 * 0.7 + n3 * 0.5) / 2.2;
       combined = combined * 0.5 + 0.5; // Normalize to 0-1
 
-      // Color palette - dark blues and teals
-      vec3 color1 = vec3(0.03, 0.05, 0.12);  // Deep navy
-      vec3 color2 = vec3(0.05, 0.12, 0.18);  // Dark teal
-      vec3 color3 = vec3(0.08, 0.18, 0.25);  // Lighter teal
-      vec3 color4 = vec3(0.12, 0.22, 0.32);  // Accent
+      // Dark theme colors - deep blues and teals
+      vec3 dark1 = vec3(0.03, 0.05, 0.12);  // Deep navy
+      vec3 dark2 = vec3(0.05, 0.12, 0.18);  // Dark teal
+      vec3 dark3 = vec3(0.08, 0.18, 0.25);  // Lighter teal
+      vec3 dark4 = vec3(0.12, 0.22, 0.32);  // Accent
+
+      // Light theme colors - soft whites and light blues
+      vec3 light1 = vec3(0.97, 0.98, 1.0);   // Near white
+      vec3 light2 = vec3(0.94, 0.96, 0.99);  // Soft blue-white
+      vec3 light3 = vec3(0.90, 0.94, 0.98);  // Light blue tint
+      vec3 light4 = vec3(0.85, 0.92, 0.97);  // Accent blue
+
+      // Select colors based on theme
+      vec3 color1 = mix(light1, dark1, u_darkMode);
+      vec3 color2 = mix(light2, dark2, u_darkMode);
+      vec3 color3 = mix(light3, dark3, u_darkMode);
+      vec3 color4 = mix(light4, dark4, u_darkMode);
 
       // Gradient mixing
       vec3 color;
@@ -100,9 +115,10 @@
         color = mix(color3, color4, (combined - 0.66) * 3.0);
       }
 
-      // Subtle vignette
+      // Subtle vignette (less intense in light mode)
       vec2 center = (gl_FragCoord.xy / u_resolution) - 0.5;
-      float vignette = 1.0 - dot(center, center) * 0.5;
+      float vignetteStrength = mix(0.2, 0.5, u_darkMode);
+      float vignette = 1.0 - dot(center, center) * vignetteStrength;
       color *= vignette;
 
       fragColor = vec4(color, 1.0);
@@ -174,6 +190,9 @@
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
+    // Get theme uniform location
+    themeLocation = gl.getUniformLocation(program, 'u_darkMode');
+
     return true;
   }
 
@@ -193,11 +212,23 @@
     }
   }
 
+  function checkTheme() {
+    if (typeof document === 'undefined') return true;
+    const theme = document.documentElement.getAttribute('data-theme');
+    if (theme === 'light') return false;
+    if (theme === 'dark') return true;
+    // System preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
   function render(timestamp) {
     if (!gl || !isVisible) {
       animationId = requestAnimationFrame(render);
       return;
     }
+
+    // Check theme on each frame for smooth transitions
+    isDarkMode = checkTheme();
 
     const time = (timestamp - startTime) / 1000;
 
@@ -208,6 +239,7 @@
 
     gl.uniform1f(timeLocation, time);
     gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+    gl.uniform1f(themeLocation, isDarkMode ? 1.0 : 0.0);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -220,6 +252,7 @@
 
   onMount(() => {
     startTime = performance.now();
+    isDarkMode = checkTheme();
 
     if (initWebGL()) {
       resize();
@@ -240,12 +273,21 @@
 
 <canvas
   bind:this={canvas}
-  class="fixed inset-0 w-full h-full -z-10"
+  class="background-canvas"
   aria-hidden="true"
 ></canvas>
 
 <style>
-  canvas {
-    background: linear-gradient(135deg, #0a0f1a 0%, #0d1520 50%, #0f1a28 100%);
+  .background-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -10;
+    background: light-dark(
+      linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%),
+      linear-gradient(135deg, #0a0f1a 0%, #0d1520 50%, #0f1a28 100%)
+    );
   }
 </style>

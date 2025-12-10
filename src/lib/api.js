@@ -4,9 +4,37 @@
  */
 
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
+const SESSION_KEY = 'sifter_session_id';
 
 // Token storage
 let accessToken = null;
+let sessionId = null;
+
+/**
+ * Get or create a session ID for anonymous conversation tracking
+ */
+export function getSessionId() {
+  if (sessionId) return sessionId;
+
+  if (typeof localStorage !== 'undefined') {
+    sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      // Generate new session ID (nanoid-style)
+      sessionId = 'sess_' + Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
+  }
+  return sessionId;
+}
+
+/**
+ * Check if this is a new session (no previous session ID stored)
+ */
+export function isNewSession() {
+  if (typeof localStorage === 'undefined') return true;
+  return !localStorage.getItem(SESSION_KEY);
+}
 
 /**
  * Set the access token for authenticated requests
@@ -166,6 +194,44 @@ export const search = {
    */
   async health() {
     return request('/api/search/health');
+  },
+
+  /**
+   * AI-powered analysis of search results
+   * Used when user asks to summarize, analyze, compare, etc.
+   */
+  async analyze(query, options = {}) {
+    return request('/api/search/analyze', {
+      method: 'POST',
+      body: JSON.stringify({
+        query,
+        limit: options.limit || 10,
+        mode: options.mode || 'hybrid'
+      })
+    });
+  }
+};
+
+// ============================================
+// Session API
+// ============================================
+
+export const session = {
+  /**
+   * Initialize or resume a session
+   * Returns intro message for new sessions
+   */
+  async init() {
+    const isNew = isNewSession();
+    const sid = getSessionId();
+
+    return request('/api/session/init', {
+      method: 'POST',
+      body: JSON.stringify({
+        sessionId: sid,
+        isNew
+      })
+    });
   }
 };
 
@@ -184,7 +250,10 @@ export async function healthCheck() {
 export default {
   auth,
   search,
+  session,
   healthCheck,
   setAccessToken,
-  clearAccessToken
+  clearAccessToken,
+  getSessionId,
+  isNewSession
 };

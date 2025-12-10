@@ -95,3 +95,34 @@ export function requireTier(...allowedTiers) {
     }
   };
 }
+
+// Seed admin user from SITE_ADMIN_EMAIL and SITE_ADMIN_PASS environment variables
+export async function seedAdminUser() {
+  const adminEmail = process.env.SITE_ADMIN_EMAIL;
+  const adminPass = process.env.SITE_ADMIN_PASS;
+
+  if (!adminEmail || !adminPass) {
+    return null; // No admin credentials configured
+  }
+
+  // Check if admin already exists
+  const existing = await queryOne('SELECT id, tier FROM users WHERE email = ?', [adminEmail.toLowerCase()]);
+
+  if (existing) {
+    // Update to admin tier if not already
+    if (existing.tier !== 'admin') {
+      await query('UPDATE users SET tier = ? WHERE id = ?', ['admin', existing.id]);
+    }
+    return { id: existing.id, email: adminEmail, action: 'updated' };
+  }
+
+  // Create admin user
+  const passwordHash = await hashPassword(adminPass);
+  const now = new Date().toISOString();
+  const result = await query(
+    'INSERT INTO users (email, password_hash, name, tier, approved_at) VALUES (?, ?, ?, ?, ?) RETURNING id',
+    [adminEmail.toLowerCase(), passwordHash, 'Admin', 'admin', now]
+  );
+
+  return { id: result.rows[0].id, email: adminEmail, action: 'created' };
+}

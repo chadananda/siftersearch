@@ -1,5 +1,146 @@
 @import 'tailwindcss';
 
+/* ============================================
+   Theme Color Scheme using light-dark()
+   ============================================ */
+
+:root {
+  /* Enable light-dark() function */
+  color-scheme: light dark;
+
+  /* Surface colors */
+  --surface-0: light-dark(#ffffff, #0f172a);
+  --surface-1: light-dark(#f8fafc, #1e293b);
+  --surface-2: light-dark(#f1f5f9, #334155);
+  --surface-3: light-dark(#e2e8f0, #475569);
+
+  /* Surface with transparency (for backdrop-blur) */
+  --surface-0-alpha: light-dark(rgba(255, 255, 255, 0.8), rgba(15, 23, 42, 0.8));
+  --surface-1-alpha: light-dark(rgba(248, 250, 252, 0.8), rgba(30, 41, 59, 0.8));
+  --surface-2-alpha: light-dark(rgba(241, 245, 249, 0.5), rgba(51, 65, 85, 0.5));
+
+  /* Text colors */
+  --text-primary: light-dark(#0f172a, #f1f5f9);
+  --text-secondary: light-dark(#475569, #94a3b8);
+  --text-tertiary: light-dark(#64748b, #64748b);
+  --text-muted: light-dark(#94a3b8, #475569);
+  --text-inverted: light-dark(#f8fafc, #0f172a);
+
+  /* Border colors */
+  --border-default: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+  --border-subtle: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+  --border-strong: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2));
+
+  /* Brand/Accent colors */
+  --accent-primary: #0ea5e9;
+  --accent-primary-hover: #0284c7;
+  --accent-primary-text: #ffffff;
+  --accent-secondary: #14b8a6;
+  --accent-tertiary: #8b5cf6;
+
+  /* Semantic colors */
+  --success: light-dark(#16a34a, #22c55e);
+  --warning: light-dark(#d97706, #fbbf24);
+  --error: light-dark(#dc2626, #ef4444);
+  --info: light-dark(#0284c7, #38bdf8);
+
+  /* Interactive states */
+  --hover-overlay: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+  --active-overlay: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+  --focus-ring: var(--accent-primary);
+
+  /* Input colors */
+  --input-bg: light-dark(#ffffff, rgba(15, 23, 42, 0.5));
+  --input-border: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15));
+  --input-border-focus: var(--accent-primary);
+  --input-placeholder: var(--text-muted);
+
+  /* Message bubbles */
+  --bubble-user: var(--accent-primary);
+  --bubble-user-text: #ffffff;
+  --bubble-assistant: var(--surface-1-alpha);
+  --bubble-assistant-text: var(--text-primary);
+
+  /* Result cards */
+  --card-bg: var(--surface-1-alpha);
+  --card-border: var(--border-default);
+  --card-hover: var(--hover-overlay);
+
+  /* Highlight for search matches - now uses accent-primary directly */
+
+  /* Scrollbar */
+  --scrollbar-track: var(--surface-1);
+  --scrollbar-thumb: var(--surface-3);
+  --scrollbar-thumb-hover: var(--text-tertiary);
+}
+
+/* Force light mode */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Force dark mode */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* ============================================
+   Tailwind Theme Extensions
+   ============================================ */
+@theme {
+  /* Brand colors (keep for gradient utilities) */
+  --color-brand-50: #f0f9ff;
+  --color-brand-100: #e0f2fe;
+  --color-brand-200: #bae6fd;
+  --color-brand-300: #7dd3fc;
+  --color-brand-400: #38bdf8;
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
+  --color-brand-700: #0369a1;
+  --color-brand-800: #075985;
+  --color-brand-900: #0c4a6e;
+
+  /* Custom animations */
+  --animate-fade-in: fadeIn 0.3s ease-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-bounce-subtle: bounceSubtle 0.6s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--surface-0);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -7,43 +148,117 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: theme('colors.slate.800');
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: theme('colors.slate.600');
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.slate.500');
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Focus styles */
 :focus-visible {
-  outline: 2px solid theme('colors.blue.500');
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
 /* Selection */
 ::selection {
-  background: theme('colors.blue.600');
-  color: white;
+  background: var(--accent-primary);
+  color: var(--accent-primary-text);
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+/* ============================================
+   Utility Classes for Theme Colors
+   ============================================ */
+
+/* Backgrounds */
+.bg-surface-0 { background-color: var(--surface-0); }
+.bg-surface-1 { background-color: var(--surface-1); }
+.bg-surface-2 { background-color: var(--surface-2); }
+.bg-surface-3 { background-color: var(--surface-3); }
+.bg-surface-0-alpha { background-color: var(--surface-0-alpha); }
+.bg-surface-1-alpha { background-color: var(--surface-1-alpha); }
+.bg-surface-2-alpha { background-color: var(--surface-2-alpha); }
+
+/* Text */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-muted { color: var(--text-muted); }
+.text-inverted { color: var(--text-inverted); }
+
+/* Borders */
+.border-default { border-color: var(--border-default); }
+.border-subtle { border-color: var(--border-subtle); }
+.border-strong { border-color: var(--border-strong); }
+
+/* Accent */
+.bg-accent { background-color: var(--accent-primary); }
+.bg-accent-hover:hover { background-color: var(--accent-primary-hover); }
+.text-accent { color: var(--accent-primary); }
+
+/* Interactive */
+.hover-overlay:hover { background-color: var(--hover-overlay); }
+.active-overlay:active { background-color: var(--active-overlay); }
+
+/* Cards */
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(8px);
+}
+.card:hover {
+  background-color: color-mix(in srgb, var(--card-bg) 95%, var(--hover-overlay));
 }
 
-/* Prevent layout shift from scrollbar */
-html {
-  scrollbar-gutter: stable;
+/* Inputs */
+.input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+.input::placeholder {
+  color: var(--input-placeholder);
+}
+.input:focus {
+  border-color: var(--input-border-focus);
 }
 
-/* Body defaults */
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
-  min-height: 100dvh;
+/* Buttons */
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: var(--accent-primary-text);
+}
+.btn-primary:hover {
+  background-color: var(--accent-primary-hover);
+}
+.btn-primary:disabled {
+  background-color: var(--surface-3);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background-color: var(--surface-3);
+}
+
+/* ============================================
+   Global Search Highlight Overrides
+   (Meilisearch uses <em> tags for matching text)
+   ============================================ */
+
+/* Override default mark/em highlighting everywhere - subtle bolding only */
+mark {
+  background: none !important;
+  background-color: transparent !important;
+  color: inherit;
+  font-weight: 500;
 }

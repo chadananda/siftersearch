@@ -216,21 +216,81 @@ export async function deleteDocument(documentId) {
 export async function getStats() {
   const meili = getMeili();
 
-  const [docStats, paraStats] = await Promise.all([
-    meili.index(INDEXES.DOCUMENTS).getStats(),
-    meili.index(INDEXES.PARAGRAPHS).getStats()
-  ]);
+  try {
+    const [docStats, paraStats] = await Promise.all([
+      meili.index(INDEXES.DOCUMENTS).getStats(),
+      meili.index(INDEXES.PARAGRAPHS).getStats()
+    ]);
 
-  return {
-    documents: {
-      numberOfDocuments: docStats.numberOfDocuments,
-      isIndexing: docStats.isIndexing
-    },
-    paragraphs: {
-      numberOfDocuments: paraStats.numberOfDocuments,
-      isIndexing: paraStats.isIndexing
+    // Get facet distributions for religions and collections
+    let religions = {};
+    let collections = {};
+    let totalWords = 0;
+
+    try {
+      const facetResults = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        limit: 0,
+        facets: ['religion', 'collection']
+      });
+      religions = facetResults.facetDistribution?.religion || {};
+      collections = facetResults.facetDistribution?.collection || {};
+    } catch {
+      // Facets may not be available
     }
-  };
+
+    // Estimate total words (rough calculation based on average words per paragraph)
+    // Average paragraph has ~100 words, so multiply passages by 100
+    totalWords = paraStats.numberOfDocuments * 100;
+
+    // Get indexing tasks info if indexing
+    let indexingProgress = null;
+    if (docStats.isIndexing || paraStats.isIndexing) {
+      try {
+        const tasks = await meili.getTasks({
+          statuses: ['enqueued', 'processing'],
+          limit: 10
+        });
+        if (tasks.results.length > 0) {
+          const enqueuedCount = tasks.results.filter(t => t.status === 'enqueued').length;
+          const processingCount = tasks.results.filter(t => t.status === 'processing').length;
+          indexingProgress = {
+            pending: enqueuedCount,
+            processing: processingCount,
+            total: tasks.total || enqueuedCount + processingCount
+          };
+        }
+      } catch {
+        // Tasks API may not be available
+      }
+    }
+
+    return {
+      totalDocuments: docStats.numberOfDocuments,
+      totalPassages: paraStats.numberOfDocuments,
+      totalWords,
+      religions: Object.keys(religions).length,
+      religionCounts: religions,
+      collections: Object.keys(collections).length,
+      collectionCounts: collections,
+      indexing: docStats.isIndexing || paraStats.isIndexing,
+      indexingProgress,
+      lastUpdated: new Date().toISOString()
+    };
+  } catch (err) {
+    logger.warn({ err }, 'Failed to get search stats');
+    return {
+      totalDocuments: 0,
+      totalPassages: 0,
+      totalWords: 0,
+      religions: 0,
+      religionCounts: {},
+      collections: 0,
+      collectionCounts: {},
+      indexing: false,
+      indexingProgress: null,
+      error: err.message
+    };
+  }
 }
 
 /**

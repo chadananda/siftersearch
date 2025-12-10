@@ -6,7 +6,8 @@ import pino from 'pino';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-export const logger = pino({
+// Logger configuration object (for Fastify)
+export const loggerConfig = {
   level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
   ...(isDev && {
     transport: {
@@ -18,6 +19,9 @@ export const logger = pino({
       }
     }
   })
-});
+};
+
+// Logger instance (for direct use outside Fastify)
+export const logger = pino(loggerConfig);
 
 export default logger;

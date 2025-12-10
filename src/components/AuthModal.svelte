@@ -1,5 +1,5 @@
 <script>
-  import { login, signup, getAuthState } from '../lib/auth.js';
+  import { login, signup, getAuthState } from '../lib/auth.svelte.js';
 
   let { isOpen = $bindable(false), onClose = () => {} } = $props();
 
@@ -66,23 +66,26 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    class="modal-backdrop"
     onclick={handleBackdropClick}
+    onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
   >
-    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+    <div class="modal-container">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-slate-700/50">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold">
+      <div class="modal-header">
+        <div class="header-content">
+          <h2 class="modal-title">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
           <button
             onclick={() => { isOpen = false; onClose(); }}
-            class="text-slate-400 hover:text-white transition-colors"
+            aria-label="Close dialog"
+            class="close-btn"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -90,40 +93,40 @@
       </div>
 
       <!-- Form -->
-      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="p-6 space-y-4">
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="modal-form">
         {#if error}
-          <div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
+          <div class="error-box">
             {error}
           </div>
         {/if}
 
         {#if mode === 'signup'}
-          <div>
-            <label for="name" class="block text-sm font-medium text-slate-300 mb-1">Name</label>
+          <div class="form-group">
+            <label for="name" class="form-label">Name</label>
             <input
               id="name"
               type="text"
               bind:value={name}
               placeholder="Your name"
-              class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 placeholder-slate-500"
+              class="form-input"
             />
           </div>
         {/if}
 
-        <div>
-          <label for="email" class="block text-sm font-medium text-slate-300 mb-1">Email</label>
+        <div class="form-group">
+          <label for="email" class="form-label">Email</label>
           <input
             id="email"
             type="email"
             bind:value={email}
             required
             placeholder="you@example.com"
-            class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 placeholder-slate-500"
+            class="form-input"
           />
         </div>
 
-        <div>
-          <label for="password" class="block text-sm font-medium text-slate-300 mb-1">Password</label>
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
           <input
             id="password"
             type="password"
@@ -131,23 +134,23 @@
             required
             minlength="8"
             placeholder="••••••••"
-            class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 placeholder-slate-500"
+            class="form-input"
           />
           {#if mode === 'signup'}
-            <p class="mt-1 text-xs text-slate-500">Minimum 8 characters</p>
+            <p class="form-hint">Minimum 8 characters</p>
           {/if}
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-xl font-medium transition-colors"
+          class="submit-btn"
         >
           {#if loading}
-            <span class="flex items-center justify-center gap-2">
-              <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <span class="loading-content">
+              <svg class="spinner" fill="none" viewBox="0 0 24 24">
+                <circle class="spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="spinner-fill" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Processing...
             </span>
@@ -158,12 +161,12 @@
       </form>
 
       <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-900/50 border-t border-slate-700/50 text-center">
-        <p class="text-sm text-slate-400">
+      <div class="modal-footer">
+        <p class="footer-text">
           {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
           <button
             onclick={switchMode}
-            class="ml-1 text-blue-400 hover:text-blue-300 transition-colors"
+            class="switch-btn"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>
@@ -172,3 +175,182 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    padding: 1rem;
+  }
+
+  .modal-container {
+    width: 100%;
+    max-width: 28rem;
+    background-color: var(--surface-1);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-default);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .close-btn {
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    transition: color 0.15s;
+  }
+  .close-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .modal-form {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .error-box {
+    padding: 0.75rem;
+    background-color: color-mix(in srgb, var(--error) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--error) 50%, transparent);
+    border-radius: 0.5rem;
+    color: var(--error);
+    font-size: 0.875rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input::placeholder {
+    color: var(--input-placeholder);
+  }
+  .form-input:focus {
+    border-color: var(--accent-primary);
+  }
+
+  .form-hint {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--accent-primary);
+    color: var(--accent-primary-text);
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .submit-btn:hover:not(:disabled) {
+    background-color: var(--accent-primary-hover);
+  }
+  .submit-btn:disabled {
+    background-color: var(--surface-3);
+    cursor: not-allowed;
+  }
+
+  .loading-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: spin 1s linear infinite;
+  }
+
+  .spinner-track {
+    opacity: 0.25;
+  }
+
+  .spinner-fill {
+    opacity: 0.75;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    background-color: var(--surface-2-alpha);
+    border-top: 1px solid var(--border-default);
+    text-align: center;
+  }
+
+  .footer-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .switch-btn {
+    margin-left: 0.25rem;
+    color: var(--accent-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .switch-btn:hover {
+    color: var(--accent-primary-hover);
+  }
+</style>
