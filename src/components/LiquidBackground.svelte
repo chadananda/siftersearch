@@ -163,14 +163,13 @@
       vec2 center = vec2(0.5 * aspect, 0.5);
       vec2 uvAspect = vec2(uv.x * aspect, uv.y);
 
-      float t = u_time * 0.05; // Very slow base time for gentle motion
+      float t = u_time * 0.08; // Slow base time for gentle motion
 
       // Distance from center
       float distFromCenter = length(uvAspect - center);
 
-      // Apply very gentle spiral transformation
-      // strength 0.15 = barely perceptible continuous rotation
-      vec2 spiralUV = spiral(uvAspect, center, t, 0.15);
+      // Apply gentle spiral transformation - visible swirl around center
+      vec2 spiralUV = spiral(uvAspect, center, t, 0.4);
 
       // Add soft organic distortion
       float distort = fbm(spiralUV * 1.2 + t * 0.1) * 0.1;
