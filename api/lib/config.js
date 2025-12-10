@@ -10,9 +10,15 @@
  * Production mode uses local Ollama by default.
  */
 
+import dotenv from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import { parse as parseYaml } from 'yaml';
 import { join } from 'path';
+
+// Load environment files early - before any config reads
+// This ensures env vars are available when this module's top-level code runs
+dotenv.config({ path: '.env-public' });
+dotenv.config({ path: '.env-secrets' });
 
 // Load config.yaml if it exists
 function loadConfigYaml() {

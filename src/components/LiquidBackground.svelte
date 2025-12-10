@@ -82,162 +82,159 @@
       return value;
     }
 
-    // Gentle spiral coordinates - very subtle continuous swirl
-    vec2 spiral(vec2 uv, vec2 center, float time, float strength) {
+    // Vortex swirl function
+    vec2 vortex(vec2 uv, vec2 center, float strength, float radius) {
       vec2 delta = uv - center;
       float dist = length(delta);
-      float angle = atan(delta.y, delta.x);
-
-      // Very gentle rotation - barely perceptible but continuous
-      float rotation = time * strength / (dist + 0.4);
-      angle += rotation;
-
-      return vec2(cos(angle), sin(angle)) * dist + center;
+      float angle = strength / (dist + 0.3) * smoothstep(radius, 0.0, dist);
+      float s = sin(angle);
+      float c = cos(angle);
+      return vec2(
+        delta.x * c - delta.y * s,
+        delta.x * s + delta.y * c
+      ) + center;
     }
 
-    // Random flashing lights scattered throughout
-    float randomFlashes(vec2 uv, float time, float cloudDensity, float thinking) {
-      // Base flash intensity (subtle when idle)
-      float baseIntensity = 0.12;
-      // Much brighter when thinking
-      float thinkingIntensity = 0.7;
-      float intensity = mix(baseIntensity, thinkingIntensity, thinking);
-
-      // Base flash rate (slow when idle)
-      float baseRate = 1.0;
-      // Faster when thinking
-      float thinkingRate = 3.0;
-      float rate = mix(baseRate, thinkingRate, thinking);
-
+    // Neural flash effect - always on, concentrated toward center
+    float neuralFlash(vec2 uv, float time, vec2 center, float thinking) {
       float flash = 0.0;
+      float distFromCenter = length(uv - center);
 
-      // Scattered random flash points
+      // Center concentration multiplier (brighter toward center)
+      float centerBoost = 1.0 + exp(-distFromCenter * 3.0) * 2.0;
+
+      // Speed increases toward center
+      float speedBoost = 1.0 + (1.0 - smoothstep(0.0, 0.5, distFromCenter)) * 1.5;
+      float rate = (1.0 + thinking * 2.0) * speedBoost;
+
+      // Multiple neural impulse sources - biased toward center
       for (int i = 0; i < 8; i++) {
         float fi = float(i);
 
-        // Random-ish positions that slowly drift
-        vec2 flashPos = vec2(
-          0.1 + 0.8 * fract(sin(fi * 127.1) * 43758.5),
-          0.1 + 0.8 * fract(sin(fi * 269.5) * 43758.5)
+        // Sources orbit around center, closer sources have tighter orbits
+        float orbitRadius = 0.15 + 0.25 * fract(sin(fi * 127.1) * 43758.5);
+        float orbitSpeed = 0.5 + fract(sin(fi * 269.5) * 43758.5) * 0.5;
+        vec2 source = center + vec2(
+          cos(time * orbitSpeed * rate + fi * 0.785) * orbitRadius,
+          sin(time * orbitSpeed * rate + fi * 0.785) * orbitRadius
         );
 
-        // Slow drift
-        flashPos += vec2(
-          sin(time * 0.1 + fi * 2.0) * 0.05,
-          cos(time * 0.08 + fi * 1.7) * 0.05
-        );
+        float dist = length(uv - source);
 
-        float flashDist = length(uv - flashPos);
+        // Pulsing rings emanating from source
+        float ring = sin(dist * 20.0 - time * rate * 3.0 + fi * 2.0);
+        ring = pow(max(ring, 0.0), 3.0);
 
-        // Soft glow
-        float glow = exp(-flashDist * 15.0);
+        // Fade with distance from source
+        float fade = exp(-dist * 4.0);
 
-        // Random timing - each flash has its own rhythm
-        float phase = fract(sin(fi * 431.2) * 43758.5) * 6.28;
-        float freq = 0.8 + fract(sin(fi * 127.7) * 43758.5) * 1.5;
-        float pulse = sin(time * freq * rate + phase);
-        pulse = smoothstep(0.3, 1.0, pulse); // Only flash on positive peaks
+        // Random timing - sharper pulses
+        float pulse = sin(time * rate * (1.5 + fi * 0.3)) * 0.5 + 0.5;
+        pulse = pow(pulse, 3.0);
 
-        // Flashes are more visible in cloud areas
-        float cloudMask = smoothstep(0.2, 0.5, cloudDensity);
-
-        flash += glow * pulse * cloudMask;
+        flash += ring * fade * pulse * 0.25;
       }
 
-      // Extra scattered tiny sparkles
-      float sparkle = snoise(uv * 20.0 + time * rate * 0.5);
+      // Lightning branches - denser toward center
+      float lightning = snoise(uv * 12.0 + time * rate * 1.5);
+      lightning = pow(max(lightning, 0.0), 6.0);
+      float lightningPulse = sin(time * rate * 2.0) * 0.5 + 0.5;
+      flash += lightning * lightningPulse * 0.5 * centerBoost;
+
+      // Sparkles throughout
+      float sparkle = snoise(uv * 25.0 + time * rate);
       sparkle = pow(max(sparkle, 0.0), 8.0);
+      flash += sparkle * 0.3 * centerBoost;
 
-      // More sparkles when thinking
-      float sparkleIntensity = mix(0.2, 0.8, thinking);
-      flash += sparkle * cloudDensity * sparkleIntensity;
+      // Core glow at center
+      float coreGlow = exp(-distFromCenter * 5.0) * 0.4;
+      float corePulse = sin(time * rate * 0.8) * 0.3 + 0.7;
+      flash += coreGlow * corePulse;
 
-      return flash * intensity;
+      return flash * (0.6 + thinking * 0.8);
     }
 
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution;
       float aspect = u_resolution.x / u_resolution.y;
+      vec2 uvAspect = uv;
+      uvAspect.x *= aspect;
 
-      // Center point for the swirl
-      vec2 center = vec2(0.5 * aspect, 0.5);
-      vec2 uvAspect = vec2(uv.x * aspect, uv.y);
+      float t = u_time * 0.15;
 
-      float t = u_time * 0.05; // Very slow base time for gentle motion
+      // Base vortex speed (always present but subtle)
+      float baseVortexSpeed = 0.3;
+      // Increased speed when thinking
+      float thinkingVortexSpeed = 1.2;
+      float vortexSpeed = mix(baseVortexSpeed, thinkingVortexSpeed, u_thinking);
 
-      // Distance from center
-      float distFromCenter = length(uvAspect - center);
+      // Apply vortex swirl - center of screen
+      vec2 center = vec2(aspect * 0.5, 0.5);
+      float vortexStrength = (0.3 + u_thinking * 0.5) * sin(t * vortexSpeed);
+      vec2 swirlUV = vortex(uvAspect, center, vortexStrength, 1.5);
 
-      // Apply very gentle spiral transformation
-      // strength 0.15 = barely perceptible continuous rotation
-      vec2 spiralUV = spiral(uvAspect, center, t, 0.15);
+      // Second subtle counter-rotating vortex
+      vec2 center2 = vec2(aspect * 0.5, 0.5);
+      float vortexStrength2 = (0.15 + u_thinking * 0.3) * cos(t * vortexSpeed * 0.7);
+      swirlUV = vortex(swirlUV, center2, -vortexStrength2, 2.0);
 
-      // Add soft organic distortion
-      float distort = fbm(spiralUV * 1.2 + t * 0.1) * 0.1;
-      spiralUV += vec2(distort, distort * 0.6);
+      // Multiple layers of flowing noise with swirl
+      float n1 = fbm(swirlUV * 2.0 + vec2(t * 0.3, t * 0.2));
+      float n2 = fbm(swirlUV * 3.0 - vec2(t * 0.2, t * 0.15) + n1 * 0.5);
+      float n3 = fbm(swirlUV * 1.5 + vec2(t * 0.1, -t * 0.25) + n2 * 0.3);
 
-      // Multiple cloud layers - slow and dreamy
-      float n1 = fbm(spiralUV * 1.8 + t * 0.08);
-      float n2 = fbm(spiralUV * 2.8 - t * 0.05 + n1 * 0.25);
-      float n3 = fbm(spiralUV * 1.5 + vec2(t * 0.04, -t * 0.06) + n2 * 0.15);
+      // Combine layers
+      float combined = (n1 + n2 * 0.7 + n3 * 0.5) / 2.2;
+      combined = combined * 0.5 + 0.5;
 
-      // Combine cloud layers
-      float clouds = (n1 + n2 * 0.5 + n3 * 0.3) / 1.8;
-      clouds = clouds * 0.5 + 0.5;
-
-      // Subtle darkening toward center (not a hard void)
-      float centerDim = smoothstep(0.0, 0.5, distFromCenter);
-      clouds *= mix(0.6, 1.0, centerDim);
-
-      // Dark theme colors - soft deep blues
-      vec3 darkBase = vec3(0.02, 0.04, 0.08);
-      vec3 darkCloud1 = vec3(0.04, 0.08, 0.15);
-      vec3 darkCloud2 = vec3(0.06, 0.12, 0.22);
-      vec3 darkCloud3 = vec3(0.09, 0.16, 0.26);
+      // Dark theme colors - deep blues and teals
+      vec3 dark1 = vec3(0.03, 0.05, 0.12);
+      vec3 dark2 = vec3(0.05, 0.12, 0.18);
+      vec3 dark3 = vec3(0.08, 0.18, 0.25);
+      vec3 dark4 = vec3(0.12, 0.22, 0.32);
 
       // Light theme colors
-      vec3 lightBase = vec3(0.94, 0.96, 0.98);
-      vec3 lightCloud1 = vec3(0.92, 0.94, 0.97);
-      vec3 lightCloud2 = vec3(0.88, 0.91, 0.95);
-      vec3 lightCloud3 = vec3(0.84, 0.88, 0.93);
+      vec3 light1 = vec3(0.97, 0.98, 1.0);
+      vec3 light2 = vec3(0.94, 0.96, 0.99);
+      vec3 light3 = vec3(0.90, 0.94, 0.98);
+      vec3 light4 = vec3(0.85, 0.92, 0.97);
 
       // Select colors based on theme
-      vec3 baseColor = mix(lightBase, darkBase, u_darkMode);
-      vec3 cloud1 = mix(lightCloud1, darkCloud1, u_darkMode);
-      vec3 cloud2 = mix(lightCloud2, darkCloud2, u_darkMode);
-      vec3 cloud3 = mix(lightCloud3, darkCloud3, u_darkMode);
+      vec3 color1 = mix(light1, dark1, u_darkMode);
+      vec3 color2 = mix(light2, dark2, u_darkMode);
+      vec3 color3 = mix(light3, dark3, u_darkMode);
+      vec3 color4 = mix(light4, dark4, u_darkMode);
 
-      // Smooth gradient through cloud density
+      // Gradient mixing
       vec3 color;
-      if (clouds < 0.4) {
-        color = mix(baseColor, cloud1, clouds / 0.4);
-      } else if (clouds < 0.6) {
-        color = mix(cloud1, cloud2, (clouds - 0.4) / 0.2);
+      if (combined < 0.33) {
+        color = mix(color1, color2, combined * 3.0);
+      } else if (combined < 0.66) {
+        color = mix(color2, color3, (combined - 0.33) * 3.0);
       } else {
-        color = mix(cloud2, cloud3, (clouds - 0.6) / 0.4);
+        color = mix(color3, color4, (combined - 0.66) * 3.0);
       }
 
-      // Random flashing lights
-      float flashes = randomFlashes(uv, u_time, clouds, u_thinking);
+      // Neural flash effect - always on, brighter when thinking
+      float flash = neuralFlash(uv, u_time, center / vec2(aspect, 1.0), u_thinking);
 
-      // Flash colors - soft cyan/blue
-      vec3 flashColorDark = vec3(0.4, 0.7, 1.0);
-      vec3 flashColorLight = vec3(0.3, 0.5, 0.8);
+      // Flash color - cyan/electric blue in dark mode, subtle blue in light
+      vec3 flashColorDark = vec3(0.2, 0.6, 0.9);
+      vec3 flashColorLight = vec3(0.4, 0.6, 0.85);
       vec3 flashColor = mix(flashColorLight, flashColorDark, u_darkMode);
 
-      // Add flashes to the scene
-      color += flashColor * flashes;
+      // Add flash to color (always visible, intensifies when thinking)
+      color += flashColor * flash;
 
-      // Subtle ambient glow when thinking
+      // Subtle overall brightening when thinking
       if (u_thinking > 0.01) {
-        // Slight overall brightening
-        color = mix(color, color * 1.08, u_thinking * 0.3);
+        color = mix(color, color * 1.15, u_thinking * 0.3);
       }
 
-      // Very soft vignette
-      vec2 vignetteUV = uv - 0.5;
-      float vignetteStrength = mix(0.1, 0.2, u_darkMode);
-      float vignette = 1.0 - dot(vignetteUV, vignetteUV) * vignetteStrength;
+      // Subtle vignette
+      vec2 vignetteCenter = (gl_FragCoord.xy / u_resolution) - 0.5;
+      float vignetteStrength = mix(0.2, 0.5, u_darkMode);
+      float vignette = 1.0 - dot(vignetteCenter, vignetteCenter) * vignetteStrength;
       color *= vignette;
 
       fragColor = vec4(color, 1.0);
