@@ -95,6 +95,62 @@
       return vec2(cos(angle), sin(angle)) * dist + center;
     }
 
+    // Neural lights - hundreds of tiny flashes, denser toward center
+    float neuralLights(vec2 uv, float time, vec2 center) {
+      float lights = 0.0;
+      float distFromCenter = length(uv - center);
+
+      // Density increases toward center (more lights near vortex core)
+      float densityBoost = 1.0 + exp(-distFromCenter * 4.0) * 3.0;
+
+      // Flash rate increases toward center
+      float rateBoost = 1.0 + (1.0 - smoothstep(0.0, 0.6, distFromCenter)) * 2.0;
+
+      // Layer 1: Scattered point lights (use noise as a grid of lights)
+      for (int i = 0; i < 3; i++) {
+        float fi = float(i);
+        float scale = 15.0 + fi * 8.0; // Different scales for variety
+        vec2 gridUV = uv * scale;
+        vec2 gridID = floor(gridUV);
+        vec2 gridLocal = fract(gridUV) - 0.5;
+
+        // Random offset within each grid cell
+        float randX = fract(sin(dot(gridID, vec2(127.1, 311.7))) * 43758.5);
+        float randY = fract(sin(dot(gridID, vec2(269.5, 183.3))) * 43758.5);
+        vec2 offset = vec2(randX - 0.5, randY - 0.5) * 0.8;
+
+        float pointDist = length(gridLocal - offset);
+
+        // Tiny point light
+        float point = exp(-pointDist * 25.0);
+
+        // Random flash timing per cell
+        float phase = fract(sin(dot(gridID, vec2(419.2, 371.9))) * 43758.5) * 6.28;
+        float freq = 1.5 + fract(sin(dot(gridID, vec2(127.7, 231.4))) * 43758.5) * 3.0;
+        float flash = sin(time * freq * rateBoost + phase);
+        flash = smoothstep(0.4, 1.0, flash); // Sharp on, gradual off
+
+        // Distance from center affects this cell's visibility
+        float cellCenter = length((gridID + 0.5) / scale - center);
+        float centerMask = 1.0 - smoothstep(0.0, 0.8, cellCenter);
+        centerMask = mix(0.3, 1.0, centerMask); // Still some lights at edges
+
+        lights += point * flash * centerMask * 0.4;
+      }
+
+      // Layer 2: Sparkle noise for extra tiny lights
+      float sparkle = snoise(uv * 30.0 + time * rateBoost * 0.8);
+      sparkle = pow(max(sparkle, 0.0), 6.0);
+      float sparkle2 = snoise(uv * 50.0 - time * rateBoost * 0.5);
+      sparkle2 = pow(max(sparkle2, 0.0), 8.0);
+
+      // More sparkles toward center
+      float sparkleCenter = 1.0 - smoothstep(0.0, 0.5, distFromCenter);
+      lights += (sparkle * 0.3 + sparkle2 * 0.2) * (0.5 + sparkleCenter * 1.5);
+
+      return lights * densityBoost * 0.15;
+    }
+
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution;
       float aspect = u_resolution.x / u_resolution.y;
@@ -156,6 +212,17 @@
       } else {
         color = mix(cloud2, cloud3, (clouds - 0.6) / 0.4);
       }
+
+      // Add neural lights behind the clouds
+      float lights = neuralLights(uvAspect, u_time, center);
+
+      // Light color - soft cyan/blue glow
+      vec3 darkLightColor = vec3(0.3, 0.6, 0.9);  // Bright blue for dark mode
+      vec3 lightLightColor = vec3(0.1, 0.4, 0.7); // Deeper blue for light mode
+      vec3 lightColor = mix(lightLightColor, darkLightColor, u_darkMode);
+
+      // Blend lights additively but subtly
+      color += lightColor * lights;
 
       // Very soft vignette
       vec2 vignetteUV = uv - 0.5;
