@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:oceanoflights.org)",
+      "WebFetch(domain:oceanlibrary.com)"
     ]
   }
 }

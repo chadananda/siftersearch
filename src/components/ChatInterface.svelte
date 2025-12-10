@@ -299,15 +299,11 @@
                   <div class="stat-label">Religions</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-value" style="color: var(--accent-secondary)">{formatNumber(libraryStats.totalWords)}</div>
-                  <div class="stat-label">Words</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-value" style="color: var(--accent-tertiary)">{libraryStats.collections || 0}</div>
+                  <div class="stat-value" style="color: var(--accent-secondary)">{libraryStats.collections || 0}</div>
                   <div class="stat-label">Collections</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-value text-accent">{formatNumber(libraryStats.totalDocuments)}</div>
+                  <div class="stat-value" style="color: var(--accent-tertiary)">{formatNumber(libraryStats.totalDocuments)}</div>
                   <div class="stat-label">Documents</div>
                 </div>
               </div>
