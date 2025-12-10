@@ -652,7 +652,7 @@
   }
 
   .about-content {
-    max-width: 48rem;
+    max-width: 64rem;
     margin: 0 auto;
     padding: 1.5rem;
     display: flex;
@@ -764,7 +764,7 @@
   /* Stats */
   .stats-container {
     width: 100%;
-    max-width: 32rem;
+    max-width: 42rem;
     margin-bottom: 2rem;
   }
 
@@ -967,7 +967,7 @@
 
   @media (min-width: 768px) {
     .bubble {
-      max-width: 70%;
+      max-width: 85%;
     }
   }
 
@@ -991,7 +991,7 @@
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    max-width: 32rem;
+    max-width: 56rem;
     margin: 0 auto;
     padding: 1.5rem;
     background: linear-gradient(135deg, var(--surface-1-alpha), var(--surface-2-alpha));
@@ -1021,15 +1021,15 @@
   }
 
   .message-text {
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.6;
     white-space: pre-wrap;
   }
 
   /* AI Analysis */
   .analysis-container {
     width: 100%;
-    max-width: 48rem;
+    max-width: 64rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -1044,7 +1044,7 @@
   }
 
   .analysis-text {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.7;
     color: var(--text-primary);
     white-space: pre-wrap;
@@ -1135,7 +1135,7 @@
   /* Results */
   .results-container {
     width: 100%;
-    max-width: 48rem;
+    max-width: 64rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -1188,7 +1188,7 @@
   }
 
   .result-text-preview {
-    font-size: 0.875rem;
+    font-size: 1rem;
     color: var(--text-primary);
     line-height: 1.6;
     display: -webkit-box;
@@ -1198,7 +1198,7 @@
   }
 
   .result-text-full {
-    font-size: 0.875rem;
+    font-size: 1rem;
     color: var(--text-primary);
     line-height: 1.6;
     white-space: pre-wrap;
@@ -1309,7 +1309,7 @@
   .input-form {
     display: flex;
     gap: 0.75rem;
-    max-width: 48rem;
+    max-width: 64rem;
     margin: 0 auto;
   }
 
