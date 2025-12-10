@@ -105,7 +105,7 @@
       console.error('Search error:', err);
       messages = [...messages, {
         role: 'assistant',
-        content: `Search error: ${err.message}. Make sure the API server and Meilisearch are running.`,
+        content: 'Could not reach the server. Please try again.',
         error: true
       }];
     } finally {
