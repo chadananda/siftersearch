@@ -30,25 +30,43 @@
   let libraryConnected = $derived(!statsLoading && libraryStats !== null);
 
   let retryInterval = $state(null);
+  let refreshInterval = $state(null);
   const RETRY_DELAY = 10000; // 10 seconds
+  const REFRESH_INTERVAL = 30000; // 30 seconds - check for index updates
 
-  async function loadLibraryStats() {
-    statsLoading = true;
+  async function loadLibraryStats(silent = false) {
+    if (!silent) statsLoading = true;
     try {
       const stats = await search.stats();
-      libraryStats = stats;
-      // Connected - stop polling if running
+
+      // Check if stats actually changed (compare lastUpdated or counts)
+      const hasChanged = !libraryStats ||
+        libraryStats.lastUpdated !== stats.lastUpdated ||
+        libraryStats.totalDocuments !== stats.totalDocuments ||
+        libraryStats.totalPassages !== stats.totalPassages;
+
+      if (hasChanged) {
+        libraryStats = stats;
+        if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
+      }
+
+      // Connected - stop retry polling if running
       if (retryInterval) {
         clearInterval(retryInterval);
         retryInterval = null;
       }
+
+      // Start refresh polling to detect index updates
+      startRefreshPolling();
     } catch (err) {
       console.error('Failed to load library stats:', err);
-      libraryStats = null;
-      // Start polling if not already
+      if (!silent) libraryStats = null;
+      // Start retry polling if not already
       startRetryPolling();
+      // Stop refresh polling on disconnect
+      stopRefreshPolling();
     } finally {
-      statsLoading = false;
+      if (!silent) statsLoading = false;
     }
   }
 
@@ -65,6 +83,23 @@
     if (retryInterval) {
       clearInterval(retryInterval);
       retryInterval = null;
+    }
+  }
+
+  function startRefreshPolling() {
+    if (refreshInterval) return; // Already polling
+    refreshInterval = setInterval(() => {
+      // Only refresh if page is visible
+      if (!document.hidden) {
+        loadLibraryStats(true); // silent refresh
+      }
+    }, REFRESH_INTERVAL);
+  }
+
+  function stopRefreshPolling() {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
     }
   }
 
@@ -93,23 +128,79 @@
     scrollToLatestUserMessage();
 
     try {
-      // Always use AI-powered analyze endpoint - let AI decide how to respond
-      const result = await search.analyze(userMessage);
-
+      // Add placeholder message for streaming
+      const assistantMsgIndex = messages.length;
       messages = [...messages, {
         id: messageId,
         role: 'assistant',
-        content: result.analysis || 'Search completed.',
-        results: result.sources || [],
-        isAnalysis: true
+        content: '',
+        results: [],
+        isAnalysis: true,
+        isStreaming: true
       }];
+
+      // Use streaming endpoint
+      let streamedContent = '';
+      let sources = [];
+
+      for await (const event of search.analyzeStream(userMessage)) {
+        if (event.type === 'sources') {
+          sources = event.sources || [];
+          // Update message with sources
+          messages = messages.map((m, i) =>
+            i === assistantMsgIndex
+              ? { ...m, results: sources }
+              : m
+          );
+        } else if (event.type === 'chunk') {
+          streamedContent += event.text;
+          // Update message content progressively
+          messages = messages.map((m, i) =>
+            i === assistantMsgIndex
+              ? { ...m, content: streamedContent }
+              : m
+          );
+        } else if (event.type === 'complete') {
+          // Mark streaming complete
+          messages = messages.map((m, i) =>
+            i === assistantMsgIndex
+              ? { ...m, isStreaming: false, content: streamedContent || 'Search completed.' }
+              : m
+          );
+        } else if (event.type === 'error') {
+          messages = messages.map((m, i) =>
+            i === assistantMsgIndex
+              ? { ...m, isStreaming: false, content: event.message || 'AI analysis unavailable.', error: true }
+              : m
+          );
+        }
+      }
+
+      // Ensure streaming is marked complete
+      messages = messages.map((m, i) =>
+        i === assistantMsgIndex
+          ? { ...m, isStreaming: false }
+          : m
+      );
+
     } catch (err) {
-      console.error('Search error:', err);
-      messages = [...messages, {
-        role: 'assistant',
-        content: 'Could not reach the server. Please try again.',
-        error: true
-      }];
+      console.error('Search error:', err?.message || err, err?.stack);
+      // Provide a more specific error message based on error type
+      let errorMessage = 'An error occurred. Please try again.';
+      if (err?.message === 'Stream request failed') {
+        errorMessage = 'Could not reach the server. Please try again.';
+      } else if (err?.name === 'TypeError' && err?.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      // Only add error message if we haven't already shown content
+      const hasContent = messages.some(m => m.id === messageId && m.content);
+      if (!hasContent) {
+        messages = [...messages, {
+          role: 'assistant',
+          content: errorMessage,
+          error: true
+        }];
+      }
     } finally {
       loading = false;
       setThinking(false); // Stop neural activity animation
@@ -131,11 +222,17 @@
 
   function toggleResult(messageId, resultIndex) {
     const key = `${messageId}-${resultIndex}`;
-    expandedResults = { ...expandedResults, [key]: !expandedResults[key] };
+    const currentState = isExpanded(messageId, resultIndex);
+    expandedResults = { ...expandedResults, [key]: !currentState };
   }
 
   function isExpanded(messageId, resultIndex) {
-    return expandedResults[`${messageId}-${resultIndex}`] || false;
+    const key = `${messageId}-${resultIndex}`;
+    // Only first result expanded by default, unless user explicitly changed it
+    if (expandedResults[key] === undefined) {
+      return resultIndex === 0;
+    }
+    return expandedResults[key];
   }
 
   // Simple markdown-like formatting for highlighted text
@@ -172,6 +269,7 @@
     // Cleanup on unmount
     return () => {
       stopRetryPolling();
+      stopRefreshPolling();
     };
   });
 </script>
@@ -279,7 +377,7 @@
         <img src="/logo.svg" alt="SifterSearch" class="welcome-logo" />
         <h2 class="welcome-title">Ocean 2.0 Interfaith Library, AI Search</h2>
         <p class="welcome-desc">
-          Use advanced AI research to locate information across thousands of books, manuscripts, papers, notes and publications across multiple languages.
+          Use advanced AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.
         </p>
 
         <!-- Library Stats -->
@@ -298,24 +396,28 @@
               <!-- Row 1: Key metrics -->
               <div class="stats-grid">
                 <div class="stat">
-                  <div class="stat-value" style="color: var(--accent-primary)">{libraryStats.religions || 0}</div>
-                  <div class="stat-label">Religions</div>
+                  <span class="stat-label">Religions</span>
+                  <span class="stat-value">{libraryStats.religions || 0}</span>
                 </div>
                 <div class="stat">
-                  <div class="stat-value" style="color: var(--accent-secondary)">{libraryStats.collections || 0}</div>
-                  <div class="stat-label">Collections</div>
+                  <span class="stat-label">Collections</span>
+                  <span class="stat-value">{libraryStats.collections || 0}</span>
                 </div>
                 <div class="stat">
-                  <div class="stat-value" style="color: var(--accent-tertiary)">{formatNumber(libraryStats.totalDocuments)}</div>
-                  <div class="stat-label">Documents</div>
+                  <span class="stat-label">Documents</span>
+                  <span class="stat-value">{formatNumber(libraryStats.totalDocuments)}</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-label">Paragraphs</span>
+                  <span class="stat-value">{formatNumber(libraryStats.totalPassages)}</span>
                 </div>
               </div>
-              <!-- Row 2: Collection tags -->
-              {#if libraryStats.collectionCounts && Object.keys(libraryStats.collectionCounts).length > 0}
-                <div class="collection-tags">
-                  {#each Object.entries(libraryStats.collectionCounts) as [collection, count]}
-                    <span class="collection-tag">
-                      {collection}
+              <!-- Religion tags with document counts -->
+              {#if libraryStats.religionCounts && Object.keys(libraryStats.religionCounts).length > 0}
+                <div class="religion-tags">
+                  {#each Object.entries(libraryStats.religionCounts) as [religion, count]}
+                    <span class="religion-tag">
+                      {religion}
                       <span class="tag-count">{count}</span>
                     </span>
                   {/each}
@@ -377,42 +479,55 @@
               <p class="message-text">{message.content}</p>
             </div>
           {:else if message.isAnalysis}
-            <!-- AI Analysis result -->
+            <!-- AI Analysis result - streaming response first, then sources -->
             <div class="analysis-container">
-              <div class="analysis-content">
-                <p class="analysis-text">{message.content}</p>
-              </div>
+              <!-- AI Response (shown first, at top) -->
+              {#if message.content || message.isStreaming}
+                <div class="analysis-content">
+                  <p class="analysis-text">{message.content}{#if message.isStreaming}<span class="streaming-cursor"></span>{/if}</p>
+                </div>
+              {/if}
+
+              <!-- Sources (shown below response) -->
               {#if message.results && message.results.length > 0}
                 <div class="analysis-sources">
                   <h4 class="sources-heading">Sources ({message.results.length})</h4>
                   {#each message.results as result, i}
                     {@const resultKey = `${message.id || msgIndex}-${i}`}
-                    {@const expanded = expandedResults[resultKey]}
+                    {@const expanded = expandedResults[resultKey] !== undefined ? expandedResults[resultKey] : i === 0}
                     {@const text = result._formatted?.text || result.text || ''}
                     {@const title = result.title || 'Untitled'}
                     {@const author = result.author || 'Unknown'}
                     {@const collection = result.collection || result.religion || ''}
-                    <button
-                      class="source-card"
-                      onclick={() => { expandedResults = { ...expandedResults, [resultKey]: !expanded }; }}
-                    >
-                      <span class="source-number">[{i + 1}]</span>
-                      <div class="source-info">
-                        <span class="source-title-small">{title}</span>
-                        <span class="source-author-small">{author}</span>
-                      </div>
-                      <svg
-                        class="expand-icon-small {expanded ? 'expanded' : ''}"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    {@const excerptLength = 200}
+                    {@const excerpt = text.length > excerptLength ? text.substring(0, excerptLength) + '...' : text}
+
+                    <div class="source-item {expanded ? 'expanded' : ''}">
+                      <button
+                        class="source-header"
+                        onclick={() => { expandedResults = { ...expandedResults, [resultKey]: !expanded }; }}
                       >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {#if expanded}
-                      <div class="source-expanded-text">
-                        <p>{@html formatText(text)}</p>
+                        <span class="source-number">[{i + 1}]</span>
+                        <div class="source-meta">
+                          <span class="source-title">{title}</span>
+                          <span class="source-author">— {author}{#if collection} ({collection}){/if}</span>
+                        </div>
+                        <svg
+                          class="expand-icon {expanded ? 'expanded' : ''}"
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      <div class="source-text-container">
+                        {#if expanded}
+                          <p class="source-text-full">{@html formatText(text)}</p>
+                        {:else}
+                          <p class="source-text-excerpt">{@html formatText(excerpt)}</p>
+                        {/if}
                       </div>
-                    {/if}
+                    </div>
                   {/each}
                 </div>
               {/if}
@@ -422,43 +537,33 @@
             <div class="results-container">
               <p class="results-summary">{message.content}</p>
               {#each message.results as result, i}
-                {@const resultKey = `${message.id || msgIndex}-${i}`}
-                {@const expanded = expandedResults[resultKey]}
+                {@const expanded = isExpanded(message.id || msgIndex, i)}
                 {@const text = result._formatted?.text || result.text || ''}
                 {@const title = result.title || 'Untitled'}
                 {@const author = result.author || 'Unknown'}
                 {@const collection = result.collection || result.religion || ''}
                 <button
-                  class="result-card"
-                  onclick={() => { expandedResults = { ...expandedResults, [resultKey]: !expanded }; }}
+                  class="result-card {expanded ? 'expanded' : ''}"
+                  onclick={() => { toggleResult(message.id || msgIndex, i); }}
                 >
-                  <!-- Result number badge -->
-                  <span class="result-number">{i + 1}</span>
-
-                  <!-- Text content first - at least 3 lines when collapsed -->
-                  <div class="result-text-area">
-                    {#if expanded}
-                      <p class="result-text-full">{@html formatText(text)}</p>
-                    {:else}
-                      <p class="result-text-preview">{@html formatText(text.substring(0, 350))}{text.length > 350 ? '...' : ''}</p>
-                    {/if}
-                  </div>
-
-                  <!-- Source info underneath -->
-                  <div class="result-source">
-                    <span class="source-title">{title}</span>
-                    <span class="source-separator">—</span>
-                    <span class="source-author">{author}</span>
-                    {#if collection}
-                      <span class="source-collection">({collection})</span>
-                    {/if}
-                  </div>
-
-                  <!-- Expand indicator -->
-                  <svg
-                    class="expand-icon {expanded ? 'expanded' : ''}"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
+                  {#if expanded}
+                    <!-- Expanded: full text with source below -->
+                    <div class="result-expanded">
+                      <p class="result-full-text">{@html formatText(text)}</p>
+                      <div class="result-meta">
+                        <span class="meta-title">{title}</span>
+                        <span class="meta-sep">—</span>
+                        <span class="meta-author">{author}</span>
+                        {#if collection}<span class="meta-collection">({collection})</span>{/if}
+                      </div>
+                    </div>
+                  {:else}
+                    <!-- Collapsed: compact single row with number, excerpt, source -->
+                    <span class="result-num">{i + 1}</span>
+                    <span class="result-excerpt">{@html formatText(text.substring(0, 120))}{text.length > 120 ? '...' : ''}</span>
+                    <span class="result-src">{title}</span>
+                  {/if}
+                  <svg class="result-chevron {expanded ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -756,12 +861,17 @@
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px light-dark(rgba(255,255,255,0.8), rgba(0,0,0,0.5));
   }
 
   .welcome-desc {
     color: var(--text-secondary);
     max-width: 28rem;
     margin-bottom: 1.5rem;
+    text-shadow:
+      0 0 8px light-dark(rgba(255,255,255,0.9), rgba(0,0,0,0.8)),
+      0 0 16px light-dark(rgba(255,255,255,0.7), rgba(0,0,0,0.6)),
+      0 1px 3px light-dark(rgba(255,255,255,0.8), rgba(0,0,0,0.7));
   }
 
   /* Stats */
@@ -791,11 +901,12 @@
   }
 
   .stats-card {
-    background-color: var(--surface-1-alpha);
+    background-color: var(--surface-0);
     border-radius: 0.75rem;
-    padding: 1rem;
+    padding: 1.25rem;
     border: 1px solid var(--border-default);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
   }
 
   .stats-title {
@@ -808,29 +919,37 @@
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+    gap: 1rem;
     text-align: center;
   }
 
   @media (max-width: 480px) {
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
     }
   }
 
-  .stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .stat-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
   }
 
-  .collection-tags {
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+  }
+
+  .religion-tags {
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-default);
@@ -840,15 +959,16 @@
     justify-content: center;
   }
 
-  .collection-tag {
+  .religion-tag {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
     padding: 0.25rem 0.625rem;
-    background-color: var(--surface-2-alpha);
+    background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
     border-radius: 9999px;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
   }
 
   .tag-count {
@@ -1053,45 +1173,79 @@
     white-space: pre-wrap;
   }
 
+  .streaming-cursor {
+    display: inline-block;
+    width: 0.5rem;
+    height: 1.1em;
+    background-color: var(--accent-primary);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.7s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
   .analysis-sources {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
   }
 
   .sources-heading {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding-left: 0.25rem;
+    margin-bottom: 0.25rem;
   }
 
-  .source-card {
+  /* Source item - card containing header and text */
+  .source-item {
+    background-color: var(--surface-1-alpha);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .source-item:hover {
+    border-color: var(--border-default);
+  }
+  .source-item.expanded {
+    border-color: var(--accent-primary);
+    border-width: 1px 1px 1px 3px;
+  }
+
+  /* Source header - clickable title/author row */
+  .source-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background-color: var(--surface-2-alpha);
-    border: 1px solid var(--border-subtle);
-    border-radius: 0.375rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    width: 100%;
+    background: transparent;
+    border: none;
     cursor: pointer;
     text-align: left;
     transition: background-color 0.15s;
   }
-  .source-card:hover {
+  .source-header:hover {
     background-color: var(--hover-overlay);
   }
 
   .source-number {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 700;
     color: var(--accent-primary);
-    min-width: 1.5rem;
+    min-width: 1.75rem;
   }
 
-  .source-info {
+  .source-meta {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1099,153 +1253,179 @@
     min-width: 0;
   }
 
-  .source-title-small {
-    font-size: 0.8125rem;
-    font-weight: 500;
+  .source-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.3;
   }
 
-  .source-author-small {
-    font-size: 0.75rem;
+  .source-author {
+    font-size: 0.8125rem;
     color: var(--text-muted);
   }
 
-  .expand-icon-small {
-    width: 0.875rem;
-    height: 0.875rem;
+  .expand-icon {
+    width: 1.25rem;
+    height: 1.25rem;
     color: var(--text-muted);
     transition: transform 0.2s;
     flex-shrink: 0;
   }
-  .expand-icon-small.expanded {
+  .expand-icon.expanded {
     transform: rotate(180deg);
   }
 
-  .source-expanded-text {
-    padding: 0.75rem 1rem;
-    margin-left: 1.5rem;
-    background-color: var(--surface-1-alpha);
-    border-left: 2px solid var(--accent-primary);
-    border-radius: 0 0.375rem 0.375rem 0;
-    font-size: 0.8125rem;
-    line-height: 1.6;
+  /* Source text container */
+  .source-text-container {
+    padding: 0 1rem 1rem 1rem;
+  }
+
+  .source-text-excerpt {
+    font-size: 1rem;
+    line-height: 1.7;
     color: var(--text-secondary);
+  }
+
+  .source-text-full {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+  }
+
+  /* Search highlight for emphasized text */
+  .source-text-excerpt :global(.search-highlight),
+  .source-text-full :global(.search-highlight) {
+    font-weight: 600;
+    color: var(--text-primary);
+    background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
   }
 
   /* Results */
   .results-container {
     width: 100%;
-    max-width: 64rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.375rem;
   }
 
   .results-summary {
-    font-size: 0.875rem;
+    font-size: 1rem;
     color: var(--text-secondary);
-    padding-left: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 
+  /* Collapsed result: single row */
   .result-card {
-    position: relative;
     width: 100%;
-    padding: 0.875rem 1rem;
+    padding: 0.5rem 0.75rem;
     background-color: var(--card-bg);
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     border: 1px solid var(--card-border);
     backdrop-filter: blur(8px);
     cursor: pointer;
     text-align: left;
     transition: background-color 0.15s;
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    gap: 0.625rem;
   }
   .result-card:hover {
     background-color: var(--hover-overlay);
   }
+  .result-card.expanded {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 1rem;
+  }
 
-  .result-number {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 9999px;
-    background-color: var(--surface-2);
-    color: var(--text-muted);
-    font-size: 0.625rem;
+  .result-num {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--accent-primary);
+    color: white;
+    font-size: 0.75rem;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .result-text-area {
+  .result-excerpt {
     flex: 1;
-    padding-right: 1.5rem;
-  }
-
-  .result-text-preview {
     font-size: 1rem;
     color: var(--text-primary);
-    line-height: 1.6;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
+    line-height: 1.4;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .result-text-full {
-    font-size: 1rem;
-    color: var(--text-primary);
-    line-height: 1.6;
-    white-space: pre-wrap;
-  }
-
-  .result-source {
+  .result-src {
+    flex-shrink: 0;
     font-size: 0.75rem;
+    color: var(--text-muted);
+    max-width: 10rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Expanded result */
+  .result-expanded {
+    width: 100%;
+  }
+
+  .result-full-text {
+    font-size: 1.125rem;
+    color: var(--text-primary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .result-meta {
+    font-size: 0.8125rem;
     color: var(--text-muted);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.25rem;
-    padding-top: 0.375rem;
+    padding-top: 0.5rem;
     border-top: 1px solid var(--border-subtle);
   }
 
-  .source-title {
+  .meta-title {
     color: var(--text-secondary);
     font-weight: 500;
   }
 
-  .source-separator {
+  .meta-sep {
     color: var(--text-muted);
   }
 
-  .source-author {
+  .meta-author {
     color: var(--text-muted);
   }
 
-  .source-collection {
+  .meta-collection {
     color: var(--text-muted);
     font-style: italic;
   }
 
-  .expand-icon {
-    position: absolute;
-    bottom: 0.5rem;
-    right: 0.5rem;
+  .result-chevron {
+    flex-shrink: 0;
     width: 1rem;
     height: 1rem;
     color: var(--text-muted);
     transition: transform 0.2s;
   }
-  .expand-icon.expanded {
+  .result-chevron.open {
     transform: rotate(180deg);
   }
 

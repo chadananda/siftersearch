@@ -209,6 +209,91 @@ export const search = {
         mode: options.mode || 'hybrid'
       })
     });
+  },
+
+  /**
+   * Streaming AI-powered analysis of search results
+   * Returns an async generator that yields events
+   * Event types: 'sources', 'chunk', 'complete', 'error'
+   */
+  async *analyzeStream(query, options = {}) {
+    const url = `${API_URL}/api/search/analyze/stream`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+      },
+      body: JSON.stringify({
+        query,
+        limit: options.limit || 10,
+        mode: options.mode || 'hybrid'
+      })
+      // Note: credentials: 'include' removed - not needed and causes CORS issues
+      // when server returns Access-Control-Allow-Origin: *
+    });
+
+    if (!response.ok) {
+      throw new Error('Stream request failed');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE messages (split on double newline)
+        const messages = buffer.split('\n\n');
+        buffer = messages.pop() || ''; // Keep incomplete message in buffer
+
+        for (const message of messages) {
+          // Each message may have multiple lines (event:, data:, etc.)
+          // We only care about lines starting with "data: "
+          const lines = message.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const jsonStr = line.slice(6).trim();
+                if (jsonStr) {
+                  const data = JSON.parse(jsonStr);
+                  yield data;
+                }
+              } catch (e) {
+                console.warn('SSE parse warning:', e.message, 'Line:', line);
+              }
+            }
+          }
+        }
+      }
+
+      // Process any remaining data in buffer
+      if (buffer.trim()) {
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr) {
+                const data = JSON.parse(jsonStr);
+                yield data;
+              }
+            } catch (e) {
+              // Ignore incomplete data at end
+            }
+          }
+        }
+      }
+    } finally {
+      // Ensure reader is released
+      reader.releaseLock();
+    }
   }
 };
 

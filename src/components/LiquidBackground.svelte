@@ -11,7 +11,6 @@
   let isDarkMode = $state(true);
   let themeLocation;
   let thinkingLocation;
-  let thinkingIntensityLocation;
 
   // Get thinking state from shared store
   const thinkingState = getThinkingState();
@@ -28,208 +27,134 @@
     }
   `;
 
+  // Simplified Neural Network - flowing particles toward center
   const fragmentShaderSource = `#version 300 es
     precision highp float;
 
     uniform float u_time;
     uniform vec2 u_resolution;
     uniform float u_darkMode;
-    uniform float u_thinking; // 0.0 = idle, 1.0 = thinking
+    uniform float u_thinking;
 
     out vec4 fragColor;
 
-    // Simplex noise functions
-    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-    vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-    vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+    // Hash functions
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
 
-    float snoise(vec2 v) {
-      const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-                         -0.577350269189626, 0.024390243902439);
-      vec2 i  = floor(v + dot(v, C.yy));
-      vec2 x0 = v -   i + dot(i, C.xx);
-      vec2 i1;
-      i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-      vec4 x12 = x0.xyxy + C.xxzz;
-      x12.xy -= i1;
-      i = mod289(i);
-      vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0))
-                              + i.x + vec3(0.0, i1.x, 1.0));
-      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
-                              dot(x12.zw,x12.zw)), 0.0);
-      m = m*m;
-      m = m*m;
-      vec3 x = 2.0 * fract(p * C.www) - 1.0;
-      vec3 h = abs(x) - 0.5;
-      vec3 ox = floor(x + 0.5);
-      vec3 a0 = x - ox;
-      m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-      vec3 g;
-      g.x  = a0.x  * x0.x  + h.x  * x0.y;
-      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-      return 130.0 * dot(m, g);
+    vec2 hash2(vec2 p) {
+      return vec2(hash(p), hash(p + vec2(37.0, 17.0)));
+    }
+
+    // FBM noise for flowing effect
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
     }
 
     float fbm(vec2 p) {
-      float value = 0.0;
-      float amplitude = 0.5;
-      float frequency = 1.0;
-      for (int i = 0; i < 5; i++) {
-        value += amplitude * snoise(p * frequency);
-        amplitude *= 0.5;
-        frequency *= 2.0;
+      float v = 0.0;
+      float a = 0.5;
+      for (int i = 0; i < 4; i++) {
+        v += a * noise(p);
+        p *= 2.0;
+        a *= 0.5;
       }
-      return value;
-    }
-
-    // Gentle spiral coordinates - oscillating swirl that doesn't wind up
-    vec2 spiral(vec2 uv, vec2 center, float time, float strength) {
-      vec2 delta = uv - center;
-      float dist = length(delta);
-      float angle = atan(delta.y, delta.x);
-
-      // Oscillating rotation - swings back and forth, never winds up
-      // Uses sine wave so it stays bounded between -strength and +strength
-      float swing = sin(time * 0.3) * strength / (dist + 0.3);
-      angle += swing;
-
-      return vec2(cos(angle), sin(angle)) * dist + center;
-    }
-
-    // Neural lights - hundreds of tiny flashes, denser toward center
-    float neuralLights(vec2 uv, float time, vec2 center) {
-      float lights = 0.0;
-      float distFromCenter = length(uv - center);
-
-      // Density increases toward center (more lights near vortex core)
-      float densityBoost = 1.0 + exp(-distFromCenter * 4.0) * 3.0;
-
-      // Flash rate increases toward center
-      float rateBoost = 1.0 + (1.0 - smoothstep(0.0, 0.6, distFromCenter)) * 2.0;
-
-      // Layer 1: Scattered point lights (use noise as a grid of lights)
-      for (int i = 0; i < 3; i++) {
-        float fi = float(i);
-        float scale = 15.0 + fi * 8.0; // Different scales for variety
-        vec2 gridUV = uv * scale;
-        vec2 gridID = floor(gridUV);
-        vec2 gridLocal = fract(gridUV) - 0.5;
-
-        // Random offset within each grid cell
-        float randX = fract(sin(dot(gridID, vec2(127.1, 311.7))) * 43758.5);
-        float randY = fract(sin(dot(gridID, vec2(269.5, 183.3))) * 43758.5);
-        vec2 offset = vec2(randX - 0.5, randY - 0.5) * 0.8;
-
-        float pointDist = length(gridLocal - offset);
-
-        // Tiny point light
-        float point = exp(-pointDist * 25.0);
-
-        // Random flash timing per cell
-        float phase = fract(sin(dot(gridID, vec2(419.2, 371.9))) * 43758.5) * 6.28;
-        float freq = 1.5 + fract(sin(dot(gridID, vec2(127.7, 231.4))) * 43758.5) * 3.0;
-        float flash = sin(time * freq * rateBoost + phase);
-        flash = smoothstep(0.4, 1.0, flash); // Sharp on, gradual off
-
-        // Distance from center affects this cell's visibility
-        float cellCenter = length((gridID + 0.5) / scale - center);
-        float centerMask = 1.0 - smoothstep(0.0, 0.8, cellCenter);
-        centerMask = mix(0.3, 1.0, centerMask); // Still some lights at edges
-
-        lights += point * flash * centerMask * 0.4;
-      }
-
-      // Layer 2: Sparkle noise for extra tiny lights
-      float sparkle = snoise(uv * 30.0 + time * rateBoost * 0.8);
-      sparkle = pow(max(sparkle, 0.0), 6.0);
-      float sparkle2 = snoise(uv * 50.0 - time * rateBoost * 0.5);
-      sparkle2 = pow(max(sparkle2, 0.0), 8.0);
-
-      // More sparkles toward center
-      float sparkleCenter = 1.0 - smoothstep(0.0, 0.5, distFromCenter);
-      lights += (sparkle * 0.3 + sparkle2 * 0.2) * (0.5 + sparkleCenter * 1.5);
-
-      return lights * densityBoost * 0.15;
+      return v;
     }
 
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution;
       float aspect = u_resolution.x / u_resolution.y;
 
-      // Center point for the swirl
-      vec2 center = vec2(0.5 * aspect, 0.5);
-      vec2 uvAspect = vec2(uv.x * aspect, uv.y);
+      // Center the coordinates
+      vec2 p = vec2((uv.x - 0.5) * aspect, uv.y - 0.5);
+      float distFromCenter = length(p);
 
-      // Time for animation - start with small offset so swirl is visible immediately
-      float t = u_time * 0.08 + 2.0; // small initial offset
+      float time = u_time * 0.3;
 
-      // Distance from center
-      float distFromCenter = length(uvAspect - center);
+      // Background colors
+      vec3 darkBg = vec3(0.02, 0.03, 0.08);
+      vec3 lightBg = vec3(0.92, 0.95, 0.98);
+      vec3 bgColor = mix(lightBg, darkBg, u_darkMode);
 
-      // Apply gentle spiral transformation - visible swirl around center
-      vec2 spiralUV = spiral(uvAspect, center, t, 0.4);
+      // Node/particle colors
+      vec3 darkNode = vec3(0.3, 0.6, 1.0);
+      vec3 lightNode = vec3(0.1, 0.4, 0.8);
+      vec3 nodeColor = mix(lightNode, darkNode, u_darkMode);
 
-      // Add soft organic distortion
-      float distort = fbm(spiralUV * 1.2 + t * 0.1) * 0.1;
-      spiralUV += vec2(distort, distort * 0.6);
+      // Start with background
+      vec3 color = bgColor;
 
-      // Multiple cloud layers - slow and dreamy
-      float n1 = fbm(spiralUV * 1.8 + t * 0.08);
-      float n2 = fbm(spiralUV * 2.8 - t * 0.05 + n1 * 0.25);
-      float n3 = fbm(spiralUV * 1.5 + vec2(t * 0.04, -t * 0.06) + n2 * 0.15);
+      // Create flowing particle field using noise
+      // Particles flow inward toward center
+      float flow = 0.0;
 
-      // Combine cloud layers
-      float clouds = (n1 + n2 * 0.5 + n3 * 0.3) / 1.8;
-      clouds = clouds * 0.5 + 0.5;
+      // Multiple scales of particles
+      for (int i = 0; i < 3; i++) {
+        float scale = 8.0 + float(i) * 6.0;
+        float speed = 0.5 - float(i) * 0.1;
 
-      // Subtle darkening toward center (not a hard void)
-      float centerDim = smoothstep(0.0, 0.5, distFromCenter);
-      clouds *= mix(0.6, 1.0, centerDim);
+        // Flow direction toward center
+        vec2 flowDir = -normalize(p + 0.001) * time * speed;
+        vec2 flowP = p * scale + flowDir;
 
-      // Dark theme colors - soft deep blues
-      vec3 darkBase = vec3(0.02, 0.04, 0.08);
-      vec3 darkCloud1 = vec3(0.04, 0.08, 0.15);
-      vec3 darkCloud2 = vec3(0.06, 0.12, 0.22);
-      vec3 darkCloud3 = vec3(0.09, 0.16, 0.26);
+        // Grid-based particles
+        vec2 gridId = floor(flowP);
+        vec2 gridUv = fract(flowP) - 0.5;
 
-      // Light theme colors
-      vec3 lightBase = vec3(0.94, 0.96, 0.98);
-      vec3 lightCloud1 = vec3(0.92, 0.94, 0.97);
-      vec3 lightCloud2 = vec3(0.88, 0.91, 0.95);
-      vec3 lightCloud3 = vec3(0.84, 0.88, 0.93);
+        // Random offset per cell
+        vec2 offset = hash2(gridId) - 0.5;
+        offset *= 0.6;
 
-      // Select colors based on theme
-      vec3 baseColor = mix(lightBase, darkBase, u_darkMode);
-      vec3 cloud1 = mix(lightCloud1, darkCloud1, u_darkMode);
-      vec3 cloud2 = mix(lightCloud2, darkCloud2, u_darkMode);
-      vec3 cloud3 = mix(lightCloud3, darkCloud3, u_darkMode);
+        // Particle position with wobble
+        float wobble = sin(time * 2.0 + hash(gridId) * 6.28) * 0.1;
+        vec2 particlePos = gridUv - offset + vec2(wobble, wobble * 0.7);
 
-      // Smooth gradient through cloud density
-      vec3 color;
-      if (clouds < 0.4) {
-        color = mix(baseColor, cloud1, clouds / 0.4);
-      } else if (clouds < 0.6) {
-        color = mix(cloud1, cloud2, (clouds - 0.4) / 0.2);
-      } else {
-        color = mix(cloud2, cloud3, (clouds - 0.6) / 0.4);
+        float dist = length(particlePos);
+
+        // Particle glow
+        float glow = 0.015 / (dist * dist + 0.01);
+
+        // Pulsing
+        float pulse = 0.7 + 0.3 * sin(time * 3.0 + hash(gridId) * 6.28);
+
+        // Brighter toward center
+        float centerBoost = 1.0 + (1.0 - smoothstep(0.0, 0.5, distFromCenter)) * 2.0;
+
+        // Layer falloff
+        float layerBright = 1.0 - float(i) * 0.3;
+
+        flow += glow * pulse * centerBoost * layerBright * 0.15;
       }
 
-      // Add neural lights behind the clouds
-      float lights = neuralLights(uvAspect, u_time, center);
+      // Add flow noise for organic feel
+      float flowNoise = fbm(p * 3.0 + time * 0.2);
+      flowNoise = pow(flowNoise, 2.0) * 0.3;
 
-      // Light color - soft cyan/blue glow
-      vec3 darkLightColor = vec3(0.3, 0.6, 0.9);  // Bright blue for dark mode
-      vec3 lightLightColor = vec3(0.1, 0.4, 0.7); // Deeper blue for light mode
-      vec3 lightColor = mix(lightLightColor, darkLightColor, u_darkMode);
+      // Central glow
+      float coreGlow = 0.08 / (distFromCenter * distFromCenter + 0.05);
+      coreGlow *= 0.3;
 
-      // Blend lights additively but subtly
-      color += lightColor * lights;
+      // Combine
+      color += nodeColor * flow;
+      color += nodeColor * flowNoise * (1.0 - smoothstep(0.0, 0.6, distFromCenter));
+      color += nodeColor * coreGlow;
 
-      // Very soft vignette
-      vec2 vignetteUV = uv - 0.5;
-      float vignetteStrength = mix(0.1, 0.2, u_darkMode);
-      float vignette = 1.0 - dot(vignetteUV, vignetteUV) * vignetteStrength;
+      // Soft vignette
+      float vignette = 1.0 - distFromCenter * 0.5;
       color *= vignette;
+
+      color = clamp(color, 0.0, 1.0);
 
       fragColor = vec4(color, 1.0);
     }

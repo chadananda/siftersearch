@@ -223,17 +223,26 @@ export async function getStats() {
     ]);
 
     // Get facet distributions for religions and collections
+    // Use DOCUMENTS index for religion counts (documents per religion, not paragraphs)
+    // Use PARAGRAPHS index for collection counts
     let religions = {};
     let collections = {};
     let totalWords = 0;
 
     try {
-      const facetResults = await meili.index(INDEXES.PARAGRAPHS).search('', {
+      // Get document counts per religion from DOCUMENTS index
+      const docFacetResults = await meili.index(INDEXES.DOCUMENTS).search('', {
         limit: 0,
-        facets: ['religion', 'collection']
+        facets: ['religion']
       });
-      religions = facetResults.facetDistribution?.religion || {};
-      collections = facetResults.facetDistribution?.collection || {};
+      religions = docFacetResults.facetDistribution?.religion || {};
+
+      // Get collection counts from PARAGRAPHS (for passage-level detail)
+      const paraFacetResults = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        limit: 0,
+        facets: ['collection']
+      });
+      collections = paraFacetResults.facetDistribution?.collection || {};
     } catch {
       // Facets may not be available
     }

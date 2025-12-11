@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.0.24",
+  "version": "0.0.40",
   "description": "AI-powered interfaith library search system",
   "type": "module",
   "engines": {
@@ -23,6 +23,8 @@
     "migrate:create": "node scripts/migrate.js create",
     "tunnel": "node scripts/tunnel.js",
     "setup:tunnel": "node scripts/setup-tunnel.js",
+    "index": "node scripts/index-library.js",
+    "index:watch": "node scripts/index-library.js --watch",
     "deploy": "npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
     "lint": "eslint . --ext .js,.svelte,.astro",
     "format": "prettier --write ."

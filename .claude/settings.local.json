@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:oceanoflights.org)",
-      "WebFetch(domain:oceanlibrary.com)"
+      "WebFetch(domain:oceanlibrary.com)",
+      "WebFetch(domain:t3.ftcdn.net)",
+      "WebFetch(domain:stock.adobe.com)"
     ]
   }
 }

@@ -58,6 +58,35 @@ export async function createServer(opts = {}) {
     });
   }
 
+  // Request logging hook - log all incoming requests
+  server.addHook('onRequest', async (request) => {
+    const { method, url, headers } = request;
+    const origin = headers.origin || 'no-origin';
+    const userAgent = headers['user-agent']?.substring(0, 50) || 'unknown';
+    request.log.info({
+      msg: '→ REQUEST',
+      method,
+      url,
+      origin,
+      userAgent
+    });
+  });
+
+  // Response logging hook - log response status
+  server.addHook('onResponse', async (request, reply) => {
+    const { method, url } = request;
+    const { statusCode } = reply;
+    // In Fastify 5, elapsedTime is available on the reply object
+    const responseTime = reply.elapsedTime || 0;
+    request.log.info({
+      msg: '← RESPONSE',
+      method,
+      url,
+      statusCode,
+      responseTimeMs: Math.round(responseTime)
+    });
+  });
+
   // Health check
   server.get('/health', async () => ({
     status: 'ok',

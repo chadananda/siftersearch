@@ -27,8 +27,10 @@ import crypto from 'crypto';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-// Load environment
-import 'dotenv/config';
+// Load environment files: .env-public (checked in) + .env-secrets (gitignored)
+import dotenv from 'dotenv';
+dotenv.config({ path: path.join(PROJECT_ROOT, '.env-public') });
+dotenv.config({ path: path.join(PROJECT_ROOT, '.env-secrets') });
 
 // Import services
 import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
@@ -42,7 +44,9 @@ const dryRun = args.includes('--dry-run');
 const skipExisting = args.includes('--skip-existing');
 const watchMode = args.includes('--watch');
 const limitArg = args.find(arg => arg.startsWith('--limit='));
-const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : Infinity;
+// Allow INDEX_LIMIT env var as default, CLI arg overrides
+const envLimit = process.env.INDEX_LIMIT ? parseInt(process.env.INDEX_LIMIT, 10) : Infinity;
+const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : envLimit;
 const religionArg = args.find(arg => arg.startsWith('--religion='));
 const religionFilter = religionArg ? religionArg.split('=')[1] : null;
 const debounceArg = args.find(arg => arg.startsWith('--debounce='));
@@ -70,10 +74,34 @@ function extractMetadataFromPath(filePath, basePath) {
   const relativePath = path.relative(basePath, filePath);
   const parts = relativePath.split(path.sep);
 
+  // Try to infer religion from the base path if it contains known religion folders
+  // This handles cases where we index from a subfolder like "Pilgrim Notes" directly
+  const knownReligions = ["Baha'i", "Islam", "Christianity", "Judaism", "Buddhism", "Hinduism", "Zoroastrianism", "Sikhism", "General"];
+  const basePathParts = basePath.split(path.sep);
+  let inferredReligion = null;
+  for (const part of basePathParts) {
+    if (knownReligions.includes(part)) {
+      inferredReligion = part;
+      break;
+    }
+  }
+
   // Path structure: Religion/Collection/filename.md
   // Or: Religion/Collection/SubCollection/filename.md
-  const religion = parts[0] || 'General';
-  const collection = parts.length > 2 ? parts.slice(1, -1).join(' > ') : parts[1] || 'General';
+  // If parts[0] looks like a filename (ends with .md or contains year prefix), use inferred religion
+  const firstPart = parts[0] || '';
+  const looksLikeFilename = firstPart.endsWith('.md') || /^\d{4}/.test(firstPart) || firstPart.includes(',');
+  const religion = (looksLikeFilename && inferredReligion) ? inferredReligion : (parts[0] || inferredReligion || 'General');
+
+  // Collection: if we inferred religion from base path, use base path's last folder as collection
+  let collection;
+  if (looksLikeFilename && inferredReligion) {
+    // Get collection from base path (e.g., "Pilgrim Notes" from the path)
+    const baseFolder = basePathParts[basePathParts.length - 1];
+    collection = parts.length > 1 ? parts.slice(0, -1).join(' > ') : baseFolder;
+  } else {
+    collection = parts.length > 2 ? parts.slice(1, -1).join(' > ') : parts[1] || 'General';
+  }
   const filename = parts[parts.length - 1].replace('.md', '');
 
   // Try to parse various filename formats
