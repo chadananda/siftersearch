@@ -2,11 +2,15 @@
 
 # Pre-commit hook for SifterSearch
 # Runs before each commit to:
-# 1. Bump version number (patch)
-# 2. Regenerate changelog from git history
-# 3. Stage the updated files
+# 1. Run linting (catches style/syntax issues)
+# 2. Run unit tests (fast safety check)
+# 3. Run Astro build (catches type errors and build issues)
+# 4. Bump version number (patch)
+# 5. Regenerate changelog from git history
+# 6. Stage the updated files
 #
 # Skip with: git commit --no-verify
+# Skip quality checks only: SKIP_CHECKS=1 git commit ...
 
 set -e
 
@@ -36,6 +40,41 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -v 'packa
 if [ -z "$STAGED_FILES" ]; then
   echo -e "${YELLOW}[pre-commit]${NC} No code changes staged, skipping version bump"
   exit 0
+fi
+
+# 0. Run quality checks (unless SKIP_CHECKS=1)
+if [ "$SKIP_CHECKS" != "1" ]; then
+  # Run linting
+  echo -e "${GREEN}[pre-commit]${NC} Running linter..."
+  if npm run lint 2>&1; then
+    echo -e "${GREEN}[pre-commit]${NC} Linting passed!"
+  else
+    echo -e "${RED}[pre-commit]${NC} Linting failed! Commit aborted."
+    echo -e "${YELLOW}[pre-commit]${NC} Fix lint errors or use SKIP_CHECKS=1 to bypass"
+    exit 1
+  fi
+
+  # Run unit tests
+  echo -e "${GREEN}[pre-commit]${NC} Running unit tests..."
+  if npm run test 2>&1; then
+    echo -e "${GREEN}[pre-commit]${NC} Tests passed!"
+  else
+    echo -e "${RED}[pre-commit]${NC} Tests failed! Commit aborted."
+    echo -e "${YELLOW}[pre-commit]${NC} Fix the tests or use SKIP_CHECKS=1 to bypass"
+    exit 1
+  fi
+
+  # Run Astro build (catches type errors and build issues)
+  echo -e "${GREEN}[pre-commit]${NC} Running Astro build check..."
+  if npm run build 2>&1; then
+    echo -e "${GREEN}[pre-commit]${NC} Build passed!"
+  else
+    echo -e "${RED}[pre-commit]${NC} Build failed! Commit aborted."
+    echo -e "${YELLOW}[pre-commit]${NC} Fix build errors or use SKIP_CHECKS=1 to bypass"
+    exit 1
+  fi
+else
+  echo -e "${YELLOW}[pre-commit]${NC} SKIP_CHECKS=1, skipping quality checks"
 fi
 
 # 1. Bump version
