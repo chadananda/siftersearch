@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T23:55:50.950Z",
+  "generated": "2025-12-11T23:57:59.071Z",
   "entries": [
+    {
+      "hash": "e41e090",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Hit card display - serif font, summary header, highlights, citation wrapping",
+      "scope": null
+    },
     {
       "hash": "10c066d",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add comprehensive SEO improvements and BDD tests",
       "scope": null
-    },
-    {
-      "hash": "fa20a76",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "e41e090",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Hit card display - serif font, summary header, highlights, citation wrapping",
+        "scope": null
+      },
       {
         "hash": "10c066d",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add comprehensive SEO improvements and BDD tests",
-        "scope": null
-      },
-      {
-        "hash": "fa20a76",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
         "scope": null
       }
     ]

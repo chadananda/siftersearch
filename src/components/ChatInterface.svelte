@@ -2027,7 +2027,8 @@
     flex: 1;
     min-width: 0;
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2035,9 +2036,9 @@
 
   .source-summary-title {
     flex-shrink: 0;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    font-weight: 400;
     padding-left: 0.5rem;
     border-left: 1px solid var(--border-subtle);
     white-space: nowrap;
