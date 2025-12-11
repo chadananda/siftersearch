@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T23:50:52.411Z",
+  "generated": "2025-12-11T23:55:50.950Z",
   "entries": [
+    {
+      "hash": "10c066d",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Implement full-screen reading mode with document navigation",
+      "scope": null
+    },
     {
       "hash": "2d2915a",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
       "scope": null
-    },
-    {
-      "hash": "9871505",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add ingester service and fix gitignore for meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "10c066d",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Implement full-screen reading mode with document navigation",
+        "scope": null
+      },
       {
         "hash": "2d2915a",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
-        "scope": null
-      },
-      {
-        "hash": "9871505",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add ingester service and fix gitignore for meilisearch",
         "scope": null
       }
     ]

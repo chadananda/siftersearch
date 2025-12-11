@@ -916,7 +916,7 @@
                         <!-- Expanded: full paper card view -->
                         <button class="source-collapse-btn" onclick={() => toggleResult(message.id || msgIndex, i)}>
                           <span class="source-num">{i + 1}</span>
-                          <span class="collapse-text">Collapse</span>
+                          <span class="source-summary-expanded">{summary || (plainText.substring(0, 80) + (plainText.length > 80 ? '...' : ''))}</span>
                           <svg class="source-expand-icon open" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                           </svg>
@@ -2078,8 +2078,13 @@
     height: 1.5rem;
     font-size: 0.75rem;
   }
-  .collapse-text {
+  .source-summary-expanded {
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    color: var(--text-primary);
   }
 
   /* Paper-like text area - ALWAYS light paper color regardless of theme */
@@ -2090,13 +2095,14 @@
   }
 
   .source-text {
+    font-family: Georgia, 'Times New Roman', Times, serif;
     font-size: 1.0625rem;
-    line-height: 1.8;
+    line-height: 1.9;
     color: #1a1a1a;
     margin: 0;
   }
 
-  /* Light yellow highlight for search matches on paper background */
+  /* Light yellow highlight for search keyword matches from Meilisearch */
   .source-paper :global(.search-highlight),
   .source-paper :global(em) {
     font-style: normal;
@@ -2107,23 +2113,19 @@
     color: #1a1a1a;
   }
 
-  /* Analyzer highlight for the most relevant sentence */
+  /* Analyzer highlight for the most relevant sentence - pale yellow background */
   .source-paper :global(mark) {
-    background-color: #ecfccb;
-    padding: 0.2em 0.1em;
-    border-radius: 0.2em;
-    border-left: 3px solid #84cc16;
-    margin-left: -0.3em;
-    padding-left: 0.4em;
+    background-color: #fef9c3;
+    padding: 0.15em 0.3em;
+    border-radius: 0.25em;
+    color: #1a1a1a;
   }
 
-  /* Bold key words within the relevant sentence */
-  .source-paper :global(mark strong) {
+  /* Bold key words within the relevant sentence - green emphasis */
+  .source-paper :global(mark strong),
+  .source-paper :global(strong) {
     font-weight: 700;
-    color: #166534;
-    background-color: rgba(22, 101, 52, 0.1);
-    padding: 0.05em 0.2em;
-    border-radius: 0.15em;
+    color: #15803d;
   }
 
   /* Citation bar at bottom of card */
@@ -2144,6 +2146,7 @@
     gap: 0.25rem;
     color: var(--text-secondary);
     min-width: 0;
+    flex: 1;
   }
 
   .citation-segment {
@@ -2160,6 +2163,8 @@
   .citation-title {
     color: var(--text-primary);
     font-weight: 600;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .read-more-btn {
