@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Post-commit hook for SifterSearch
+# Runs after each successful commit to:
+# 1. Build the client
+# 2. Deploy client to Cloudflare Pages
+# 3. Deploy server (placeholder for future)
+#
+# Skip with: SKIP_DEPLOY=1 git commit ...
+# Or: git commit --no-verify (skips all hooks)
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if deployment should be skipped
+if [ "$SKIP_DEPLOY" = "1" ]; then
+  echo -e "${YELLOW}[post-commit]${NC} SKIP_DEPLOY=1, skipping deployment"
+  exit 0
+fi
+
+# Get the root of the git repository
+ROOT_DIR=$(git rev-parse --show-toplevel)
+cd "$ROOT_DIR"
+
+# Get version from package.json
+VERSION=$(node -p "require('./package.json').version")
+
+echo -e "${BLUE}[post-commit]${NC} Starting deployment for v${VERSION}..."
+
+# 1. Build the client
+echo -e "${GREEN}[post-commit]${NC} Building client..."
+npm run build
+
+# 2. Deploy to Cloudflare Pages
+echo -e "${GREEN}[post-commit]${NC} Deploying client to Cloudflare Pages..."
+if npx wrangler pages deploy ./dist --project-name siftersearch --commit-dirty=true; then
+  echo -e "${GREEN}[post-commit]${NC} Client deployed successfully!"
+else
+  echo -e "${RED}[post-commit]${NC} Client deployment failed!"
+  exit 1
+fi
+
+# 3. Deploy server (placeholder for future)
+# echo -e "${GREEN}[post-commit]${NC} Deploying server..."
+# TODO: Add server deployment commands when ready
+# Examples:
+#   - SSH to server and pull latest
+#   - Deploy to Cloudflare Workers
+#   - Deploy to Railway/Render/etc.
+
+echo -e "${GREEN}[post-commit]${NC} Deployment complete for v${VERSION}"
+echo -e "${BLUE}[post-commit]${NC} Client: https://siftersearch.com"
+# echo -e "${BLUE}[post-commit]${NC} API: https://api.siftersearch.com"

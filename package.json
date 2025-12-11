@@ -26,6 +26,8 @@
     "migrate:create": "node scripts/migrate.js create",
     "tunnel": "node scripts/tunnel.js",
     "setup:tunnel": "node scripts/setup-tunnel.js",
+    "setup:hooks": "node scripts/install-hooks.js",
+    "postinstall": "node scripts/install-hooks.js",
     "index": "node scripts/index-library.js",
     "index:watch": "node scripts/index-library.js --watch",
     "version:patch": "node scripts/bump-version.js patch",
