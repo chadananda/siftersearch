@@ -1,6 +1,6 @@
 <script>
   import { onMount, tick } from 'svelte';
-  import { search, session } from '../lib/api.js';
+  import { search, session, documents } from '../lib/api.js';
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
@@ -193,6 +193,92 @@
     }
   }
 
+  // ============================================
+  // Full-screen Reader Functions
+  // ============================================
+
+  /**
+   * Open the full-screen reader for a document
+   * @param {Object} result - The search result containing document_id, paragraph_index, title, author, etc.
+   */
+  async function openReader(result) {
+    if (!result.document_id) {
+      console.error('No document_id available for reading');
+      return;
+    }
+
+    readerLoading = true;
+    readerOpen = true;
+    readerDocument = {
+      id: result.document_id,
+      title: result.title,
+      author: result.author,
+      religion: result.religion,
+      collection: result.collection
+    };
+    readerCurrentIndex = result.paragraph_index || 0;
+    readerParagraphs = [];
+
+    try {
+      // Fetch all segments for the document
+      const response = await documents.getSegments(result.document_id, { limit: 500 });
+      readerParagraphs = response.segments || [];
+
+      // Scroll to the current paragraph after render
+      await tick();
+      scrollToReaderParagraph(readerCurrentIndex);
+    } catch (err) {
+      console.error('Failed to load document segments:', err);
+      readerParagraphs = [];
+    } finally {
+      readerLoading = false;
+    }
+  }
+
+  /**
+   * Close the full-screen reader
+   */
+  function closeReader() {
+    readerOpen = false;
+    readerDocument = null;
+    readerParagraphs = [];
+    readerCurrentIndex = 0;
+  }
+
+  /**
+   * Scroll to a specific paragraph in the reader
+   */
+  function scrollToReaderParagraph(index) {
+    const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${index}"]`);
+    if (paragraphEl) {
+      paragraphEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  /**
+   * Handle keyboard navigation in reader
+   */
+  function handleReaderKeydown(event) {
+    if (!readerOpen) return;
+
+    if (event.key === 'Escape') {
+      closeReader();
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (readerCurrentIndex > 0) {
+        readerCurrentIndex--;
+        scrollToReaderParagraph(readerCurrentIndex);
+      }
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (readerCurrentIndex < readerParagraphs.length - 1) {
+        readerCurrentIndex++;
+        scrollToReaderParagraph(readerCurrentIndex);
+      }
+    }
+  }
+
+  // ============================================
   // Scroll to user's message at top of view
   async function scrollToLatestUserMessage() {
     await tick(); // Wait for DOM update
@@ -386,6 +472,100 @@
 </script>
 
 <AuthModal bind:isOpen={showAuthModal} />
+
+<!-- Full-screen Reading Modal -->
+{#if readerOpen}
+  <div
+    class="reader-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Full document reader"
+    onkeydown={handleReaderKeydown}
+  >
+    <div class="reader-modal">
+      <!-- Reader Header -->
+      <header class="reader-header">
+        <div class="reader-title-area">
+          <h2 class="reader-title">{readerDocument?.title || 'Document'}</h2>
+          {#if readerDocument?.author}
+            <p class="reader-author">{readerDocument.author}</p>
+          {/if}
+          {#if readerDocument?.collection}
+            <p class="reader-collection">{readerDocument.religion} › {readerDocument.collection}</p>
+          {/if}
+        </div>
+        <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      <!-- Reader Content -->
+      <div class="reader-content" bind:this={readerContainerEl}>
+        {#if readerLoading}
+          <div class="reader-loading">
+            <div class="reader-loading-spinner"></div>
+            <p>Loading document...</p>
+          </div>
+        {:else if readerParagraphs.length === 0}
+          <div class="reader-empty">
+            <p>No content available for this document.</p>
+          </div>
+        {:else}
+          <div class="reader-paragraphs">
+            {#each readerParagraphs as paragraph, i}
+              <p
+                class="reader-paragraph {i === readerCurrentIndex ? 'current' : ''}"
+                data-paragraph-index={paragraph.paragraph_index}
+                onclick={() => { readerCurrentIndex = i; }}
+              >
+                {paragraph.text}
+              </p>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Reader Footer -->
+      <footer class="reader-footer">
+        <div class="reader-progress">
+          <span class="reader-progress-text">
+            {readerCurrentIndex + 1} of {readerParagraphs.length}
+          </span>
+          <div class="reader-progress-bar">
+            <div
+              class="reader-progress-fill"
+              style="width: {readerParagraphs.length > 0 ? ((readerCurrentIndex + 1) / readerParagraphs.length * 100) : 0}%"
+            ></div>
+          </div>
+        </div>
+        <div class="reader-nav-buttons">
+          <button
+            class="reader-nav-btn"
+            onclick={() => { if (readerCurrentIndex > 0) { readerCurrentIndex--; scrollToReaderParagraph(readerCurrentIndex); } }}
+            disabled={readerCurrentIndex === 0}
+            aria-label="Previous paragraph"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            class="reader-nav-btn"
+            onclick={() => { if (readerCurrentIndex < readerParagraphs.length - 1) { readerCurrentIndex++; scrollToReaderParagraph(readerCurrentIndex); } }}
+            disabled={readerCurrentIndex >= readerParagraphs.length - 1}
+            aria-label="Next paragraph"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+{/if}
 
 <div class="chat-container" role="application" aria-label="SifterSearch - Interfaith Library Search">
   <!-- Skip to main content link for keyboard users -->
@@ -755,7 +935,7 @@
                             {#if author && !rawCollection.includes(author)}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
                             <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
                           </div>
-                          <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); alert('Full reader coming soon'); }}>
+                          <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); openReader(result); }}>
                             Read More
                           </button>
                         </div>
@@ -2338,5 +2518,245 @@
     top: 0;
     outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
+  }
+
+  /* ==========================================
+     Full-screen Reader Modal Styles
+     ========================================== */
+
+  .reader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: readerFadeIn 0.3s ease;
+  }
+
+  @keyframes readerFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .reader-modal {
+    width: 100%;
+    height: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    background: #faf8f3;
+    color: #1a1a1a;
+  }
+
+  @media (min-width: 768px) {
+    .reader-modal {
+      height: 95vh;
+      max-height: 95vh;
+      border-radius: 1rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  /* Reader Header */
+  .reader-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f5f3ee;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 768px) {
+    .reader-header {
+      border-radius: 1rem 1rem 0 0;
+    }
+  }
+
+  .reader-title-area {
+    flex: 1;
+    min-width: 0;
+    padding-right: 1rem;
+  }
+
+  .reader-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 0.25rem;
+    line-height: 1.3;
+  }
+
+  .reader-author {
+    font-size: 0.9375rem;
+    color: #4a4a4a;
+    margin: 0 0 0.125rem;
+  }
+
+  .reader-collection {
+    font-size: 0.8125rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .reader-close-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .reader-close-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+  }
+
+  /* Reader Content */
+  .reader-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem 1.5rem;
+    scroll-behavior: smooth;
+  }
+
+  @media (min-width: 768px) {
+    .reader-content {
+      padding: 2.5rem 3rem;
+    }
+  }
+
+  .reader-loading,
+  .reader-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+    color: #666;
+  }
+
+  .reader-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: var(--accent-primary, #0891b2);
+    border-radius: 50%;
+    animation: readerSpin 1s linear infinite;
+  }
+
+  @keyframes readerSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  .reader-paragraphs {
+    max-width: 65ch;
+    margin: 0 auto;
+  }
+
+  .reader-paragraph {
+    font-size: 1.125rem;
+    line-height: 1.9;
+    color: #2a2a2a;
+    margin: 0 0 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .reader-paragraph:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .reader-paragraph.current {
+    background: rgba(8, 145, 178, 0.08);
+    border-left-color: var(--accent-primary, #0891b2);
+  }
+
+  /* Reader Footer */
+  .reader-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: #f5f3ee;
+    flex-shrink: 0;
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .reader-footer {
+      border-radius: 0 0 1rem 1rem;
+    }
+  }
+
+  .reader-progress {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .reader-progress-text {
+    font-size: 0.8125rem;
+    color: #666;
+  }
+
+  .reader-progress-bar {
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .reader-progress-fill {
+    height: 100%;
+    background: var(--accent-primary, #0891b2);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .reader-nav-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .reader-nav-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 50%;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .reader-nav-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+  }
+
+  .reader-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 </style>

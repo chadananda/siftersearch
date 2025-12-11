@@ -349,6 +349,8 @@ Rules:
         // Fallback: send original results without analysis
         const fallbackSources = searchResults.hits.map(hit => ({
           id: hit.id,
+          document_id: hit.document_id,
+          paragraph_index: hit.paragraph_index,
           text: hit._formatted?.text || hit.text,
           title: hit.title,
           author: hit.author,
@@ -389,6 +391,8 @@ Rules:
 
         return {
           id: originalHit.id,
+          document_id: originalHit.document_id,
+          paragraph_index: originalHit.paragraph_index,
           text: originalHit._formatted?.text || originalHit.text,
           title: originalHit.title,
           author: originalHit.author,

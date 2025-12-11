@@ -298,6 +298,32 @@ export const search = {
 };
 
 // ============================================
+// Documents API
+// ============================================
+
+export const documents = {
+  /**
+   * Get document metadata by ID
+   */
+  async get(documentId) {
+    return request(`/api/documents/${encodeURIComponent(documentId)}`);
+  },
+
+  /**
+   * Get all segments/paragraphs for a document
+   * Returns segments sorted by paragraph_index
+   */
+  async getSegments(documentId, options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    const queryString = params.toString();
+    const url = `/api/documents/${encodeURIComponent(documentId)}/segments${queryString ? `?${queryString}` : ''}`;
+    return request(url);
+  }
+};
+
+// ============================================
 // Session API
 // ============================================
 
@@ -335,6 +361,7 @@ export async function healthCheck() {
 export default {
   auth,
   search,
+  documents,
   session,
   healthCheck,
   setAccessToken,

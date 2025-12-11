@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T23:43:41.794Z",
+  "generated": "2025-12-11T23:50:52.411Z",
   "entries": [
+    {
+      "hash": "2d2915a",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Paper background always light regardless of theme",
+      "scope": null
+    },
     {
       "hash": "0613ae0",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add ingester service and fix gitignore for meilisearch",
       "scope": null
-    },
-    {
-      "hash": "62c8c77",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "2d2915a",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Paper background always light regardless of theme",
+        "scope": null
+      },
       {
         "hash": "0613ae0",
         "date": "2025-12-11",
@@ -135,15 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add ingester service and fix gitignore for meilisearch",
-        "scope": null
-      }
-    ],
-    "2025-12-10": [
-      {
-        "hash": "62c8c77",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
         "scope": null
       }
     ]
