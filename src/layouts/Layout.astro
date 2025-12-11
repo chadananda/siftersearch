@@ -1,4 +1,6 @@
 ---
+import { SEO } from 'astro-seo';
+
 interface Props {
   title: string;
   description?: string;
@@ -22,7 +24,7 @@ const {
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
 const imageUrl = new URL(image, siteUrl).href;
 
-// Structured data for the website
+// Structured data for the website (SearchAction for sitelinks searchbox)
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -56,38 +58,51 @@ const organizationSchema = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
     <meta name="theme-color" content="light-dark(#ffffff, #1e293b)" />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href={canonicalUrl} />
+    <!-- SEO Component handles: title, description, canonical, OG, Twitter -->
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonicalUrl}
+      noindex={noindex}
+      nofollow={noindex}
+      openGraph={{
+        basic: {
+          title: title,
+          type: type,
+          image: imageUrl,
+          url: canonicalUrl,
+        },
+        optional: {
+          description: description,
+          siteName: siteName,
+          locale: "en_US",
+        },
+        image: {
+          url: imageUrl,
+          alt: `${title} - ${siteName}`,
+          width: 1200,
+          height: 630,
+        },
+      }}
+      twitter={{
+        card: "summary_large_image",
+        site: "@siftersearch",
+        title: title,
+        description: description,
+        image: imageUrl,
+        imageAlt: `${title} - ${siteName}`,
+      }}
+    />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content={type} />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={imageUrl} />
-    <meta property="og:site_name" content={siteName} />
-    <meta property="og:locale" content="en_US" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content={canonicalUrl} />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={imageUrl} />
-
-    <!-- Structured Data -->
+    <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
 
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-
-    <title>{title}</title>
 
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

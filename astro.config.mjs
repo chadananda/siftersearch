@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
+import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
 import { readFileSync } from 'fs';
@@ -8,10 +9,21 @@ import { readFileSync } from 'fs';
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
+  site: 'https://siftersearch.com',
   output: 'static',
 
   integrations: [
     svelte(),
+    sitemap({
+      // Filter out any pages that shouldn't be in sitemap
+      filter: (page) => !page.includes('/api/'),
+      // Customize sitemap entries
+      serialize: (item) => ({
+        ...item,
+        changefreq: item.url === 'https://siftersearch.com/' ? 'weekly' : 'monthly',
+        priority: item.url === 'https://siftersearch.com/' ? 1.0 : 0.8,
+      }),
+    }),
     AstroPWA({
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'logo.svg', 'apple-touch-icon.png'],
