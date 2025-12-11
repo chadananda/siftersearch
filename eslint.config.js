@@ -20,6 +20,16 @@ export default [
         fetch: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        crypto: 'readonly',
+        TextDecoder: 'readonly',
+        Uint8Array: 'readonly',
+        ReadableStream: 'readonly',
+        navigator: 'readonly',
         // Vitest globals
         describe: 'readonly',
         it: 'readonly',

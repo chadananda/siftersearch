@@ -1902,17 +1902,17 @@
     flex: 1;
   }
 
-  /* Paper-like text area with off-white/cream background */
+  /* Paper-like text area - ALWAYS light paper color regardless of theme */
   .source-paper {
-    background-color: light-dark(#faf8f3, #3d3a35);
+    background-color: #faf8f3;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .source-text {
     font-size: 1.0625rem;
     line-height: 1.8;
-    color: light-dark(#1a1a1a, #e8e8e8);
+    color: #1a1a1a;
     margin: 0;
   }
 
@@ -1921,18 +1921,18 @@
   .source-paper :global(em) {
     font-style: normal;
     font-weight: 600;
-    background-color: light-dark(#fef9c3, rgba(254, 249, 195, 0.3));
+    background-color: #fef9c3;
     padding: 0.1em 0.25em;
     border-radius: 0.2em;
-    color: light-dark(#1a1a1a, #fef9c3);
+    color: #1a1a1a;
   }
 
   /* Analyzer highlight for the most relevant sentence */
   .source-paper :global(mark) {
-    background-color: light-dark(#ecfccb, rgba(236, 252, 203, 0.25));
+    background-color: #ecfccb;
     padding: 0.2em 0.1em;
     border-radius: 0.2em;
-    border-left: 3px solid light-dark(#84cc16, #a3e635);
+    border-left: 3px solid #84cc16;
     margin-left: -0.3em;
     padding-left: 0.4em;
   }
@@ -1940,8 +1940,8 @@
   /* Bold key words within the relevant sentence */
   .source-paper :global(mark strong) {
     font-weight: 700;
-    color: light-dark(#166534, #86efac);
-    background-color: light-dark(rgba(22, 101, 52, 0.1), rgba(134, 239, 172, 0.15));
+    color: #166534;
+    background-color: rgba(22, 101, 52, 0.1);
     padding: 0.05em 0.2em;
     border-radius: 0.15em;
   }

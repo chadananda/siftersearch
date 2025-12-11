@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T23:08:59.832Z",
+  "generated": "2025-12-11T23:43:41.794Z",
   "entries": [
+    {
+      "hash": "0613ae0",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Rename Jafar to Sifter, enhance about page, add QR code",
+      "scope": null
+    },
     {
       "hash": "5dd6f69",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
       "scope": null
-    },
-    {
-      "hash": "89fe168",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Oscillating spiral + transparent surfaces with glass blur v0.0.24",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "0613ae0",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Rename Jafar to Sifter, enhance about page, add QR code",
+        "scope": null
+      },
       {
         "hash": "5dd6f69",
         "date": "2025-12-11",
@@ -137,13 +144,6 @@
         "date": "2025-12-10",
         "type": "New",
         "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
-        "scope": null
-      },
-      {
-        "hash": "89fe168",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Oscillating spiral + transparent surfaces with glass blur v0.0.24",
         "scope": null
       }
     ]
