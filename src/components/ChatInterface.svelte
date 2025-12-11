@@ -25,6 +25,13 @@
   let inputEl;
   let messagesAreaEl;
 
+  // Clear search and return to library summary
+  function clearSearch() {
+    input = '';
+    messages = [];
+    inputEl?.focus();
+  }
+
   const auth = getAuthState();
 
   // Library connection status
@@ -284,7 +291,7 @@
   <!-- Header -->
   <header class="header" role="banner">
     <div class="header-left">
-      <img src="/logo.svg" alt="SifterSearch" class="logo" />
+      <img src="/ocean.svg" alt="SifterSearch" class="logo" />
       <span class="title" role="text">SifterSearch {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}</span>
     </div>
     <nav class="header-right" aria-label="Main navigation">
@@ -395,8 +402,8 @@
   <main id="main-content" class="messages-area" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
     {#if messages.length === 0}
       <div class="welcome-screen">
-        <img src="/logo.svg" alt="SifterSearch" class="welcome-logo" />
-        <h2 class="welcome-title">Ocean 2.0 Interfaith Library, AI Search</h2>
+        <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
+        <h2 class="welcome-title">Ocean Library AI Research Engine</h2>
         <p class="welcome-desc">
           Use advanced AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.
         </p>
@@ -518,37 +525,27 @@
                     {@const expanded = expandedResults[resultKey] !== undefined ? expandedResults[resultKey] : i === 0}
                     {@const text = result._formatted?.text || result.text || ''}
                     {@const title = result.title || 'Untitled'}
-                    {@const author = result.author || 'Unknown'}
-                    {@const collection = result.collection || result.religion || ''}
-                    {@const excerptLength = 200}
-                    {@const excerpt = text.length > excerptLength ? text.substring(0, excerptLength) + '...' : text}
+                    {@const author = result.author}
+                    {@const religion = result.religion || ''}
+                    {@const collection = result.collection || ''}
 
-                    <div class="source-item {expanded ? 'expanded' : ''}" role="article" aria-labelledby="source-title-{resultKey}">
-                      <button
-                        class="source-header"
-                        onclick={() => { expandedResults = { ...expandedResults, [resultKey]: !expanded }; }}
-                        aria-expanded={expanded}
-                        aria-controls="source-content-{resultKey}"
-                      >
-                        <span class="source-number">[{i + 1}]</span>
-                        <div class="source-meta">
-                          <span id="source-title-{resultKey}" class="source-title">{title}</span>
-                          <span class="source-author">— {author}{#if collection} ({collection}){/if}</span>
+                    <div class="source-card" role="article">
+                      <!-- Paper-like text area with white background -->
+                      <div class="source-paper">
+                        <p class="source-text">{@html formatText(text)}</p>
+                      </div>
+
+                      <!-- Citation bar: [religion] > [collection] > [author] > [title] -->
+                      <div class="citation-bar">
+                        <div class="citation-path">
+                          {#if religion}<span class="citation-segment">{religion}</span>{/if}
+                          {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
+                          {#if author}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
+                          <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
                         </div>
-                        <svg
-                          class="expand-icon {expanded ? 'expanded' : ''}"
-                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        >
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-
-                      <div id="source-content-{resultKey}" class="source-text-container">
-                        {#if expanded}
-                          <p class="source-text-full">{@html formatText(text)}</p>
-                        {:else}
-                          <p class="source-text-excerpt">{@html formatText(excerpt)}</p>
-                        {/if}
+                        <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); alert('Full reader coming soon'); }}>
+                          Read More
+                        </button>
                       </div>
                     </div>
                   {/each}
@@ -651,6 +648,19 @@
         autocomplete="off"
         aria-describedby="search-status"
       />
+      {#if input || messages.length > 0}
+        <button
+          type="button"
+          onclick={clearSearch}
+          class="clear-btn"
+          aria-label="Clear search and return to library"
+          title="Clear search"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      {/if}
       <button
         type="submit"
         disabled={!input.trim() || loading || !libraryConnected}
@@ -1407,6 +1417,96 @@
     border-radius: 0.2em;
   }
 
+  /* Source Card - Paper-like hit card design */
+  .source-card {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .source-card:hover {
+    border-color: var(--border-strong, var(--border-default));
+    box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
+  }
+
+  /* Paper-like text area with white/light background */
+  .source-paper {
+    background-color: light-dark(#ffffff, #1a1a1a);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .source-text {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    color: light-dark(#1a1a1a, #e8e8e8);
+    margin: 0;
+  }
+
+  /* Light yellow highlight for search matches on paper background */
+  .source-paper :global(.search-highlight),
+  .source-paper :global(em) {
+    font-style: normal;
+    font-weight: 600;
+    background-color: light-dark(#fef9c3, rgba(254, 249, 195, 0.3));
+    padding: 0.1em 0.25em;
+    border-radius: 0.2em;
+    color: light-dark(#1a1a1a, #fef9c3);
+  }
+
+  /* Citation bar at bottom of card */
+  .citation-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.625rem 1rem;
+    background-color: var(--surface-2);
+    font-size: 0.8125rem;
+  }
+
+  .citation-path {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    color: var(--text-muted);
+    min-width: 0;
+  }
+
+  .citation-segment {
+    white-space: nowrap;
+  }
+
+  .citation-sep {
+    color: var(--text-muted);
+    opacity: 0.5;
+    margin: 0 0.125rem;
+  }
+
+  .citation-title {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .read-more-btn {
+    flex-shrink: 0;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--accent-primary);
+    color: var(--accent-primary-text);
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.15s;
+  }
+  .read-more-btn:hover {
+    background-color: var(--accent-primary-hover);
+    transform: scale(1.02);
+  }
+
   /* Results */
   .results-container {
     width: 100%;
@@ -1532,34 +1632,37 @@
     transform: rotate(180deg);
   }
 
-  /* Search highlight - very subtle emphasis, just slightly bolder */
+  /* Search highlight - visible yellow/accent background for matched terms */
   :global(.search-highlight) {
-    font-weight: 500;
-    color: inherit;
-    background: none !important;
-    background-color: transparent !important;
+    font-weight: 600;
     font-style: normal;
+    background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
   }
 
   /* Override browser default <em> styling in results (Meilisearch uses <em> tags) */
   .result-text-area :global(em),
   .result-text-preview :global(em),
   .result-text-full :global(em),
-  .result-card :global(em) {
+  .result-card :global(em),
+  .source-text-excerpt :global(em),
+  .source-text-full :global(em),
+  .result-excerpt :global(em) {
     font-style: normal;
-    font-weight: 500;
-    color: inherit;
-    background: none !important;
-    background-color: transparent !important;
+    font-weight: 600;
+    background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
   }
 
   /* Also override any mark tags that might be used */
   .result-text-area :global(mark),
   .result-card :global(mark) {
-    font-weight: 500;
-    color: inherit;
-    background: none !important;
-    background-color: transparent !important;
+    font-weight: 600;
+    background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
   }
 
   /* Typing indicator */
@@ -1619,6 +1722,24 @@
   }
   .search-input:disabled {
     opacity: 0.5;
+  }
+
+  .clear-btn {
+    padding: 0.5rem;
+    background-color: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .clear-btn:hover {
+    background-color: var(--surface-3);
+    color: var(--text-primary);
   }
 
   .submit-btn {

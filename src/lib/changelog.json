@@ -1,6 +1,27 @@
 {
-  "generated": "2025-12-11T16:55:46.683Z",
+  "generated": "2025-12-11T17:24:08.274Z",
   "entries": [
+    {
+      "hash": "b1f1bf2",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add linting and build checks to pre-commit hook",
+      "scope": null
+    },
+    {
+      "hash": "4c0a9b0",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add git hooks for automated version bump and deployment",
+      "scope": null
+    },
+    {
+      "hash": "49e8732",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add version automation and What's New section",
+      "scope": null
+    },
     {
       "hash": "6704d34",
       "date": "2025-12-11",
@@ -49,31 +70,31 @@
       "type": "New",
       "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
       "scope": null
-    },
-    {
-      "hash": "8ae5d02",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Start with vortex already formed (v0.0.21)",
-      "scope": null
-    },
-    {
-      "hash": "e3a8bb5",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Remove thinking animation, pure swirling clouds (v0.0.20)",
-      "scope": null
-    },
-    {
-      "hash": "a2d5fa9",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Increase cloud swirl around center (v0.0.19)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "b1f1bf2",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add linting and build checks to pre-commit hook",
+        "scope": null
+      },
+      {
+        "hash": "4c0a9b0",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add git hooks for automated version bump and deployment",
+        "scope": null
+      },
+      {
+        "hash": "49e8732",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add version automation and What's New section",
+        "scope": null
+      },
       {
         "hash": "6704d34",
         "date": "2025-12-11",
@@ -123,27 +144,6 @@
         "date": "2025-12-10",
         "type": "New",
         "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
-        "scope": null
-      },
-      {
-        "hash": "8ae5d02",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Start with vortex already formed (v0.0.21)",
-        "scope": null
-      },
-      {
-        "hash": "e3a8bb5",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Remove thinking animation, pure swirling clouds (v0.0.20)",
-        "scope": null
-      },
-      {
-        "hash": "a2d5fa9",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Increase cloud swirl around center (v0.0.19)",
         "scope": null
       }
     ]
