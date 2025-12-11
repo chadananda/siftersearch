@@ -101,12 +101,72 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
             </div>
           </section>
 
+          <!-- Agent System -->
+          <section class="card">
+            <h2 class="card-title">Agentic Architecture</h2>
+            <p class="card-text">
+              SifterSearch uses a multi-agent AI architecture where specialized agents collaborate
+              to understand, research, analyze, and present search results.
+            </p>
+            <div class="agents-grid">
+              <div class="agent">
+                <div class="agent-icon sifter">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Sifter</h3>
+                <p class="agent-role">Orchestrator</p>
+                <p class="agent-desc">Routes queries to the right agents and synthesizes final responses.</p>
+              </div>
+              <div class="agent">
+                <div class="agent-icon researcher">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Researcher</h3>
+                <p class="agent-role">Search Strategy</p>
+                <p class="agent-desc">Plans search strategies from simple lookups to multi-query investigations.</p>
+              </div>
+              <div class="agent">
+                <div class="agent-icon analyzer">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Analyzer</h3>
+                <p class="agent-role">Re-ranking & Summarization</p>
+                <p class="agent-desc">Filters results by relevance, highlights key passages, creates summaries.</p>
+              </div>
+              <div class="agent">
+                <div class="agent-icon translator">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Translator</h3>
+                <p class="agent-role">Shoghi Effendi Style</p>
+                <p class="agent-desc">Renders text in the dignified English prose style of Shoghi Effendi.</p>
+              </div>
+              <div class="agent">
+                <div class="agent-icon narrator">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Narrator</h3>
+                <p class="agent-role">Audio Narration</p>
+                <p class="agent-desc">Generates spoken audio with correct pronunciation of sacred terms.</p>
+              </div>
+            </div>
+          </section>
+
           <!-- Technology -->
           <section class="card">
             <h2 class="card-title">Technology</h2>
             <p class="card-text">
-              SifterSearch uses AI technology to understand the meaning behind queries,
-              not just keywords. The hybrid search engine combines:
+              The hybrid search engine combines multiple AI technologies:
             </p>
             <ul class="tech-list">
               <li class="tech-item">
@@ -120,6 +180,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
               <li class="tech-item">
                 <span class="bullet">&#8226;</span>
                 <span><strong>AI re-ranking</strong> to surface the most relevant results</span>
+              </li>
+              <li class="tech-item">
+                <span class="bullet">&#8226;</span>
+                <span><strong>ElevenLabs TTS</strong> for high-quality audio narration</span>
               </li>
             </ul>
           </section>
@@ -330,6 +394,91 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
     font-size: 0.875rem;
     color: var(--text-secondary);
     line-height: 1.5;
+  }
+
+  /* Agents Grid */
+  .agents-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .agents-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .agents-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .agent {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background: var(--surface-0-alpha);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-default);
+  }
+
+  .agent-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .agent-icon.sifter {
+    background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+    color: var(--accent-primary);
+  }
+
+  .agent-icon.researcher {
+    background-color: color-mix(in srgb, var(--accent-secondary) 20%, transparent);
+    color: var(--accent-secondary);
+  }
+
+  .agent-icon.analyzer {
+    background-color: color-mix(in srgb, var(--accent-tertiary) 20%, transparent);
+    color: var(--accent-tertiary);
+  }
+
+  .agent-icon.translator {
+    background-color: color-mix(in srgb, var(--warning) 20%, transparent);
+    color: var(--warning);
+  }
+
+  .agent-icon.narrator {
+    background-color: color-mix(in srgb, var(--success) 20%, transparent);
+    color: var(--success);
+  }
+
+  .agent-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .agent-role {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .agent-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
   }
 
   /* Technology */

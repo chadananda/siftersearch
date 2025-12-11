@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T17:24:08.274Z",
+  "generated": "2025-12-11T21:32:14.748Z",
   "entries": [
+    {
+      "hash": "e88d9aa",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
+      "scope": null
+    },
     {
       "hash": "b1f1bf2",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use simple rotation to prevent cloud smearing v0.0.23",
       "scope": null
-    },
-    {
-      "hash": "d09c1d4",
-      "date": "2025-12-10",
-      "type": "New",
-      "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "e88d9aa",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
+        "scope": null
+      },
       {
         "hash": "b1f1bf2",
         "date": "2025-12-11",
@@ -137,13 +144,6 @@
         "date": "2025-12-10",
         "type": "Fixed",
         "description": "Use simple rotation to prevent cloud smearing v0.0.23",
-        "scope": null
-      },
-      {
-        "hash": "d09c1d4",
-        "date": "2025-12-10",
-        "type": "New",
-        "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
         "scope": null
       }
     ]

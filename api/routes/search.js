@@ -266,57 +266,6 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         }) + '\n\n');
     }
 
-    // Prepare sources to send first
-    const sources = searchResults.hits.map(hit => ({
-      id: hit.id,
-      text: hit._formatted?.text || hit.text,
-      title: hit.title,
-      author: hit.author,
-      collection: hit.collection || hit.religion
-    }));
-
-    // Build context from search results
-    const contextTexts = searchResults.hits.map((hit, i) => {
-      const text = hit.text || hit._formatted?.text || '';
-      const title = hit.title || 'Untitled';
-      const author = hit.author || 'Unknown';
-      return `[${i + 1}] "${title}" by ${author}:\n${text}`;
-    }).join('\n\n---\n\n');
-
-    // Create analysis prompt
-    const systemPrompt = `You are Jafar, a scholarly assistant for SifterSearch, an interfaith library.
-Your role is to help users FIND passages - not to summarize or analyze them unless explicitly asked.
-
-CRITICAL: Keep responses BRIEF. Your job is to introduce and point to sources, not to explain them.
-
-IMPORTANT: The passages are ALREADY SORTED BY RELEVANCE. [1] is the most relevant, [2] is second most relevant, etc.
-Do NOT say things like "most relevant are [3] and [6]" - the order already reflects relevance.
-
-Response guidelines:
-- Give a 1-2 sentence introduction that orients the user to what was found
-- Reference passages by citation numbers [1], [2], etc.
-- Let the passages speak for themselves - don't paraphrase or summarize their content
-- Since [1] is already most relevant, just say "I found X passages about [topic]" without picking favorites
-
-For most queries:
-- "I found X passages about [topic] from various traditions."
-- Keep it short - users can read the passages themselves
-- You can mention which traditions/collections are represented
-
-Only provide longer analysis when the user specifically requests:
-- "Summarize these passages"
-- "Explain what these mean"
-- "Compare these teachings"
-
-Never make up quotes - only reference what's in the provided passages.`;
-
-    const userPrompt = `User query: "${query}"
-
-PASSAGES FROM SEARCH (ALREADY SORTED BY RELEVANCE - [1] is most relevant):
-${contextTexts}
-
-Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sorted by relevance, so [1] is most relevant.`;
-
     // Set up SSE response
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -325,47 +274,144 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       'Access-Control-Allow-Origin': '*'
     });
 
-    // Send sources first
-    reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources }) + '\n\n');
+    // Build context for analyzer
+    const passagesForAnalysis = searchResults.hits.map((hit, i) => ({
+      index: i,
+      text: hit.text || hit._formatted?.text || '',
+      title: hit.title || 'Untitled',
+      author: hit.author || 'Unknown',
+      religion: hit.religion || '',
+      collection: hit.collection || ''
+    }));
+
+    // STEP 1: Ask AI to analyze, re-rank, filter, and annotate results
+    const analyzerPrompt = `Analyze search results for: "${query}"
+
+TASKS:
+1. Re-rank by relevance (most relevant first)
+2. Remove irrelevant passages
+3. Find the MOST relevant sentence in each passage
+4. Identify 1-3 key words/phrases in that sentence
+5. Write a DIRECT answer summary (5-10 words max)
+
+CRITICAL SUMMARY RULES:
+- Answer the query directly from the quote's content
+- NO meta-language: Never say "this passage states", "asserts", "discusses", "addresses"
+- Format: Just the answer. Example: "Unity through diversity of traditions" NOT "This passage asserts that unity comes through diversity"
+- If query is "What is X?" → summary is "X is [answer]"
+- If query is "How to Y?" → summary is "[method/answer]"
+- Maximum 10 words
+
+Return ONLY valid JSON:
+{
+  "results": [
+    {
+      "originalIndex": 0,
+      "relevantSentence": "Exact quote from passage",
+      "keyWords": ["word1", "phrase"],
+      "summary": "Direct 5-10 word answer"
+    }
+  ],
+  "introduction": "Brief 1 sentence intro"
+}
+
+PASSAGES:
+${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text}`).join('\n\n---\n\n')}
+
+Rules:
+- Only include relevant passages
+- relevantSentence must be EXACT quote
+- keyWords from relevantSentence only
+- Summaries: direct answers, no filler words`;
 
     try {
-      // Use AI to analyze the results with streaming
-      const stream = await ai.chat([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+      // Get structured analysis from AI
+      const analysisResponse = await ai.chat([
+        { role: 'system', content: 'You are an expert search result analyzer. Return only valid JSON, no markdown.' },
+        { role: 'user', content: analyzerPrompt }
       ], {
-        temperature: 0.7,
-        maxTokens: 1500,
-        stream: true
+        temperature: 0.3,
+        maxTokens: 3000
       });
 
-      // Handle different stream formats based on provider
-      for await (const chunk of stream) {
-        let text = '';
-
-        // OpenAI format
-        if (chunk.choices?.[0]?.delta?.content) {
-          text = chunk.choices[0].delta.content;
+      // Parse the AI response
+      let analysis;
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = analysisResponse.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
         }
-        // Anthropic format
-        else if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
-          text = chunk.delta.text;
-        }
-        // Ollama format
-        else if (chunk.message?.content) {
-          text = chunk.message.content;
-        }
-
-        if (text) {
-          reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text }) + '\n\n');
-        }
+      } catch (parseErr) {
+        logger.error({ parseErr, content: analysisResponse.content }, 'Failed to parse analyzer response');
+        // Fallback: send original results without analysis
+        const fallbackSources = searchResults.hits.map(hit => ({
+          id: hit.id,
+          text: hit._formatted?.text || hit.text,
+          title: hit.title,
+          author: hit.author,
+          religion: hit.religion,
+          collection: hit.collection || hit.religion,
+          summary: '',
+          relevantSentence: '',
+          highlightedText: hit._formatted?.text || hit.text
+        }));
+        reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: fallbackSources }) + '\n\n');
+        reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: `I found ${fallbackSources.length} passages related to your query.` }) + '\n\n');
+        reply.raw.write('data: ' + JSON.stringify({ type: 'complete' }) + '\n\n');
+        reply.raw.end();
+        return;
       }
+
+      // STEP 2: Build enhanced sources with analysis data
+      const enhancedSources = analysis.results.map(result => {
+        const originalHit = searchResults.hits[result.originalIndex];
+        if (!originalHit) return null;
+
+        // Create highlighted text by bolding key words in the relevant sentence
+        let highlightedText = originalHit._formatted?.text || originalHit.text || '';
+
+        // Replace the relevant sentence with a version that has bolded key words
+        if (result.relevantSentence && result.keyWords?.length > 0) {
+          let highlightedSentence = result.relevantSentence;
+          // Sort key words by length (longest first) to avoid partial replacements
+          const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
+          for (const keyword of sortedKeyWords) {
+            // Case-insensitive replacement with bold tags
+            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            highlightedSentence = highlightedSentence.replace(regex, '<strong>$1</strong>');
+          }
+          // Replace the original sentence with highlighted version in the full text
+          highlightedText = highlightedText.replace(result.relevantSentence, `<mark>${highlightedSentence}</mark>`);
+        }
+
+        return {
+          id: originalHit.id,
+          text: originalHit._formatted?.text || originalHit.text,
+          title: originalHit.title,
+          author: originalHit.author,
+          religion: originalHit.religion,
+          collection: originalHit.collection || originalHit.religion,
+          summary: result.summary || '',
+          relevantSentence: result.relevantSentence || '',
+          highlightedText
+        };
+      }).filter(Boolean);
+
+      // Send enhanced sources
+      reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: enhancedSources }) + '\n\n');
+
+      // STEP 3: Stream the introduction
+      const intro = analysis.introduction || `I found ${enhancedSources.length} relevant passages for your query.`;
+      reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: intro }) + '\n\n');
 
       // Send completion
       reply.raw.write('data: ' + JSON.stringify({ type: 'complete' }) + '\n\n');
       reply.raw.end();
 
-      logger.info({ query, hitsAnalyzed: searchResults.hits.length }, 'Streaming analysis completed');
+      logger.info({ query, hitsAnalyzed: searchResults.hits.length, resultsReturned: enhancedSources.length }, 'Analysis completed');
 
     } catch (err) {
       logger.error({ err, query }, 'Streaming analysis failed');

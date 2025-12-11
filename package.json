@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.0.44",
+  "version": "0.0.51",
   "description": "AI-powered interfaith library search system",
   "type": "module",
   "engines": {

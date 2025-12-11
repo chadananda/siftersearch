@@ -19,17 +19,99 @@
   let loading = $state(false);
   let showAuthModal = $state(false);
   let showAbout = $state(false);
+  let showMobileMenu = $state(false);
   let libraryStats = $state(null);
   let statsLoading = $state(true);
   let expandedResults = $state({}); // Track which results are expanded
   let inputEl;
   let messagesAreaEl;
 
+  // Fullscreen reader state
+  let readerOpen = $state(false);
+  let readerDocument = $state(null);
+  let readerParagraphs = $state([]);
+  let readerLoading = $state(false);
+  let readerCurrentIndex = $state(0);
+  let readerContainerEl;
+
+  // Typewriter loading messages
+  const LOADING_MESSAGES = [
+    'Searching...',
+    'Thinking...',
+    'Researching...',
+    'Cogitating...',
+    'Considering...',
+    'Pondering...',
+    'Reflecting...',
+    'Exploring...',
+    'Sifting...',
+    'Analyzing...',
+    'Consulting...',
+    'Examining...',
+    'Investigating...',
+    'Inquiring...',
+    'Perusing...',
+    'Studying...',
+    'Delving...',
+    'Contemplating...',
+    'Gathering...',
+    'Processing...'
+  ];
+  let typewriterText = $state('');
+  let typewriterInterval = $state(null);
+  let typewriterPhase = $state('typing'); // 'typing', 'waiting', 'untyping'
+
+  function startTypewriter() {
+    if (typewriterInterval) return;
+
+    let currentMessage = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+    let charIndex = 0;
+    typewriterPhase = 'typing';
+    typewriterText = '';
+
+    typewriterInterval = setInterval(() => {
+      if (typewriterPhase === 'typing') {
+        if (charIndex < currentMessage.length) {
+          typewriterText = currentMessage.substring(0, charIndex + 1);
+          charIndex++;
+        } else {
+          typewriterPhase = 'waiting';
+          setTimeout(() => {
+            typewriterPhase = 'untyping';
+          }, 800); // Wait 800ms before untyping
+        }
+      } else if (typewriterPhase === 'untyping') {
+        if (charIndex > 0) {
+          charIndex--;
+          typewriterText = currentMessage.substring(0, charIndex);
+        } else {
+          // Pick new random message
+          currentMessage = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+          typewriterPhase = 'typing';
+        }
+      }
+    }, 50); // 50ms per character
+  }
+
+  function stopTypewriter() {
+    if (typewriterInterval) {
+      clearInterval(typewriterInterval);
+      typewriterInterval = null;
+    }
+    typewriterText = '';
+    typewriterPhase = 'typing';
+  }
+
   // Clear search and return to library summary
   function clearSearch() {
     input = '';
     messages = [];
     inputEl?.focus();
+  }
+
+  // Close mobile menu
+  function closeMobileMenu() {
+    showMobileMenu = false;
   }
 
   const auth = getAuthState();
@@ -131,6 +213,7 @@
     messages = [...messages, { id: `user-${messageId}`, role: 'user', content: userMessage }];
     loading = true;
     setThinking(true); // Trigger neural activity animation
+    startTypewriter(); // Start typewriter loading animation
 
     // Scroll to user message
     scrollToLatestUserMessage();
@@ -154,6 +237,7 @@
       for await (const event of search.analyzeStream(userMessage)) {
         if (event.type === 'sources') {
           sources = event.sources || [];
+          stopTypewriter(); // Stop typewriter when sources arrive
           // Update message with sources
           messages = messages.map((m, i) =>
             i === assistantMsgIndex
@@ -161,6 +245,7 @@
               : m
           );
         } else if (event.type === 'chunk') {
+          stopTypewriter(); // Stop typewriter when streaming starts
           streamedContent += event.text;
           // Update message content progressively
           messages = messages.map((m, i) =>
@@ -212,6 +297,7 @@
     } finally {
       loading = false;
       setThinking(false); // Stop neural activity animation
+      stopTypewriter(); // Ensure typewriter is stopped
     }
   }
 
@@ -231,14 +317,29 @@
   function toggleResult(messageId, resultIndex) {
     const key = `${messageId}-${resultIndex}`;
     const currentState = isExpanded(messageId, resultIndex);
-    expandedResults = { ...expandedResults, [key]: !currentState };
+
+    // Accordion behavior: close all others, toggle this one
+    const newState = {};
+    // Close all results in this message
+    Object.keys(expandedResults).forEach(k => {
+      if (k.startsWith(`${messageId}-`)) {
+        newState[k] = false;
+      } else {
+        newState[k] = expandedResults[k];
+      }
+    });
+    // Toggle the clicked one (if closing, just close; if opening, set to true)
+    newState[key] = !currentState;
+    expandedResults = newState;
   }
 
   function isExpanded(messageId, resultIndex) {
     const key = `${messageId}-${resultIndex}`;
-    // Only first result expanded by default, unless user explicitly changed it
+    // First result expanded by default only if no explicit state set for this message
     if (expandedResults[key] === undefined) {
-      return resultIndex === 0;
+      // Check if any result in this message has been explicitly toggled
+      const hasExplicitState = Object.keys(expandedResults).some(k => k.startsWith(`${messageId}-`));
+      return !hasExplicitState && resultIndex === 0;
     }
     return expandedResults[key];
   }
@@ -247,11 +348,13 @@
   function formatText(text) {
     if (!text) return '';
     // Convert **bold** and _italic_ and highlight <em> tags from Meilisearch
+    // Also preserve <mark> and <strong> tags from analyzer for relevant sentence highlighting
     return text
       .replace(/<em>/g, '<span class="search-highlight">')
       .replace(/<\/em>/g, '</span>')
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
       .replace(/_(.+?)_/g, '<em class="italic">$1</em>');
+    // Note: <mark> and <strong> tags from analyzer are preserved as-is
   }
 
   async function initSession() {
@@ -292,9 +395,15 @@
   <header class="header" role="banner">
     <div class="header-left">
       <img src="/ocean.svg" alt="SifterSearch" class="logo" />
-      <span class="title" role="text">SifterSearch {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}</span>
+      <span class="title" role="text">
+        <span class="title-full">SifterSearch</span>
+        <span class="title-short">Sifter</span>
+        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}
+      </span>
     </div>
-    <nav class="header-right" aria-label="Main navigation">
+
+    <!-- Desktop navigation -->
+    <nav class="header-right desktop-nav" aria-label="Main navigation">
       <ThemeToggle />
       <button
         onclick={() => showAbout = !showAbout}
@@ -323,7 +432,44 @@
         </button>
       {/if}
     </nav>
+
+    <!-- Mobile navigation -->
+    <div class="mobile-nav">
+      {#if auth.isAuthenticated}
+        <button onclick={logout} class="btn-secondary btn-small">Sign Out</button>
+      {:else}
+        <button onclick={() => showAuthModal = true} class="btn-primary btn-small">Sign In</button>
+      {/if}
+      <button
+        class="hamburger-btn"
+        onclick={() => showMobileMenu = !showMobileMenu}
+        aria-label="Toggle menu"
+        aria-expanded={showMobileMenu}
+      >
+        <svg class="hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {#if showMobileMenu}
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          {:else}
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          {/if}
+        </svg>
+      </button>
+    </div>
   </header>
+
+  <!-- Mobile menu dropdown -->
+  {#if showMobileMenu}
+    <div class="mobile-menu" role="menu">
+      <ThemeToggle />
+      <button
+        onclick={() => { showAbout = !showAbout; closeMobileMenu(); }}
+        class="mobile-menu-item"
+        role="menuitem"
+      >
+        About
+      </button>
+    </div>
+  {/if}
 
   <!-- Collapsible About Section -->
   {#if showAbout}
@@ -365,18 +511,54 @@
           </div>
         </div>
 
-        <!-- What's New Section -->
-        {#if changelog?.entries?.length > 0}
+        <!-- How It Works Section -->
+        <div class="how-it-works">
+          <h3 class="how-it-works-title">How It Works</h3>
+          <div class="agents-grid">
+            <div class="agent-card">
+              <div class="agent-name">Hybrid Search</div>
+              <p class="agent-desc">Combines keyword matching with semantic vector search to find passages even when exact words differ.</p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-name">AI Embeddings</div>
+              <p class="agent-desc">OpenAI text-embedding-3-small converts text into vectors capturing meaning and context.</p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-name">Jafar Assistant</div>
+              <p class="agent-desc">GPT-4 scholarly assistant introduces and contextualizes search results with citations.</p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-name">Meilisearch</div>
+              <p class="agent-desc">Lightning-fast full-text search with typo tolerance, filters, and faceted navigation.</p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-name">Citation Tracking</div>
+              <p class="agent-desc">Every passage linked to source document with religion, collection, author, and title metadata.</p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-name">Multi-Language</div>
+              <p class="agent-desc">Indexes content across languages with language-aware search and filtering.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- What's New Section - Grouped by Date -->
+        {#if changelog?.grouped && Object.keys(changelog.grouped).length > 0}
           <div class="whats-new">
             <h3 class="whats-new-title">What's New</h3>
-            <ul class="changelog-list">
-              {#each changelog.entries.slice(0, 5) as entry}
-                <li class="changelog-item">
-                  <span class="changelog-type changelog-type-{entry.type.toLowerCase()}">{entry.type}</span>
-                  <span class="changelog-desc">{entry.description}</span>
-                </li>
-              {/each}
-            </ul>
+            {#each Object.entries(changelog.grouped).slice(0, 3) as [date, entries]}
+              <div class="changelog-date-group">
+                <div class="changelog-date">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                <ul class="changelog-list">
+                  {#each entries as entry}
+                    <li class="changelog-item">
+                      <span class="changelog-type changelog-type-{entry.type.toLowerCase()}">{entry.type}</span>
+                      <span class="changelog-desc">{entry.description}</span>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/each}
           </div>
         {/if}
       </div>
@@ -403,7 +585,7 @@
     {#if messages.length === 0}
       <div class="welcome-screen">
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
-        <h2 class="welcome-title">Ocean Library AI Research Engine</h2>
+        <h2 class="welcome-title">Ocean Library Agentic Research Engine</h2>
         <p class="welcome-desc">
           Use advanced AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.
         </p>
@@ -512,7 +694,12 @@
               <!-- AI Response (shown first, at top) -->
               {#if message.content || message.isStreaming}
                 <div class="analysis-content">
-                  <p class="analysis-text">{message.content}{#if message.isStreaming}<span class="streaming-cursor"></span>{/if}</p>
+                  {#if message.isStreaming && !message.content}
+                    <!-- Typewriter loading text when waiting for response -->
+                    <p class="analysis-text typewriter-loading"><span class="typewriter-text">{typewriterText}<span class="typewriter-cursor">|</span></span></p>
+                  {:else}
+                    <p class="analysis-text">{message.content}{#if message.isStreaming}<span class="streaming-cursor"></span>{/if}</p>
+                  {/if}
                 </div>
               {/if}
 
@@ -524,29 +711,55 @@
                     {@const resultKey = `${message.id || msgIndex}-${i}`}
                     {@const expanded = expandedResults[resultKey] !== undefined ? expandedResults[resultKey] : i === 0}
                     {@const text = result._formatted?.text || result.text || ''}
+                    {@const plainText = text.replace(/<[^>]*>/g, '')}
                     {@const title = result.title || 'Untitled'}
                     {@const author = result.author}
                     {@const religion = result.religion || ''}
-                    {@const collection = result.collection || ''}
+                    {@const rawCollection = result.collection || ''}
+                    {@const collection = rawCollection.includes(' > ') ? rawCollection.split(' > ')[0] : rawCollection}
 
-                    <div class="source-card" role="article">
-                      <!-- Paper-like text area with white background -->
-                      <div class="source-paper">
-                        <p class="source-text">{@html formatText(text)}</p>
-                      </div>
+                    {@const summary = result.summary || ''}
+                    {@const highlightedText = result.highlightedText || text}
 
-                      <!-- Citation bar: [religion] > [collection] > [author] > [title] -->
-                      <div class="citation-bar">
-                        <div class="citation-path">
-                          {#if religion}<span class="citation-segment">{religion}</span>{/if}
-                          {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
-                          {#if author}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
-                          <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
-                        </div>
-                        <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); alert('Full reader coming soon'); }}>
-                          Read More
+                    <div class="source-card {expanded ? 'expanded' : 'collapsed'}" role="article">
+                      <!-- Collapsed: single line with number, AI summary (or fallback), title, expand arrow -->
+                      {#if !expanded}
+                        <button class="source-summary-header" onclick={() => toggleResult(message.id || msgIndex, i)}>
+                          <span class="source-num">{i + 1}</span>
+                          <span class="source-summary-text">{summary || (plainText.substring(0, 60) + (plainText.length > 60 ? '...' : ''))}</span>
+                          <span class="source-summary-title">{title.length > 30 ? title.substring(0, 30) + '...' : title}</span>
+                          <svg class="source-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                          </svg>
                         </button>
-                      </div>
+                      {:else}
+                        <!-- Expanded: full paper card view -->
+                        <button class="source-collapse-btn" onclick={() => toggleResult(message.id || msgIndex, i)}>
+                          <span class="source-num">{i + 1}</span>
+                          <span class="collapse-text">Collapse</span>
+                          <svg class="source-expand-icon open" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+
+                        <!-- Paper-like text area with off-white background -->
+                        <div class="source-paper">
+                          <p class="source-text">{@html formatText(highlightedText)}</p>
+                        </div>
+
+                        <!-- Citation bar: [religion] > [collection] > [author] > [title] -->
+                        <div class="citation-bar">
+                          <div class="citation-path">
+                            {#if religion}<span class="citation-segment">{religion}</span>{/if}
+                            {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
+                            {#if author && !rawCollection.includes(author)}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
+                            <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
+                          </div>
+                          <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); alert('Full reader coming soon'); }}>
+                            Read More
+                          </button>
+                        </div>
+                      {/if}
                     </div>
                   {/each}
                 </div>
@@ -607,17 +820,6 @@
           {/if}
         </div>
       {/each}
-      {#if loading}
-        <div class="message-row assistant">
-          <div class="bubble bubble-assistant">
-            <div class="typing-indicator">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-            </div>
-          </div>
-        </div>
-      {/if}
     {/if}
   </main>
 
@@ -713,6 +915,23 @@
     color: var(--text-primary);
   }
 
+  .title-full {
+    display: inline;
+  }
+
+  .title-short {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .title-full {
+      display: none;
+    }
+    .title-short {
+      display: inline;
+    }
+  }
+
   .title .version {
     font-size: 0.7rem;
     font-weight: 400;
@@ -748,6 +967,92 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+
+  /* Desktop nav visible on larger screens */
+  .desktop-nav {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .desktop-nav {
+      display: flex;
+    }
+  }
+
+  /* Mobile nav visible on smaller screens */
+  .mobile-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-nav {
+      display: none;
+    }
+  }
+
+  .hamburger-btn {
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .hamburger-btn:hover {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
+  }
+
+  .hamburger-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .btn-small {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Mobile menu dropdown */
+  .mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface-1);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  @media (min-width: 640px) {
+    .mobile-menu {
+      display: none;
+    }
+  }
+
+  .mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+    text-align: left;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .mobile-menu-item:hover {
+    background-color: var(--surface-2);
+    color: var(--text-primary);
   }
 
   .nav-link {
@@ -877,6 +1182,59 @@
     color: var(--text-secondary);
   }
 
+  /* How It Works / Agents Section */
+  .how-it-works {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .how-it-works-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 768px) {
+    .agents-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .agents-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .agent-card {
+    background-color: var(--surface-2);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .agent-name {
+    font-weight: 600;
+    color: var(--accent-primary);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .agent-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+  }
+
   /* What's New Section */
   .whats-new {
     margin-top: 1.5rem;
@@ -889,6 +1247,19 @@
     color: var(--text-primary);
     margin-bottom: 0.75rem;
     font-size: 0.95rem;
+  }
+
+  .changelog-date-group {
+    margin-bottom: 1rem;
+  }
+
+  .changelog-date {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .changelog-list {
@@ -1425,14 +1796,112 @@
     overflow: hidden;
     transition: box-shadow 0.15s, border-color 0.15s;
   }
-  .source-card:hover {
+  .source-card.expanded {
     border-color: var(--border-strong, var(--border-default));
     box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
   }
+  .source-card.collapsed {
+    background-color: var(--surface-1-alpha);
+    opacity: 0.85;
+  }
+  .source-card.collapsed:hover {
+    opacity: 1;
+    border-color: var(--border-strong, var(--border-default));
+  }
 
-  /* Paper-like text area with white/light background */
+  /* Collapsed summary header */
+  .source-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s;
+  }
+  .source-summary-header:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  .source-num {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--accent-primary);
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .source-summary-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .source-summary-title {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--border-subtle);
+    white-space: nowrap;
+  }
+
+  .source-expand-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .source-expand-icon.open {
+    transform: rotate(180deg);
+  }
+
+  /* Collapse button for expanded cards */
+  .source-collapse-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: var(--surface-2);
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    transition: background-color 0.15s;
+  }
+  .source-collapse-btn:hover {
+    background-color: var(--surface-3);
+  }
+  .source-collapse-btn .source-num {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+  }
+  .collapse-text {
+    flex: 1;
+  }
+
+  /* Paper-like text area with off-white/cream background */
   .source-paper {
-    background-color: light-dark(#ffffff, #1a1a1a);
+    background-color: light-dark(#faf8f3, #3d3a35);
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-subtle);
   }
@@ -1455,6 +1924,25 @@
     color: light-dark(#1a1a1a, #fef9c3);
   }
 
+  /* Analyzer highlight for the most relevant sentence */
+  .source-paper :global(mark) {
+    background-color: light-dark(#ecfccb, rgba(236, 252, 203, 0.25));
+    padding: 0.2em 0.1em;
+    border-radius: 0.2em;
+    border-left: 3px solid light-dark(#84cc16, #a3e635);
+    margin-left: -0.3em;
+    padding-left: 0.4em;
+  }
+
+  /* Bold key words within the relevant sentence */
+  .source-paper :global(mark strong) {
+    font-weight: 700;
+    color: light-dark(#166534, #86efac);
+    background-color: light-dark(rgba(22, 101, 52, 0.1), rgba(134, 239, 172, 0.15));
+    padding: 0.05em 0.2em;
+    border-radius: 0.15em;
+  }
+
   /* Citation bar at bottom of card */
   .citation-bar {
     display: flex;
@@ -1471,7 +1959,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 0.25rem;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     min-width: 0;
   }
 
@@ -1480,14 +1968,15 @@
   }
 
   .citation-sep {
-    color: var(--text-muted);
-    opacity: 0.5;
+    color: var(--text-primary);
+    opacity: 0.6;
     margin: 0 0.125rem;
+    font-weight: 500;
   }
 
   .citation-title {
-    color: var(--text-secondary);
-    font-weight: 500;
+    color: var(--text-primary);
+    font-weight: 600;
   }
 
   .read-more-btn {
@@ -1665,7 +2154,31 @@
     border-radius: 0.2em;
   }
 
-  /* Typing indicator */
+  /* Typewriter loading animation in analysis content */
+  .typewriter-loading {
+    min-height: 1.5rem;
+  }
+
+  .typewriter-text {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .typewriter-cursor {
+    display: inline-block;
+    color: var(--accent-primary);
+    font-weight: 300;
+    animation: cursor-blink 0.6s ease-in-out infinite;
+    margin-left: 1px;
+  }
+
+  @keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Legacy typing indicator (kept for reference) */
   .typing-indicator {
     display: flex;
     gap: 0.25rem;
@@ -1700,6 +2213,14 @@
     gap: 0.75rem;
     max-width: 64rem;
     margin: 0 auto;
+    width: 100%;
+  }
+
+  /* On desktop, center the input with some breathing room */
+  @media (min-width: 640px) {
+    .input-form {
+      max-width: 48rem;
+    }
   }
 
   .search-input {

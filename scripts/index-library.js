@@ -93,14 +93,15 @@ function extractMetadataFromPath(filePath, basePath) {
   const looksLikeFilename = firstPart.endsWith('.md') || /^\d{4}/.test(firstPart) || firstPart.includes(',');
   const religion = (looksLikeFilename && inferredReligion) ? inferredReligion : (parts[0] || inferredReligion || 'General');
 
-  // Collection: if we inferred religion from base path, use base path's last folder as collection
+  // Collection: only the FIRST folder after religion (not subfolders)
+  // Structure: Religion/Collection/[SubFolder]/[SubFolder]/filename.md
   let collection;
   if (looksLikeFilename && inferredReligion) {
     // Get collection from base path (e.g., "Pilgrim Notes" from the path)
     const baseFolder = basePathParts[basePathParts.length - 1];
-    collection = parts.length > 1 ? parts.slice(0, -1).join(' > ') : baseFolder;
+    collection = parts[0] || baseFolder;  // First part after inferred religion
   } else {
-    collection = parts.length > 2 ? parts.slice(1, -1).join(' > ') : parts[1] || 'General';
+    collection = parts[1] || 'General';  // First folder after religion (parts[0])
   }
   const filename = parts[parts.length - 1].replace('.md', '');
 
