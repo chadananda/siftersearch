@@ -1,4 +1,4 @@
-// Shared reactive state for Jafar's thinking status
+// Shared reactive state for Sifter's thinking status
 // Used to trigger neural activity animation in background
 
 let thinkingState = $state({ isThinking: false });

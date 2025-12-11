@@ -260,7 +260,7 @@ Respond with JSON only:
    * Get Sifter's default welcome message (no API call)
    */
   getDefaultWelcome() {
-    return "Welcome to SifterSearch! I'm Jafar, your guide to exploring thousands of sacred texts across world traditions. Ask me anything - whether you're searching for specific teachings, comparing perspectives, or just curious about what's in the library.";
+    return "Welcome to SifterSearch! I'm Sifter, your guide to exploring thousands of sacred texts across world traditions. Ask me anything - whether you're searching for specific teachings, comparing perspectives, or just curious about what's in the library.";
   }
 }
 

@@ -156,7 +156,7 @@ export default async function searchRoutes(fastify) {
     }).join('\n\n---\n\n');
 
     // Create analysis prompt - AI decides how to respond based on query type
-    const systemPrompt = `You are Jafar, a scholarly assistant for SifterSearch, an interfaith library.
+    const systemPrompt = `You are Sifter, a scholarly assistant for SifterSearch, an interfaith library.
 Your role is to help users FIND passages - not to summarize or analyze them unless explicitly asked.
 
 CRITICAL: Keep responses BRIEF. Your job is to introduce and point to sources, not to explain them.

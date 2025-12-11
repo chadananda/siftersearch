@@ -106,10 +106,11 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
             <h2 class="card-title">Agentic Architecture</h2>
             <p class="card-text">
               SifterSearch uses a multi-agent AI architecture where specialized agents collaborate
-              to understand, research, analyze, and present search results.
+              to understand, research, analyze, and present search results. Each agent has a distinct
+              personality and expertise, working together under Sifter's orchestration.
             </p>
             <div class="agents-grid">
-              <div class="agent">
+              <div class="agent agent-featured">
                 <div class="agent-icon sifter">
                   <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
@@ -117,7 +118,11 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 </div>
                 <h3 class="agent-title">Sifter</h3>
                 <p class="agent-role">Orchestrator</p>
-                <p class="agent-desc">Routes queries to the right agents and synthesizes final responses.</p>
+                <p class="agent-desc">
+                  The friendly face of SifterSearch. Sifter receives your questions, determines the best
+                  approach, coordinates the other agents, and presents results in a warm, scholarly manner.
+                  Think of Sifter as your personal research librarian.
+                </p>
               </div>
               <div class="agent">
                 <div class="agent-icon researcher">
@@ -127,7 +132,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 </div>
                 <h3 class="agent-title">Researcher</h3>
                 <p class="agent-role">Search Strategy</p>
-                <p class="agent-desc">Plans search strategies from simple lookups to multi-query investigations.</p>
+                <p class="agent-desc">
+                  Plans optimal search strategies based on query complexity. Simple questions get fast lookups;
+                  complex comparisons trigger multi-query investigations across traditions.
+                </p>
               </div>
               <div class="agent">
                 <div class="agent-icon analyzer">
@@ -137,7 +145,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 </div>
                 <h3 class="agent-title">Analyzer</h3>
                 <p class="agent-role">Re-ranking & Summarization</p>
-                <p class="agent-desc">Filters results by relevance, highlights key passages, creates summaries.</p>
+                <p class="agent-desc">
+                  Re-ranks results by true relevance, identifies the most important sentences,
+                  highlights key phrases, and generates direct, concise summaries.
+                </p>
               </div>
               <div class="agent">
                 <div class="agent-icon translator">
@@ -147,7 +158,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 </div>
                 <h3 class="agent-title">Translator</h3>
                 <p class="agent-role">Shoghi Effendi Style</p>
-                <p class="agent-desc">Renders text in the dignified English prose style of Shoghi Effendi.</p>
+                <p class="agent-desc">
+                  Renders text in the elevated, dignified English prose style of Shoghi Effendi,
+                  using Victorian vocabulary, poetic rhythm, and rich spiritual imagery.
+                </p>
               </div>
               <div class="agent">
                 <div class="agent-icon narrator">
@@ -157,7 +171,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 </div>
                 <h3 class="agent-title">Narrator</h3>
                 <p class="agent-role">Audio Narration</p>
-                <p class="agent-desc">Generates spoken audio with correct pronunciation of sacred terms.</p>
+                <p class="agent-desc">
+                  Generates high-quality audio narration via ElevenLabs, with a pronunciation dictionary
+                  covering 80+ sacred terms from Baha'i, Islamic, Jewish, Hindu, Buddhist, and Christian traditions.
+                </p>
               </div>
             </div>
           </section>
@@ -422,6 +439,40 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
     background: var(--surface-0-alpha);
     border-radius: 0.75rem;
     border: 1px solid var(--border-default);
+  }
+
+  .agent-featured {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, var(--surface-1-alpha), var(--surface-0-alpha));
+    border: 1px solid var(--accent-primary);
+  }
+
+  @media (min-width: 640px) {
+    .agent-featured {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 0 1rem;
+    }
+
+    .agent-featured .agent-icon {
+      grid-row: 1 / 4;
+      align-self: start;
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .agent-featured .agent-title {
+      grid-column: 2;
+    }
+
+    .agent-featured .agent-role {
+      grid-column: 2;
+    }
+
+    .agent-featured .agent-desc {
+      grid-column: 2;
+    }
   }
 
   .agent-icon {

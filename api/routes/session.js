@@ -6,8 +6,8 @@
 import { ai } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
-// Jafar's personality for generating introductions
-const JAFAR_SYSTEM_PROMPT = `You are Jafar, a friendly and knowledgeable research assistant for SifterSearch, an interfaith library search system.
+// Sifter's personality for generating introductions
+const SIFTER_SYSTEM_PROMPT = `You are Sifter, a friendly and knowledgeable research assistant for SifterSearch, an interfaith library search system.
 
 Your personality:
 - Warm, welcoming, and genuinely eager to help
@@ -40,12 +40,12 @@ export default async function sessionRoutes(fastify) {
 
     logger.info({ sessionId, isNew }, 'Session init');
 
-    // For new sessions, generate a personalized intro from Jafar
+    // For new sessions, generate a personalized intro from Sifter
     if (isNew) {
       try {
         const introResponse = await ai.chat([
-          { role: 'system', content: JAFAR_SYSTEM_PROMPT },
-          { role: 'user', content: 'A new user just opened SifterSearch for the first time. Give them a warm, brief welcome introducing yourself as Jafar and what you can help them do. Be friendly and inviting. Keep it to 2-3 sentences.' }
+          { role: 'system', content: SIFTER_SYSTEM_PROMPT },
+          { role: 'user', content: 'A new user just opened SifterSearch for the first time. Give them a warm, brief welcome introducing yourself as Sifter and what you can help them do. Be friendly and inviting. Keep it to 2-3 sentences.' }
         ], {
           temperature: 0.9,
           maxTokens: 200
@@ -68,7 +68,7 @@ export default async function sessionRoutes(fastify) {
           isNew: true,
           intro: {
             role: 'assistant',
-            content: "Hello! I'm Jafar, your research assistant for exploring the interfaith library. I can help you search sacred texts, compare teachings across traditions, and discover insights from thousands of religious and philosophical works. What would you like to explore?",
+            content: "Hello! I'm Sifter, your research assistant for exploring the interfaith library. I can help you search sacred texts, compare teachings across traditions, and discover insights from thousands of religious and philosophical works. What would you like to explore?",
             isIntro: true
           }
         };

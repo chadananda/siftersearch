@@ -360,7 +360,7 @@
   async function initSession() {
     try {
       const sessionData = await session.init();
-      // If new session with intro message from Jafar, add it to messages
+      // If new session with intro message from Sifter, add it to messages
       if (sessionData.isNew && sessionData.intro) {
         messages = [sessionData.intro];
       }
@@ -524,7 +524,7 @@
               <p class="agent-desc">OpenAI text-embedding-3-small converts text into vectors capturing meaning and context.</p>
             </div>
             <div class="agent-card">
-              <div class="agent-name">Jafar Assistant</div>
+              <div class="agent-name">Sifter Assistant</div>
               <p class="agent-desc">GPT-4 scholarly assistant introduces and contextualizes search results with citations.</p>
             </div>
             <div class="agent-card">
@@ -803,10 +803,10 @@
               {/each}
             </div>
           {:else if message.isIntro}
-            <!-- Jafar's intro message - styled as welcome -->
+            <!-- Sifter's intro message - styled as welcome -->
             <div class="intro-container">
               <div class="intro-avatar">
-                <img src="/jafar.svg" alt="Jafar" class="intro-logo" />
+                <img src="/ocean.svg" alt="Sifter" class="intro-logo" />
               </div>
               <div class="intro-content">
                 <p class="intro-text">{message.content}</p>
@@ -836,6 +836,9 @@
 
   <!-- Input area -->
   <div class="input-area" role="search">
+    <a href="https://siftersearch.com" class="qr-link" title="SifterSearch.com" aria-label="QR code for SifterSearch.com">
+      <img src="/qr-siftersearch.svg" alt="QR code for siftersearch.com" class="qr-code" />
+    </a>
     <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="input-form" aria-label="Search form">
       <label for="search-input" class="sr-only">Search sacred texts</label>
       <input
@@ -1593,7 +1596,7 @@
     border: 1px solid var(--error);
   }
 
-  /* Jafar's intro message */
+  /* Sifter's intro message */
   .intro-container {
     display: flex;
     align-items: flex-start;
@@ -2202,15 +2205,43 @@
 
   /* Input Area */
   .input-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     padding: 1rem;
     border-top: 1px solid var(--border-default);
     background-color: var(--surface-0-alpha);
     backdrop-filter: blur(8px);
   }
 
+  .qr-link {
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .qr-code {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.375rem;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+  }
+
+  .qr-link:hover .qr-code {
+    opacity: 1;
+  }
+
+  /* Show QR code on desktop only */
+  @media (min-width: 768px) {
+    .qr-link {
+      display: block;
+    }
+  }
+
   .input-form {
     display: flex;
     gap: 0.75rem;
+    flex: 1;
     max-width: 64rem;
     margin: 0 auto;
     width: 100%;
