@@ -2,9 +2,53 @@
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  type?: string;
+  noindex?: boolean;
 }
 
-const { title, description = 'AI-powered search for interfaith texts and sacred literature' } = Astro.props;
+const siteUrl = 'https://siftersearch.com';
+const siteName = 'SifterSearch';
+
+const {
+  title,
+  description = 'Search thousands of sacred texts from world religions with AI-powered semantic search. Explore Baha\'i writings, pilgrim notes, and interfaith literature instantly.',
+  image = '/og-image.png',
+  type = 'website',
+  noindex = false
+} = Astro.props;
+
+// Build canonical URL from current path
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const imageUrl = new URL(image, siteUrl).href;
+
+// Structured data for the website
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": siteName,
+  "alternateName": "Ocean 2.0 Interfaith Library",
+  "url": siteUrl,
+  "description": description,
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": `${siteUrl}/?q={search_term_string}`
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
+
+// Organization schema
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": siteName,
+  "url": siteUrl,
+  "logo": `${siteUrl}/logo.svg`,
+  "description": "AI-powered interfaith library search system"
+};
 ---
 
 <!doctype html>
@@ -14,6 +58,30 @@ const { title, description = 'AI-powered search for interfaith texts and sacred 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="light-dark(#ffffff, #1e293b)" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
 
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

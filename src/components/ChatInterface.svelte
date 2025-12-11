@@ -284,7 +284,7 @@
   <header class="header" role="banner">
     <div class="header-left">
       <img src="/logo.svg" alt="SifterSearch" class="logo" />
-      <h1 class="title">SifterSearch {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}</h1>
+      <span class="title" role="text">SifterSearch {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}</span>
     </div>
     <nav class="header-right" aria-label="Main navigation">
       <ThemeToggle />
@@ -360,10 +360,10 @@
     </section>
   {/if}
 
-  <!-- Hidden SEO content -->
-  <div class="sr-only" aria-hidden="true">
+  <!-- SEO content - visible to screen readers and crawlers -->
+  <div class="sr-only">
     <article>
-      <h1>SifterSearch - Ocean 2.0 Interfaith Library, AI Search</h1>
+      <h1>SifterSearch - AI-Powered Interfaith Library Search</h1>
       <p>SifterSearch is a private project by Chad Jones to help organize and search the Interfaith supplemental library used in OceanLibrary.com. Access is by invitation from participants and by approval only.</p>
       <h2>Features</h2>
       <ul>

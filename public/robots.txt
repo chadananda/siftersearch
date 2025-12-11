@@ -1,0 +1,19 @@
+# robots.txt for SifterSearch
+# https://siftersearch.com
+
+# Allow all search engines to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow API endpoints from indexing
+Disallow: /api/
+
+# Disallow temporary/internal paths
+Disallow: /tmp/
+Disallow: /_astro/
+
+# Sitemap location
+Sitemap: https://siftersearch.com/sitemap.xml
+
+# Crawl delay (optional, be nice to crawlers)
+Crawl-delay: 1
