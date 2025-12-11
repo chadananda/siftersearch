@@ -28,7 +28,12 @@
     "setup:tunnel": "node scripts/setup-tunnel.js",
     "index": "node scripts/index-library.js",
     "index:watch": "node scripts/index-library.js --watch",
-    "deploy": "npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major",
+    "changelog": "node scripts/generate-changelog.js",
+    "prebuild": "node scripts/generate-changelog.js",
+    "deploy": "node scripts/bump-version.js && npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
     "lint": "eslint . --ext .js,.svelte,.astro",
     "format": "prettier --write ."
   },

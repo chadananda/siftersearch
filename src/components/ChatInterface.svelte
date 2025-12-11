@@ -4,6 +4,7 @@
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
+  import changelog from '../lib/changelog.json';
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
 
@@ -356,6 +357,21 @@
             <p class="feature-desc">Ask questions in natural language and receive contextual responses with citations.</p>
           </div>
         </div>
+
+        <!-- What's New Section -->
+        {#if changelog?.entries?.length > 0}
+          <div class="whats-new">
+            <h3 class="whats-new-title">What's New</h3>
+            <ul class="changelog-list">
+              {#each changelog.entries.slice(0, 5) as entry}
+                <li class="changelog-item">
+                  <span class="changelog-type changelog-type-{entry.type.toLowerCase()}">{entry.type}</span>
+                  <span class="changelog-desc">{entry.description}</span>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
       </div>
     </section>
   {/if}
@@ -849,6 +865,70 @@
 
   .feature-desc {
     color: var(--text-secondary);
+  }
+
+  /* What's New Section */
+  .whats-new {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .whats-new-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .changelog-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .changelog-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .changelog-type {
+    flex-shrink: 0;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .changelog-type-new {
+    background: rgba(34, 197, 94, 0.2);
+    color: rgb(34, 197, 94);
+  }
+
+  .changelog-type-fixed {
+    background: rgba(59, 130, 246, 0.2);
+    color: rgb(59, 130, 246);
+  }
+
+  .changelog-type-improved {
+    background: rgba(168, 85, 247, 0.2);
+    color: rgb(168, 85, 247);
+  }
+
+  .changelog-type-updated {
+    background: rgba(251, 191, 36, 0.2);
+    color: rgb(251, 191, 36);
+  }
+
+  .changelog-desc {
+    color: var(--text-secondary);
+    line-height: 1.4;
   }
 
   /* Messages Area */

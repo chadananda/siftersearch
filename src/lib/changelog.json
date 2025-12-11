@@ -1,0 +1,151 @@
+{
+  "generated": "2025-12-11T16:55:46.683Z",
+  "entries": [
+    {
+      "hash": "6704d34",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add comprehensive SEO improvements and BDD tests",
+      "scope": null
+    },
+    {
+      "hash": "fa20a76",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
+      "scope": null
+    },
+    {
+      "hash": "9871505",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Add ingester service and fix gitignore for meilisearch",
+      "scope": null
+    },
+    {
+      "hash": "62c8c77",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
+      "scope": null
+    },
+    {
+      "hash": "89fe168",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Oscillating spiral + transparent surfaces with glass blur v0.0.24",
+      "scope": null
+    },
+    {
+      "hash": "7f82104",
+      "date": "2025-12-10",
+      "type": "Fixed",
+      "description": "Use simple rotation to prevent cloud smearing v0.0.23",
+      "scope": null
+    },
+    {
+      "hash": "d09c1d4",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
+      "scope": null
+    },
+    {
+      "hash": "8ae5d02",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Start with vortex already formed (v0.0.21)",
+      "scope": null
+    },
+    {
+      "hash": "e3a8bb5",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Remove thinking animation, pure swirling clouds (v0.0.20)",
+      "scope": null
+    },
+    {
+      "hash": "a2d5fa9",
+      "date": "2025-12-10",
+      "type": "New",
+      "description": "Increase cloud swirl around center (v0.0.19)",
+      "scope": null
+    }
+  ],
+  "grouped": {
+    "2025-12-11": [
+      {
+        "hash": "6704d34",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add comprehensive SEO improvements and BDD tests",
+        "scope": null
+      },
+      {
+        "hash": "fa20a76",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add WCAG accessibility improvements and Cucumber BDD test framework",
+        "scope": null
+      },
+      {
+        "hash": "9871505",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Add ingester service and fix gitignore for meilisearch",
+        "scope": null
+      }
+    ],
+    "2025-12-10": [
+      {
+        "hash": "62c8c77",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Fix chat streaming CORS, improve UI, add stats refresh, fix indexer v0.0.40",
+        "scope": null
+      },
+      {
+        "hash": "89fe168",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Oscillating spiral + transparent surfaces with glass blur v0.0.24",
+        "scope": null
+      },
+      {
+        "hash": "7f82104",
+        "date": "2025-12-10",
+        "type": "Fixed",
+        "description": "Use simple rotation to prevent cloud smearing v0.0.23",
+        "scope": null
+      },
+      {
+        "hash": "d09c1d4",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Add neural lights flashing behind clouds, denser toward vortex center v0.0.22",
+        "scope": null
+      },
+      {
+        "hash": "8ae5d02",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Start with vortex already formed (v0.0.21)",
+        "scope": null
+      },
+      {
+        "hash": "e3a8bb5",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Remove thinking animation, pure swirling clouds (v0.0.20)",
+        "scope": null
+      },
+      {
+        "hash": "a2d5fa9",
+        "date": "2025-12-10",
+        "type": "New",
+        "description": "Increase cloud swirl around center (v0.0.19)",
+        "scope": null
+      }
+    ]
+  }
+}
