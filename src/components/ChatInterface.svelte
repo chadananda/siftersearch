@@ -276,18 +276,23 @@
 
 <AuthModal bind:isOpen={showAuthModal} />
 
-<div class="chat-container">
+<div class="chat-container" role="application" aria-label="SifterSearch - Interfaith Library Search">
+  <!-- Skip to main content link for keyboard users -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
   <!-- Header -->
-  <header class="header">
+  <header class="header" role="banner">
     <div class="header-left">
       <img src="/logo.svg" alt="SifterSearch" class="logo" />
       <h1 class="title">SifterSearch {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}</h1>
     </div>
-    <nav class="header-right">
+    <nav class="header-right" aria-label="Main navigation">
       <ThemeToggle />
       <button
         onclick={() => showAbout = !showAbout}
         class="nav-link"
+        aria-expanded={showAbout}
+        aria-controls="about-section"
       >
         About
       </button>
@@ -314,10 +319,10 @@
 
   <!-- Collapsible About Section -->
   {#if showAbout}
-    <div class="about-section">
+    <section id="about-section" class="about-section" role="region" aria-labelledby="about-title">
       <div class="about-content">
         <div class="about-header">
-          <h2 class="about-title">About SifterSearch</h2>
+          <h2 id="about-title" class="about-title">About SifterSearch</h2>
           <button
             onclick={() => showAbout = false}
             aria-label="Close about section"
@@ -352,7 +357,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
   {/if}
 
   <!-- Hidden SEO content -->
@@ -370,8 +375,8 @@
     </article>
   </div>
 
-  <!-- Messages area -->
-  <div class="messages-area" bind:this={messagesAreaEl}>
+  <!-- Messages area - Main content region -->
+  <main id="main-content" class="messages-area" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
     {#if messages.length === 0}
       <div class="welcome-screen">
         <img src="/logo.svg" alt="SifterSearch" class="welcome-logo" />
@@ -502,14 +507,16 @@
                     {@const excerptLength = 200}
                     {@const excerpt = text.length > excerptLength ? text.substring(0, excerptLength) + '...' : text}
 
-                    <div class="source-item {expanded ? 'expanded' : ''}">
+                    <div class="source-item {expanded ? 'expanded' : ''}" role="article" aria-labelledby="source-title-{resultKey}">
                       <button
                         class="source-header"
                         onclick={() => { expandedResults = { ...expandedResults, [resultKey]: !expanded }; }}
+                        aria-expanded={expanded}
+                        aria-controls="source-content-{resultKey}"
                       >
                         <span class="source-number">[{i + 1}]</span>
                         <div class="source-meta">
-                          <span class="source-title">{title}</span>
+                          <span id="source-title-{resultKey}" class="source-title">{title}</span>
                           <span class="source-author">— {author}{#if collection} ({collection}){/if}</span>
                         </div>
                         <svg
@@ -520,7 +527,7 @@
                         </svg>
                       </button>
 
-                      <div class="source-text-container">
+                      <div id="source-content-{resultKey}" class="source-text-container">
                         {#if expanded}
                           <p class="source-text-full">{@html formatText(text)}</p>
                         {:else}
@@ -599,23 +606,39 @@
         </div>
       {/if}
     {/if}
+  </main>
+
+  <!-- Live region for screen reader announcements -->
+  <div id="search-status" class="sr-only" aria-live="polite" aria-atomic="true">
+    {#if loading}
+      Searching...
+    {:else if messages.length > 0}
+      {#if messages[messages.length - 1]?.results?.length}
+        Found {messages[messages.length - 1].results.length} results
+      {/if}
+    {/if}
   </div>
 
   <!-- Input area -->
-  <div class="input-area">
-    <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="input-form">
+  <div class="input-area" role="search">
+    <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="input-form" aria-label="Search form">
+      <label for="search-input" class="sr-only">Search sacred texts</label>
       <input
+        id="search-input"
         bind:this={inputEl}
         bind:value={input}
         onkeydown={handleKeydown}
         placeholder="Search sacred texts..."
         disabled={loading}
         class="search-input"
+        type="search"
+        autocomplete="off"
+        aria-describedby="search-status"
       />
       <button
         type="submit"
         disabled={!input.trim() || loading || !libraryConnected}
-        aria-label="Search"
+        aria-label={loading ? 'Searching...' : 'Search'}
         class="submit-btn"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1543,4 +1566,24 @@
   .h-5 { height: 1.25rem; }
   .mx-2 { margin-left: 0.5rem; margin-right: 0.5rem; }
   .text-accent { color: var(--accent-primary); }
+
+  /* Skip link for keyboard navigation */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--accent-primary);
+    color: var(--accent-primary-text);
+    padding: 0.5rem 1rem;
+    z-index: 100;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 0 0 0.5rem 0;
+    transition: top 0.2s ease;
+  }
+  .skip-link:focus {
+    top: 0;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
 </style>

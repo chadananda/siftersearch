@@ -71,13 +71,15 @@
     onkeydown={handleKeydown}
     role="dialog"
     aria-modal="true"
+    aria-labelledby="auth-modal-title"
+    aria-describedby="auth-modal-desc"
     tabindex="-1"
   >
-    <div class="modal-container">
+    <div class="modal-container" role="document">
       <!-- Header -->
       <div class="modal-header">
         <div class="header-content">
-          <h2 class="modal-title">
+          <h2 id="auth-modal-title" class="modal-title">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
           <button
@@ -93,9 +95,12 @@
       </div>
 
       <!-- Form -->
-      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="modal-form">
+      <p id="auth-modal-desc" class="sr-only">
+        {mode === 'login' ? 'Sign in to your account to access personalized features.' : 'Create a new account to get started.'}
+      </p>
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="modal-form" aria-label="{mode === 'login' ? 'Sign in' : 'Create account'} form">
         {#if error}
-          <div class="error-box">
+          <div class="error-box" role="alert" aria-live="assertive">
             {error}
           </div>
         {/if}
@@ -158,6 +163,13 @@
             {mode === 'login' ? 'Sign In' : 'Create Account'}
           {/if}
         </button>
+
+        <!-- Live region for form status announcements -->
+        <div class="sr-only" aria-live="polite" aria-atomic="true">
+          {#if loading}
+            Processing your request...
+          {/if}
+        </div>
       </form>
 
       <!-- Footer -->
@@ -352,5 +364,18 @@
   }
   .switch-btn:hover {
     color: var(--accent-primary-hover);
+  }
+
+  /* Visually hidden but screen reader accessible */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
