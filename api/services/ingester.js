@@ -1,0 +1,461 @@
+/**
+ * Document Ingester Service
+ *
+ * Phase 1 of paragraph-centric indexing pipeline.
+ * Parses documents into paragraphs and stores in SQLite.
+ * NO embeddings generated here - that's the embedding-worker's job.
+ */
+
+import { createHash } from 'crypto';
+import { query, queryOne, queryAll, transaction } from '../lib/db.js';
+import { logger } from '../lib/logger.js';
+import { nanoid } from 'nanoid';
+import matter from 'gray-matter';
+
+// Chunking configuration (same as original indexer)
+const CHUNK_CONFIG = {
+  maxChunkSize: 1500,      // Max characters per chunk
+  minChunkSize: 100,       // Min characters (skip smaller chunks)
+  overlapSize: 150,        // Overlap between chunks for context
+  sentenceDelimiters: /[.!?]\s+/,
+  paragraphDelimiters: /\n\n+/
+};
+
+/**
+ * Generate SHA256 hash of content for change detection
+ */
+export function hashContent(text) {
+  return createHash('sha256').update(text).digest('hex');
+}
+
+/**
+ * Safely parse a year value, returning null for invalid/non-numeric values
+ * Handles strings like "n.d.", empty values, and non-numeric data
+ */
+function safeParseYear(year) {
+  if (year === null || year === undefined || year === '') return null;
+  const parsed = parseInt(year, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * Parse document text into paragraphs/chunks
+ * (Reused from original indexer.js)
+ */
+export function parseDocument(text, options = {}) {
+  const {
+    maxChunkSize = CHUNK_CONFIG.maxChunkSize,
+    minChunkSize = CHUNK_CONFIG.minChunkSize,
+    overlapSize = CHUNK_CONFIG.overlapSize
+  } = options;
+
+  // Split by paragraphs first
+  const paragraphs = text.split(CHUNK_CONFIG.paragraphDelimiters)
+    .map(p => p.trim())
+    .filter(p => p.length >= minChunkSize);
+
+  const chunks = [];
+
+  for (const para of paragraphs) {
+    if (para.length <= maxChunkSize) {
+      // Paragraph fits in one chunk
+      chunks.push(para);
+    } else {
+      // Need to split paragraph into smaller chunks
+      const sentences = para.split(CHUNK_CONFIG.sentenceDelimiters);
+      let currentChunk = '';
+
+      for (const sentence of sentences) {
+        const trimmed = sentence.trim();
+        if (!trimmed) continue;
+
+        if (currentChunk.length + trimmed.length + 1 <= maxChunkSize) {
+          currentChunk += (currentChunk ? ' ' : '') + trimmed;
+        } else {
+          // Save current chunk if it's long enough
+          if (currentChunk.length >= minChunkSize) {
+            chunks.push(currentChunk);
+          }
+          // Start new chunk with overlap
+          if (overlapSize > 0 && currentChunk.length > overlapSize) {
+            // Include last part of previous chunk for context
+            const words = currentChunk.split(/\s+/);
+            const overlapWords = [];
+            let overlapLen = 0;
+            for (let i = words.length - 1; i >= 0 && overlapLen < overlapSize; i--) {
+              overlapWords.unshift(words[i]);
+              overlapLen += words[i].length + 1;
+            }
+            currentChunk = overlapWords.join(' ') + ' ' + trimmed;
+          } else {
+            currentChunk = trimmed;
+          }
+        }
+      }
+
+      // Don't forget the last chunk
+      if (currentChunk.length >= minChunkSize) {
+        chunks.push(currentChunk);
+      }
+    }
+  }
+
+  return chunks;
+}
+
+/**
+ * Extract metadata from markdown frontmatter using gray-matter
+ * Properly handles YAML parsing including arrays, nested objects, etc.
+ */
+export function parseMarkdownFrontmatter(text) {
+  try {
+    const parsed = matter(text);
+
+    // Clean up metadata - remove [object Object] values and empty strings
+    const metadata = {};
+    for (const [key, value] of Object.entries(parsed.data || {})) {
+      if (value !== null && value !== undefined && value !== '[object Object]') {
+        // Convert arrays/objects to strings if needed
+        if (typeof value === 'object') {
+          if (Array.isArray(value)) {
+            metadata[key] = value.join(', ');
+          }
+          // Skip nested objects
+        } else {
+          metadata[key] = String(value).trim();
+        }
+      }
+    }
+
+    return {
+      metadata,
+      content: parsed.content.trim()
+    };
+  } catch (err) {
+    // If gray-matter fails, return original text as content
+    logger.warn({ error: err.message }, 'Failed to parse frontmatter, using raw content');
+    return {
+      metadata: {},
+      content: text
+    };
+  }
+}
+
+/**
+ * Try to extract the heading for a chunk from the full document
+ * (Reused from original indexer.js)
+ */
+function extractHeading(fullContent, chunkText) {
+  // Find chunk position in document
+  const chunkPos = fullContent.indexOf(chunkText.substring(0, 100));
+  if (chunkPos === -1) return null;
+
+  // Look for markdown headings before this position
+  const beforeChunk = fullContent.substring(0, chunkPos);
+  const headingMatches = beforeChunk.match(/^#+\s+(.+)$/gm);
+
+  if (headingMatches && headingMatches.length > 0) {
+    // Return the last heading before this chunk
+    const lastHeading = headingMatches[headingMatches.length - 1];
+    return lastHeading.replace(/^#+\s+/, '');
+  }
+
+  return null;
+}
+
+/**
+ * Ingest a document - parse into paragraphs and store in SQLite
+ *
+ * Smart incremental updates:
+ * - Unchanged documents are skipped entirely
+ * - Changed documents do paragraph-level diffing
+ * - Only new/changed paragraphs need embedding generation
+ * - Unchanged paragraphs keep their embeddings
+ *
+ * @param {string} text - Raw document text
+ * @param {Object} metadata - Document metadata
+ * @param {string} filePath - Optional file path for tracking
+ * @returns {Object} - { documentId, paragraphCount, status }
+ */
+export async function ingestDocument(text, metadata = {}, filePath = null) {
+  const documentId = metadata.id || `doc_${nanoid(12)}`;
+  const fileHash = hashContent(text);
+
+  // Check if document already exists
+  let existingDoc = null;
+  let existingParagraphs = new Map(); // content_hash -> paragraph data
+
+  if (filePath) {
+    existingDoc = await queryOne(
+      'SELECT id, file_hash FROM indexed_documents WHERE file_path = ?',
+      [filePath]
+    );
+
+    if (existingDoc && existingDoc.file_hash === fileHash) {
+      logger.info({ documentId: existingDoc.id, filePath }, 'Document unchanged, skipping');
+      return {
+        documentId: existingDoc.id,
+        paragraphCount: 0,
+        status: 'unchanged',
+        skipped: true
+      };
+    }
+
+    // Document changed - get existing paragraphs for smart diffing
+    if (existingDoc) {
+      const paragraphs = await queryAll(
+        'SELECT id, content_hash, embedded, synced FROM indexed_paragraphs WHERE document_id = ?',
+        [existingDoc.id]
+      );
+      for (const p of paragraphs) {
+        existingParagraphs.set(p.content_hash, p);
+      }
+      logger.info({ documentId: existingDoc.id, filePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
+    }
+  }
+
+  // Parse frontmatter using gray-matter (handles detection automatically)
+  const { content, metadata: extractedMeta } = parseMarkdownFrontmatter(text);
+
+  // Merge metadata: frontmatter takes precedence over filename-extracted data
+  // Use frontmatter if available, fall back to filename-extracted, then defaults
+  // Exception: if filename-extracted has meaningful data (not "Unknown"), prefer that for some fields
+  const finalMeta = {
+    title: extractedMeta.title || metadata.title || 'Untitled',
+    // For author: prefer frontmatter, unless filename has real author and frontmatter doesn't
+    author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
+    religion: extractedMeta.religion || metadata.religion || 'General',
+    collection: extractedMeta.collection || metadata.collection || 'General',
+    language: extractedMeta.language || metadata.language || 'en',
+    year: extractedMeta.year || metadata.year || null,
+    description: extractedMeta.description || metadata.description || ''
+  };
+
+  // Parse into chunks/paragraphs
+  const chunks = parseDocument(content);
+
+  if (chunks.length === 0) {
+    logger.warn({ documentId, filePath }, 'Document has no content to ingest');
+    return {
+      documentId,
+      paragraphCount: 0,
+      status: 'empty',
+      error: 'No content to index'
+    };
+  }
+
+  // Use existing document ID if updating
+  const finalDocId = existingDoc ? existingDoc.id : documentId;
+
+  // Insert/update document record
+  await query(`
+    INSERT OR REPLACE INTO indexed_documents
+    (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `, [
+    finalDocId,
+    filePath,
+    fileHash,
+    finalMeta.title,
+    finalMeta.author,
+    finalMeta.religion,
+    finalMeta.collection,
+    finalMeta.language,
+    safeParseYear(finalMeta.year),
+    finalMeta.description,
+    chunks.length
+  ]);
+
+  // Smart paragraph diffing: compare new chunks with existing paragraphs
+  const newContentHashes = new Set();
+  const paragraphStatements = [];
+  let reusedCount = 0;
+  let newCount = 0;
+
+  for (let index = 0; index < chunks.length; index++) {
+    const chunkText = chunks[index];
+    const contentHash = hashContent(chunkText);
+    newContentHashes.add(contentHash);
+
+    const existing = existingParagraphs.get(contentHash);
+
+    if (existing) {
+      // Paragraph content unchanged - update metadata only (position might have changed)
+      reusedCount++;
+      paragraphStatements.push({
+        sql: `
+          UPDATE indexed_paragraphs
+          SET paragraph_index = ?, heading = ?, title = ?, author = ?, religion = ?, collection = ?, language = ?, year = ?, synced = 0
+          WHERE id = ?
+        `,
+        args: [
+          index,
+          extractHeading(content, chunkText),
+          finalMeta.title,
+          finalMeta.author,
+          finalMeta.religion,
+          finalMeta.collection,
+          finalMeta.language,
+          safeParseYear(finalMeta.year),
+          existing.id
+        ]
+      });
+      // Mark as used so we don't delete it later
+      existingParagraphs.delete(contentHash);
+    } else {
+      // New paragraph - insert it
+      newCount++;
+      paragraphStatements.push({
+        sql: `
+          INSERT INTO indexed_paragraphs
+          (id, document_id, paragraph_index, text, content_hash, heading, title, author, religion, collection, language, year)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          `${finalDocId}_p${index}`,
+          finalDocId,
+          index,
+          chunkText,
+          contentHash,
+          extractHeading(content, chunkText),
+          finalMeta.title,
+          finalMeta.author,
+          finalMeta.religion,
+          finalMeta.collection,
+          finalMeta.language,
+          safeParseYear(finalMeta.year)
+        ]
+      });
+    }
+  }
+
+  // Delete paragraphs that no longer exist in the document (remainders in existingParagraphs)
+  let deletedCount = 0;
+  for (const [, oldParagraph] of existingParagraphs) {
+    deletedCount++;
+    // Delete from paragraph_embeddings first (but keep the content_hash based cache!)
+    // Note: We DON'T delete from paragraph_embeddings by paragraph_id anymore
+    // The embeddings table is keyed by content_hash, so they persist for reuse
+    paragraphStatements.push({
+      sql: `DELETE FROM indexed_paragraphs WHERE id = ?`,
+      args: [oldParagraph.id]
+    });
+  }
+
+  // Execute in batches of 100 to avoid hitting limits
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < paragraphStatements.length; i += BATCH_SIZE) {
+    const batch = paragraphStatements.slice(i, i + BATCH_SIZE);
+    await transaction(batch);
+  }
+
+  logger.info({
+    documentId: finalDocId,
+    title: finalMeta.title,
+    paragraphs: chunks.length,
+    reused: reusedCount,
+    new: newCount,
+    deleted: deletedCount,
+    filePath
+  }, existingDoc ? 'Document updated (incremental)' : 'Document ingested');
+
+  return {
+    documentId: finalDocId,
+    title: finalMeta.title,
+    paragraphCount: chunks.length,
+    reusedParagraphs: reusedCount,
+    newParagraphs: newCount,
+    deletedParagraphs: deletedCount,
+    status: existingDoc ? 'updated' : 'ingested'
+  };
+}
+
+/**
+ * Remove a document and all its paragraphs
+ */
+export async function removeDocument(documentId) {
+  // Delete paragraphs first (foreign key constraint)
+  await query('DELETE FROM paragraph_embeddings WHERE paragraph_id IN (SELECT id FROM indexed_paragraphs WHERE document_id = ?)', [documentId]);
+  await query('DELETE FROM indexed_paragraphs WHERE document_id = ?', [documentId]);
+  await query('DELETE FROM indexed_documents WHERE id = ?', [documentId]);
+
+  logger.info({ documentId }, 'Document removed from SQLite');
+  return { documentId, removed: true };
+}
+
+/**
+ * Get ingestion statistics
+ */
+export async function getIngestionStats() {
+  const docCount = await queryOne('SELECT COUNT(*) as count FROM indexed_documents');
+  const paraTotal = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs');
+  const paraUnembedded = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 0');
+  const paraEmbedded = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 1');
+  const paraUnsynced = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 1 AND synced = 0');
+  const paraSynced = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE synced = 1');
+  const paraFailed = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedding_error IS NOT NULL');
+
+  return {
+    documents: docCount?.count || 0,
+    paragraphs: {
+      total: paraTotal?.count || 0,
+      unembedded: paraUnembedded?.count || 0,
+      embedded: paraEmbedded?.count || 0,
+      unsynced: paraUnsynced?.count || 0,
+      synced: paraSynced?.count || 0,
+      failed: paraFailed?.count || 0
+    }
+  };
+}
+
+/**
+ * Get documents that need processing
+ */
+export async function getUnprocessedDocuments(limit = 100) {
+  const docs = await queryAll(`
+    SELECT d.*,
+           (SELECT COUNT(*) FROM indexed_paragraphs p WHERE p.document_id = d.id AND p.embedded = 0) as unembedded_count
+    FROM indexed_documents d
+    WHERE EXISTS (
+      SELECT 1 FROM indexed_paragraphs p WHERE p.document_id = d.id AND p.embedded = 0
+    )
+    LIMIT ?
+  `, [limit]);
+
+  return docs;
+}
+
+/**
+ * Check if a file has been ingested (by path)
+ */
+export async function isFileIngested(filePath) {
+  const doc = await queryOne(
+    'SELECT id, file_hash FROM indexed_documents WHERE file_path = ?',
+    [filePath]
+  );
+  return doc !== null;
+}
+
+/**
+ * Get document by file path
+ */
+export async function getDocumentByPath(filePath) {
+  return queryOne(
+    'SELECT * FROM indexed_documents WHERE file_path = ?',
+    [filePath]
+  );
+}
+
+export const ingester = {
+  hashContent,
+  parseDocument,
+  parseMarkdownFrontmatter,
+  ingestDocument,
+  removeDocument,
+  getIngestionStats,
+  getUnprocessedDocuments,
+  isFileIngested,
+  getDocumentByPath
+};
+
+export default ingester;
