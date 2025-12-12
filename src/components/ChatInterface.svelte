@@ -1252,14 +1252,16 @@
   }
 
   .title .version {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 400;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    opacity: 0.5;
     vertical-align: super;
     margin-left: 0.25rem;
   }
 
   .title .version-update {
+    opacity: 1;
     background: var(--accent-primary);
     color: white;
     border: none;

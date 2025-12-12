@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:32:07.681Z",
+  "generated": "2025-12-12T21:33:13.011Z",
   "entries": [
+    {
+      "hash": "4110240",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use --text-secondary for version without opacity for readability",
+      "scope": null
+    },
     {
       "hash": "525d897",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Disable smooth scroll during initial reader positioning",
       "scope": null
-    },
-    {
-      "hash": "d4c639c",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Reader displays with no visible scrolling and matches hit styling",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "4110240",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use --text-secondary for version without opacity for readability",
+        "scope": null
+      },
       {
         "hash": "525d897",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Disable smooth scroll during initial reader positioning",
-        "scope": null
-      },
-      {
-        "hash": "d4c639c",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Reader displays with no visible scrolling and matches hit styling",
         "scope": null
       }
     ]
