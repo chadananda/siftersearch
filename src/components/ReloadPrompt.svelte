@@ -1,9 +1,6 @@
 <script>
   import { onMount } from 'svelte';
 
-  // App version - injected at build time
-  const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
-
   let offlineReady = $state(false);
   let needRefresh = $state(false);
   let updateSW = $state(null);
@@ -72,8 +69,8 @@
     <div class="buttons">
       {#if needRefresh}
         <button class="refresh-btn" onclick={refresh}>
-          <span class="desktop-text">Update to v{APP_VERSION}</span>
-          <span class="mobile-text">» v{APP_VERSION}</span>
+          <span class="desktop-text">Update Now</span>
+          <span class="mobile-text">Update</span>
         </button>
       {/if}
       <button class="close-btn" onclick={close} aria-label="Close">
