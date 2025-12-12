@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:12:03.247Z",
+  "generated": "2025-12-12T21:16:35.246Z",
   "entries": [
+    {
+      "hash": "d4c639c",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Reader displays with no visible scrolling and matches hit styling",
+      "scope": null
+    },
     {
       "hash": "c3a793d",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Properly parse inline tokens in marked renderer",
       "scope": null
-    },
-    {
-      "hash": "197ad4c",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Simplify markdown link regex, remove lookbehind for compatibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "d4c639c",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Reader displays with no visible scrolling and matches hit styling",
+        "scope": null
+      },
       {
         "hash": "c3a793d",
         "date": "2025-12-12",
@@ -137,13 +144,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Properly parse inline tokens in marked renderer",
-        "scope": null
-      },
-      {
-        "hash": "197ad4c",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Simplify markdown link regex, remove lookbehind for compatibility",
         "scope": null
       }
     ]

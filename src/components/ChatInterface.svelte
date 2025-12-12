@@ -278,8 +278,8 @@
       // Wait for DOM, position scroll BEFORE content becomes visible
       await tick();
       if (readerContainerEl) {
-        // Temporarily hide content while positioning
-        readerContainerEl.style.visibility = 'hidden';
+        // Disable smooth scroll for instant positioning
+        readerContainerEl.style.scrollBehavior = 'auto';
 
         const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
         if (paragraphEl) {
@@ -290,8 +290,8 @@
           readerContainerEl.scrollTop = Math.max(0, scrollTop);
         }
 
-        // Make visible after scroll is set
-        readerContainerEl.style.visibility = 'visible';
+        // Re-enable smooth scroll for user navigation
+        readerContainerEl.style.scrollBehavior = 'smooth';
       }
 
       // End animation after CSS transition
@@ -326,15 +326,19 @@
         total: response.total || 0
       });
 
-      // Position scroll so current paragraph is centered
+      // Position scroll so current paragraph is centered (no animation)
       await tick();
-      const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${targetIndex}"]`);
-      if (paragraphEl && readerContainerEl) {
-        const containerHeight = readerContainerEl.clientHeight;
-        const paragraphTop = paragraphEl.offsetTop;
-        const paragraphHeight = paragraphEl.offsetHeight;
-        const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
-        readerContainerEl.scrollTop = Math.max(0, scrollTop);
+      if (readerContainerEl) {
+        readerContainerEl.style.scrollBehavior = 'auto';
+        const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+        if (paragraphEl) {
+          const containerHeight = readerContainerEl.clientHeight;
+          const paragraphTop = paragraphEl.offsetTop;
+          const paragraphHeight = paragraphEl.offsetHeight;
+          const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+          readerContainerEl.scrollTop = Math.max(0, scrollTop);
+        }
+        readerContainerEl.style.scrollBehavior = 'smooth';
       }
     } catch (err) {
       console.error('Failed to load document segments:', err);
