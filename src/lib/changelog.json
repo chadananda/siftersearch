@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:01:45.651Z",
+  "generated": "2025-12-12T00:04:17.118Z",
   "entries": [
+    {
+      "hash": "4e01d83",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Sentence highlighting, stats transparency, line spacing",
+      "scope": null
+    },
     {
       "hash": "b55557a",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add git hooks for automated version bump and deployment",
       "scope": null
-    },
-    {
-      "hash": "49e8732",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add version automation and What's New section",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "4e01d83",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Sentence highlighting, stats transparency, line spacing",
+        "scope": null
+      },
       {
         "hash": "b55557a",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add git hooks for automated version bump and deployment",
-        "scope": null
-      },
-      {
-        "hash": "49e8732",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add version automation and What's New section",
         "scope": null
       }
     ]

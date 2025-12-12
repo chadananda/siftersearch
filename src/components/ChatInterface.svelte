@@ -2123,8 +2123,8 @@
   }
 
   /* Bold key words within the relevant sentence - green emphasis */
-  .source-paper :global(mark strong),
-  .source-paper :global(strong) {
+  .source-paper :global(mark b),
+  .source-paper :global(b) {
     font-weight: 700;
     color: #15803d;
   }

@@ -387,12 +387,12 @@ Rules:
             // Build the highlighted version with bolded keywords
             let highlightedSentence = result.relevantSentence;
 
-            // If we have keywords, bold them within the sentence
+            // If we have keywords, bold them within the sentence using <b> tags
             if (result.keyWords?.length > 0) {
               const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
               for (const keyword of sortedKeyWords) {
                 const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                highlightedSentence = highlightedSentence.replace(regex, '<strong>$1</strong>');
+                highlightedSentence = highlightedSentence.replace(regex, '<b>$1</b>');
               }
             }
 
