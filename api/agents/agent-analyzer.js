@@ -98,9 +98,10 @@ Return ONLY valid JSON:
 PASSAGES:
 ${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text}`).join('\n\n---\n\n')}
 
-Rules:
+CRITICAL RULES:
 - Only include relevant passages
-- relevantSentence must be EXACT quote
+- relevantSentence must be COPY-PASTED VERBATIM from the passage - do NOT paraphrase or modify
+- Copy the sentence EXACTLY including punctuation, capitalization, and any special characters
 - keyWords from relevantSentence only
 - Summaries: direct answers, no filler words`;
 
@@ -200,6 +201,39 @@ Rules:
                 : Math.min(partialIndex + result.relevantSentence.length + 50, plainText.length);
               sentenceIndex = partialIndex;
               matchedSentence = plainText.substring(partialIndex, sentenceEnd).trim();
+            }
+          }
+        }
+
+        // If still no match, try case-insensitive first 3 words
+        if (sentenceIndex === -1) {
+          const firstWords = result.relevantSentence.split(/\s+/).slice(0, 3).join(' ').toLowerCase();
+          if (firstWords.length > 8) {
+            const lowerText = plainText.toLowerCase();
+            const partialIndex = lowerText.indexOf(firstWords);
+            if (partialIndex !== -1) {
+              // Find sentence boundaries
+              let sentenceStart = partialIndex;
+              // Look back for sentence start (capital after period/start)
+              for (let i = partialIndex - 1; i >= 0; i--) {
+                if (plainText[i] === '.' || plainText[i] === '!' || plainText[i] === '?') {
+                  sentenceStart = i + 1;
+                  // Skip whitespace
+                  while (sentenceStart < partialIndex && /\s/.test(plainText[sentenceStart])) {
+                    sentenceStart++;
+                  }
+                  break;
+                }
+                if (i === 0) sentenceStart = 0;
+              }
+              // Find sentence end
+              const remainingText = plainText.substring(sentenceStart);
+              const endMatch = remainingText.match(/[.!?]/);
+              const sentenceEnd = endMatch
+                ? sentenceStart + endMatch.index + 1
+                : Math.min(sentenceStart + 300, plainText.length);
+              sentenceIndex = sentenceStart;
+              matchedSentence = plainText.substring(sentenceStart, sentenceEnd).trim();
             }
           }
         }
