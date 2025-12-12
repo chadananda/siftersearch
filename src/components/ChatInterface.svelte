@@ -412,15 +412,11 @@
     const key = `${messageId}-${resultIndex}`;
     const currentState = isExpanded(messageId, resultIndex);
 
-    // Accordion behavior: close all others, toggle this one
+    // Accordion behavior: only one hit can be open at a time
+    // Close ALL results, then toggle the clicked one
     const newState = {};
-    // Close all results in this message
     Object.keys(expandedResults).forEach(k => {
-      if (k.startsWith(`${messageId}-`)) {
-        newState[k] = false;
-      } else {
-        newState[k] = expandedResults[k];
-      }
+      newState[k] = false;
     });
     // Toggle the clicked one (if closing, just close; if opening, set to true)
     newState[key] = !currentState;
