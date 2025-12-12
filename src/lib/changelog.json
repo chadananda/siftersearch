@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:29:31.970Z",
+  "generated": "2025-12-12T21:30:34.547Z",
   "entries": [
+    {
+      "hash": "2a3ac70",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Show just 'UPDATE' on update button, no version",
+      "scope": null
+    },
     {
       "hash": "da6d5d3",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Center current paragraph in reader without scroll animation",
       "scope": null
-    },
-    {
-      "hash": "aa7c9b1",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Optimize mobile layout with Tailwind responsive classes",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "2a3ac70",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Show just 'UPDATE' on update button, no version",
+        "scope": null
+      },
       {
         "hash": "da6d5d3",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Center current paragraph in reader without scroll animation",
-        "scope": null
-      },
-      {
-        "hash": "aa7c9b1",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Optimize mobile layout with Tailwind responsive classes",
         "scope": null
       }
     ]

@@ -1255,7 +1255,7 @@
     font-size: 0.7rem;
     font-weight: 400;
     color: var(--text-muted);
-    opacity: 0.6;
+    opacity: 0.8;
     vertical-align: super;
     margin-left: 0.25rem;
   }
