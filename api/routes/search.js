@@ -93,8 +93,8 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
   const endMatch = findAnchorPosition(text, endAnchor, startMatch.end);
   if (endMatch === -1) return null;
 
-  // Sanity check: sentence shouldn't be too long (max 500 chars)
-  if (endMatch.end - startMatch.start > 500) return null;
+  // Sanity check: sentence shouldn't be too long (max 800 chars)
+  if (endMatch.end - startMatch.start > 800) return null;
 
   return {
     start: startMatch.start,
