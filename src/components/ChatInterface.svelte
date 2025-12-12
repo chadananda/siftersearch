@@ -441,16 +441,32 @@
   // Simple markdown-like formatting for highlighted text
   function formatText(text) {
     if (!text) return '';
+
+    // First, find and clean URLs that might have <em> or <mark> tags inside them
+    // Meilisearch might highlight parts of URLs which breaks them
+    let result = text.replace(
+      /https?:\/\/[^\s<]*(?:<\/?(?:em|mark|b|strong)>[^\s<]*)+/gi,
+      (match) => {
+        // Strip all HTML tags from the URL
+        return match.replace(/<\/?(?:em|mark|b|strong)>/gi, '');
+      }
+    );
+
+    // Convert URLs to clickable links BEFORE other HTML transformations
+    // Match URLs but stop at whitespace, angle brackets, or quotes
+    result = result.replace(
+      /(https?:\/\/[^\s<>"']+?)(?=[.,;:!?)]*(?:\s|$|<))/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-link">$1</a>'
+    );
+
+    // Now apply HTML transformations
     // Convert **bold** and _italic_ and highlight <em> tags from Meilisearch
     // Also preserve <mark> and <strong> tags from analyzer for relevant sentence highlighting
-    return text
+    return result
       .replace(/<em>/g, '<span class="search-highlight">')
       .replace(/<\/em>/g, '</span>')
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-      .replace(/_(.+?)_/g, '<em class="italic">$1</em>')
-      // Convert URLs to clickable links (but not if already inside an href)
-      // Exclude trailing punctuation (.,;:!?) from URL capture
-      .replace(/(?<!href=["'])(?<!">)(https?:\/\/[^\s<>\[\]()'"]+?)(?=[.,;:!?)]*(?:\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-link">$1</a>');
+      .replace(/_(.+?)_/g, '<em class="italic">$1</em>');
     // Note: <mark> and <strong> tags from analyzer are preserved as-is
   }
 

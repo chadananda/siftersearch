@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:43:41.525Z",
+  "generated": "2025-12-12T00:46:40.687Z",
   "entries": [
+    {
+      "hash": "8858c42",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Fix collections metadata, add URL hyperlinking, match reader styling",
+      "scope": null
+    },
     {
       "hash": "e2e0031",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Rename Jafar to Sifter, enhance about page, add QR code",
       "scope": null
-    },
-    {
-      "hash": "5dd6f69",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add multi-agent architecture and UI improvements",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "8858c42",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Fix collections metadata, add URL hyperlinking, match reader styling",
+        "scope": null
+      },
       {
         "hash": "e2e0031",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Rename Jafar to Sifter, enhance about page, add QR code",
-        "scope": null
-      },
-      {
-        "hash": "5dd6f69",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add multi-agent architecture and UI improvements",
         "scope": null
       }
     ]
