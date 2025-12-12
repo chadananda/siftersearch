@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:19:35.014Z",
+  "generated": "2025-12-12T21:22:19.535Z",
   "entries": [
+    {
+      "hash": "bfd1c7c",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Render markdown in reader paragraphs",
+      "scope": null
+    },
     {
       "hash": "36019a9",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Add solid background to collapsed hit cards",
       "scope": null
-    },
-    {
-      "hash": "d89afc2",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "First hit now closes when opening other hits",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "bfd1c7c",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Render markdown in reader paragraphs",
+        "scope": null
+      },
       {
         "hash": "36019a9",
         "date": "2025-12-12",
@@ -137,13 +144,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Add solid background to collapsed hit cards",
-        "scope": null
-      },
-      {
-        "hash": "d89afc2",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "First hit now closes when opening other hits",
         "scope": null
       }
     ]
