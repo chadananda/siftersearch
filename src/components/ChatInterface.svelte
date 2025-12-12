@@ -21,8 +21,9 @@
     gfm: true
   });
 
-  // App version - injected at build time
+  // App version - injected at build time, formatted as v.0.x (drops leading 0.)
   const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
+  const SHORT_VERSION = APP_VERSION.replace(/^0\./, '');
 
   // PWA update state
   const pwa = getPWAState();
@@ -707,7 +708,7 @@
       <span class="title" role="text">
         <span class="title-full">SifterSearch</span>
         <span class="title-short">Sifter</span>
-        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v{APP_VERSION} - Update!</button>{:else}<span class="version">v{APP_VERSION}</span>{/if}
+        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v.{SHORT_VERSION} - Update!</button>{:else}<span class="version">v.{SHORT_VERSION}</span>{/if}
       </span>
     </div>
 
@@ -1254,6 +1255,7 @@
     font-size: 0.7rem;
     font-weight: 400;
     color: var(--text-muted);
+    opacity: 0.6;
     vertical-align: super;
     margin-left: 0.25rem;
   }

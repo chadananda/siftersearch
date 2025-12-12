@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:26:01.625Z",
+  "generated": "2025-12-12T21:28:19.568Z",
   "entries": [
+    {
+      "hash": "da6d5d3",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
+      "scope": null
+    },
     {
       "hash": "8a45f80",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Optimize mobile layout with Tailwind responsive classes",
       "scope": null
-    },
-    {
-      "hash": "6b4478d",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Increase max sentence length for highlighting from 500 to 800 chars",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "da6d5d3",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
+        "scope": null
+      },
       {
         "hash": "8a45f80",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Optimize mobile layout with Tailwind responsive classes",
-        "scope": null
-      },
-      {
-        "hash": "6b4478d",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Increase max sentence length for highlighting from 500 to 800 chars",
         "scope": null
       }
     ]
