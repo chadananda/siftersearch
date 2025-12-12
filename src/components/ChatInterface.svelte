@@ -2117,13 +2117,13 @@
     box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
   }
   .source-card.collapsed {
-    background-color: transparent;
+    background-color: var(--surface-1);
     border: none;
     border-bottom: 1px solid var(--border-subtle);
     border-radius: 0;
   }
   .source-card.collapsed:hover {
-    background-color: var(--surface-1-alpha);
+    background-color: var(--surface-2);
   }
 
   /* Collapsed summary header */
