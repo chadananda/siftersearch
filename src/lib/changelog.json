@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:16:35.246Z",
+  "generated": "2025-12-12T21:19:35.014Z",
   "entries": [
+    {
+      "hash": "36019a9",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Disable smooth scroll during initial reader positioning",
+      "scope": null
+    },
     {
       "hash": "d4c639c",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "First hit now closes when opening other hits",
       "scope": null
-    },
-    {
-      "hash": "890abe7",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Properly parse inline tokens in marked renderer",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "36019a9",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Disable smooth scroll during initial reader positioning",
+        "scope": null
+      },
       {
         "hash": "d4c639c",
         "date": "2025-12-12",
@@ -137,13 +144,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "First hit now closes when opening other hits",
-        "scope": null
-      },
-      {
-        "hash": "890abe7",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Properly parse inline tokens in marked renderer",
         "scope": null
       }
     ]

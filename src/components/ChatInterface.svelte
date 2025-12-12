@@ -648,7 +648,7 @@
                 {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
                   {@html readerHighlightedText}
                 {:else}
-                  {paragraph.text}
+                  {@html formatText(paragraph.text)}
                 {/if}
               </p>
             {/each}
