@@ -2247,7 +2247,6 @@
     line-height: 1.65;
     color: #1a1a1a;
     margin: 0;
-    max-width: 65ch;
   }
 
   /* Light yellow highlight for search keyword matches from Meilisearch */

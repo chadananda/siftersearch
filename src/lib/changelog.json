@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T02:30:43.961Z",
+  "generated": "2025-12-12T02:31:39.050Z",
   "entries": [
+    {
+      "hash": "40de879",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Accordion allows only one hit open at a time",
+      "scope": null
+    },
     {
       "hash": "bc434d2",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Sentence highlighting, stats transparency, line spacing",
       "scope": null
-    },
-    {
-      "hash": "b55557a",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Summary text prominent (white), document title muted (gray)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "40de879",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Accordion allows only one hit open at a time",
+        "scope": null
+      },
       {
         "hash": "bc434d2",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Sentence highlighting, stats transparency, line spacing",
-        "scope": null
-      },
-      {
-        "hash": "b55557a",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Summary text prominent (white), document title muted (gray)",
         "scope": null
       }
     ]
