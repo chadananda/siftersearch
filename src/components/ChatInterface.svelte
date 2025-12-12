@@ -33,6 +33,8 @@
   let readerLoading = $state(false);
   let readerCurrentIndex = $state(0);
   let readerContainerEl;
+  let readerHighlightedText = $state(''); // Store the hit's highlighted text for the current paragraph
+  let readerAnimating = $state(false); // For smooth open animation
 
   // Typewriter loading messages
   const LOADING_MESSAGES = [
@@ -207,6 +209,8 @@
       return;
     }
 
+    // Start animation
+    readerAnimating = true;
     readerLoading = true;
     readerOpen = true;
     readerDocument = {
@@ -217,7 +221,11 @@
       collection: result.collection
     };
     readerCurrentIndex = result.paragraph_index || 0;
+    readerHighlightedText = result.highlightedText || result.text || ''; // Store highlighted text from hit
     readerParagraphs = [];
+
+    // End animation after CSS transition
+    setTimeout(() => { readerAnimating = false; }, 400);
 
     try {
       // Fetch all segments for the document
@@ -476,7 +484,7 @@
 <!-- Full-screen Reading Modal -->
 {#if readerOpen}
   <div
-    class="reader-overlay"
+    class="reader-overlay {readerAnimating ? 'animating' : ''}"
     role="dialog"
     aria-modal="true"
     aria-label="Full document reader"
@@ -520,7 +528,11 @@
                 data-paragraph-index={paragraph.paragraph_index}
                 onclick={() => { readerCurrentIndex = i; }}
               >
-                {paragraph.text}
+                {#if i === readerCurrentIndex && readerHighlightedText}
+                  {@html readerHighlightedText}
+                {:else}
+                  {paragraph.text}
+                {/if}
               </p>
             {/each}
           </div>
@@ -1016,47 +1028,54 @@
 
   <!-- Input area -->
   <div class="input-area" role="search">
+    <!-- QR code on the left -->
     <a href="https://siftersearch.com" class="qr-link" title="SifterSearch.com" aria-label="QR code for SifterSearch.com">
       <img src="/qr-siftersearch.svg" alt="QR code for siftersearch.com" class="qr-code" />
     </a>
+
+    <!-- Input form with search button inside -->
     <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="input-form" aria-label="Search form">
       <label for="search-input" class="sr-only">Search sacred texts</label>
-      <input
-        id="search-input"
-        bind:this={inputEl}
-        bind:value={input}
-        onkeydown={handleKeydown}
-        placeholder="Search sacred texts..."
-        disabled={loading}
-        class="search-input"
-        type="search"
-        autocomplete="off"
-        aria-describedby="search-status"
-      />
-      {#if input || messages.length > 0}
+      <div class="input-wrapper">
+        <input
+          id="search-input"
+          bind:this={inputEl}
+          bind:value={input}
+          onkeydown={handleKeydown}
+          placeholder="Search sacred texts..."
+          disabled={loading}
+          class="search-input"
+          type="search"
+          autocomplete="off"
+          aria-describedby="search-status"
+        />
         <button
-          type="button"
-          onclick={clearSearch}
-          class="clear-btn"
-          aria-label="Clear search and return to library"
-          title="Clear search"
+          type="submit"
+          disabled={!input.trim() || loading || !libraryConnected}
+          aria-label={loading ? 'Searching...' : 'Search'}
+          class="submit-btn"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
-      {/if}
+      </div>
+    </form>
+
+    <!-- Clear button on the right -->
+    {#if input || messages.length > 0}
       <button
-        type="submit"
-        disabled={!input.trim() || loading || !libraryConnected}
-        aria-label={loading ? 'Searching...' : 'Search'}
-        class="submit-btn"
+        type="button"
+        onclick={clearSearch}
+        class="clear-btn"
+        aria-label="Clear search and return to library"
+        title="Clear search"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-    </form>
+    {/if}
   </div>
 </div>
 
@@ -1510,42 +1529,79 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100%;
+    justify-content: flex-start;
+    min-height: 100%;
     text-align: center;
-    padding: 1rem;
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .welcome-screen {
+      justify-content: center;
+      padding: 1rem;
+    }
   }
 
   .welcome-logo {
-    width: 5rem;
-    height: 5rem;
-    border-radius: 1rem;
-    margin-bottom: 1.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .welcome-logo {
+      width: 5rem;
+      height: 5rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+    }
   }
 
   .welcome-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.375rem;
     text-shadow: 0 1px 2px light-dark(rgba(255,255,255,0.8), rgba(0,0,0,0.5));
+  }
+
+  @media (min-width: 640px) {
+    .welcome-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
   }
 
   .welcome-desc {
     color: var(--text-secondary);
     max-width: 28rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
     text-shadow:
       0 0 8px light-dark(rgba(255,255,255,0.9), rgba(0,0,0,0.8)),
       0 0 16px light-dark(rgba(255,255,255,0.7), rgba(0,0,0,0.6)),
       0 1px 3px light-dark(rgba(255,255,255,0.8), rgba(0,0,0,0.7));
   }
 
+  @media (min-width: 640px) {
+    .welcome-desc {
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+    }
+  }
+
   /* Stats */
   .stats-container {
     width: 100%;
     max-width: 42rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .stats-container {
+      margin-bottom: 2rem;
+    }
   }
 
   .stats-loading {
@@ -1568,32 +1624,51 @@
   }
 
   .stats-card {
-    background-color: light-dark(rgba(255, 255, 255, 0.7), rgba(30, 41, 59, 0.7));
+    background-color: light-dark(rgba(255, 255, 255, 0.55), rgba(30, 41, 59, 0.55));
     border-radius: 0.75rem;
-    padding: 1.25rem;
+    padding: 0.75rem 1rem;
     border: 1px solid var(--border-default);
     backdrop-filter: blur(12px);
     box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
   }
 
+  @media (min-width: 640px) {
+    .stats-card {
+      padding: 1.25rem;
+    }
+  }
+
   .stats-title {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-secondary);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .stats-title {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
   }
 
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 0.5rem;
     text-align: center;
+  }
+
+  @media (min-width: 640px) {
+    .stats-grid {
+      gap: 1rem;
+    }
   }
 
   @media (max-width: 480px) {
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
   }
 
@@ -1601,29 +1676,55 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.125rem;
+  }
+
+  @media (min-width: 640px) {
+    .stat {
+      gap: 0.25rem;
+    }
   }
 
   .stat-label {
-    font-size: 1rem;
+    font-size: 0.8125rem;
     font-weight: 500;
     color: var(--text-primary);
   }
 
+  @media (min-width: 640px) {
+    .stat-label {
+      font-size: 1rem;
+    }
+  }
+
   .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--accent-primary);
   }
 
+  @media (min-width: 640px) {
+    .stat-value {
+      font-size: 1.75rem;
+    }
+  }
+
   .religion-tags {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
+    margin-top: 0.625rem;
+    padding-top: 0.5rem;
     border-top: 1px solid var(--border-default);
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.375rem;
     justify-content: center;
+  }
+
+  @media (min-width: 640px) {
+    .religion-tags {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      gap: 0.5rem;
+    }
   }
 
   .religion-tag {
@@ -2026,7 +2127,7 @@
   .source-summary-text {
     flex: 1;
     min-width: 0;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     color: var(--text-primary);
     font-weight: 500;
     white-space: nowrap;
@@ -2115,17 +2216,20 @@
   }
 
   /* Analyzer highlight for the most relevant sentence - pale yellow background */
+  /* Use !important to override browser default mark styles */
   .source-paper :global(mark) {
-    background-color: #fef9c3;
+    background-color: #fef9c3 !important;
+    background: #fef9c3 !important;
     padding: 0.15em 0.3em;
     border-radius: 0.25em;
-    color: #1a1a1a;
+    color: #1a1a1a !important;
   }
 
   /* Bold key words within the relevant sentence - just bold, no color change */
   .source-paper :global(mark b),
   .source-paper :global(b) {
     font-weight: 700;
+    color: inherit;
   }
 
   /* Citation bar at bottom of card */
@@ -2337,7 +2441,8 @@
   .result-text-area :global(mark),
   .result-card :global(mark) {
     font-weight: 600;
-    background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent) !important;
+    background: color-mix(in srgb, var(--accent-primary) 25%, transparent) !important;
     padding: 0.1em 0.2em;
     border-radius: 0.2em;
   }
@@ -2392,8 +2497,8 @@
   .input-area {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     border-top: 1px solid var(--border-default);
     background-color: var(--surface-0-alpha);
     backdrop-filter: blur(8px);
@@ -2401,12 +2506,11 @@
 
   .qr-link {
     flex-shrink: 0;
-    display: none;
   }
 
   .qr-code {
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 0.375rem;
     opacity: 0.7;
     transition: opacity 0.15s;
@@ -2416,51 +2520,69 @@
     opacity: 1;
   }
 
-  /* Show QR code on desktop only */
-  @media (min-width: 768px) {
-    .qr-link {
-      display: block;
-    }
-  }
-
   .input-form {
-    display: flex;
-    gap: 0.75rem;
     flex: 1;
-    max-width: 64rem;
-    margin: 0 auto;
-    width: 100%;
+    min-width: 0;
   }
 
-  /* On desktop, center the input with some breathing room */
-  @media (min-width: 640px) {
-    .input-form {
-      max-width: 48rem;
-    }
+  /* Input wrapper - contains input and search button */
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: border-color 0.15s;
+    backdrop-filter: blur(8px);
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--input-border-focus);
   }
 
   .search-input {
     flex: 1;
-    padding: 0.75rem 1rem;
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 0.75rem;
+    min-width: 0;
+    padding: 0.625rem 0.75rem;
+    background: transparent;
+    border: none;
     color: var(--text-primary);
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.15s;
-    backdrop-filter: blur(8px);
   }
   .search-input::placeholder {
     color: var(--input-placeholder);
-  }
-  .search-input:focus {
-    border-color: var(--input-border-focus);
   }
   .search-input:disabled {
     opacity: 0.5;
   }
 
+  /* Search button inside input */
+  .submit-btn {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--accent-primary);
+    color: var(--accent-primary-text);
+    border: none;
+    border-radius: 0.5rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .submit-btn:hover:not(:disabled) {
+    background-color: var(--accent-primary-hover);
+  }
+  .submit-btn:disabled {
+    background-color: var(--surface-3);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  /* Clear button on the right */
   .clear-btn {
     padding: 0.5rem;
     background-color: var(--surface-2);
@@ -2477,26 +2599,6 @@
   .clear-btn:hover {
     background-color: var(--surface-3);
     color: var(--text-primary);
-  }
-
-  .submit-btn {
-    padding: 0.75rem 1.5rem;
-    background-color: var(--accent-primary);
-    color: var(--accent-primary-text);
-    border: none;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .submit-btn:hover:not(:disabled) {
-    background-color: var(--accent-primary-hover);
-  }
-  .submit-btn:disabled {
-    background-color: var(--surface-3);
-    cursor: not-allowed;
   }
 
   /* Utilities */
@@ -2533,34 +2635,43 @@
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: readerFadeIn 0.3s ease;
   }
 
-  @keyframes readerFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  /* Smooth expansion animation */
+  .reader-overlay.animating {
+    animation: readerExpand 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes readerExpand {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .reader-modal {
     width: 100%;
     height: 100%;
-    max-width: 900px;
     display: flex;
     flex-direction: column;
     background: #faf8f3;
     color: #1a1a1a;
   }
 
+  /* Desktop: still allow some border-radius for polish */
   @media (min-width: 768px) {
     .reader-modal {
-      height: 95vh;
-      max-height: 95vh;
-      border-radius: 1rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      max-width: 100%;
+      height: 100%;
+      border-radius: 0;
     }
   }
 
@@ -2575,11 +2686,7 @@
     flex-shrink: 0;
   }
 
-  @media (min-width: 768px) {
-    .reader-header {
-      border-radius: 1rem 1rem 0 0;
-    }
-  }
+  /* Full-screen: no border-radius needed */
 
   .reader-title-area {
     flex: 1;
@@ -2672,9 +2779,10 @@
   }
 
   .reader-paragraph {
-    font-size: 1.125rem;
-    line-height: 1.9;
-    color: #2a2a2a;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: #1a1a1a;
     margin: 0 0 1.5rem;
     padding: 1rem 1.25rem;
     border-radius: 0.5rem;
@@ -2688,8 +2796,22 @@
   }
 
   .reader-paragraph.current {
-    background: rgba(8, 145, 178, 0.08);
-    border-left-color: var(--accent-primary, #0891b2);
+    background: rgba(254, 249, 195, 0.5);
+    border-left-color: #fbbf24;
+  }
+
+  /* Mark and bold styling for highlighted text in reader */
+  .reader-paragraph :global(mark) {
+    background-color: #fef9c3 !important;
+    background: #fef9c3 !important;
+    padding: 0.15em 0.3em;
+    border-radius: 0.25em;
+    color: #1a1a1a !important;
+  }
+
+  .reader-paragraph :global(mark b),
+  .reader-paragraph :global(b) {
+    font-weight: 700;
   }
 
   /* Reader Footer */
@@ -2704,11 +2826,7 @@
     gap: 1rem;
   }
 
-  @media (min-width: 768px) {
-    .reader-footer {
-      border-radius: 0 0 1rem 1rem;
-    }
-  }
+  /* Full-screen: no border-radius needed */
 
   .reader-progress {
     flex: 1;

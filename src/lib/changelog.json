@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:07:58.059Z",
+  "generated": "2025-12-12T00:28:35.771Z",
   "entries": [
+    {
+      "hash": "0a17e28",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Bold keywords without green color, improve summary grammar",
+      "scope": null
+    },
     {
       "hash": "2a82c9c",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
       "scope": null
-    },
-    {
-      "hash": "b1f1bf2",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add linting and build checks to pre-commit hook",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "0a17e28",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Bold keywords without green color, improve summary grammar",
+        "scope": null
+      },
       {
         "hash": "2a82c9c",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
-        "scope": null
-      },
-      {
-        "hash": "b1f1bf2",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add linting and build checks to pre-commit hook",
         "scope": null
       }
     ]
