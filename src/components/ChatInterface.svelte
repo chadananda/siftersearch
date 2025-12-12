@@ -426,11 +426,18 @@
     const currentState = isExpanded(messageId, resultIndex);
 
     // Accordion behavior: only one hit can be open at a time
-    // Close ALL results, then toggle the clicked one
+    // Start fresh - explicitly close everything
     const newState = {};
+
+    // Copy all existing keys as false
     Object.keys(expandedResults).forEach(k => {
       newState[k] = false;
     });
+
+    // Also explicitly close the first item of this message (which might be expanded by default)
+    const firstKey = `${messageId}-0`;
+    newState[firstKey] = false;
+
     // Toggle the clicked one (if closing, just close; if opening, set to true)
     newState[key] = !currentState;
     expandedResults = newState;
@@ -438,13 +445,12 @@
 
   function isExpanded(messageId, resultIndex) {
     const key = `${messageId}-${resultIndex}`;
-    // First result expanded by default only if no explicit state set for this message
-    if (expandedResults[key] === undefined) {
-      // Check if any result in this message has been explicitly toggled
-      const hasExplicitState = Object.keys(expandedResults).some(k => k.startsWith(`${messageId}-`));
-      return !hasExplicitState && resultIndex === 0;
+    // If we have an explicit state, use it
+    if (expandedResults[key] !== undefined) {
+      return expandedResults[key];
     }
-    return expandedResults[key];
+    // First result expanded by default only if no explicit state set anywhere
+    return Object.keys(expandedResults).length === 0 && resultIndex === 0;
   }
 
   // Format text using marked for markdown, preserving HTML tags from analyzer

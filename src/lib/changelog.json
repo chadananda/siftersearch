@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T02:38:07.512Z",
+  "generated": "2025-12-12T03:10:17.446Z",
   "entries": [
+    {
+      "hash": "890abe7",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Properly parse inline tokens in marked renderer",
+      "scope": null
+    },
     {
       "hash": "197ad4c",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Redesign search input with inline button, improve mobile layout",
       "scope": null
-    },
-    {
-      "hash": "0a17e28",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Bold keywords without green color, improve summary grammar",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "890abe7",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Properly parse inline tokens in marked renderer",
+        "scope": null
+      },
       {
         "hash": "197ad4c",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Redesign search input with inline button, improve mobile layout",
-        "scope": null
-      },
-      {
-        "hash": "0a17e28",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Bold keywords without green color, improve summary grammar",
         "scope": null
       }
     ]
