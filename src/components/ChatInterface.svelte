@@ -233,7 +233,8 @@
       religion: result.religion,
       collection: result.collection
     };
-    readerCurrentIndex = result.paragraph_index || 0;
+    const targetIndex = result.paragraph_index || 0;
+    readerCurrentIndex = targetIndex;
     readerHighlightedText = result.highlightedText || result.text || ''; // Store highlighted text from hit
     readerParagraphs = [];
 
@@ -245,9 +246,17 @@
       const response = await documents.getSegments(result.document_id, { limit: 500 });
       readerParagraphs = response.segments || [];
 
-      // Scroll to the current paragraph after render
+      // Position scroll so current paragraph is centered (no animation)
       await tick();
-      scrollToReaderParagraph(readerCurrentIndex);
+      const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+      if (paragraphEl && readerContainerEl) {
+        // Calculate position to center the paragraph
+        const containerHeight = readerContainerEl.clientHeight;
+        const paragraphTop = paragraphEl.offsetTop;
+        const paragraphHeight = paragraphEl.offsetHeight;
+        const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+        readerContainerEl.scrollTop = Math.max(0, scrollTop);
+      }
     } catch (err) {
       console.error('Failed to load document segments:', err);
       readerParagraphs = [];
