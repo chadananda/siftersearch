@@ -1,5 +1,6 @@
 <script>
   import { onMount, tick } from 'svelte';
+  import { marked } from 'marked';
   import { search, session, documents } from '../lib/api.js';
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
@@ -7,6 +8,17 @@
   import changelog from '../lib/changelog.json';
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
+
+  // Configure marked for inline parsing (no <p> tags wrapping)
+  marked.use({
+    renderer: {
+      paragraph(token) {
+        return token.text;
+      }
+    },
+    breaks: false,
+    gfm: true
+  });
 
   // App version - injected at build time
   const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
@@ -434,57 +446,23 @@
     return expandedResults[key];
   }
 
-  // Simple markdown-like formatting for highlighted text
+  // Format text using marked for markdown, preserving HTML tags from analyzer
   function formatText(text) {
     if (!text) return '';
 
-    // First, find and clean URLs that might have <em> or <mark> tags inside them
-    // Meilisearch might highlight parts of URLs which breaks them
+    // First, clean any HTML tags that might be inside URLs (from Meilisearch highlighting)
     let result = text.replace(
       /https?:\/\/[^\s<]*(?:<\/?(?:em|mark|b|strong)>[^\s<]*)+/gi,
-      (match) => {
-        // Strip all HTML tags from the URL
-        return match.replace(/<\/?(?:em|mark|b|strong)>/gi, '');
-      }
+      (match) => match.replace(/<\/?(?:em|mark|b|strong)>/gi, '')
     );
 
-    // Handle markdown-style links [text](url) FIRST
-    // This prevents the URL regex from breaking markdown links
-    // The URL can contain any characters except ) since that ends the link
-    result = result.replace(
-      /\[(\d+)\]\((https?:\/\/[^)\s]+)\)/g,
-      (match, linkText, url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">[${linkText}]</a>`;
-      }
-    );
+    // Parse with marked (handles links, bold, italic, etc.)
+    result = marked.parse(result);
 
-    // Convert standalone URLs to clickable links (not already in an anchor tag)
-    // Only match URLs that are NOT preceded by href=" or ">
-    result = result.replace(
-      /(https?:\/\/[^\s<>"')\]]+)/g,
-      (match, url, offset, string) => {
-        // Check if this URL is already inside an anchor tag
-        const before = string.substring(Math.max(0, offset - 10), offset);
-        if (before.includes('href="') || before.includes('">')) {
-          return match; // Already in a link, don't double-wrap
-        }
-        // Replace underscores with a placeholder in display text only
-        const displayUrl = url.replace(/_/g, '\u2017');
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${displayUrl}</a>`;
-      }
-    );
+    // Make all links open in new tab
+    result = result.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" class="text-link" href="');
 
-    // Now apply HTML transformations
-    // Convert **bold** and _italic_ and highlight <em> tags from Meilisearch
-    // Also preserve <mark> and <strong> tags from analyzer for relevant sentence highlighting
-    return result
-      .replace(/<em>/g, '<span class="search-highlight">')
-      .replace(/<\/em>/g, '</span>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-      .replace(/_(.+?)_/g, '<em class="italic">$1</em>')
-      // Restore underscores in URLs after italic conversion
-      .replace(/\u2017/g, '_');
-    // Note: <mark> and <strong> tags from analyzer are preserved as-is
+    return result;
   }
 
   async function initSession() {

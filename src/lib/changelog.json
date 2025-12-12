@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T02:33:18.034Z",
+  "generated": "2025-12-12T02:34:47.577Z",
   "entries": [
+    {
+      "hash": "197ad4c",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Simplify markdown link regex, remove lookbehind for compatibility",
+      "scope": null
+    },
     {
       "hash": "b8ed1e9",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Bold keywords without green color, improve summary grammar",
       "scope": null
-    },
-    {
-      "hash": "2a82c9c",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Use <b> tag for bolded keywords in relevant sentence",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "197ad4c",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Simplify markdown link regex, remove lookbehind for compatibility",
+        "scope": null
+      },
       {
         "hash": "b8ed1e9",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Bold keywords without green color, improve summary grammar",
-        "scope": null
-      },
-      {
-        "hash": "2a82c9c",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Use <b> tag for bolded keywords in relevant sentence",
         "scope": null
       }
     ]
