@@ -62,8 +62,6 @@
     <div class="message" id="toast-message">
       {#if offlineReady}
         <span>App ready to work offline</span>
-      {:else}
-        <span class="desktop-text">New version available!</span>
       {/if}
     </div>
     <div class="buttons">
@@ -150,15 +148,5 @@
 
   .close-btn:hover {
     color: var(--text-primary, #f1f5f9);
-  }
-
-  /* Hide message text on mobile */
-  .desktop-text {
-    display: none;
-  }
-  @media (min-width: 480px) {
-    .desktop-text {
-      display: inline;
-    }
   }
 </style>

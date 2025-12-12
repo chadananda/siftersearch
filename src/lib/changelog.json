@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:24:07.877Z",
+  "generated": "2025-12-12T21:26:01.625Z",
   "entries": [
+    {
+      "hash": "8a45f80",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Simplify update button to just 'UPDATE'",
+      "scope": null
+    },
     {
       "hash": "942eae3",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Increase max sentence length for highlighting from 500 to 800 chars",
       "scope": null
-    },
-    {
-      "hash": "a7cb745",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "8a45f80",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Simplify update button to just 'UPDATE'",
+        "scope": null
+      },
       {
         "hash": "942eae3",
         "date": "2025-12-12",
@@ -135,15 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Increase max sentence length for highlighting from 500 to 800 chars",
-        "scope": null
-      }
-    ],
-    "2025-12-11": [
-      {
-        "hash": "a7cb745",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
         "scope": null
       }
     ]
