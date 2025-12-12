@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T02:24:31.278Z",
+  "generated": "2025-12-12T02:28:35.122Z",
   "entries": [
+    {
+      "hash": "fd8ac08",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Robust sentence matching and accordion rule styling",
+      "scope": null
+    },
     {
       "hash": "fb52019",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Hit card display - serif font, summary header, highlights, citation wrapping",
       "scope": null
-    },
-    {
-      "hash": "10c066d",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Implement full-screen reading mode with document navigation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "fd8ac08",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Robust sentence matching and accordion rule styling",
+        "scope": null
+      },
       {
         "hash": "fb52019",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Hit card display - serif font, summary header, highlights, citation wrapping",
-        "scope": null
-      },
-      {
-        "hash": "10c066d",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Implement full-screen reading mode with document navigation",
         "scope": null
       }
     ]

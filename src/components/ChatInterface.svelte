@@ -452,14 +452,25 @@
       }
     );
 
-    // Convert URLs to clickable links BEFORE other HTML transformations
-    // Match URLs but stop at whitespace, angle brackets, or quotes
-    // Use a placeholder for underscores in display text to prevent italic conversion
+    // Handle markdown-style links [text](url) FIRST
+    // This prevents the URL regex from breaking markdown links
     result = result.replace(
-      /(https?:\/\/[^\s<>"']+?)(?=[.,;:!?)]*(?:\s|$|<))/g,
+      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      (match, linkText, url) => {
+        // Protect underscores in link text from italic conversion
+        const safeText = linkText.replace(/_/g, '\u2017');
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${safeText}</a>`;
+      }
+    );
+
+    // Convert standalone URLs to clickable links (not already in an anchor tag)
+    // Match URLs but stop at whitespace, angle brackets, quotes, or closing parens
+    // Use negative lookbehind to avoid URLs already in href=""
+    result = result.replace(
+      /(?<!href=")(?<!">)(https?:\/\/[^\s<>"')\]]+)/g,
       (match, url) => {
         // Replace underscores with a placeholder in display text only
-        const displayUrl = url.replace(/_/g, '\u2017'); // Using double low line as placeholder
+        const displayUrl = url.replace(/_/g, '\u2017');
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${displayUrl}</a>`;
       }
     );
