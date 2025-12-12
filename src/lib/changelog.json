@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T03:33:11.674Z",
+  "generated": "2025-12-12T03:50:17.266Z",
   "entries": [
+    {
+      "hash": "a7cb745",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
+      "scope": null
+    },
     {
       "hash": "7ed4016",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Robust sentence matching and accordion rule styling",
       "scope": null
-    },
-    {
-      "hash": "fb52019",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Use plain text for highlighting, not Meilisearch formatted text",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "a7cb745",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
+        "scope": null
+      },
       {
         "hash": "7ed4016",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Robust sentence matching and accordion rule styling",
-        "scope": null
-      },
-      {
-        "hash": "fb52019",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Use plain text for highlighting, not Meilisearch formatted text",
         "scope": null
       }
     ]

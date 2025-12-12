@@ -13,6 +13,96 @@ import { config } from '../lib/config.js';
 import { ai } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
+// Helper functions for anchor-based sentence matching
+
+/**
+ * Normalize text for fuzzy matching - lowercase, collapse whitespace, remove punctuation
+ */
+function normalizeForMatch(str) {
+  return str.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '').trim();
+}
+
+/**
+ * Find position in original text that matches normalized anchor
+ * Returns { start, end } or -1 if not found
+ */
+function findAnchorPosition(text, anchor, searchFrom = 0) {
+  const normalizedAnchor = normalizeForMatch(anchor);
+  const anchorWords = normalizedAnchor.split(' ').filter(w => w.length > 0);
+  if (anchorWords.length === 0) return -1;
+
+  const textLower = text.toLowerCase();
+  let pos = searchFrom;
+
+  while (pos < text.length) {
+    // Find first word
+    const firstWordPos = textLower.indexOf(anchorWords[0], pos);
+    if (firstWordPos === -1) return -1;
+
+    // Check if remaining words follow
+    let matchStart = firstWordPos;
+    let matchEnd = firstWordPos;
+    let wordIdx = 0;
+    let checkPos = firstWordPos;
+
+    while (wordIdx < anchorWords.length && checkPos < text.length) {
+      // Skip non-word characters
+      while (checkPos < text.length && /[\s\W]/.test(text[checkPos])) {
+        checkPos++;
+      }
+
+      // Extract word at current position
+      let wordEnd = checkPos;
+      while (wordEnd < text.length && /\w/.test(text[wordEnd])) {
+        wordEnd++;
+      }
+
+      const word = text.substring(checkPos, wordEnd).toLowerCase();
+
+      if (word === anchorWords[wordIdx]) {
+        if (wordIdx === 0) matchStart = checkPos;
+        matchEnd = wordEnd;
+        wordIdx++;
+        checkPos = wordEnd;
+      } else if (wordIdx === 0) {
+        break;
+      } else {
+        break;
+      }
+    }
+
+    if (wordIdx === anchorWords.length) {
+      return { start: matchStart, end: matchEnd };
+    }
+
+    pos = firstWordPos + 1;
+  }
+
+  return -1;
+}
+
+/**
+ * Find sentence in text using start and end anchors (fuzzy matching)
+ */
+function findSentenceByAnchors(text, startAnchor, endAnchor) {
+  if (!startAnchor || !endAnchor) return null;
+
+  const startMatch = findAnchorPosition(text, startAnchor, 0);
+  if (startMatch === -1) return null;
+
+  const endMatch = findAnchorPosition(text, endAnchor, startMatch.end);
+  if (endMatch === -1) return null;
+
+  // Sanity check: sentence shouldn't be too long (max 500 chars)
+  if (endMatch.end - startMatch.start > 500) return null;
+
+  return {
+    start: startMatch.start,
+    end: endMatch.end,
+    text: text.substring(startMatch.start, endMatch.end)
+  };
+}
+
 export default async function searchRoutes(fastify) {
   // Main search endpoint
   fastify.post('/', {
@@ -290,8 +380,8 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
 TASKS:
 1. Re-rank by relevance (most relevant first)
 2. Remove irrelevant passages
-3. Find the MOST relevant sentence in each passage
-4. Identify 1-3 key words/phrases in that sentence
+3. Find the MOST relevant sentence - provide anchor words to locate it
+4. Identify 1-3 key words/phrases to highlight
 5. Write a DIRECT answer summary (5-10 words max)
 
 CRITICAL SUMMARY RULES:
@@ -307,7 +397,8 @@ Return ONLY valid JSON:
   "results": [
     {
       "originalIndex": 0,
-      "relevantSentence": "Exact quote from passage",
+      "sentenceStart": "first 3-5 words VERBATIM",
+      "sentenceEnd": "last 3-5 words VERBATIM",
       "keyWords": ["word1", "phrase"],
       "summary": "Direct 5-10 word answer"
     }
@@ -318,10 +409,11 @@ Return ONLY valid JSON:
 PASSAGES:
 ${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text}`).join('\n\n---\n\n')}
 
-Rules:
+CRITICAL RULES:
 - Only include relevant passages
-- relevantSentence must be EXACT quote
-- keyWords from relevantSentence only
+- sentenceStart: EXACT first 3-5 words of the relevant sentence (COPY VERBATIM from text)
+- sentenceEnd: EXACT last 3-5 words of the relevant sentence (COPY VERBATIM including punctuation)
+- keyWords: 1-3 important words/phrases from that sentence to bold
 - Summaries: direct answers, no filler words`;
 
     try {
@@ -358,7 +450,6 @@ Rules:
           religion: hit.religion,
           collection: hit.collection || hit.religion,
           summary: '',
-          relevantSentence: '',
           highlightedText: hit.text // No highlighting in fallback - use plain text
         }));
         reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: fallbackSources }) + '\n\n');
@@ -378,68 +469,14 @@ Rules:
         let highlightedText = originalHit.text || '';
         const plainText = highlightedText;
 
-        // Highlight the relevant sentence if we have one
-        if (result.relevantSentence) {
-          // Try to find where the sentence appears in the plain text
-          // First try exact match
-          let sentenceIndex = plainText.indexOf(result.relevantSentence);
-          let matchedSentence = result.relevantSentence;
+        // Highlight the relevant sentence using anchor-based matching
+        if (result.sentenceStart && result.sentenceEnd) {
+          const match = findSentenceByAnchors(plainText, result.sentenceStart, result.sentenceEnd);
 
-          // If exact match fails, try normalized matching
-          if (sentenceIndex === -1) {
-            // Normalize whitespace for comparison
-            const normalizedSentence = result.relevantSentence.replace(/\s+/g, ' ').trim();
-            const normalizedText = plainText.replace(/\s+/g, ' ');
-            const normalizedIndex = normalizedText.indexOf(normalizedSentence);
+          if (match) {
+            let highlightedSentence = match.text;
 
-            if (normalizedIndex !== -1) {
-              // Find the actual position in original text by counting characters
-              // This is approximate but usually works
-              let charCount = 0;
-              let actualIndex = 0;
-              for (let i = 0; i < plainText.length && charCount < normalizedIndex; i++) {
-                if (!/\s/.test(plainText[i]) || (i > 0 && !/\s/.test(plainText[i-1]))) {
-                  charCount++;
-                }
-                actualIndex = i;
-              }
-              // Find the end of the sentence in original text
-              let sentenceEnd = actualIndex;
-              let matchedChars = 0;
-              const targetChars = normalizedSentence.replace(/\s+/g, '').length;
-              for (let i = actualIndex; i < plainText.length && matchedChars < targetChars; i++) {
-                if (!/\s/.test(plainText[i])) {
-                  matchedChars++;
-                }
-                sentenceEnd = i + 1;
-              }
-              sentenceIndex = actualIndex;
-              matchedSentence = plainText.substring(actualIndex, sentenceEnd);
-            }
-          }
-
-          // If still no match, try finding the first few words
-          if (sentenceIndex === -1) {
-            const words = result.relevantSentence.split(/\s+/).slice(0, 5).join(' ');
-            if (words.length > 10) {
-              const partialIndex = plainText.indexOf(words);
-              if (partialIndex !== -1) {
-                // Find the end of the sentence (period, question mark, exclamation, or end of text)
-                const sentenceEndMatch = plainText.substring(partialIndex).match(/[.!?]/);
-                const sentenceEnd = sentenceEndMatch
-                  ? partialIndex + sentenceEndMatch.index + 1
-                  : Math.min(partialIndex + result.relevantSentence.length + 50, plainText.length);
-                sentenceIndex = partialIndex;
-                matchedSentence = plainText.substring(partialIndex, sentenceEnd).trim();
-              }
-            }
-          }
-
-          if (sentenceIndex !== -1) {
-            // Build the highlighted version with bolded keywords
-            let highlightedSentence = matchedSentence;
-
-            // If we have keywords, bold them within the sentence using <b> tags
+            // Bold keywords within the sentence
             if (result.keyWords?.length > 0) {
               const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
               for (const keyword of sortedKeyWords) {
@@ -449,10 +486,30 @@ Rules:
             }
 
             // Reconstruct: text before + marked sentence + text after
-            const before = plainText.substring(0, sentenceIndex);
-            const after = plainText.substring(sentenceIndex + matchedSentence.length);
+            const before = plainText.substring(0, match.start);
+            const after = plainText.substring(match.end);
             highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
+
+            logger.debug({
+              originalIndex: result.originalIndex,
+              matchedText: match.text.substring(0, 60)
+            }, 'Highlight success');
+          } else {
+            logger.error({
+              originalIndex: result.originalIndex,
+              sentenceStart: result.sentenceStart,
+              sentenceEnd: result.sentenceEnd,
+              textPreview: plainText.substring(0, 200),
+              title: originalHit.title
+            }, 'HIGHLIGHT FAILED: Could not match anchors');
           }
+        } else {
+          logger.error({
+            originalIndex: result.originalIndex,
+            hasSentenceStart: !!result.sentenceStart,
+            hasSentenceEnd: !!result.sentenceEnd,
+            title: originalHit.title
+          }, 'HIGHLIGHT FAILED: Missing anchor data from LLM');
         }
 
         return {
@@ -465,7 +522,6 @@ Rules:
           religion: originalHit.religion,
           collection: originalHit.collection || originalHit.religion,
           summary: result.summary || '',
-          relevantSentence: result.relevantSentence || '',
           highlightedText // Only this should have <mark> around the relevant sentence
         };
       }).filter(Boolean);
