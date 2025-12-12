@@ -13,7 +13,8 @@
   marked.use({
     renderer: {
       paragraph(token) {
-        return token.text;
+        // Parse inline tokens (links, bold, italic) but skip the <p> wrapper
+        return this.parser.parseInline(token.tokens);
       }
     },
     breaks: false,
