@@ -143,34 +143,95 @@ CRITICAL RULES:
   }
 
   /**
-   * Find sentence in text using start and end anchors
+   * Normalize text for fuzzy matching - lowercase, collapse whitespace, remove punctuation
+   */
+  normalizeForMatch(str) {
+    return str.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '').trim();
+  }
+
+  /**
+   * Find position in original text that matches normalized anchor
+   */
+  findAnchorPosition(text, anchor, searchFrom = 0) {
+    const normalizedAnchor = this.normalizeForMatch(anchor);
+    const anchorWords = normalizedAnchor.split(' ').filter(w => w.length > 0);
+    if (anchorWords.length === 0) return -1;
+
+    // Slide through the text looking for matching sequence of words
+    const textLower = text.toLowerCase();
+    let pos = searchFrom;
+
+    while (pos < text.length) {
+      // Find first word
+      const firstWordPos = textLower.indexOf(anchorWords[0], pos);
+      if (firstWordPos === -1) return -1;
+
+      // Check if remaining words follow
+      let matchStart = firstWordPos;
+      let matchEnd = firstWordPos;
+      let wordIdx = 0;
+      let checkPos = firstWordPos;
+
+      while (wordIdx < anchorWords.length && checkPos < text.length) {
+        // Skip non-word characters
+        while (checkPos < text.length && /[\s\W]/.test(text[checkPos])) {
+          checkPos++;
+        }
+
+        // Extract word at current position
+        let wordEnd = checkPos;
+        while (wordEnd < text.length && /\w/.test(text[wordEnd])) {
+          wordEnd++;
+        }
+
+        const word = text.substring(checkPos, wordEnd).toLowerCase();
+
+        if (word === anchorWords[wordIdx]) {
+          if (wordIdx === 0) matchStart = checkPos;
+          matchEnd = wordEnd;
+          wordIdx++;
+          checkPos = wordEnd;
+        } else if (wordIdx === 0) {
+          // First word didn't match, move on
+          break;
+        } else {
+          // Partial match failed, restart search
+          break;
+        }
+      }
+
+      if (wordIdx === anchorWords.length) {
+        // All words matched
+        return { start: matchStart, end: matchEnd };
+      }
+
+      pos = firstWordPos + 1;
+    }
+
+    return -1;
+  }
+
+  /**
+   * Find sentence in text using start and end anchors (fuzzy matching)
    */
   findSentenceByAnchors(text, startAnchor, endAnchor) {
     if (!startAnchor || !endAnchor) return null;
 
-    const lowerText = text.toLowerCase();
-    const lowerStart = startAnchor.toLowerCase();
-    const lowerEnd = endAnchor.toLowerCase();
-
     // Find start anchor position
-    const startIndex = lowerText.indexOf(lowerStart);
-    if (startIndex === -1) return null;
+    const startMatch = this.findAnchorPosition(text, startAnchor, 0);
+    if (startMatch === -1) return null;
 
     // Find end anchor position (must be after start)
-    const searchFrom = startIndex + lowerStart.length;
-    const endIndex = lowerText.indexOf(lowerEnd, searchFrom);
-    if (endIndex === -1) return null;
-
-    // Extract the full sentence (from start anchor to end of end anchor)
-    const sentenceEnd = endIndex + endAnchor.length;
+    const endMatch = this.findAnchorPosition(text, endAnchor, startMatch.end);
+    if (endMatch === -1) return null;
 
     // Sanity check: sentence shouldn't be too long (max 500 chars)
-    if (sentenceEnd - startIndex > 500) return null;
+    if (endMatch.end - startMatch.start > 500) return null;
 
     return {
-      start: startIndex,
-      end: sentenceEnd,
-      text: text.substring(startIndex, sentenceEnd)
+      start: startMatch.start,
+      end: endMatch.end,
+      text: text.substring(startMatch.start, endMatch.end)
     };
   }
 
@@ -205,7 +266,24 @@ CRITICAL RULES:
           const before = plainText.substring(0, match.start);
           const after = plainText.substring(match.end);
           highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
+        } else {
+          // HIGHLIGHT FAILURE - log error for debugging
+          this.logger.error({
+            originalIndex: result.originalIndex,
+            sentenceStart: result.sentenceStart,
+            sentenceEnd: result.sentenceEnd,
+            textPreview: plainText.substring(0, 200),
+            title: originalHit.title
+          }, 'HIGHLIGHT FAILED: Could not match anchors in text');
         }
+      } else {
+        // Missing anchors from LLM
+        this.logger.error({
+          originalIndex: result.originalIndex,
+          hasSentenceStart: !!result.sentenceStart,
+          hasSentenceEnd: !!result.sentenceEnd,
+          title: originalHit.title
+        }, 'HIGHLIGHT FAILED: LLM did not return sentence anchors');
       }
 
       return {

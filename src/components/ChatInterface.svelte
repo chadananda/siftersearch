@@ -1645,12 +1645,12 @@
   }
 
   .stats-card {
-    background-color: light-dark(rgba(255, 255, 255, 0.55), rgba(30, 41, 59, 0.55));
+    background-color: light-dark(rgba(255, 255, 255, 0.35), rgba(30, 41, 59, 0.35));
     border-radius: 0.75rem;
     padding: 0.75rem 1rem;
     border: 1px solid var(--border-default);
     backdrop-filter: blur(12px);
-    box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
+    box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.06), rgba(0,0,0,0.2));
   }
 
   @media (min-width: 640px) {
