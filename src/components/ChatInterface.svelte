@@ -49,6 +49,14 @@
   let readerHighlightedText = $state(''); // Store the hit's highlighted text for the current paragraph
   let readerAnimating = $state(false); // For smooth open animation
 
+  // Preloaded document cache: Map<document_id, { segments: [], total: number }>
+  const documentCache = new Map();
+
+  // Derived reader navigation state
+  let readerArrayIndex = $derived(readerParagraphs.findIndex(p => p.paragraph_index === readerCurrentIndex));
+  let readerCanGoPrev = $derived(readerArrayIndex > 0);
+  let readerCanGoNext = $derived(readerArrayIndex >= 0 && readerArrayIndex < readerParagraphs.length - 1);
+
   // Typewriter loading messages
   const LOADING_MESSAGES = [
     'Searching...',
@@ -213,7 +221,30 @@
   // ============================================
 
   /**
+   * Preload document segments for search results (called when sources arrive)
+   * Loads a window of paragraphs around each hit for instant reader display
+   */
+  async function preloadDocuments(sources) {
+    for (const source of sources) {
+      if (!source.document_id || documentCache.has(source.document_id)) continue;
+
+      // Start preloading in background (don't await - fire and forget)
+      documents.getSegments(source.document_id, { limit: 500 })
+        .then(response => {
+          documentCache.set(source.document_id, {
+            segments: response.segments || [],
+            total: response.total || 0
+          });
+        })
+        .catch(err => {
+          console.warn('Failed to preload document:', source.document_id, err);
+        });
+    }
+  }
+
+  /**
    * Open the full-screen reader for a document
+   * Uses preloaded cache if available for instant display
    * @param {Object} result - The search result containing document_id, paragraph_index, title, author, etc.
    */
   async function openReader(result) {
@@ -222,7 +253,43 @@
       return;
     }
 
-    // Start animation
+    const targetIndex = result.paragraph_index || 0;
+
+    // Check cache first - if preloaded, open instantly without loading state
+    const cached = documentCache.get(result.document_id);
+    if (cached && cached.segments.length > 0) {
+      // Instant open - no loading spinner!
+      readerAnimating = true;
+      readerOpen = true;
+      readerDocument = {
+        id: result.document_id,
+        title: result.title,
+        author: result.author,
+        religion: result.religion,
+        collection: result.collection
+      };
+      readerCurrentIndex = targetIndex;
+      readerHighlightedText = result.highlightedText || result.text || '';
+      readerParagraphs = cached.segments;
+      readerLoading = false;
+
+      // End animation after CSS transition
+      setTimeout(() => { readerAnimating = false; }, 400);
+
+      // Position scroll so current paragraph is centered (no animation)
+      await tick();
+      const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+      if (paragraphEl && readerContainerEl) {
+        const containerHeight = readerContainerEl.clientHeight;
+        const paragraphTop = paragraphEl.offsetTop;
+        const paragraphHeight = paragraphEl.offsetHeight;
+        const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+        readerContainerEl.scrollTop = Math.max(0, scrollTop);
+      }
+      return;
+    }
+
+    // Fallback: not cached yet, show loading and fetch
     readerAnimating = true;
     readerLoading = true;
     readerOpen = true;
@@ -233,24 +300,26 @@
       religion: result.religion,
       collection: result.collection
     };
-    const targetIndex = result.paragraph_index || 0;
     readerCurrentIndex = targetIndex;
-    readerHighlightedText = result.highlightedText || result.text || ''; // Store highlighted text from hit
+    readerHighlightedText = result.highlightedText || result.text || '';
     readerParagraphs = [];
 
-    // End animation after CSS transition
     setTimeout(() => { readerAnimating = false; }, 400);
 
     try {
-      // Fetch all segments for the document
       const response = await documents.getSegments(result.document_id, { limit: 500 });
       readerParagraphs = response.segments || [];
 
-      // Position scroll so current paragraph is centered (no animation)
+      // Cache for future use
+      documentCache.set(result.document_id, {
+        segments: response.segments || [],
+        total: response.total || 0
+      });
+
+      // Position scroll so current paragraph is centered
       await tick();
       const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${targetIndex}"]`);
       if (paragraphEl && readerContainerEl) {
-        // Calculate position to center the paragraph
         const containerHeight = readerContainerEl.clientHeight;
         const paragraphTop = paragraphEl.offsetTop;
         const paragraphHeight = paragraphEl.offsetHeight;
@@ -295,14 +364,16 @@
       closeReader();
     } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
       event.preventDefault();
-      if (readerCurrentIndex > 0) {
-        readerCurrentIndex--;
+      const currentArrayIndex = readerParagraphs.findIndex(p => p.paragraph_index === readerCurrentIndex);
+      if (currentArrayIndex > 0) {
+        readerCurrentIndex = readerParagraphs[currentArrayIndex - 1].paragraph_index;
         scrollToReaderParagraph(readerCurrentIndex);
       }
     } else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
       event.preventDefault();
-      if (readerCurrentIndex < readerParagraphs.length - 1) {
-        readerCurrentIndex++;
+      const currentArrayIndex = readerParagraphs.findIndex(p => p.paragraph_index === readerCurrentIndex);
+      if (currentArrayIndex < readerParagraphs.length - 1 && currentArrayIndex >= 0) {
+        readerCurrentIndex = readerParagraphs[currentArrayIndex + 1].paragraph_index;
         scrollToReaderParagraph(readerCurrentIndex);
       }
     }
@@ -354,6 +425,8 @@
         if (event.type === 'sources') {
           sources = event.sources || [];
           stopTypewriter(); // Stop typewriter when sources arrive
+          // Preload documents for instant reader access
+          preloadDocuments(sources);
           // Update message with sources
           messages = messages.map((m, i) =>
             i === assistantMsgIndex
@@ -554,11 +627,11 @@
           <div class="reader-paragraphs">
             {#each readerParagraphs as paragraph, i}
               <p
-                class="reader-paragraph {i === readerCurrentIndex ? 'current' : ''}"
+                class="reader-paragraph {paragraph.paragraph_index === readerCurrentIndex ? 'current' : ''}"
                 data-paragraph-index={paragraph.paragraph_index}
-                onclick={() => { readerCurrentIndex = i; }}
+                onclick={() => { readerCurrentIndex = paragraph.paragraph_index; }}
               >
-                {#if i === readerCurrentIndex && readerHighlightedText}
+                {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
                   {@html readerHighlightedText}
                 {:else}
                   {paragraph.text}
@@ -573,20 +646,20 @@
       <footer class="reader-footer">
         <div class="reader-progress">
           <span class="reader-progress-text">
-            {readerCurrentIndex + 1} of {readerParagraphs.length}
+            {readerArrayIndex >= 0 ? readerArrayIndex + 1 : 1} of {readerParagraphs.length}
           </span>
           <div class="reader-progress-bar">
             <div
               class="reader-progress-fill"
-              style="width: {readerParagraphs.length > 0 ? ((readerCurrentIndex + 1) / readerParagraphs.length * 100) : 0}%"
+              style="width: {readerParagraphs.length > 0 && readerArrayIndex >= 0 ? ((readerArrayIndex + 1) / readerParagraphs.length * 100) : 0}%"
             ></div>
           </div>
         </div>
         <div class="reader-nav-buttons">
           <button
             class="reader-nav-btn"
-            onclick={() => { if (readerCurrentIndex > 0) { readerCurrentIndex--; scrollToReaderParagraph(readerCurrentIndex); } }}
-            disabled={readerCurrentIndex === 0}
+            onclick={() => { if (readerCanGoPrev) { readerCurrentIndex = readerParagraphs[readerArrayIndex - 1].paragraph_index; scrollToReaderParagraph(readerCurrentIndex); } }}
+            disabled={!readerCanGoPrev}
             aria-label="Previous paragraph"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -595,8 +668,8 @@
           </button>
           <button
             class="reader-nav-btn"
-            onclick={() => { if (readerCurrentIndex < readerParagraphs.length - 1) { readerCurrentIndex++; scrollToReaderParagraph(readerCurrentIndex); } }}
-            disabled={readerCurrentIndex >= readerParagraphs.length - 1}
+            onclick={() => { if (readerCanGoNext) { readerCurrentIndex = readerParagraphs[readerArrayIndex + 1].paragraph_index; scrollToReaderParagraph(readerCurrentIndex); } }}
+            disabled={!readerCanGoNext}
             aria-label="Next paragraph"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">

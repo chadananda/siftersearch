@@ -239,12 +239,22 @@ CRITICAL RULES:
    * Enhance results with highlighting
    */
   enhanceResults(analysisResults, originalHits) {
+    this.logger.info({ resultCount: analysisResults?.length }, 'enhanceResults called');
+
     return analysisResults.map(result => {
       const originalHit = originalHits[result.originalIndex];
       if (!originalHit) return null;
 
       const plainText = originalHit.text || '';
       let highlightedText = plainText;
+
+      this.logger.info({
+        idx: result.originalIndex,
+        hasStart: !!result.sentenceStart,
+        hasEnd: !!result.sentenceEnd,
+        start: result.sentenceStart?.substring(0, 30),
+        end: result.sentenceEnd?.substring(0, 30)
+      }, 'Processing result');
 
       // Use anchor-based matching (new approach)
       if (result.sentenceStart && result.sentenceEnd) {
@@ -266,6 +276,12 @@ CRITICAL RULES:
           const before = plainText.substring(0, match.start);
           const after = plainText.substring(match.end);
           highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
+
+          this.logger.info({
+            originalIndex: result.originalIndex,
+            matchedText: match.text.substring(0, 60) + '...',
+            title: originalHit.title?.substring(0, 30)
+          }, 'HIGHLIGHT SUCCESS');
         } else {
           // HIGHLIGHT FAILURE - log error for debugging
           this.logger.error({
