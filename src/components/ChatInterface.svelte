@@ -1254,7 +1254,7 @@
   .title .version {
     font-size: 0.7rem;
     font-weight: 400;
-    color: var(--text-secondary, #cbd5e1);
+    color: var(--text-secondary);
     vertical-align: super;
     margin-left: 0.25rem;
   }

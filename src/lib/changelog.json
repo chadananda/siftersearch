@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:31:13.334Z",
+  "generated": "2025-12-12T21:32:07.681Z",
   "entries": [
+    {
+      "hash": "525d897",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use text-secondary color for version, remove opacity",
+      "scope": null
+    },
     {
       "hash": "f480fb6",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Reader displays with no visible scrolling and matches hit styling",
       "scope": null
-    },
-    {
-      "hash": "c3a793d",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Instant reader with preloaded documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "525d897",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use text-secondary color for version, remove opacity",
+        "scope": null
+      },
       {
         "hash": "f480fb6",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Reader displays with no visible scrolling and matches hit styling",
-        "scope": null
-      },
-      {
-        "hash": "c3a793d",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Instant reader with preloaded documents",
         "scope": null
       }
     ]
