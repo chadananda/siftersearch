@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:30:34.547Z",
+  "generated": "2025-12-12T21:31:13.334Z",
   "entries": [
+    {
+      "hash": "f480fb6",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Increase version text opacity from 0.6 to 0.8 for readability",
+      "scope": null
+    },
     {
       "hash": "2a3ac70",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Instant reader with preloaded documents",
       "scope": null
-    },
-    {
-      "hash": "684e5f9",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Center current paragraph in reader without scroll animation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "f480fb6",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Increase version text opacity from 0.6 to 0.8 for readability",
+        "scope": null
+      },
       {
         "hash": "2a3ac70",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Instant reader with preloaded documents",
-        "scope": null
-      },
-      {
-        "hash": "684e5f9",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Center current paragraph in reader without scroll animation",
         "scope": null
       }
     ]
