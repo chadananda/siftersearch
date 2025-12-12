@@ -1985,8 +1985,19 @@
   .analysis-sources {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0;
     margin-top: 0.5rem;
+  }
+  /* Add gap only when expanded card follows any card */
+  .analysis-sources .source-card.expanded {
+    margin-top: 0.75rem;
+  }
+  .analysis-sources .source-card.expanded:first-child {
+    margin-top: 0;
+  }
+  /* Add gap after expanded card */
+  .analysis-sources .source-card.expanded + .source-card {
+    margin-top: 0.75rem;
   }
 
   .sources-heading {
@@ -2111,12 +2122,13 @@
     box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.25));
   }
   .source-card.collapsed {
-    background-color: var(--surface-1-alpha);
-    opacity: 0.85;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
   }
   .source-card.collapsed:hover {
-    opacity: 1;
-    border-color: var(--border-strong, var(--border-default));
+    background-color: var(--surface-1-alpha);
   }
 
   /* Collapsed summary header */

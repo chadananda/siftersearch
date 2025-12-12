@@ -380,12 +380,64 @@ Rules:
 
         // Highlight the relevant sentence if we have one
         if (result.relevantSentence) {
-          // Find where the sentence appears in the plain text
-          const sentenceIndex = plainText.indexOf(result.relevantSentence);
+          // Try to find where the sentence appears in the plain text
+          // First try exact match
+          let sentenceIndex = plainText.indexOf(result.relevantSentence);
+          let matchedSentence = result.relevantSentence;
+
+          // If exact match fails, try normalized matching
+          if (sentenceIndex === -1) {
+            // Normalize whitespace for comparison
+            const normalizedSentence = result.relevantSentence.replace(/\s+/g, ' ').trim();
+            const normalizedText = plainText.replace(/\s+/g, ' ');
+            const normalizedIndex = normalizedText.indexOf(normalizedSentence);
+
+            if (normalizedIndex !== -1) {
+              // Find the actual position in original text by counting characters
+              // This is approximate but usually works
+              let charCount = 0;
+              let actualIndex = 0;
+              for (let i = 0; i < plainText.length && charCount < normalizedIndex; i++) {
+                if (!/\s/.test(plainText[i]) || (i > 0 && !/\s/.test(plainText[i-1]))) {
+                  charCount++;
+                }
+                actualIndex = i;
+              }
+              // Find the end of the sentence in original text
+              let sentenceEnd = actualIndex;
+              let matchedChars = 0;
+              const targetChars = normalizedSentence.replace(/\s+/g, '').length;
+              for (let i = actualIndex; i < plainText.length && matchedChars < targetChars; i++) {
+                if (!/\s/.test(plainText[i])) {
+                  matchedChars++;
+                }
+                sentenceEnd = i + 1;
+              }
+              sentenceIndex = actualIndex;
+              matchedSentence = plainText.substring(actualIndex, sentenceEnd);
+            }
+          }
+
+          // If still no match, try finding the first few words
+          if (sentenceIndex === -1) {
+            const words = result.relevantSentence.split(/\s+/).slice(0, 5).join(' ');
+            if (words.length > 10) {
+              const partialIndex = plainText.indexOf(words);
+              if (partialIndex !== -1) {
+                // Find the end of the sentence (period, question mark, exclamation, or end of text)
+                const sentenceEndMatch = plainText.substring(partialIndex).match(/[.!?]/);
+                const sentenceEnd = sentenceEndMatch
+                  ? partialIndex + sentenceEndMatch.index + 1
+                  : Math.min(partialIndex + result.relevantSentence.length + 50, plainText.length);
+                sentenceIndex = partialIndex;
+                matchedSentence = plainText.substring(partialIndex, sentenceEnd).trim();
+              }
+            }
+          }
 
           if (sentenceIndex !== -1) {
             // Build the highlighted version with bolded keywords
-            let highlightedSentence = result.relevantSentence;
+            let highlightedSentence = matchedSentence;
 
             // If we have keywords, bold them within the sentence using <b> tags
             if (result.keyWords?.length > 0) {
@@ -398,7 +450,7 @@ Rules:
 
             // Reconstruct: text before + marked sentence + text after
             const before = plainText.substring(0, sentenceIndex);
-            const after = plainText.substring(sentenceIndex + result.relevantSentence.length);
+            const after = plainText.substring(sentenceIndex + matchedSentence.length);
             highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
           }
         }

@@ -150,24 +150,77 @@ Rules:
 
       // Create highlighted text - start with plain text, not Meilisearch's formatted version
       let highlightedText = originalHit.text || '';
+      const plainText = highlightedText;
 
-      if (result.relevantSentence && result.keyWords?.length > 0) {
-        let highlightedSentence = result.relevantSentence;
+      if (result.relevantSentence) {
+        // Try to find where the sentence appears in the plain text
+        // First try exact match
+        let sentenceIndex = plainText.indexOf(result.relevantSentence);
+        let matchedSentence = result.relevantSentence;
 
-        // Sort key words by length (longest first) to avoid partial replacements
-        const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
+        // If exact match fails, try normalized matching
+        if (sentenceIndex === -1) {
+          const normalizedSentence = result.relevantSentence.replace(/\s+/g, ' ').trim();
+          const normalizedText = plainText.replace(/\s+/g, ' ');
+          const normalizedIndex = normalizedText.indexOf(normalizedSentence);
 
-        for (const keyword of sortedKeyWords) {
-          // Case-insensitive replacement with bold tags
-          const regex = new RegExp(`(${this.escapeRegex(keyword)})`, 'gi');
-          highlightedSentence = highlightedSentence.replace(regex, '<strong>$1</strong>');
+          if (normalizedIndex !== -1) {
+            // Approximate position mapping
+            let charCount = 0;
+            let actualIndex = 0;
+            for (let i = 0; i < plainText.length && charCount < normalizedIndex; i++) {
+              if (!/\s/.test(plainText[i]) || (i > 0 && !/\s/.test(plainText[i-1]))) {
+                charCount++;
+              }
+              actualIndex = i;
+            }
+            let sentenceEnd = actualIndex;
+            let matchedChars = 0;
+            const targetChars = normalizedSentence.replace(/\s+/g, '').length;
+            for (let i = actualIndex; i < plainText.length && matchedChars < targetChars; i++) {
+              if (!/\s/.test(plainText[i])) {
+                matchedChars++;
+              }
+              sentenceEnd = i + 1;
+            }
+            sentenceIndex = actualIndex;
+            matchedSentence = plainText.substring(actualIndex, sentenceEnd);
+          }
         }
 
-        // Replace the original sentence with highlighted version
-        highlightedText = highlightedText.replace(
-          result.relevantSentence,
-          `<mark>${highlightedSentence}</mark>`
-        );
+        // If still no match, try finding the first few words
+        if (sentenceIndex === -1) {
+          const words = result.relevantSentence.split(/\s+/).slice(0, 5).join(' ');
+          if (words.length > 10) {
+            const partialIndex = plainText.indexOf(words);
+            if (partialIndex !== -1) {
+              const sentenceEndMatch = plainText.substring(partialIndex).match(/[.!?]/);
+              const sentenceEnd = sentenceEndMatch
+                ? partialIndex + sentenceEndMatch.index + 1
+                : Math.min(partialIndex + result.relevantSentence.length + 50, plainText.length);
+              sentenceIndex = partialIndex;
+              matchedSentence = plainText.substring(partialIndex, sentenceEnd).trim();
+            }
+          }
+        }
+
+        if (sentenceIndex !== -1) {
+          let highlightedSentence = matchedSentence;
+
+          // If we have keywords, bold them within the sentence
+          if (result.keyWords?.length > 0) {
+            const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
+            for (const keyword of sortedKeyWords) {
+              const regex = new RegExp(`(${this.escapeRegex(keyword)})`, 'gi');
+              highlightedSentence = highlightedSentence.replace(regex, '<b>$1</b>');
+            }
+          }
+
+          // Reconstruct with mark tag
+          const before = plainText.substring(0, sentenceIndex);
+          const after = plainText.substring(sentenceIndex + matchedSentence.length);
+          highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
+        }
       }
 
       return {

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:51:52.894Z",
+  "generated": "2025-12-12T02:24:31.278Z",
   "entries": [
+    {
+      "hash": "fb52019",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Use plain text for highlighting, not Meilisearch formatted text",
+      "scope": null
+    },
     {
       "hash": "d4c309b",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Implement full-screen reading mode with document navigation",
       "scope": null
-    },
-    {
-      "hash": "2d2915a",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Paper background always light regardless of theme",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "fb52019",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Use plain text for highlighting, not Meilisearch formatted text",
+        "scope": null
+      },
       {
         "hash": "d4c309b",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Implement full-screen reading mode with document navigation",
-        "scope": null
-      },
-      {
-        "hash": "2d2915a",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Paper background always light regardless of theme",
         "scope": null
       }
     ]
