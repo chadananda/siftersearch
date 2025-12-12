@@ -2122,11 +2122,10 @@
     color: #1a1a1a;
   }
 
-  /* Bold key words within the relevant sentence - green emphasis */
+  /* Bold key words within the relevant sentence - just bold, no color change */
   .source-paper :global(mark b),
   .source-paper :global(b) {
     font-weight: 700;
-    color: #15803d;
   }
 
   /* Citation bar at bottom of card */

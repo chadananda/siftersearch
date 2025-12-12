@@ -295,12 +295,12 @@ TASKS:
 5. Write a DIRECT answer summary (5-10 words max)
 
 CRITICAL SUMMARY RULES:
-- Answer the query directly from the quote's content
+- Write a complete assertion statement from the quote's content
+- ALWAYS include articles (the, a, an) - never omit them
+- Format: Complete sentence-like assertion. Example: "The soul connects to God through Divine Revelation" NOT "Soul connects God"
 - NO meta-language: Never say "this passage states", "asserts", "discusses", "addresses"
-- Format: Just the answer. Example: "Unity through diversity of traditions" NOT "This passage asserts that unity comes through diversity"
-- If query is "What is X?" → summary is "X is [answer]"
-- If query is "How to Y?" → summary is "[method/answer]"
-- Maximum 10 words
+- If query is "What is X?" → summary is "X is [answer]" or "The X is [answer]"
+- Maximum 10 words but must read naturally with proper grammar
 
 Return ONLY valid JSON:
 {

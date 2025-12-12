@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:04:17.118Z",
+  "generated": "2025-12-12T00:07:58.059Z",
   "entries": [
+    {
+      "hash": "2a82c9c",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Use <b> tag for bolded keywords in relevant sentence",
+      "scope": null
+    },
     {
       "hash": "4e01d83",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add linting and build checks to pre-commit hook",
       "scope": null
-    },
-    {
-      "hash": "4c0a9b0",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add git hooks for automated version bump and deployment",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "2a82c9c",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Use <b> tag for bolded keywords in relevant sentence",
+        "scope": null
+      },
       {
         "hash": "4e01d83",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add linting and build checks to pre-commit hook",
-        "scope": null
-      },
-      {
-        "hash": "4c0a9b0",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add git hooks for automated version bump and deployment",
         "scope": null
       }
     ]
