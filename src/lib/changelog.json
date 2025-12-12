@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:23:17.516Z",
+  "generated": "2025-12-12T21:24:07.877Z",
   "entries": [
+    {
+      "hash": "942eae3",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Simplify PWA update button text (version not available before refresh)",
+      "scope": null
+    },
     {
       "hash": "2efe82c",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
       "scope": null
-    },
-    {
-      "hash": "7ed4016",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Improve sentence matching for highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "942eae3",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Simplify PWA update button text (version not available before refresh)",
+        "scope": null
+      },
       {
         "hash": "2efe82c",
         "date": "2025-12-12",
@@ -137,13 +144,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
-        "scope": null
-      },
-      {
-        "hash": "7ed4016",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Improve sentence matching for highlighting",
         "scope": null
       }
     ]

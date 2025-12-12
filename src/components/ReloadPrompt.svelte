@@ -68,10 +68,7 @@
     </div>
     <div class="buttons">
       {#if needRefresh}
-        <button class="refresh-btn" onclick={refresh}>
-          <span class="desktop-text">Update Now</span>
-          <span class="mobile-text">Update</span>
-        </button>
+        <button class="refresh-btn" onclick={refresh}>UPDATE</button>
       {/if}
       <button class="close-btn" onclick={close} aria-label="Close">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -155,19 +152,11 @@
     color: var(--text-primary, #f1f5f9);
   }
 
-  /* Mobile: show compact text, hide desktop text */
-  .mobile-text {
-    display: inline;
-  }
+  /* Hide message text on mobile */
   .desktop-text {
     display: none;
   }
-
-  /* Desktop: show full text, hide mobile text */
   @media (min-width: 480px) {
-    .mobile-text {
-      display: none;
-    }
     .desktop-text {
       display: inline;
     }
