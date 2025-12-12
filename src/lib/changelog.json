@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-11T23:57:59.071Z",
+  "generated": "2025-12-12T00:01:45.651Z",
   "entries": [
+    {
+      "hash": "b55557a",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Summary text prominent (white), document title muted (gray)",
+      "scope": null
+    },
     {
       "hash": "e41e090",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add version automation and What's New section",
       "scope": null
-    },
-    {
-      "hash": "6704d34",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Add comprehensive SEO improvements and BDD tests",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "b55557a",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Summary text prominent (white), document title muted (gray)",
+        "scope": null
+      },
       {
         "hash": "e41e090",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add version automation and What's New section",
-        "scope": null
-      },
-      {
-        "hash": "6704d34",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Add comprehensive SEO improvements and BDD tests",
         "scope": null
       }
     ]

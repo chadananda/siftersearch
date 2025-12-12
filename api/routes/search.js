@@ -372,21 +372,35 @@ Rules:
         const originalHit = searchResults.hits[result.originalIndex];
         if (!originalHit) return null;
 
-        // Create highlighted text by bolding key words in the relevant sentence
+        // Create highlighted text by marking the relevant sentence
         let highlightedText = originalHit._formatted?.text || originalHit.text || '';
 
-        // Replace the relevant sentence with a version that has bolded key words
-        if (result.relevantSentence && result.keyWords?.length > 0) {
-          let highlightedSentence = result.relevantSentence;
-          // Sort key words by length (longest first) to avoid partial replacements
-          const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
-          for (const keyword of sortedKeyWords) {
-            // Case-insensitive replacement with bold tags
-            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            highlightedSentence = highlightedSentence.replace(regex, '<strong>$1</strong>');
+        // Strip Meilisearch's <mark> tags for matching, but keep a version with them
+        const plainText = highlightedText.replace(/<\/?mark>/g, '');
+
+        // Highlight the relevant sentence if we have one
+        if (result.relevantSentence) {
+          // Find where the sentence appears in the plain text
+          const sentenceIndex = plainText.indexOf(result.relevantSentence);
+
+          if (sentenceIndex !== -1) {
+            // Build the highlighted version with bolded keywords
+            let highlightedSentence = result.relevantSentence;
+
+            // If we have keywords, bold them within the sentence
+            if (result.keyWords?.length > 0) {
+              const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
+              for (const keyword of sortedKeyWords) {
+                const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                highlightedSentence = highlightedSentence.replace(regex, '<strong>$1</strong>');
+              }
+            }
+
+            // Reconstruct: text before + marked sentence + text after
+            const before = plainText.substring(0, sentenceIndex);
+            const after = plainText.substring(sentenceIndex + result.relevantSentence.length);
+            highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
           }
-          // Replace the original sentence with highlighted version in the full text
-          highlightedText = highlightedText.replace(result.relevantSentence, `<mark>${highlightedSentence}</mark>`);
         }
 
         return {

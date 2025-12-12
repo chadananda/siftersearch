@@ -1568,7 +1568,7 @@
   }
 
   .stats-card {
-    background-color: var(--surface-0);
+    background-color: light-dark(rgba(255, 255, 255, 0.7), rgba(30, 41, 59, 0.7));
     border-radius: 0.75rem;
     padding: 1.25rem;
     border: 1px solid var(--border-default);
@@ -2098,7 +2098,7 @@
   .source-text {
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-size: 1.0625rem;
-    line-height: 1.9;
+    line-height: 1.65;
     color: #1a1a1a;
     margin: 0;
   }
