@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T18:33:39.506Z",
+  "generated": "2025-12-12T21:12:03.247Z",
   "entries": [
+    {
+      "hash": "c3a793d",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Instant reader with preloaded documents",
+      "scope": null
+    },
     {
       "hash": "684e5f9",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Simplify markdown link regex, remove lookbehind for compatibility",
       "scope": null
-    },
-    {
-      "hash": "b8ed1e9",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Remove max-width constraint from source text",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "c3a793d",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Instant reader with preloaded documents",
+        "scope": null
+      },
       {
         "hash": "684e5f9",
         "date": "2025-12-12",
@@ -137,13 +144,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Simplify markdown link regex, remove lookbehind for compatibility",
-        "scope": null
-      },
-      {
-        "hash": "b8ed1e9",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Remove max-width constraint from source text",
         "scope": null
       }
     ]

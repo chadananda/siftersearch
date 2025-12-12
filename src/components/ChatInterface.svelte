@@ -258,9 +258,7 @@
     // Check cache first - if preloaded, open instantly without loading state
     const cached = documentCache.get(result.document_id);
     if (cached && cached.segments.length > 0) {
-      // Instant open - no loading spinner!
-      readerAnimating = true;
-      readerOpen = true;
+      // Set up data first (reader not visible yet)
       readerDocument = {
         id: result.document_id,
         title: result.title,
@@ -273,19 +271,31 @@
       readerParagraphs = cached.segments;
       readerLoading = false;
 
+      // Open reader but keep content invisible until scroll positioned
+      readerOpen = true;
+      readerAnimating = true;
+
+      // Wait for DOM, position scroll BEFORE content becomes visible
+      await tick();
+      if (readerContainerEl) {
+        // Temporarily hide content while positioning
+        readerContainerEl.style.visibility = 'hidden';
+
+        const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+        if (paragraphEl) {
+          const containerHeight = readerContainerEl.clientHeight;
+          const paragraphTop = paragraphEl.offsetTop;
+          const paragraphHeight = paragraphEl.offsetHeight;
+          const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+          readerContainerEl.scrollTop = Math.max(0, scrollTop);
+        }
+
+        // Make visible after scroll is set
+        readerContainerEl.style.visibility = 'visible';
+      }
+
       // End animation after CSS transition
       setTimeout(() => { readerAnimating = false; }, 400);
-
-      // Position scroll so current paragraph is centered (no animation)
-      await tick();
-      const paragraphEl = readerContainerEl?.querySelector(`[data-paragraph-index="${targetIndex}"]`);
-      if (paragraphEl && readerContainerEl) {
-        const containerHeight = readerContainerEl.clientHeight;
-        const paragraphTop = paragraphEl.offsetTop;
-        const paragraphHeight = paragraphEl.offsetHeight;
-        const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
-        readerContainerEl.scrollTop = Math.max(0, scrollTop);
-      }
       return;
     }
 
@@ -2894,7 +2904,7 @@
   }
 
   .reader-paragraphs {
-    max-width: 65ch;
+    /* Match source-paper width - no max-width constraint */
     margin: 0 auto;
   }
 
@@ -2904,20 +2914,7 @@
     line-height: 1.65;
     color: #1a1a1a;
     margin: 0 0 1.5rem;
-    padding: 1rem 1.25rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-left: 3px solid transparent;
-  }
-
-  .reader-paragraph:hover {
-    background: rgba(0, 0, 0, 0.03);
-  }
-
-  .reader-paragraph.current {
-    background: rgba(254, 249, 195, 0.5);
-    border-left-color: #fbbf24;
+    /* No special padding/border - match source-paper text style */
   }
 
   /* Mark, search-highlight, and em styling for highlighted text in reader */
