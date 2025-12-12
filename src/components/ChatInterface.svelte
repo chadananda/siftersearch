@@ -447,7 +447,10 @@
       .replace(/<em>/g, '<span class="search-highlight">')
       .replace(/<\/em>/g, '</span>')
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-      .replace(/_(.+?)_/g, '<em class="italic">$1</em>');
+      .replace(/_(.+?)_/g, '<em class="italic">$1</em>')
+      // Convert URLs to clickable links (but not if already inside an href)
+      // Exclude trailing punctuation (.,;:!?) from URL capture
+      .replace(/(?<!href=["'])(?<!">)(https?:\/\/[^\s<>\[\]()'"]+?)(?=[.,;:!?)]*(?:\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-link">$1</a>');
     // Note: <mark> and <strong> tags from analyzer are preserved as-is
   }
 
@@ -2202,6 +2205,7 @@
     line-height: 1.65;
     color: #1a1a1a;
     margin: 0;
+    max-width: 65ch;
   }
 
   /* Light yellow highlight for search keyword matches from Meilisearch */
@@ -2420,6 +2424,18 @@
     background-color: color-mix(in srgb, var(--accent-primary) 25%, transparent);
     padding: 0.1em 0.2em;
     border-radius: 0.2em;
+  }
+
+  /* Hyperlinked URLs in text */
+  :global(.text-link) {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+    text-underline-offset: 2px;
+    word-break: break-all;
+  }
+  :global(.text-link:hover) {
+    text-decoration-color: var(--accent-primary);
   }
 
   /* Override browser default <em> styling in results (Meilisearch uses <em> tags) */
@@ -2800,7 +2816,18 @@
     border-left-color: #fbbf24;
   }
 
-  /* Mark and bold styling for highlighted text in reader */
+  /* Mark, search-highlight, and em styling for highlighted text in reader */
+  /* Must match .source-paper styling for consistency */
+  .reader-paragraph :global(.search-highlight),
+  .reader-paragraph :global(em) {
+    font-style: normal;
+    font-weight: 600;
+    background-color: #fef9c3;
+    padding: 0.1em 0.25em;
+    border-radius: 0.2em;
+    color: #1a1a1a;
+  }
+
   .reader-paragraph :global(mark) {
     background-color: #fef9c3 !important;
     background: #fef9c3 !important;
@@ -2812,6 +2839,7 @@
   .reader-paragraph :global(mark b),
   .reader-paragraph :global(b) {
     font-weight: 700;
+    color: inherit;
   }
 
   /* Reader Footer */

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:28:35.771Z",
+  "generated": "2025-12-12T00:43:41.525Z",
   "entries": [
+    {
+      "hash": "e2e0031",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Redesign search input with inline button, improve mobile layout",
+      "scope": null
+    },
     {
       "hash": "0a17e28",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add multi-agent architecture and UI improvements",
       "scope": null
-    },
-    {
-      "hash": "e88d9aa",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "e2e0031",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Redesign search input with inline button, improve mobile layout",
+        "scope": null
+      },
       {
         "hash": "0a17e28",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Add multi-agent architecture and UI improvements",
-        "scope": null
-      },
-      {
-        "hash": "e88d9aa",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Redesign hit cards with paper background, citation bar, ocean.svg logo",
         "scope": null
       }
     ]
