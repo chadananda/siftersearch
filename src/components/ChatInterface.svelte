@@ -605,7 +605,7 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- Header -->
-  <header class="header" role="banner">
+  <header class="header px-3 py-2 sm:px-4 sm:py-3" role="banner">
     <div class="header-left">
       <img src="/ocean.svg" alt="SifterSearch" class="logo" />
       <span class="title" role="text">
@@ -794,7 +794,7 @@
   </div>
 
   <!-- Messages area - Main content region -->
-  <main id="main-content" class="messages-area" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
+  <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
     {#if messages.length === 0}
       <div class="welcome-screen">
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
@@ -947,7 +947,7 @@
                         </button>
                       {:else}
                         <!-- Expanded: full paper card view -->
-                        <button class="source-collapse-btn" onclick={() => toggleResult(message.id || msgIndex, i)}>
+                        <button class="source-collapse-btn px-3 py-2 sm:px-4" onclick={() => toggleResult(message.id || msgIndex, i)}>
                           <span class="source-num">{i + 1}</span>
                           <span class="source-summary-expanded">{summary || (plainText.substring(0, 80) + (plainText.length > 80 ? '...' : ''))}</span>
                           <svg class="source-expand-icon open" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -956,12 +956,12 @@
                         </button>
 
                         <!-- Paper-like text area with off-white background -->
-                        <div class="source-paper">
+                        <div class="source-paper p-3 sm:p-4 sm:px-5">
                           <p class="source-text">{@html formatText(highlightedText)}</p>
                         </div>
 
                         <!-- Citation bar: [religion] > [collection] > [author] > [title] -->
-                        <div class="citation-bar">
+                        <div class="citation-bar px-3 py-2 gap-2 sm:px-4 sm:gap-4">
                           <div class="citation-path">
                             {#if religion}<span class="citation-segment">{religion}</span>{/if}
                             {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
@@ -1114,7 +1114,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-default);
     background-color: var(--surface-0-alpha);
     backdrop-filter: blur(8px);
@@ -1539,10 +1538,8 @@
   .messages-area {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
   }
 
   /* Welcome Screen */
@@ -2195,7 +2192,6 @@
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    padding: 0.5rem 1rem;
     background: var(--surface-2);
     border: none;
     border-bottom: 1px solid var(--border-subtle);
@@ -2225,7 +2221,6 @@
   /* Paper-like text area - ALWAYS light paper color regardless of theme */
   .source-paper {
     background-color: #faf8f3;
-    padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
@@ -2270,8 +2265,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.625rem 1rem;
     background-color: var(--surface-2);
     font-size: 0.8125rem;
   }

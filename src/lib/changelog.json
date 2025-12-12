@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T16:16:04.512Z",
+  "generated": "2025-12-12T16:38:23.423Z",
   "entries": [
+    {
+      "hash": "6b4478d",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Increase max sentence length for highlighting from 500 to 800 chars",
+      "scope": null
+    },
     {
       "hash": "a7cb745",
       "date": "2025-12-11",
@@ -63,16 +70,18 @@
       "type": "Fixed",
       "description": "Handle markdown-style links [text](url) before standalone URLs",
       "scope": null
-    },
-    {
-      "hash": "fd8ac08",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Robust sentence matching and accordion rule styling",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-12": [
+      {
+        "hash": "6b4478d",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Increase max sentence length for highlighting from 500 to 800 chars",
+        "scope": null
+      }
+    ],
     "2025-12-11": [
       {
         "hash": "a7cb745",
@@ -135,13 +144,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Handle markdown-style links [text](url) before standalone URLs",
-        "scope": null
-      },
-      {
-        "hash": "fd8ac08",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Robust sentence matching and accordion rule styling",
         "scope": null
       }
     ]
