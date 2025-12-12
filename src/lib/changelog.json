@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T03:20:45.037Z",
+  "generated": "2025-12-12T03:23:24.109Z",
   "entries": [
+    {
+      "hash": "7ed4016",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Improve sentence matching for highlighting",
+      "scope": null
+    },
     {
       "hash": "fffa9ff",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use plain text for highlighting, not Meilisearch formatted text",
       "scope": null
-    },
-    {
-      "hash": "d4c309b",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Prevent URL mangling from em/mark tags inside links",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "7ed4016",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Improve sentence matching for highlighting",
+        "scope": null
+      },
       {
         "hash": "fffa9ff",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Use plain text for highlighting, not Meilisearch formatted text",
-        "scope": null
-      },
-      {
-        "hash": "d4c309b",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Prevent URL mangling from em/mark tags inside links",
         "scope": null
       }
     ]

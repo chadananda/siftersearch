@@ -70,8 +70,8 @@ export class AnalyzerAgent extends BaseAgent {
 TASKS:
 1. Re-rank by relevance (most relevant first)
 2. Remove irrelevant passages
-3. Find the MOST relevant sentence in each passage
-4. Identify 1-3 key words/phrases in that sentence
+3. Find the MOST relevant sentence in each passage - provide anchor words to locate it
+4. Identify 1-3 key words/phrases to highlight
 5. Write a DIRECT answer summary (5-10 words max)
 
 CRITICAL SUMMARY RULES:
@@ -87,7 +87,8 @@ Return ONLY valid JSON:
   "results": [
     {
       "originalIndex": 0,
-      "relevantSentence": "Exact quote from passage",
+      "sentenceStart": "first three words",
+      "sentenceEnd": "last three words",
       "keyWords": ["word1", "phrase"],
       "summary": "Direct 5-10 word answer"
     }
@@ -100,9 +101,9 @@ ${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text
 
 CRITICAL RULES:
 - Only include relevant passages
-- relevantSentence must be COPY-PASTED VERBATIM from the passage - do NOT paraphrase or modify
-- Copy the sentence EXACTLY including punctuation, capitalization, and any special characters
-- keyWords from relevantSentence only
+- sentenceStart: the EXACT first 3-5 words of the relevant sentence (copy verbatim)
+- sentenceEnd: the EXACT last 3-5 words of the relevant sentence (copy verbatim, including punctuation)
+- keyWords: 1-3 important words/phrases from that sentence to bold
 - Summaries: direct answers, no filler words`;
 
     try {
@@ -131,14 +132,46 @@ CRITICAL RULES:
         results: hits.map(hit => ({
           ...hit,
           summary: '',
-          relevantSentence: '',
-          highlightedText: hit.text // Plain text in fallback, no highlighting
+          keyWords: [],
+          highlightedText: hit.text
         })),
         introduction: `Found ${hits.length} passages related to your query.`,
         query,
         error: 'Analysis unavailable'
       };
     }
+  }
+
+  /**
+   * Find sentence in text using start and end anchors
+   */
+  findSentenceByAnchors(text, startAnchor, endAnchor) {
+    if (!startAnchor || !endAnchor) return null;
+
+    const lowerText = text.toLowerCase();
+    const lowerStart = startAnchor.toLowerCase();
+    const lowerEnd = endAnchor.toLowerCase();
+
+    // Find start anchor position
+    const startIndex = lowerText.indexOf(lowerStart);
+    if (startIndex === -1) return null;
+
+    // Find end anchor position (must be after start)
+    const searchFrom = startIndex + lowerStart.length;
+    const endIndex = lowerText.indexOf(lowerEnd, searchFrom);
+    if (endIndex === -1) return null;
+
+    // Extract the full sentence (from start anchor to end of end anchor)
+    const sentenceEnd = endIndex + endAnchor.length;
+
+    // Sanity check: sentence shouldn't be too long (max 500 chars)
+    if (sentenceEnd - startIndex > 500) return null;
+
+    return {
+      start: startIndex,
+      end: sentenceEnd,
+      text: text.substring(startIndex, sentenceEnd)
+    };
   }
 
   /**
@@ -149,99 +182,17 @@ CRITICAL RULES:
       const originalHit = originalHits[result.originalIndex];
       if (!originalHit) return null;
 
-      // Create highlighted text - start with plain text, not Meilisearch's formatted version
-      let highlightedText = originalHit.text || '';
-      const plainText = highlightedText;
+      const plainText = originalHit.text || '';
+      let highlightedText = plainText;
 
-      if (result.relevantSentence) {
-        // Try to find where the sentence appears in the plain text
-        // First try exact match
-        let sentenceIndex = plainText.indexOf(result.relevantSentence);
-        let matchedSentence = result.relevantSentence;
+      // Use anchor-based matching (new approach)
+      if (result.sentenceStart && result.sentenceEnd) {
+        const match = this.findSentenceByAnchors(plainText, result.sentenceStart, result.sentenceEnd);
 
-        // If exact match fails, try normalized matching
-        if (sentenceIndex === -1) {
-          const normalizedSentence = result.relevantSentence.replace(/\s+/g, ' ').trim();
-          const normalizedText = plainText.replace(/\s+/g, ' ');
-          const normalizedIndex = normalizedText.indexOf(normalizedSentence);
+        if (match) {
+          let highlightedSentence = match.text;
 
-          if (normalizedIndex !== -1) {
-            // Approximate position mapping
-            let charCount = 0;
-            let actualIndex = 0;
-            for (let i = 0; i < plainText.length && charCount < normalizedIndex; i++) {
-              if (!/\s/.test(plainText[i]) || (i > 0 && !/\s/.test(plainText[i-1]))) {
-                charCount++;
-              }
-              actualIndex = i;
-            }
-            let sentenceEnd = actualIndex;
-            let matchedChars = 0;
-            const targetChars = normalizedSentence.replace(/\s+/g, '').length;
-            for (let i = actualIndex; i < plainText.length && matchedChars < targetChars; i++) {
-              if (!/\s/.test(plainText[i])) {
-                matchedChars++;
-              }
-              sentenceEnd = i + 1;
-            }
-            sentenceIndex = actualIndex;
-            matchedSentence = plainText.substring(actualIndex, sentenceEnd);
-          }
-        }
-
-        // If still no match, try finding the first few words
-        if (sentenceIndex === -1) {
-          const words = result.relevantSentence.split(/\s+/).slice(0, 5).join(' ');
-          if (words.length > 10) {
-            const partialIndex = plainText.indexOf(words);
-            if (partialIndex !== -1) {
-              const sentenceEndMatch = plainText.substring(partialIndex).match(/[.!?]/);
-              const sentenceEnd = sentenceEndMatch
-                ? partialIndex + sentenceEndMatch.index + 1
-                : Math.min(partialIndex + result.relevantSentence.length + 50, plainText.length);
-              sentenceIndex = partialIndex;
-              matchedSentence = plainText.substring(partialIndex, sentenceEnd).trim();
-            }
-          }
-        }
-
-        // If still no match, try case-insensitive first 3 words
-        if (sentenceIndex === -1) {
-          const firstWords = result.relevantSentence.split(/\s+/).slice(0, 3).join(' ').toLowerCase();
-          if (firstWords.length > 8) {
-            const lowerText = plainText.toLowerCase();
-            const partialIndex = lowerText.indexOf(firstWords);
-            if (partialIndex !== -1) {
-              // Find sentence boundaries
-              let sentenceStart = partialIndex;
-              // Look back for sentence start (capital after period/start)
-              for (let i = partialIndex - 1; i >= 0; i--) {
-                if (plainText[i] === '.' || plainText[i] === '!' || plainText[i] === '?') {
-                  sentenceStart = i + 1;
-                  // Skip whitespace
-                  while (sentenceStart < partialIndex && /\s/.test(plainText[sentenceStart])) {
-                    sentenceStart++;
-                  }
-                  break;
-                }
-                if (i === 0) sentenceStart = 0;
-              }
-              // Find sentence end
-              const remainingText = plainText.substring(sentenceStart);
-              const endMatch = remainingText.match(/[.!?]/);
-              const sentenceEnd = endMatch
-                ? sentenceStart + endMatch.index + 1
-                : Math.min(sentenceStart + 300, plainText.length);
-              sentenceIndex = sentenceStart;
-              matchedSentence = plainText.substring(sentenceStart, sentenceEnd).trim();
-            }
-          }
-        }
-
-        if (sentenceIndex !== -1) {
-          let highlightedSentence = matchedSentence;
-
-          // If we have keywords, bold them within the sentence
+          // Bold keywords within the sentence
           if (result.keyWords?.length > 0) {
             const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
             for (const keyword of sortedKeyWords) {
@@ -251,23 +202,22 @@ CRITICAL RULES:
           }
 
           // Reconstruct with mark tag
-          const before = plainText.substring(0, sentenceIndex);
-          const after = plainText.substring(sentenceIndex + matchedSentence.length);
+          const before = plainText.substring(0, match.start);
+          const after = plainText.substring(match.end);
           highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
         }
       }
 
       return {
         id: originalHit.id,
-        text: originalHit.text, // Plain text without Meilisearch highlighting
+        text: originalHit.text,
         title: originalHit.title,
         author: originalHit.author,
         religion: originalHit.religion,
         collection: originalHit.collection || originalHit.religion,
         summary: result.summary || '',
-        relevantSentence: result.relevantSentence || '',
         keyWords: result.keyWords || [],
-        highlightedText // Only this has <mark> around the relevant sentence
+        highlightedText
       };
     }).filter(Boolean);
   }
