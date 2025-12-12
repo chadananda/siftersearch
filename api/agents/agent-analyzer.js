@@ -131,7 +131,7 @@ Rules:
           ...hit,
           summary: '',
           relevantSentence: '',
-          highlightedText: hit._formatted?.text || hit.text
+          highlightedText: hit.text // Plain text in fallback, no highlighting
         })),
         introduction: `Found ${hits.length} passages related to your query.`,
         query,
@@ -148,8 +148,8 @@ Rules:
       const originalHit = originalHits[result.originalIndex];
       if (!originalHit) return null;
 
-      // Create highlighted text
-      let highlightedText = originalHit._formatted?.text || originalHit.text || '';
+      // Create highlighted text - start with plain text, not Meilisearch's formatted version
+      let highlightedText = originalHit.text || '';
 
       if (result.relevantSentence && result.keyWords?.length > 0) {
         let highlightedSentence = result.relevantSentence;
@@ -172,7 +172,7 @@ Rules:
 
       return {
         id: originalHit.id,
-        text: originalHit._formatted?.text || originalHit.text,
+        text: originalHit.text, // Plain text without Meilisearch highlighting
         title: originalHit.title,
         author: originalHit.author,
         religion: originalHit.religion,
@@ -180,7 +180,7 @@ Rules:
         summary: result.summary || '',
         relevantSentence: result.relevantSentence || '',
         keyWords: result.keyWords || [],
-        highlightedText
+        highlightedText // Only this has <mark> around the relevant sentence
       };
     }).filter(Boolean);
   }

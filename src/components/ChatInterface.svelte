@@ -454,9 +454,14 @@
 
     // Convert URLs to clickable links BEFORE other HTML transformations
     // Match URLs but stop at whitespace, angle brackets, or quotes
+    // Use a placeholder for underscores in display text to prevent italic conversion
     result = result.replace(
       /(https?:\/\/[^\s<>"']+?)(?=[.,;:!?)]*(?:\s|$|<))/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-link">$1</a>'
+      (match, url) => {
+        // Replace underscores with a placeholder in display text only
+        const displayUrl = url.replace(/_/g, '\u2017'); // Using double low line as placeholder
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${displayUrl}</a>`;
+      }
     );
 
     // Now apply HTML transformations
@@ -466,7 +471,9 @@
       .replace(/<em>/g, '<span class="search-highlight">')
       .replace(/<\/em>/g, '</span>')
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-      .replace(/_(.+?)_/g, '<em class="italic">$1</em>');
+      .replace(/_(.+?)_/g, '<em class="italic">$1</em>')
+      // Restore underscores in URLs after italic conversion
+      .replace(/\u2017/g, '_');
     // Note: <mark> and <strong> tags from analyzer are preserved as-is
   }
 

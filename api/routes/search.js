@@ -347,18 +347,19 @@ Rules:
       } catch (parseErr) {
         logger.error({ parseErr, content: analysisResponse.content }, 'Failed to parse analyzer response');
         // Fallback: send original results without analysis
+        // In fallback case, use Meilisearch highlighting since we don't have analyzer
         const fallbackSources = searchResults.hits.map(hit => ({
           id: hit.id,
           document_id: hit.document_id,
           paragraph_index: hit.paragraph_index,
-          text: hit._formatted?.text || hit.text,
+          text: hit.text, // Plain text
           title: hit.title,
           author: hit.author,
           religion: hit.religion,
           collection: hit.collection || hit.religion,
           summary: '',
           relevantSentence: '',
-          highlightedText: hit._formatted?.text || hit.text
+          highlightedText: hit.text // No highlighting in fallback - use plain text
         }));
         reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: fallbackSources }) + '\n\n');
         reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: `I found ${fallbackSources.length} passages related to your query.` }) + '\n\n');
@@ -373,10 +374,9 @@ Rules:
         if (!originalHit) return null;
 
         // Create highlighted text by marking the relevant sentence
-        let highlightedText = originalHit._formatted?.text || originalHit.text || '';
-
-        // Strip Meilisearch's <mark> tags for matching, but keep a version with them
-        const plainText = highlightedText.replace(/<\/?mark>/g, '');
+        // Start with plain text, not Meilisearch's formatted version
+        let highlightedText = originalHit.text || '';
+        const plainText = highlightedText;
 
         // Highlight the relevant sentence if we have one
         if (result.relevantSentence) {
@@ -407,14 +407,14 @@ Rules:
           id: originalHit.id,
           document_id: originalHit.document_id,
           paragraph_index: originalHit.paragraph_index,
-          text: originalHit._formatted?.text || originalHit.text,
+          text: originalHit.text, // Plain text without Meilisearch highlighting
           title: originalHit.title,
           author: originalHit.author,
           religion: originalHit.religion,
           collection: originalHit.collection || originalHit.religion,
           summary: result.summary || '',
           relevantSentence: result.relevantSentence || '',
-          highlightedText
+          highlightedText // Only this should have <mark> around the relevant sentence
         };
       }).filter(Boolean);
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T00:46:40.687Z",
+  "generated": "2025-12-12T00:51:52.894Z",
   "entries": [
+    {
+      "hash": "d4c309b",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Prevent URL mangling from em/mark tags inside links",
+      "scope": null
+    },
     {
       "hash": "8858c42",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Paper background always light regardless of theme",
       "scope": null
-    },
-    {
-      "hash": "0613ae0",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Rename Jafar to Sifter, enhance about page, add QR code",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "d4c309b",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Prevent URL mangling from em/mark tags inside links",
+        "scope": null
+      },
       {
         "hash": "8858c42",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Paper background always light regardless of theme",
-        "scope": null
-      },
-      {
-        "hash": "0613ae0",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Rename Jafar to Sifter, enhance about page, add QR code",
         "scope": null
       }
     ]

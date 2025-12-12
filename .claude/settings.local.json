@@ -5,7 +5,9 @@
       "WebFetch(domain:oceanoflights.org)",
       "WebFetch(domain:oceanlibrary.com)",
       "WebFetch(domain:t3.ftcdn.net)",
-      "WebFetch(domain:stock.adobe.com)"
+      "WebFetch(domain:stock.adobe.com)",
+      "Skill(webapp-testing)",
+      "WebFetch(domain:media.cleanshot.cloud)"
     ]
   }
 }
