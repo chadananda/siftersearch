@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T02:31:39.050Z",
+  "generated": "2025-12-12T02:33:18.034Z",
   "entries": [
+    {
+      "hash": "b8ed1e9",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Remove max-width constraint from source text",
+      "scope": null
+    },
     {
       "hash": "40de879",
       "date": "2025-12-11",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use <b> tag for bolded keywords in relevant sentence",
       "scope": null
-    },
-    {
-      "hash": "4e01d83",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Sentence highlighting, stats transparency, line spacing",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-11": [
+      {
+        "hash": "b8ed1e9",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Remove max-width constraint from source text",
+        "scope": null
+      },
       {
         "hash": "40de879",
         "date": "2025-12-11",
@@ -135,13 +142,6 @@
         "date": "2025-12-11",
         "type": "Fixed",
         "description": "Use <b> tag for bolded keywords in relevant sentence",
-        "scope": null
-      },
-      {
-        "hash": "4e01d83",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Sentence highlighting, stats transparency, line spacing",
         "scope": null
       }
     ]

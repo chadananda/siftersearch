@@ -450,21 +450,24 @@
 
     // Handle markdown-style links [text](url) FIRST
     // This prevents the URL regex from breaking markdown links
+    // The URL can contain any characters except ) since that ends the link
     result = result.replace(
-      /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      /\[(\d+)\]\((https?:\/\/[^)\s]+)\)/g,
       (match, linkText, url) => {
-        // Protect underscores in link text from italic conversion
-        const safeText = linkText.replace(/_/g, '\u2017');
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${safeText}</a>`;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">[${linkText}]</a>`;
       }
     );
 
     // Convert standalone URLs to clickable links (not already in an anchor tag)
-    // Match URLs but stop at whitespace, angle brackets, quotes, or closing parens
-    // Use negative lookbehind to avoid URLs already in href=""
+    // Only match URLs that are NOT preceded by href=" or ">
     result = result.replace(
-      /(?<!href=")(?<!">)(https?:\/\/[^\s<>"')\]]+)/g,
-      (match, url) => {
+      /(https?:\/\/[^\s<>"')\]]+)/g,
+      (match, url, offset, string) => {
+        // Check if this URL is already inside an anchor tag
+        const before = string.substring(Math.max(0, offset - 10), offset);
+        if (before.includes('href="') || before.includes('">')) {
+          return match; // Already in a link, don't double-wrap
+        }
         // Replace underscores with a placeholder in display text only
         const displayUrl = url.replace(/_/g, '\u2017');
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-link">${displayUrl}</a>`;
