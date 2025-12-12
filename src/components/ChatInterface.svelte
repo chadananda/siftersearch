@@ -708,7 +708,7 @@
       <span class="title" role="text">
         <span class="title-full">SifterSearch</span>
         <span class="title-short">Sifter</span>
-        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">v.{SHORT_VERSION} - Update!</button>{:else}<span class="version">v.{SHORT_VERSION}</span>{/if}
+        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>{:else}<span class="version">v.{SHORT_VERSION}</span>{/if}
       </span>
     </div>
 
