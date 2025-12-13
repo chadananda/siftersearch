@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T13:55:35.327Z",
+  "generated": "2025-12-13T13:59:10.723Z",
   "entries": [
+    {
+      "hash": "3cd03b5",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Federated search pagination must use federation.limit",
+      "scope": null
+    },
     {
       "hash": "1e91a8b",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Randomize search suggestions from pool of 32 examples",
       "scope": null
-    },
-    {
-      "hash": "4764c2e",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Remove reader footer, add View Source link in header",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "3cd03b5",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Federated search pagination must use federation.limit",
+        "scope": null
+      },
       {
         "hash": "1e91a8b",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Randomize search suggestions from pool of 32 examples",
-        "scope": null
-      },
-      {
-        "hash": "4764c2e",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Remove reader footer, add View Source link in header",
         "scope": null
       }
     ]

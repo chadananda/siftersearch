@@ -334,11 +334,10 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
 
   /* Cards */
   .card {
-    background-color: var(--surface-1-alpha);
+    background-color: var(--surface-1);
     border-radius: 1rem;
     padding: 1.5rem;
     border: 1px solid var(--border-default);
-    backdrop-filter: blur(8px);
   }
 
   @media (min-width: 768px) {
@@ -441,14 +440,14 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    background: var(--surface-0-alpha);
+    background: var(--surface-0);
     border-radius: 0.75rem;
     border: 1px solid var(--border-default);
   }
 
   .agent-featured {
     grid-column: 1 / -1;
-    background: linear-gradient(135deg, var(--surface-1-alpha), var(--surface-0-alpha));
+    background: linear-gradient(135deg, var(--surface-1), var(--surface-0));
     border: 1px solid var(--accent-primary);
   }
 

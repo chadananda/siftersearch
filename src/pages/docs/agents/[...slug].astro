@@ -1,7 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
-import LiquidBackground from '../../../components/LiquidBackground.svelte';
 import ThemeToggle from '../../../components/ThemeToggle.svelte';
 
 export async function getStaticPaths() {
@@ -37,7 +36,6 @@ const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
 ---
 
 <Layout title={`${title} - SifterSearch Docs`} description={description}>
-  <LiquidBackground client:only="svelte" />
   <main class="docs-page">
     <div class="page-wrapper">
       <!-- Header -->
@@ -111,6 +109,7 @@ const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
   .docs-page {
     min-height: 100vh;
     position: relative;
+    background-color: var(--surface-0);
   }
 
   .page-wrapper {
@@ -126,8 +125,7 @@ const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
     justify-content: space-between;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
-    backdrop-filter: blur(8px);
+    background-color: var(--surface-0);
     position: sticky;
     top: 0;
     z-index: 50;
@@ -182,8 +180,7 @@ const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
     width: 280px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
-    backdrop-filter: blur(8px);
+    background-color: var(--surface-0);
     padding: 1.5rem 1rem;
     overflow-y: auto;
     display: none;
@@ -448,7 +445,7 @@ const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
     font-size: 0.875rem;
     color: var(--text-muted);
     border-top: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
+    background-color: var(--surface-0);
   }
 
   .footer-link {

@@ -1,7 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
-import LiquidBackground from '../../../components/LiquidBackground.svelte';
 import ThemeToggle from '../../../components/ThemeToggle.svelte';
 
 // Get the README content from docsIndex collection
@@ -53,7 +52,6 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
 ---
 
 <Layout title={`${title} - SifterSearch Docs`} description={description}>
-  <LiquidBackground client:only="svelte" />
   <main class="docs-page">
     <div class="page-wrapper">
       <!-- Header -->
@@ -129,6 +127,7 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
   .docs-page {
     min-height: 100vh;
     position: relative;
+    background-color: var(--surface-0);
   }
 
   .page-wrapper {
@@ -144,8 +143,7 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
     justify-content: space-between;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
-    backdrop-filter: blur(8px);
+    background-color: var(--surface-0);
     position: sticky;
     top: 0;
     z-index: 50;
@@ -266,13 +264,12 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
   .agent-card {
     display: flex;
     flex-direction: column;
-    background: var(--surface-1-alpha);
+    background: var(--surface-1);
     border: 1px solid var(--border-default);
     border-radius: 1rem;
     overflow: hidden;
     text-decoration: none;
     transition: all 0.2s;
-    backdrop-filter: blur(8px);
   }
 
   .agent-card:hover {
@@ -329,11 +326,10 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
 
   /* README Section */
   .readme-section {
-    background: var(--surface-1-alpha);
+    background: var(--surface-1);
     border: 1px solid var(--border-default);
     border-radius: 1rem;
     padding: 2rem;
-    backdrop-filter: blur(8px);
   }
 
   @media (min-width: 768px) {
@@ -448,7 +444,7 @@ const description = indexEntry?.data.description || 'Documentation for the Sifte
     font-size: 0.875rem;
     color: var(--text-muted);
     border-top: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
+    background-color: var(--surface-0);
   }
 
   .footer-link {
