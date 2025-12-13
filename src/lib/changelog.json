@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:38:35.664Z",
+  "generated": "2025-12-13T14:41:29.520Z",
   "entries": [
+    {
+      "hash": "539e261",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add tiered query limits for anonymous and verified users",
+      "scope": null
+    },
     {
       "hash": "2813376",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Add missing PWA icons (192x192 and 512x512)",
       "scope": null
-    },
-    {
-      "hash": "2bfda8b",
-      "date": "2025-12-13",
-      "type": "Updated",
-      "description": "Remove keyword fallback, add detailed logging for anchor match failures",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "539e261",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add tiered query limits for anonymous and verified users",
+        "scope": null
+      },
       {
         "hash": "2813376",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Add missing PWA icons (192x192 and 512x512)",
-        "scope": null
-      },
-      {
-        "hash": "2bfda8b",
-        "date": "2025-12-13",
-        "type": "Updated",
-        "description": "Remove keyword fallback, add detailed logging for anchor match failures",
         "scope": null
       }
     ]
