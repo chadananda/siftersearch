@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T12:37:26.175Z",
+  "generated": "2025-12-13T12:38:53.421Z",
   "entries": [
+    {
+      "hash": "b82722f",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Add missing PWA icons (192x192 and 512x512)",
+      "scope": null
+    },
     {
       "hash": "2bfda8b",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Paragraph numbers start at 1 instead of 0",
       "scope": null
-    },
-    {
-      "hash": "c135295",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "b82722f",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Add missing PWA icons (192x192 and 512x512)",
+        "scope": null
+      },
       {
         "hash": "2bfda8b",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Paragraph numbers start at 1 instead of 0",
-        "scope": null
-      },
-      {
-        "hash": "c135295",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
         "scope": null
       }
     ]

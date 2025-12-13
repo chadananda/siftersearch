@@ -181,7 +181,7 @@
           typewriterPhase = 'waiting';
           setTimeout(() => {
             typewriterPhase = 'untyping';
-          }, 800); // Wait 800ms before untyping
+          }, 1500); // Wait 1.5s before untyping
         }
       } else if (typewriterPhase === 'untyping') {
         if (charIndex > 0) {
@@ -193,7 +193,7 @@
           typewriterPhase = 'typing';
         }
       }
-    }, 50); // 50ms per character
+    }, 150); // 150ms per character (slower, more readable)
   }
 
   function stopTypewriter() {
