@@ -1,3 +1,11 @@
+---
+title: Narrator Agent
+description: Audio narration specialist with pronunciation dictionary for 80+ sacred terms
+role: Audio Narration
+icon: volume-2
+order: 5
+---
+
 # Narrator Agent
 
 **Role:** Audio Narration Specialist

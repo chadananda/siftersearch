@@ -1,3 +1,11 @@
+---
+title: Translator Agent
+description: Shoghi Effendi style specialist that renders text in elevated Victorian prose
+role: Shoghi Effendi Style
+icon: languages
+order: 4
+---
+
 # Translator Agent
 
 **Role:** Shoghi Effendi Style Specialist

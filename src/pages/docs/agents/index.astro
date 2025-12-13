@@ -1,0 +1,462 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import LiquidBackground from '../../../components/LiquidBackground.svelte';
+import ThemeToggle from '../../../components/ThemeToggle.svelte';
+
+// Get the README content from docsIndex collection
+const docsIndexEntries = await getCollection('docsIndex');
+const indexEntry = docsIndexEntries[0]; // README.md is the only file
+const { Content } = indexEntry ? await render(indexEntry) : { Content: null };
+
+// Get all agents for the card grid
+const allAgents = await getCollection('agents');
+const sortedAgents = allAgents.sort((a, b) => (a.data.order || 99) - (b.data.order || 99));
+
+// Agent metadata for cards
+const agentMeta: Record<string, { color: string; gradient: string }> = {
+  'agent-sifter': {
+    color: 'var(--accent-primary)',
+    gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
+  },
+  'agent-researcher': {
+    color: 'var(--accent-secondary)',
+    gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)'
+  },
+  'agent-analyzer': {
+    color: 'var(--accent-tertiary)',
+    gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)'
+  },
+  'agent-translator': {
+    color: 'var(--warning)',
+    gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)'
+  },
+  'agent-narrator': {
+    color: 'var(--success)',
+    gradient: 'linear-gradient(135deg, #10b981, #06b6d4)'
+  },
+};
+
+// Icon paths
+const iconMap: Record<string, string> = {
+  'cpu': 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z',
+  'search': 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
+  'bar-chart': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+  'languages': 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129',
+  'volume-2': 'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z',
+};
+
+const getIcon = (icon?: string) => iconMap[icon || 'cpu'] || iconMap['cpu'];
+
+const title = indexEntry?.data.title || 'Agent Architecture';
+const description = indexEntry?.data.description || 'Documentation for the SifterSearch multi-agent AI system';
+---
+
+<Layout title={`${title} - SifterSearch Docs`} description={description}>
+  <LiquidBackground client:only="svelte" />
+  <main class="docs-page">
+    <div class="page-wrapper">
+      <!-- Header -->
+      <header class="header">
+        <a href="/" class="logo-link">
+          <img src="/logo-generated.png" alt="SifterSearch" class="logo" />
+          <h1 class="site-title">SifterSearch</h1>
+        </a>
+        <nav class="nav">
+          <ThemeToggle client:only="svelte" />
+          <a href="/about" class="nav-link">About</a>
+          <a href="/" class="nav-link">Search</a>
+        </nav>
+      </header>
+
+      <!-- Content -->
+      <div class="content">
+        <div class="content-inner">
+          <!-- Hero -->
+          <section class="hero">
+            <h1 class="hero-title">{title}</h1>
+            <p class="hero-desc">{description}</p>
+          </section>
+
+          <!-- Agent Cards Grid -->
+          <section class="agents-section">
+            <h2 class="section-title">Meet the Agents</h2>
+            <div class="agents-grid">
+              {sortedAgents.map((agent) => {
+                const slug = agent.id.replace('agent-', '');
+                const agentTitle = agent.data.title || slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ' Agent';
+                const meta = agentMeta[agent.id] || { color: 'var(--accent-primary)', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' };
+                const imagePath = agent.data.image || `/images/agents/${slug}.png`;
+
+                return (
+                  <a href={`/docs/agents/${slug}`} class="agent-card">
+                    <div class="agent-image" style={`background: ${meta.gradient};`}>
+                      <svg class="agent-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d={getIcon(agent.data.icon)} />
+                      </svg>
+                    </div>
+                    <div class="agent-content">
+                      <span class="agent-role">{agent.data.role || 'Agent'}</span>
+                      <h3 class="agent-title">{agentTitle.replace(' Agent', '')}</h3>
+                      <p class="agent-desc">{agent.data.description}</p>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+
+          <!-- README Content -->
+          {Content && (
+            <section class="readme-section">
+              <div class="prose">
+                <Content />
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <p>&copy; {new Date().getFullYear()} Chad Jones. A companion tool for <a href="https://oceanlibrary.com" class="footer-link">OceanLibrary.com</a>.</p>
+      </footer>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .docs-page {
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-default);
+    background-color: var(--surface-0-alpha);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .logo {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+  }
+
+  .site-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-link {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+  }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .content {
+      padding: 3rem 2rem;
+    }
+  }
+
+  .content-inner {
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .hero-title {
+      font-size: 3rem;
+    }
+  }
+
+  .hero-desc {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+
+  /* Agents Section */
+  .agents-section {
+    margin-bottom: 4rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .agents-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 640px) {
+    .agents-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .agents-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .agent-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-1-alpha);
+    border: 1px solid var(--border-default);
+    border-radius: 1rem;
+    overflow: hidden;
+    text-decoration: none;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+  }
+
+  .agent-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent-primary);
+  }
+
+  .agent-image {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .agent-icon {
+    width: 3rem;
+    height: 3rem;
+    color: white;
+    opacity: 0.9;
+  }
+
+  .agent-content {
+    padding: 1.25rem;
+  }
+
+  .agent-role {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .agent-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .agent-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* README Section */
+  .readme-section {
+    background: var(--surface-1-alpha);
+    border: 1px solid var(--border-default);
+    border-radius: 1rem;
+    padding: 2rem;
+    backdrop-filter: blur(8px);
+  }
+
+  @media (min-width: 768px) {
+    .readme-section {
+      padding: 3rem;
+    }
+  }
+
+  /* Prose Styling */
+  .prose {
+    max-width: 65ch;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .prose :global(h1) {
+    display: none; /* Already shown in hero */
+  }
+
+  .prose :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .prose :global(h2:first-of-type) {
+    margin-top: 0;
+  }
+
+  .prose :global(h3) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose :global(p) {
+    margin-bottom: 1rem;
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+
+  .prose :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose :global(code) {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.875em;
+    background-color: var(--surface-elevated);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    color: var(--accent-secondary);
+  }
+
+  .prose :global(pre) {
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose :global(pre code) {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .prose :global(a) {
+    color: var(--accent-primary);
+    text-decoration: none;
+  }
+
+  .prose :global(a:hover) {
+    text-decoration: underline;
+  }
+
+  .prose :global(strong) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border-default);
+    margin: 2rem 0;
+  }
+
+  /* Hide the agent sections in prose since we show cards */
+  .prose :global(h3:has(+ p a[href^="/docs/agents/"])) {
+    display: none;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-default);
+    background-color: var(--surface-0-alpha);
+  }
+
+  .footer-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  .footer-link:hover {
+    color: var(--text-primary);
+  }
+</style>

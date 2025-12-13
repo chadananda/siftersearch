@@ -88,7 +88,51 @@
    Tailwind Theme Extensions
    ============================================ */
 @theme {
-  /* Brand colors (keep for gradient utilities) */
+  /* ============================================
+     Semantic Color Tokens (reference CSS vars)
+     Use: text-primary, bg-surface-1, border-default
+     ============================================ */
+
+  /* Surface colors */
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-0-alpha: var(--surface-0-alpha);
+  --color-surface-1-alpha: var(--surface-1-alpha);
+  --color-surface-2-alpha: var(--surface-2-alpha);
+  --color-surface-elevated: var(--surface-2);
+
+  /* Text colors */
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-muted: var(--text-muted);
+  --color-inverted: var(--text-inverted);
+
+  /* Border colors */
+  --color-border: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  /* Accent colors */
+  --color-accent: var(--accent-primary);
+  --color-accent-hover: var(--accent-primary-hover);
+  --color-accent-text: var(--accent-primary-text);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-tertiary: var(--accent-tertiary);
+
+  /* Semantic colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  /* Interactive */
+  --color-hover: var(--hover-overlay);
+  --color-active: var(--active-overlay);
+
+  /* Brand colors (for gradients) */
   --color-brand-50: #f0f9ff;
   --color-brand-100: #e0f2fe;
   --color-brand-200: #bae6fd;
@@ -173,81 +217,20 @@ body {
 }
 
 /* ============================================
-   Utility Classes for Theme Colors
+   Component Classes (combine multiple utilities)
    ============================================ */
 
-/* Backgrounds with backdrop blur for glass effect */
-.bg-surface-0 { background-color: var(--surface-0); backdrop-filter: blur(12px); }
-.bg-surface-1 { background-color: var(--surface-1); backdrop-filter: blur(10px); }
-.bg-surface-2 { background-color: var(--surface-2); backdrop-filter: blur(8px); }
-.bg-surface-3 { background-color: var(--surface-3); backdrop-filter: blur(6px); }
-.bg-surface-0-alpha { background-color: var(--surface-0-alpha); backdrop-filter: blur(12px); }
-.bg-surface-1-alpha { background-color: var(--surface-1-alpha); backdrop-filter: blur(10px); }
-.bg-surface-2-alpha { background-color: var(--surface-2-alpha); backdrop-filter: blur(8px); }
+/* Glass effect surfaces (backdrop blur + surface color) */
+.glass-0 { @apply bg-surface-0 backdrop-blur-lg; }
+.glass-1 { @apply bg-surface-1 backdrop-blur-md; }
+.glass-2 { @apply bg-surface-2 backdrop-blur; }
 
-/* Text */
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-tertiary { color: var(--text-tertiary); }
-.text-muted { color: var(--text-muted); }
-.text-inverted { color: var(--text-inverted); }
-
-/* Borders */
-.border-default { border-color: var(--border-default); }
-.border-subtle { border-color: var(--border-subtle); }
-.border-strong { border-color: var(--border-strong); }
-
-/* Accent */
-.bg-accent { background-color: var(--accent-primary); }
-.bg-accent-hover:hover { background-color: var(--accent-primary-hover); }
-.text-accent { color: var(--accent-primary); }
-
-/* Interactive */
-.hover-overlay:hover { background-color: var(--hover-overlay); }
-.active-overlay:active { background-color: var(--active-overlay); }
-
-/* Cards */
+/* Card component */
 .card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  backdrop-filter: blur(8px);
+  @apply bg-surface-1-alpha border border-border backdrop-blur-lg rounded-xl;
 }
 .card:hover {
-  background-color: color-mix(in srgb, var(--card-bg) 95%, var(--hover-overlay));
-}
-
-/* Inputs */
-.input {
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--text-primary);
-}
-.input::placeholder {
-  color: var(--input-placeholder);
-}
-.input:focus {
-  border-color: var(--input-border-focus);
-}
-
-/* Buttons */
-.btn-primary {
-  background-color: var(--accent-primary);
-  color: var(--accent-primary-text);
-}
-.btn-primary:hover {
-  background-color: var(--accent-primary-hover);
-}
-.btn-primary:disabled {
-  background-color: var(--surface-3);
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background-color: var(--surface-2);
-  color: var(--text-primary);
-}
-.btn-secondary:hover {
-  background-color: var(--surface-3);
+  @apply bg-surface-2-alpha;
 }
 
 /* ============================================

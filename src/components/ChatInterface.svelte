@@ -543,6 +543,10 @@
               : m
           );
         } else if (event.type === 'complete') {
+          // Capture analyzer timing if available
+          if (event.timing?.analyzerTimeMs && researchPlan) {
+            researchPlan = { ...researchPlan, analyzerTimeMs: event.timing.analyzerTimeMs };
+          }
           // Mark streaming complete
           messages = messages.map((m, i) =>
             i === assistantMsgIndex
@@ -886,89 +890,105 @@
     </div>
   {/if}
 
-  <!-- Collapsible About Section -->
+  <!-- Fullscreen About Section -->
   {#if showAbout}
-    <section id="about-section" class="about-section" role="region" aria-labelledby="about-title">
-      <div class="about-content">
-        <div class="about-header">
-          <h2 id="about-title" class="about-title">About SifterSearch</h2>
+    <section id="about-section" class="fixed inset-0 z-50 bg-surface-0 overflow-y-auto" role="region" aria-labelledby="about-title">
+      <div class="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10 flex flex-col gap-6">
+        <!-- Sticky Header -->
+        <div class="sticky top-0 z-10 bg-surface-0 py-4 -mt-4 flex items-center justify-between border-b border-border">
+          <h2 id="about-title" class="text-2xl font-bold text-primary">About SifterSearch</h2>
           <button
             onclick={() => showAbout = false}
             aria-label="Close about section"
-            class="close-btn"
+            class="p-2 rounded-lg bg-surface-elevated border border-border text-secondary hover:text-primary hover:bg-surface-2 transition-all"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <p class="about-text">
+
+        <p class="text-secondary leading-relaxed text-lg">
           SifterSearch is a private project by Chad Jones to help organize and search the Interfaith
-          supplemental library used in <a href="https://oceanlibrary.com" class="link">OceanLibrary.com</a>.
+          supplemental library used in <a href="https://oceanlibrary.com" class="text-accent hover:underline">OceanLibrary.com</a>.
           Access is by invitation from participants and by approval only.
         </p>
-        <div class="features-grid">
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
-            <h3 class="feature-title">Hybrid Search</h3>
-            <p class="feature-desc">Combines keyword matching with semantic understanding to find relevant passages.</p>
+            <h3 class="font-semibold text-primary mb-1">Hybrid Search</h3>
+            <p class="text-secondary">Combines keyword matching with semantic understanding to find relevant passages.</p>
           </div>
           <div>
-            <h3 class="feature-title">Multi-Tradition Library</h3>
-            <p class="feature-desc">Search across scriptures, commentaries, and scholarly works from diverse traditions.</p>
+            <h3 class="font-semibold text-primary mb-1">Multi-Tradition Library</h3>
+            <p class="text-secondary">Search across scriptures, commentaries, and scholarly works from diverse traditions.</p>
           </div>
           <div>
-            <h3 class="feature-title">AI-Powered</h3>
-            <p class="feature-desc">Uses OpenAI embeddings for semantic search and Meilisearch for keyword matching.</p>
+            <h3 class="font-semibold text-primary mb-1">AI-Powered</h3>
+            <p class="text-secondary">Uses OpenAI embeddings for semantic search and Meilisearch for keyword matching.</p>
           </div>
           <div>
-            <h3 class="feature-title">Conversational Interface</h3>
-            <p class="feature-desc">Ask questions in natural language and receive contextual responses with citations.</p>
+            <h3 class="font-semibold text-primary mb-1">Conversational Interface</h3>
+            <p class="text-secondary">Ask questions in natural language and receive contextual responses with citations.</p>
           </div>
         </div>
 
-        <!-- How It Works Section -->
-        <div class="how-it-works">
-          <h3 class="how-it-works-title">How It Works</h3>
-          <div class="agents-grid">
-            <div class="agent-card">
-              <div class="agent-name">Hybrid Search</div>
-              <p class="agent-desc">Combines keyword matching with semantic vector search to find passages even when exact words differ.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-name">AI Embeddings</div>
-              <p class="agent-desc">OpenAI text-embedding-3-small converts text into vectors capturing meaning and context.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-name">Sifter Assistant</div>
-              <p class="agent-desc">GPT-4 scholarly assistant introduces and contextualizes search results with citations.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-name">Meilisearch</div>
-              <p class="agent-desc">Lightning-fast full-text search with typo tolerance, filters, and faceted navigation.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-name">Citation Tracking</div>
-              <p class="agent-desc">Every passage linked to source document with religion, collection, author, and title metadata.</p>
-            </div>
-            <div class="agent-card">
-              <div class="agent-name">Multi-Language</div>
-              <p class="agent-desc">Indexes content across languages with language-aware search and filtering.</p>
-            </div>
+        <!-- Agent Architecture Section -->
+        <div class="mt-4 pt-6 border-t border-border">
+          <h3 class="text-xl font-bold text-primary mb-2">
+            <a href="/docs/agents" class="hover:text-accent transition-colors">Agent Architecture</a>
+          </h3>
+          <p class="text-secondary mb-4">Specialized AI agents collaborate to understand, research, analyze, and present search results.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a href="/docs/agents/sifter" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Sifter</div>
+              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Orchestrator</div>
+              <p class="text-sm text-secondary leading-snug">Routes your questions to specialized agents and presents results in a warm, scholarly manner.</p>
+            </a>
+            <a href="/docs/agents/researcher" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Researcher</div>
+              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Search Strategy</div>
+              <p class="text-sm text-secondary leading-snug">Designs comprehensive search strategies that transcend secular assumptions.</p>
+            </a>
+            <a href="/docs/agents/analyzer" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Analyzer</div>
+              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Re-ranking & Scoring</div>
+              <p class="text-sm text-secondary leading-snug">Scores results by relevance, extracts key sentences, and highlights core terms.</p>
+            </a>
+            <a href="/docs/agents/translator" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Translator</div>
+              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Shoghi Effendi Style</div>
+              <p class="text-sm text-secondary leading-snug">Renders text in elevated Victorian prose with rich spiritual imagery.</p>
+            </a>
+            <a href="/docs/agents/narrator" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Narrator</div>
+              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Audio Narration</div>
+              <p class="text-sm text-secondary leading-snug">Generates audio with pronunciation dictionary for 80+ sacred terms.</p>
+            </a>
+            <a href="/docs/agents" class="block p-4 rounded-xl bg-gradient-to-br from-surface-2 to-surface-1 border border-dashed border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <div class="font-semibold text-accent">Learn More</div>
+              <p class="text-sm text-secondary leading-snug mt-2">Explore the full agent architecture documentation and design principles.</p>
+            </a>
           </div>
         </div>
 
         <!-- What's New Section - Grouped by Date -->
         {#if changelog?.grouped && Object.keys(changelog.grouped).length > 0}
-          <div class="whats-new">
-            <h3 class="whats-new-title">What's New</h3>
+          <div class="mt-6 pt-4 border-t border-border">
+            <h3 class="font-semibold text-primary mb-3 text-sm">What's New</h3>
             {#each Object.entries(changelog.grouped).slice(0, 3) as [date, entries]}
-              <div class="changelog-date-group">
-                <div class="changelog-date">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                <ul class="changelog-list">
+              <div class="mb-4">
+                <div class="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                <ul class="list-none p-0 m-0 flex flex-col gap-2">
                   {#each entries as entry}
-                    <li class="changelog-item">
-                      <span class="changelog-type changelog-type-{entry.type.toLowerCase()}">{entry.type}</span>
-                      <span class="changelog-desc">{entry.description}</span>
+                    <li class="flex items-start gap-2 text-xs">
+                      <span class="flex-shrink-0 px-2 py-0.5 rounded text-[0.65rem] font-semibold uppercase
+                        {entry.type.toLowerCase() === 'new' ? 'bg-success/20 text-success' : ''}
+                        {entry.type.toLowerCase() === 'fixed' ? 'bg-info/20 text-info' : ''}
+                        {entry.type.toLowerCase() === 'improved' ? 'bg-accent-tertiary/20 text-accent-tertiary' : ''}
+                        {entry.type.toLowerCase() === 'updated' ? 'bg-warning/20 text-warning' : ''}">{entry.type}</span>
+                      <span class="text-secondary leading-snug">{entry.description}</span>
                     </li>
                   {/each}
                 </ul>
@@ -1128,8 +1148,34 @@
                     </svg>
                     Research Strategy
                     <span class="px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold uppercase">{researchPlan.type}</span>
-                    {#if researchPlan.planningTimeMs}
-                      <span class="ml-auto px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)] text-xs font-mono">{researchPlan.planningTimeMs}ms</span>
+                    {#if researchPlan.planningTimeMs || researchPlan.searchTimeMs || researchPlan.analyzerTimeMs}
+                      <div class="ml-auto flex items-center gap-1.5 text-xs font-mono">
+                        {#if researchPlan.planningTimeMs}
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI planning time">
+                            Plan: {researchPlan.planningTimeMs}ms
+                          </span>
+                        {/if}
+                        {#if researchPlan.embeddingTimeMs}
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Batch embedding generation time">
+                            Embed: {researchPlan.embeddingTimeMs}ms
+                          </span>
+                        {/if}
+                        {#if researchPlan.meiliTimeMs}
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Meilisearch federated query time">
+                            Meili: {researchPlan.meiliTimeMs}ms
+                          </span>
+                        {/if}
+                        {#if researchPlan.searchTimeMs}
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Total search execution time">
+                            Search: {researchPlan.searchTimeMs}ms
+                          </span>
+                        {/if}
+                        {#if researchPlan.analyzerTimeMs}
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI analysis and reranking time">
+                            Analyze: {researchPlan.analyzerTimeMs}ms
+                          </span>
+                        {/if}
+                      </div>
                     {/if}
                   </summary>
                   <div class="p-3 flex flex-col gap-3 border-t border-[var(--border-default)]">
@@ -1620,212 +1666,6 @@
   }
   .btn-secondary:hover {
     background-color: var(--surface-3);
-  }
-
-  /* About Section */
-  .about-section {
-    border-bottom: 1px solid var(--border-default);
-    background-color: var(--surface-1-alpha);
-    backdrop-filter: blur(8px);
-  }
-
-  .about-content {
-    max-width: 64rem;
-    margin: 0 auto;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .about-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .about-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .close-btn {
-    color: var(--text-secondary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    display: flex;
-  }
-  .close-btn:hover {
-    color: var(--text-primary);
-  }
-
-  .about-text {
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-
-  .link {
-    color: var(--accent-primary);
-    text-decoration: none;
-  }
-  .link:hover {
-    text-decoration: underline;
-  }
-
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 640px) {
-    .features-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .feature-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-  }
-
-  .feature-desc {
-    color: var(--text-secondary);
-  }
-
-  /* How It Works / Agents Section */
-  .how-it-works {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-  }
-
-  .how-it-works-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-  }
-
-  .agents-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 768px) {
-    .agents-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 480px) {
-    .agents-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .agent-card {
-    background-color: var(--surface-2);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    border: 1px solid var(--border-subtle);
-  }
-
-  .agent-name {
-    font-weight: 600;
-    color: var(--accent-primary);
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .agent-desc {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
-    margin: 0;
-  }
-
-  /* What's New Section */
-  .whats-new {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-  }
-
-  .whats-new-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-  }
-
-  .changelog-date-group {
-    margin-bottom: 1rem;
-  }
-
-  .changelog-date {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 0.375rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .changelog-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .changelog-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .changelog-type {
-    flex-shrink: 0;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .changelog-type-new {
-    background: rgba(34, 197, 94, 0.2);
-    color: rgb(34, 197, 94);
-  }
-
-  .changelog-type-fixed {
-    background: rgba(59, 130, 246, 0.2);
-    color: rgb(59, 130, 246);
-  }
-
-  .changelog-type-improved {
-    background: rgba(168, 85, 247, 0.2);
-    color: rgb(168, 85, 247);
-  }
-
-  .changelog-type-updated {
-    background: rgba(251, 191, 36, 0.2);
-    color: rgb(251, 191, 36);
-  }
-
-  .changelog-desc {
-    color: var(--text-secondary);
-    line-height: 1.4;
   }
 
   /* Messages Area */

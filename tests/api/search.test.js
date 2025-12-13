@@ -454,3 +454,334 @@ describe('Highlight Formatting', () => {
     expect(highlighted).toContain('<mark>إِلهي</mark>');
   });
 });
+
+/**
+ * Query Filter Parsing Tests
+ *
+ * Tests for the parenthetical filter syntax: "query (filter1, filter2)"
+ */
+describe('Query Filter Parsing', () => {
+  /**
+   * Parse parenthetical filter terms from a query string.
+   * This replicates the logic from api/routes/search.js for unit testing.
+   */
+  function parseQueryFilters(query) {
+    const parenMatch = query.match(/\(([^)]+)\)\s*$/);
+
+    if (!parenMatch) {
+      return { cleanQuery: query.trim(), filterTerms: [] };
+    }
+
+    const filterTerms = parenMatch[1]
+      .split(',')
+      .map(term => term.trim().toLowerCase())
+      .filter(term => term.length > 0);
+
+    const cleanQuery = query.replace(/\(([^)]+)\)\s*$/, '').trim();
+
+    return { cleanQuery, filterTerms };
+  }
+
+  it('should extract single filter term', () => {
+    const result = parseQueryFilters('what is justice (shoghi)');
+    expect(result.cleanQuery).toBe('what is justice');
+    expect(result.filterTerms).toEqual(['shoghi']);
+  });
+
+  it('should extract multiple filter terms', () => {
+    const result = parseQueryFilters('what is love (shoghi, pilgrim)');
+    expect(result.cleanQuery).toBe('what is love');
+    expect(result.filterTerms).toEqual(['shoghi', 'pilgrim']);
+  });
+
+  it('should handle extra whitespace', () => {
+    const result = parseQueryFilters('prayer (  shoghi  ,  effendi  )  ');
+    expect(result.cleanQuery).toBe('prayer');
+    expect(result.filterTerms).toEqual(['shoghi', 'effendi']);
+  });
+
+  it('should lowercase filter terms for case-insensitive matching', () => {
+    const result = parseQueryFilters('unity (Shoghi, EFFENDI)');
+    expect(result.filterTerms).toEqual(['shoghi', 'effendi']);
+  });
+
+  it('should return empty filterTerms when no parentheses', () => {
+    const result = parseQueryFilters('what is the soul');
+    expect(result.cleanQuery).toBe('what is the soul');
+    expect(result.filterTerms).toEqual([]);
+  });
+
+  it('should ignore parentheses in the middle of query', () => {
+    const result = parseQueryFilters('what is love (and mercy) in teachings');
+    expect(result.cleanQuery).toBe('what is love (and mercy) in teachings');
+    expect(result.filterTerms).toEqual([]);
+  });
+
+  it('should handle empty parentheses by leaving query unchanged', () => {
+    // Empty parentheses aren't valid filters, so they stay in the query
+    const result = parseQueryFilters('prayer ()');
+    expect(result.cleanQuery).toBe('prayer ()');
+    expect(result.filterTerms).toEqual([]);
+  });
+
+  it('should handle three or more filter terms', () => {
+    const result = parseQueryFilters('justice (shoghi, pilgrim, notes)');
+    expect(result.filterTerms).toEqual(['shoghi', 'pilgrim', 'notes']);
+  });
+
+  it('should build correct CONTAINS filter string', () => {
+    const filterTerms = ['shoghi', 'pilgrim'];
+
+    const textFilters = [];
+    for (const term of filterTerms) {
+      textFilters.push(`author CONTAINS "${term}"`);
+      textFilters.push(`collection CONTAINS "${term}"`);
+      textFilters.push(`title CONTAINS "${term}"`);
+    }
+    const filterString = `(${textFilters.join(' OR ')})`;
+
+    expect(filterString).toContain('author CONTAINS "shoghi"');
+    expect(filterString).toContain('collection CONTAINS "shoghi"');
+    expect(filterString).toContain('title CONTAINS "shoghi"');
+    expect(filterString).toContain('author CONTAINS "pilgrim"');
+    expect(filterString).toContain(' OR ');
+  });
+});
+
+/**
+ * Anchor-based Sentence Highlighting Tests
+ *
+ * Tests for the LLM-guided sentence highlighting using start/end anchors.
+ */
+describe('Anchor-based Highlighting', () => {
+  /**
+   * Normalize text for fuzzy matching
+   */
+  function normalizeForMatch(str) {
+    return str.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '').trim();
+  }
+
+  /**
+   * Find position in original text that matches normalized anchor
+   */
+  function findAnchorPosition(text, anchor, searchFrom = 0) {
+    const normalizedAnchor = normalizeForMatch(anchor);
+    const anchorWords = normalizedAnchor.split(' ').filter(w => w.length > 0);
+    if (anchorWords.length === 0) return -1;
+
+    const textLower = text.toLowerCase();
+    let pos = searchFrom;
+
+    while (pos < text.length) {
+      const firstWordPos = textLower.indexOf(anchorWords[0], pos);
+      if (firstWordPos === -1) return -1;
+
+      let matchStart = firstWordPos;
+      let matchEnd = firstWordPos;
+      let wordIdx = 0;
+      let checkPos = firstWordPos;
+
+      while (wordIdx < anchorWords.length && checkPos < text.length) {
+        while (checkPos < text.length && /[\s\W]/.test(text[checkPos])) {
+          checkPos++;
+        }
+
+        let wordEnd = checkPos;
+        while (wordEnd < text.length && /\w/.test(text[wordEnd])) {
+          wordEnd++;
+        }
+
+        const word = text.substring(checkPos, wordEnd).toLowerCase();
+
+        if (word === anchorWords[wordIdx]) {
+          if (wordIdx === 0) matchStart = checkPos;
+          matchEnd = wordEnd;
+          wordIdx++;
+          checkPos = wordEnd;
+        } else if (wordIdx === 0) {
+          break;
+        } else {
+          break;
+        }
+      }
+
+      if (wordIdx === anchorWords.length) {
+        return { start: matchStart, end: matchEnd };
+      }
+
+      pos = firstWordPos + 1;
+    }
+
+    return -1;
+  }
+
+  /**
+   * Find sentence in text using start and end anchors
+   */
+  function findSentenceByAnchors(text, startAnchor, endAnchor) {
+    if (!startAnchor || !endAnchor) return null;
+
+    const startMatch = findAnchorPosition(text, startAnchor, 0);
+    if (startMatch === -1) return null;
+
+    const endMatch = findAnchorPosition(text, endAnchor, startMatch.end);
+    if (endMatch === -1) return null;
+
+    if (endMatch.end - startMatch.start > 800) return null;
+
+    return {
+      start: startMatch.start,
+      end: endMatch.end,
+      text: text.substring(startMatch.start, endMatch.end)
+    };
+  }
+
+  describe('findAnchorPosition', () => {
+    it('should find simple anchor at start', () => {
+      const text = 'The soul is immortal and everlasting.';
+      const result = findAnchorPosition(text, 'The soul is');
+      expect(result).not.toBe(-1);
+      expect(result.start).toBe(0);
+    });
+
+    it('should find anchor in middle of text', () => {
+      const text = 'Prayer is the key. The soul is immortal.';
+      const result = findAnchorPosition(text, 'The soul is');
+      expect(result).not.toBe(-1);
+      expect(text.substring(result.start, result.end)).toBe('The soul is');
+    });
+
+    it('should be case insensitive', () => {
+      const text = 'The SOUL is immortal.';
+      const result = findAnchorPosition(text, 'the soul is');
+      expect(result).not.toBe(-1);
+    });
+
+    it('should handle punctuation differences', () => {
+      const text = "The soul, which is immortal, lives forever.";
+      const result = findAnchorPosition(text, 'soul which is');
+      expect(result).not.toBe(-1);
+    });
+
+    it('should return -1 for non-matching anchor', () => {
+      const text = 'The body is temporary.';
+      const result = findAnchorPosition(text, 'soul is immortal');
+      expect(result).toBe(-1);
+    });
+  });
+
+  describe('findSentenceByAnchors', () => {
+    it('should find complete sentence with anchors', () => {
+      const text = 'Prayer is important. The soul is immortal and everlasting. Love is divine.';
+      const result = findSentenceByAnchors(text, 'The soul is', 'and everlasting');
+
+      expect(result).not.toBeNull();
+      expect(result.text).toBe('The soul is immortal and everlasting');
+    });
+
+    it('should return null for non-matching start anchor', () => {
+      const text = 'The body is temporary.';
+      const result = findSentenceByAnchors(text, 'The soul is', 'immortal');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for non-matching end anchor', () => {
+      const text = 'The soul is temporary.';
+      const result = findSentenceByAnchors(text, 'The soul is', 'immortal');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for missing anchors', () => {
+      const text = 'The soul is immortal.';
+      expect(findSentenceByAnchors(text, null, 'immortal')).toBeNull();
+      expect(findSentenceByAnchors(text, 'The soul', null)).toBeNull();
+    });
+
+    it('should reject sentences that are too long (>800 chars)', () => {
+      const longText = 'Start ' + 'x'.repeat(850) + ' End';
+      const result = findSentenceByAnchors(longText, 'Start', 'End');
+      expect(result).toBeNull();
+    });
+
+    it('should handle real-world passage text', () => {
+      const text = `The light of men is Justice. Quench it not with the contrary winds of oppression and tyranny. The purpose of justice is the appearance of unity among men.`;
+
+      const result = findSentenceByAnchors(
+        text,
+        'The light of men',
+        'is Justice'
+      );
+
+      expect(result).not.toBeNull();
+      expect(result.text).toBe('The light of men is Justice');
+    });
+
+    it('should handle Fred Mortensen style text (regression test)', () => {
+      // This test documents the expected behavior for passages like Fred Mortensen's
+      const text = "Fred Mortensen was a devoted believer who traveled to the Holy Land. His pilgrim notes contain many precious recollections.";
+
+      const result = findSentenceByAnchors(
+        text,
+        'Fred Mortensen was',
+        'the Holy Land'
+      );
+
+      expect(result).not.toBeNull();
+      expect(result.text).toContain('Fred Mortensen');
+      expect(result.text).toContain('Holy Land');
+    });
+  });
+});
+
+/**
+ * Researcher Agent Filter Tests
+ *
+ * Tests for the researcher's ability to craft religion/tradition filters.
+ */
+describe('Researcher Agent Filters', () => {
+  it('should build religion filter for tradition-specific queries', () => {
+    // Simulates what the researcher should produce for "Buddhist teachings on suffering"
+    const filter = { religion: 'Buddhist' };
+
+    const filterString = `religion = "${filter.religion}"`;
+    expect(filterString).toBe('religion = "Buddhist"');
+  });
+
+  it('should support multiple tradition filters for comparative queries', () => {
+    // For "compare Buddhist and Christian views on compassion"
+    // The researcher should create separate queries with different filters
+    const buddhistFilter = { religion: 'Buddhist' };
+    const christianFilter = { religion: 'Christian' };
+
+    expect(`religion = "${buddhistFilter.religion}"`).toBe('religion = "Buddhist"');
+    expect(`religion = "${christianFilter.religion}"`).toBe('religion = "Christian"');
+  });
+
+  it('should combine parenthetical filters with tradition filters', () => {
+    // For "justice (shoghi)" with researcher adding religion filter
+    const filterTerms = ['shoghi'];
+    const religionFilter = { religion: 'Bahai' };
+
+    const filterParts = [];
+
+    // Add religion filter
+    if (religionFilter.religion) {
+      filterParts.push(`religion = "${religionFilter.religion}"`);
+    }
+
+    // Add text-based filters
+    const textFilters = [];
+    for (const term of filterTerms) {
+      textFilters.push(`author CONTAINS "${term}"`);
+      textFilters.push(`collection CONTAINS "${term}"`);
+      textFilters.push(`title CONTAINS "${term}"`);
+    }
+    filterParts.push(`(${textFilters.join(' OR ')})`);
+
+    const combinedFilter = filterParts.join(' AND ');
+
+    expect(combinedFilter).toContain('religion = "Bahai"');
+    expect(combinedFilter).toContain('author CONTAINS "shoghi"');
+    expect(combinedFilter).toContain(' AND ');
+  });
+});

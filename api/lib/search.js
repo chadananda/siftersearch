@@ -7,7 +7,7 @@
 import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
-import { createEmbedding } from './ai.js';
+import { createEmbedding, createEmbeddings } from './ai.js';
 
 let client = null;
 
@@ -50,7 +50,9 @@ export async function initializeIndexes() {
       'collection',
       'language',
       'year',
-      'paragraph_index'
+      'paragraph_index',
+      'author',  // For parenthetical filter syntax: (author_name)
+      'title'    // For parenthetical filter syntax: (title_keyword)
     ],
     sortableAttributes: [
       'year',
@@ -99,6 +101,7 @@ export async function hybridSearch(query, options = {}) {
     limit = 20,
     offset = 0,
     filters = {},
+    filterTerms = [], // Array of terms to match against author/collection/title (case insensitive)
     semanticRatio = 0.5, // 0 = keyword only, 1 = semantic only
     attributesToRetrieve = ['*'],
     attributesToHighlight = ['text', 'heading'],
@@ -117,6 +120,19 @@ export async function hybridSearch(query, options = {}) {
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
   if (filters.documentId) filterParts.push(`document_id = "${filters.documentId}"`);
+
+  // Add text-based filters for author/collection/title (from parenthetical query syntax)
+  if (filterTerms.length > 0) {
+    const textFilters = [];
+    for (const term of filterTerms) {
+      // Match against author, collection, or title (CONTAINS is case insensitive in Meilisearch)
+      textFilters.push(`author CONTAINS "${term}"`);
+      textFilters.push(`collection CONTAINS "${term}"`);
+      textFilters.push(`title CONTAINS "${term}"`);
+    }
+    // Join with OR - any match is acceptable
+    filterParts.push(`(${textFilters.join(' OR ')})`);
+  }
 
   const filterString = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
 
@@ -177,6 +193,49 @@ export async function keywordSearch(query, options = {}) {
  */
 export async function semanticSearch(query, options = {}) {
   return hybridSearch(query, { ...options, semanticRatio: 1 });
+}
+
+/**
+ * Federated search - execute multiple queries in a single request with merged, deduplicated results
+ * @param {Array} queries - Array of { query, filter, limit, vector, semanticRatio }
+ * @returns {Object} { hits: [], processingTimeMs }
+ */
+export async function federatedSearch(queries) {
+  const meili = getMeili();
+
+  const searchQueries = queries.map(q => ({
+    indexUid: INDEXES.PARAGRAPHS,
+    q: q.query,
+    limit: q.limit || 10,
+    filter: q.filter,
+    vector: q.vector,
+    hybrid: q.vector ? { semanticRatio: q.semanticRatio || 0.5, embedder: 'default' } : undefined,
+    showRankingScore: true,
+    attributesToRetrieve: ['*']
+  }));
+
+  // Federated search: merges and deduplicates results across all queries
+  const response = await meili.multiSearch({
+    federation: {},  // Enable federation for merged results
+    queries: searchQueries
+  });
+
+  return {
+    hits: response.hits || [],  // Single merged array, duplicates removed
+    processingTimeMs: response.processingTimeMs
+  };
+}
+
+/**
+ * Generate embeddings for multiple texts in a single batch API call
+ * @param {string[]} texts - Array of texts to embed
+ * @returns {number[][]} Array of embedding vectors
+ */
+export async function batchEmbeddings(texts) {
+  if (texts.length === 0) return [];
+
+  const { embeddings } = await createEmbeddings(texts);
+  return embeddings;
 }
 
 /**
@@ -321,6 +380,8 @@ export const search = {
   hybridSearch,
   keywordSearch,
   semanticSearch,
+  federatedSearch,
+  batchEmbeddings,
   indexDocument,
   deleteDocument,
   getStats,

@@ -1,3 +1,11 @@
+---
+title: Sifter Agent
+description: The orchestrator agent that routes queries and coordinates the multi-agent system
+role: Orchestrator
+icon: cpu
+order: 1
+---
+
 # Sifter Agent
 
 **Role:** Orchestrator

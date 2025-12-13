@@ -14,6 +14,66 @@ import { ai } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 import { ResearcherAgent } from '../agents/agent-researcher.js';
 
+// Helper function to parse parenthetical filter terms from query
+/**
+ * Parse parenthetical filter terms from a query string.
+ * Example: "what is justice (shoghi, pilgrim)" returns:
+ *   { cleanQuery: "what is justice", filterTerms: ["shoghi", "pilgrim"] }
+ *
+ * Filter terms are used to match against author, collection, or title fields (case insensitive).
+ */
+function parseQueryFilters(query) {
+  // Match content in parentheses at the end of the query
+  const parenMatch = query.match(/\(([^)]+)\)\s*$/);
+
+  if (!parenMatch) {
+    return { cleanQuery: query.trim(), filterTerms: [] };
+  }
+
+  // Extract filter terms (comma-separated)
+  const filterTerms = parenMatch[1]
+    .split(',')
+    .map(term => term.trim().toLowerCase())
+    .filter(term => term.length > 0);
+
+  // Remove the parenthetical from the query
+  const cleanQuery = query.replace(/\(([^)]+)\)\s*$/, '').trim();
+
+  return { cleanQuery, filterTerms };
+}
+
+/**
+ * Build Meilisearch filter string for author/collection/title containing any of the filter terms.
+ * Uses OR logic: matches if author OR collection OR title contains any term.
+ */
+function buildMetadataFilter(filterTerms, existingFilters = {}) {
+  const filterParts = [];
+
+  // Add existing filters
+  if (existingFilters.religion) filterParts.push(`religion = "${existingFilters.religion}"`);
+  if (existingFilters.collection) filterParts.push(`collection = "${existingFilters.collection}"`);
+  if (existingFilters.language) filterParts.push(`language = "${existingFilters.language}"`);
+  if (existingFilters.yearFrom) filterParts.push(`year >= ${existingFilters.yearFrom}`);
+  if (existingFilters.yearTo) filterParts.push(`year <= ${existingFilters.yearTo}`);
+  if (existingFilters.documentId) filterParts.push(`document_id = "${existingFilters.documentId}"`);
+
+  // Add text-based filters for author/collection/title
+  // Meilisearch uses CONTAINS operator for partial text matching
+  if (filterTerms.length > 0) {
+    const textFilters = [];
+    for (const term of filterTerms) {
+      // Match against author, collection, or title (case insensitive in Meilisearch)
+      textFilters.push(`author CONTAINS "${term}"`);
+      textFilters.push(`collection CONTAINS "${term}"`);
+      textFilters.push(`title CONTAINS "${term}"`);
+    }
+    // Join with OR - any match is acceptable
+    filterParts.push(`(${textFilters.join(' OR ')})`);
+  }
+
+  return filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
+}
+
 // Helper functions for anchor-based sentence matching
 
 /**
@@ -256,8 +316,17 @@ CRITICAL: Keep responses BRIEF. Your job is to introduce and point to sources, n
 IMPORTANT: The passages are ALREADY SORTED BY RELEVANCE. [1] is the most relevant, [2] is second most relevant, etc.
 Do NOT say things like "most relevant are [3] and [6]" - the order already reflects relevance.
 
+SEMANTIC AWARENESS - CRITICAL:
+Key terms often carry multiple philosophical meanings users may not distinguish. If passages reveal different conceptualizations:
+- "equality" → rights vs outcomes vs nature vs dignity
+- "freedom" → from constraint vs to act vs spiritual vs political
+- "justice" → retributive vs restorative vs distributive vs divine
+- "love" → divine vs human vs duty vs emotion
+If you notice passages using a term in DIFFERENT SENSES, briefly note this to help users see the landscape of meaning. Example: "These passages explore justice in different senses - some focus on divine justice, others on social justice."
+
 Response guidelines:
 - Give a 1-2 sentence introduction that orients the user to what was found
+- If key terms appear in distinctly different senses, note this briefly
 - Reference passages by citation numbers [1], [2], etc.
 - Let the passages speak for themselves - don't paraphrase or summarize their content
 - Since [1] is already most relevant, just say "I found X passages about [topic]" without picking favorites
@@ -341,7 +410,15 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       }
     }
   }, async (request, reply) => {
-    const { query, limit = 10, mode = 'hybrid', useResearcher = true } = request.body;
+    const { query: rawQuery, limit = 10, mode = 'hybrid', useResearcher = true } = request.body;
+
+    // Parse parenthetical filter terms from query
+    const { cleanQuery, filterTerms } = parseQueryFilters(rawQuery);
+    const query = cleanQuery; // Use cleaned query for search
+
+    if (filterTerms.length > 0) {
+      logger.info({ rawQuery, cleanQuery, filterTerms }, 'Parsed query filters');
+    }
 
     let searchResults;
     let researchPlan = null;
@@ -350,8 +427,11 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       // Use ResearcherAgent for intelligent search planning
       const researcher = new ResearcherAgent();
       const planStartTime = Date.now();
-      const plan = await researcher.createSearchPlan(query, { limit });
+      const plan = await researcher.createSearchPlan(query, { limit, filterTerms });
       const planningTimeMs = Date.now() - planStartTime;
+
+      // Execute the plan with filter terms
+      searchResults = await researcher.executeSearchPlan(plan, { limit, filterTerms });
 
       researchPlan = {
         type: plan.type,
@@ -367,16 +447,28 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         traditions: plan.traditions || [],
         surprises: plan.surprises || [],
         followUp: plan.followUp || [],
-        planningTimeMs
+        filterTerms, // Include parsed filter terms in plan
+        // Timing metrics
+        planningTimeMs,
+        searchTimeMs: searchResults.searchTimeMs || 0,
+        embeddingTimeMs: searchResults.embeddingTimeMs || 0,
+        meiliTimeMs: searchResults.meiliTimeMs || 0
       };
-      logger.info({ query, planType: plan.type, queryCount: plan.queries.length, planningTimeMs }, 'Research plan created');
-
-      // Execute the plan
-      searchResults = await researcher.executeSearchPlan(plan, { limit });
+      logger.info({
+        query,
+        planType: plan.type,
+        queryCount: plan.queries.length,
+        filterTerms,
+        planningTimeMs,
+        searchTimeMs: searchResults.searchTimeMs,
+        embeddingTimeMs: searchResults.embeddingTimeMs,
+        meiliTimeMs: searchResults.meiliTimeMs
+      }, 'Research plan created and executed');
     } else {
-      // Direct search without researcher
+      // Direct search without researcher - apply filter terms directly
       const searchFn = mode === 'keyword' ? keywordSearch : mode === 'semantic' ? semanticSearch : hybridSearch;
-      searchResults = await searchFn(query, { limit });
+      const filterString = buildMetadataFilter(filterTerms, {});
+      searchResults = await searchFn(query, { limit, filter: filterString });
     }
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
@@ -404,60 +496,90 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       reply.raw.write('data: ' + JSON.stringify({ type: 'plan', plan: researchPlan }) + '\n\n');
     }
 
-    // Build context for analyzer
+    // Build context for analyzer - include hit id for tracking
     const passagesForAnalysis = searchResults.hits.map((hit, i) => ({
       index: i,
+      id: hit.id,
       text: hit.text || hit._formatted?.text || '',
       title: hit.title || 'Untitled',
       author: hit.author || 'Unknown',
       religion: hit.religion || '',
-      collection: hit.collection || ''
+      collection: hit.collection || '',
+      _searchQuery: hit._searchQuery // Which search query found this
     }));
 
-    // STEP 1: Ask AI to analyze, re-rank, filter, and annotate results
-    const analyzerPrompt = `Analyze search results for: "${query}"
+    // Build research plan context for the analyzer
+    const researchPlanContext = researchPlan ? `
+RESEARCH STRATEGY:
+- Reasoning: ${researchPlan.reasoning || 'Standard search'}
+- Assumptions being challenged: ${researchPlan.assumptions?.join(', ') || 'None specified'}
+- Search queries used:
+${researchPlan.queries?.map((q, i) => `  ${i + 1}. "${q.query}" (${q.mode}) - ${q.rationale || 'direct search'}`).join('\n') || '  Direct query'}
+- Traditions covered: ${researchPlan.traditions?.join(', ') || 'All'}
+- Surprises to watch for: ${researchPlan.surprises?.join(', ') || 'None specified'}
+` : 'Direct search without research planning.';
 
-TASKS:
-1. Re-rank by relevance (most relevant first)
-2. Remove irrelevant passages
-3. Find the MOST relevant sentence - provide anchor words to locate it
-4. Identify 1-3 key words/phrases to highlight
-5. Write a DIRECT answer summary (5-10 words max)
+    // STEP 1: Ask AI to score, re-rank, and annotate results using research plan as guide
+    const analyzerPrompt = `You are analyzing federated search results for an interfaith research query. Score each result by relevance using the research plan as your guide.
 
-CRITICAL SUMMARY RULES:
-- Write a complete assertion statement from the quote's content
-- ALWAYS include articles (the, a, an) - never omit them
-- Format: Complete sentence-like assertion. Example: "The soul connects to God through Divine Revelation" NOT "Soul connects God"
-- NO meta-language: Never say "this passage states", "asserts", "discusses", "addresses"
-- If query is "What is X?" → summary is "X is [answer]" or "The X is [answer]"
-- Maximum 10 words but must read naturally with proper grammar
+USER QUERY: "${query}"
 
-Return ONLY valid JSON:
+${researchPlanContext}
+
+SEARCH RESULTS:
+${passagesForAnalysis.map((p, i) => {
+  const queryInfo = p._searchQuery ? ` (found by: "${p._searchQuery}")` : '';
+  return `[${i}] ID: ${p.id} | ${p.title} by ${p.author}${queryInfo}:\n${p.text}`;
+}).join('\n\n---\n\n')}
+
+## Relevance Scoring
+For each quote, assign a score (0-100) based on:
+- **Direct Relevance (40%)**: How directly does it address the query?
+- **Depth of Insight (30%)**: Substantive teaching vs surface mention?
+- **Research Plan Alignment (20%)**: Does it address angles/facets identified in the research plan?
+- **Unexpectedness (10%)**: Does it challenge assumptions or reveal surprising perspectives mentioned in the plan?
+
+## Analysis Requirements
+For each quote scoring ≥60:
+
+1. **Score**: [0-100]
+2. **Brief Answer** (5-8 words): Answer the user's query from this quote's perspective
+3. **Key Sentence**: The single most relevant sentence within the quote
+   - Start words: first 3-5 words VERBATIM from the text
+   - End words: last 3-5 words VERBATIM from the text (including punctuation)
+4. **Core Terms**: The 3-7 most important words from that sentence to highlight
+5. **Why Relevant**: One sentence explaining the score in context of the research plan
+
+## SEMANTIC AWARENESS
+Key terms often have multiple philosophical meanings. If passages reveal different conceptualizations:
+- "equality" → rights vs outcomes vs nature vs dignity
+- "freedom" → from constraint vs to act vs spiritual vs political
+- "justice" → retributive vs restorative vs distributive vs divine
+- "love" → divine vs human vs duty vs emotion
+Note any semantic distinctions discovered across the passages.
+
+## Output Format
+Return ONLY valid JSON, ranked by score (highest first), only including scores ≥60:
 {
   "results": [
     {
       "originalIndex": 0,
-      "sentenceStart": "first 3-5 words VERBATIM",
-      "sentenceEnd": "last 3-5 words VERBATIM",
-      "keyWords": ["word1", "phrase"],
-      "summary": "Direct 5-10 word answer"
+      "id": "passage_id",
+      "score": 95,
+      "briefAnswer": "Divine love unites all faiths",
+      "sentenceStart": "In the sight of",
+      "sentenceEnd": "one human family.",
+      "coreTerms": ["divine", "love", "unites", "human", "family"],
+      "relevanceNote": "Addresses cross-traditional unity angle from research plan"
     }
   ],
-  "introduction": "Brief 1 sentence intro"
-}
-
-PASSAGES:
-${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text}`).join('\n\n---\n\n')}
-
-CRITICAL RULES:
-- Only include relevant passages
-- sentenceStart: EXACT first 3-5 words of the relevant sentence (COPY VERBATIM from text)
-- sentenceEnd: EXACT last 3-5 words of the relevant sentence (COPY VERBATIM including punctuation)
-- keyWords: 1-3 important words/phrases from that sentence to bold
-- Summaries: direct answers, no filler words`;
+  "introduction": "Brief 1-2 sentence intro orienting the user to what was found.",
+  "semanticNote": "Optional: note if key terms appear in distinctly different senses across passages"
+}`;
 
     try {
       // Get structured analysis from AI
+      const analyzerStartTime = Date.now();
       const analysisResponse = await ai.chat([
         { role: 'system', content: 'You are an expert search result analyzer. Return only valid JSON, no markdown.' },
         { role: 'user', content: analyzerPrompt }
@@ -465,6 +587,7 @@ CRITICAL RULES:
         temperature: 0.3,
         maxTokens: 3000
       });
+      const analyzerTimeMs = Date.now() - analyzerStartTime;
 
       // Parse the AI response
       let analysis;
@@ -516,11 +639,11 @@ CRITICAL RULES:
           if (match) {
             let highlightedSentence = match.text;
 
-            // Bold keywords within the sentence
-            if (result.keyWords?.length > 0) {
-              const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
-              for (const keyword of sortedKeyWords) {
-                const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            // Bold core terms within the sentence
+            if (result.coreTerms?.length > 0) {
+              const sortedCoreTerms = [...result.coreTerms].sort((a, b) => b.length - a.length);
+              for (const term of sortedCoreTerms) {
+                const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 highlightedSentence = highlightedSentence.replace(regex, '<b>$1</b>');
               }
             }
@@ -564,23 +687,41 @@ CRITICAL RULES:
           author: originalHit.author,
           religion: originalHit.religion,
           collection: originalHit.collection || originalHit.religion,
-          summary: result.summary || '',
+          summary: result.briefAnswer || '', // Brief answer from analyzer
+          score: result.score || 0, // Relevance score (0-100)
+          relevanceNote: result.relevanceNote || '', // Why this result is relevant
           highlightedText // Only this should have <mark> around the relevant sentence
         };
       }).filter(Boolean);
 
+      // Sort by score (highest first) - analyzer ranks, we sort
+      enhancedSources.sort((a, b) => b.score - a.score);
+
       // Send enhanced sources
       reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: enhancedSources }) + '\n\n');
 
-      // STEP 3: Stream the introduction
-      const intro = analysis.introduction || `I found ${enhancedSources.length} relevant passages for your query.`;
+      // STEP 3: Stream the introduction (with semantic note if present)
+      let intro = analysis.introduction || `I found ${enhancedSources.length} relevant passages for your query.`;
+      if (analysis.semanticNote) {
+        intro += '\n\n' + analysis.semanticNote;
+      }
       reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: intro }) + '\n\n');
 
-      // Send completion
-      reply.raw.write('data: ' + JSON.stringify({ type: 'complete' }) + '\n\n');
+      // Send completion with timing metrics
+      reply.raw.write('data: ' + JSON.stringify({
+        type: 'complete',
+        timing: {
+          analyzerTimeMs
+        }
+      }) + '\n\n');
       reply.raw.end();
 
-      logger.info({ query, hitsAnalyzed: searchResults.hits.length, resultsReturned: enhancedSources.length }, 'Analysis completed');
+      logger.info({
+        query,
+        hitsAnalyzed: searchResults.hits.length,
+        resultsReturned: enhancedSources.length,
+        analyzerTimeMs
+      }, 'Analysis completed');
 
     } catch (err) {
       logger.error({ err, query }, 'Streaming analysis failed');

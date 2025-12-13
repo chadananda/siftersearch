@@ -123,6 +123,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   approach, coordinates the other agents, and presents results in a warm, scholarly manner.
                   Think of Sifter as your personal research librarian.
                 </p>
+                <a href="/docs/agents/sifter" class="agent-link">Learn more &rarr;</a>
               </div>
               <div class="agent">
                 <div class="agent-icon researcher">
@@ -136,6 +137,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   Plans optimal search strategies based on query complexity. Simple questions get fast lookups;
                   complex comparisons trigger multi-query investigations across traditions.
                 </p>
+                <a href="/docs/agents/researcher" class="agent-link">Learn more &rarr;</a>
               </div>
               <div class="agent">
                 <div class="agent-icon analyzer">
@@ -149,6 +151,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   Re-ranks results by true relevance, identifies the most important sentences,
                   highlights key phrases, and generates direct, concise summaries.
                 </p>
+                <a href="/docs/agents/analyzer" class="agent-link">Learn more &rarr;</a>
               </div>
               <div class="agent">
                 <div class="agent-icon translator">
@@ -162,6 +165,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   Renders text in the elevated, dignified English prose style of Shoghi Effendi,
                   using Victorian vocabulary, poetic rhythm, and rich spiritual imagery.
                 </p>
+                <a href="/docs/agents/translator" class="agent-link">Learn more &rarr;</a>
               </div>
               <div class="agent">
                 <div class="agent-icon narrator">
@@ -175,6 +179,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   Generates high-quality audio narration via ElevenLabs, with a pronunciation dictionary
                   covering 80+ sacred terms from Baha'i, Islamic, Jewish, Hindu, Buddhist, and Christian traditions.
                 </p>
+                <a href="/docs/agents/narrator" class="agent-link">Learn more &rarr;</a>
               </div>
             </div>
           </section>
@@ -530,6 +535,21 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
     font-size: 0.875rem;
     color: var(--text-secondary);
     line-height: 1.4;
+  }
+
+  .agent-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .agent-link:hover {
+    color: var(--accent-secondary);
+    text-decoration: underline;
   }
 
   /* Technology */
