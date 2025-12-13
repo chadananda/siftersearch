@@ -12,6 +12,7 @@ import { authenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { ai } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
+import { ResearcherAgent } from '../agents/agent-researcher.js';
 
 // Helper functions for anchor-based sentence matching
 
@@ -333,16 +334,39 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         properties: {
           query: { type: 'string', minLength: 1, maxLength: 500 },
           limit: { type: 'integer', minimum: 1, maximum: 20, default: 10 },
-          mode: { type: 'string', enum: ['hybrid', 'keyword', 'semantic'], default: 'hybrid' }
+          mode: { type: 'string', enum: ['hybrid', 'keyword', 'semantic'], default: 'hybrid' },
+          useResearcher: { type: 'boolean', default: true }
         }
       }
     }
   }, async (request, reply) => {
-    const { query, limit = 10, mode = 'hybrid' } = request.body;
+    const { query, limit = 10, mode = 'hybrid', useResearcher = true } = request.body;
 
-    // First, search for relevant passages
-    const searchFn = mode === 'keyword' ? keywordSearch : mode === 'semantic' ? semanticSearch : hybridSearch;
-    const searchResults = await searchFn(query, { limit });
+    let searchResults;
+    let researchPlan = null;
+
+    if (useResearcher) {
+      // Use ResearcherAgent for intelligent search planning
+      const researcher = new ResearcherAgent();
+      const plan = await researcher.createSearchPlan(query, { limit });
+      researchPlan = {
+        type: plan.type,
+        reasoning: plan.reasoning,
+        queries: plan.queries.map(q => ({
+          query: q.query,
+          mode: q.mode,
+          filters: q.filters || {}
+        }))
+      };
+      logger.info({ query, planType: plan.type, queryCount: plan.queries.length }, 'Research plan created');
+
+      // Execute the plan
+      searchResults = await researcher.executeSearchPlan(plan, { limit });
+    } else {
+      // Direct search without researcher
+      const searchFn = mode === 'keyword' ? keywordSearch : mode === 'semantic' ? semanticSearch : hybridSearch;
+      searchResults = await searchFn(query, { limit });
+    }
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
       return reply
@@ -363,6 +387,11 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*'
     });
+
+    // Send research plan if available
+    if (researchPlan) {
+      reply.raw.write('data: ' + JSON.stringify({ type: 'plan', plan: researchPlan }) + '\n\n');
+    }
 
     // Build context for analyzer
     const passagesForAnalysis = searchResults.hits.map((hit, i) => ({

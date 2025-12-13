@@ -50,6 +50,9 @@
   let readerHighlightedText = $state(''); // Store the hit's highlighted text for the current paragraph
   let readerAnimating = $state(false); // For smooth open animation
 
+  // Research plan state - shows the researcher agent's strategy
+  let researchPlan = $state(null);
+
   // Preloaded document cache: Map<document_id, { segments: [], total: number }>
   const documentCache = new Map();
 
@@ -476,6 +479,9 @@
     input = '';
     const messageId = Date.now();
 
+    // Clear previous research plan
+    researchPlan = null;
+
     messages = [...messages, { id: `user-${messageId}`, role: 'user', content: userMessage }];
     loading = true;
     setThinking(true); // Trigger neural activity animation
@@ -501,7 +507,10 @@
       let sources = [];
 
       for await (const event of search.analyzeStream(userMessage)) {
-        if (event.type === 'sources') {
+        if (event.type === 'plan') {
+          // Store the research plan for display
+          researchPlan = event.plan;
+        } else if (event.type === 'sources') {
           sources = event.sources || [];
           stopTypewriter(); // Stop typewriter when sources arrive
           // Preload documents for instant reader access
@@ -1095,6 +1104,35 @@
                     <p class="analysis-text">{message.content}{#if message.isStreaming}<span class="streaming-cursor"></span>{/if}</p>
                   {/if}
                 </div>
+              {/if}
+
+              <!-- Research Plan (shows researcher agent's strategy) -->
+              {#if researchPlan && message.results?.length > 0}
+                <details class="research-plan">
+                  <summary class="research-plan-toggle">
+                    <svg class="research-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    Research Strategy
+                    <span class="plan-type">{researchPlan.type}</span>
+                  </summary>
+                  <div class="research-plan-content">
+                    {#if researchPlan.reasoning}
+                      <p class="plan-reasoning">{researchPlan.reasoning}</p>
+                    {/if}
+                    {#if researchPlan.queries?.length > 0}
+                      <div class="plan-queries">
+                        <span class="queries-label">Queries:</span>
+                        {#each researchPlan.queries as q, i}
+                          <span class="query-chip" title={q.mode}>
+                            {q.query}
+                          </span>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                </details>
               {/if}
 
               <!-- Sources (shown below response) -->
@@ -2156,6 +2194,84 @@
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
+  }
+
+  /* Research Plan Styles */
+  .research-plan {
+    margin: 0.5rem 0;
+    border-radius: 0.5rem;
+    background: var(--surface-1-alpha);
+    border: 1px solid var(--border-default);
+    font-size: 0.875rem;
+  }
+
+  .research-plan-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: 500;
+    list-style: none;
+  }
+
+  .research-plan-toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .research-plan[open] .research-plan-toggle {
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .research-icon {
+    width: 1rem;
+    height: 1rem;
+    stroke: var(--text-muted);
+  }
+
+  .plan-type {
+    margin-left: auto;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--accent-primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .research-plan-content {
+    padding: 0.75rem;
+  }
+
+  .plan-reasoning {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  .plan-queries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    align-items: center;
+  }
+
+  .queries-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+  }
+
+  .query-chip {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    background: var(--surface-elevated);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    border: 1px solid var(--border-default);
   }
 
   .analysis-sources {
