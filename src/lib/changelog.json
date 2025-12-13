@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T13:43:11.967Z",
+  "generated": "2025-12-13T13:55:35.327Z",
   "entries": [
+    {
+      "hash": "1e91a8b",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add federated search, Tailwind color tokens, and coding guidelines",
+      "scope": null
+    },
     {
       "hash": "5644d5b",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Remove reader footer, add View Source link in header",
       "scope": null
-    },
-    {
-      "hash": "440e286",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Artistic book-style header for reader with religion icons",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "1e91a8b",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add federated search, Tailwind color tokens, and coding guidelines",
+        "scope": null
+      },
       {
         "hash": "5644d5b",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Remove reader footer, add View Source link in header",
-        "scope": null
-      },
-      {
-        "hash": "440e286",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Artistic book-style header for reader with religion icons",
         "scope": null
       }
     ]

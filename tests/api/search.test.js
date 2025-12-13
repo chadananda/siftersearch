@@ -785,3 +785,242 @@ describe('Researcher Agent Filters', () => {
     expect(combinedFilter).toContain(' AND ');
   });
 });
+
+/**
+ * Federated Search Query Building Tests
+ *
+ * Tests for building and validating federated search queries.
+ * Note: These tests verify the query structure without calling Meilisearch.
+ */
+describe('Federated Search Query Building', () => {
+  /**
+   * Build federated search queries matching the federatedSearch function signature.
+   * This validates the structure before sending to Meilisearch.
+   */
+  function buildFederatedQueries(queries, options = {}) {
+    const { limit = 20, offset = 0 } = options;
+
+    // Validate: federated search doesn't allow limit on individual queries
+    const searchQueries = queries.map(q => {
+      const query = {
+        indexUid: 'paragraphs',
+        q: q.query,
+        showRankingScore: true,
+        attributesToRetrieve: ['*']
+      };
+
+      // Only add filter if present and non-empty
+      if (q.filter) {
+        query.filter = q.filter;
+      }
+
+      // Only add vector/hybrid if vector is present
+      if (q.vector) {
+        query.vector = q.vector;
+        query.hybrid = { semanticRatio: q.semanticRatio || 0.5, embedder: 'default' };
+      }
+
+      return query;
+    });
+
+    return {
+      federation: { limit, offset },
+      queries: searchQueries
+    };
+  }
+
+  it('should place limit on federation object, not individual queries', () => {
+    const queries = [
+      { query: 'justice', limit: 10 },
+      { query: 'mercy', limit: 10 }
+    ];
+
+    const result = buildFederatedQueries(queries, { limit: 20 });
+
+    // Federation object should have limit
+    expect(result.federation.limit).toBe(20);
+    expect(result.federation.offset).toBe(0);
+
+    // Individual queries should NOT have limit
+    result.queries.forEach(q => {
+      expect(q.limit).toBeUndefined();
+    });
+  });
+
+  it('should include vector and hybrid only when vector is provided', () => {
+    const mockVector = Array(1536).fill(0.1);
+    const queries = [
+      { query: 'justice', vector: mockVector, semanticRatio: 0.7 },
+      { query: 'mercy', vector: null, semanticRatio: 0 }
+    ];
+
+    const result = buildFederatedQueries(queries);
+
+    // First query should have vector and hybrid
+    expect(result.queries[0].vector).toBeDefined();
+    expect(result.queries[0].hybrid).toEqual({ semanticRatio: 0.7, embedder: 'default' });
+
+    // Second query should NOT have vector or hybrid
+    expect(result.queries[1].vector).toBeUndefined();
+    expect(result.queries[1].hybrid).toBeUndefined();
+  });
+
+  it('should include filter only when provided', () => {
+    const queries = [
+      { query: 'justice', filter: 'religion = "Bahai"' },
+      { query: 'mercy', filter: null },
+      { query: 'love', filter: '' }
+    ];
+
+    const result = buildFederatedQueries(queries);
+
+    expect(result.queries[0].filter).toBe('religion = "Bahai"');
+    expect(result.queries[1].filter).toBeUndefined();
+    expect(result.queries[2].filter).toBeUndefined();
+  });
+
+  it('should set default semantic ratio to 0.5 when not specified', () => {
+    const mockVector = Array(1536).fill(0.1);
+    const queries = [
+      { query: 'justice', vector: mockVector }  // No semanticRatio specified
+    ];
+
+    const result = buildFederatedQueries(queries);
+
+    expect(result.queries[0].hybrid.semanticRatio).toBe(0.5);
+  });
+
+  it('should support custom offset for pagination', () => {
+    const queries = [{ query: 'justice' }];
+
+    const result = buildFederatedQueries(queries, { limit: 10, offset: 20 });
+
+    expect(result.federation.limit).toBe(10);
+    expect(result.federation.offset).toBe(20);
+  });
+
+  it('should handle empty queries array', () => {
+    const result = buildFederatedQueries([], { limit: 10 });
+
+    expect(result.queries).toEqual([]);
+    expect(result.federation.limit).toBe(10);
+  });
+});
+
+/**
+ * Batch Embeddings Tests
+ *
+ * Tests for batch embedding generation logic.
+ */
+describe('Batch Embeddings Logic', () => {
+  it('should return empty array for empty input', () => {
+    const texts = [];
+    // Simulating batchEmbeddings behavior
+    const result = texts.length === 0 ? [] : texts.map(() => createMockEmbedding('test'));
+
+    expect(result).toEqual([]);
+  });
+
+  it('should generate one embedding per input text', () => {
+    const texts = ['justice', 'mercy', 'love'];
+    const defaultDimension = 3072; // Matches mock-data.js default
+    // Simulating batch generation
+    const result = texts.map(text => createMockEmbedding(text));
+
+    expect(result.length).toBe(3);
+    result.forEach(embedding => {
+      expect(Array.isArray(embedding)).toBe(true);
+      expect(embedding.length).toBe(defaultDimension);
+    });
+  });
+
+  it('should generate different embeddings for different texts', () => {
+    const embedding1 = createMockEmbedding('justice');
+    const embedding2 = createMockEmbedding('mercy');
+
+    // At least some values should differ
+    const differences = embedding1.filter((v, i) => v !== embedding2[i]);
+    expect(differences.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Research Plan Execution Tests
+ *
+ * Tests for the researcher agent's search plan structure.
+ */
+describe('Research Plan Structure', () => {
+  it('should have required fields for search plan queries', () => {
+    const searchPlan = {
+      type: 'exhaustive',
+      reasoning: 'Testing multiple angles',
+      queries: [
+        { query: 'divine justice', mode: 'semantic', rationale: 'Explore divine perspective' },
+        { query: 'justice mercy', mode: 'hybrid', rationale: 'Explore relationship' },
+        { query: 'justice quran', mode: 'keyword', rationale: 'Islamic perspective', filters: { religion: 'Islamic' } }
+      ],
+      traditions: ['Bahai', 'Islamic', 'Christian'],
+      assumptions: ['justice means punishment'],
+      surprises: ['justice as love'],
+      followUp: []
+    };
+
+    expect(searchPlan.type).toBeDefined();
+    expect(searchPlan.reasoning).toBeDefined();
+    expect(Array.isArray(searchPlan.queries)).toBe(true);
+    expect(searchPlan.queries.length).toBeGreaterThan(0);
+
+    searchPlan.queries.forEach(q => {
+      expect(q.query).toBeDefined();
+      expect(q.mode).toBeDefined();
+      expect(['semantic', 'hybrid', 'keyword']).toContain(q.mode);
+    });
+  });
+
+  it('should separate queries by mode for batching', () => {
+    const queries = [
+      { query: 'justice', mode: 'semantic' },
+      { query: 'mercy', mode: 'hybrid' },
+      { query: 'law', mode: 'keyword' },
+      { query: 'forgiveness', mode: 'semantic' }
+    ];
+
+    // Hybrid and semantic need embeddings
+    const hybridQueries = queries.filter(q => q.mode !== 'keyword');
+    const keywordQueries = queries.filter(q => q.mode === 'keyword');
+
+    expect(hybridQueries.length).toBe(3);
+    expect(keywordQueries.length).toBe(1);
+    expect(keywordQueries[0].query).toBe('law');
+  });
+
+  it('should calculate total limit correctly', () => {
+    const queries = [
+      { query: 'q1', limit: 10 },
+      { query: 'q2', limit: 10 },
+      { query: 'q3', limit: 5 },
+      { query: 'q4' }  // Default limit
+    ];
+
+    const defaultLimit = 10;
+    const maxLimit = 50;
+    const totalLimit = Math.min(
+      queries.reduce((sum, q) => sum + (q.limit || defaultLimit), 0),
+      maxLimit
+    );
+
+    expect(totalLimit).toBe(35);  // 10 + 10 + 5 + 10 = 35
+  });
+
+  it('should cap total limit at maximum', () => {
+    const queries = Array(10).fill({ query: 'test', limit: 10 });  // 100 total
+
+    const maxLimit = 50;
+    const totalLimit = Math.min(
+      queries.reduce((sum, q) => sum + (q.limit || 10), 0),
+      maxLimit
+    );
+
+    expect(totalLimit).toBe(50);  // Capped at 50
+  });
+});

@@ -259,10 +259,12 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
     });
 
     // STEP 4: Execute federated search - returns merged, deduplicated results
+    // Calculate total limit based on plan queries (cap at reasonable max)
+    const totalLimit = Math.min(plan.queries.reduce((sum, q) => sum + (q.limit || 10), 0), 50);
     const meiliStartTime = Date.now();
     let hits = [];
     try {
-      const result = await federatedSearch(meiliQueries);
+      const result = await federatedSearch(meiliQueries, { limit: totalLimit });
       hits = result.hits;
     } catch (error) {
       this.logger.error({ error }, 'Federated search failed');

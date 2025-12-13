@@ -200,23 +200,25 @@ export async function semanticSearch(query, options = {}) {
  * @param {Array} queries - Array of { query, filter, limit, vector, semanticRatio }
  * @returns {Object} { hits: [], processingTimeMs }
  */
-export async function federatedSearch(queries) {
+export async function federatedSearch(queries, options = {}) {
   const meili = getMeili();
+  const { limit = 20, offset = 0 } = options;
 
+  // For federated search, limit/offset go on federation object, not individual queries
   const searchQueries = queries.map(q => ({
     indexUid: INDEXES.PARAGRAPHS,
     q: q.query,
-    limit: q.limit || 10,
-    filter: q.filter,
-    vector: q.vector,
+    filter: q.filter || undefined,
+    vector: q.vector || undefined,
     hybrid: q.vector ? { semanticRatio: q.semanticRatio || 0.5, embedder: 'default' } : undefined,
     showRankingScore: true,
     attributesToRetrieve: ['*']
   }));
 
   // Federated search: merges and deduplicates results across all queries
+  // Pagination goes on federation object, not individual queries
   const response = await meili.multiSearch({
-    federation: {},  // Enable federation for merged results
+    federation: { limit, offset },
     queries: searchQueries
   });
 
