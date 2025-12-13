@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T01:53:24.402Z",
+  "generated": "2025-12-13T02:46:16.762Z",
   "entries": [
+    {
+      "hash": "440e286",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Artistic book-style header for reader with religion icons",
+      "scope": null
+    },
     {
       "hash": "3294605",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Increase version text opacity from 0.6 to 0.8 for readability",
       "scope": null
-    },
-    {
-      "hash": "2a3ac70",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Show just 'UPDATE' on update button, no version",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "440e286",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Artistic book-style header for reader with religion icons",
+        "scope": null
+      },
       {
         "hash": "3294605",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Increase version text opacity from 0.6 to 0.8 for readability",
-        "scope": null
-      },
-      {
-        "hash": "2a3ac70",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Show just 'UPDATE' on update button, no version",
         "scope": null
       }
     ]

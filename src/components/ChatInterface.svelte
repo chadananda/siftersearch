@@ -58,6 +58,19 @@
   let readerCanGoPrev = $derived(readerArrayIndex > 0);
   let readerCanGoNext = $derived(readerArrayIndex >= 0 && readerArrayIndex < readerParagraphs.length - 1);
 
+  // Extract source URL from first few paragraphs (many docs have links to bahai-library.com, oceanoflights.org, etc.)
+  let readerSourceUrl = $derived.by(() => {
+    if (!readerParagraphs.length) return null;
+    // Check first 5 paragraphs for a source URL
+    for (let i = 0; i < Math.min(5, readerParagraphs.length); i++) {
+      const text = readerParagraphs[i]?.text || '';
+      // Look for common source domains
+      const match = text.match(/https?:\/\/(?:bahai-library\.com|oceanoflights\.org|oceanlibrary\.com|reference\.bahai\.org)[^\s\)"\]<]*/i);
+      if (match) return match[0];
+    }
+    return null;
+  });
+
   // Typewriter loading messages
   const LOADING_MESSAGES = [
     'Searching...',
@@ -661,6 +674,16 @@
             {#if readerDocument?.author}
               <p class="reader-book-author">by {readerDocument.author}</p>
             {/if}
+            {#if readerSourceUrl}
+              <a href={readerSourceUrl} target="_blank" rel="noopener noreferrer" class="reader-source-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                View Source
+              </a>
+            {/if}
           </div>
         </div>
 
@@ -703,43 +726,6 @@
           </div>
         {/if}
       </div>
-
-      <!-- Reader Footer -->
-      <footer class="reader-footer">
-        <div class="reader-progress">
-          <span class="reader-progress-text">
-            {readerArrayIndex >= 0 ? readerArrayIndex + 1 : 1} of {readerParagraphs.length}
-          </span>
-          <div class="reader-progress-bar">
-            <div
-              class="reader-progress-fill"
-              style="width: {readerParagraphs.length > 0 && readerArrayIndex >= 0 ? ((readerArrayIndex + 1) / readerParagraphs.length * 100) : 0}%"
-            ></div>
-          </div>
-        </div>
-        <div class="reader-nav-buttons">
-          <button
-            class="reader-nav-btn"
-            onclick={() => { if (readerCanGoPrev) { readerCurrentIndex = readerParagraphs[readerArrayIndex - 1].paragraph_index; scrollToReaderParagraph(readerCurrentIndex); } }}
-            disabled={!readerCanGoPrev}
-            aria-label="Previous paragraph"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <button
-            class="reader-nav-btn"
-            onclick={() => { if (readerCanGoNext) { readerCurrentIndex = readerParagraphs[readerArrayIndex + 1].paragraph_index; scrollToReaderParagraph(readerCurrentIndex); } }}
-            disabled={!readerCanGoNext}
-            aria-label="Next paragraph"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
-        </div>
-      </footer>
     </div>
   </div>
 {/if}
@@ -2985,6 +2971,36 @@
     .reader-book-author {
       font-size: 0.875rem;
     }
+
+    .reader-source-link {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+
+  .reader-source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    color: #6b5c4c;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .reader-source-link:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #4a3d2e;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .reader-source-link svg {
+    flex-shrink: 0;
   }
 
   .reader-close-btn {
@@ -3088,72 +3104,4 @@
     color: inherit;
   }
 
-  /* Reader Footer */
-  .reader-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    background: #f5f3ee;
-    flex-shrink: 0;
-    gap: 1rem;
-  }
-
-  /* Full-screen: no border-radius needed */
-
-  .reader-progress {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .reader-progress-text {
-    font-size: 0.8125rem;
-    color: #666;
-  }
-
-  .reader-progress-bar {
-    height: 4px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .reader-progress-fill {
-    height: 100%;
-    background: var(--accent-primary, #0891b2);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-  }
-
-  .reader-nav-buttons {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .reader-nav-btn {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.05);
-    border: none;
-    border-radius: 50%;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .reader-nav-btn:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.1);
-    color: #1a1a1a;
-  }
-
-  .reader-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
 </style>
