@@ -92,25 +92,11 @@ CREATE TABLE IF NOT EXISTS book_research_cache (
 CREATE INDEX IF NOT EXISTS idx_book_research_religion ON book_research_cache(religion);
 
 -- Add cover_url and isbn to indexed_documents if not exists
--- These columns may already exist, so we use a trick to add them conditionally
+-- SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so these may fail if columns exist
+-- The migration runner should handle this gracefully
 
--- Check and add cover_url
-SELECT CASE
-  WHEN (SELECT COUNT(*) FROM pragma_table_info('indexed_documents') WHERE name = 'cover_url') = 0
-  THEN 'ALTER TABLE indexed_documents ADD COLUMN cover_url TEXT'
-  ELSE 'SELECT 1'
-END;
-
--- Check and add isbn
-SELECT CASE
-  WHEN (SELECT COUNT(*) FROM pragma_table_info('indexed_documents') WHERE name = 'isbn') = 0
-  THEN 'ALTER TABLE indexed_documents ADD COLUMN isbn TEXT'
-  ELSE 'SELECT 1'
-END;
-
--- Check and add source_file
-SELECT CASE
-  WHEN (SELECT COUNT(*) FROM pragma_table_info('indexed_documents') WHERE name = 'source_file') = 0
-  THEN 'ALTER TABLE indexed_documents ADD COLUMN source_file TEXT'
-  ELSE 'SELECT 1'
-END;
+-- Note: These ALTER TABLE statements will fail silently if columns already exist
+-- due to the way our migration runner handles errors
+ALTER TABLE indexed_documents ADD COLUMN cover_url TEXT;
+ALTER TABLE indexed_documents ADD COLUMN isbn TEXT;
+ALTER TABLE indexed_documents ADD COLUMN source_file TEXT

@@ -74,7 +74,16 @@ async function runMigrations() {
     console.log(`  [run]  ${file}`);
 
     for (const stmt of statements) {
-      await db.execute(stmt);
+      try {
+        await db.execute(stmt);
+      } catch (err) {
+        // Handle expected errors (e.g., column already exists)
+        if (err.message?.includes('duplicate column name')) {
+          console.log(`    [info] Column already exists, skipping`);
+        } else {
+          throw err;
+        }
+      }
     }
 
     await db.execute({

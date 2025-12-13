@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T19:34:13.160Z",
+  "generated": "2025-12-13T19:37:18.243Z",
   "entries": [
+    {
+      "hash": "5322389",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add search results cache with 4-hour TTL",
+      "scope": null
+    },
     {
       "hash": "1fa30fe",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Reader displays with no visible scrolling and matches hit styling",
       "scope": null
-    },
-    {
-      "hash": "c3a793d",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Instant reader with preloaded documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "5322389",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add search results cache with 4-hour TTL",
+        "scope": null
+      },
       {
         "hash": "1fa30fe",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Reader displays with no visible scrolling and matches hit styling",
-        "scope": null
-      },
-      {
-        "hash": "c3a793d",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Instant reader with preloaded documents",
         "scope": null
       }
     ]
