@@ -649,7 +649,7 @@
                 <span class="para-num">{paragraph.paragraph_index}</span>
                 <p class="reader-paragraph">
                   {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
-                    {@html readerHighlightedText}
+                    {@html formatText(readerHighlightedText)}
                   {:else}
                     {@html formatText(paragraph.text)}
                   {/if}

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T01:35:47.227Z",
+  "generated": "2025-12-13T01:36:56.298Z",
   "entries": [
+    {
+      "hash": "4699391",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
+      "scope": null
+    },
     {
       "hash": "a007c99",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Simplify update button to just 'UPDATE'",
       "scope": null
-    },
-    {
-      "hash": "942eae3",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Simplify PWA update button text (version not available before refresh)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "4699391",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
+        "scope": null
+      },
       {
         "hash": "a007c99",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Simplify update button to just 'UPDATE'",
-        "scope": null
-      },
-      {
-        "hash": "942eae3",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Simplify PWA update button text (version not available before refresh)",
         "scope": null
       }
     ]
