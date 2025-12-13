@@ -164,8 +164,14 @@ export async function incrementUserSearchCount(userId) {
 
 /**
  * Unify anonymous user with authenticated user.
- * Merges search history, conversations, and preferences.
- * Called when a user logs in.
+ * Merges search history, conversations, preferences, and profile data.
+ * Called when a user logs in or signs up.
+ *
+ * This function:
+ * 1. Transfers anonymous user's search count to authenticated user
+ * 2. Transfers user profile data (learned preferences, interests)
+ * 3. Updates anonymous_conversations to link to authenticated user
+ * 4. Marks anonymous user as converted (keeps for audit trail)
  */
 export async function unifyUserId(anonymousUserId, authenticatedUserId) {
   if (!anonymousUserId || !authenticatedUserId) {
@@ -174,26 +180,84 @@ export async function unifyUserId(anonymousUserId, authenticatedUserId) {
   }
 
   try {
-    // Mark the anonymous user as converted
-    await query(
-      `UPDATE anonymous_users
-       SET converted_to_user_id = ?, last_seen_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [authenticatedUserId, anonymousUserId]
-    );
-
-    // Transfer conversations to the authenticated user
-    await query(
-      `UPDATE anonymous_conversations
-       SET anonymous_user_id = NULL
-       WHERE anonymous_user_id = ?`,
+    // Get anonymous user data to transfer
+    const anonUser = await queryOne(
+      'SELECT search_count, preferences, interests FROM anonymous_users WHERE id = ?',
       [anonymousUserId]
     );
 
-    // Note: In a full implementation, we'd also:
-    // 1. Merge preferences
-    // 2. Transfer conversation history to user's account
-    // 3. Merge any interests/topics learned
+    if (anonUser) {
+      // Add anonymous search count to authenticated user's count
+      if (anonUser.search_count > 0) {
+        await query(
+          'UPDATE users SET search_count = search_count + ? WHERE id = ?',
+          [anonUser.search_count, authenticatedUserId]
+        );
+        logger.info({ anonymousUserId, searchCount: anonUser.search_count }, 'Transferred search count');
+      }
+    }
+
+    // Transfer user_profiles data (learned preferences, spiritual background, etc.)
+    const anonProfile = await queryOne(
+      'SELECT * FROM user_profiles WHERE user_id = ?',
+      [anonymousUserId]
+    );
+
+    if (anonProfile) {
+      // Check if authenticated user already has a profile
+      const existingProfile = await queryOne(
+        'SELECT id FROM user_profiles WHERE user_id = ?',
+        [authenticatedUserId.toString()]
+      );
+
+      if (existingProfile) {
+        // Merge profiles - anonymous data fills in gaps
+        await query(
+          `UPDATE user_profiles SET
+             name = COALESCE(name, ?),
+             bio = COALESCE(bio, ?),
+             spiritual_background = COALESCE(spiritual_background, ?),
+             interests = CASE WHEN interests IS NULL THEN ? ELSE interests END,
+             preferred_sources = CASE WHEN preferred_sources IS NULL THEN ? ELSE preferred_sources END,
+             metadata = CASE WHEN metadata IS NULL THEN ? ELSE metadata END,
+             updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ?`,
+          [
+            anonProfile.name,
+            anonProfile.bio,
+            anonProfile.spiritual_background,
+            anonProfile.interests,
+            anonProfile.preferred_sources,
+            anonProfile.metadata,
+            authenticatedUserId.toString()
+          ]
+        );
+      } else {
+        // Transfer the entire profile to authenticated user
+        await query(
+          `UPDATE user_profiles SET user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`,
+          [authenticatedUserId.toString(), anonymousUserId]
+        );
+      }
+      logger.info({ anonymousUserId, authenticatedUserId }, 'Transferred user profile');
+    }
+
+    // Transfer anonymous_conversations to authenticated user
+    // Keep the link but add user_id reference
+    await query(
+      `UPDATE anonymous_conversations
+       SET user_id = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE anonymous_user_id = ?`,
+      [authenticatedUserId, anonymousUserId]
+    );
+
+    // Mark the anonymous user as converted (keep for audit trail)
+    await query(
+      `UPDATE anonymous_users
+       SET converted_to_user_id = ?, converted_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [authenticatedUserId, anonymousUserId]
+    );
 
     logger.info({ anonymousUserId, authenticatedUserId }, 'Unified anonymous user with authenticated account');
     return true;

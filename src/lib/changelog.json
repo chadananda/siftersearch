@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:57:55.161Z",
+  "generated": "2025-12-13T15:22:51.292Z",
   "entries": [
+    {
+      "hash": "df7e513",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add context field to paragraphs for AI enrichment",
+      "scope": null
+    },
     {
       "hash": "695299c",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Remove animated background from docs, increase about card opacity",
       "scope": null
-    },
-    {
-      "hash": "3cd03b5",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Federated search pagination must use federation.limit",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "df7e513",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add context field to paragraphs for AI enrichment",
+        "scope": null
+      },
       {
         "hash": "695299c",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Remove animated background from docs, increase about card opacity",
-        "scope": null
-      },
-      {
-        "hash": "3cd03b5",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Federated search pagination must use federation.limit",
         "scope": null
       }
     ]

@@ -3,7 +3,9 @@
  * Simple reactive auth store for Svelte
  */
 
-import { auth as authApi } from './api.js';
+import { auth as authApi, getUserId } from './api.js';
+
+const USER_ID_KEY = 'sifter_user_id';
 
 // Auth state
 let user = $state(null);
@@ -34,6 +36,10 @@ export async function initAuth() {
 
 /**
  * Login
+ * Note: The anonymous user ID in localStorage is preserved until logout.
+ * This ensures the X-User-ID header continues to be sent for any pending
+ * unification requests. The server handles linking the anonymous data
+ * to the authenticated account.
  */
 export async function login(email, password) {
   loading = true;
@@ -72,6 +78,8 @@ export async function signup(email, password, name) {
 
 /**
  * Logout
+ * Clears the user session and generates a fresh anonymous user ID.
+ * This ensures the user starts fresh after logout.
  */
 export async function logout() {
   try {
@@ -80,6 +88,11 @@ export async function logout() {
     // Ignore errors
   } finally {
     user = null;
+    // Generate a fresh anonymous user ID for the logged-out session
+    if (typeof localStorage !== 'undefined') {
+      const newUserId = 'user_' + crypto.randomUUID();
+      localStorage.setItem(USER_ID_KEY, newUserId);
+    }
   }
 }
 
