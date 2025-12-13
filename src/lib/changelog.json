@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T12:33:55.941Z",
+  "generated": "2025-12-13T12:35:21.035Z",
   "entries": [
+    {
+      "hash": "fc52ec6",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Add fallback keyword highlighting when anchor matching fails",
+      "scope": null
+    },
     {
       "hash": "7e84797",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
       "scope": null
-    },
-    {
-      "hash": "a007c99",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Add left margin to source text for paragraph number spacing",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "fc52ec6",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Add fallback keyword highlighting when anchor matching fails",
+        "scope": null
+      },
       {
         "hash": "7e84797",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
-        "scope": null
-      },
-      {
-        "hash": "a007c99",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Add left margin to source text for paragraph number spacing",
         "scope": null
       }
     ]

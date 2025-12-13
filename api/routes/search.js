@@ -104,40 +104,6 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
   };
 }
 
-/**
- * Fallback highlighting using keywords when anchor matching fails.
- * Finds the first sentence containing any keyword and highlights it.
- */
-function fallbackKeywordHighlight(text, keyWords) {
-  if (!keyWords || keyWords.length === 0) return null;
-
-  // Split into sentences (rough heuristic)
-  const sentences = text.split(/(?<=[.!?])\s+/);
-
-  // Find first sentence containing a keyword
-  for (let i = 0; i < sentences.length; i++) {
-    const sentence = sentences[i];
-    const sentenceLower = sentence.toLowerCase();
-
-    for (const keyword of keyWords) {
-      if (sentenceLower.includes(keyword.toLowerCase())) {
-        // Found a match - calculate position in original text
-        let pos = 0;
-        for (let j = 0; j < i; j++) {
-          pos += sentences[j].length + 1; // +1 for space
-        }
-
-        return {
-          start: pos,
-          end: pos + sentence.length,
-          text: sentence
-        };
-      }
-    }
-  }
-
-  return null;
-}
 
 export default async function searchRoutes(fastify) {
   // Main search endpoint
@@ -542,71 +508,51 @@ CRITICAL RULES:
         // Start with plain text, not Meilisearch's formatted version
         let highlightedText = originalHit.text || '';
         const plainText = highlightedText;
-        let highlightSuccess = false;
 
-        // Helper to apply highlighting to a match
-        const applyHighlight = (match) => {
-          let highlightedSentence = match.text;
-
-          // Bold keywords within the sentence
-          if (result.keyWords?.length > 0) {
-            const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
-            for (const keyword of sortedKeyWords) {
-              const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-              highlightedSentence = highlightedSentence.replace(regex, '<b>$1</b>');
-            }
-          }
-
-          // Reconstruct: text before + marked sentence + text after
-          const before = plainText.substring(0, match.start);
-          const after = plainText.substring(match.end);
-          return `${before}<mark>${highlightedSentence}</mark>${after}`;
-        };
-
-        // Try anchor-based matching first
+        // Highlight the relevant sentence using anchor-based matching
         if (result.sentenceStart && result.sentenceEnd) {
           const match = findSentenceByAnchors(plainText, result.sentenceStart, result.sentenceEnd);
 
           if (match) {
-            highlightedText = applyHighlight(match);
-            highlightSuccess = true;
+            let highlightedSentence = match.text;
+
+            // Bold keywords within the sentence
+            if (result.keyWords?.length > 0) {
+              const sortedKeyWords = [...result.keyWords].sort((a, b) => b.length - a.length);
+              for (const keyword of sortedKeyWords) {
+                const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                highlightedSentence = highlightedSentence.replace(regex, '<b>$1</b>');
+              }
+            }
+
+            // Reconstruct: text before + marked sentence + text after
+            const before = plainText.substring(0, match.start);
+            const after = plainText.substring(match.end);
+            highlightedText = `${before}<mark>${highlightedSentence}</mark>${after}`;
+
             logger.debug({
               originalIndex: result.originalIndex,
               matchedText: match.text.substring(0, 60)
-            }, 'Highlight success (anchor)');
+            }, 'Highlight success');
           } else {
-            logger.warn({
+            // Detailed logging when anchor matching fails
+            logger.error({
               originalIndex: result.originalIndex,
               sentenceStart: result.sentenceStart,
               sentenceEnd: result.sentenceEnd,
+              textPreview: plainText.substring(0, 300),
+              textLength: plainText.length,
               title: originalHit.title
-            }, 'Anchor match failed, trying keyword fallback');
+            }, 'HIGHLIGHT FAILED: Could not match anchors - investigate LLM output vs actual text');
           }
-        }
-
-        // Fallback: try keyword-based highlighting if anchor matching failed
-        if (!highlightSuccess && result.keyWords?.length > 0) {
-          const match = fallbackKeywordHighlight(plainText, result.keyWords);
-
-          if (match) {
-            highlightedText = applyHighlight(match);
-            highlightSuccess = true;
-            logger.debug({
-              originalIndex: result.originalIndex,
-              matchedText: match.text.substring(0, 60)
-            }, 'Highlight success (keyword fallback)');
-          }
-        }
-
-        // Log if all highlighting failed
-        if (!highlightSuccess) {
-          logger.warn({
+        } else {
+          logger.error({
             originalIndex: result.originalIndex,
             hasSentenceStart: !!result.sentenceStart,
             hasSentenceEnd: !!result.sentenceEnd,
-            keyWordsCount: result.keyWords?.length || 0,
+            resultKeys: Object.keys(result),
             title: originalHit.title
-          }, 'All highlighting methods failed');
+          }, 'HIGHLIGHT FAILED: Missing anchor data from LLM');
         }
 
         return {
