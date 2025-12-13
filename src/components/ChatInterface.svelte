@@ -2346,6 +2346,7 @@
     line-height: 1.65;
     color: #1a1a1a;
     margin: 0;
+    margin-left: 1rem; /* Space for paragraph number */
   }
 
   /* Light yellow highlight for search keyword matches from Meilisearch */
