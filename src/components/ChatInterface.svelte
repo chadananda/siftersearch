@@ -2349,14 +2349,11 @@
     margin-left: 1rem; /* Space for paragraph number */
   }
 
-  /* Light yellow highlight for search keyword matches from Meilisearch */
+  /* Meilisearch keyword matches - just bold, no background (avoid over-highlighting) */
   .source-paper :global(.search-highlight),
   .source-paper :global(em) {
     font-style: normal;
     font-weight: 600;
-    background-color: #fef9c3;
-    padding: 0.1em 0.25em;
-    border-radius: 0.2em;
     color: #1a1a1a;
   }
 
@@ -2370,7 +2367,7 @@
     color: #1a1a1a !important;
   }
 
-  /* Bold key words within the relevant sentence - just bold, no color change */
+  /* Bold key words within the relevant sentence */
   .source-paper :global(mark b),
   .source-paper :global(b) {
     font-weight: 700;
@@ -2955,18 +2952,7 @@
     /* No special padding/border - match source-paper text style */
   }
 
-  /* Mark, search-highlight, and em styling for highlighted text in reader */
-  /* Must match .source-paper styling for consistency */
-  .reader-paragraph :global(.search-highlight),
-  .reader-paragraph :global(em) {
-    font-style: normal;
-    font-weight: 600;
-    background-color: #fef9c3;
-    padding: 0.1em 0.25em;
-    border-radius: 0.2em;
-    color: #1a1a1a;
-  }
-
+  /* Reader paragraph highlighting - only <mark> from the current hit */
   .reader-paragraph :global(mark) {
     background-color: #fef9c3 !important;
     background: #fef9c3 !important;

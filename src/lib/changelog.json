@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T01:32:20.002Z",
+  "generated": "2025-12-13T01:35:47.227Z",
   "entries": [
+    {
+      "hash": "a007c99",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Add left margin to source text for paragraph number spacing",
+      "scope": null
+    },
     {
       "hash": "c92a96d",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Simplify PWA update button text (version not available before refresh)",
       "scope": null
-    },
-    {
-      "hash": "2efe82c",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Show version in PWA update button, compact on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "a007c99",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Add left margin to source text for paragraph number spacing",
+        "scope": null
+      },
       {
         "hash": "c92a96d",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Simplify PWA update button text (version not available before refresh)",
-        "scope": null
-      },
-      {
-        "hash": "2efe82c",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Show version in PWA update button, compact on mobile",
         "scope": null
       }
     ]
