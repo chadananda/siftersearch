@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T17:41:44.540Z",
+  "generated": "2025-12-13T17:42:52.348Z",
   "entries": [
+    {
+      "hash": "b95cd1a",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add Librarian agent for library management and fix highlighting",
+      "scope": null
+    },
     {
       "hash": "347c15f",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
       "scope": null
-    },
-    {
-      "hash": "7ed4016",
-      "date": "2025-12-11",
-      "type": "Fixed",
-      "description": "Improve sentence matching for highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "b95cd1a",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add Librarian agent for library management and fix highlighting",
+        "scope": null
+      },
       {
         "hash": "347c15f",
         "date": "2025-12-13",
@@ -699,13 +706,6 @@
         "date": "2025-12-11",
         "type": "New",
         "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
-        "scope": null
-      },
-      {
-        "hash": "7ed4016",
-        "date": "2025-12-11",
-        "type": "Fixed",
-        "description": "Improve sentence matching for highlighting",
         "scope": null
       }
     ]

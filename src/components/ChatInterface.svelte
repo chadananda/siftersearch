@@ -2730,32 +2730,42 @@
   .input-area {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
     border-top: 1px solid var(--border-default);
     background-color: var(--surface-0-alpha);
     backdrop-filter: blur(8px);
+    position: relative;
   }
 
   .qr-link {
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: -1.5rem; /* Overflow above the input bar */
   }
 
   .qr-code {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.375rem;
-    opacity: 0.7;
-    transition: opacity 0.15s;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 0.5rem;
+    opacity: 0.9;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: white;
+    padding: 0.25rem;
   }
 
   .qr-link:hover .qr-code {
     opacity: 1;
+    transform: scale(1.05);
   }
 
   .input-form {
     flex: 1;
     min-width: 0;
+    max-width: 600px;
   }
 
   /* Input wrapper - contains input and search button */
