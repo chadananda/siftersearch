@@ -58,8 +58,7 @@ Feature: Accessibility and Screen Reader Support
   @pending
   Scenario: Search results list is properly structured
     Given search results are displayed
-    Then results should be in a list element (ul/ol)
-    Or results should have role="list" with role="listitem" children
+    Then results should be in a list element or have appropriate ARIA roles
     And each result should be focusable
 
   @pending
@@ -226,8 +225,7 @@ Feature: Accessibility and Screen Reader Support
   @pending
   Scenario: Progress indicators are accessible
     Given there is a loading indicator
-    Then it should have role="progressbar" if determinate
-    Or role="status" with aria-busy for indeterminate
+    Then it should have appropriate progress role and aria attributes
     And percentage should be announced if available
 
   # ============================================
@@ -306,5 +304,4 @@ Feature: Accessibility and Screen Reader Support
   Scenario: Reading order matches visual order
     Given I navigate with a screen reader
     Then content should be read in logical order
-    And visually reordered content should have correct DOM order
-    Or use aria-flowto for custom reading order
+    And visually reordered content should have correct DOM order or aria-flowto

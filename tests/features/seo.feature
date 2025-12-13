@@ -390,8 +390,7 @@ Feature: SEO On-Page Optimization
   @duplicates @trailing-slash
   Scenario: URLs handle trailing slashes consistently
     When I visit "/" and "/index.html"
-    Then one should redirect to the other
-    Or both should serve the same canonical URL
+    Then one should redirect to the other or both serve same canonical
 
   @duplicates @www
   Scenario: www and non-www URLs are handled

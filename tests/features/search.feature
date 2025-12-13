@@ -148,8 +148,7 @@ Feature: Search Functionality
   Scenario: Semantic-only search
     Given I am an approved user
     When I search for "how can humanity achieve peace"
-    Then results should match semantic meaning
-    Even if exact keywords are not present
+    Then results should match semantic meaning even without exact keywords
 
   # ============================================
   # PENDING - Tiered AI Providers

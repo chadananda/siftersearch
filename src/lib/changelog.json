@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T15:38:39.940Z",
+  "generated": "2025-12-13T15:56:27.096Z",
   "entries": [
+    {
+      "hash": "28d8eb5",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Update E2E tests to match current UI",
+      "scope": null
+    },
     {
       "hash": "96361f1",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add two-pass exhaustive search for comprehensive queries",
       "scope": null
-    },
-    {
-      "hash": "801ab8e",
-      "date": "2025-12-13",
-      "type": "Improved",
-      "description": "Optimize search pipeline - faster AI models and dynamic result limits",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "28d8eb5",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Update E2E tests to match current UI",
+        "scope": null
+      },
       {
         "hash": "96361f1",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add two-pass exhaustive search for comprehensive queries",
-        "scope": null
-      },
-      {
-        "hash": "801ab8e",
-        "date": "2025-12-13",
-        "type": "Improved",
-        "description": "Optimize search pipeline - faster AI models and dynamic result limits",
         "scope": null
       }
     ]

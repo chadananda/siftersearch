@@ -6,28 +6,29 @@
  * to serve as a development roadmap.
  */
 
+const common = {
+  paths: ['tests/features/**/*.feature'],
+  import: ['tests/features/step_definitions/*.js', 'tests/features/support/*.js'],
+  formatOptions: { snippetInterface: 'async-await' },
+  publishQuiet: true
+};
+
+// Default configuration
 export default {
-  default: {
-    paths: ['tests/features/**/*.feature'],
-    require: ['tests/features/step_definitions/**/*.js', 'tests/features/support/**/*.js'],
-    format: ['@cucumber/pretty-formatter', 'html:test-results/cucumber-report.html'],
-    formatOptions: { snippetInterface: 'async-await' },
-    publishQuiet: true
-  },
-  // Run only implemented features (for CI)
-  implemented: {
-    paths: ['tests/features/**/*.feature'],
-    require: ['tests/features/step_definitions/**/*.js', 'tests/features/support/**/*.js'],
-    tags: '@implemented',
-    format: ['@cucumber/pretty-formatter'],
-    publishQuiet: true
-  },
-  // Run pending/unimplemented features (roadmap check)
-  pending: {
-    paths: ['tests/features/**/*.feature'],
-    require: ['tests/features/step_definitions/**/*.js', 'tests/features/support/**/*.js'],
-    tags: '@pending or @unimplemented',
-    format: ['@cucumber/pretty-formatter'],
-    publishQuiet: true
-  }
+  ...common,
+  format: ['@cucumber/pretty-formatter', 'html:test-results/cucumber-report.html']
+};
+
+// Run only implemented features (for CI)
+export const implemented = {
+  ...common,
+  tags: '@implemented',
+  format: ['@cucumber/pretty-formatter']
+};
+
+// Run pending/unimplemented features (roadmap check)
+export const pending = {
+  ...common,
+  tags: '@pending or @unimplemented',
+  format: ['@cucumber/pretty-formatter']
 };
