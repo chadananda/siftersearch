@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T12:35:21.035Z",
+  "generated": "2025-12-13T12:37:26.175Z",
   "entries": [
+    {
+      "hash": "2bfda8b",
+      "date": "2025-12-13",
+      "type": "Updated",
+      "description": "Remove keyword fallback, add detailed logging for anchor match failures",
+      "scope": null
+    },
     {
       "hash": "fc52ec6",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
       "scope": null
-    },
-    {
-      "hash": "4699391",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "2bfda8b",
+        "date": "2025-12-13",
+        "type": "Updated",
+        "description": "Remove keyword fallback, add detailed logging for anchor match failures",
+        "scope": null
+      },
       {
         "hash": "fc52ec6",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
-        "scope": null
-      },
-      {
-        "hash": "4699391",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
         "scope": null
       }
     ]
