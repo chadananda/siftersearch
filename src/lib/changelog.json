@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:28:02.645Z",
+  "generated": "2025-12-13T14:29:11.085Z",
   "entries": [
+    {
+      "hash": "9cce327",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add conversational feedback for complex searches",
+      "scope": null
+    },
     {
       "hash": "bf93f00",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Add fallback keyword highlighting when anchor matching fails",
       "scope": null
-    },
-    {
-      "hash": "7e84797",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Show source domain in reader link with external icon",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "9cce327",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add conversational feedback for complex searches",
+        "scope": null
+      },
       {
         "hash": "bf93f00",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Add fallback keyword highlighting when anchor matching fails",
-        "scope": null
-      },
-      {
-        "hash": "7e84797",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Show source domain in reader link with external icon",
         "scope": null
       }
     ]

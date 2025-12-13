@@ -432,19 +432,45 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       'Access-Control-Allow-Origin': '*'
     });
 
-    // Send conversational acknowledgment for complex queries
+    // Send AI-generated conversational acknowledgment for complex queries
     // Sifter's personality: questions assumptions, seeks deeper spiritual perspectives
     if (isExhaustive) {
-      const acknowledgments = [
-        "There's more to this question than meets the eye. Let me search across traditions for perspectives that might challenge our usual assumptions...",
-        "This deserves a deeper look. I'll explore not just obvious answers, but what the sacred texts might reveal about the question itself...",
-        "Interesting. Let me search broadly first, then refine based on what emerges—sometimes the most valuable insights come from unexpected angles...",
-        "A question worth sitting with. Let me see what wisdom traditions say—and equally important, what they might say about how we're framing the question...",
-        "Let me dig into this. The surface answer is rarely the whole story—I'll search for perspectives that go beyond conventional framing..."
-      ];
-      const ack = acknowledgments[Math.floor(Math.random() * acknowledgments.length)];
-      reply.raw.write('data: ' + JSON.stringify({ type: 'thinking', message: ack, isExhaustive: true }) + '\n\n');
-      logger.info({ query, isExhaustive }, 'Sent exhaustive search acknowledgment');
+      try {
+        const ackPrompt = `You are Sifter, a scholarly assistant for an interfaith library. A user has asked a comprehensive question that will require thorough exploration.
+
+USER QUERY: "${query}"
+
+Generate a brief (1-2 sentence) conversational acknowledgment that:
+1. Shows genuine interest in their question
+2. Hints that you'll be looking at multiple perspectives and angles
+3. Reflects that sometimes the framing of a question matters as much as the answer
+4. Feels natural and conversational, not formulaic
+
+Do NOT:
+- Use generic phrases like "Great question!" or "That's fascinating!"
+- Sound robotic or templated
+- Lecture or preach
+- Make it too long
+
+Just respond with the acknowledgment, nothing else.`;
+
+        const ackResponse = await ai.chat([
+          { role: 'user', content: ackPrompt }
+        ], {
+          model: config.ai.search.model, // Fast model for quick response
+          temperature: 0.8,
+          maxTokens: 100
+        });
+
+        const ack = ackResponse.content?.trim() || '';
+        if (ack) {
+          reply.raw.write('data: ' + JSON.stringify({ type: 'thinking', message: ack, isExhaustive: true }) + '\n\n');
+          logger.info({ query, isExhaustive, ack }, 'Sent AI-generated acknowledgment');
+        }
+      } catch (ackError) {
+        // Don't fail the search if acknowledgment generation fails
+        logger.warn({ ackError }, 'Failed to generate acknowledgment, continuing with search');
+      }
     }
 
     let searchResults;
