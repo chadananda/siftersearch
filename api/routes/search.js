@@ -8,11 +8,13 @@
  */
 
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck } from '../lib/search.js';
-import { authenticate } from '../lib/auth.js';
+import { authenticate, optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { ai } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 import { ResearcherAgent } from '../agents/agent-researcher.js';
+import { checkQueryLimit, incrementSearchCount, incrementUserSearchCount, getAnonymousUserId } from '../lib/anonymous.js';
+import { ApiError } from '../lib/errors.js';
 
 // Helper function to parse parenthetical filter terms from query
 /**
@@ -408,9 +410,31 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
           useResearcher: { type: 'boolean', default: true }
         }
       }
-    }
+    },
+    preHandler: optionalAuthenticate
   }, async (request, reply) => {
     const { query: rawQuery, limit = 10, mode = 'hybrid', useResearcher = true } = request.body;
+
+    // Check query limit before processing
+    const limitCheck = await checkQueryLimit(request);
+    if (!limitCheck.allowed) {
+      // Return error as SSE for consistency
+      reply.raw.writeHead(402, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*'
+      });
+      reply.raw.write('data: ' + JSON.stringify({
+        type: 'error',
+        error: 'query_limit_exceeded',
+        message: limitCheck.reason,
+        isAuthenticated: limitCheck.isAuthenticated,
+        limit: limitCheck.limit
+      }) + '\n\n');
+      reply.raw.end();
+      return;
+    }
 
     // Parse parenthetical filter terms from query
     const { cleanQuery, filterTerms } = parseQueryFilters(rawQuery);
@@ -796,14 +820,32 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
       }
       reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: intro }) + '\n\n');
 
-      // Send completion with timing metrics
+      // Send completion with timing metrics and remaining queries
+      const remainingQueries = limitCheck.remaining - 1;
       reply.raw.write('data: ' + JSON.stringify({
         type: 'complete',
         timing: {
           analyzerTimeMs
+        },
+        queryLimit: {
+          remaining: Math.max(0, remainingQueries),
+          limit: limitCheck.limit,
+          isAuthenticated: limitCheck.isAuthenticated
         }
       }) + '\n\n');
       reply.raw.end();
+
+      // Increment search count
+      if (limitCheck.isAuthenticated && request.user?.sub) {
+        // Authenticated user
+        await incrementUserSearchCount(request.user.sub);
+      } else {
+        // Anonymous user
+        const anonymousUserId = getAnonymousUserId(request);
+        if (anonymousUserId) {
+          await incrementSearchCount(anonymousUserId, query);
+        }
+      }
 
       logger.info({
         query,
@@ -811,7 +853,8 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
         resultsFromAnalyzer: enhancedSources.length,
         resultsReturned: cappedSources.length,
         maxResults,
-        analyzerTimeMs
+        analyzerTimeMs,
+        remainingQueries
       }, 'Analysis completed');
 
     } catch (err) {

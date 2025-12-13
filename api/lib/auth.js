@@ -85,6 +85,36 @@ export async function authenticate(request, reply) {
   request.user = payload;
 }
 
+/**
+ * Optional authentication - sets request.user if token is valid, but doesn't fail if missing.
+ * Used for routes that work for both authenticated and anonymous users.
+ */
+export async function optionalAuthenticate(request, _reply) {
+  const authHeader = request.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return; // No auth header, continue as anonymous
+  }
+
+  const token = authHeader.slice(7);
+  const payload = verifyAccessToken(token);
+
+  if (payload) {
+    // Fetch full user data including search_count
+    const user = await queryOne(
+      'SELECT id, email, tier, search_count FROM users WHERE id = ?',
+      [payload.sub]
+    );
+    if (user) {
+      request.user = {
+        ...payload,
+        search_count: user.search_count || 0
+      };
+    }
+  }
+  // If token is invalid, just continue as anonymous (don't throw)
+}
+
 // Tier authorization
 export function requireTier(...allowedTiers) {
   return async (request, reply) => {
