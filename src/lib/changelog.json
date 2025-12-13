@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:54:48.634Z",
+  "generated": "2025-12-13T14:57:55.161Z",
   "entries": [
+    {
+      "hash": "695299c",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Add X-User-ID header to streaming search and fix Playwright tests",
+      "scope": null
+    },
     {
       "hash": "63e8c06",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Federated search pagination must use federation.limit",
       "scope": null
-    },
-    {
-      "hash": "1e91a8b",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add federated search, Tailwind color tokens, and coding guidelines",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "695299c",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Add X-User-ID header to streaming search and fix Playwright tests",
+        "scope": null
+      },
       {
         "hash": "63e8c06",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Federated search pagination must use federation.limit",
-        "scope": null
-      },
-      {
-        "hash": "1e91a8b",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add federated search, Tailwind color tokens, and coding guidelines",
         "scope": null
       }
     ]
