@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T23:29:57.099Z",
+  "generated": "2025-12-13T23:34:00.919Z",
   "entries": [
+    {
+      "hash": "f84d5e5",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Redesign About page with narrative agent team introduction",
+      "scope": null
+    },
     {
       "hash": "466a070",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Show version in PWA update button, compact on mobile",
       "scope": null
-    },
-    {
-      "hash": "bfd1c7c",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Render markdown in reader paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "f84d5e5",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Redesign About page with narrative agent team introduction",
+        "scope": null
+      },
       {
         "hash": "466a070",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Show version in PWA update button, compact on mobile",
-        "scope": null
-      },
-      {
-        "hash": "bfd1c7c",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Render markdown in reader paragraphs",
         "scope": null
       }
     ]

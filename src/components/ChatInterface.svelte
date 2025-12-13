@@ -963,43 +963,61 @@
           </div>
         </div>
 
-        <!-- Agent Architecture Section -->
+        <!-- Meet the Team Section -->
         <div class="mt-4 pt-6 border-t border-border">
-          <h3 class="text-xl font-bold text-primary mb-2">
-            <a href="/docs/agents" class="hover:text-accent transition-colors">Agent Architecture</a>
+          <h3 class="text-xl font-bold text-primary mb-3">
+            <a href="/docs/agents" class="hover:text-accent transition-colors">Meet the Team</a>
           </h3>
-          <p class="text-secondary mb-4">Specialized AI agents collaborate to understand, research, analyze, and present search results.</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="/docs/agents/sifter" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Sifter</div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Orchestrator</div>
-              <p class="text-sm text-secondary leading-snug">Routes your questions to specialized agents and presents results in a warm, scholarly manner.</p>
-            </a>
-            <a href="/docs/agents/researcher" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Researcher</div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Search Strategy</div>
-              <p class="text-sm text-secondary leading-snug">Designs comprehensive search strategies that transcend secular assumptions.</p>
-            </a>
-            <a href="/docs/agents/analyzer" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Analyzer</div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Re-ranking & Scoring</div>
-              <p class="text-sm text-secondary leading-snug">Scores results by relevance, extracts key sentences, and highlights core terms.</p>
-            </a>
-            <a href="/docs/agents/translator" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Translator</div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Shoghi Effendi Style</div>
-              <p class="text-sm text-secondary leading-snug">Renders text in elevated Victorian prose with rich spiritual imagery.</p>
-            </a>
-            <a href="/docs/agents/narrator" class="block p-4 rounded-xl bg-surface-1 border border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Narrator</div>
-              <div class="text-xs font-semibold uppercase tracking-wide text-muted mb-2">Audio Narration</div>
-              <p class="text-sm text-secondary leading-snug">Generates audio with pronunciation dictionary for 80+ sacred terms.</p>
-            </a>
-            <a href="/docs/agents" class="block p-4 rounded-xl bg-gradient-to-br from-surface-2 to-surface-1 border border-dashed border-border hover:border-accent hover:-translate-y-0.5 hover:shadow-lg transition-all">
-              <div class="font-semibold text-accent">Learn More</div>
-              <p class="text-sm text-secondary leading-snug mt-2">Explore the full agent architecture documentation and design principles.</p>
-            </a>
+          <div class="text-secondary leading-relaxed space-y-3 mb-5">
+            <p>
+              Behind every search is a team of AI agents working together. When you ask a question,
+              <a href="/docs/agents/sifter" class="inline-agent sifter">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+                <strong>Sifter</strong>
+              </a>
+              greets you and coordinates the response.
+              <a href="/docs/agents/researcher" class="inline-agent researcher">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <strong>Researcher</strong>
+              </a>
+              plans the optimal search strategy, then
+              <a href="/docs/agents/analyzer" class="inline-agent analyzer">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <strong>Analyzer</strong>
+              </a>
+              scores and highlights the most relevant passages.
+            </p>
+            <p>
+              Meanwhile,
+              <a href="/docs/agents/memory" class="inline-agent memory">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                <strong>Memory</strong>
+              </a>
+              recalls your past conversations to personalize responses. Need audio?
+              <a href="/docs/agents/narrator" class="inline-agent narrator">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                <strong>Narrator</strong>
+              </a>
+              speaks the sacred texts aloud. Want elegant prose?
+              <a href="/docs/agents/translator" class="inline-agent translator">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
+                <strong>Translator</strong>
+              </a>
+              renders text in beautiful, elevated English.
+            </p>
+            <p>
+              And behind the scenes,
+              <a href="/docs/agents/librarian" class="inline-agent librarian">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                <strong>Librarian</strong>
+              </a>
+              curates and grows our collection, ensuring every text is properly cataloged and discoverable.
+            </p>
           </div>
+          <a href="/docs/agents" class="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline">
+            <span>Explore the full agent documentation</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+          </a>
         </div>
 
         <!-- What's New Section - Grouped by Date -->
@@ -3167,6 +3185,65 @@
   .reader-paragraph :global(b) {
     font-weight: 700;
     color: inherit;
+  }
+
+  /* Inline agent badges for Meet the Team section */
+  .inline-agent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.1rem 0.4rem 0.1rem 0.25rem;
+    border-radius: 1rem;
+    font-size: 0.9em;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .inline-agent:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+  }
+
+  .inline-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .inline-agent.sifter {
+    background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    color: var(--accent-primary);
+  }
+
+  .inline-agent.researcher {
+    background-color: color-mix(in srgb, var(--accent-secondary) 15%, transparent);
+    color: var(--accent-secondary);
+  }
+
+  .inline-agent.analyzer {
+    background-color: color-mix(in srgb, var(--accent-tertiary) 15%, transparent);
+    color: var(--accent-tertiary);
+  }
+
+  .inline-agent.translator {
+    background-color: color-mix(in srgb, var(--warning) 15%, transparent);
+    color: var(--warning);
+  }
+
+  .inline-agent.narrator {
+    background-color: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+  }
+
+  .inline-agent.memory {
+    background-color: color-mix(in srgb, var(--info) 15%, transparent);
+    color: var(--info);
+  }
+
+  .inline-agent.librarian {
+    background-color: color-mix(in srgb, #8B4513 15%, transparent);
+    color: #8B4513;
   }
 
 </style>
