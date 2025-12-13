@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T12:29:34.389Z",
+  "generated": "2025-12-13T12:33:55.941Z",
   "entries": [
+    {
+      "hash": "7e84797",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Show source domain in reader link with external icon",
+      "scope": null
+    },
     {
       "hash": "03e5a54",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Add left margin to source text for paragraph number spacing",
       "scope": null
-    },
-    {
-      "hash": "c92a96d",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Add floating paragraph numbers to reader and hit cards",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "7e84797",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Show source domain in reader link with external icon",
+        "scope": null
+      },
       {
         "hash": "03e5a54",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Add left margin to source text for paragraph number spacing",
-        "scope": null
-      },
-      {
-        "hash": "c92a96d",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Add floating paragraph numbers to reader and hit cards",
         "scope": null
       }
     ]
