@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T19:45:38.985Z",
+  "generated": "2025-12-13T23:29:57.099Z",
   "entries": [
+    {
+      "hash": "466a070",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add Memory and Librarian agents to about page",
+      "scope": null
+    },
     {
       "hash": "8fc23be",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Render markdown in reader paragraphs",
       "scope": null
-    },
-    {
-      "hash": "36019a9",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Disable smooth scroll during initial reader positioning",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "466a070",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add Memory and Librarian agents to about page",
+        "scope": null
+      },
       {
         "hash": "8fc23be",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Render markdown in reader paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "36019a9",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Disable smooth scroll during initial reader positioning",
         "scope": null
       }
     ]
