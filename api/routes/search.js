@@ -15,6 +15,7 @@ import { logger } from '../lib/logger.js';
 import { ResearcherAgent } from '../agents/agent-researcher.js';
 import { checkQueryLimit, incrementSearchCount, incrementUserSearchCount, getAnonymousUserId } from '../lib/anonymous.js';
 import { ApiError } from '../lib/errors.js';
+import { MemoryAgent } from '../agents/agent-memory.js';
 
 // Helper function to parse parenthetical filter terms from query
 /**
@@ -444,6 +445,32 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       logger.info({ rawQuery, cleanQuery, filterTerms }, 'Parsed query filters');
     }
 
+    // Get user ID for memory and context
+    const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
+
+    // Initialize Memory agent and fetch user context
+    const memory = new MemoryAgent();
+    let userContext = null;
+    let relevantMemories = [];
+
+    if (userId) {
+      try {
+        // Fetch user profile and relevant memories in parallel
+        const [profile, memories] = await Promise.all([
+          memory.getUserProfile(userId),
+          memory.searchMemories(userId, query, 3) // Get 3 most relevant past conversations
+        ]);
+        userContext = profile;
+        relevantMemories = memories;
+
+        if (relevantMemories.length > 0) {
+          logger.info({ userId, memoryCount: relevantMemories.length }, 'Found relevant past conversations');
+        }
+      } catch (memErr) {
+        logger.warn({ memErr, userId }, 'Failed to fetch user context, continuing without');
+      }
+    }
+
     // Detect if this will be a complex/exhaustive search BEFORE starting
     const researcher = new ResearcherAgent();
     const isExhaustive = researcher.isExhaustiveQuery(query);
@@ -617,6 +644,30 @@ Just respond with the acknowledgment, nothing else.`;
       _searchQuery: hit._searchQuery // Which search query found this
     }));
 
+    // Build user context for personalization
+    let userContextSection = '';
+    if (userContext || relevantMemories.length > 0) {
+      const parts = [];
+
+      if (userContext?.topTopics?.length > 0) {
+        parts.push(`User interests: ${userContext.topTopics.slice(0, 5).map(t => t.topic).join(', ')}`);
+      }
+
+      if (relevantMemories.length > 0) {
+        parts.push('Recent related conversations:');
+        for (const mem of relevantMemories) {
+          parts.push(`- "${mem.content.substring(0, 100)}..." (similarity: ${(mem.similarity * 100).toFixed(0)}%)`);
+        }
+      }
+
+      if (parts.length > 0) {
+        userContextSection = `
+USER CONTEXT (use to personalize the response):
+${parts.join('\n')}
+`;
+      }
+    }
+
     // Build research plan context for the analyzer
     const researchPlanContext = researchPlan ? `
 RESEARCH STRATEGY:
@@ -632,7 +683,7 @@ ${researchPlan.queries?.map((q, i) => `  ${i + 1}. "${q.query}" (${q.mode}) - ${
     const analyzerPrompt = `You are analyzing federated search results for an interfaith research query. Score each result by relevance using the research plan as your guide.
 
 USER QUERY: "${query}"
-
+${userContextSection}
 ${researchPlanContext}
 
 SEARCH RESULTS:
@@ -844,6 +895,28 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
         const anonymousUserId = getAnonymousUserId(request);
         if (anonymousUserId) {
           await incrementSearchCount(anonymousUserId, query);
+        }
+      }
+
+      // Store this interaction in memory for future context
+      if (userId) {
+        try {
+          // Store user query
+          await memory.storeMemory(userId, 'user', query, {
+            isSearch: true,
+            resultsCount: cappedSources.length
+          });
+
+          // Store assistant response (brief summary)
+          if (intro) {
+            await memory.storeMemory(userId, 'assistant', intro, {
+              isSearch: true,
+              resultsCount: cappedSources.length,
+              topSources: cappedSources.slice(0, 3).map(s => ({ title: s.title, author: s.author }))
+            });
+          }
+        } catch (memErr) {
+          logger.warn({ memErr, userId }, 'Failed to store search in memory');
         }
       }
 

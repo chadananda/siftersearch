@@ -9,6 +9,7 @@
 
 import { query, queryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
+import { logger } from '../lib/logger.js';
 import {
   hashPassword,
   verifyPassword,
@@ -18,6 +19,8 @@ import {
   revokeRefreshToken,
   authenticate
 } from '../lib/auth.js';
+import { getAnonymousUserId, unifyUserId } from '../lib/anonymous.js';
+import { MemoryAgent } from '../agents/agent-memory.js';
 
 const REFRESH_COOKIE = 'refresh_token';
 const COOKIE_OPTIONS = {
@@ -60,6 +63,23 @@ export default async function authRoutes(fastify) {
     const userId = result.rows[0].id;
     const user = await queryOne('SELECT id, email, name, tier, created_at FROM users WHERE id = ?', [userId]);
 
+    // Unify anonymous user data with new authenticated account
+    const anonymousUserId = getAnonymousUserId(request);
+    if (anonymousUserId) {
+      try {
+        // Unify anonymous_users table
+        await unifyUserId(anonymousUserId, userId);
+
+        // Unify conversation memories
+        const memory = new MemoryAgent();
+        await memory.unifyMemories(anonymousUserId, userId.toString());
+
+        logger.info({ anonymousUserId, userId }, 'Unified anonymous user with new account');
+      } catch (unifyErr) {
+        logger.warn({ unifyErr, anonymousUserId, userId }, 'Failed to unify anonymous user, continuing');
+      }
+    }
+
     // Generate tokens
     const accessToken = createAccessToken(user);
     const refresh = await createRefreshToken(userId);
@@ -100,6 +120,23 @@ export default async function authRoutes(fastify) {
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
       throw ApiError.unauthorized('Invalid email or password');
+    }
+
+    // Unify anonymous user data with existing account (on login from new device)
+    const anonymousUserId = getAnonymousUserId(request);
+    if (anonymousUserId) {
+      try {
+        // Unify anonymous_users table
+        await unifyUserId(anonymousUserId, user.id);
+
+        // Unify conversation memories
+        const memoryAgent = new MemoryAgent();
+        await memoryAgent.unifyMemories(anonymousUserId, user.id.toString());
+
+        logger.info({ anonymousUserId, userId: user.id }, 'Unified anonymous user on login');
+      } catch (unifyErr) {
+        logger.warn({ unifyErr, anonymousUserId, userId: user.id }, 'Failed to unify anonymous user on login');
+      }
     }
 
     // Generate tokens
