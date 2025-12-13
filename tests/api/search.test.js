@@ -555,61 +555,55 @@ describe('Query Filter Parsing', () => {
  */
 describe('Anchor-based Highlighting', () => {
   /**
-   * Normalize text for fuzzy matching
+   * Normalize a word for comparison - handles contractions, possessives
    */
-  function normalizeForMatch(str) {
-    return str.toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\s]/g, '').trim();
+  function normalizeWord(word) {
+    return word.toLowerCase()
+      .replace(/['']/g, '')  // Remove apostrophes (it's → its, God's → Gods)
+      .replace(/[^\w]/g, ''); // Remove other non-word chars
   }
 
   /**
    * Find position in original text that matches normalized anchor
+   * Uses word boundary matching to avoid partial word matches.
    */
   function findAnchorPosition(text, anchor, searchFrom = 0) {
-    const normalizedAnchor = normalizeForMatch(anchor);
-    const anchorWords = normalizedAnchor.split(' ').filter(w => w.length > 0);
+    // Normalize the anchor and extract words
+    const anchorWords = anchor.split(/\s+/)
+      .map(w => normalizeWord(w))
+      .filter(w => w.length > 0);
     if (anchorWords.length === 0) return -1;
 
-    const textLower = text.toLowerCase();
-    let pos = searchFrom;
+    // Extract all words from text with their start/end positions
+    // Match word characters plus apostrophes for contractions
+    const wordRegex = /[\w']+/g;
+    const words = [];
+    let match;
+    while ((match = wordRegex.exec(text)) !== null) {
+      if (match.index >= searchFrom) {
+        words.push({
+          word: normalizeWord(match[0]),
+          start: match.index,
+          end: match.index + match[0].length
+        });
+      }
+    }
 
-    while (pos < text.length) {
-      const firstWordPos = textLower.indexOf(anchorWords[0], pos);
-      if (firstWordPos === -1) return -1;
-
-      let matchStart = firstWordPos;
-      let matchEnd = firstWordPos;
-      let wordIdx = 0;
-      let checkPos = firstWordPos;
-
-      while (wordIdx < anchorWords.length && checkPos < text.length) {
-        while (checkPos < text.length && /[\s\W]/.test(text[checkPos])) {
-          checkPos++;
-        }
-
-        let wordEnd = checkPos;
-        while (wordEnd < text.length && /\w/.test(text[wordEnd])) {
-          wordEnd++;
-        }
-
-        const word = text.substring(checkPos, wordEnd).toLowerCase();
-
-        if (word === anchorWords[wordIdx]) {
-          if (wordIdx === 0) matchStart = checkPos;
-          matchEnd = wordEnd;
-          wordIdx++;
-          checkPos = wordEnd;
-        } else if (wordIdx === 0) {
-          break;
-        } else {
+    // Find anchor sequence in words
+    for (let i = 0; i <= words.length - anchorWords.length; i++) {
+      let matches = true;
+      for (let j = 0; j < anchorWords.length; j++) {
+        if (words[i + j].word !== anchorWords[j]) {
+          matches = false;
           break;
         }
       }
-
-      if (wordIdx === anchorWords.length) {
-        return { start: matchStart, end: matchEnd };
+      if (matches) {
+        return {
+          start: words[i].start,
+          end: words[i + anchorWords.length - 1].end
+        };
       }
-
-      pos = firstWordPos + 1;
     }
 
     return -1;
@@ -627,12 +621,18 @@ describe('Anchor-based Highlighting', () => {
     const endMatch = findAnchorPosition(text, endAnchor, startMatch.end);
     if (endMatch === -1) return null;
 
-    if (endMatch.end - startMatch.start > 800) return null;
+    // Include trailing punctuation (.,;:!?"') after the end match
+    let endPos = endMatch.end;
+    while (endPos < text.length && /[.,;:!?"')}\]]/.test(text[endPos])) {
+      endPos++;
+    }
+
+    if (endPos - startMatch.start > 800) return null;
 
     return {
       start: startMatch.start,
-      end: endMatch.end,
-      text: text.substring(startMatch.start, endMatch.end)
+      end: endPos,
+      text: text.substring(startMatch.start, endPos)
     };
   }
 
@@ -668,6 +668,35 @@ describe('Anchor-based Highlighting', () => {
       const result = findAnchorPosition(text, 'soul is immortal');
       expect(result).toBe(-1);
     });
+
+    it('should not match partial words (word boundary)', () => {
+      // "in" should NOT match the "in" inside "interject" or "interfaith"
+      const text = 'The interfaith conference was interesting. In the beginning, all was one.';
+      const result = findAnchorPosition(text, 'In the beginning');
+      expect(result).not.toBe(-1);
+      expect(text.substring(result.start, result.end)).toBe('In the beginning');
+      // Should find "In the beginning" not "interfaith... the... interesting"
+      expect(result.start).toBeGreaterThan(40); // After "interesting"
+    });
+
+    it('should handle apostrophes and contractions', () => {
+      const text = "God's love is everlasting. It's a divine truth.";
+      const result = findAnchorPosition(text, "God's love is");
+      expect(result).not.toBe(-1);
+      expect(text.substring(result.start, result.end)).toBe("God's love is");
+    });
+
+    it('should match anchor without apostrophe to text with apostrophe', () => {
+      const text = "God's love is everlasting.";
+      const result = findAnchorPosition(text, "Gods love is");
+      expect(result).not.toBe(-1);
+    });
+
+    it('should match anchor with apostrophe to text without apostrophe', () => {
+      const text = "Gods love is everlasting.";
+      const result = findAnchorPosition(text, "God's love is");
+      expect(result).not.toBe(-1);
+    });
   });
 
   describe('findSentenceByAnchors', () => {
@@ -676,7 +705,15 @@ describe('Anchor-based Highlighting', () => {
       const result = findSentenceByAnchors(text, 'The soul is', 'and everlasting');
 
       expect(result).not.toBeNull();
-      expect(result.text).toBe('The soul is immortal and everlasting');
+      // Should include trailing period
+      expect(result.text).toBe('The soul is immortal and everlasting.');
+    });
+
+    it('should include trailing punctuation', () => {
+      const text = 'What is truth? The answer lies within!';
+      const result = findSentenceByAnchors(text, 'What is', 'truth');
+      expect(result).not.toBeNull();
+      expect(result.text).toBe('What is truth?');
     });
 
     it('should return null for non-matching start anchor', () => {
@@ -713,7 +750,8 @@ describe('Anchor-based Highlighting', () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result.text).toBe('The light of men is Justice');
+      // Now includes trailing punctuation
+      expect(result.text).toBe('The light of men is Justice.');
     });
 
     it('should handle Fred Mortensen style text (regression test)', () => {
