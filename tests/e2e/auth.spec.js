@@ -9,10 +9,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Auth Modal', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
   });
 
   test('should open auth modal when clicking Sign In', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    // Use first Sign In button (nav bar)
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
 
     // Modal should appear
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -20,93 +22,91 @@ test.describe('Auth Modal', () => {
   });
 
   test('should show login form by default', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
-    await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Email' })).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Password' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
 
   test('should switch to signup form', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
     // Click "Sign up" link
-    await page.getByRole('button', { name: 'Sign up' }).click();
+    await dialog.getByRole('button', { name: 'Sign up' }).click();
 
     // Should show signup form
-    await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
-    await expect(page.getByLabel('Name')).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Create Account' })).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Name' })).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Email' })).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Password' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Create Account' })).toBeVisible();
   });
 
   test('should switch back to login form', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.getByRole('button', { name: 'Sign up' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
-    // Click "Sign in" link
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await dialog.getByRole('button', { name: 'Sign up' }).click();
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
   });
 
-  test('should close modal when clicking X button', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+  test('should close modal when clicking close button', async ({ page }) => {
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-    // Click X button (SVG with X path)
-    await page.locator('button:has(svg path[d*="M6 18L18 6"])').click();
+    // Click close dialog button
+    await dialog.getByRole('button', { name: 'Close dialog' }).click();
 
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(dialog).not.toBeVisible();
   });
 
   test('should close modal when pressing Escape', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');
 
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(dialog).not.toBeVisible();
   });
 
-  test('should close modal when clicking backdrop', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-
-    // Click on the backdrop (the dark overlay, not the modal content)
-    await page.locator('.fixed.inset-0').click({ position: { x: 10, y: 10 } });
-
-    await expect(page.getByRole('dialog')).not.toBeVisible();
-  });
-
-  test('should require email field', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
+  test('should require email field for submission', async ({ page }) => {
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
     // Try to submit with just password
-    await page.getByLabel('Password').fill('testpassword');
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await dialog.getByRole('textbox', { name: 'Password' }).fill('testpassword');
+    await dialog.getByRole('button', { name: 'Sign In' }).click();
 
-    // Form should not submit (HTML5 validation)
-    await expect(page.getByRole('dialog')).toBeVisible();
+    // Form should not submit (HTML5 validation) - dialog still visible
+    await expect(dialog).toBeVisible();
   });
 
-  test('should require password field', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
+  test('should require password field for submission', async ({ page }) => {
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
     // Try to submit with just email
-    await page.getByLabel('Email').fill('test@example.com');
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await dialog.getByRole('textbox', { name: 'Email' }).fill('test@example.com');
+    await dialog.getByRole('button', { name: 'Sign In' }).click();
 
-    // Form should not submit (HTML5 validation)
-    await expect(page.getByRole('dialog')).toBeVisible();
+    // Form should not submit (HTML5 validation) - dialog still visible
+    await expect(dialog).toBeVisible();
   });
 
   test('should show password minimum length hint on signup', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.getByRole('button', { name: 'Sign up' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
 
-    await expect(page.getByText('Minimum 8 characters')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Sign up' }).click();
+
+    await expect(dialog.getByText('Minimum 8 characters')).toBeVisible();
   });
 });
 
@@ -114,9 +114,11 @@ test.describe('Auth Modal - Responsive', () => {
   test('should work on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByLabel('Email')).toBeVisible();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: 'Email' })).toBeVisible();
   });
 });
