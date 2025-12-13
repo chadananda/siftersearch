@@ -60,12 +60,12 @@ export async function login(email, password) {
 /**
  * Signup
  */
-export async function signup(email, password, name) {
+export async function signup(email, password, name, referralCode = null) {
   loading = true;
   error = null;
 
   try {
-    const data = await authApi.signup(email, password, name);
+    const data = await authApi.signup(email, password, name, referralCode);
     user = data.user;
     return { success: true };
   } catch (err) {

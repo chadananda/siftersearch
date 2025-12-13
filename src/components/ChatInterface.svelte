@@ -6,6 +6,8 @@
   import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import changelog from '../lib/changelog.json';
+  import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
+  import { getUserId } from '../lib/api.js';
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
 
@@ -43,6 +45,7 @@
   let libraryStats = $state(null);
   let statsLoading = $state(true);
   let expandedResults = $state({}); // Track which results are expanded
+  let qrCodeUrl = $state(null); // Dynamic QR code with referral URL
   let inputEl;
   let messagesAreaEl;
 
@@ -690,12 +693,19 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     initAuth();
     initPWA();
     loadLibraryStats();
     initSession();
     inputEl?.focus();
+
+    // Capture referral code from URL if present
+    captureReferral();
+
+    // Generate QR code with referral URL (using current user's ID)
+    const userId = getUserId();
+    qrCodeUrl = await generateQRCode(userId);
 
     // Cleanup on unmount
     return () => {
@@ -911,10 +921,10 @@
 
   <!-- Fullscreen About Section -->
   {#if showAbout}
-    <section id="about-section" class="fixed inset-0 z-50 bg-surface-0 overflow-y-auto" role="region" aria-labelledby="about-title">
+    <section id="about-section" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: var(--surface-solid);" role="region" aria-labelledby="about-title">
       <div class="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10 flex flex-col gap-6">
         <!-- Sticky Header -->
-        <div class="sticky top-0 z-10 bg-surface-0 py-4 -mt-4 flex items-center justify-between border-b border-border">
+        <div class="sticky top-0 z-10 py-4 -mt-4 flex items-center justify-between border-b border-border" style="background-color: var(--surface-solid);">
           <h2 id="about-title" class="text-2xl font-bold text-primary">About SifterSearch</h2>
           <button
             onclick={() => showAbout = false}
@@ -996,7 +1006,7 @@
         {#if changelog?.grouped && Object.keys(changelog.grouped).length > 0}
           <div class="mt-6 pt-4 border-t border-border">
             <h3 class="font-semibold text-primary mb-3 text-sm">What's New</h3>
-            {#each Object.entries(changelog.grouped).slice(0, 3) as [date, entries]}
+            {#each Object.entries(changelog.grouped).slice(0, 30) as [date, entries]}
               <div class="mb-4">
                 <div class="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 <ul class="list-none p-0 m-0 flex flex-col gap-2">
@@ -1427,9 +1437,9 @@
 
   <!-- Input area -->
   <div class="input-area" role="search">
-    <!-- QR code on the left -->
-    <a href="https://siftersearch.com" class="qr-link" title="SifterSearch.com" aria-label="QR code for SifterSearch.com">
-      <img src="/qr-siftersearch.svg" alt="QR code for siftersearch.com" class="qr-code" />
+    <!-- QR code on the left (includes referral link) -->
+    <a href={getReferralUrl(getUserId())} class="qr-link" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
+      <img src={qrCodeUrl || '/qr-siftersearch.svg'} alt="QR code for sharing siftersearch.com" class="qr-code" />
     </a>
 
     <!-- Input form with search button inside -->

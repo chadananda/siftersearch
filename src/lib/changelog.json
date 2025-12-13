@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T17:11:43.174Z",
+  "generated": "2025-12-13T17:26:45.833Z",
   "entries": [
+    {
+      "hash": "6ef0da7",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add email verification and password reset with SendGrid",
+      "scope": null
+    },
     {
       "hash": "34d44e5",
       "date": "2025-12-13",
@@ -70,10 +77,290 @@
       "type": "New",
       "description": "Add conversational feedback for complex searches",
       "scope": null
+    },
+    {
+      "hash": "bf93f00",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add two-pass exhaustive search for comprehensive queries",
+      "scope": null
+    },
+    {
+      "hash": "801ab8e",
+      "date": "2025-12-13",
+      "type": "Improved",
+      "description": "Optimize search pipeline - faster AI models and dynamic result limits",
+      "scope": null
+    },
+    {
+      "hash": "6ad727b",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Remove animated background from docs, increase about card opacity",
+      "scope": null
+    },
+    {
+      "hash": "3cd03b5",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Federated search pagination must use federation.limit",
+      "scope": null
+    },
+    {
+      "hash": "1e91a8b",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add federated search, Tailwind color tokens, and coding guidelines",
+      "scope": null
+    },
+    {
+      "hash": "5644d5b",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Slow down typewriter animation to 1/3 speed",
+      "scope": null
+    },
+    {
+      "hash": "b82722f",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Add missing PWA icons (192x192 and 512x512)",
+      "scope": null
+    },
+    {
+      "hash": "2bfda8b",
+      "date": "2025-12-13",
+      "type": "Updated",
+      "description": "Remove keyword fallback, add detailed logging for anchor match failures",
+      "scope": null
+    },
+    {
+      "hash": "fc52ec6",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Add fallback keyword highlighting when anchor matching fails",
+      "scope": null
+    },
+    {
+      "hash": "7e84797",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Show source domain in reader link with external icon",
+      "scope": null
+    },
+    {
+      "hash": "03e5a54",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Enhance ResearcherAgent with comprehensive search strategy",
+      "scope": null
+    },
+    {
+      "hash": "298d3e2",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Integrate ResearcherAgent and display research strategy in search results",
+      "scope": null
+    },
+    {
+      "hash": "1ff61df",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Randomize search suggestions from pool of 32 examples",
+      "scope": null
+    },
+    {
+      "hash": "4764c2e",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Remove reader footer, add View Source link in header",
+      "scope": null
+    },
+    {
+      "hash": "440e286",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Artistic book-style header for reader with religion icons",
+      "scope": null
+    },
+    {
+      "hash": "3294605",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Paragraph numbers start at 1 instead of 0",
+      "scope": null
+    },
+    {
+      "hash": "c135295",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
+      "scope": null
+    },
+    {
+      "hash": "4699391",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
+      "scope": null
+    },
+    {
+      "hash": "a007c99",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Add left margin to source text for paragraph number spacing",
+      "scope": null
+    },
+    {
+      "hash": "c92a96d",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Add floating paragraph numbers to reader and hit cards",
+      "scope": null
+    },
+    {
+      "hash": "e76a052",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
+      "scope": null
+    },
+    {
+      "hash": "4110240",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use --text-secondary for version without opacity for readability",
+      "scope": null
+    },
+    {
+      "hash": "525d897",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use text-secondary color for version, remove opacity",
+      "scope": null
+    },
+    {
+      "hash": "f480fb6",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Increase version text opacity from 0.6 to 0.8 for readability",
+      "scope": null
+    },
+    {
+      "hash": "2a3ac70",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Show just 'UPDATE' on update button, no version",
+      "scope": null
+    },
+    {
+      "hash": "da6d5d3",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
+      "scope": null
+    },
+    {
+      "hash": "8a45f80",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Simplify update button to just 'UPDATE'",
+      "scope": null
+    },
+    {
+      "hash": "942eae3",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Simplify PWA update button text (version not available before refresh)",
+      "scope": null
+    },
+    {
+      "hash": "2efe82c",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Show version in PWA update button, compact on mobile",
+      "scope": null
+    },
+    {
+      "hash": "bfd1c7c",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Render markdown in reader paragraphs",
+      "scope": null
+    },
+    {
+      "hash": "36019a9",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Disable smooth scroll during initial reader positioning",
+      "scope": null
+    },
+    {
+      "hash": "d4c639c",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Reader displays with no visible scrolling and matches hit styling",
+      "scope": null
+    },
+    {
+      "hash": "c3a793d",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Instant reader with preloaded documents",
+      "scope": null
+    },
+    {
+      "hash": "684e5f9",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Center current paragraph in reader without scroll animation",
+      "scope": null
+    },
+    {
+      "hash": "aa7c9b1",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Optimize mobile layout with Tailwind responsive classes",
+      "scope": null
+    },
+    {
+      "hash": "6b4478d",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Increase max sentence length for highlighting from 500 to 800 chars",
+      "scope": null
+    },
+    {
+      "hash": "a7cb745",
+      "date": "2025-12-11",
+      "type": "New",
+      "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
+      "scope": null
+    },
+    {
+      "hash": "7ed4016",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Improve sentence matching for highlighting",
+      "scope": null
+    },
+    {
+      "hash": "fffa9ff",
+      "date": "2025-12-11",
+      "type": "Fixed",
+      "description": "Add solid background to collapsed hit cards",
+      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "6ef0da7",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add email verification and password reset with SendGrid",
+        "scope": null
+      },
       {
         "hash": "34d44e5",
         "date": "2025-12-13",
@@ -142,6 +429,283 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add conversational feedback for complex searches",
+        "scope": null
+      },
+      {
+        "hash": "bf93f00",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add two-pass exhaustive search for comprehensive queries",
+        "scope": null
+      },
+      {
+        "hash": "801ab8e",
+        "date": "2025-12-13",
+        "type": "Improved",
+        "description": "Optimize search pipeline - faster AI models and dynamic result limits",
+        "scope": null
+      },
+      {
+        "hash": "6ad727b",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Remove animated background from docs, increase about card opacity",
+        "scope": null
+      },
+      {
+        "hash": "3cd03b5",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Federated search pagination must use federation.limit",
+        "scope": null
+      },
+      {
+        "hash": "1e91a8b",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add federated search, Tailwind color tokens, and coding guidelines",
+        "scope": null
+      },
+      {
+        "hash": "5644d5b",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Slow down typewriter animation to 1/3 speed",
+        "scope": null
+      },
+      {
+        "hash": "b82722f",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Add missing PWA icons (192x192 and 512x512)",
+        "scope": null
+      },
+      {
+        "hash": "2bfda8b",
+        "date": "2025-12-13",
+        "type": "Updated",
+        "description": "Remove keyword fallback, add detailed logging for anchor match failures",
+        "scope": null
+      },
+      {
+        "hash": "fc52ec6",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Add fallback keyword highlighting when anchor matching fails",
+        "scope": null
+      },
+      {
+        "hash": "7e84797",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Show source domain in reader link with external icon",
+        "scope": null
+      },
+      {
+        "hash": "03e5a54",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Enhance ResearcherAgent with comprehensive search strategy",
+        "scope": null
+      }
+    ],
+    "2025-12-12": [
+      {
+        "hash": "298d3e2",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Integrate ResearcherAgent and display research strategy in search results",
+        "scope": null
+      },
+      {
+        "hash": "1ff61df",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Randomize search suggestions from pool of 32 examples",
+        "scope": null
+      },
+      {
+        "hash": "4764c2e",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Remove reader footer, add View Source link in header",
+        "scope": null
+      },
+      {
+        "hash": "440e286",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Artistic book-style header for reader with religion icons",
+        "scope": null
+      },
+      {
+        "hash": "3294605",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Paragraph numbers start at 1 instead of 0",
+        "scope": null
+      },
+      {
+        "hash": "c135295",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
+        "scope": null
+      },
+      {
+        "hash": "4699391",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
+        "scope": null
+      },
+      {
+        "hash": "a007c99",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Add left margin to source text for paragraph number spacing",
+        "scope": null
+      },
+      {
+        "hash": "c92a96d",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Add floating paragraph numbers to reader and hit cards",
+        "scope": null
+      },
+      {
+        "hash": "e76a052",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
+        "scope": null
+      },
+      {
+        "hash": "4110240",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use --text-secondary for version without opacity for readability",
+        "scope": null
+      },
+      {
+        "hash": "525d897",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use text-secondary color for version, remove opacity",
+        "scope": null
+      },
+      {
+        "hash": "f480fb6",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Increase version text opacity from 0.6 to 0.8 for readability",
+        "scope": null
+      },
+      {
+        "hash": "2a3ac70",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Show just 'UPDATE' on update button, no version",
+        "scope": null
+      },
+      {
+        "hash": "da6d5d3",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
+        "scope": null
+      },
+      {
+        "hash": "8a45f80",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Simplify update button to just 'UPDATE'",
+        "scope": null
+      },
+      {
+        "hash": "942eae3",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Simplify PWA update button text (version not available before refresh)",
+        "scope": null
+      },
+      {
+        "hash": "2efe82c",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Show version in PWA update button, compact on mobile",
+        "scope": null
+      },
+      {
+        "hash": "bfd1c7c",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Render markdown in reader paragraphs",
+        "scope": null
+      },
+      {
+        "hash": "36019a9",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Disable smooth scroll during initial reader positioning",
+        "scope": null
+      },
+      {
+        "hash": "d4c639c",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Reader displays with no visible scrolling and matches hit styling",
+        "scope": null
+      },
+      {
+        "hash": "c3a793d",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Instant reader with preloaded documents",
+        "scope": null
+      },
+      {
+        "hash": "684e5f9",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Center current paragraph in reader without scroll animation",
+        "scope": null
+      },
+      {
+        "hash": "aa7c9b1",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Optimize mobile layout with Tailwind responsive classes",
+        "scope": null
+      },
+      {
+        "hash": "6b4478d",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Increase max sentence length for highlighting from 500 to 800 chars",
+        "scope": null
+      }
+    ],
+    "2025-12-11": [
+      {
+        "hash": "a7cb745",
+        "date": "2025-12-11",
+        "type": "New",
+        "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
+        "scope": null
+      },
+      {
+        "hash": "7ed4016",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Improve sentence matching for highlighting",
+        "scope": null
+      },
+      {
+        "hash": "fffa9ff",
+        "date": "2025-12-11",
+        "type": "Fixed",
+        "description": "Add solid background to collapsed hit cards",
         "scope": null
       }
     ]

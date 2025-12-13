@@ -1,5 +1,6 @@
 <script>
   import { login, signup, getAuthState } from '../lib/auth.svelte.js';
+  import { getStoredReferral, clearStoredReferral } from '../lib/referral.js';
 
   let { isOpen = $bindable(false), onClose = () => {} } = $props();
 
@@ -21,7 +22,13 @@
       if (mode === 'login') {
         result = await login(email, password);
       } else {
-        result = await signup(email, password, name);
+        // Get referral code if user was referred
+        const referralCode = getStoredReferral();
+        result = await signup(email, password, name, referralCode);
+        // Clear referral after signup attempt
+        if (result.success) {
+          clearStoredReferral();
+        }
       }
 
       if (result.success) {

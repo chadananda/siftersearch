@@ -147,10 +147,10 @@ async function refreshToken() {
 // ============================================
 
 export const auth = {
-  async signup(email, password, name) {
+  async signup(email, password, name, referralCode = null) {
     const data = await request('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name })
+      body: JSON.stringify({ email, password, name, referralCode })
     });
     accessToken = data.accessToken;
     return data;

@@ -52,12 +52,13 @@ export default async function authRoutes(fastify) {
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 8 },
-          name: { type: 'string', maxLength: 100 }
+          name: { type: 'string', maxLength: 100 },
+          referralCode: { type: 'string', maxLength: 100, nullable: true }
         }
       }
     }
   }, async (request, reply) => {
-    const { email, password, name } = request.body;
+    const { email, password, name, referralCode } = request.body;
 
     // Check if email exists
     const existing = await queryOne('SELECT id, email_verified FROM users WHERE email = ?', [email.toLowerCase()]);
@@ -73,11 +74,38 @@ export default async function authRoutes(fastify) {
       throw ApiError.badRequest('Email already registered');
     }
 
+    // Resolve referrer from referral code
+    let referredBy = null;
+    if (referralCode) {
+      // Referral code is either:
+      // 1. An anonymous user ID like "user_abc123..." - check anonymous_users table
+      // 2. A numeric user ID like "42" - check users table directly
+      if (referralCode.startsWith('user_')) {
+        // Look up anonymous user to find if they've been unified with a real user
+        const anonUser = await queryOne(
+          'SELECT unified_to FROM anonymous_users WHERE user_id = ?',
+          [referralCode]
+        );
+        if (anonUser?.unified_to) {
+          referredBy = anonUser.unified_to;
+        }
+        // If not unified, we'll still track the anonymous ID for later unification
+        // by storing the referral code in metadata
+      } else {
+        // Numeric user ID - verify it exists
+        const referrer = await queryOne('SELECT id FROM users WHERE id = ?', [parseInt(referralCode, 10)]);
+        if (referrer) {
+          referredBy = referrer.id;
+        }
+      }
+      logger.info({ referralCode, referredBy }, 'Referral code resolved');
+    }
+
     // Create user (unverified)
     const passwordHash = await hashPassword(password);
     const result = await query(
-      'INSERT INTO users (email, password_hash, name, email_verified) VALUES (?, ?, ?, 0) RETURNING id',
-      [email.toLowerCase(), passwordHash, name || null]
+      'INSERT INTO users (email, password_hash, name, email_verified, referred_by) VALUES (?, ?, ?, 0, ?) RETURNING id',
+      [email.toLowerCase(), passwordHash, name || null, referredBy]
     );
 
     const userId = result.rows[0].id;

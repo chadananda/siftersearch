@@ -14,6 +14,9 @@
   --surface-2: light-dark(rgba(241, 245, 249, 0.75), rgba(51, 65, 85, 0.75));
   --surface-3: light-dark(rgba(226, 232, 240, 0.7), rgba(71, 85, 105, 0.7));
 
+  /* Solid surface (no transparency, for modals/popovers) */
+  --surface-solid: light-dark(#ffffff, #0f172a);
+
   /* Surface with more transparency (for backdrop-blur) */
   --surface-0-alpha: light-dark(rgba(255, 255, 255, 0.7), rgba(15, 23, 42, 0.7));
   --surface-1-alpha: light-dark(rgba(248, 250, 252, 0.65), rgba(30, 41, 59, 0.65));

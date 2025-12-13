@@ -21,7 +21,7 @@ const outputPath = join(__dirname, '..', 'src', 'lib', 'changelog.json');
 // Parse args
 const args = process.argv.slice(2);
 const countArg = args.find(a => a.startsWith('--count='));
-const count = countArg ? parseInt(countArg.split('=')[1], 10) : 10;
+const count = countArg ? parseInt(countArg.split('=')[1], 10) : 50; // Default to 50 entries (~1 month)
 
 // Get recent commits with conventional commit format
 // Format: hash|date|subject
