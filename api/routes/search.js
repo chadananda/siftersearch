@@ -87,59 +87,58 @@ function normalizeForMatch(str) {
 }
 
 /**
+ * Normalize a word for comparison - handles contractions, possessives
+ */
+function normalizeWord(word) {
+  return word.toLowerCase()
+    .replace(/['']/g, '')  // Remove apostrophes (it's → its, God's → Gods)
+    .replace(/[^\w]/g, ''); // Remove other non-word chars
+}
+
+/**
  * Find position in original text that matches normalized anchor
  * Returns { start, end } or -1 if not found
+ *
+ * Strategy: Extract all words from text with their positions,
+ * then find the anchor word sequence within those words.
  */
 function findAnchorPosition(text, anchor, searchFrom = 0) {
-  const normalizedAnchor = normalizeForMatch(anchor);
-  const anchorWords = normalizedAnchor.split(' ').filter(w => w.length > 0);
+  // Normalize the anchor and extract words
+  const anchorWords = anchor.split(/\s+/)
+    .map(w => normalizeWord(w))
+    .filter(w => w.length > 0);
   if (anchorWords.length === 0) return -1;
 
-  const textLower = text.toLowerCase();
-  let pos = searchFrom;
+  // Extract all words from text with their start/end positions
+  // Match word characters plus apostrophes for contractions
+  const wordRegex = /[\w']+/g;
+  const words = [];
+  let match;
+  while ((match = wordRegex.exec(text)) !== null) {
+    if (match.index >= searchFrom) {
+      words.push({
+        word: normalizeWord(match[0]),
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+  }
 
-  while (pos < text.length) {
-    // Find first word
-    const firstWordPos = textLower.indexOf(anchorWords[0], pos);
-    if (firstWordPos === -1) return -1;
-
-    // Check if remaining words follow
-    let matchStart = firstWordPos;
-    let matchEnd = firstWordPos;
-    let wordIdx = 0;
-    let checkPos = firstWordPos;
-
-    while (wordIdx < anchorWords.length && checkPos < text.length) {
-      // Skip non-word characters
-      while (checkPos < text.length && /[\s\W]/.test(text[checkPos])) {
-        checkPos++;
-      }
-
-      // Extract word at current position
-      let wordEnd = checkPos;
-      while (wordEnd < text.length && /\w/.test(text[wordEnd])) {
-        wordEnd++;
-      }
-
-      const word = text.substring(checkPos, wordEnd).toLowerCase();
-
-      if (word === anchorWords[wordIdx]) {
-        if (wordIdx === 0) matchStart = checkPos;
-        matchEnd = wordEnd;
-        wordIdx++;
-        checkPos = wordEnd;
-      } else if (wordIdx === 0) {
-        break;
-      } else {
+  // Find anchor sequence in words
+  for (let i = 0; i <= words.length - anchorWords.length; i++) {
+    let matches = true;
+    for (let j = 0; j < anchorWords.length; j++) {
+      if (words[i + j].word !== anchorWords[j]) {
+        matches = false;
         break;
       }
     }
-
-    if (wordIdx === anchorWords.length) {
-      return { start: matchStart, end: matchEnd };
+    if (matches) {
+      return {
+        start: words[i].start,
+        end: words[i + anchorWords.length - 1].end
+      };
     }
-
-    pos = firstWordPos + 1;
   }
 
   return -1;
@@ -157,13 +156,19 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
   const endMatch = findAnchorPosition(text, endAnchor, startMatch.end);
   if (endMatch === -1) return null;
 
+  // Include trailing punctuation (.,;:!?"') after the end match
+  let endPos = endMatch.end;
+  while (endPos < text.length && /[.,;:!?"')}\]]/.test(text[endPos])) {
+    endPos++;
+  }
+
   // Sanity check: sentence shouldn't be too long (max 800 chars)
-  if (endMatch.end - startMatch.start > 800) return null;
+  if (endPos - startMatch.start > 800) return null;
 
   return {
     start: startMatch.start,
-    end: endMatch.end,
-    text: text.substring(startMatch.start, endMatch.end)
+    end: endPos,
+    text: text.substring(startMatch.start, endPos)
   };
 }
 

@@ -10,6 +10,7 @@
  * - Translator: Shoghi Effendi style translation specialist
  * - Narrator: Audio narration with ElevenLabs and pronunciation dictionary
  * - Memory: Semantic memory for user conversations and context recall
+ * - Librarian: Library management, document ingestion, and curation
  */
 
 import { BaseAgent } from './base-agent.js';
@@ -19,8 +20,9 @@ import { AnalyzerAgent } from './agent-analyzer.js';
 import { TranslatorAgent } from './agent-translator.js';
 import { NarratorAgent } from './agent-narrator.js';
 import { MemoryAgent } from './agent-memory.js';
+import { LibrarianAgent } from './agent-librarian.js';
 
-export { BaseAgent, SifterAgent, ResearcherAgent, AnalyzerAgent, TranslatorAgent, NarratorAgent, MemoryAgent };
+export { BaseAgent, SifterAgent, ResearcherAgent, AnalyzerAgent, TranslatorAgent, NarratorAgent, MemoryAgent, LibrarianAgent };
 
 /**
  * Create a fully wired agent system
@@ -32,9 +34,10 @@ export function createAgentSystem(options = {}) {
   const translator = new TranslatorAgent(options.translator);
   const narrator = new NarratorAgent(options.narrator);
   const memory = new MemoryAgent(options.memory);
+  const librarian = new LibrarianAgent(options.librarian);
 
   // Wire up the orchestrator with sub-agents
-  sifter.registerAgents({ researcher, analyzer, translator, narrator, memory });
+  sifter.registerAgents({ researcher, analyzer, translator, narrator, memory, librarian });
 
   return {
     sifter,
@@ -43,6 +46,7 @@ export function createAgentSystem(options = {}) {
     translator,
     narrator,
     memory,
+    librarian,
 
     // Convenience method for processing queries
     async process(query, opts = {}) {
@@ -59,5 +63,6 @@ export default {
   TranslatorAgent,
   NarratorAgent,
   MemoryAgent,
+  LibrarianAgent,
   createAgentSystem
 };

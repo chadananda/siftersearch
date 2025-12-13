@@ -17,6 +17,7 @@ import adminRoutes from './routes/admin.js';
 import documentsRoutes from './routes/documents.js';
 import servicesRoutes from './routes/services.js';
 import anonymousRoutes from './routes/anonymous.js';
+import librarianRoutes from './routes/librarian.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -104,6 +105,7 @@ export async function createServer(opts = {}) {
   await server.register(documentsRoutes, { prefix: '/api/documents' });
   await server.register(servicesRoutes, { prefix: '/api/services' });
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });
+  await server.register(librarianRoutes, { prefix: '/api/librarian' });
 
   // Error handling
   server.setErrorHandler(errorHandler);
