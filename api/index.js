@@ -7,9 +7,10 @@
 
 import dotenv from 'dotenv';
 
-// Load environment files: .env-public (checked in) + .env-secrets (gitignored)
-dotenv.config({ path: '.env-public' });
+// Load environment files: .env-secrets first (overrides), then .env-public (defaults)
+// Secrets are loaded first so they take precedence over public defaults
 dotenv.config({ path: '.env-secrets' });
+dotenv.config({ path: '.env-public' });
 
 import { checkEnvironment, getEnvSummary } from './lib/env-check.js';
 import { createServer } from './server.js';

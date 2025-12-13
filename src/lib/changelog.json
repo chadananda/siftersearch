@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T15:56:27.096Z",
+  "generated": "2025-12-13T17:11:43.174Z",
   "entries": [
+    {
+      "hash": "34d44e5",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add comprehensive BDD tests for user tracking",
+      "scope": null
+    },
     {
       "hash": "28d8eb5",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add conversational feedback for complex searches",
       "scope": null
-    },
-    {
-      "hash": "bf93f00",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add two-pass exhaustive search for comprehensive queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "34d44e5",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add comprehensive BDD tests for user tracking",
+        "scope": null
+      },
       {
         "hash": "28d8eb5",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add conversational feedback for complex searches",
-        "scope": null
-      },
-      {
-        "hash": "bf93f00",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add two-pass exhaustive search for comprehensive queries",
         "scope": null
       }
     ]

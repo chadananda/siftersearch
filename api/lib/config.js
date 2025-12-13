@@ -17,8 +17,9 @@ import { join } from 'path';
 
 // Load environment files early - before any config reads
 // This ensures env vars are available when this module's top-level code runs
-dotenv.config({ path: '.env-public' });
+// Load secrets first so they override public defaults
 dotenv.config({ path: '.env-secrets' });
+dotenv.config({ path: '.env-public' });
 
 // Load config.yaml if it exists
 function loadConfigYaml() {
