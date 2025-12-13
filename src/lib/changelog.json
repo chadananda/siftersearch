@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T03:09:47.430Z",
+  "generated": "2025-12-13T12:28:10.147Z",
   "entries": [
+    {
+      "hash": "298d3e2",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Integrate ResearcherAgent and display research strategy in search results",
+      "scope": null
+    },
     {
       "hash": "1ff61df",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
       "scope": null
-    },
-    {
-      "hash": "4110240",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Use --text-secondary for version without opacity for readability",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "298d3e2",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Integrate ResearcherAgent and display research strategy in search results",
+        "scope": null
+      },
       {
         "hash": "1ff61df",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
-        "scope": null
-      },
-      {
-        "hash": "4110240",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Use --text-secondary for version without opacity for readability",
         "scope": null
       }
     ]

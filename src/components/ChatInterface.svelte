@@ -1108,27 +1108,87 @@
 
               <!-- Research Plan (shows researcher agent's strategy) -->
               {#if researchPlan && message.results?.length > 0}
-                <details class="research-plan">
-                  <summary class="research-plan-toggle">
-                    <svg class="research-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <details class="my-2 rounded-lg bg-[var(--surface-1-alpha)] border border-[var(--border-default)] text-sm">
+                  <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer text-[var(--text-muted)] font-medium list-none [&::-webkit-details-marker]:hidden">
+                    <svg class="w-4 h-4 stroke-[var(--text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="11" cy="11" r="8"/>
                       <path d="M21 21l-4.35-4.35"/>
                     </svg>
                     Research Strategy
-                    <span class="plan-type">{researchPlan.type}</span>
-                  </summary>
-                  <div class="research-plan-content">
-                    {#if researchPlan.reasoning}
-                      <p class="plan-reasoning">{researchPlan.reasoning}</p>
+                    <span class="px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold uppercase">{researchPlan.type}</span>
+                    {#if researchPlan.planningTimeMs}
+                      <span class="ml-auto px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)] text-xs font-mono">{researchPlan.planningTimeMs}ms</span>
                     {/if}
+                  </summary>
+                  <div class="p-3 flex flex-col gap-3 border-t border-[var(--border-default)]">
+                    {#if researchPlan.reasoning}
+                      <p class="text-[var(--text-secondary)] italic leading-relaxed">{researchPlan.reasoning}</p>
+                    {/if}
+
+                    {#if researchPlan.assumptions?.length > 0}
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Challenging assumptions:</span>
+                        <ul class="m-0 pl-5 text-[var(--text-secondary)] text-[0.8125rem]">
+                          {#each researchPlan.assumptions as assumption}
+                            <li class="mb-1">{assumption}</li>
+                          {/each}
+                        </ul>
+                      </div>
+                    {/if}
+
+                    {#if researchPlan.traditions?.length > 0}
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Traditions covered:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                          {#each researchPlan.traditions as tradition}
+                            <span class="px-2 py-0.5 rounded-full bg-[var(--accent-primary)] text-white text-xs opacity-90">{tradition}</span>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+
                     {#if researchPlan.queries?.length > 0}
-                      <div class="plan-queries">
-                        <span class="queries-label">Queries:</span>
-                        {#each researchPlan.queries as q, i}
-                          <span class="query-chip" title={q.mode}>
-                            {q.query}
-                          </span>
-                        {/each}
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Search queries ({researchPlan.queries.length}):</span>
+                        <div class="flex flex-col gap-2">
+                          {#each researchPlan.queries as q, i}
+                            <div class="bg-[var(--surface-elevated)] rounded-md px-3 py-2 border border-[var(--border-default)]">
+                              <div class="flex items-center gap-2 flex-wrap">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--accent-primary)] text-white text-[0.6875rem] font-semibold shrink-0">{i + 1}</span>
+                                <span class="text-[var(--text-primary)] font-medium flex-1">{q.query}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-[var(--surface-1-alpha)] text-[var(--text-muted)] text-[0.6875rem] uppercase">{q.mode}</span>
+                                {#if q.angle && q.angle !== 'direct'}
+                                  <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[0.6875rem] italic">{q.angle}</span>
+                                {/if}
+                              </div>
+                              {#if q.rationale}
+                                <p class="mt-1.5 ml-7 text-[var(--text-muted)] text-[0.8125rem] italic">{q.rationale}</p>
+                              {/if}
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
+
+                    {#if researchPlan.surprises?.length > 0}
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Watch for surprises:</span>
+                        <ul class="m-0 pl-5 text-[var(--text-secondary)] text-[0.8125rem] [&>li::marker]:content-['⚡_']">
+                          {#each researchPlan.surprises as surprise}
+                            <li class="mb-1">{surprise}</li>
+                          {/each}
+                        </ul>
+                      </div>
+                    {/if}
+
+                    {#if researchPlan.followUp?.length > 0}
+                      <div class="flex flex-col gap-1.5">
+                        <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Suggested follow-ups:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                          {#each researchPlan.followUp as followUp}
+                            <span class="px-2 py-1 rounded-full bg-[var(--surface-elevated)] text-[var(--text-secondary)] text-[0.8125rem] border border-[var(--border-default)] cursor-pointer hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)]">{followUp}</span>
+                          {/each}
+                        </div>
                       </div>
                     {/if}
                   </div>
@@ -2194,84 +2254,6 @@
   @keyframes blink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
-  }
-
-  /* Research Plan Styles */
-  .research-plan {
-    margin: 0.5rem 0;
-    border-radius: 0.5rem;
-    background: var(--surface-1-alpha);
-    border: 1px solid var(--border-default);
-    font-size: 0.875rem;
-  }
-
-  .research-plan-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-weight: 500;
-    list-style: none;
-  }
-
-  .research-plan-toggle::-webkit-details-marker {
-    display: none;
-  }
-
-  .research-plan[open] .research-plan-toggle {
-    border-bottom: 1px solid var(--border-default);
-  }
-
-  .research-icon {
-    width: 1rem;
-    height: 1rem;
-    stroke: var(--text-muted);
-  }
-
-  .plan-type {
-    margin-left: auto;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    background: var(--accent-primary);
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .research-plan-content {
-    padding: 0.75rem;
-  }
-
-  .plan-reasoning {
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    font-style: italic;
-  }
-
-  .plan-queries {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    align-items: center;
-  }
-
-  .queries-label {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    margin-right: 0.25rem;
-  }
-
-  .query-chip {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 1rem;
-    background: var(--surface-elevated);
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
-    border: 1px solid var(--border-default);
   }
 
   .analysis-sources {

@@ -348,17 +348,27 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
     if (useResearcher) {
       // Use ResearcherAgent for intelligent search planning
       const researcher = new ResearcherAgent();
+      const planStartTime = Date.now();
       const plan = await researcher.createSearchPlan(query, { limit });
+      const planningTimeMs = Date.now() - planStartTime;
+
       researchPlan = {
         type: plan.type,
+        assumptions: plan.assumptions || [],
         reasoning: plan.reasoning,
         queries: plan.queries.map(q => ({
           query: q.query,
           mode: q.mode,
+          rationale: q.rationale || '',
+          angle: q.angle || 'direct',
           filters: q.filters || {}
-        }))
+        })),
+        traditions: plan.traditions || [],
+        surprises: plan.surprises || [],
+        followUp: plan.followUp || [],
+        planningTimeMs
       };
-      logger.info({ query, planType: plan.type, queryCount: plan.queries.length }, 'Research plan created');
+      logger.info({ query, planType: plan.type, queryCount: plan.queries.length, planningTimeMs }, 'Research plan created');
 
       // Execute the plan
       searchResults = await researcher.executeSearchPlan(plan, { limit });

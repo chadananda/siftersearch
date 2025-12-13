@@ -11,43 +11,41 @@
 import { BaseAgent } from './base-agent.js';
 import { hybridSearch, keywordSearch, semanticSearch } from '../lib/search.js';
 
-const RESEARCHER_SYSTEM_PROMPT = `You are a research strategist for an interfaith library search system. Your job is to analyze user queries and determine the optimal search strategy.
+const RESEARCHER_SYSTEM_PROMPT = `You are designing a search strategy for an interfaith research query. Your goal is to create an exhaustive plan that uncovers ALL relevant perspectives, especially unexpected or counterintuitive teachings.
 
-QUERY TYPES:
+Create a comprehensive search strategy following these principles:
 
-1. SIMPLE/DIRECT - Single search sufficient
-   - "What does Baha'u'llah say about justice?"
-   - "Find prayers for healing"
-   - "Quotes about love"
-   Strategy: One hybrid search with the query as-is
+1. **Challenge Assumptions** - What obvious answers might we expect? List them, then design searches specifically to find teachings that contradict or complicate these expectations.
 
-2. CONCEPT EXPLORATION - Multiple related searches
-   - "What is the purpose of life?"
-   - "Teachings about the soul"
-   Strategy: 2-3 searches with related terms/synonyms
+2. **Cross-Traditional Coverage** - Ensure searches span multiple religious/spiritual traditions. Don't assume which traditions are relevant - cast a wide net.
 
-3. CROSS-TRADITION COMPARISON - Tradition-specific searches
-   - "Compare Baha'i and Buddhist teachings on suffering"
-   - "How do different religions view the afterlife?"
-   Strategy: Separate searches per tradition, then merge
+3. **Multiple Angles** - Break the query into conceptual facets:
+   - Direct teachings on the topic
+   - Related metaphors, parables, or symbolic teachings
+   - Historical/cultural context that shaped the teachings
+   - Practical applications or ethical implications
+   - Paradoxes or tensions within traditions
+   - Evolution of thought across time periods
 
-4. DEEP DIVE - Comprehensive exploration
-   - "Everything about Abdu'l-Baha's travels to America"
-   - "All teachings on education"
-   Strategy: Multiple searches with variations, broader and narrower terms
+4. **Unexpected Connections** - What tangential topics might reveal surprising insights? Look for:
+   - Concepts that seem unrelated but share deep connections
+   - Minority voices or less-studied texts within traditions
+   - Teachings that appear contradictory on the surface
+   - Modern interpretations vs historical understandings
 
-5. SPECIFIC REFERENCE - Targeted lookup
-   - "Quote from Hidden Words about detachment"
-   - "What Shoghi Effendi wrote about administration"
-   Strategy: Keyword search targeting specific works/authors
+5. **Keyword Diversity** - Generate search terms that include:
+   - Literal terminology
+   - Synonyms and related concepts
+   - Traditional/scriptural language
+   - Modern scholarly framing
+   - Metaphorical language
 
 SEARCH MODES:
 - hybrid: Best for most queries (combines semantic + keyword)
 - semantic: Best for conceptual/meaning-based queries
 - keyword: Best for specific phrases, names, titles
 
-OUTPUT:
-Return a search plan with 1-5 queries, each with mode and optional filters.`;
+Remember: The most valuable insights often come from what we DON'T expect to find. Design searches to prove yourself wrong, not right.`;
 
 export class ResearcherAgent extends BaseAgent {
   constructor(options = {}) {
@@ -83,42 +81,55 @@ export class ResearcherAgent extends BaseAgent {
     const planPrompt = `Create a search plan for this query: "${query}"
 
 ${traditions.length ? `Focus on traditions: ${traditions.join(', ')}` : ''}
-${strategy === 'complex_search' ? 'Use a comprehensive multi-query approach.' : 'Choose the simplest effective approach.'}
+${strategy === 'complex_search' ? 'Use a comprehensive multi-query approach.' : ''}
 
 Return JSON only:
 {
-  "type": "simple" | "multi" | "comparative",
-  "reasoning": "brief explanation",
+  "type": "simple" | "exhaustive" | "comparative",
+  "assumptions": ["obvious answer 1 we might expect", "obvious answer 2"],
+  "reasoning": "overall strategy explanation - what makes this query interesting and how we'll explore it",
   "queries": [
     {
       "query": "search string",
       "mode": "hybrid" | "semantic" | "keyword",
-      "limit": 10,
-      "filters": { "religion": "optional", "author": "optional" }
+      "rationale": "why this specific search",
+      "angle": "direct" | "metaphor" | "historical" | "practical" | "paradox" | "unexpected",
+      "limit": 10
     }
-  ]
+  ],
+  "traditions": ["traditions this plan covers"],
+  "surprises": ["unexpected findings to watch for"],
+  "followUp": ["suggested next searches based on likely findings"]
 }
 
-Max 5 queries. Most queries need only 1-2 searches.`;
+Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast a wide net across traditions.`;
 
     const response = await this.chat([
       { role: 'user', content: planPrompt }
-    ], { temperature: 0.2, maxTokens: 600 });
+    ], { temperature: 0.3, maxTokens: 1500 });
 
     try {
       const plan = this.parseJSON(response.content);
       // Validate and sanitize
       return {
-        type: plan.type || 'simple',
+        type: plan.type || 'exhaustive',
+        assumptions: plan.assumptions || [],
         reasoning: plan.reasoning || '',
-        queries: (plan.queries || [{ query, mode: 'hybrid', limit: 10 }]).slice(0, 5)
+        queries: (plan.queries || [{ query, mode: 'hybrid', limit: 10 }]).slice(0, 10),
+        traditions: plan.traditions || [],
+        surprises: plan.surprises || [],
+        followUp: plan.followUp || []
       };
     } catch (error) {
       this.logger.warn({ error, query }, 'Failed to parse search plan, using simple strategy');
       return {
         type: 'simple',
+        assumptions: [],
         reasoning: 'Fallback to simple search',
-        queries: [{ query, mode: 'hybrid', limit: options.limit || 10 }]
+        queries: [{ query, mode: 'hybrid', limit: options.limit || 10 }],
+        traditions: [],
+        surprises: [],
+        followUp: []
       };
     }
   }
