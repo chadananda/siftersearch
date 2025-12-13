@@ -1183,27 +1183,17 @@
                     {#if researchPlan.planningTimeMs || researchPlan.searchTimeMs || researchPlan.analyzerTimeMs}
                       <div class="ml-auto flex items-center gap-1.5 text-xs font-mono">
                         {#if researchPlan.planningTimeMs}
-                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI planning time">
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI planning time (creating search strategy)">
                             Plan: {formatTime(researchPlan.planningTimeMs)}
                           </span>
                         {/if}
-                        {#if researchPlan.embeddingTimeMs}
-                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Batch embedding generation time">
-                            Embed: {formatTime(researchPlan.embeddingTimeMs)}
-                          </span>
-                        {/if}
-                        {#if researchPlan.meiliTimeMs}
-                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Meilisearch federated query time">
-                            Meili: {formatTime(researchPlan.meiliTimeMs)}
-                          </span>
-                        {/if}
                         {#if researchPlan.searchTimeMs}
-                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Total search execution time">
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="Search execution (embeddings + Meilisearch)">
                             Search: {formatTime(researchPlan.searchTimeMs)}
                           </span>
                         {/if}
                         {#if researchPlan.analyzerTimeMs}
-                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI analysis and reranking time">
+                          <span class="px-2 py-0.5 rounded bg-[var(--surface-elevated)] text-[var(--text-muted)]" title="AI analysis, ranking, and highlighting">
                             Analyze: {formatTime(researchPlan.analyzerTimeMs)}
                           </span>
                         {/if}
