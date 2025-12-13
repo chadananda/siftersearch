@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T02:46:16.762Z",
+  "generated": "2025-12-13T03:01:50.045Z",
   "entries": [
+    {
+      "hash": "4764c2e",
+      "date": "2025-12-12",
+      "type": "New",
+      "description": "Remove reader footer, add View Source link in header",
+      "scope": null
+    },
     {
       "hash": "440e286",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use text-secondary color for version, remove opacity",
       "scope": null
-    },
-    {
-      "hash": "f480fb6",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Increase version text opacity from 0.6 to 0.8 for readability",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "4764c2e",
+        "date": "2025-12-12",
+        "type": "New",
+        "description": "Remove reader footer, add View Source link in header",
+        "scope": null
+      },
       {
         "hash": "440e286",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use text-secondary color for version, remove opacity",
-        "scope": null
-      },
-      {
-        "hash": "f480fb6",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Increase version text opacity from 0.6 to 0.8 for readability",
         "scope": null
       }
     ]

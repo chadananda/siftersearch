@@ -71,6 +71,57 @@
     return null;
   });
 
+  // Search suggestion examples - randomly select 3 on each page load
+  const ALL_SUGGESTIONS = [
+    // Soul & Afterlife
+    'What is the nature of the soul?',
+    'What happens after death?',
+    'Is the soul immortal?',
+    'What is the purpose of life?',
+    // Comparative
+    'Compare creation stories across religions',
+    'How do religions view suffering?',
+    'What do scriptures say about forgiveness?',
+    'Compare teachings on love',
+    // Virtues & Ethics
+    'Teachings on compassion',
+    'What is true humility?',
+    'How to overcome anger?',
+    'Guidance on honesty and truthfulness',
+    'What is justice?',
+    // Prayer & Worship
+    'How should one pray?',
+    'What is the purpose of fasting?',
+    'Importance of meditation',
+    'How to draw closer to God?',
+    // Social teachings
+    'Teachings on marriage and family',
+    'How to achieve peace?',
+    'What is the role of service?',
+    'Guidance on wealth and poverty',
+    // Knowledge & Truth
+    'What is the source of knowledge?',
+    'How to recognize truth?',
+    'Relationship between science and religion',
+    'What is wisdom?',
+    // Unity & Oneness
+    'Teachings on unity of humanity',
+    'What does oneness mean?',
+    'How to overcome prejudice?',
+    // Spiritual Growth
+    'How to develop spiritually?',
+    'What are spiritual tests?',
+    'Purpose of trials and difficulties',
+    'How to find inner peace?'
+  ];
+
+  // Randomly select 3 suggestions
+  function getRandomSuggestions(count = 3) {
+    const shuffled = [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }
+  const displayedSuggestions = getRandomSuggestions(3);
+
   // Typewriter loading messages
   const LOADING_MESSAGES = [
     'Searching...',
@@ -1013,7 +1064,7 @@
         </div>
 
         <div class="suggestions">
-          {#each ['What is the nature of the soul?', 'Compare creation stories', 'Teachings on compassion'] as suggestion}
+          {#each displayedSuggestions as suggestion}
             <button
               onclick={() => { input = suggestion; sendMessage(); }}
               class="suggestion-btn"
