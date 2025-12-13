@@ -1177,6 +1177,9 @@
                     </svg>
                     Research Strategy
                     <span class="px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold uppercase">{researchPlan.type}</span>
+                    {#if researchPlan.cached}
+                      <span class="px-2 py-0.5 rounded bg-green-500 text-white text-xs font-semibold uppercase" title="Served from cache">Cached</span>
+                    {/if}
                     {#if researchPlan.twoPass}
                       <span class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-semibold uppercase" title="Two-pass exhaustive search">2-Pass</span>
                     {/if}

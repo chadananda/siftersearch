@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T19:27:14.797Z",
+  "generated": "2025-12-13T19:34:13.160Z",
   "entries": [
+    {
+      "hash": "1fa30fe",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Simplify timing display to 3 clear metrics",
+      "scope": null
+    },
     {
       "hash": "672c627",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Instant reader with preloaded documents",
       "scope": null
-    },
-    {
-      "hash": "684e5f9",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Center current paragraph in reader without scroll animation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "1fa30fe",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Simplify timing display to 3 clear metrics",
+        "scope": null
+      },
       {
         "hash": "672c627",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Instant reader with preloaded documents",
-        "scope": null
-      },
-      {
-        "hash": "684e5f9",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Center current paragraph in reader without scroll animation",
         "scope": null
       }
     ]

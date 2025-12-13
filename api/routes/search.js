@@ -16,6 +16,7 @@ import { ResearcherAgent } from '../agents/agent-researcher.js';
 import { checkQueryLimit, incrementSearchCount, incrementUserSearchCount, getAnonymousUserId } from '../lib/anonymous.js';
 import { ApiError } from '../lib/errors.js';
 import { MemoryAgent } from '../agents/agent-memory.js';
+import { getCachedSearch, setCachedSearch } from '../lib/search-cache.js';
 
 // Helper function to parse parenthetical filter terms from query
 /**
@@ -448,6 +449,57 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
 
     if (filterTerms.length > 0) {
       logger.info({ rawQuery, cleanQuery, filterTerms }, 'Parsed query filters');
+    }
+
+    // Check cache first (only for queries without filter terms for now)
+    if (filterTerms.length === 0) {
+      const cached = await getCachedSearch(query);
+      if (cached) {
+        // Set up SSE and send cached response
+        reply.raw.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
+
+        // Send plan if available
+        if (cached.plan) {
+          reply.raw.write('data: ' + JSON.stringify({ type: 'plan', plan: { ...cached.plan, cached: true } }) + '\n\n');
+        }
+
+        // Send sources
+        reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: cached.sources }) + '\n\n');
+
+        // Send analysis intro
+        reply.raw.write('data: ' + JSON.stringify({ type: 'chunk', text: cached.intro }) + '\n\n');
+
+        // Send completion with cache info
+        reply.raw.write('data: ' + JSON.stringify({
+          type: 'complete',
+          cached: true,
+          cacheAge: cached.cacheAge,
+          queryLimit: {
+            remaining: Math.max(0, limitCheck.remaining - 1),
+            limit: limitCheck.limit,
+            isAuthenticated: limitCheck.isAuthenticated
+          }
+        }) + '\n\n');
+        reply.raw.end();
+
+        // Still count the query for rate limiting
+        if (limitCheck.isAuthenticated && request.user?.sub) {
+          await incrementUserSearchCount(request.user.sub);
+        } else {
+          const anonymousUserId = getAnonymousUserId(request);
+          if (anonymousUserId) {
+            await incrementSearchCount(anonymousUserId, query);
+          }
+        }
+
+        logger.info({ query, cacheAge: cached.cacheAge }, 'Served from cache');
+        return;
+      }
     }
 
     // Get user ID for memory and context
@@ -900,6 +952,19 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
         const anonymousUserId = getAnonymousUserId(request);
         if (anonymousUserId) {
           await incrementSearchCount(anonymousUserId, query);
+        }
+      }
+
+      // Cache the results for future identical queries (skip if filter terms used)
+      if (filterTerms.length === 0) {
+        try {
+          await setCachedSearch(query, {
+            plan: researchPlan,
+            sources: cappedSources,
+            intro
+          });
+        } catch (cacheErr) {
+          logger.warn({ cacheErr, query }, 'Failed to cache search results');
         }
       }
 
