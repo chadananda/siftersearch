@@ -245,12 +245,24 @@ export const search = {
   async *analyzeStream(query, options = {}) {
     const url = `${API_URL}/api/search/analyze/stream`;
 
+    // Build headers - include X-User-ID for anonymous tracking
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    // Always send user ID for anonymous user tracking
+    const uid = getUserId();
+    if (uid) {
+      headers['X-User-ID'] = uid;
+    }
+
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
-      },
+      headers,
       body: JSON.stringify({
         query,
         limit: options.limit || 10,

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:44:08.009Z",
+  "generated": "2025-12-13T14:54:48.634Z",
   "entries": [
+    {
+      "hash": "63e8c06",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Inject user context into search and unify user IDs on login",
+      "scope": null
+    },
     {
       "hash": "628bbbf",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Add federated search, Tailwind color tokens, and coding guidelines",
       "scope": null
-    },
-    {
-      "hash": "5644d5b",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Slow down typewriter animation to 1/3 speed",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "63e8c06",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Inject user context into search and unify user IDs on login",
+        "scope": null
+      },
       {
         "hash": "628bbbf",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add federated search, Tailwind color tokens, and coding guidelines",
-        "scope": null
-      },
-      {
-        "hash": "5644d5b",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Slow down typewriter animation to 1/3 speed",
         "scope": null
       }
     ]
