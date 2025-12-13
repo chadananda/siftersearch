@@ -4,36 +4,56 @@
  */
 
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
-const SESSION_KEY = 'sifter_session_id';
+const USER_ID_KEY = 'sifter_user_id';
+const SESSION_KEY = 'sifter_session_id'; // Keep for backwards compatibility
 
 // Token storage
 let accessToken = null;
-let sessionId = null;
+let userId = null;
+
+/**
+ * Get or create a persistent user ID for anonymous user tracking.
+ * This ID persists across sessions and is used to store preferences,
+ * interests, and chat history in the backend database.
+ */
+export function getUserId() {
+  if (userId) return userId;
+
+  if (typeof localStorage !== 'undefined') {
+    // Try new key first, fall back to old session key for migration
+    userId = localStorage.getItem(USER_ID_KEY) || localStorage.getItem(SESSION_KEY);
+    if (!userId) {
+      // Generate new user ID (UUID v4 style)
+      userId = 'user_' + crypto.randomUUID();
+    }
+    // Always store under new key (migrates old session IDs)
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+  return userId;
+}
 
 /**
  * Get or create a session ID for anonymous conversation tracking
+ * @deprecated Use getUserId() instead for persistent tracking
  */
 export function getSessionId() {
-  if (sessionId) return sessionId;
+  return getUserId();
+}
 
-  if (typeof localStorage !== 'undefined') {
-    sessionId = localStorage.getItem(SESSION_KEY);
-    if (!sessionId) {
-      // Generate new session ID (nanoid-style)
-      sessionId = 'sess_' + Array.from(crypto.getRandomValues(new Uint8Array(16)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-      localStorage.setItem(SESSION_KEY, sessionId);
-    }
-  }
-  return sessionId;
+/**
+ * Check if this is a new user (no previous user ID stored)
+ */
+export function isNewUser() {
+  if (typeof localStorage === 'undefined') return true;
+  return !localStorage.getItem(USER_ID_KEY) && !localStorage.getItem(SESSION_KEY);
 }
 
 /**
  * Check if this is a new session (no previous session ID stored)
+ * @deprecated Use isNewUser() instead
  */
 export function isNewSession() {
-  if (typeof localStorage === 'undefined') return true;
-  return !localStorage.getItem(SESSION_KEY);
+  return isNewUser();
 }
 
 /**
@@ -60,6 +80,12 @@ async function request(path, options = {}) {
     'Content-Type': 'application/json',
     ...options.headers
   };
+
+  // Always send user ID for anonymous user tracking
+  const uid = getUserId();
+  if (uid) {
+    headers['X-User-ID'] = uid;
+  }
 
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
