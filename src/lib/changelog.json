@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T19:37:18.243Z",
+  "generated": "2025-12-13T19:41:24.656Z",
   "entries": [
+    {
+      "hash": "8fc23be",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Handle duplicate column errors in migration runner",
+      "scope": null
+    },
     {
       "hash": "5322389",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Disable smooth scroll during initial reader positioning",
       "scope": null
-    },
-    {
-      "hash": "d4c639c",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Reader displays with no visible scrolling and matches hit styling",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "8fc23be",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Handle duplicate column errors in migration runner",
+        "scope": null
+      },
       {
         "hash": "5322389",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Disable smooth scroll during initial reader positioning",
-        "scope": null
-      },
-      {
-        "hash": "d4c639c",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Reader displays with no visible scrolling and matches hit styling",
         "scope": null
       }
     ]

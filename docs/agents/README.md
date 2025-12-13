@@ -21,20 +21,20 @@ This pipeline transforms a simple query into a scholarly research experience.
 ## Architecture
 
 ```
-User Query
+User Query                                      Admin
+    │                                             │
+    ▼                                             ▼
+┌─────────────┐                           ┌────────────┐
+│   SIFTER    │ ◄── Orchestrator          │ LIBRARIAN  │
+│ (Routing)   │                           │ (Curation) │
+└─────────────┘                           └────────────┘
     │
-    ▼
-┌─────────────┐
-│   SIFTER    │ ◄── Orchestrator
-│ (Routing)   │
-└─────────────┘
-    │
-    ├───────────────┬───────────────┬───────────────┐
-    ▼               ▼               ▼               ▼
-┌─────────┐   ┌──────────┐   ┌────────────┐   ┌──────────┐
-│RESEARCHER│   │ ANALYZER │   │ TRANSLATOR │   │ NARRATOR │
-│(Search)  │   │(Re-rank) │   │  (Style)   │   │ (Audio)  │
-└─────────┘   └──────────┘   └────────────┘   └──────────┘
+    ├───────────────┬───────────────┬───────────────┬───────────────┐
+    ▼               ▼               ▼               ▼               ▼
+┌─────────┐   ┌──────────┐   ┌────────────┐   ┌──────────┐   ┌────────┐
+│RESEARCHER│   │ ANALYZER │   │ TRANSLATOR │   │ NARRATOR │   │ MEMORY │
+│(Search)  │   │(Re-rank) │   │  (Style)   │   │ (Audio)  │   │(Context)│
+└─────────┘   └──────────┘   └────────────┘   └──────────┘   └────────┘
 ```
 
 ## The Agents
@@ -79,6 +79,24 @@ Generates high-quality audio narration via ElevenLabs TTS, featuring a pronuncia
 **Key capability:** Context-aware emotion detection (reverent, scholarly, inspiring) with appropriate voice settings.
 
 [Read Narrator Documentation →](/docs/agents/narrator)
+
+---
+
+### Memory - User Context
+Provides semantic memory for user conversations. Stores, indexes, and retrieves relevant context from past interactions, enabling Sifter to maintain continuity across sessions and personalize responses based on user history.
+
+**Key capability:** Semantic search across conversation history with cosine similarity matching.
+
+[Read Memory Documentation →](/docs/agents/memory)
+
+---
+
+### Librarian - Library Management
+Manages the SifterSearch library collection. Handles document ingestion, metadata enrichment, duplicate detection, quality assessment, and book research to keep the collection organized and comprehensive.
+
+**Key capability:** AI-powered document analysis with ISBN lookup, cover image discovery, and duplicate detection via semantic search.
+
+[Read Librarian Documentation →](/docs/agents/librarian)
 
 ---
 
