@@ -609,17 +609,61 @@
     onkeydown={handleReaderKeydown}
   >
     <div class="reader-modal">
-      <!-- Reader Header -->
+      <!-- Reader Header - Book Style -->
       <header class="reader-header">
-        <div class="reader-title-area">
-          <h2 class="reader-title">{readerDocument?.title || 'Document'}</h2>
-          {#if readerDocument?.author}
-            <p class="reader-author">{readerDocument.author}</p>
-          {/if}
-          {#if readerDocument?.collection}
-            <p class="reader-collection">{readerDocument.religion} › {readerDocument.collection}</p>
-          {/if}
+        <div class="reader-book-header">
+          <!-- Religion symbol/badge -->
+          <div class="reader-religion-badge">
+            {#if readerDocument?.religion === "Baha'i" || readerDocument?.religion === "Baháʼí"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <polygon points="50,5 61,35 95,35 68,55 79,90 50,70 21,90 32,55 5,35 39,35" fill="currentColor" opacity="0.15"/>
+                <text x="50" y="58" text-anchor="middle" font-size="24" fill="currentColor">✦</text>
+              </svg>
+            {:else if readerDocument?.religion === "Christianity" || readerDocument?.religion === "Christian"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">✝</text>
+              </svg>
+            {:else if readerDocument?.religion === "Islam" || readerDocument?.religion === "Islamic"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">☪</text>
+              </svg>
+            {:else if readerDocument?.religion === "Judaism" || readerDocument?.religion === "Jewish"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">✡</text>
+              </svg>
+            {:else if readerDocument?.religion === "Hinduism" || readerDocument?.religion === "Hindu"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">ॐ</text>
+              </svg>
+            {:else if readerDocument?.religion === "Buddhism" || readerDocument?.religion === "Buddhist"}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">☸</text>
+              </svg>
+            {:else}
+              <svg viewBox="0 0 100 100" class="religion-icon">
+                <text x="50" y="60" text-anchor="middle" font-size="36" fill="currentColor">📖</text>
+              </svg>
+            {/if}
+          </div>
+
+          <!-- Book metadata -->
+          <div class="reader-book-meta">
+            <div class="reader-book-collection">
+              {#if readerDocument?.religion}
+                <span class="reader-religion-tag">{readerDocument.religion}</span>
+              {/if}
+              {#if readerDocument?.collection}
+                <span class="reader-collection-sep">›</span>
+                <span class="reader-collection-name">{readerDocument.collection}</span>
+              {/if}
+            </div>
+            <h2 class="reader-book-title">{readerDocument?.title || 'Document'}</h2>
+            {#if readerDocument?.author}
+              <p class="reader-book-author">by {readerDocument.author}</p>
+            {/if}
+          </div>
         </div>
+
         <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 18L18 6M6 6l12 12" />
@@ -2827,43 +2871,120 @@
     }
   }
 
-  /* Reader Header */
+  /* Reader Header - Book Style */
   .reader-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: #f5f3ee;
+    background: linear-gradient(135deg, #f8f6f1 0%, #ebe7df 100%);
     flex-shrink: 0;
   }
 
-  /* Full-screen: no border-radius needed */
+  .reader-book-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+  }
 
-  .reader-title-area {
+  /* Religion badge with decorative icon */
+  .reader-religion-badge {
+    flex-shrink: 0;
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #fff 0%, #f0ede6 100%);
+    border-radius: 0.5rem;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .religion-icon {
+    width: 2rem;
+    height: 2rem;
+    color: #8b7355;
+  }
+
+  /* Book metadata area */
+  .reader-book-meta {
     flex: 1;
     min-width: 0;
     padding-right: 1rem;
   }
 
-  .reader-title {
-    font-size: 1.25rem;
+  .reader-book-collection {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .reader-religion-tag {
+    color: #8b7355;
     font-weight: 600;
-    color: #1a1a1a;
+  }
+
+  .reader-collection-sep {
+    color: #b8a88a;
+  }
+
+  .reader-collection-name {
+    color: #6b5c4c;
+  }
+
+  .reader-book-title {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #2c2416;
     margin: 0 0 0.25rem;
-    line-height: 1.3;
+    line-height: 1.25;
   }
 
-  .reader-author {
+  .reader-book-author {
     font-size: 0.9375rem;
-    color: #4a4a4a;
-    margin: 0 0 0.125rem;
+    font-style: italic;
+    color: #5a4d3a;
+    margin: 0;
   }
 
-  .reader-collection {
-    font-size: 0.8125rem;
-    color: #666;
-    margin: 0;
+  /* Mobile: stack vertically */
+  @media (max-width: 480px) {
+    .reader-header {
+      padding: 1rem;
+    }
+
+    .reader-book-header {
+      gap: 0.75rem;
+    }
+
+    .reader-religion-badge {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .religion-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .reader-book-title {
+      font-size: 1.125rem;
+    }
+
+    .reader-book-author {
+      font-size: 0.875rem;
+    }
   }
 
   .reader-close-btn {

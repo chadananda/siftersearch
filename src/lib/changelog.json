@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T01:47:15.349Z",
+  "generated": "2025-12-13T01:53:24.402Z",
   "entries": [
+    {
+      "hash": "3294605",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Paragraph numbers start at 1 instead of 0",
+      "scope": null
+    },
     {
       "hash": "c135295",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Show just 'UPDATE' on update button, no version",
       "scope": null
-    },
-    {
-      "hash": "da6d5d3",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "3294605",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Paragraph numbers start at 1 instead of 0",
+        "scope": null
+      },
       {
         "hash": "c135295",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Show just 'UPDATE' on update button, no version",
-        "scope": null
-      },
-      {
-        "hash": "da6d5d3",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
         "scope": null
       }
     ]
