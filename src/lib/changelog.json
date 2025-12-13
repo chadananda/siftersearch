@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T17:50:24.513Z",
+  "generated": "2025-12-13T19:16:49.926Z",
   "entries": [
+    {
+      "hash": "75ca195",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Prevent QR code overlapping input on mobile",
+      "scope": null
+    },
     {
       "hash": "42adce0",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Optimize mobile layout with Tailwind responsive classes",
       "scope": null
-    },
-    {
-      "hash": "6b4478d",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Increase max sentence length for highlighting from 500 to 800 chars",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "75ca195",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Prevent QR code overlapping input on mobile",
+        "scope": null
+      },
       {
         "hash": "42adce0",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Optimize mobile layout with Tailwind responsive classes",
-        "scope": null
-      },
-      {
-        "hash": "6b4478d",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Increase max sentence length for highlighting from 500 to 800 chars",
         "scope": null
       }
     ]

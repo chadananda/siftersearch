@@ -1293,8 +1293,12 @@
                       <div class="flex flex-col gap-1.5">
                         <span class="text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wide">Suggested follow-ups:</span>
                         <div class="flex flex-wrap gap-1.5">
-                          {#each researchPlan.followUp as followUp}
-                            <span class="px-2 py-1 rounded-full bg-[var(--surface-elevated)] text-[var(--text-secondary)] text-[0.8125rem] border border-[var(--border-default)] cursor-pointer hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)]">{followUp}</span>
+                          {#each researchPlan.followUp as followUpQuery}
+                            <button
+                              type="button"
+                              class="px-2 py-1 rounded-full bg-[var(--surface-elevated)] text-[var(--text-secondary)] text-[0.8125rem] border border-[var(--border-default)] cursor-pointer hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)] transition-colors"
+                              onclick={() => { input = followUpQuery; handleSubmit(new Event('submit')); }}
+                            >{followUpQuery}</button>
                           {/each}
                         </div>
                       </div>
