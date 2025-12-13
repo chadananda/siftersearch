@@ -420,18 +420,59 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
       logger.info({ rawQuery, cleanQuery, filterTerms }, 'Parsed query filters');
     }
 
+    // Detect if this will be a complex/exhaustive search BEFORE starting
+    const researcher = new ResearcherAgent();
+    const isExhaustive = researcher.isExhaustiveQuery(query);
+
+    // Set up SSE response EARLY so we can send conversational feedback
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // Send conversational acknowledgment for complex queries
+    // Sifter's personality: questions assumptions, seeks deeper spiritual perspectives
+    if (isExhaustive) {
+      const acknowledgments = [
+        "There's more to this question than meets the eye. Let me search across traditions for perspectives that might challenge our usual assumptions...",
+        "This deserves a deeper look. I'll explore not just obvious answers, but what the sacred texts might reveal about the question itself...",
+        "Interesting. Let me search broadly first, then refine based on what emerges—sometimes the most valuable insights come from unexpected angles...",
+        "A question worth sitting with. Let me see what wisdom traditions say—and equally important, what they might say about how we're framing the question...",
+        "Let me dig into this. The surface answer is rarely the whole story—I'll search for perspectives that go beyond conventional framing..."
+      ];
+      const ack = acknowledgments[Math.floor(Math.random() * acknowledgments.length)];
+      reply.raw.write('data: ' + JSON.stringify({ type: 'thinking', message: ack, isExhaustive: true }) + '\n\n');
+      logger.info({ query, isExhaustive }, 'Sent exhaustive search acknowledgment');
+    }
+
     let searchResults;
     let researchPlan = null;
 
     if (useResearcher) {
       // Use ResearcherAgent for intelligent search planning
       // The search method auto-detects exhaustive queries and uses two-pass when needed
-      const researcher = new ResearcherAgent();
       const planStartTime = Date.now();
+
+      // Stream progress during two-pass search
+      if (isExhaustive) {
+        // First pass
+        reply.raw.write('data: ' + JSON.stringify({ type: 'progress', phase: 'pass1', message: 'Exploring initial search strategies...' }) + '\n\n');
+      }
 
       // Use the main search method which handles two-pass detection
       searchResults = await researcher.search(query, { limit, filterTerms });
       const planningTimeMs = Date.now() - planStartTime;
+
+      // If two-pass was used, send completion of passes
+      if (searchResults.plan?.twoPass) {
+        reply.raw.write('data: ' + JSON.stringify({
+          type: 'progress',
+          phase: 'complete',
+          message: `Found ${searchResults.hits.length} passages across ${searchResults.queriesExecuted} search queries`
+        }) + '\n\n');
+      }
 
       const plan = searchResults.plan;
 
@@ -496,24 +537,15 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
     }
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
-      return reply
-        .header('Content-Type', 'text/event-stream')
-        .header('Cache-Control', 'no-cache')
-        .header('Connection', 'keep-alive')
-        .send('data: ' + JSON.stringify({
-          type: 'complete',
-          analysis: 'No relevant passages found to analyze for your query.',
-          sources: []
-        }) + '\n\n');
+      // SSE already set up, just send the completion
+      reply.raw.write('data: ' + JSON.stringify({
+        type: 'complete',
+        analysis: 'No relevant passages found to analyze for your query.',
+        sources: []
+      }) + '\n\n');
+      reply.raw.end();
+      return;
     }
-
-    // Set up SSE response
-    reply.raw.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
-    });
 
     // Send research plan if available
     if (researchPlan) {

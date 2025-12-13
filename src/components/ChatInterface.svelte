@@ -525,7 +525,20 @@
       let sources = [];
 
       for await (const event of search.analyzeStream(userMessage)) {
-        if (event.type === 'plan') {
+        if (event.type === 'thinking') {
+          // Conversational acknowledgment for complex queries
+          // Display immediately as the message content
+          stopTypewriter();
+          messages = messages.map((m, i) =>
+            i === assistantMsgIndex
+              ? { ...m, content: event.message, isThinking: true }
+              : m
+          );
+        } else if (event.type === 'progress') {
+          // Progress updates during search (e.g., "Pass 1 complete...")
+          // Could show in a status indicator or append to thinking message
+          console.log('Search progress:', event.phase, event.message);
+        } else if (event.type === 'plan') {
           // Store the research plan for display
           researchPlan = event.plan;
         } else if (event.type === 'sources') {

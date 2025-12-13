@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T14:25:34.600Z",
+  "generated": "2025-12-13T14:28:02.645Z",
   "entries": [
+    {
+      "hash": "bf93f00",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add two-pass exhaustive search for comprehensive queries",
+      "scope": null
+    },
     {
       "hash": "801ab8e",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Show source domain in reader link with external icon",
       "scope": null
-    },
-    {
-      "hash": "03e5a54",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Enhance ResearcherAgent with comprehensive search strategy",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "bf93f00",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add two-pass exhaustive search for comprehensive queries",
+        "scope": null
+      },
       {
         "hash": "801ab8e",
         "date": "2025-12-13",
@@ -135,13 +142,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Show source domain in reader link with external icon",
-        "scope": null
-      },
-      {
-        "hash": "03e5a54",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Enhance ResearcherAgent with comprehensive search strategy",
         "scope": null
       }
     ]
