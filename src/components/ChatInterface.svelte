@@ -2730,8 +2730,6 @@
   .input-area {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
     padding: 0.5rem 1rem;
     border-top: 1px solid var(--border-default);
     background-color: var(--surface-0-alpha);
@@ -2741,7 +2739,8 @@
 
   .qr-link {
     flex-shrink: 0;
-    position: relative;
+    position: absolute;
+    left: 1rem;
     z-index: 1;
     margin-top: -1.5rem; /* Overflow above the input bar */
   }
@@ -2766,6 +2765,7 @@
     flex: 1;
     min-width: 0;
     max-width: 600px;
+    margin: 0 auto; /* Center the form */
   }
 
   /* Input wrapper - contains input and search button */
