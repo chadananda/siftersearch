@@ -2766,6 +2766,13 @@
     min-width: 0;
     max-width: 600px;
     margin: 0 auto; /* Center the form */
+    padding-left: 5rem; /* Space for QR code on left */
+  }
+
+  @media (min-width: 640px) {
+    .input-form {
+      padding-left: 0; /* No extra padding needed on larger screens */
+    }
   }
 
   /* Input wrapper - contains input and search button */

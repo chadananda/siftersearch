@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T17:48:55.305Z",
+  "generated": "2025-12-13T17:50:24.513Z",
   "entries": [
+    {
+      "hash": "42adce0",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Keep QR code on far left at all resolutions",
+      "scope": null
+    },
     {
       "hash": "b95cd1a",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Increase max sentence length for highlighting from 500 to 800 chars",
       "scope": null
-    },
-    {
-      "hash": "a7cb745",
-      "date": "2025-12-11",
-      "type": "New",
-      "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "42adce0",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Keep QR code on far left at all resolutions",
+        "scope": null
+      },
       {
         "hash": "b95cd1a",
         "date": "2025-12-13",
@@ -697,15 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Increase max sentence length for highlighting from 500 to 800 chars",
-        "scope": null
-      }
-    ],
-    "2025-12-11": [
-      {
-        "hash": "a7cb745",
-        "date": "2025-12-11",
-        "type": "New",
-        "description": "Fuzzy anchor matching for highlights, error logging, transparent stats",
         "scope": null
       }
     ]
