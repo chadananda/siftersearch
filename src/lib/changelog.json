@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T12:28:10.147Z",
+  "generated": "2025-12-13T12:29:34.389Z",
   "entries": [
+    {
+      "hash": "03e5a54",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Enhance ResearcherAgent with comprehensive search strategy",
+      "scope": null
+    },
     {
       "hash": "298d3e2",
       "date": "2025-12-12",
@@ -63,16 +70,18 @@
       "type": "New",
       "description": "Add floating paragraph numbers to reader and hit cards",
       "scope": null
-    },
-    {
-      "hash": "e76a052",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-13": [
+      {
+        "hash": "03e5a54",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Enhance ResearcherAgent with comprehensive search strategy",
+        "scope": null
+      }
+    ],
     "2025-12-12": [
       {
         "hash": "298d3e2",
@@ -135,13 +144,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Add floating paragraph numbers to reader and hit cards",
-        "scope": null
-      },
-      {
-        "hash": "e76a052",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
         "scope": null
       }
     ]
