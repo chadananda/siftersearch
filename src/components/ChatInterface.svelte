@@ -641,17 +641,20 @@
         {:else}
           <div class="reader-paragraphs">
             {#each readerParagraphs as paragraph, i}
-              <p
-                class="reader-paragraph {paragraph.paragraph_index === readerCurrentIndex ? 'current' : ''}"
+              <div
+                class="reader-paragraph-wrapper {paragraph.paragraph_index === readerCurrentIndex ? 'current' : ''}"
                 data-paragraph-index={paragraph.paragraph_index}
                 onclick={() => { readerCurrentIndex = paragraph.paragraph_index; }}
               >
-                {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
-                  {@html readerHighlightedText}
-                {:else}
-                  {@html formatText(paragraph.text)}
-                {/if}
-              </p>
+                <span class="para-num">{paragraph.paragraph_index}</span>
+                <p class="reader-paragraph">
+                  {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
+                    {@html readerHighlightedText}
+                  {:else}
+                    {@html formatText(paragraph.text)}
+                  {/if}
+                </p>
+              </div>
             {/each}
           </div>
         {/if}
@@ -1054,6 +1057,7 @@
 
                         <!-- Paper-like text area with off-white background -->
                         <div class="source-paper p-3 sm:p-4 sm:px-5">
+                          <span class="para-num">{result.paragraph_index ?? ''}</span>
                           <p class="source-text">{@html formatText(highlightedText)}</p>
                         </div>
 
@@ -2321,6 +2325,19 @@
   .source-paper {
     background-color: #faf8f3;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
+  }
+
+  /* Floating paragraph number */
+  .para-num {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.75rem;
+    font-size: 0.65rem;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #9ca3af;
+    user-select: none;
+    pointer-events: none;
   }
 
   .source-text {
@@ -2913,6 +2930,19 @@
   .reader-paragraphs {
     /* Match source-paper width - no max-width constraint */
     margin: 0 auto;
+    padding-left: 2rem; /* Space for paragraph numbers */
+  }
+
+  .reader-paragraph-wrapper {
+    position: relative;
+    margin: 0 0 1.5rem;
+    cursor: pointer;
+  }
+
+  .reader-paragraph-wrapper .para-num {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
   }
 
   .reader-paragraph {
@@ -2920,7 +2950,7 @@
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #1a1a1a;
-    margin: 0 0 1.5rem;
+    margin: 0;
     /* No special padding/border - match source-paper text style */
   }
 

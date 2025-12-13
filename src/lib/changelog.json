@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-12T21:33:13.011Z",
+  "generated": "2025-12-13T01:29:30.605Z",
   "entries": [
+    {
+      "hash": "e76a052",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
+      "scope": null
+    },
     {
       "hash": "4110240",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Render markdown in reader paragraphs",
       "scope": null
-    },
-    {
-      "hash": "36019a9",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Disable smooth scroll during initial reader positioning",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "e76a052",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Use text-primary at 50% opacity for version, ensure update button is full opacity",
+        "scope": null
+      },
       {
         "hash": "4110240",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Render markdown in reader paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "36019a9",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Disable smooth scroll during initial reader positioning",
         "scope": null
       }
     ]
