@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T01:36:56.298Z",
+  "generated": "2025-12-13T01:47:15.349Z",
   "entries": [
+    {
+      "hash": "c135295",
+      "date": "2025-12-12",
+      "type": "Fixed",
+      "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
+      "scope": null
+    },
     {
       "hash": "4699391",
       "date": "2025-12-12",
@@ -63,17 +70,17 @@
       "type": "Fixed",
       "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
       "scope": null
-    },
-    {
-      "hash": "8a45f80",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Simplify update button to just 'UPDATE'",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-12": [
+      {
+        "hash": "c135295",
+        "date": "2025-12-12",
+        "type": "Fixed",
+        "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
+        "scope": null
+      },
       {
         "hash": "4699391",
         "date": "2025-12-12",
@@ -135,13 +142,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
-        "scope": null
-      },
-      {
-        "hash": "8a45f80",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Simplify update button to just 'UPDATE'",
         "scope": null
       }
     ]

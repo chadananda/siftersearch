@@ -646,7 +646,7 @@
                 data-paragraph-index={paragraph.paragraph_index}
                 onclick={() => { readerCurrentIndex = paragraph.paragraph_index; }}
               >
-                <span class="para-num">{paragraph.paragraph_index}</span>
+                <span class="para-num">{paragraph.paragraph_index + 1}</span>
                 <p class="reader-paragraph">
                   {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
                     {@html formatText(readerHighlightedText)}
@@ -1057,7 +1057,7 @@
 
                         <!-- Paper-like text area with off-white background -->
                         <div class="source-paper p-3 sm:p-4 sm:px-5">
-                          <span class="para-num">{result.paragraph_index ?? ''}</span>
+                          <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
                           <p class="source-text">{@html formatText(highlightedText)}</p>
                         </div>
 
