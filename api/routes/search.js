@@ -425,19 +425,23 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
 
     if (useResearcher) {
       // Use ResearcherAgent for intelligent search planning
+      // The search method auto-detects exhaustive queries and uses two-pass when needed
       const researcher = new ResearcherAgent();
       const planStartTime = Date.now();
-      const plan = await researcher.createSearchPlan(query, { limit, filterTerms });
+
+      // Use the main search method which handles two-pass detection
+      searchResults = await researcher.search(query, { limit, filterTerms });
       const planningTimeMs = Date.now() - planStartTime;
 
-      // Execute the plan with filter terms
-      searchResults = await researcher.executeSearchPlan(plan, { limit, filterTerms });
+      const plan = searchResults.plan;
 
+      // Build research plan for UI display
       researchPlan = {
         type: plan.type,
+        twoPass: plan.twoPass || false,
         assumptions: plan.assumptions || [],
         reasoning: plan.reasoning,
-        queries: plan.queries.map(q => ({
+        queries: (plan.queries || []).map(q => ({
           query: q.query,
           mode: q.mode,
           rationale: q.rationale || '',
@@ -448,16 +452,36 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         surprises: plan.surprises || [],
         followUp: plan.followUp || [],
         filterTerms, // Include parsed filter terms in plan
+        maxResults: plan.maxResults || 20,
+        // Two-pass details if applicable
+        ...(plan.twoPass && plan.pass1 && {
+          pass1: {
+            reasoning: plan.pass1.reasoning,
+            queries: plan.pass1.queries?.length || 0,
+            hits: plan.pass1.hits || 0
+          },
+          pass2: plan.pass2 ? {
+            gaps: plan.pass2.gaps || [],
+            promising: plan.pass2.promising || [],
+            reasoning: plan.pass2.reasoning,
+            queries: plan.pass2.queries?.length || 0,
+            hits: plan.pass2.hits || 0
+          } : null,
+          pass1TimeMs: plan.pass1TimeMs,
+          pass2TimeMs: plan.pass2TimeMs
+        }),
         // Timing metrics
         planningTimeMs,
         searchTimeMs: searchResults.searchTimeMs || 0,
         embeddingTimeMs: searchResults.embeddingTimeMs || 0,
         meiliTimeMs: searchResults.meiliTimeMs || 0
       };
+
       logger.info({
         query,
         planType: plan.type,
-        queryCount: plan.queries.length,
+        twoPass: plan.twoPass || false,
+        queryCount: plan.queries?.length || 0,
         filterTerms,
         planningTimeMs,
         searchTimeMs: searchResults.searchTimeMs,

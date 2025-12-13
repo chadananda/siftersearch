@@ -1154,6 +1154,9 @@
                     </svg>
                     Research Strategy
                     <span class="px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold uppercase">{researchPlan.type}</span>
+                    {#if researchPlan.twoPass}
+                      <span class="px-2 py-0.5 rounded bg-amber-500 text-white text-xs font-semibold uppercase" title="Two-pass exhaustive search">2-Pass</span>
+                    {/if}
                     {#if researchPlan.planningTimeMs || researchPlan.searchTimeMs || researchPlan.analyzerTimeMs}
                       <div class="ml-auto flex items-center gap-1.5 text-xs font-mono">
                         {#if researchPlan.planningTimeMs}
@@ -1231,6 +1234,24 @@
                             </div>
                           {/each}
                         </div>
+                      </div>
+                    {/if}
+
+                    {#if researchPlan.twoPass && researchPlan.pass2}
+                      <div class="flex flex-col gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+                        <div class="flex items-center gap-2">
+                          <span class="text-amber-700 dark:text-amber-400 text-xs font-semibold uppercase tracking-wide">Two-Pass Search</span>
+                          <span class="text-[var(--text-muted)] text-xs">Pass 1: {researchPlan.pass1?.hits || 0} hits • Pass 2: {researchPlan.pass2?.hits || 0} new hits</span>
+                        </div>
+                        {#if researchPlan.pass2.gaps?.length > 0}
+                          <div class="text-[0.8125rem]">
+                            <span class="text-[var(--text-muted)]">Gaps identified:</span>
+                            <span class="text-[var(--text-secondary)]">{researchPlan.pass2.gaps.join(', ')}</span>
+                          </div>
+                        {/if}
+                        {#if researchPlan.pass2.reasoning}
+                          <p class="text-[var(--text-secondary)] text-[0.8125rem] italic">{researchPlan.pass2.reasoning}</p>
+                        {/if}
                       </div>
                     {/if}
 

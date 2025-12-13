@@ -323,12 +323,37 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
   }
 
   /**
+   * Detect if query requests exhaustive/comprehensive search
+   */
+  isExhaustiveQuery(query) {
+    const exhaustivePatterns = [
+      /\b(all|every|complete|comprehensive|thorough|exhaustive|full)\b/i,
+      /\bfind all\b/i,
+      /\bevery (reference|mention|passage|quote)\b/i,
+      /\ball (references|mentions|passages|quotes)\b/i,
+      /\bdeep dive\b/i,
+      /\bcompletely\b/i
+    ];
+    return exhaustivePatterns.some(pattern => pattern.test(query));
+  }
+
+  /**
    * Main search method - plans and executes
+   * Automatically uses two-pass for exhaustive queries
    */
   async search(query, options = {}) {
     const startTime = Date.now();
 
-    // Create search plan
+    // Check if this is an exhaustive query that warrants two-pass search
+    const forceExhaustive = options.strategy === 'exhaustive' || options.twoPass === true;
+    const isExhaustive = forceExhaustive || this.isExhaustiveQuery(query);
+
+    if (isExhaustive && options.strategy !== 'simple_search') {
+      this.logger.info({ query, forceExhaustive }, 'Exhaustive query detected, using two-pass search');
+      return this.exhaustiveSearch(query, options);
+    }
+
+    // Standard single-pass search
     const plan = await this.createSearchPlan(query, options);
     this.logger.info({ query, planType: plan.type, queryCount: plan.queries.length }, 'Search plan created');
 
@@ -355,6 +380,204 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
                      hybridSearch;
 
     return searchFn(query, { limit, filters });
+  }
+
+  /**
+   * Review first-pass results and create refined second-pass plan for exhaustive searches
+   * @param {string} query - Original user query
+   * @param {Object} firstPassPlan - The initial search plan
+   * @param {Array} firstPassHits - Results from first pass
+   * @param {Object} options - Search options
+   */
+  async createSecondPassPlan(query, firstPassPlan, firstPassHits, options = {}) {
+    const { filterTerms = [] } = options;
+
+    // Summarize what we found in first pass
+    const hitsSummary = firstPassHits.slice(0, 20).map((hit, i) => ({
+      index: i,
+      title: hit.title,
+      author: hit.author,
+      religion: hit.religion,
+      preview: (hit.text || '').substring(0, 150)
+    }));
+
+    const traditionsFound = [...new Set(firstPassHits.map(h => h.religion).filter(Boolean))];
+    const authorsFound = [...new Set(firstPassHits.map(h => h.author).filter(Boolean))].slice(0, 10);
+
+    const filterContext = filterTerms.length > 0
+      ? `\nActive filters: ${filterTerms.join(', ')}`
+      : '';
+
+    const reviewPrompt = `You are refining a comprehensive search. Review what the first pass found and design a SECOND PASS to fill gaps and expand coverage.
+
+ORIGINAL QUERY: "${query}"
+
+FIRST PASS STRATEGY:
+- Reasoning: ${firstPassPlan.reasoning}
+- Queries executed: ${firstPassPlan.queries?.length || 0}
+- Results found: ${firstPassHits.length}
+${filterContext}
+
+TRADITIONS FOUND: ${traditionsFound.join(', ') || 'None identified'}
+AUTHORS FOUND: ${authorsFound.join(', ') || 'None identified'}
+
+SAMPLE RESULTS (first 20):
+${hitsSummary.map(h => `[${h.index}] "${h.title}" by ${h.author} (${h.religion}): ${h.preview}...`).join('\n')}
+
+---
+
+Based on these results, design a SECOND PASS that:
+1. Identifies GAPS - traditions, perspectives, or angles NOT well covered
+2. Explores DEEPER - specific authors, collections, or themes that appeared promising
+3. Tries ALTERNATIVE framings - different terminology or conceptual approaches
+4. Casts WIDER net - related concepts the results suggest but weren't explicitly searched
+
+Return JSON only:
+{
+  "gaps": ["what's missing from first pass"],
+  "promising": ["authors/themes/traditions worth exploring deeper"],
+  "reasoning": "strategy for second pass - what we're trying to find that we missed",
+  "queries": [
+    {
+      "query": "search string",
+      "mode": "hybrid" | "semantic" | "keyword",
+      "rationale": "why this fills a gap or goes deeper",
+      "angle": "gap" | "deeper" | "alternative" | "wider",
+      "filters": { "religion": "optional" },
+      "limit": 15
+    }
+  ]
+}
+
+Generate 5-8 queries that COMPLEMENT (not duplicate) the first pass. Focus on what's MISSING.`;
+
+    const response = await this.chat([
+      { role: 'user', content: reviewPrompt }
+    ], { temperature: 0.4, maxTokens: 1200 });
+
+    try {
+      const plan = this.parseJSON(response.content);
+      return {
+        type: 'second_pass',
+        gaps: plan.gaps || [],
+        promising: plan.promising || [],
+        reasoning: plan.reasoning || 'Refined search based on first pass',
+        queries: (plan.queries || []).slice(0, 8),
+        isSecondPass: true
+      };
+    } catch (error) {
+      this.logger.warn({ error, query }, 'Failed to parse second pass plan');
+      return null;
+    }
+  }
+
+  /**
+   * Execute two-pass search for exhaustive queries
+   * @param {string} query - User query
+   * @param {Object} options - Search options
+   */
+  async exhaustiveSearch(query, options = {}) {
+    const startTime = Date.now();
+
+    // PASS 1: Initial exploration
+    this.logger.info({ query }, 'Starting two-pass exhaustive search - Pass 1');
+    const firstPassPlan = await this.createSearchPlan(query, { ...options, strategy: 'complex_search' });
+    firstPassPlan.twoPass = true;
+    firstPassPlan.pass = 1;
+
+    const firstPassResults = await this.executeSearchPlan(firstPassPlan, options);
+    const pass1TimeMs = Date.now() - startTime;
+
+    this.logger.info({
+      query,
+      pass1Hits: firstPassResults.hits.length,
+      pass1TimeMs
+    }, 'Pass 1 complete, analyzing for gaps');
+
+    // PASS 2: Refined search based on what we found
+    const pass2StartTime = Date.now();
+    const secondPassPlan = await this.createSecondPassPlan(
+      query,
+      firstPassPlan,
+      firstPassResults.hits,
+      options
+    );
+
+    if (!secondPassPlan || !secondPassPlan.queries?.length) {
+      this.logger.info({ query }, 'No second pass needed or failed to generate');
+      return {
+        ...firstPassResults,
+        plan: { ...firstPassPlan, twoPass: true, secondPassSkipped: true },
+        processingTimeMs: Date.now() - startTime
+      };
+    }
+
+    const secondPassResults = await this.executeSearchPlan(secondPassPlan, options);
+    const pass2TimeMs = Date.now() - pass2StartTime;
+
+    // Merge and deduplicate results from both passes
+    const seenIds = new Set();
+    const mergedHits = [];
+
+    // First pass results first (they're already ranked)
+    for (const hit of firstPassResults.hits) {
+      if (!seenIds.has(hit.id)) {
+        seenIds.add(hit.id);
+        mergedHits.push({ ...hit, _pass: 1 });
+      }
+    }
+
+    // Then second pass results
+    for (const hit of secondPassResults.hits) {
+      if (!seenIds.has(hit.id)) {
+        seenIds.add(hit.id);
+        mergedHits.push({ ...hit, _pass: 2 });
+      }
+    }
+
+    const totalTimeMs = Date.now() - startTime;
+
+    this.logger.info({
+      query,
+      pass1Hits: firstPassResults.hits.length,
+      pass2Hits: secondPassResults.hits.length,
+      mergedHits: mergedHits.length,
+      pass1TimeMs,
+      pass2TimeMs,
+      totalTimeMs
+    }, 'Two-pass exhaustive search complete');
+
+    // Combine plans for display
+    const combinedPlan = {
+      ...firstPassPlan,
+      twoPass: true,
+      pass1: {
+        reasoning: firstPassPlan.reasoning,
+        queries: firstPassPlan.queries,
+        hits: firstPassResults.hits.length
+      },
+      pass2: {
+        gaps: secondPassPlan.gaps,
+        promising: secondPassPlan.promising,
+        reasoning: secondPassPlan.reasoning,
+        queries: secondPassPlan.queries,
+        hits: secondPassResults.hits.length
+      },
+      planningTimeMs: (firstPassResults.planningTimeMs || 0) + pass2TimeMs,
+      pass1TimeMs,
+      pass2TimeMs
+    };
+
+    return {
+      hits: mergedHits,
+      plan: combinedPlan,
+      searchTimeMs: firstPassResults.searchTimeMs + secondPassResults.searchTimeMs,
+      embeddingTimeMs: (firstPassResults.embeddingTimeMs || 0) + (secondPassResults.embeddingTimeMs || 0),
+      meiliTimeMs: (firstPassResults.meiliTimeMs || 0) + (secondPassResults.meiliTimeMs || 0),
+      totalHits: mergedHits.length,
+      queriesExecuted: firstPassPlan.queries.length + secondPassPlan.queries.length,
+      processingTimeMs: totalTimeMs
+    };
   }
 
   /**
