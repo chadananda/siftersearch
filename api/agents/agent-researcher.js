@@ -77,7 +77,7 @@ Remember: The most valuable insights come from what TRANSCENDS secular expectati
 export class ResearcherAgent extends BaseAgent {
   constructor(options = {}) {
     super('researcher', {
-      model: options.model || 'gpt-4o',
+      model: options.model || 'gpt-4o-mini',
       temperature: options.temperature ?? 0.3,
       maxTokens: options.maxTokens || 800,
       systemPrompt: RESEARCHER_SYSTEM_PROMPT,
@@ -101,6 +101,7 @@ export class ResearcherAgent extends BaseAgent {
     if (strategy === 'simple_search') {
       return {
         type: 'simple',
+        maxResults: 10,
         queries: [{
           query,
           mode: 'hybrid',
@@ -123,6 +124,7 @@ ${strategy === 'complex_search' ? 'Use a comprehensive multi-query approach.' : 
 Return JSON only:
 {
   "type": "simple" | "exhaustive" | "comparative",
+  "maxResults": 20,
   "assumptions": ["obvious answer 1 we might expect", "obvious answer 2"],
   "reasoning": "overall strategy explanation - what makes this query interesting and how we'll explore it",
   "queries": [
@@ -140,6 +142,12 @@ Return JSON only:
   "followUp": ["suggested next searches based on likely findings"]
 }
 
+MAX RESULTS GUIDANCE (maxResults field):
+- Simple/direct lookups: maxResults: 10 (fast, focused)
+- Standard queries: maxResults: 20 (balanced)
+- Exhaustive searches ("find all", "every reference", "comprehensive"): maxResults: 50
+- User wants thorough coverage: maxResults: 50
+
 FILTERS: You can add "filters" to any query to narrow results:
 - "religion": Filter by tradition (Buddhist, Bahai, Christian, Islamic, Hindu, Jewish, Sikh, Zoroastrian, etc.)
 - Use filters when the query specifically mentions a tradition or when exploring a specific tradition's perspective
@@ -154,9 +162,11 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
 
     try {
       const plan = this.parseJSON(response.content);
-      // Validate and sanitize
+      // Validate and sanitize - default maxResults based on type if not specified
+      const defaultMaxResults = plan.type === 'simple' ? 10 : plan.type === 'exhaustive' ? 50 : 20;
       return {
         type: plan.type || 'exhaustive',
+        maxResults: plan.maxResults || defaultMaxResults,
         assumptions: plan.assumptions || [],
         reasoning: plan.reasoning || '',
         queries: (plan.queries || [{ query, mode: 'hybrid', limit: 10 }]).slice(0, 10),
@@ -168,6 +178,7 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
       this.logger.warn({ error, query }, 'Failed to parse search plan, using simple strategy');
       return {
         type: 'simple',
+        maxResults: 10,
         assumptions: [],
         reasoning: 'Fallback to simple search',
         queries: [{ query, mode: 'hybrid', limit: options.limit || 10 }],

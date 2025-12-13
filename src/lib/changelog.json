@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T13:59:10.723Z",
+  "generated": "2025-12-13T14:20:18.277Z",
   "entries": [
+    {
+      "hash": "6ad727b",
+      "date": "2025-12-13",
+      "type": "Fixed",
+      "description": "Remove animated background from docs, increase about card opacity",
+      "scope": null
+    },
     {
       "hash": "3cd03b5",
       "date": "2025-12-13",
@@ -63,17 +70,17 @@
       "type": "New",
       "description": "Integrate ResearcherAgent and display research strategy in search results",
       "scope": null
-    },
-    {
-      "hash": "1ff61df",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Randomize search suggestions from pool of 32 examples",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "6ad727b",
+        "date": "2025-12-13",
+        "type": "Fixed",
+        "description": "Remove animated background from docs, increase about card opacity",
+        "scope": null
+      },
       {
         "hash": "3cd03b5",
         "date": "2025-12-13",
@@ -137,13 +144,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Integrate ResearcherAgent and display research strategy in search results",
-        "scope": null
-      },
-      {
-        "hash": "1ff61df",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Randomize search suggestions from pool of 32 examples",
         "scope": null
       }
     ]

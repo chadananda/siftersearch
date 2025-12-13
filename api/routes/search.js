@@ -497,7 +497,10 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
     }
 
     // Build context for analyzer - include hit id for tracking
-    const passagesForAnalysis = searchResults.hits.map((hit, i) => ({
+    // Pass 2x maxResults to analyzer for better re-ranking, then cap final output at maxResults
+    const maxResults = researchPlan?.maxResults || 20;
+    const analyzerInputLimit = Math.min(searchResults.hits.length, maxResults * 2);
+    const passagesForAnalysis = searchResults.hits.slice(0, analyzerInputLimit).map((hit, i) => ({
       index: i,
       id: hit.id,
       text: hit.text || hit._formatted?.text || '',
@@ -578,14 +581,15 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
 }`;
 
     try {
-      // Get structured analysis from AI
+      // Get structured analysis from AI using the fast search model
       const analyzerStartTime = Date.now();
       const analysisResponse = await ai.chat([
         { role: 'system', content: 'You are an expert search result analyzer. Return only valid JSON, no markdown.' },
         { role: 'user', content: analyzerPrompt }
       ], {
+        model: config.ai.search.model,
         temperature: 0.3,
-        maxTokens: 3000
+        maxTokens: 2000
       });
       const analyzerTimeMs = Date.now() - analyzerStartTime;
 
@@ -697,11 +701,14 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
       // Sort by score (highest first) - analyzer ranks, we sort
       enhancedSources.sort((a, b) => b.score - a.score);
 
+      // Cap at maxResults (analyzer received 2x for better re-ranking)
+      const cappedSources = enhancedSources.slice(0, maxResults);
+
       // Send enhanced sources
-      reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: enhancedSources }) + '\n\n');
+      reply.raw.write('data: ' + JSON.stringify({ type: 'sources', sources: cappedSources }) + '\n\n');
 
       // STEP 3: Stream the introduction (with semantic note if present)
-      let intro = analysis.introduction || `I found ${enhancedSources.length} relevant passages for your query.`;
+      let intro = analysis.introduction || `I found ${cappedSources.length} relevant passages for your query.`;
       if (analysis.semanticNote) {
         intro += '\n\n' + analysis.semanticNote;
       }
@@ -718,8 +725,10 @@ Return ONLY valid JSON, ranked by score (highest first), only including scores â
 
       logger.info({
         query,
-        hitsAnalyzed: searchResults.hits.length,
-        resultsReturned: enhancedSources.length,
+        hitsAnalyzed: analyzerInputLimit,
+        resultsFromAnalyzer: enhancedSources.length,
+        resultsReturned: cappedSources.length,
+        maxResults,
         analyzerTimeMs
       }, 'Analysis completed');
 
