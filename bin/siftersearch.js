@@ -90,6 +90,7 @@ SifterSearch v${getVersion()} - AI-powered interfaith library search
 Usage: siftersearch <command> [options]
 
 Commands:
+  preflight       Run environment check (tools, env vars, connectivity)
   start           Start the API server (production mode)
   dev             Start in development mode (API + UI with hot reload)
   stop            Stop all PM2 processes
@@ -109,6 +110,7 @@ PM2 Commands:
   pm2:reload      Reload API with zero downtime
 
 Examples:
+  siftersearch preflight        # Check environment before first run
   siftersearch start            # Start server
   siftersearch dev              # Development mode
   siftersearch pm2:start        # Start with PM2 process manager
@@ -121,6 +123,11 @@ For more info: https://siftersearch.com/docs
 
 // Command router
 switch (command) {
+  case 'preflight':
+  case 'check':
+    runNode(join(PROJECT_ROOT, 'scripts/preflight.js'), args);
+    break;
+
   case 'start':
     runNode(join(PROJECT_ROOT, 'api/index.js'), args);
     break;
