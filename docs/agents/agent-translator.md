@@ -23,11 +23,11 @@ Shoghi Effendi's translations are considered masterpieces because he possessed a
 2. **Persian literary mastery** - Familiarity with classical Persian poetry (Hafiz, Sa'adi, Rumi), metaphors, and literary conventions
 3. **Classical English command** - Victorian vocabulary, Shakespearean cadence, and the full breadth of English phraseology
 
-No single translator typically possesses all three. The Translator agent addresses this by convening a panel of specialist personas.
+No single translator typically possesses all three. The Translator agent addresses this by convening a panel of specialist personas—an approach we call **Committee Translation AI (CTAI)**.
 
 ---
 
-## Architecture: Multi-Persona Consultation
+## Architecture: Committee Translation AI (CTAI)
 
 ### The Three Scholars
 
@@ -300,8 +300,12 @@ const translator = new TranslatorAgent({
 
 ---
 
-## The Vision
+## The Vision: Committee Translation AI (CTAI)
 
-The goal is not merely to produce "Victorian-sounding" English, but to approach the depth and precision that Shoghi Effendi achieved through his unique combination of scholarships. By convening specialist personas that each bring one dimension of his expertise, and by grounding the translation in actual examples from his work, we can aspire to translations that honor both the original text and the tradition he established.
+The goal is not merely to produce "Victorian-sounding" English, but to approach the depth and precision that Shoghi Effendi achieved through his unique combination of scholarships.
 
-As Shoghi Effendi himself noted, translation is not merely linguistic conversion but the transmission of spiritual meaning across cultural boundaries. The Translator agent aims to be a worthy instrument in that sacred task.
+**Committee Translation AI (CTAI)** represents a novel approach to machine translation: rather than relying on a single model's general knowledge, CTAI convenes specialist personas that each bring one dimension of the required expertise. These personas engage in collaborative discussion, debate nuances, and synthesize their insights into a final rendering that no single perspective could achieve alone.
+
+By grounding the translation in actual examples from Shoghi Effendi's work, CTAI can aspire to translations that honor both the original text and the tradition he established. The committee model also provides transparency—users can see the reasoning from each specialist, understanding *why* particular translation choices were made.
+
+As Shoghi Effendi himself noted, translation is not merely linguistic conversion but the transmission of spiritual meaning across cultural boundaries. The Translator agent, powered by CTAI, aims to be a worthy instrument in that sacred task.
