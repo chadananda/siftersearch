@@ -43,7 +43,103 @@ const results = {
   passed: [],
   warnings: [],
   failed: [],
-  skipped: []
+  skipped: [],
+  instructions: []
+};
+
+// Installation instructions for Arch-based systems (Omarchy, CachyOS, Manjaro, EndeavourOS)
+const INSTALL_INSTRUCTIONS = {
+  // System tools
+  'node': {
+    arch: 'sudo pacman -S nodejs npm',
+    note: 'Or use nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash && nvm install 20'
+  },
+  'npm': {
+    arch: 'sudo pacman -S npm',
+    note: 'Included with nodejs package'
+  },
+  'git': {
+    arch: 'sudo pacman -S git'
+  },
+  'meilisearch': {
+    arch: 'yay -S meilisearch-bin',
+    note: 'Or download from https://github.com/meilisearch/meilisearch/releases'
+  },
+  'ollama': {
+    arch: 'yay -S ollama-bin',
+    note: 'Then: systemctl --user enable --now ollama'
+  },
+  'pandoc': {
+    arch: 'sudo pacman -S pandoc'
+  },
+  'tesseract': {
+    arch: 'sudo pacman -S tesseract tesseract-data-eng',
+    note: 'Add more languages: tesseract-data-ara, tesseract-data-fas, etc.'
+  },
+  'ffmpeg': {
+    arch: 'sudo pacman -S ffmpeg'
+  },
+  'pdftotext': {
+    arch: 'sudo pacman -S poppler',
+    note: 'Provides pdftotext, pdfinfo, pdfimages'
+  },
+  'pm2': {
+    arch: 'npm install -g pm2',
+    note: 'Then: pm2 startup systemd'
+  },
+  'cloudflared': {
+    arch: 'yay -S cloudflared-bin',
+    note: 'Then: cloudflared tunnel login'
+  },
+
+  // Environment setup
+  'JWT_SECRET': {
+    note: 'Generate with: openssl rand -hex 64',
+    file: '.env-secrets',
+    example: 'JWT_SECRET=<your-64-char-hex-string>'
+  },
+  'MEILI_MASTER_KEY': {
+    note: 'Generate with: openssl rand -hex 32',
+    file: '.env-secrets',
+    example: 'MEILI_MASTER_KEY=<your-32-char-hex-string>'
+  },
+  'OPENAI_API_KEY': {
+    note: 'Get from https://platform.openai.com/api-keys',
+    file: '.env-secrets',
+    example: 'OPENAI_API_KEY=sk-...'
+  },
+  'ANTHROPIC_API_KEY': {
+    note: 'Get from https://console.anthropic.com/settings/keys',
+    file: '.env-secrets',
+    example: 'ANTHROPIC_API_KEY=sk-ant-...'
+  },
+  'ELEVENLABS_API_KEY': {
+    note: 'Get from https://elevenlabs.io/app/settings/api-keys',
+    file: '.env-secrets',
+    example: 'ELEVENLABS_API_KEY=...'
+  },
+  'SENDGRID_API_KEY': {
+    note: 'Get from https://app.sendgrid.com/settings/api_keys',
+    file: '.env-secrets',
+    example: 'SENDGRID_API_KEY=SG...'
+  },
+
+  // Directories
+  'data': {
+    note: 'mkdir -p data logs'
+  },
+  'logs': {
+    note: 'mkdir -p data logs'
+  },
+  '.env-secrets': {
+    note: 'cp .env-secrets.example .env-secrets && $EDITOR .env-secrets'
+  },
+
+  // Services
+  'meilisearch-service': {
+    arch: 'systemctl --user enable --now meilisearch',
+    note: 'Or run manually: meilisearch --db-path ./data/meilisearch'
+  }
 };
 
 /**
@@ -93,9 +189,23 @@ async function checkUrl(url, timeout = 5000) {
 }
 
 /**
+ * Add installation instruction
+ */
+function addInstruction(key, required = false) {
+  const inst = INSTALL_INSTRUCTIONS[key];
+  if (inst && !results.instructions.find(i => i.key === key)) {
+    results.instructions.push({
+      key,
+      required,
+      ...inst
+    });
+  }
+}
+
+/**
  * Log result
  */
-function log(status, category, message, detail = '') {
+function log(status, category, message, detail = '', instructionKey = null) {
   const icons = {
     pass: `${c.green}✓${c.reset}`,
     warn: `${c.yellow}!${c.reset}`,
@@ -108,8 +218,14 @@ function log(status, category, message, detail = '') {
   console.log(`  ${icons[status]} ${category}: ${message}${detailStr}`);
 
   if (status === 'pass') results.passed.push(category);
-  else if (status === 'warn') results.warnings.push({ category, message });
-  else if (status === 'fail') results.failed.push({ category, message });
+  else if (status === 'warn') {
+    results.warnings.push({ category, message });
+    if (instructionKey) addInstruction(instructionKey, false);
+  }
+  else if (status === 'fail') {
+    results.failed.push({ category, message });
+    if (instructionKey) addInstruction(instructionKey, true);
+  }
   else if (status === 'skip') results.skipped.push(category);
 }
 
@@ -142,7 +258,7 @@ async function checkSystemTools() {
         const [major] = version.split('.').map(Number);
         const [minMajor] = tool.minVersion.split('.').map(Number);
         if (major < minMajor) {
-          log('warn', tool.name, `v${version}`, `v${tool.minVersion}+ recommended`);
+          log('warn', tool.name, `v${version}`, `v${tool.minVersion}+ recommended`, tool.cmd);
         } else {
           log('pass', tool.name, `v${version}`);
         }
@@ -150,7 +266,7 @@ async function checkSystemTools() {
         log('pass', tool.name, version || 'installed');
       }
     } else {
-      log('fail', tool.name, 'not found', 'required');
+      log('fail', tool.name, 'not found', 'required', tool.cmd);
     }
   }
 
@@ -170,7 +286,7 @@ async function checkSystemTools() {
       const version = getVersion(tool.cmd);
       log('pass', tool.name, version || 'installed', tool.note);
     } else {
-      log('skip', tool.name, 'not installed', tool.note);
+      log('skip', tool.name, 'not installed', tool.note, tool.cmd);
     }
   }
 }
@@ -226,7 +342,7 @@ async function checkDirectories() {
     if (existsSync(fullPath)) {
       log('pass', cfg.path, 'exists');
     } else if (cfg.required) {
-      log('fail', cfg.path, 'missing', 'required');
+      log('fail', cfg.path, 'missing', 'required', cfg.path);
     } else {
       log('skip', cfg.path, 'missing', 'optional');
     }
@@ -428,6 +544,25 @@ async function main() {
     for (const f of results.failed) {
       console.log(`  ${c.red}• ${f.category}: ${f.message}${c.reset}`);
     }
+
+    // Show installation instructions for failed items
+    const requiredInstructions = results.instructions.filter(i => i.required);
+    if (requiredInstructions.length > 0) {
+      console.log(`\n${c.cyan}${c.bold}Installation Instructions (Arch Linux):${c.reset}`);
+      for (const inst of requiredInstructions) {
+        console.log(`\n  ${c.bold}${inst.key}:${c.reset}`);
+        if (inst.arch) {
+          console.log(`    ${c.green}$ ${inst.arch}${c.reset}`);
+        }
+        if (inst.note) {
+          console.log(`    ${c.dim}${inst.note}${c.reset}`);
+        }
+        if (inst.file) {
+          console.log(`    ${c.dim}Add to ${inst.file}: ${inst.example}${c.reset}`);
+        }
+      }
+    }
+
     console.log(`\n${c.bold}════════════════════════════════════════════════════════════════${c.reset}\n`);
     process.exit(1);
   }
@@ -436,6 +571,17 @@ async function main() {
     console.log(`\n${c.yellow}Warnings (non-blocking):${c.reset}`);
     for (const w of results.warnings) {
       console.log(`  ${c.yellow}• ${w.category}: ${w.message}${c.reset}`);
+    }
+  }
+
+  // Show optional installation instructions if any were skipped
+  const optionalInstructions = results.instructions.filter(i => !i.required);
+  if (optionalInstructions.length > 0 && process.argv.includes('--verbose')) {
+    console.log(`\n${c.cyan}Optional tools you could install:${c.reset}`);
+    for (const inst of optionalInstructions) {
+      if (inst.arch) {
+        console.log(`  ${c.dim}${inst.key}: ${inst.arch}${c.reset}`);
+      }
     }
   }
 

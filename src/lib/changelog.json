@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-14T03:41:53.984Z",
+  "generated": "2025-12-14T03:49:24.485Z",
   "entries": [
+    {
+      "hash": "ad208bb",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add preflight check for environment validation",
+      "scope": null
+    },
     {
       "hash": "7bf4982",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
       "scope": null
-    },
-    {
-      "hash": "8a45f80",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Simplify update button to just 'UPDATE'",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "ad208bb",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add preflight check for environment validation",
+        "scope": null
+      },
       {
         "hash": "7bf4982",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
-        "scope": null
-      },
-      {
-        "hash": "8a45f80",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Simplify update button to just 'UPDATE'",
         "scope": null
       }
     ]

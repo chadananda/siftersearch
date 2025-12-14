@@ -72,6 +72,20 @@ export default {
       error_file: './logs/watchdog-error.log',
       out_file: './logs/watchdog-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Auto-Updater (checks for git updates every 5 minutes)
+    {
+      name: 'siftersearch-updater',
+      script: 'scripts/update-server.js',
+      instances: 1,
+      cron_restart: '*/5 * * * *',  // Run every 5 minutes
+      autorestart: false,  // Don't restart on exit - cron handles scheduling
+      watch: false,
+      // Logging
+      error_file: './logs/updater-error.log',
+      out_file: './logs/updater-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     }
   ]
 };
