@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-14T03:36:32.376Z",
+  "generated": "2025-12-14T03:38:11.558Z",
   "entries": [
+    {
+      "hash": "7bf4982",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add production deployment infrastructure with PM2",
+      "scope": null
+    },
     {
       "hash": "2131f2d",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Simplify update button to just 'UPDATE'",
       "scope": null
-    },
-    {
-      "hash": "942eae3",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Simplify PWA update button text (version not available before refresh)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "7bf4982",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add production deployment infrastructure with PM2",
+        "scope": null
+      },
       {
         "hash": "2131f2d",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Simplify update button to just 'UPDATE'",
-        "scope": null
-      },
-      {
-        "hash": "942eae3",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Simplify PWA update button text (version not available before refresh)",
         "scope": null
       }
     ]

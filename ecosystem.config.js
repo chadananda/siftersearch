@@ -1,15 +1,14 @@
 /**
  * PM2 Ecosystem Configuration for SifterSearch
  *
- * Start all services: pm2 start ecosystem.config.cjs --env production
+ * Start all services: pm2 start ecosystem.config.js --env production
  * View status: pm2 status
  * View logs: pm2 logs
  * Restart: pm2 restart all
  * Stop: pm2 stop all
  */
 
-/* eslint-disable no-undef */
-module.exports = {
+export default {
   apps: [
     // SifterSearch API Server
     {

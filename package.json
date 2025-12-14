@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.0.147",
+  "version": "0.0.148",
   "description": "AI-powered interfaith library search system",
   "type": "module",
   "bin": {
@@ -41,7 +41,7 @@
     "deploy": "node scripts/bump-version.js && npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
     "lint": "eslint . --ext .js,.svelte,.astro",
     "format": "prettier --write .",
-    "prod:start": "pm2 start ecosystem.config.cjs --env production",
+    "prod:start": "pm2 start ecosystem.config.js --env production",
     "prod:stop": "pm2 stop all",
     "prod:restart": "pm2 restart all",
     "prod:reload": "pm2 reload siftersearch-api",
