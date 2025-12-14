@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-14T03:49:24.485Z",
+  "generated": "2025-12-14T17:13:51.817Z",
   "entries": [
+    {
+      "hash": "898076c",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add auto-updater to PM2 and Arch Linux install instructions",
+      "scope": null
+    },
     {
       "hash": "ad208bb",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Show just 'UPDATE' on update button, no version",
       "scope": null
-    },
-    {
-      "hash": "da6d5d3",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "898076c",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add auto-updater to PM2 and Arch Linux install instructions",
+        "scope": null
+      },
       {
         "hash": "ad208bb",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Show just 'UPDATE' on update button, no version",
-        "scope": null
-      },
-      {
-        "hash": "da6d5d3",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Use Tailwind for PWA toast, simplify to UPDATE button only",
         "scope": null
       }
     ]
