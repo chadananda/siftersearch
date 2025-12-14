@@ -1,0 +1,216 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Library Overview"
+  description="Explore the sacred texts and collections available in SifterSearch"
+  activeSection="library"
+>
+  <h1>Library Overview</h1>
+  <p class="subtitle">Thousands of sacred texts from the world's religious traditions</p>
+
+  <p>
+    The SifterSearch library contains a carefully curated collection of sacred texts, scholarly works,
+    and primary sources from the world's great religious traditions. Each document is processed,
+    indexed, and made searchable with both keyword and semantic search capabilities.
+  </p>
+
+  <h2>Collections</h2>
+
+  <h3>Baha'i Faith</h3>
+  <p>
+    The most comprehensive collection in our library, spanning the writings of the Bab, Baha'u'llah,
+    'Abdu'l-Baha, Shoghi Effendi, and the Universal House of Justice.
+  </p>
+
+  <h4>Core Publications</h4>
+  <ul>
+    <li><strong>The Hidden Words</strong> - Baha'u'llah's ethical and spiritual guidance</li>
+    <li><strong>The Kitab-i-Iqan</strong> - Book of Certitude, on progressive revelation</li>
+    <li><strong>Gleanings from the Writings of Baha'u'llah</strong> - Key passages compiled by Shoghi Effendi</li>
+    <li><strong>Some Answered Questions</strong> - 'Abdu'l-Baha's answers to philosophical inquiries</li>
+    <li><strong>Paris Talks</strong> - Addresses given by 'Abdu'l-Baha during his Western travels</li>
+  </ul>
+
+  <h4>Pilgrim Notes</h4>
+  <p>
+    A unique collection of first-hand accounts from pilgrims who visited 'Abdu'l-Baha and
+    Shoghi Effendi. These notes capture intimate conversations and teachings not found elsewhere.
+  </p>
+  <ul>
+    <li>Over 200 pilgrim accounts spanning 1898-1957</li>
+    <li>Multiple visits from key figures like May Maxwell, Lua Getsinger, and Roy Wilhelm</li>
+    <li>Valuable historical context and personal observations</li>
+  </ul>
+
+  <h4>Letters and Tablets</h4>
+  <ul>
+    <li>Tablets of Baha'u'llah revealed after the Kitab-i-Aqdas</li>
+    <li>Selections from the Writings of 'Abdu'l-Baha</li>
+    <li>Letters of Shoghi Effendi to individual believers and communities</li>
+    <li>Messages of the Universal House of Justice</li>
+  </ul>
+
+  <h3>Other Traditions</h3>
+  <p>
+    We're actively expanding our collection to include sacred texts from other major religions:
+  </p>
+
+  <ul>
+    <li><strong>Buddhism</strong> - Selected sutras and commentaries</li>
+    <li><strong>Christianity</strong> - Bible, Church Fathers, mystical writings</li>
+    <li><strong>Hinduism</strong> - Upanishads, Bhagavad Gita, selected commentaries</li>
+    <li><strong>Islam</strong> - Quran, Hadith collections, Sufi masters</li>
+    <li><strong>Judaism</strong> - Torah, Prophets, selected Midrash and Kabbalah</li>
+  </ul>
+
+  <div class="callout callout-info">
+    <strong>Want to contribute?</strong> We welcome submissions of high-quality texts. The Librarian agent
+    reviews all submissions for quality, checks for duplicates, and helps prepare documents for indexing.
+    Contact us to learn more.
+  </div>
+
+  <h2>Document Format</h2>
+
+  <p>
+    All documents in our library are stored as Markdown files with YAML frontmatter containing
+    metadata. This ensures clean, portable, and easily searchable content.
+  </p>
+
+  <h4>Example Document Structure</h4>
+  <pre><code>---
+title: "Some Answered Questions"
+author: "'Abdu'l-Baha"
+translator: "Laura Clifford Barney"
+date: "1908"
+religion: "Baha'i"
+collection: "Core Publications"
+---
+
+# Some Answered Questions
+
+## Part One: On the Influence of the Prophets
+
+### 1. Nature Requires an Educator
+
+Nature is that condition or reality which outwardly is...</code></pre>
+
+  <h2>Search Capabilities</h2>
+
+  <h3>Keyword Search</h3>
+  <p>
+    Traditional full-text search using Meilisearch. Supports:
+  </p>
+  <ul>
+    <li>Exact phrase matching with quotes</li>
+    <li>Typo tolerance and fuzzy matching</li>
+    <li>Filtering by religion, collection, author, date</li>
+    <li>Highlighted snippets showing match context</li>
+  </ul>
+
+  <h3>Semantic Search</h3>
+  <p>
+    Vector-based search using OpenAI embeddings (text-embedding-3-large, 3072 dimensions).
+    Finds conceptually related passages even without keyword matches.
+  </p>
+  <ul>
+    <li>Understands synonyms and paraphrases</li>
+    <li>Cross-lingual concept matching</li>
+    <li>Theme and topic discovery</li>
+    <li>Question-answering capabilities</li>
+  </ul>
+
+  <h3>Hybrid Search</h3>
+  <p>
+    Combines both approaches for best results. Keyword matches boost relevance for exact terms,
+    while semantic search surfaces conceptually related passages you might have missed.
+  </p>
+
+  <h2>Indexing Pipeline</h2>
+
+  <p>Documents go through several processing stages before becoming searchable:</p>
+
+  <ol>
+    <li><strong>Ingestion</strong> - Markdown files are parsed and metadata extracted</li>
+    <li><strong>Chunking</strong> - Long documents are split into paragraph-sized passages</li>
+    <li><strong>Embedding</strong> - Each passage gets a 3072-dimensional vector representation</li>
+    <li><strong>Indexing</strong> - Passages are indexed in Meilisearch with vectors</li>
+    <li><strong>Quality Check</strong> - AI verifies metadata and flags potential issues</li>
+  </ol>
+
+  <h2>Contributing Documents</h2>
+
+  <p>
+    We encourage the community to help expand our library. Here's how the contribution process works:
+  </p>
+
+  <ol>
+    <li><strong>Submit</strong> - Share a document URL, file, or text with the Librarian</li>
+    <li><strong>Analysis</strong> - The Librarian checks for duplicates and existing coverage</li>
+    <li><strong>Conversion</strong> - Documents are converted to clean Markdown format</li>
+    <li><strong>Metadata</strong> - AI enriches metadata (author, date, collection)</li>
+    <li><strong>Review</strong> - Admin reviews and approves for indexing</li>
+    <li><strong>Indexing</strong> - Document is processed and becomes searchable</li>
+  </ol>
+
+  <h4>Supported Formats</h4>
+  <ul>
+    <li>Markdown (.md)</li>
+    <li>Plain text (.txt)</li>
+    <li>PDF (text-based)</li>
+    <li>HTML</li>
+    <li>EPUB</li>
+    <li>Audio/Video URLs (via Transcriber agent)</li>
+  </ul>
+
+  <h2>Library Statistics</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Total Documents</td>
+        <td>~500</td>
+      </tr>
+      <tr>
+        <td>Total Passages</td>
+        <td>~50,000</td>
+      </tr>
+      <tr>
+        <td>Religions Represented</td>
+        <td>6+</td>
+      </tr>
+      <tr>
+        <td>Languages</td>
+        <td>English (primary)</td>
+      </tr>
+      <tr>
+        <td>Date Range</td>
+        <td>Ancient - Present</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <strong>Library Growing Daily</strong> - We're actively adding new content. The numbers above
+    are approximate and increasing. Use the <code>/api/v1/collections</code> endpoint for current stats.
+  </div>
+
+  <h2>Future Expansion</h2>
+
+  <p>Our roadmap for library growth includes:</p>
+
+  <ul>
+    <li><strong>More Traditions</strong> - Sikhism, Jainism, Taoism, indigenous traditions</li>
+    <li><strong>Historical Texts</strong> - Desert Fathers, Stoics, Neoplatonists</li>
+    <li><strong>Academic Works</strong> - Scholarly commentary and analysis</li>
+    <li><strong>Multilingual</strong> - Original languages alongside translations</li>
+    <li><strong>Audio Transcripts</strong> - Talks, lectures, and classes</li>
+  </ul>
+</DocsLayout>

@@ -1,0 +1,88 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Documentation Overview"
+  description="Complete documentation for SifterSearch - AI-powered interfaith library search"
+  activeSection="overview"
+>
+  <h1>SifterSearch Documentation</h1>
+  <p class="subtitle">AI-powered search for the world's sacred texts</p>
+
+  <p>
+    SifterSearch is an intelligent search system designed to help scholars, seekers, and researchers
+    explore sacred texts from the world's religious traditions. Built on a multi-agent AI architecture,
+    it goes beyond simple keyword matching to understand the deeper meaning behind your questions.
+  </p>
+
+  <h2>What Makes SifterSearch Different</h2>
+
+  <p>Traditional search engines find words. SifterSearch finds <strong>meaning</strong>.</p>
+
+  <ul>
+    <li><strong>Semantic Understanding</strong> - Understands concepts, not just keywords. Search for "detachment from material things" and find passages about spiritual freedom, even if they don't use those exact words.</li>
+    <li><strong>Cross-Tradition Discovery</strong> - Explore how different religions approach similar themes. Find connections between Baha'i writings, Buddhist sutras, and Christian mystics.</li>
+    <li><strong>AI-Powered Analysis</strong> - Each search result is scored, summarized, and highlighted by AI to show you why it's relevant to your query.</li>
+    <li><strong>Scholarly Focus</strong> - Built for serious study with proper citations, source attribution, and access to original texts.</li>
+  </ul>
+
+  <h2>Core Features</h2>
+
+  <h3>Hybrid Search</h3>
+  <p>
+    Combines traditional keyword search with semantic vector search for best-of-both-worlds results.
+    Find exact quotes when you need them, or explore conceptually related passages.
+  </p>
+
+  <h3>Multi-Agent System</h3>
+  <p>
+    Under the hood, specialized AI agents collaborate to understand your query, design search strategies,
+    analyze results, and present findings. <a href="/docs/agents">Learn more about our agents &rarr;</a>
+  </p>
+
+  <h3>Comprehensive Library</h3>
+  <p>
+    Access thousands of documents spanning major world religions, with special depth in Baha'i writings,
+    pilgrim notes, and interfaith literature. <a href="/docs/library">Explore the library &rarr;</a>
+  </p>
+
+  <h3>Developer API</h3>
+  <p>
+    Build your own applications on top of SifterSearch with our public REST API. Full AI analysis,
+    filtering, and rate limiting included. <a href="/docs/api">View API docs &rarr;</a>
+  </p>
+
+  <h2>Quick Start</h2>
+
+  <ol>
+    <li><strong>Ask a question</strong> - Type naturally: "What does Baha'u'llah say about justice?"</li>
+    <li><strong>Review results</strong> - Each passage shows its relevance score and key phrases highlighted</li>
+    <li><strong>Explore deeper</strong> - Click any result to see the full context and document</li>
+    <li><strong>Refine your search</strong> - Filter by religion, collection, or time period</li>
+  </ol>
+
+  <h2>Architecture Overview</h2>
+
+  <pre><code>User Query
+    │
+    ▼
+┌─────────────┐
+│   SIFTER    │ ◄── Orchestrator (routes to appropriate agents)
+└─────────────┘
+    │
+    ├───────────────┬───────────────┬───────────────┐
+    ▼               ▼               ▼               ▼
+┌─────────┐   ┌──────────┐   ┌────────────┐   ┌──────────┐
+│RESEARCHER│   │ ANALYZER │   │ TRANSLATOR │   │ NARRATOR │
+│(Search)  │   │(Re-rank) │   │  (Style)   │   │ (Audio)  │
+└─────────┘   └──────────┘   └────────────┘   └──────────┘</code></pre>
+
+  <h2>Getting Help</h2>
+
+  <ul>
+    <li><strong>Questions?</strong> - Use the search bar to ask Sifter directly</li>
+    <li><strong>Bug reports</strong> - <a href="https://github.com/chadananda/siftersearch/issues">GitHub Issues</a></li>
+    <li><strong>Feature requests</strong> - We'd love to hear your ideas</li>
+  </ul>
+</DocsLayout>
