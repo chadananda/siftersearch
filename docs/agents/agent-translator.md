@@ -1,14 +1,14 @@
 ---
-title: Translator Agent
-description: Shoghi Effendi style specialist that renders text in elevated Victorian prose through multi-persona scholarly consultation
+title: Translator Agent (CTAI)
+description: Committee Translation AI - Shoghi Effendi style specialist using multi-persona scholarly consultation
 role: Shoghi Effendi Style
 icon: languages
 order: 4
 ---
 
-# Translator Agent
+# Translator Agent (CTAI)
 
-**Role:** Shoghi Effendi Style Specialist
+**Role:** Shoghi Effendi Style Specialist | Committee Translation AI
 **File:** `api/agents/agent-translator.js`
 
 ## Overview
