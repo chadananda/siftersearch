@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-13T23:34:00.919Z",
+  "generated": "2025-12-14T02:40:05.714Z",
   "entries": [
+    {
+      "hash": "2131f2d",
+      "date": "2025-12-13",
+      "type": "New",
+      "description": "Add inline agent icons to home page About popover",
+      "scope": null
+    },
     {
       "hash": "f84d5e5",
       "date": "2025-12-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Simplify PWA update button text (version not available before refresh)",
       "scope": null
-    },
-    {
-      "hash": "2efe82c",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Show version in PWA update button, compact on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-13": [
+      {
+        "hash": "2131f2d",
+        "date": "2025-12-13",
+        "type": "New",
+        "description": "Add inline agent icons to home page About popover",
+        "scope": null
+      },
       {
         "hash": "f84d5e5",
         "date": "2025-12-13",
@@ -697,13 +704,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Simplify PWA update button text (version not available before refresh)",
-        "scope": null
-      },
-      {
-        "hash": "2efe82c",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Show version in PWA update button, compact on mobile",
         "scope": null
       }
     ]
