@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-14T17:22:09.853Z",
+  "generated": "2025-12-14T17:24:00.407Z",
   "entries": [
+    {
+      "hash": "244f838",
+      "date": "2025-12-14",
+      "type": "New",
+      "description": "Add Omarchy-specific install instructions",
+      "scope": null
+    },
     {
       "hash": "7a298ce",
       "date": "2025-12-14",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use --text-secondary for version without opacity for readability",
       "scope": null
-    },
-    {
-      "hash": "525d897",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Use text-secondary color for version, remove opacity",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-14": [
+      {
+        "hash": "244f838",
+        "date": "2025-12-14",
+        "type": "New",
+        "description": "Add Omarchy-specific install instructions",
+        "scope": null
+      },
       {
         "hash": "7a298ce",
         "date": "2025-12-14",
@@ -699,13 +706,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use --text-secondary for version without opacity for readability",
-        "scope": null
-      },
-      {
-        "hash": "525d897",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Use text-secondary color for version, remove opacity",
         "scope": null
       }
     ]

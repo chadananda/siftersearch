@@ -86,6 +86,25 @@ export default {
       error_file: './logs/updater-error.log',
       out_file: './logs/updater-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:3000)
+    {
+      name: 'cloudflared-tunnel',
+      script: 'cloudflared',
+      args: 'tunnel --config ~/.cloudflared/config-siftersearch.yml run siftersearch-api',
+      interpreter: 'none',
+      exec_mode: 'fork',
+      watch: false,
+      autorestart: true,
+      // Restart policies - tunnel should always be up
+      exp_backoff_restart_delay: 1000,
+      max_restarts: 50,  // Many retries - tunnel is critical
+      min_uptime: '30s',
+      // Logging
+      error_file: './logs/tunnel-error.log',
+      out_file: './logs/tunnel-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     }
   ]
 };
