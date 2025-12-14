@@ -33,9 +33,9 @@ VERSION=$(node -p "require('./package.json').version")
 
 echo -e "${BLUE}[post-commit]${NC} Starting deployment for v${VERSION}..."
 
-# 1. Build the client
+# 1. Build the client with production API URL
 echo -e "${GREEN}[post-commit]${NC} Building client..."
-npm run build
+PUBLIC_API_URL=https://api.siftersearch.com npm run build
 
 # 2. Deploy to Cloudflare Pages
 echo -e "${GREEN}[post-commit]${NC} Deploying client to Cloudflare Pages..."
@@ -46,14 +46,9 @@ else
   exit 1
 fi
 
-# 3. Deploy server (placeholder for future)
-# echo -e "${GREEN}[post-commit]${NC} Deploying server..."
-# TODO: Add server deployment commands when ready
-# Examples:
-#   - SSH to server and pull latest
-#   - Deploy to Cloudflare Workers
-#   - Deploy to Railway/Render/etc.
+# 3. Server auto-updates via cron (see scripts/update-server.js)
+# The production server checks for updates every 5 minutes and self-updates
 
 echo -e "${GREEN}[post-commit]${NC} Deployment complete for v${VERSION}"
 echo -e "${BLUE}[post-commit]${NC} Client: https://siftersearch.com"
-# echo -e "${BLUE}[post-commit]${NC} API: https://api.siftersearch.com"
+echo -e "${BLUE}[post-commit]${NC} API: https://api.siftersearch.com (auto-updates within 5 min)"

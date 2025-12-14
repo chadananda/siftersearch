@@ -210,18 +210,98 @@ npm run test:coverage
 
 ## Deployment
 
-The app is designed to run on a VPS with:
-- PM2 for process management
-- Cloudflare Pages for static assets
-- Cloudflare Tunnel for API exposure
+### Architecture
+
+| Component | Technology | Description |
+|-----------|------------|-------------|
+| Client | Cloudflare Pages | Auto-deploys on git commit |
+| API | PM2 + Fastify | Self-updating via git polling |
+| Search | Meilisearch | Managed by PM2 |
+| Database | Turso (libsql) | Managed cloud SQLite |
+| Tunnel | Cloudflare Tunnel | Secure API exposure |
+
+### Quick Start (Production)
 
 ```bash
-# Production build
-npm run build
+# Install globally
+npm install -g siftersearch
 
-# Start with PM2
-pm2 start api/index.js --name sifter-api
+# Or run directly
+npx siftersearch start
+
+# Or with PM2 (recommended)
+npx siftersearch pm2:start
 ```
+
+### CLI Commands
+
+```bash
+siftersearch start        # Start API server
+siftersearch dev          # Development mode (API + UI)
+siftersearch pm2:start    # Start all services via PM2
+siftersearch pm2:stop     # Stop all services
+siftersearch status       # Show PM2 status
+siftersearch logs         # View API logs
+siftersearch migrate      # Run database migrations
+siftersearch update       # Check for and apply git updates
+```
+
+### Full Production Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/chadananda/siftersearch.git
+cd siftersearch
+
+# 2. Install dependencies
+npm ci
+
+# 3. Configure secrets
+cp .env-secrets.example .env-secrets
+# Edit with your API keys and secrets
+
+# 4. Run migrations
+npm run migrate
+
+# 5. Start all services with PM2
+npm run prod:start
+
+# 6. Save PM2 state (auto-restart on reboot)
+pm2 save
+pm2 startup  # Follow instructions to enable boot startup
+
+# 7. Set up auto-updates (optional)
+crontab -e
+# Add: */5 * * * * cd /path/to/siftersearch && node scripts/update-server.js >> logs/update.log 2>&1
+```
+
+### PM2 Services
+
+The `ecosystem.config.cjs` manages three processes:
+
+| Service | Description |
+|---------|-------------|
+| `siftersearch-api` | Fastify API server |
+| `meilisearch` | Search engine |
+| `siftersearch-watchdog` | Health monitor (auto-restarts failed services) |
+
+### npm Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run prod:start` | Start all services with PM2 |
+| `npm run prod:stop` | Stop all services |
+| `npm run prod:restart` | Restart all services |
+| `npm run prod:reload` | Zero-downtime API reload |
+| `npm run prod:logs` | View API logs |
+| `npm run prod:status` | Show service status |
+
+### Deployment Workflow
+
+1. **Commit code** → Git push to main
+2. **Client** → Automatically builds and deploys to Cloudflare Pages
+3. **Server** → Auto-updates within 5 minutes (or manually via `siftersearch update`)
+4. **Health** → Watchdog monitors and restarts failed services
 
 ## License
 

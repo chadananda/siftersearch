@@ -1,8 +1,11 @@
 {
   "name": "siftersearch",
-  "version": "0.0.146",
+  "version": "0.0.147",
   "description": "AI-powered interfaith library search system",
   "type": "module",
+  "bin": {
+    "siftersearch": "./bin/siftersearch.js"
+  },
   "engines": {
     "node": ">=20.3.0"
   },
@@ -37,7 +40,13 @@
     "prebuild": "node scripts/generate-changelog.js",
     "deploy": "node scripts/bump-version.js && npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
     "lint": "eslint . --ext .js,.svelte,.astro",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prod:start": "pm2 start ecosystem.config.cjs --env production",
+    "prod:stop": "pm2 stop all",
+    "prod:restart": "pm2 restart all",
+    "prod:reload": "pm2 reload siftersearch-api",
+    "prod:logs": "pm2 logs siftersearch-api",
+    "prod:status": "pm2 status"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
