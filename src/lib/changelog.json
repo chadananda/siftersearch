@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-14T17:17:54.680Z",
+  "generated": "2025-12-14T17:22:09.853Z",
   "entries": [
+    {
+      "hash": "7a298ce",
+      "date": "2025-12-14",
+      "type": "New",
+      "description": "Integrate preflight check into dev script with Mac support",
+      "scope": null
+    },
     {
       "hash": "adcb060",
       "date": "2025-12-14",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use text-secondary color for version, remove opacity",
       "scope": null
-    },
-    {
-      "hash": "f480fb6",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Increase version text opacity from 0.6 to 0.8 for readability",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-14": [
+      {
+        "hash": "7a298ce",
+        "date": "2025-12-14",
+        "type": "New",
+        "description": "Integrate preflight check into dev script with Mac support",
+        "scope": null
+      },
       {
         "hash": "adcb060",
         "date": "2025-12-14",
@@ -699,13 +706,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Use text-secondary color for version, remove opacity",
-        "scope": null
-      },
-      {
-        "hash": "f480fb6",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Increase version text opacity from 0.6 to 0.8 for readability",
         "scope": null
       }
     ]

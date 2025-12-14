@@ -52,13 +52,14 @@ const isMac = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';
 const platform = isMac ? 'mac' : 'arch'; // Default to arch for Linux
 
-// Installation instructions for Mac (Homebrew) and Arch Linux
+// Installation instructions for Mac (Homebrew) and Omarchy/Arch Linux
+// Omarchy: Use menu (Super+Alt+Space > Install) when available, otherwise pacman/yay
 const INSTALL_INSTRUCTIONS = {
   // System tools
   'node': {
     mac: 'brew install node',
     arch: 'sudo pacman -S nodejs npm',
-    note: 'Or use nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash && nvm install 20'
+    note: 'Omarchy: Menu > Install > Package > nodejs. Or use nvm for version management.'
   },
   'npm': {
     mac: 'brew install node',
@@ -67,45 +68,48 @@ const INSTALL_INSTRUCTIONS = {
   },
   'git': {
     mac: 'brew install git',
-    arch: 'sudo pacman -S git'
+    arch: 'sudo pacman -S git',
+    note: 'Omarchy: Pre-installed. If missing: Menu > Install > Package > git'
   },
   'meilisearch': {
     mac: 'brew install meilisearch',
     arch: 'yay -S meilisearch-bin',
-    note: 'Or download from https://github.com/meilisearch/meilisearch/releases'
+    note: 'Omarchy: Menu > Install > AUR > meilisearch-bin'
   },
   'ollama': {
     mac: 'brew install ollama && brew services start ollama',
-    arch: 'yay -S ollama-bin',
-    note: 'Mac: ollama serve (or brew services). Linux: systemctl --user enable --now ollama'
+    arch: 'yay -S ollama-bin && systemctl --user enable --now ollama',
+    note: 'Omarchy: Menu > Install > AUR > ollama-bin. Then: systemctl --user enable --now ollama'
   },
   'pandoc': {
     mac: 'brew install pandoc',
-    arch: 'sudo pacman -S pandoc'
+    arch: 'sudo pacman -S pandoc',
+    note: 'Omarchy: Menu > Install > Package > pandoc'
   },
   'tesseract': {
     mac: 'brew install tesseract tesseract-lang',
     arch: 'sudo pacman -S tesseract tesseract-data-eng',
-    note: 'Mac includes all languages. Arch: add tesseract-data-ara, tesseract-data-fas, etc.'
+    note: 'Omarchy: Menu > Install > Package > tesseract. Add language packs as needed.'
   },
   'ffmpeg': {
     mac: 'brew install ffmpeg',
-    arch: 'sudo pacman -S ffmpeg'
+    arch: 'sudo pacman -S ffmpeg',
+    note: 'Omarchy: Menu > Install > Package > ffmpeg'
   },
   'pdftotext': {
     mac: 'brew install poppler',
     arch: 'sudo pacman -S poppler',
-    note: 'Provides pdftotext, pdfinfo, pdfimages'
+    note: 'Omarchy: Menu > Install > Package > poppler (provides pdftotext)'
   },
   'pm2': {
     mac: 'npm install -g pm2',
     arch: 'npm install -g pm2',
-    note: 'Then: pm2 startup (follow instructions)'
+    note: 'Then run: pm2 startup (follow the instructions it prints)'
   },
   'cloudflared': {
     mac: 'brew install cloudflared',
     arch: 'yay -S cloudflared-bin',
-    note: 'Then: cloudflared tunnel login'
+    note: 'Omarchy: Menu > Install > AUR > cloudflared-bin. Then: cloudflared tunnel login'
   },
 
   // Environment setup
@@ -565,7 +569,7 @@ async function main() {
     // Show installation instructions for failed items
     const requiredInstructions = results.instructions.filter(i => i.required);
     if (requiredInstructions.length > 0) {
-      const platformName = isMac ? 'macOS (Homebrew)' : 'Arch Linux';
+      const platformName = isMac ? 'macOS (Homebrew)' : 'Omarchy/Arch Linux';
       console.log(`\n${c.cyan}${c.bold}Installation Instructions (${platformName}):${c.reset}`);
       for (const inst of requiredInstructions) {
         console.log(`\n  ${c.bold}${inst.key}:${c.reset}`);
@@ -667,7 +671,7 @@ export async function runPreflight(options = {}) {
 
     const requiredInstructions = results.instructions.filter(i => i.required);
     if (requiredInstructions.length > 0) {
-      const platformName = isMac ? 'macOS (Homebrew)' : 'Arch Linux';
+      const platformName = isMac ? 'macOS (Homebrew)' : 'Omarchy/Arch Linux';
       console.log(`\n${c.cyan}${c.bold}Installation Instructions (${platformName}):${c.reset}`);
       for (const inst of requiredInstructions) {
         console.log(`\n  ${c.bold}${inst.key}:${c.reset}`);

@@ -10,7 +10,9 @@
       "WebFetch(domain:media.cleanshot.cloud)",
       "WebFetch(domain:www.meilisearch.com)",
       "WebFetch(domain:specs.meilisearch.dev)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:learn.omacom.io)"
     ]
   }
 }
