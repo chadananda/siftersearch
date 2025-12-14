@@ -47,47 +47,63 @@ const results = {
   instructions: []
 };
 
-// Installation instructions for Arch-based systems (Omarchy, CachyOS, Manjaro, EndeavourOS)
+// Detect platform
+const isMac = process.platform === 'darwin';
+const isLinux = process.platform === 'linux';
+const platform = isMac ? 'mac' : 'arch'; // Default to arch for Linux
+
+// Installation instructions for Mac (Homebrew) and Arch Linux
 const INSTALL_INSTRUCTIONS = {
   // System tools
   'node': {
+    mac: 'brew install node',
     arch: 'sudo pacman -S nodejs npm',
     note: 'Or use nvm: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash && nvm install 20'
   },
   'npm': {
+    mac: 'brew install node',
     arch: 'sudo pacman -S npm',
     note: 'Included with nodejs package'
   },
   'git': {
+    mac: 'brew install git',
     arch: 'sudo pacman -S git'
   },
   'meilisearch': {
+    mac: 'brew install meilisearch',
     arch: 'yay -S meilisearch-bin',
     note: 'Or download from https://github.com/meilisearch/meilisearch/releases'
   },
   'ollama': {
+    mac: 'brew install ollama && brew services start ollama',
     arch: 'yay -S ollama-bin',
-    note: 'Then: systemctl --user enable --now ollama'
+    note: 'Mac: ollama serve (or brew services). Linux: systemctl --user enable --now ollama'
   },
   'pandoc': {
+    mac: 'brew install pandoc',
     arch: 'sudo pacman -S pandoc'
   },
   'tesseract': {
+    mac: 'brew install tesseract tesseract-lang',
     arch: 'sudo pacman -S tesseract tesseract-data-eng',
-    note: 'Add more languages: tesseract-data-ara, tesseract-data-fas, etc.'
+    note: 'Mac includes all languages. Arch: add tesseract-data-ara, tesseract-data-fas, etc.'
   },
   'ffmpeg': {
+    mac: 'brew install ffmpeg',
     arch: 'sudo pacman -S ffmpeg'
   },
   'pdftotext': {
+    mac: 'brew install poppler',
     arch: 'sudo pacman -S poppler',
     note: 'Provides pdftotext, pdfinfo, pdfimages'
   },
   'pm2': {
+    mac: 'npm install -g pm2',
     arch: 'npm install -g pm2',
-    note: 'Then: pm2 startup systemd'
+    note: 'Then: pm2 startup (follow instructions)'
   },
   'cloudflared': {
+    mac: 'brew install cloudflared',
     arch: 'yay -S cloudflared-bin',
     note: 'Then: cloudflared tunnel login'
   },
@@ -137,6 +153,7 @@ const INSTALL_INSTRUCTIONS = {
 
   // Services
   'meilisearch-service': {
+    mac: 'brew services start meilisearch',
     arch: 'systemctl --user enable --now meilisearch',
     note: 'Or run manually: meilisearch --db-path ./data/meilisearch'
   }
@@ -548,11 +565,13 @@ async function main() {
     // Show installation instructions for failed items
     const requiredInstructions = results.instructions.filter(i => i.required);
     if (requiredInstructions.length > 0) {
-      console.log(`\n${c.cyan}${c.bold}Installation Instructions (Arch Linux):${c.reset}`);
+      const platformName = isMac ? 'macOS (Homebrew)' : 'Arch Linux';
+      console.log(`\n${c.cyan}${c.bold}Installation Instructions (${platformName}):${c.reset}`);
       for (const inst of requiredInstructions) {
         console.log(`\n  ${c.bold}${inst.key}:${c.reset}`);
-        if (inst.arch) {
-          console.log(`    ${c.green}$ ${inst.arch}${c.reset}`);
+        const cmd = inst[platform]; // 'mac' or 'arch'
+        if (cmd) {
+          console.log(`    ${c.green}$ ${cmd}${c.reset}`);
         }
         if (inst.note) {
           console.log(`    ${c.dim}${inst.note}${c.reset}`);
@@ -579,8 +598,9 @@ async function main() {
   if (optionalInstructions.length > 0 && process.argv.includes('--verbose')) {
     console.log(`\n${c.cyan}Optional tools you could install:${c.reset}`);
     for (const inst of optionalInstructions) {
-      if (inst.arch) {
-        console.log(`  ${c.dim}${inst.key}: ${inst.arch}${c.reset}`);
+      const cmd = inst[platform];
+      if (cmd) {
+        console.log(`  ${c.dim}${inst.key}: ${cmd}${c.reset}`);
       }
     }
   }
@@ -591,7 +611,98 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error(`${c.red}Preflight check failed: ${err.message}${c.reset}`);
-  process.exit(1);
-});
+// Export for use by dev.js
+export {
+  checkUrl,
+  commandExists,
+  getVersion,
+  results,
+  INSTALL_INSTRUCTIONS,
+  platform,
+  isMac,
+  c as colors,
+  PROJECT_ROOT
+};
+
+// Run preflight checks and return results (for programmatic use)
+export async function runPreflight(options = {}) {
+  const { quiet = false, exitOnFail = true } = options;
+
+  if (!quiet) {
+    console.log(`\n${c.bold}════════════════════════════════════════════════════════════════${c.reset}`);
+    console.log(`${c.bold}                 SifterSearch Preflight Check${c.reset}`);
+    console.log(`${c.bold}════════════════════════════════════════════════════════════════${c.reset}`);
+  }
+
+  // Reset results for fresh run
+  results.passed = [];
+  results.warnings = [];
+  results.failed = [];
+  results.skipped = [];
+  results.instructions = [];
+
+  await checkSystemTools();
+  await checkDirectories();
+  await checkEnvironmentVars();
+  await checkNetworkConnectivity();
+  await checkNodeModules();
+
+  if (!quiet) {
+    console.log(`\n${c.bold}────────────────────────────────────────────────────────────────${c.reset}`);
+    console.log(`${c.bold}Summary${c.reset}`);
+    console.log(`${c.bold}────────────────────────────────────────────────────────────────${c.reset}`);
+    console.log(`  ${c.green}✓ Passed:${c.reset}   ${results.passed.length}`);
+    console.log(`  ${c.yellow}! Warnings:${c.reset} ${results.warnings.length}`);
+    console.log(`  ${c.red}✗ Failed:${c.reset}   ${results.failed.length}`);
+    console.log(`  ${c.dim}○ Skipped:${c.reset}  ${results.skipped.length}`);
+  }
+
+  const success = results.failed.length === 0;
+
+  if (!success && !quiet) {
+    console.log(`\n${c.red}${c.bold}Critical issues that must be resolved:${c.reset}`);
+    for (const f of results.failed) {
+      console.log(`  ${c.red}• ${f.category}: ${f.message}${c.reset}`);
+    }
+
+    const requiredInstructions = results.instructions.filter(i => i.required);
+    if (requiredInstructions.length > 0) {
+      const platformName = isMac ? 'macOS (Homebrew)' : 'Arch Linux';
+      console.log(`\n${c.cyan}${c.bold}Installation Instructions (${platformName}):${c.reset}`);
+      for (const inst of requiredInstructions) {
+        console.log(`\n  ${c.bold}${inst.key}:${c.reset}`);
+        const cmd = inst[platform];
+        if (cmd) {
+          console.log(`    ${c.green}$ ${cmd}${c.reset}`);
+        }
+        if (inst.note) {
+          console.log(`    ${c.dim}${inst.note}${c.reset}`);
+        }
+        if (inst.file) {
+          console.log(`    ${c.dim}Add to ${inst.file}: ${inst.example}${c.reset}`);
+        }
+      }
+    }
+    console.log(`\n${c.bold}════════════════════════════════════════════════════════════════${c.reset}\n`);
+  }
+
+  if (!success && exitOnFail) {
+    process.exit(1);
+  }
+
+  if (success && !quiet) {
+    console.log(`\n${c.green}${c.bold}✓ Preflight check passed - ready to start${c.reset}`);
+    console.log(`${c.bold}════════════════════════════════════════════════════════════════${c.reset}\n`);
+  }
+
+  return { success, results };
+}
+
+// Only run main when executed directly (not imported)
+const isMainModule = process.argv[1]?.endsWith('preflight.js');
+if (isMainModule) {
+  main().catch(err => {
+    console.error(`${c.red}Preflight check failed: ${err.message}${c.reset}`);
+    process.exit(1);
+  });
+}

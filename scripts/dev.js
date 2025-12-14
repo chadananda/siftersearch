@@ -3,23 +3,35 @@
  * Development Server Orchestrator
  *
  * Starts all local services for development:
- * 1. Meilisearch (if not already running)
- * 2. API server (with hot reload)
- * 3. Astro dev server
+ * 1. Runs preflight check to validate environment
+ * 2. Meilisearch (starts if not already running)
+ * 3. API server (with hot reload)
+ * 4. Astro dev server
  *
  * All services connect locally - no tunnel required.
+ *
+ * Usage:
+ *   npm run dev             # Full preflight + start all services
+ *   npm run dev -- --quick  # Skip preflight, just start services
  */
 
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env-public' });
 dotenv.config({ path: '.env-secrets' });
 
-import { spawn, exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import {
+  runPreflight,
+  checkUrl,
+  commandExists,
+  colors as c,
+  INSTALL_INSTRUCTIONS,
+  platform,
+  isMac
+} from './preflight.js';
 
-const execAsync = promisify(exec);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
@@ -36,6 +48,8 @@ const COLORS = {
 const MEILI_URL = 'http://127.0.0.1:7700';
 const API_PORT = process.env.API_PORT || '3000';
 const UI_PORT = process.env.APP_PORT || '4321';
+
+const SKIP_PREFLIGHT = process.argv.includes('--quick') || process.argv.includes('-q');
 
 let meiliProcess = null;
 let apiProcess = null;
@@ -56,15 +70,8 @@ function prefixOutput(name, color, stream) {
 }
 
 async function isMeilisearchRunning() {
-  try {
-    const controller = new globalThis.AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
-    const response = await fetch(`${MEILI_URL}/health`, { signal: controller.signal });
-    clearTimeout(timeout);
-    return response.ok;
-  } catch {
-    return false;
-  }
+  const result = await checkUrl(`${MEILI_URL}/health`, 2000);
+  return result.ok;
 }
 
 async function startMeilisearch() {
@@ -78,10 +85,17 @@ async function startMeilisearch() {
   log('info', 'Starting Meilisearch...');
 
   // Check if meilisearch is installed
-  try {
-    await execAsync('which meilisearch');
-  } catch {
-    log('error', 'Meilisearch not installed. Run: npm run preflight');
+  if (!commandExists('meilisearch')) {
+    log('error', 'Meilisearch not installed.');
+    const inst = INSTALL_INSTRUCTIONS['meilisearch'];
+    const cmd = inst[platform];
+    if (cmd) {
+      console.log(`\n  ${c.cyan}Install with:${c.reset}`);
+      console.log(`  ${c.green}$ ${cmd}${c.reset}`);
+      if (inst.note) {
+        console.log(`  ${c.dim}${inst.note}${c.reset}`);
+      }
+    }
     process.exit(1);
   }
 
@@ -199,11 +213,14 @@ function cleanup() {
 }
 
 async function main() {
+  const platformName = isMac ? 'macOS' : 'Linux';
+
   console.log(`
 ${COLORS.info}════════════════════════════════════════════════════════════════${COLORS.reset}
 ${COLORS.info}              SifterSearch Development Environment${COLORS.reset}
 ${COLORS.info}════════════════════════════════════════════════════════════════${COLORS.reset}
 
+  Platform:    ${platformName}
   Meilisearch: ${MEILI_URL}
   API Server:  http://localhost:${API_PORT}
   Web UI:      http://localhost:${UI_PORT}
@@ -214,6 +231,18 @@ ${COLORS.info}══════════════════════
   // Handle cleanup on exit
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
+
+  // Run preflight check (unless --quick flag)
+  if (!SKIP_PREFLIGHT) {
+    log('info', 'Running preflight check...\n');
+    const { success } = await runPreflight({ exitOnFail: true });
+    if (!success) {
+      process.exit(1);
+    }
+    console.log(''); // Add spacing after preflight
+  } else {
+    log('info', 'Skipping preflight check (--quick mode)\n');
+  }
 
   // Start services in order
   await startMeilisearch();
