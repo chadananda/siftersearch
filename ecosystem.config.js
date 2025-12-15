@@ -68,6 +68,24 @@ export default {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
+    // Library Watcher (indexes new/changed documents automatically)
+    {
+      name: 'siftersearch-library-watcher',
+      script: 'scripts/index-library.js',
+      args: '--watch --skip-existing',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      // Restart policies
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '30s',
+      // Logging
+      error_file: './logs/library-watcher-error.log',
+      out_file: './logs/library-watcher-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:3000)
     {
       name: 'cloudflared-tunnel',

@@ -25,7 +25,8 @@ async function checkImports() {
     '../api/agents/agent-narrator.js',
     '../api/agents/agent-researcher.js',
     '../api/agents/agent-transcriber.js',
-    '../api/routes/deploy.js'
+    '../api/routes/deploy.js',
+    './index-library.js'
   ];
 
   for (const mod of modules) {

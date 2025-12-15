@@ -142,20 +142,21 @@ async function applyUpdates() {
     log('info', 'Migrations complete');
   }
 
-  // Reload API server
-  log('info', 'Reloading API server...');
-  const reloadResult = await run('pm2 reload siftersearch-api');
+  // Reload all PM2 processes from ecosystem config
+  // This picks up new processes and config changes
+  log('info', 'Reloading PM2 ecosystem...');
+  const reloadResult = await run('pm2 reload ecosystem.config.js --env production');
   if (!reloadResult.success) {
-    log('error', `Failed to reload API: ${reloadResult.error}`);
-    // Try restart as fallback
-    log('info', 'Trying restart instead...');
-    const restartResult = await run('pm2 restart siftersearch-api');
-    if (!restartResult.success) {
-      log('error', `Failed to restart API: ${restartResult.error}`);
+    log('warn', `PM2 reload warning: ${reloadResult.error}`);
+    // Try startOrReload as fallback (handles new processes)
+    log('info', 'Trying startOrReload instead...');
+    const startResult = await run('pm2 startOrReload ecosystem.config.js --env production');
+    if (!startResult.success) {
+      log('error', `Failed to reload PM2: ${startResult.error}`);
       return false;
     }
   }
-  log('info', 'API server reloaded');
+  log('info', 'PM2 ecosystem reloaded');
 
   return true;
 }
