@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T18:09:49.775Z",
+  "generated": "2025-12-15T18:11:24.465Z",
   "entries": [
+    {
+      "hash": "c333103",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
+      "scope": null
+    },
     {
       "hash": "bbf1520",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Randomize search suggestions from pool of 32 examples",
       "scope": null
-    },
-    {
-      "hash": "4764c2e",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Remove reader footer, add View Source link in header",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "c333103",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
+        "scope": null
+      },
       {
         "hash": "bbf1520",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Randomize search suggestions from pool of 32 examples",
-        "scope": null
-      },
-      {
-        "hash": "4764c2e",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Remove reader footer, add View Source link in header",
         "scope": null
       }
     ]

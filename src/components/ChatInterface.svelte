@@ -2083,7 +2083,7 @@
   }
 
   .server-version {
-    opacity: 0.7;
+    color: var(--accent-primary-light);
   }
 
   .indexing-indicator {
