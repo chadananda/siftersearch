@@ -93,7 +93,8 @@ function getFloat(key, defaultValue = 0.0) {
 }
 
 // Computed config values
-const isDevMode = getBool('DEV_MODE', true); // Default to dev mode for safety
+// Production is the default - dev mode must be explicitly enabled
+const isDevMode = getBool('DEV_MODE', false);
 const isProduction = get('NODE_ENV') === 'production';
 
 // AI Provider configuration

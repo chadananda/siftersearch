@@ -1,6 +1,20 @@
 {
-  "generated": "2025-12-15T23:42:57.633Z",
+  "generated": "2025-12-15T23:45:54.470Z",
   "entries": [
+    {
+      "hash": "ff8b6ec",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Set DEV_MODE at launch time in package.json scripts",
+      "scope": null
+    },
+    {
+      "hash": "da7aac4",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Remove DEV_MODE from .env-public, let environment control it",
+      "scope": null
+    },
     {
       "hash": "825d64d",
       "date": "2025-12-15",
@@ -336,24 +350,24 @@
       "type": "New",
       "description": "Add inline agent icons to home page About popover",
       "scope": null
-    },
-    {
-      "hash": "f84d5e5",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Redesign About page with narrative agent team introduction",
-      "scope": null
-    },
-    {
-      "hash": "466a070",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add Memory and Librarian agents to about page",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "ff8b6ec",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Set DEV_MODE at launch time in package.json scripts",
+        "scope": null
+      },
+      {
+        "hash": "da7aac4",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Remove DEV_MODE from .env-public, let environment control it",
+        "scope": null
+      },
       {
         "hash": "825d64d",
         "date": "2025-12-15",
@@ -692,20 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add inline agent icons to home page About popover",
-        "scope": null
-      },
-      {
-        "hash": "f84d5e5",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Redesign About page with narrative agent team introduction",
-        "scope": null
-      },
-      {
-        "hash": "466a070",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add Memory and Librarian agents to about page",
         "scope": null
       }
     ]
