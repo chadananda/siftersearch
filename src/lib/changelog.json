@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:15:18.505Z",
+  "generated": "2025-12-15T23:18:05.072Z",
   "entries": [
+    {
+      "hash": "aa8766f",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Centralize embedding config - read from config.js only",
+      "scope": null
+    },
     {
       "hash": "6104536",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Simplify timing display to 3 clear metrics",
       "scope": null
-    },
-    {
-      "hash": "672c627",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Make follow-up suggestions clickable",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "aa8766f",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Centralize embedding config - read from config.js only",
+        "scope": null
+      },
       {
         "hash": "6104536",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Simplify timing display to 3 clear metrics",
-        "scope": null
-      },
-      {
-        "hash": "672c627",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Make follow-up suggestions clickable",
         "scope": null
       }
     ]

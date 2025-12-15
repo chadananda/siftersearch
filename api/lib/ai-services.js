@@ -107,20 +107,21 @@ const SERVICE_CONFIG = {
   // IMPORTANT: Embedding config is centralized in config.js (config.ai.embeddings)
   // Both local and remote use the SAME settings to ensure dimension consistency
   // between indexed documents and search queries.
+  // NOTE: Uses getter to avoid ES module hoisting issues - config must be
+  // resolved at runtime, not at module load time.
   // ==========================================================================
 
-  embedding: {
-    // Read from centralized config - DO NOT HARDCODE VALUES HERE
-    local: {
+  get embedding() {
+    // Resolve config at runtime to avoid ES module hoisting issues
+    const embeddingConfig = {
       provider: config.ai.embeddings.provider,
       model: config.ai.embeddings.model,
       dimensions: config.ai.embeddings.dimensions
-    },
-    remote: {
-      provider: config.ai.embeddings.provider,
-      model: config.ai.embeddings.model,
-      dimensions: config.ai.embeddings.dimensions
-    }
+    };
+    return {
+      local: embeddingConfig,
+      remote: embeddingConfig
+    };
   }
 };
 
