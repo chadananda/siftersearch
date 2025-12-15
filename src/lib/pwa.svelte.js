@@ -1,7 +1,7 @@
 /**
  * PWA Update State Management
  * Provides reactive state for service worker updates
- * v4 - auto-update pipeline test
+ * v5 - skipWaiting:true means SW activates immediately
  */
 
 // Reactive state for PWA updates
@@ -20,9 +20,17 @@ export async function initPWA() {
   if (typeof window === 'undefined') return;
 
   // Listen for controller change (new SW took over)
-  // This handles the case where SW updates and takes control
+  // With skipWaiting:true, this fires immediately when new SW is installed
   navigator.serviceWorker?.addEventListener('controllerchange', () => {
     if (refreshing) return;
+
+    // Check if user has active conversation
+    if (hasActiveConversation()) {
+      console.log('[PWA] New SW active, but user has conversation - showing update prompt');
+      updateAvailable = true;
+      return;
+    }
+
     refreshing = true;
     console.log('[PWA] New service worker activated, reloading...');
     window.location.reload();
@@ -35,38 +43,32 @@ export async function initPWA() {
       immediate: true,
       onRegisteredSW(swUrl, r) {
         console.log(`[PWA] Service worker registered: ${swUrl}`);
-        // Check for updates every 30 seconds (faster detection)
+        // Check for updates periodically
         if (r) {
-          // Initial check after 5 seconds
+          // Initial check after 3 seconds
           setTimeout(() => {
             console.log('[PWA] Initial update check...');
             r.update();
-          }, 5000);
+          }, 3000);
 
-          // Then check every 30 seconds
+          // Then check every 60 seconds (SW update detection)
           setInterval(() => {
-            console.log('[PWA] Checking for updates...');
             r.update();
-          }, 30 * 1000);
+          }, 60 * 1000);
         }
       },
       onRegisterError(error) {
         console.error('[PWA] Service worker registration error:', error);
       },
       onOfflineReady() {
-        // Silent - we cache for performance, not offline use
         console.log('[PWA] Assets cached for performance');
       },
       onNeedRefresh() {
-        console.log('[PWA] New version available!');
+        // With skipWaiting:true, this may not fire - controllerchange handles it
+        console.log('[PWA] New version available via onNeedRefresh');
         updateAvailable = true;
-
-        // Auto-update if user is not in an active conversation
         if (!hasActiveConversation()) {
-          console.log('[PWA] No active conversation, auto-updating...');
           performUpdate();
-        } else {
-          console.log('[PWA] Active conversation detected, showing update button');
         }
       }
     });

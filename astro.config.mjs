@@ -60,10 +60,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Clean up old caches when new SW activates
         cleanupOutdatedCaches: true,
-        // Don't auto-skip waiting - let client code control when to update
-        // This allows onNeedRefresh to fire properly
-        skipWaiting: false,
+        // Auto-activate new SW immediately - no waiting for tab close
+        skipWaiting: true,
         clientsClaim: true,
+        // Navigation preload for faster page loads
+        navigationPreload: true,
         // Runtime caching
         runtimeCaching: [
           {
