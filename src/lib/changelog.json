@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:20:36.947Z",
+  "generated": "2025-12-15T21:22:07.571Z",
   "entries": [
+    {
+      "hash": "85cfae0",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
+      "scope": null
+    },
     {
       "hash": "816ae76",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add two-pass exhaustive search for comprehensive queries",
       "scope": null
-    },
-    {
-      "hash": "801ab8e",
-      "date": "2025-12-13",
-      "type": "Improved",
-      "description": "Optimize search pipeline - faster AI models and dynamic result limits",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "85cfae0",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
+        "scope": null
+      },
       {
         "hash": "816ae76",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add two-pass exhaustive search for comprehensive queries",
-        "scope": null
-      },
-      {
-        "hash": "801ab8e",
-        "date": "2025-12-13",
-        "type": "Improved",
-        "description": "Optimize search pipeline - faster AI models and dynamic result limits",
         "scope": null
       }
     ]

@@ -320,7 +320,7 @@
 
       // Check for version mismatch
       if (stats.serverVersion && CLIENT_VERSION) {
-        if (stats.serverVersion !== CLIENT_VERSION) {
+        if (stats.serverVersion !== CLIENT_VERSION && !updateTriggered) {
           // Compare versions to determine who needs updating
           const clientParts = CLIENT_VERSION.split('.').map(Number);
           const serverParts = stats.serverVersion.split('.').map(Number);
@@ -331,12 +331,23 @@
           if (serverNewer) {
             // Server is newer - client needs to reload (only if no active conversation)
             if (messages.length === 0) {
-              console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading client...`);
-              window.location.reload();
+              // Check if we already tried reloading this session
+              const reloadKey = `reload_attempted_${stats.serverVersion}`;
+              if (!sessionStorage.getItem(reloadKey)) {
+                sessionStorage.setItem(reloadKey, 'true');
+                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading client...`);
+                // Clear service worker cache and reload
+                if ('caches' in window) {
+                  caches.keys().then(names => names.forEach(name => caches.delete(name)));
+                }
+                window.location.reload();
+              } else {
+                console.log(`[Deploy] Already attempted reload for ${stats.serverVersion}, skipping`);
+              }
             } else {
               console.log(`[Deploy] Server newer but conversation active, skipping reload`);
             }
-          } else if (!updateTriggered) {
+          } else {
             // Client is newer - trigger server update
             console.log(`[Deploy] Version mismatch: client=${CLIENT_VERSION}, server=${stats.serverVersion}`);
             updateTriggered = true;

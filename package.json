@@ -1,7 +1,7 @@
 {
   "name": "siftersearch",
-  "version": "0.1.27",
-  "description": "AI-powered interfaith library search system",
+  "version": "0.1.28",
+  "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
     "siftersearch": "./bin/siftersearch.js"
