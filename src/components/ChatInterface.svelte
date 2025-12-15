@@ -2021,7 +2021,7 @@
   .stat-value {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0ea5e9; /* sky-500 - lighter for better visibility */
+    color: var(--accent-primary-light);
   }
 
   @media (min-width: 640px) {
