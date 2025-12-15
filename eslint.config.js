@@ -55,6 +55,18 @@ export default [
     }
   },
   {
+    // CommonJS files (.cjs) need module and exports globals
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        module: 'readonly',
+        exports: 'readonly',
+        require: 'readonly'
+      }
+    }
+  },
+  {
     ignores: [
       'node_modules/**',
       'dist/**',

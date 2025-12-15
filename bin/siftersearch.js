@@ -169,7 +169,7 @@ switch (command) {
     break;
 
   case 'pm2:start':
-    runPm2('start', [join(PROJECT_ROOT, 'ecosystem.config.js'), '--env', 'production']);
+    runPm2('start', [join(PROJECT_ROOT, 'ecosystem.config.cjs'), '--env', 'production']);
     break;
 
   case 'pm2:stop':

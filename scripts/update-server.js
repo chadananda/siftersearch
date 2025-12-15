@@ -147,12 +147,12 @@ async function applyUpdates() {
   // Reload all PM2 processes from ecosystem config
   // This picks up new processes and config changes
   log('info', 'Reloading PM2 ecosystem...');
-  const reloadResult = await run('pm2 reload ecosystem.config.js --env production');
+  const reloadResult = await run('pm2 reload ecosystem.config.cjs --env production');
   if (!reloadResult.success) {
     log('warn', `PM2 reload warning: ${reloadResult.error}`);
     // Try startOrReload as fallback (handles new processes)
     log('info', 'Trying startOrReload instead...');
-    const startResult = await run('pm2 startOrReload ecosystem.config.js --env production');
+    const startResult = await run('pm2 startOrReload ecosystem.config.cjs --env production');
     if (!startResult.success) {
       log('error', `Failed to reload PM2: ${startResult.error}`);
       return false;

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:23:35.958Z",
+  "generated": "2025-12-15T21:38:49.052Z",
   "entries": [
+    {
+      "hash": "285845d",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Use package.json description for welcome subtitle",
+      "scope": null
+    },
     {
       "hash": "ae554c8",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add anonymous user tracking with persistent user IDs",
       "scope": null
-    },
-    {
-      "hash": "9cce327",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add conversational feedback for complex searches",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "285845d",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Use package.json description for welcome subtitle",
+        "scope": null
+      },
       {
         "hash": "ae554c8",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add anonymous user tracking with persistent user IDs",
-        "scope": null
-      },
-      {
-        "hash": "9cce327",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add conversational feedback for complex searches",
         "scope": null
       }
     ]

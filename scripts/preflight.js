@@ -355,7 +355,7 @@ async function checkDirectories() {
   const configs = [
     { path: '.env-secrets', required: true },
     { path: '.env-public', required: true },
-    { path: 'ecosystem.config.js', required: false }
+    { path: 'ecosystem.config.cjs', required: false }
   ];
 
   for (const cfg of configs) {

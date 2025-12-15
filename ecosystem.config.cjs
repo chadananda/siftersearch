@@ -1,7 +1,8 @@
+/* eslint-env node */
 /**
  * PM2 Ecosystem Configuration for SifterSearch
  *
- * Start all services: pm2 start ecosystem.config.js --env production
+ * Start all services: pm2 start ecosystem.config.cjs --env production
  * View status: pm2 status
  * View logs: pm2 logs
  * Restart: pm2 restart all
@@ -11,7 +12,7 @@
  * This keeps PM2 focused on the Node.js app and avoids port confusion.
  */
 
-export default {
+module.exports = {
   apps: [
     // SifterSearch API Server
     {
