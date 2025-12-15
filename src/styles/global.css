@@ -35,8 +35,8 @@
   --border-strong: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2));
 
   /* Brand/Accent colors */
-  --accent-primary: #0ea5e9;
-  --accent-primary-hover: #0284c7;
+  --accent-primary: #075985;
+  --accent-primary-hover: #0c4a6e;
   --accent-primary-text: #ffffff;
   --accent-secondary: #14b8a6;
   --accent-tertiary: #8b5cf6;
