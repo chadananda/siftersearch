@@ -25,7 +25,8 @@ module.exports = {
       exec_mode: 'fork',
       watch: false,
       max_memory_restart: '1G',
-      env_production: {
+      // Default env - always production (dev uses npm run dev, not PM2)
+      env: {
         NODE_ENV: 'production',
         DEV_MODE: 'false'
       },
@@ -84,7 +85,8 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      env_production: {
+      // Default env - always production (dev uses npm run dev, not PM2)
+      env: {
         NODE_ENV: 'production',
         DEV_MODE: 'false'
       },

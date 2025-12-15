@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:52:04.331Z",
+  "generated": "2025-12-15T23:56:58.035Z",
   "entries": [
+    {
+      "hash": "d51836a",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use _DEV suffix pattern for environment-specific config",
+      "scope": null
+    },
     {
       "hash": "26c1784",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add auto-updater to PM2 and Arch Linux install instructions",
       "scope": null
-    },
-    {
-      "hash": "ad208bb",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add preflight check for environment validation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "d51836a",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use _DEV suffix pattern for environment-specific config",
+        "scope": null
+      },
       {
         "hash": "26c1784",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add auto-updater to PM2 and Arch Linux install instructions",
-        "scope": null
-      },
-      {
-        "hash": "ad208bb",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add preflight check for environment validation",
         "scope": null
       }
     ]
