@@ -25,10 +25,10 @@ module.exports = {
       exec_mode: 'fork',
       watch: false,
       max_memory_restart: '1G',
-      // Default env - always production (dev uses npm run dev, not PM2)
+      // Production is the default in config.js (DEV_MODE defaults to false)
+      // Dev uses npm run dev which sets DEV_MODE=true
       env: {
-        NODE_ENV: 'production',
-        DEV_MODE: 'false'
+        NODE_ENV: 'production'
       },
       // Health check - restart if unresponsive
       listen_timeout: 10000,
@@ -85,10 +85,9 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      // Default env - always production (dev uses npm run dev, not PM2)
+      // Production is the default in config.js (DEV_MODE defaults to false)
       env: {
-        NODE_ENV: 'production',
-        DEV_MODE: 'false'
+        NODE_ENV: 'production'
       },
       // Restart policies
       exp_backoff_restart_delay: 5000,

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:56:58.035Z",
+  "generated": "2025-12-15T23:59:00.534Z",
   "entries": [
+    {
+      "hash": "f2c8ad5",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use env instead of env_production in PM2 config",
+      "scope": null
+    },
     {
       "hash": "d51836a",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve dev script with local Meilisearch management",
       "scope": null
-    },
-    {
-      "hash": "898076c",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add auto-updater to PM2 and Arch Linux install instructions",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "f2c8ad5",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use env instead of env_production in PM2 config",
+        "scope": null
+      },
       {
         "hash": "d51836a",
         "date": "2025-12-15",
@@ -697,15 +704,6 @@
         "date": "2025-12-14",
         "type": "New",
         "description": "Improve dev script with local Meilisearch management",
-        "scope": null
-      }
-    ],
-    "2025-12-13": [
-      {
-        "hash": "898076c",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add auto-updater to PM2 and Arch Linux install instructions",
         "scope": null
       }
     ]
