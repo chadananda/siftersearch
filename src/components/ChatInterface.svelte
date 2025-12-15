@@ -1189,7 +1189,7 @@
     {#if messages.length === 0}
       <div class="welcome-screen">
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
-        <h2 class="welcome-title">Ocean Library Agentic Research Engine</h2>
+        <h2 class="welcome-title"><a href="https://oceanlibrary.com" target="_blank" rel="noopener" class="ocean-link">Ocean 2.0 Library</a> Agentic Research Engine</h2>
         <p class="welcome-desc">
           Use advanced AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.
         </p>
@@ -1918,6 +1918,17 @@
     color: var(--text-primary);
     margin-bottom: 0.375rem;
     text-shadow: 0 1px 2px light-dark(rgba(255,255,255,0.8), rgba(0,0,0,0.5));
+  }
+
+  .ocean-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .ocean-link:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
   }
 
   @media (min-width: 640px) {

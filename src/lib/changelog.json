@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:18:28.291Z",
+  "generated": "2025-12-15T21:20:36.947Z",
   "entries": [
+    {
+      "hash": "816ae76",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Auto-reload client when server is newer version",
+      "scope": null
+    },
     {
       "hash": "d2c62fe",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Improved",
       "description": "Optimize search pipeline - faster AI models and dynamic result limits",
       "scope": null
-    },
-    {
-      "hash": "6ad727b",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Remove animated background from docs, increase about card opacity",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "816ae76",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Auto-reload client when server is newer version",
+        "scope": null
+      },
       {
         "hash": "d2c62fe",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Improved",
         "description": "Optimize search pipeline - faster AI models and dynamic result limits",
-        "scope": null
-      },
-      {
-        "hash": "6ad727b",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Remove animated background from docs, increase about card opacity",
         "scope": null
       }
     ]
