@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:34:12.176Z",
+  "generated": "2025-12-15T22:42:11.365Z",
   "entries": [
+    {
+      "hash": "5866965",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Add Meilisearch host debug output to library indexer",
+      "scope": null
+    },
     {
       "hash": "fcd2f94",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Librarian agent for library management and fix highlighting",
       "scope": null
-    },
-    {
-      "hash": "347c15f",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add referral tracking, UI fixes, and extended changelog",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "5866965",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Add Meilisearch host debug output to library indexer",
+        "scope": null
+      },
       {
         "hash": "fcd2f94",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add Librarian agent for library management and fix highlighting",
-        "scope": null
-      },
-      {
-        "hash": "347c15f",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add referral tracking, UI fixes, and extended changelog",
         "scope": null
       }
     ]
