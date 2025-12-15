@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:01:32.723Z",
+  "generated": "2025-12-15T21:05:33.056Z",
   "entries": [
+    {
+      "hash": "6c05e6b",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Prevent SW caching with _headers, disable reload loop",
+      "scope": null
+    },
     {
       "hash": "2915d91",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Federated search pagination must use federation.limit",
       "scope": null
-    },
-    {
-      "hash": "1e91a8b",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add federated search, Tailwind color tokens, and coding guidelines",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "6c05e6b",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Prevent SW caching with _headers, disable reload loop",
+        "scope": null
+      },
       {
         "hash": "2915d91",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Federated search pagination must use federation.limit",
-        "scope": null
-      },
-      {
-        "hash": "1e91a8b",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add federated search, Tailwind color tokens, and coding guidelines",
         "scope": null
       }
     ]

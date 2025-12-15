@@ -1,7 +1,7 @@
 /**
  * PWA Update State Management
  * Provides reactive state for service worker updates
- * v2 - improved update detection
+ * v3 - improved update detection with no-cache headers
  */
 
 // Reactive state for PWA updates
