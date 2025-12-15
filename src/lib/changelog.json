@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:16:58.664Z",
+  "generated": "2025-12-15T22:23:25.540Z",
   "entries": [
+    {
+      "hash": "951608b",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Don't cache stats endpoint so server version updates immediately",
+      "scope": null
+    },
     {
       "hash": "7f1ddd8",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add comprehensive BDD tests for user tracking",
       "scope": null
-    },
-    {
-      "hash": "28d8eb5",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Update E2E tests to match current UI",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "951608b",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Don't cache stats endpoint so server version updates immediately",
+        "scope": null
+      },
       {
         "hash": "7f1ddd8",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add comprehensive BDD tests for user tracking",
-        "scope": null
-      },
-      {
-        "hash": "28d8eb5",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Update E2E tests to match current UI",
         "scope": null
       }
     ]

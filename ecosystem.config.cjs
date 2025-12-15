@@ -80,10 +80,14 @@ module.exports = {
     {
       name: 'siftersearch-library-watcher',
       script: 'scripts/index-library.js',
-      args: '--watch --skip-existing',
+      args: '--watch',
       instances: 1,
       autorestart: true,
       watch: false,
+      env_production: {
+        NODE_ENV: 'production',
+        DEV_MODE: 'false'
+      },
       // Restart policies
       exp_backoff_restart_delay: 5000,
       max_restarts: 10,
