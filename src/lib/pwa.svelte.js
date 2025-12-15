@@ -1,7 +1,7 @@
 /**
  * PWA Update State Management
  * Provides reactive state for service worker updates
- * v3 - improved update detection with no-cache headers
+ * v4 - auto-update pipeline test
  */
 
 // Reactive state for PWA updates
