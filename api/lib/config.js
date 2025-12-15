@@ -147,10 +147,17 @@ const dbConfig = {
   authToken: get('TURSO_AUTH_TOKEN')
 };
 
+// Helper to get dev or prod value
+function getDevOrProd(key, defaultProd, defaultDev) {
+  if (isDevMode) {
+    return get(`${key}_DEV`, get(key, defaultDev || defaultProd));
+  }
+  return get(key, defaultProd);
+}
+
 // Search configuration
-// Dev uses port 7701, production uses 7700
 const searchConfig = {
-  host: get('MEILI_HOST', isDevMode ? 'http://localhost:7701' : 'http://localhost:7700'),
+  host: getDevOrProd('MEILI_HOST', 'http://localhost:7700', 'http://localhost:7701'),
   apiKey: get('MEILISEARCH_KEY') || get('MEILI_MASTER_KEY'),
   maxResults: getInt('SEARCH_MAX_RESULTS', 100),
   snippetSize: getInt('SEARCH_SNIPPET_SIZE', 160),
@@ -158,11 +165,10 @@ const searchConfig = {
 };
 
 // Server configuration
-// Dev uses port 3001, production uses 3000
 const serverConfig = {
-  port: getInt('API_PORT', isDevMode ? 3001 : 3000),
+  port: parseInt(getDevOrProd('API_PORT', '3000', '3001'), 10),
   host: get('HOST', '0.0.0.0'),
-  frontendUrl: get('APP_URL', isDevMode ? 'http://localhost:5173' : 'https://siftersearch.com'),
+  frontendUrl: getDevOrProd('APP_URL', 'https://siftersearch.com', 'http://localhost:5173'),
   corsOrigins: get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4321,https://siftersearch.com,https://www.siftersearch.com')
 };
 
