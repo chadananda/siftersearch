@@ -407,6 +407,44 @@ export async function healthCheck() {
 }
 
 // ============================================
+// Deploy API
+// ============================================
+
+const DEPLOY_SECRET = import.meta.env.PUBLIC_DEPLOY_SECRET || '';
+
+/**
+ * Trigger server update when client detects version mismatch
+ */
+export async function triggerServerUpdate(clientVersion) {
+  if (!DEPLOY_SECRET) {
+    console.log('[Deploy] No deploy secret configured, skipping update trigger');
+    return { skipped: true };
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/deploy/trigger-update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: DEPLOY_SECRET,
+        clientVersion
+      })
+    });
+
+    if (response.ok) {
+      console.log('[Deploy] Server update triggered successfully');
+      return await response.json();
+    } else {
+      console.warn('[Deploy] Failed to trigger update:', response.status);
+      return { error: response.status };
+    }
+  } catch (err) {
+    console.warn('[Deploy] Error triggering update:', err.message);
+    return { error: err.message };
+  }
+}
+
+// ============================================
 // Default export
 // ============================================
 
@@ -416,6 +454,7 @@ export default {
   documents,
   session,
   healthCheck,
+  triggerServerUpdate,
   setAccessToken,
   clearAccessToken,
   getSessionId,

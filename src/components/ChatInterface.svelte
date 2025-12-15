@@ -1,7 +1,10 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked';
-  import { search, session, documents } from '../lib/api.js';
+  import { search, session, documents, triggerServerUpdate } from '../lib/api.js';
+
+  // Client version - baked in at build time
+  const CLIENT_VERSION = __APP_VERSION__;
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
@@ -296,6 +299,9 @@
   const REFRESH_INTERVAL = 30000; // 30 seconds - check for index updates
   const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
 
+  // Track if we've already triggered an update this session
+  let updateTriggered = $state(false);
+
   async function loadLibraryStats(silent = false) {
     if (!silent) statsLoading = true;
     try {
@@ -310,6 +316,15 @@
       if (hasChanged) {
         libraryStats = stats;
         if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
+      }
+
+      // Check for version mismatch and trigger server update (once per session)
+      if (stats.serverVersion && CLIENT_VERSION && !updateTriggered) {
+        if (stats.serverVersion !== CLIENT_VERSION) {
+          console.log(`[Deploy] Version mismatch: client=${CLIENT_VERSION}, server=${stats.serverVersion}`);
+          updateTriggered = true;
+          triggerServerUpdate(CLIENT_VERSION);
+        }
       }
 
       // Connected - stop retry polling if running
