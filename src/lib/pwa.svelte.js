@@ -1,7 +1,7 @@
 /**
  * PWA Update State Management
  * Provides reactive state for service worker updates
- * v5 - skipWaiting:true means SW activates immediately
+ * v6 - skipWaiting:true, rely on controllerchange for reload
  */
 
 // Reactive state for PWA updates
@@ -20,7 +20,8 @@ export async function initPWA() {
   if (typeof window === 'undefined') return;
 
   // Listen for controller change (new SW took over)
-  // With skipWaiting:true, this fires immediately when new SW is installed
+  // With skipWaiting:true, this fires when new SW activates
+  // This is the ONLY place we trigger reload to avoid double-reload
   navigator.serviceWorker?.addEventListener('controllerchange', () => {
     if (refreshing) return;
 
@@ -64,12 +65,11 @@ export async function initPWA() {
         console.log('[PWA] Assets cached for performance');
       },
       onNeedRefresh() {
-        // With skipWaiting:true, this may not fire - controllerchange handles it
-        console.log('[PWA] New version available via onNeedRefresh');
+        // With skipWaiting:true, the new SW will activate immediately
+        // and controllerchange will handle the reload
+        console.log('[PWA] New version available!');
         updateAvailable = true;
-        if (!hasActiveConversation()) {
-          performUpdate();
-        }
+        // Don't call performUpdate() here - let controllerchange handle it
       }
     });
   } catch (e) {

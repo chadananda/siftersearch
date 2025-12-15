@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:08:18.947Z",
+  "generated": "2025-12-15T22:09:53.852Z",
   "entries": [
+    {
+      "hash": "00a8eef",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Enable skipWaiting for immediate SW updates without cache clearing",
+      "scope": null
+    },
     {
       "hash": "065aa24",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add context field to paragraphs for AI enrichment",
       "scope": null
-    },
-    {
-      "hash": "695299c",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Add X-User-ID header to streaming search and fix Playwright tests",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "00a8eef",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Enable skipWaiting for immediate SW updates without cache clearing",
+        "scope": null
+      },
       {
         "hash": "065aa24",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add context field to paragraphs for AI enrichment",
-        "scope": null
-      },
-      {
-        "hash": "695299c",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Add X-User-ID header to streaming search and fix Playwright tests",
         "scope": null
       }
     ]
