@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:04:19.454Z",
+  "generated": "2025-12-15T22:06:22.666Z",
   "entries": [
+    {
+      "hash": "065aa24",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Bump version before build so client has correct version",
+      "scope": null
+    },
     {
       "hash": "6d7c938",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add X-User-ID header to streaming search and fix Playwright tests",
       "scope": null
-    },
-    {
-      "hash": "63e8c06",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Inject user context into search and unify user IDs on login",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "065aa24",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Bump version before build so client has correct version",
+        "scope": null
+      },
       {
         "hash": "6d7c938",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Add X-User-ID header to streaming search and fix Playwright tests",
-        "scope": null
-      },
-      {
-        "hash": "63e8c06",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Inject user context into search and unify user IDs on login",
         "scope": null
       }
     ]
