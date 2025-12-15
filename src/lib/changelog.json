@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T20:34:41.203Z",
+  "generated": "2025-12-15T20:37:23.069Z",
   "entries": [
+    {
+      "hash": "3696321",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Add automatic library watcher and improve PM2 update handling",
+      "scope": null
+    },
     {
       "hash": "6722faa",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add fallback keyword highlighting when anchor matching fails",
       "scope": null
-    },
-    {
-      "hash": "7e84797",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Show source domain in reader link with external icon",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "3696321",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Add automatic library watcher and improve PM2 update handling",
+        "scope": null
+      },
       {
         "hash": "6722faa",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Add fallback keyword highlighting when anchor matching fails",
-        "scope": null
-      },
-      {
-        "hash": "7e84797",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Show source domain in reader link with external icon",
         "scope": null
       }
     ]

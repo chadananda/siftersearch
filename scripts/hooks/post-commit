@@ -38,8 +38,9 @@ echo -e "${GREEN}[post-commit]${NC} Building client..."
 PUBLIC_API_URL=https://api.siftersearch.com npm run build
 
 # 2. Deploy to Cloudflare Pages
+# Use simple commit message to avoid UTF-8/emoji issues with Cloudflare API
 echo -e "${GREEN}[post-commit]${NC} Deploying client to Cloudflare Pages..."
-if npx wrangler pages deploy ./dist --project-name siftersearch --commit-dirty=true; then
+if npx wrangler pages deploy ./dist --project-name siftersearch --commit-dirty=true --commit-message="v${VERSION}"; then
   echo -e "${GREEN}[post-commit]${NC} Client deployed successfully!"
 else
   echo -e "${RED}[post-commit]${NC} Client deployment failed!"
