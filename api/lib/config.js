@@ -141,8 +141,9 @@ const dbConfig = {
 };
 
 // Search configuration
+// Dev uses port 7701, production uses 7700
 const searchConfig = {
-  host: get('MEILI_HOST', 'http://localhost:7700'),
+  host: get('MEILI_HOST', isDevMode ? 'http://localhost:7701' : 'http://localhost:7700'),
   apiKey: get('MEILISEARCH_KEY') || get('MEILI_MASTER_KEY'),
   maxResults: getInt('SEARCH_MAX_RESULTS', 100),
   snippetSize: getInt('SEARCH_SNIPPET_SIZE', 160),

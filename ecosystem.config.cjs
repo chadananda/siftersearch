@@ -27,10 +27,7 @@ module.exports = {
       max_memory_restart: '1G',
       env_production: {
         NODE_ENV: 'production',
-        DEV_MODE: 'false',
-        // Production uses port 7700 (dev uses 7701)
-        MEILI_HOST: 'http://localhost:7700',
-        API_PORT: '3000'
+        DEV_MODE: 'false'
       },
       // Health check - restart if unresponsive
       listen_timeout: 10000,
@@ -89,9 +86,7 @@ module.exports = {
       watch: false,
       env_production: {
         NODE_ENV: 'production',
-        DEV_MODE: 'false',
-        // Production uses port 7700 (dev uses 7701)
-        MEILI_HOST: 'http://localhost:7700'
+        DEV_MODE: 'false'
       },
       // Restart policies
       exp_backoff_restart_delay: 5000,
