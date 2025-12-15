@@ -7,6 +7,9 @@
 let updateAvailable = $state(false);
 let updateSW = $state(null);
 
+// Callback to check if user has an active conversation
+let hasActiveConversation = () => false;
+
 /**
  * Initialize PWA service worker registration
  * Call this once from a top-level component
@@ -39,6 +42,16 @@ export async function initPWA() {
       onNeedRefresh() {
         console.log('[PWA] New version available');
         updateAvailable = true;
+
+        // Auto-update if user is not in an active conversation
+        if (!hasActiveConversation()) {
+          console.log('[PWA] No active conversation, auto-updating...');
+          setTimeout(() => {
+            performUpdate();
+          }, 1000); // Small delay to ensure SW is ready
+        } else {
+          console.log('[PWA] Active conversation detected, showing update button');
+        }
       }
     });
   } catch (e) {
@@ -74,6 +87,14 @@ export async function performUpdate() {
     console.log('[PWA] Reloading page...');
     window.location.reload();
   }
+}
+
+/**
+ * Set callback to check if user has an active conversation
+ * @param {Function} callback - Returns true if conversation is active
+ */
+export function setConversationChecker(callback) {
+  hasActiveConversation = callback;
 }
 
 /**

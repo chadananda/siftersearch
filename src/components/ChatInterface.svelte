@@ -3,7 +3,7 @@
   import { marked } from 'marked';
   import { search, session, documents } from '../lib/api.js';
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
-  import { initPWA, performUpdate, getPWAState } from '../lib/pwa.svelte.js';
+  import { initPWA, performUpdate, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import changelog from '../lib/changelog.json';
   import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
@@ -776,6 +776,9 @@
 
   onMount(async () => {
     initAuth();
+    // Register conversation checker before initializing PWA
+    // This allows PWA to auto-update only when no conversation is active
+    setConversationChecker(() => messages.length > 0);
     initPWA();
     loadLibraryStats();
     initSession();
