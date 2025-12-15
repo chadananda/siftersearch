@@ -72,7 +72,7 @@ function truncateAtWord(text, maxLength) {
 async function analyzeBatch(query, passages, batchIndex, researchContext = '') {
   // Use excerpt if available, otherwise fall back to full text (truncated)
   // Normalize text to remove markdown that could confuse keyPhrase matching
-  const batchPrompt = `Query: "${query}"
+  const batchPrompt = `User's question: "${query}"
 
 ${passages.map((p, i) => {
   const text = normalizeForAI(p.excerpt || p.text.slice(0, 400));
@@ -80,22 +80,26 @@ ${passages.map((p, i) => {
 "${text}"`;
 }).join('\n\n')}
 
-For each passage, return JSON with:
-- score: 0-100 relevance (80+ highly relevant, 50-79 somewhat, <50 not relevant)
-- briefAnswer: 5-8 word direct answer to query
-- keyPhrase: CRITICAL - copy a phrase VERBATIM from the quoted text above (5-15 words). Do NOT paraphrase. The phrase must appear exactly as written in the passage.
+For each passage, analyze how well it answers the user's question. Return JSON with:
+- score: 0-100 relevance based on how directly the passage answers the question
+  * 90-100: Passage directly defines, explains, or answers the question (e.g., "the meaning of X is...")
+  * 70-89: Passage substantially addresses the question with relevant insight
+  * 50-69: Passage touches on the topic but doesn't directly answer
+  * <50: Passage is tangentially related or off-topic
+- summary: A 10-20 word statement explaining what THIS passage says that answers or relates to the user's question. Write as if completing "This passage says that..."
+- keyPhrase: CRITICAL - copy a phrase VERBATIM from the quoted text above (5-15 words). Choose the phrase that best captures the answer. Do NOT paraphrase.
 - coreTerms: 1-3 key words from the passage to bold (copy exactly as spelled)
 
-{"results":[{"globalIndex":0,"score":85,"briefAnswer":"Unity through diversity","keyPhrase":"exact phrase from text to highlight","coreTerms":["word1","word2"]}]}`;
+{"results":[{"globalIndex":0,"score":92,"summary":"justice means giving each person their due according to divine law","keyPhrase":"exact phrase from text","coreTerms":["word1"]}]}`;
 
   try {
     // Use 'fast' service for quick analysis
     const response = await aiService('fast').chat([
-      { role: 'system', content: 'You are a search result analyzer. Return only valid JSON. CRITICAL: The keyPhrase MUST be copied character-for-character from the passage text - it will be used for string matching. Never paraphrase or modify the keyPhrase.' },
+      { role: 'system', content: 'You are a scholarly research assistant analyzing passages from religious and philosophical texts. Your job is to evaluate how well each passage answers the user\'s question. Return only valid JSON. CRITICAL: The keyPhrase MUST be copied character-for-character from the passage text. Prioritize passages that directly define, explain, or answer the question.' },
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
-      maxTokens: 500
+      maxTokens: 600
     });
 
     // Parse JSON response
@@ -111,7 +115,8 @@ For each passage, return JSON with:
     return passages.map(p => ({
       globalIndex: p.globalIndex,
       score: 50,
-      briefAnswer: '',
+      summary: '',
+      briefAnswer: '', // Keep for backwards compatibility
       keyPhrase: '',
       coreTerms: []
     }));
@@ -119,14 +124,46 @@ For each passage, return JSON with:
 }
 
 /**
- * Generate introduction text based on analyzed results
+ * Generate introduction text based on analyzed results.
+ * Synthesizes key insights from top results into a brief answer.
  */
 async function generateIntroduction(query, topResults, semanticNote = '') {
-  // Skip AI call for intro - just use a simple template
-  // This saves ~1-2 seconds
   const count = topResults.length;
   const traditions = [...new Set(topResults.map(r => r.religion).filter(Boolean))];
 
+  // If we have good summaries from analysis, use AI to synthesize them
+  const summaries = topResults
+    .filter(r => r.summary || r.briefAnswer)
+    .slice(0, 5)
+    .map(r => r.summary || r.briefAnswer);
+
+  if (summaries.length >= 2) {
+    try {
+      const response = await aiService('fast').chat([
+        { role: 'system', content: 'You synthesize search results into a brief, scholarly answer. Be concise and direct. Write 1-2 sentences maximum.' },
+        { role: 'user', content: `User asked: "${query}"
+
+Top passages say:
+${summaries.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+Write a 1-2 sentence synthesis that answers the user's question based on these passages. Start directly with the answer, not "Based on..." or "The passages suggest...". Example: "Justice, according to these texts, is the fair treatment of all people according to divine principles."` }
+      ], {
+        temperature: 0.3,
+        maxTokens: 100
+      });
+
+      if (response.content) {
+        const traditionsNote = traditions.length > 1
+          ? ` (${count} passages from ${traditions.slice(0, 3).join(', ')}${traditions.length > 3 ? ' and others' : ''})`
+          : ` (${count} passages)`;
+        return response.content.trim() + traditionsNote;
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Failed to generate synthesized introduction');
+    }
+  }
+
+  // Fallback to simple template
   if (traditions.length > 1) {
     return `Found ${count} passages across ${traditions.slice(0, 3).join(', ')}${traditions.length > 3 ? ' and others' : ''}.`;
   }
@@ -137,8 +174,8 @@ async function generateIntroduction(query, topResults, semanticNote = '') {
  * Detect if results show semantic variations in key terms
  */
 function detectSemanticVariations(results) {
-  // Simple heuristic: if briefAnswers vary significantly, note it
-  const answers = results.filter(r => r.briefAnswer).map(r => r.briefAnswer.toLowerCase());
+  // Simple heuristic: if summaries vary significantly, note it
+  const answers = results.filter(r => r.summary || r.briefAnswer).map(r => (r.summary || r.briefAnswer).toLowerCase());
   if (answers.length < 3) return null;
 
   // Check for contrasting concepts

@@ -13,6 +13,7 @@
 
 import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
+import { config } from './config.js';
 
 const ANONYMOUS_QUERY_LIMIT = 10;
 const VERIFIED_QUERY_LIMIT = 20; // Total for logged-in but not approved users
@@ -70,8 +71,14 @@ const UNLIMITED_TIERS = ['approved', 'patron', 'institutional', 'admin'];
  * - Verified (logged in, not approved): 20 queries
  * - Approved/Patron/Institutional/Admin: Unlimited
  * - Banned: 0 queries
+ *
+ * In DEV_MODE, limits are disabled for easier testing.
  */
 export async function checkQueryLimit(request) {
+  // Bypass limits in dev mode
+  if (config.isDevMode) {
+    return { allowed: true, remaining: Infinity, limit: Infinity, isAuthenticated: false, devMode: true };
+  }
   // Check authenticated user tier
   if (request.user) {
     const tier = request.user.tier || 'verified';

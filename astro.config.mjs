@@ -31,6 +31,9 @@ export default defineConfig({
     }),
     AstroPWA({
       registerType: 'prompt',
+      devOptions: {
+        enabled: false
+      },
       includeAssets: ['favicon.ico', 'ocean.svg', 'logo.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'SifterSearch',

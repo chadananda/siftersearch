@@ -10,6 +10,7 @@
 import { createHash } from 'crypto';
 import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
+import { config } from './config.js';
 
 // Default TTL: 4 hours (library updates should invalidate within reasonable time)
 const DEFAULT_TTL_MS = 4 * 60 * 60 * 1000;
@@ -38,6 +39,11 @@ function hashQuery(q) {
  * @returns {Object|null} Cached response or null if not found/expired
  */
 export async function getCachedSearch(queryText) {
+  // Disable cache in dev mode for easier testing
+  if (config.isDevMode) {
+    return null;
+  }
+
   const hash = hashQuery(queryText);
 
   try {

@@ -14,19 +14,26 @@ let error = $state(null);
 
 /**
  * Initialize auth state - check if user is logged in
+ * Only attempts refresh if there's evidence of a previous login session
  */
 export async function initAuth() {
   loading = true;
   error = null;
 
   try {
-    // Try to refresh token and get user
-    const refreshed = await authApi.refresh();
-    if (refreshed) {
-      const data = await authApi.me();
-      user = data.user;
+    // Only try to refresh if we have a marker indicating previous login
+    // This avoids unnecessary 401 errors for anonymous users
+    const hadPreviousSession = typeof document !== 'undefined' &&
+      document.cookie.includes('refresh_token');
+
+    if (hadPreviousSession) {
+      const refreshed = await authApi.refresh();
+      if (refreshed) {
+        const data = await authApi.me();
+        user = data.user;
+      }
     }
-  } catch (err) {
+  } catch {
     // Not logged in or token expired
     user = null;
   } finally {

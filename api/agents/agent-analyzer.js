@@ -11,22 +11,26 @@
 
 import { BaseAgent } from './base-agent.js';
 
-const ANALYZER_SYSTEM_PROMPT = `You are an expert search result analyzer. Your job is to re-rank, filter, and annotate search results for maximum relevance.
+const ANALYZER_SYSTEM_PROMPT = `You are a scholarly research assistant analyzing passages from religious and philosophical texts. Your job is to evaluate how well each passage answers the user's question.
 
-CRITICAL SUMMARY RULES:
-- Answer the query directly from the quote's content
-- NO meta-language: Never say "this passage states", "asserts", "discusses", "addresses", "explores"
-- Just give the answer. Example: "Unity through diversity" NOT "This passage asserts that unity comes through diversity"
-- Maximum 10 words per summary
-- If query is "What is X?" -> summary is "X is [answer]"
-- If query is "How to Y?" -> summary is "[method]"
+SCORING CRITERIA (0-100):
+- 90-100: Passage DIRECTLY defines, explains, or answers the question (e.g., "the meaning of X is...", "X is defined as...")
+- 70-89: Passage substantially addresses the question with relevant insight
+- 50-69: Passage touches on the topic but doesn't directly answer
+- <50: Passage is tangentially related or off-topic
+
+SUMMARY RULES:
+- Write 10-20 words explaining what THIS passage says that answers the user's question
+- Write as if completing "This passage says that..."
+- Focus on the ANSWER, not describing the passage
+- Good: "justice means giving each person their due according to divine law"
+- Bad: "this passage discusses the concept of justice" (too meta)
 
 ANALYSIS TASKS:
-1. Re-rank passages by relevance (most relevant first)
-2. Remove passages that don't help answer the query
-3. Find the MOST relevant sentence in each passage
-4. Identify 1-3 key words/phrases in that sentence
-5. Write a DIRECT answer summary (5-10 words)
+1. Score each passage by how directly it answers the question
+2. Write a summary that captures the passage's answer/insight
+3. Find the MOST relevant sentence and provide exact anchor words
+4. Identify 1-3 key words/phrases to highlight
 
 Return only valid JSON, no markdown.`;
 
@@ -65,46 +69,47 @@ export class AnalyzerAgent extends BaseAgent {
       collection: hit.collection || ''
     }));
 
-    const analyzerPrompt = `Analyze search results for: "${query}"
+    const analyzerPrompt = `User's question: "${query}"
 
-TASKS:
-1. Re-rank by relevance (most relevant first)
-2. Remove irrelevant passages
-3. Find the MOST relevant sentence in each passage - provide anchor words to locate it
-4. Identify 1-3 key words/phrases to highlight
-5. Write a DIRECT answer summary (5-10 words max)
+For each passage, analyze how well it ANSWERS the question. Return JSON with:
 
-CRITICAL SUMMARY RULES:
-- Answer the query directly from the quote's content
-- NO meta-language: Never say "this passage states", "asserts", "discusses", "addresses"
-- Format: Just the answer. Example: "Unity through diversity of traditions" NOT "This passage asserts that unity comes through diversity"
-- If query is "What is X?" -> summary is "X is [answer]"
-- If query is "How to Y?" -> summary is "[method/answer]"
-- Maximum 10 words
-
-Return ONLY valid JSON:
 {
   "results": [
     {
       "originalIndex": 0,
-      "sentenceStart": "first three words",
-      "sentenceEnd": "last three words",
-      "keyWords": ["word1", "phrase"],
-      "summary": "Direct 5-10 word answer"
+      "score": 85,
+      "summary": "10-20 word statement of what this passage says that answers the question",
+      "sentenceStart": "exact first 3-5 words",
+      "sentenceEnd": "exact last 3-5 words",
+      "keyWords": ["word1", "phrase"]
     }
   ],
-  "introduction": "Brief 1 sentence intro"
+  "introduction": "1-2 sentence synthesis answering the user's question based on all passages"
 }
+
+SCORING (0-100):
+- 90-100: Passage DIRECTLY defines/explains/answers (e.g., "the meaning of X is...")
+- 70-89: Substantially addresses with relevant insight
+- 50-69: Touches on topic but doesn't directly answer
+- <50: Tangentially related (exclude these)
+
+SUMMARY RULES:
+- Write what THIS passage says that answers the question
+- Good: "the soul is an immortal essence that continues after death"
+- Bad: "this passage discusses the nature of the soul" (too meta)
+
+INTRODUCTION:
+- Synthesize the key answer from the top passages
+- Start directly with the answer, not "Based on these passages..."
+- Example: "Justice, according to these texts, is the fair treatment of all according to divine law."
 
 PASSAGES:
 ${passagesForAnalysis.map((p, i) => `[${i}] ${p.title} by ${p.author}:\n${p.text}`).join('\n\n---\n\n')}
 
-CRITICAL RULES:
-- Only include relevant passages
-- sentenceStart: the EXACT first 3-5 words of the relevant sentence (copy verbatim)
-- sentenceEnd: the EXACT last 3-5 words of the relevant sentence (copy verbatim, including punctuation)
-- keyWords: 1-3 important words/phrases from that sentence to bold
-- Summaries: direct answers, no filler words`;
+CRITICAL:
+- Only include passages with score >= 50
+- sentenceStart/End: EXACT words from text (for highlighting)
+- keyWords: 1-3 words from the relevant sentence to bold`;
 
     try {
       const response = await this.chat([
@@ -310,10 +315,11 @@ CRITICAL RULES:
         religion: originalHit.religion,
         collection: originalHit.collection || originalHit.religion,
         summary: result.summary || '',
+        score: result.score || 50,
         keyWords: result.keyWords || [],
         highlightedText
       };
-    }).filter(Boolean);
+    }).filter(Boolean).sort((a, b) => (b.score || 0) - (a.score || 0));
   }
 
   /**

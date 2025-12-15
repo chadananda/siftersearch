@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T14:11:37.621Z",
+  "generated": "2025-12-15T15:10:34.697Z",
   "entries": [
+    {
+      "hash": "5804842",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Standardize dev server port to 5173",
+      "scope": null
+    },
     {
       "hash": "656b443",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
       "scope": null
-    },
-    {
-      "hash": "a007c99",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Add left margin to source text for paragraph number spacing",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "5804842",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Standardize dev server port to 5173",
+        "scope": null
+      },
       {
         "hash": "656b443",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
-        "scope": null
-      },
-      {
-        "hash": "a007c99",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Add left margin to source text for paragraph number spacing",
         "scope": null
       }
     ]

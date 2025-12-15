@@ -739,7 +739,7 @@ Just respond with the acknowledgment, nothing else.`;
           author: originalHit.author,
           religion: originalHit.religion,
           collection: originalHit.collection || originalHit.religion,
-          summary: result.briefAnswer || '',
+          summary: result.summary || result.briefAnswer || '',
           score: result.score || 0,
           highlightedText: result.highlightedText || originalHit.text
         };
