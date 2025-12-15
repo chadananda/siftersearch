@@ -83,7 +83,15 @@ else
 fi
 
 # ============================================
-# PHASE 2: Build Client for Production
+# PHASE 2: Bump Version (BEFORE build so it's baked into client)
+# ============================================
+
+echo -e "${BLUE}[pre-commit]${NC} Bumping version..."
+NEW_VERSION=$(node scripts/bump-version.js patch 2>&1 | tail -1)
+echo -e "${GREEN}[pre-commit]${NC} ✓ Version: ${NEW_VERSION}"
+
+# ============================================
+# PHASE 3: Build Client for Production (with new version)
 # ============================================
 
 echo -e "${BLUE}[pre-commit]${NC} Building client for production..."
@@ -93,15 +101,7 @@ if ! PUBLIC_API_URL=https://api.siftersearch.com PUBLIC_DEPLOY_SECRET="$DEPLOY_S
 fi
 echo -e "${GREEN}[pre-commit]${NC} ✓ Build passed"
 
-# ============================================
-# PHASE 3: Bump Version
-# ============================================
-
-echo -e "${BLUE}[pre-commit]${NC} Bumping version..."
-NEW_VERSION=$(node scripts/bump-version.js patch 2>&1 | tail -1)
-echo -e "${GREEN}[pre-commit]${NC} ✓ Version: ${NEW_VERSION}"
-
-# Regenerate changelog
+# Regenerate changelog with new version
 node scripts/generate-changelog.js > /dev/null 2>&1
 
 # Stage version files

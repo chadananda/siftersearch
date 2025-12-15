@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:53:59.259Z",
+  "generated": "2025-12-15T22:04:19.454Z",
   "entries": [
+    {
+      "hash": "6d7c938",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use os.homedir() for cloudflared config path",
+      "scope": null
+    },
     {
       "hash": "62107ec",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Inject user context into search and unify user IDs on login",
       "scope": null
-    },
-    {
-      "hash": "628bbbf",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add Memory agent for semantic conversation recall",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "6d7c938",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use os.homedir() for cloudflared config path",
+        "scope": null
+      },
       {
         "hash": "62107ec",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Inject user context into search and unify user IDs on login",
-        "scope": null
-      },
-      {
-        "hash": "628bbbf",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add Memory agent for semantic conversation recall",
         "scope": null
       }
     ]
