@@ -158,11 +158,12 @@ const searchConfig = {
 };
 
 // Server configuration
+// Dev uses port 3001, production uses 3000
 const serverConfig = {
-  port: getInt('API_PORT', 3000),
+  port: getInt('API_PORT', isDevMode ? 3001 : 3000),
   host: get('HOST', '0.0.0.0'),
-  frontendUrl: get('APP_URL', 'http://localhost:5173'),
-  corsOrigins: get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4321')
+  frontendUrl: get('APP_URL', isDevMode ? 'http://localhost:5173' : 'https://siftersearch.com'),
+  corsOrigins: get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:4321,https://siftersearch.com,https://www.siftersearch.com')
 };
 
 // Auth configuration
