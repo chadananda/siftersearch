@@ -104,6 +104,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     define: {
       '__APP_VERSION__': JSON.stringify(pkg.version),
+      '__APP_DESCRIPTION__': JSON.stringify(pkg.description),
       'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(pkg.version),
       'import.meta.env.PUBLIC_API_URL': JSON.stringify(process.env.PUBLIC_API_URL || 'https://api.siftersearch.com'),
       'import.meta.env.PUBLIC_DEPLOY_SECRET': JSON.stringify(process.env.PUBLIC_DEPLOY_SECRET || '')

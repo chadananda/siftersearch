@@ -5,6 +5,7 @@
 
   // Client version - baked in at build time
   const CLIENT_VERSION = __APP_VERSION__;
+  const APP_DESCRIPTION = __APP_DESCRIPTION__;
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
@@ -1202,7 +1203,7 @@
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
         <h2 class="welcome-title"><a href="https://oceanlibrary.com" target="_blank" rel="noopener" class="ocean-link">Ocean 2.0 Library</a> Agentic Research Engine</h2>
         <p class="welcome-desc">
-          Use advanced AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.
+          {APP_DESCRIPTION}
         </p>
 
         <!-- Library Stats -->

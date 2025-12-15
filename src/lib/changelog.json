@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:22:07.571Z",
+  "generated": "2025-12-15T21:23:35.958Z",
   "entries": [
+    {
+      "hash": "ae554c8",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
+      "scope": null
+    },
     {
       "hash": "85cfae0",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add conversational feedback for complex searches",
       "scope": null
-    },
-    {
-      "hash": "bf93f00",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add two-pass exhaustive search for comprehensive queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "ae554c8",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
+        "scope": null
+      },
       {
         "hash": "85cfae0",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add conversational feedback for complex searches",
-        "scope": null
-      },
-      {
-        "hash": "bf93f00",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add two-pass exhaustive search for comprehensive queries",
         "scope": null
       }
     ]
