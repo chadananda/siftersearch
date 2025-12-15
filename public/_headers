@@ -1,0 +1,7 @@
+# Service worker should never be cached
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Workbox chunks also shouldn't be cached long
+/workbox-*.js
+  Cache-Control: no-cache, no-store, must-revalidate
