@@ -1,4 +1,7 @@
 /* eslint-env node */
+const os = require('os');
+const path = require('path');
+
 /**
  * PM2 Ecosystem Configuration for SifterSearch
  *
@@ -95,7 +98,7 @@ module.exports = {
     {
       name: 'cloudflared-tunnel',
       script: 'cloudflared',
-      args: `tunnel --config ${process.env.HOME}/.cloudflared/config-siftersearch.yml run siftersearch-api`,
+      args: 'tunnel --config ' + path.join(os.homedir(), '.cloudflared', 'config-siftersearch.yml') + ' run siftersearch-api',
       interpreter: 'none',
       exec_mode: 'fork',
       watch: false,

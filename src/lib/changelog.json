@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:52:19.778Z",
+  "generated": "2025-12-15T21:53:59.259Z",
   "entries": [
+    {
+      "hash": "62107ec",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use absolute path for cloudflared config",
+      "scope": null
+    },
     {
       "hash": "3382e51",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Memory agent for semantic conversation recall",
       "scope": null
-    },
-    {
-      "hash": "539e261",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add tiered query limits for anonymous and verified users",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "62107ec",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use absolute path for cloudflared config",
+        "scope": null
+      },
       {
         "hash": "3382e51",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add Memory agent for semantic conversation recall",
-        "scope": null
-      },
-      {
-        "hash": "539e261",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add tiered query limits for anonymous and verified users",
         "scope": null
       }
     ]
