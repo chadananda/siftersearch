@@ -31,11 +31,16 @@ cd "$ROOT_DIR"
 # Get version from package.json
 VERSION=$(node -p "require('./package.json').version")
 
+# Load deploy secret from .env-secrets
+if [ -f .env-secrets ]; then
+  DEPLOY_SECRET=$(grep "^DEPLOY_SECRET=" .env-secrets | cut -d'=' -f2)
+fi
+
 echo -e "${BLUE}[post-commit]${NC} Starting deployment for v${VERSION}..."
 
-# 1. Build the client with production API URL
+# 1. Build the client with production API URL and deploy secret
 echo -e "${GREEN}[post-commit]${NC} Building client..."
-PUBLIC_API_URL=https://api.siftersearch.com npm run build
+PUBLIC_API_URL=https://api.siftersearch.com PUBLIC_DEPLOY_SECRET="$DEPLOY_SECRET" npm run build
 
 # 2. Deploy to Cloudflare Pages
 # Use simple commit message to avoid UTF-8/emoji issues with Cloudflare API

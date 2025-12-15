@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T20:37:23.069Z",
+  "generated": "2025-12-15T20:39:31.650Z",
   "entries": [
+    {
+      "hash": "78690b6",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
+      "scope": null
+    },
     {
       "hash": "3696321",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Remove keyword fallback, add detailed logging for anchor match failures",
       "scope": null
-    },
-    {
-      "hash": "fc52ec6",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Add fallback keyword highlighting when anchor matching fails",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "78690b6",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
+        "scope": null
+      },
       {
         "hash": "3696321",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Updated",
         "description": "Remove keyword fallback, add detailed logging for anchor match failures",
-        "scope": null
-      },
-      {
-        "hash": "fc52ec6",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Add fallback keyword highlighting when anchor matching fails",
         "scope": null
       }
     ]
