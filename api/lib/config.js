@@ -13,17 +13,23 @@
 import dotenv from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import { parse as parseYaml } from 'yaml';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get project root (2 levels up from api/lib/config.js)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..', '..');
 
 // Load environment files early - before any config reads
 // This ensures env vars are available when this module's top-level code runs
 // Load secrets first so they override public defaults
-dotenv.config({ path: '.env-secrets' });
-dotenv.config({ path: '.env-public' });
+// Use absolute paths to ensure it works from any working directory
+dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
+dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 // Load config.yaml if it exists
 function loadConfigYaml() {
-  const configPath = join(process.cwd(), 'config.yaml');
+  const configPath = join(PROJECT_ROOT, 'config.yaml');
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf-8');

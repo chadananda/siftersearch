@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:38:41.760Z",
+  "generated": "2025-12-15T23:41:55.393Z",
   "entries": [
+    {
+      "hash": "296e51c",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Hard-split oversized sentences in document chunking",
+      "scope": null
+    },
     {
       "hash": "d3c309b",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Handle duplicate column errors in migration runner",
       "scope": null
-    },
-    {
-      "hash": "5322389",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add search results cache with 4-hour TTL",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "296e51c",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Hard-split oversized sentences in document chunking",
+        "scope": null
+      },
       {
         "hash": "d3c309b",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Handle duplicate column errors in migration runner",
-        "scope": null
-      },
-      {
-        "hash": "5322389",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add search results cache with 4-hour TTL",
         "scope": null
       }
     ]
