@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:09:53.852Z",
+  "generated": "2025-12-15T22:12:21.694Z",
   "entries": [
+    {
+      "hash": "4a95dd7",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Prevent double reload on PWA update",
+      "scope": null
+    },
     {
       "hash": "00a8eef",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve user ID unification to transfer all data",
       "scope": null
-    },
-    {
-      "hash": "df7e513",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add context field to paragraphs for AI enrichment",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "4a95dd7",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Prevent double reload on PWA update",
+        "scope": null
+      },
       {
         "hash": "00a8eef",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Improve user ID unification to transfer all data",
-        "scope": null
-      },
-      {
-        "hash": "df7e513",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add context field to paragraphs for AI enrichment",
         "scope": null
       }
     ]

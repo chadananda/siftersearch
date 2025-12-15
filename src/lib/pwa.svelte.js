@@ -1,7 +1,7 @@
 /**
  * PWA Update State Management
  * Provides reactive state for service worker updates
- * v6 - skipWaiting:true, rely on controllerchange for reload
+ * v7 - single reload via controllerchange only
  */
 
 // Reactive state for PWA updates
