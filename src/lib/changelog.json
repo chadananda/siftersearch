@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T17:37:55.500Z",
+  "generated": "2025-12-15T17:49:27.996Z",
   "entries": [
+    {
+      "hash": "bbf1520",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Only auto-reload PWA when no active conversation",
+      "scope": null
+    },
     {
       "hash": "af2be44",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Remove reader footer, add View Source link in header",
       "scope": null
-    },
-    {
-      "hash": "440e286",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Artistic book-style header for reader with religion icons",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "bbf1520",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Only auto-reload PWA when no active conversation",
+        "scope": null
+      },
       {
         "hash": "af2be44",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Remove reader footer, add View Source link in header",
-        "scope": null
-      },
-      {
-        "hash": "440e286",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Artistic book-style header for reader with religion icons",
         "scope": null
       }
     ]
