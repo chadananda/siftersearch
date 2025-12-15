@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T14:02:06.741Z",
+  "generated": "2025-12-15T14:11:37.621Z",
   "entries": [
+    {
+      "hash": "656b443",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Rate limit handling prompts login, fix playwright tests",
+      "scope": null
+    },
     {
       "hash": "9f96295",
       "date": "2025-12-14",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Add left margin to source text for paragraph number spacing",
       "scope": null
-    },
-    {
-      "hash": "c92a96d",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Add floating paragraph numbers to reader and hit cards",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-15": [
+      {
+        "hash": "656b443",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Rate limit handling prompts login, fix playwright tests",
+        "scope": null
+      }
+    ],
     "2025-12-14": [
       {
         "hash": "9f96295",
@@ -699,13 +708,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Add left margin to source text for paragraph number spacing",
-        "scope": null
-      },
-      {
-        "hash": "c92a96d",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Add floating paragraph numbers to reader and hit cards",
         "scope": null
       }
     ]

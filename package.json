@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.0.156",
+  "version": "0.0.157",
   "description": "AI-powered interfaith library search system",
   "type": "module",
   "bin": {
@@ -13,7 +13,7 @@
     "preflight": "node scripts/preflight.js",
     "dev": "node scripts/dev.js",
     "dev:api": "node --watch api/index.js",
-    "dev:ui": "astro dev",
+    "dev:ui": "astro dev --port 5173",
     "build": "astro build",
     "build:api": "echo 'API is runtime JS, no build needed'",
     "preview": "astro preview",
