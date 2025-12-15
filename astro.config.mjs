@@ -60,8 +60,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Clean up old caches when new SW activates
         cleanupOutdatedCaches: true,
-        // Skip waiting and claim clients immediately
-        skipWaiting: true,
+        // Don't auto-skip waiting - let client code control when to update
+        // This allows onNeedRefresh to fire properly
+        skipWaiting: false,
         clientsClaim: true,
         // Runtime caching
         runtimeCaching: [

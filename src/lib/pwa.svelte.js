@@ -6,6 +6,7 @@
 // Reactive state for PWA updates
 let updateAvailable = $state(false);
 let updateSW = $state(null);
+let refreshing = false;
 
 // Callback to check if user has an active conversation
 let hasActiveConversation = () => false;
@@ -17,6 +18,15 @@ let hasActiveConversation = () => false;
 export async function initPWA() {
   if (typeof window === 'undefined') return;
 
+  // Listen for controller change (new SW took over)
+  // This handles the case where SW updates and takes control
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    console.log('[PWA] New service worker activated, reloading...');
+    window.location.reload();
+  });
+
   try {
     const { registerSW } = await import('virtual:pwa-register');
 
@@ -24,12 +34,19 @@ export async function initPWA() {
       immediate: true,
       onRegisteredSW(swUrl, r) {
         console.log(`[PWA] Service worker registered: ${swUrl}`);
-        // Check for updates every 60 seconds
+        // Check for updates every 30 seconds (faster detection)
         if (r) {
+          // Initial check after 5 seconds
+          setTimeout(() => {
+            console.log('[PWA] Initial update check...');
+            r.update();
+          }, 5000);
+
+          // Then check every 30 seconds
           setInterval(() => {
             console.log('[PWA] Checking for updates...');
             r.update();
-          }, 60 * 1000);
+          }, 30 * 1000);
         }
       },
       onRegisterError(error) {
@@ -40,15 +57,13 @@ export async function initPWA() {
         console.log('[PWA] Assets cached for performance');
       },
       onNeedRefresh() {
-        console.log('[PWA] New version available');
+        console.log('[PWA] New version available!');
         updateAvailable = true;
 
         // Auto-update if user is not in an active conversation
         if (!hasActiveConversation()) {
           console.log('[PWA] No active conversation, auto-updating...');
-          setTimeout(() => {
-            performUpdate();
-          }, 1000); // Small delay to ensure SW is ready
+          performUpdate();
         } else {
           console.log('[PWA] Active conversation detected, showing update button');
         }
