@@ -29,6 +29,15 @@ export function parseDocument(text, options = {}) {
     overlapSize = CHUNK_CONFIG.overlapSize
   } = options;
 
+  // Helper to hard-split text that exceeds maxChunkSize
+  function hardSplit(text) {
+    const result = [];
+    for (let i = 0; i < text.length; i += maxChunkSize) {
+      result.push(text.slice(i, i + maxChunkSize));
+    }
+    return result;
+  }
+
   // Split by paragraphs first
   const paragraphs = text.split(CHUNK_CONFIG.paragraphDelimiters)
     .map(p => p.trim())
@@ -48,6 +57,18 @@ export function parseDocument(text, options = {}) {
       for (const sentence of sentences) {
         const trimmed = sentence.trim();
         if (!trimmed) continue;
+
+        // If a single sentence exceeds max, hard-split it
+        if (trimmed.length > maxChunkSize) {
+          // Save current chunk first
+          if (currentChunk.length >= minChunkSize) {
+            chunks.push(currentChunk);
+          }
+          // Hard-split the oversized sentence
+          chunks.push(...hardSplit(trimmed));
+          currentChunk = '';
+          continue;
+        }
 
         if (currentChunk.length + trimmed.length + 1 <= maxChunkSize) {
           currentChunk += (currentChunk ? ' ' : '') + trimmed;

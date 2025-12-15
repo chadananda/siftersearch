@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:18:05.072Z",
+  "generated": "2025-12-15T23:38:41.760Z",
   "entries": [
+    {
+      "hash": "d3c309b",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use getter for embedding config to avoid ES module hoisting",
+      "scope": null
+    },
     {
       "hash": "aa8766f",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add search results cache with 4-hour TTL",
       "scope": null
-    },
-    {
-      "hash": "1fa30fe",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Simplify timing display to 3 clear metrics",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "d3c309b",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use getter for embedding config to avoid ES module hoisting",
+        "scope": null
+      },
       {
         "hash": "aa8766f",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add search results cache with 4-hour TTL",
-        "scope": null
-      },
-      {
-        "hash": "1fa30fe",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Simplify timing display to 3 clear metrics",
         "scope": null
       }
     ]
