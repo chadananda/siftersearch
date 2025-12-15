@@ -11,9 +11,9 @@
   },
   "scripts": {
     "preflight": "node scripts/preflight.js",
-    "dev": "node scripts/dev.js",
-    "dev:api": "node --watch api/index.js",
-    "dev:ui": "astro dev --port 5173",
+    "dev": "DEV_MODE=true node scripts/dev.js",
+    "dev:api": "DEV_MODE=true node --watch api/index.js",
+    "dev:ui": "DEV_MODE=true astro dev --port 5173",
     "build": "astro build",
     "build:api": "echo 'API is runtime JS, no build needed'",
     "preview": "astro preview",
