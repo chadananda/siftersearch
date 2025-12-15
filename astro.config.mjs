@@ -63,8 +63,6 @@ export default defineConfig({
         // Auto-activate new SW immediately - no waiting for tab close
         skipWaiting: true,
         clientsClaim: true,
-        // Navigation preload for faster page loads
-        navigationPreload: true,
         // Runtime caching
         runtimeCaching: [
           {
