@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T21:17:34.872Z",
+  "generated": "2025-12-15T21:18:28.291Z",
   "entries": [
+    {
+      "hash": "d2c62fe",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Poll server version every 10 seconds for better monitoring",
+      "scope": null
+    },
     {
       "hash": "6c05e6b",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove animated background from docs, increase about card opacity",
       "scope": null
-    },
-    {
-      "hash": "3cd03b5",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Federated search pagination must use federation.limit",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "d2c62fe",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Poll server version every 10 seconds for better monitoring",
+        "scope": null
+      },
       {
         "hash": "6c05e6b",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Remove animated background from docs, increase about card opacity",
-        "scope": null
-      },
-      {
-        "hash": "3cd03b5",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Federated search pagination must use federation.limit",
         "scope": null
       }
     ]

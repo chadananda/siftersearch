@@ -318,12 +318,30 @@
         if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
       }
 
-      // Check for version mismatch and trigger server update (once per session)
-      if (stats.serverVersion && CLIENT_VERSION && !updateTriggered) {
+      // Check for version mismatch
+      if (stats.serverVersion && CLIENT_VERSION) {
         if (stats.serverVersion !== CLIENT_VERSION) {
-          console.log(`[Deploy] Version mismatch: client=${CLIENT_VERSION}, server=${stats.serverVersion}`);
-          updateTriggered = true;
-          triggerServerUpdate(CLIENT_VERSION);
+          // Compare versions to determine who needs updating
+          const clientParts = CLIENT_VERSION.split('.').map(Number);
+          const serverParts = stats.serverVersion.split('.').map(Number);
+          const serverNewer = serverParts[0] > clientParts[0] ||
+            (serverParts[0] === clientParts[0] && serverParts[1] > clientParts[1]) ||
+            (serverParts[0] === clientParts[0] && serverParts[1] === clientParts[1] && serverParts[2] > clientParts[2]);
+
+          if (serverNewer) {
+            // Server is newer - client needs to reload (only if no active conversation)
+            if (messages.length === 0) {
+              console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading client...`);
+              window.location.reload();
+            } else {
+              console.log(`[Deploy] Server newer but conversation active, skipping reload`);
+            }
+          } else if (!updateTriggered) {
+            // Client is newer - trigger server update
+            console.log(`[Deploy] Version mismatch: client=${CLIENT_VERSION}, server=${stats.serverVersion}`);
+            updateTriggered = true;
+            triggerServerUpdate(CLIENT_VERSION);
+          }
         }
       }
 
