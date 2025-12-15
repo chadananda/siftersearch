@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:00:33.440Z",
+  "generated": "2025-12-15T23:15:18.505Z",
   "entries": [
+    {
+      "hash": "6104536",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
+      "scope": null
+    },
     {
       "hash": "378a288",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Make follow-up suggestions clickable",
       "scope": null
-    },
-    {
-      "hash": "75ca195",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Prevent QR code overlapping input on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "6104536",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
+        "scope": null
+      },
       {
         "hash": "378a288",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Make follow-up suggestions clickable",
-        "scope": null
-      },
-      {
-        "hash": "75ca195",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Prevent QR code overlapping input on mobile",
         "scope": null
       }
     ]

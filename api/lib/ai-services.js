@@ -104,41 +104,22 @@ const SERVICE_CONFIG = {
   // ==========================================================================
   // EMBEDDING SERVICE
   // ==========================================================================
-  // IMPORTANT: Must use the SAME embedding model for both indexing and search
-  // queries - dimensions must match for vector similarity to work.
-  //
-  // For a classical religious library, embedding quality matters greatly.
-  // Religious/spiritual texts contain nuanced meanings, archaic language,
-  // metaphors, and cross-traditional concepts that benefit from models
-  // trained on diverse, high-quality corpora.
-  //
-  // Remote embeddings (OpenAI) capture wider semantic facets because:
-  // - Trained on massive diverse text including religious/philosophical works
-  // - Better understanding of archaic language and spiritual terminology
-  // - More dimensions = more nuanced meaning representation
-  //
-  // Trade-off considerations:
-  // - text-embedding-3-small (1536 dims): Faster, cheaper, good quality
-  // - text-embedding-3-large (3072 dims): Best quality, slower, more expensive
-  //
-  // Current choice: text-embedding-3-large for maximum semantic precision
-  // For a religious library, the extra dimensions capture nuanced spiritual meanings
+  // IMPORTANT: Embedding config is centralized in config.js (config.ai.embeddings)
+  // Both local and remote use the SAME settings to ensure dimension consistency
+  // between indexed documents and search queries.
   // ==========================================================================
 
   embedding: {
-    // IMPORTANT: Both local and remote use the same model to ensure
-    // dimension consistency between indexed documents and search queries.
-    // Embedding quality is foundational - poor initial retrieval cannot
-    // be fixed by re-ranking or analysis.
+    // Read from centralized config - DO NOT HARDCODE VALUES HERE
     local: {
-      provider: 'openai',
-      model: 'text-embedding-3-large', // 3072 dims - best semantic quality
-      dimensions: 3072
+      provider: config.ai.embeddings.provider,
+      model: config.ai.embeddings.model,
+      dimensions: config.ai.embeddings.dimensions
     },
     remote: {
-      provider: 'openai',
-      model: 'text-embedding-3-large', // 3072 dims - best semantic quality
-      dimensions: 3072
+      provider: config.ai.embeddings.provider,
+      model: config.ai.embeddings.model,
+      dimensions: config.ai.embeddings.dimensions
     }
   }
 };
