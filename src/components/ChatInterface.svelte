@@ -296,7 +296,7 @@
   let retryInterval = $state(null);
   let refreshInterval = $state(null);
   const RETRY_DELAY = 10000; // 10 seconds
-  const REFRESH_INTERVAL = 30000; // 30 seconds - check for index updates
+  const REFRESH_INTERVAL = 10000; // 10 seconds - check for server version and stats
   const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
 
   // Track if we've already triggered an update this session
