@@ -55,13 +55,17 @@ export default {
     },
 
     // Auto-Updater (checks for git updates every 5 minutes)
+    // Runs continuously with built-in interval, not cron
     {
       name: 'siftersearch-updater',
       script: 'scripts/update-server.js',
+      args: '--daemon',
       instances: 1,
-      cron_restart: '*/5 * * * *',  // Run every 5 minutes
-      autorestart: false,  // Don't restart on exit - cron handles scheduling
+      autorestart: true,
       watch: false,
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '30s',
       // Logging
       error_file: './logs/updater-error.log',
       out_file: './logs/updater-out.log',

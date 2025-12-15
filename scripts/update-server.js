@@ -37,6 +37,8 @@ const BRANCH = process.env.UPDATE_BRANCH || 'main';
 const REMOTE = process.env.UPDATE_REMOTE || 'origin';
 const DRY_RUN = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
+const DAEMON_MODE = process.argv.includes('--daemon');
+const CHECK_INTERVAL = parseInt(process.env.UPDATE_INTERVAL) || 5 * 60 * 1000; // 5 minutes
 
 /**
  * Log with timestamp
@@ -175,27 +177,22 @@ function getCurrentVersion() {
 }
 
 /**
- * Main
+ * Run a single update check
  */
-async function main() {
+async function runOnce() {
   const versionBefore = getCurrentVersion();
-  log('info', '='.repeat(50));
-  log('info', `SifterSearch Auto-Update (v${versionBefore})`);
-  log('info', `Branch: ${BRANCH}, Remote: ${REMOTE}`);
-  if (DRY_RUN) log('info', 'DRY RUN - no changes will be made');
-  log('info', '='.repeat(50));
 
   // Check for updates
   const updateCheck = await checkForUpdates();
 
   if (updateCheck.error) {
     log('error', `Update check failed: ${updateCheck.error}`);
-    process.exit(1);
+    return false;
   }
 
   if (!updateCheck.hasUpdates) {
-    log('info', 'No updates available');
-    process.exit(0);
+    if (VERBOSE) log('info', 'No updates available');
+    return true;
   }
 
   log('info', `Found ${updateCheck.commits.length} new commit(s):`);
@@ -208,7 +205,7 @@ async function main() {
 
   if (DRY_RUN) {
     log('info', 'DRY RUN - skipping actual update');
-    process.exit(0);
+    return true;
   }
 
   // Apply updates
@@ -219,10 +216,35 @@ async function main() {
     log('info', '='.repeat(50));
     log('info', `Update complete! ${versionBefore} → ${versionAfter}`);
     log('info', '='.repeat(50));
-    process.exit(0);
   } else {
     log('error', 'Update failed');
-    process.exit(1);
+  }
+
+  return success;
+}
+
+/**
+ * Main
+ */
+async function main() {
+  const versionBefore = getCurrentVersion();
+  log('info', '='.repeat(50));
+  log('info', `SifterSearch Auto-Update (v${versionBefore})`);
+  log('info', `Branch: ${BRANCH}, Remote: ${REMOTE}`);
+  if (DRY_RUN) log('info', 'DRY RUN - no changes will be made');
+  if (DAEMON_MODE) log('info', `DAEMON MODE - checking every ${CHECK_INTERVAL / 1000}s`);
+  log('info', '='.repeat(50));
+
+  if (DAEMON_MODE) {
+    // Run continuously
+    while (true) {
+      await runOnce();
+      await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL));
+    }
+  } else {
+    // Run once and exit
+    const success = await runOnce();
+    process.exit(success ? 0 : 1);
   }
 }
 
