@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:43:33.785Z",
+  "generated": "2025-12-15T23:00:33.440Z",
   "entries": [
+    {
+      "hash": "378a288",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use DEV_MODE to select Meilisearch port automatically",
+      "scope": null
+    },
     {
       "hash": "bb080fb",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent QR code overlapping input on mobile",
       "scope": null
-    },
-    {
-      "hash": "42adce0",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Keep QR code on far left at all resolutions",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "378a288",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use DEV_MODE to select Meilisearch port automatically",
+        "scope": null
+      },
       {
         "hash": "bb080fb",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Prevent QR code overlapping input on mobile",
-        "scope": null
-      },
-      {
-        "hash": "42adce0",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Keep QR code on far left at all resolutions",
         "scope": null
       }
     ]

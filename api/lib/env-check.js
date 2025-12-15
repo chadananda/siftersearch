@@ -62,8 +62,8 @@ export const ENV_CONFIG = {
     required: true,
     vars: [
       { key: 'OPENAI_API_KEY', description: 'OpenAI API key (for embeddings)', sensitive: true },
-      { key: 'EMBEDDING_MODEL', description: 'Embedding model', default: 'text-embedding-3-small' },
-      { key: 'EMBEDDING_DIMENSIONS', description: 'Embedding dimensions', default: '1536' }
+      { key: 'EMBEDDING_MODEL', description: 'Embedding model', default: 'text-embedding-3-large' },
+      { key: 'EMBEDDING_DIMENSIONS', description: 'Embedding dimensions', default: '3072' }
     ]
   },
 

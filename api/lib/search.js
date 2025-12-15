@@ -33,9 +33,27 @@ export const INDEXES = {
  */
 export async function initializeIndexes() {
   const meili = getMeili();
+  const expectedDimensions = config.ai.embeddings.dimensions;
 
   // Paragraphs index (main search index)
   const paragraphs = meili.index(INDEXES.PARAGRAPHS);
+
+  // Check if existing index has wrong dimensions - if so, delete and recreate
+  try {
+    const settings = await paragraphs.getSettings();
+    const currentDimensions = settings.embedders?.default?.dimensions;
+    if (currentDimensions && currentDimensions !== expectedDimensions) {
+      logger.warn({ currentDimensions, expectedDimensions }, 'Paragraphs index has wrong embedding dimensions, deleting and recreating');
+      await meili.deleteIndex(INDEXES.PARAGRAPHS);
+      // Small delay to ensure deletion completes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  } catch (err) {
+    // Index doesn't exist yet, that's fine
+    if (!err.message?.includes('not found')) {
+      logger.debug({ err: err.message }, 'Could not check paragraphs index settings');
+    }
+  }
 
   await paragraphs.updateSettings({
     searchableAttributes: [
@@ -63,7 +81,7 @@ export async function initializeIndexes() {
     embedders: {
       default: {
         source: 'userProvided',
-        dimensions: config.ai.embeddings.dimensions
+        dimensions: expectedDimensions
       }
     }
   });
