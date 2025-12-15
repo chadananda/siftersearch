@@ -95,7 +95,7 @@ module.exports = {
     {
       name: 'cloudflared-tunnel',
       script: 'cloudflared',
-      args: 'tunnel --config ~/.cloudflared/config-siftersearch.yml run siftersearch-api',
+      args: `tunnel --config ${process.env.HOME}/.cloudflared/config-siftersearch.yml run siftersearch-api`,
       interpreter: 'none',
       exec_mode: 'fork',
       watch: false,
