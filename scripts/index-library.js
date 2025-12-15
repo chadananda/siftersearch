@@ -36,13 +36,17 @@ dotenv.config({ path: path.join(PROJECT_ROOT, '.env-secrets') });
 import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
+import { config } from '../api/lib/config.js';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
-const libraryPath = args.find(arg => !arg.startsWith('--'));
+// Use CLI path, or fall back to configured library paths
+const cliPath = args.find(arg => !arg.startsWith('--'));
+const libraryPaths = cliPath ? [cliPath] : config.library.paths;
 const dryRun = args.includes('--dry-run');
 const skipExisting = args.includes('--skip-existing');
 const watchMode = args.includes('--watch');
+const clearIndex = args.includes('--clear');
 const limitArg = args.find(arg => arg.startsWith('--limit='));
 // Allow INDEX_LIMIT env var as default, CLI arg overrides
 const envLimit = process.env.INDEX_LIMIT ? parseInt(process.env.INDEX_LIMIT, 10) : Infinity;
@@ -74,35 +78,54 @@ function extractMetadataFromPath(filePath, basePath) {
   const relativePath = path.relative(basePath, filePath);
   const parts = relativePath.split(path.sep);
 
-  // Try to infer religion from the base path if it contains known religion folders
-  // This handles cases where we index from a subfolder like "Pilgrim Notes" directly
+  // Known religions for inference
   const knownReligions = ["Baha'i", "Islam", "Christianity", "Judaism", "Buddhism", "Hinduism", "Zoroastrianism", "Sikhism", "General"];
+  // Known collections for inference
+  const knownCollections = ["Pilgrim Notes", "Core Publications", "Core Tablets", "Core Talks", "Core Tablet Translations",
+    "Essays", "Baha'i Essays", "Baha'i Books", "Baha'i Talks", "Administrative", "Compilations", "Constitutions",
+    "Historical", "Legal", "News", "Press", "Reference", "Studies Papers", "Study Guides", "Prayers", "Tablets", "Translations"];
+
   const basePathParts = basePath.split(path.sep);
+
+  // Infer religion from base path
   let inferredReligion = null;
-  for (const part of basePathParts) {
-    if (knownReligions.includes(part)) {
+  let inferredCollection = null;
+  for (let i = 0; i < basePathParts.length; i++) {
+    const part = basePathParts[i];
+    if (!inferredReligion && knownReligions.includes(part)) {
       inferredReligion = part;
-      break;
+    } else if (inferredReligion && !inferredCollection && knownCollections.includes(part)) {
+      inferredCollection = part;
     }
   }
 
-  // Path structure: Religion/Collection/filename.md
-  // Or: Religion/Collection/SubCollection/filename.md
-  // If parts[0] looks like a filename (ends with .md or contains year prefix), use inferred religion
-  const firstPart = parts[0] || '';
-  const looksLikeFilename = firstPart.endsWith('.md') || /^\d{4}/.test(firstPart) || firstPart.includes(',');
-  const religion = (looksLikeFilename && inferredReligion) ? inferredReligion : (parts[0] || inferredReligion || 'General');
-
-  // Collection: only the FIRST folder after religion (not subfolders)
-  // Structure: Religion/Collection/[SubFolder]/[SubFolder]/filename.md
-  let collection;
-  if (looksLikeFilename && inferredReligion) {
-    // Get collection from base path (e.g., "Pilgrim Notes" from the path)
-    const baseFolder = basePathParts[basePathParts.length - 1];
-    collection = parts[0] || baseFolder;  // First part after inferred religion
-  } else {
-    collection = parts[1] || 'General';  // First folder after religion (parts[0])
+  // If collection not found in known list, use last folder in basePath as collection
+  if (inferredReligion && !inferredCollection) {
+    const lastFolder = basePathParts[basePathParts.length - 1];
+    if (lastFolder !== inferredReligion) {
+      inferredCollection = lastFolder;
+    }
   }
+
+  // Determine final religion and collection
+  // If basePath already includes religion/collection, use those
+  // Otherwise fall back to parts from relativePath
+  let religion = inferredReligion;
+  let collection = inferredCollection;
+
+  // If no religion inferred from basePath, try from relativePath
+  if (!religion) {
+    religion = knownReligions.includes(parts[0]) ? parts[0] : 'General';
+    collection = parts[1] || 'General';
+  }
+
+  // If no collection inferred, try from relativePath (but not if it's the filename)
+  if (!collection) {
+    const firstPart = parts[0] || '';
+    const looksLikeFilename = firstPart.endsWith('.md') || /^\d{4}/.test(firstPart) || firstPart.includes(',');
+    collection = looksLikeFilename ? 'General' : (parts[0] || 'General');
+  }
+
   const filename = parts[parts.length - 1].replace('.md', '');
 
   // Try to parse various filename formats
@@ -342,8 +365,10 @@ function setupWatcher(basePath) {
 
 // Main indexing function
 async function indexLibrary() {
-  if (!libraryPath) {
-    console.error('Usage: node scripts/index-library.js <path> [options]');
+  if (!libraryPaths || libraryPaths.length === 0) {
+    console.error('Usage: node scripts/index-library.js [path] [options]');
+    console.error('');
+    console.error('If no path provided, uses config.library.paths');
     console.error('');
     console.error('Options:');
     console.error('  --dry-run       Show what would be indexed without actually indexing');
@@ -352,28 +377,34 @@ async function indexLibrary() {
     console.error('  --skip-existing Skip documents that are already indexed');
     console.error('  --watch         Watch for changes and re-index modified files');
     console.error('  --debounce=N    Debounce time in ms for watch mode (default: 1000)');
+    console.error('  --clear         Clear existing index before indexing');
     process.exit(1);
   }
 
-  const resolvedPath = path.resolve(libraryPath);
+  const resolvedPaths = libraryPaths.map(p => path.resolve(p));
 
   console.log('');
   console.log('📚 Ocean Library Indexer');
   console.log('========================');
-  console.log(`Path: ${resolvedPath}`);
+  console.log(`Mode: ${config.isDevMode ? 'DEV' : 'PRODUCTION'}`);
+  console.log(`Paths (${resolvedPaths.length}):`);
+  resolvedPaths.forEach(p => console.log(`  - ${p}`));
   if (dryRun) console.log('Mode: DRY RUN (no actual indexing)');
   if (watchMode) console.log('Mode: WATCH (continuous sync)');
   if (limit < Infinity) console.log(`Limit: ${limit} documents`);
   if (religionFilter) console.log(`Religion filter: ${religionFilter}`);
   if (skipExisting) console.log('Skipping existing documents');
+  if (clearIndex) console.log('⚠️  Will CLEAR existing index first');
   console.log('');
 
-  // Check path exists
-  try {
-    await fs.access(resolvedPath);
-  } catch {
-    console.error(`Error: Path does not exist: ${resolvedPath}`);
-    process.exit(1);
+  // Check all paths exist
+  for (const resolvedPath of resolvedPaths) {
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      console.error(`Error: Path does not exist: ${resolvedPath}`);
+      process.exit(1);
+    }
   }
 
   // Ensure Meilisearch indexes are ready
@@ -381,12 +412,28 @@ async function indexLibrary() {
     console.log('🔧 Ensuring Meilisearch indexes are ready...');
     await initializeIndexes();
     console.log('✅ Indexes ready');
+
+    // Clear index if requested
+    if (clearIndex) {
+      console.log('');
+      console.log('🗑️  Clearing existing indexes...');
+      const meili = getMeili();
+      await meili.index(INDEXES.DOCUMENTS).deleteAllDocuments();
+      await meili.index(INDEXES.PARAGRAPHS).deleteAllDocuments();
+      console.log('✅ Indexes cleared');
+    }
     console.log('');
   }
 
-  // Find all markdown files
+  // Find all markdown files from all paths
   console.log('🔍 Scanning for markdown files...');
-  const files = await findMarkdownFiles(resolvedPath);
+  let files = [];
+  for (const resolvedPath of resolvedPaths) {
+    const pathFiles = await findMarkdownFiles(resolvedPath);
+    // Tag each file with its base path for metadata extraction
+    pathFiles.forEach(f => f.basePath = resolvedPath);
+    files = files.concat(pathFiles);
+  }
   console.log(`Found ${files.length} markdown files`);
   console.log('');
 
@@ -436,7 +483,7 @@ async function indexLibrary() {
 
       // Index document
       console.log(`${progress} 📥 Indexing: ${file.metadata.title}`);
-      const result = await indexFile(file.path, resolvedPath, true);
+      const result = await indexFile(file.path, file.basePath, true);
 
       if (result.success && !result.skipped) {
         console.log(`         ✅ Indexed ${result.chunks} chunks`);
@@ -495,7 +542,9 @@ async function indexLibrary() {
 
   // Start watcher if requested
   if (watchMode && !dryRun) {
-    setupWatcher(resolvedPath);
+    for (const resolvedPath of resolvedPaths) {
+      setupWatcher(resolvedPath);
+    }
   }
 }
 

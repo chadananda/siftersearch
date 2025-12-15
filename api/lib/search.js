@@ -15,7 +15,7 @@ export function getMeili() {
   if (!client) {
     client = new MeiliSearch({
       host: config.search.host,
-      apiKey: process.env.MEILI_MASTER_KEY
+      apiKey: config.search.apiKey
     });
     logger.info({ host: config.search.host }, 'Meilisearch connected');
   }
@@ -157,7 +157,8 @@ export async function hybridSearch(query, options = {}) {
     attributesToHighlight,
     highlightPreTag,
     highlightPostTag,
-    showRankingScore: true
+    showRankingScore: true,
+    showMatchesPosition: true  // Get exact byte positions of matches for sentence extraction
   };
 
   // Add hybrid search if we have a vector
@@ -212,7 +213,11 @@ export async function federatedSearch(queries, options = {}) {
     vector: q.vector || undefined,
     hybrid: q.vector ? { semanticRatio: q.semanticRatio || 0.5, embedder: 'default' } : undefined,
     showRankingScore: true,
-    attributesToRetrieve: ['*']
+    showMatchesPosition: true,  // Get exact positions for sentence extraction
+    attributesToRetrieve: ['*'],
+    attributesToHighlight: ['text', 'heading'],
+    highlightPreTag: '<mark>',
+    highlightPostTag: '</mark>'
   }));
 
   // Federated search: merges and deduplicates results across all queries
@@ -240,8 +245,14 @@ export async function batchEmbeddings(texts) {
   return embeddings;
 }
 
+// Meilisearch payload limit: 100MB
+// Each paragraph with 3072-dim vector is ~30KB (text + vector + metadata)
+// Batch 200 paragraphs per upload to stay well under limit (~6MB per batch)
+const MEILI_BATCH_SIZE = 200;
+
 /**
  * Index a document with its paragraphs
+ * Handles batching for large documents to avoid Meilisearch payload limits
  */
 export async function indexDocument(document, paragraphs) {
   const meili = getMeili();
@@ -249,9 +260,24 @@ export async function indexDocument(document, paragraphs) {
   // Index document metadata (primary key: id)
   await meili.index(INDEXES.DOCUMENTS).addDocuments([document], { primaryKey: 'id' });
 
-  // Index paragraphs with embeddings (primary key: id)
+  // Index paragraphs in batches to avoid payload size limits
   if (paragraphs.length > 0) {
-    await meili.index(INDEXES.PARAGRAPHS).addDocuments(paragraphs, { primaryKey: 'id' });
+    const paragraphIndex = meili.index(INDEXES.PARAGRAPHS);
+
+    for (let i = 0; i < paragraphs.length; i += MEILI_BATCH_SIZE) {
+      const batch = paragraphs.slice(i, i + MEILI_BATCH_SIZE);
+      await paragraphIndex.addDocuments(batch, { primaryKey: 'id' });
+
+      // Log progress for large documents
+      if (paragraphs.length > MEILI_BATCH_SIZE) {
+        logger.debug({
+          documentId: document.id,
+          batch: Math.floor(i / MEILI_BATCH_SIZE) + 1,
+          total: Math.ceil(paragraphs.length / MEILI_BATCH_SIZE),
+          paragraphs: `${Math.min(i + MEILI_BATCH_SIZE, paragraphs.length)}/${paragraphs.length}`
+        }, 'Indexing paragraph batch');
+      }
+    }
   }
 
   logger.info({ documentId: document.id, paragraphCount: paragraphs.length }, 'Document indexed');
@@ -312,26 +338,57 @@ export async function getStats() {
     // Average paragraph has ~100 words, so multiply passages by 100
     totalWords = paraStats.numberOfDocuments * 100;
 
-    // Get indexing tasks info if indexing
+    // Detect indexing activity
+    // Meilisearch's isIndexing flag clears quickly between documents,
+    // so also check if recent tasks completed (within last 60 seconds)
+    // Large documents can take 30+ seconds for embedding generation
+    let isIndexing = docStats.isIndexing || paraStats.isIndexing;
     let indexingProgress = null;
-    if (docStats.isIndexing || paraStats.isIndexing) {
-      try {
-        const tasks = await meili.getTasks({
-          statuses: ['enqueued', 'processing'],
-          limit: 10
+
+    try {
+      // Check pending/processing tasks
+      const pendingTasks = await meili.tasks.getTasks({
+        statuses: ['enqueued', 'processing'],
+        limit: 10
+      });
+
+      if (pendingTasks.results.length > 0) {
+        isIndexing = true;
+        const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
+        const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
+        indexingProgress = {
+          pending: enqueuedCount,
+          processing: processingCount,
+          total: pendingTasks.total || enqueuedCount + processingCount
+        };
+      } else {
+        // No pending tasks - check if tasks completed recently (indexing in progress)
+        // Use 60 second window since large documents can take 30+ seconds for embeddings
+        const recentTasks = await meili.tasks.getTasks({
+          statuses: ['succeeded'],
+          types: ['documentAdditionOrUpdate'],
+          limit: 1
         });
-        if (tasks.results.length > 0) {
-          const enqueuedCount = tasks.results.filter(t => t.status === 'enqueued').length;
-          const processingCount = tasks.results.filter(t => t.status === 'processing').length;
-          indexingProgress = {
-            pending: enqueuedCount,
-            processing: processingCount,
-            total: tasks.total || enqueuedCount + processingCount
-          };
+
+        if (recentTasks.results.length > 0) {
+          const lastTask = recentTasks.results[0];
+          const finishedAt = new Date(lastTask.finishedAt);
+          const secondsAgo = (Date.now() - finishedAt.getTime()) / 1000;
+
+          // If a document was indexed within last 60 seconds, likely still indexing
+          if (secondsAgo < 60) {
+            isIndexing = true;
+            indexingProgress = {
+              pending: 0,
+              processing: 0,
+              recentlyCompleted: true,
+              lastTaskSecondsAgo: Math.round(secondsAgo)
+            };
+          }
         }
-      } catch {
-        // Tasks API may not be available
       }
+    } catch {
+      // Tasks API may not be available
     }
 
     return {
@@ -342,7 +399,7 @@ export async function getStats() {
       religionCounts: religions,
       collections: Object.keys(collections).length,
       collectionCounts: collections,
-      indexing: docStats.isIndexing || paraStats.isIndexing,
+      indexing: isIndexing,
       indexingProgress,
       lastUpdated: new Date().toISOString()
     };
@@ -376,6 +433,249 @@ export async function healthCheck() {
   }
 }
 
+// =============================================================================
+// SENTENCE EXTRACTION UTILITIES
+// =============================================================================
+
+/**
+ * Extract sentences containing search matches from a Meilisearch hit.
+ * Uses _matchesPosition to find exact locations and extracts surrounding sentences.
+ * Preserves Meilisearch highlighting from _formatted.text if available.
+ *
+ * @param {Object} hit - Meilisearch search hit with _matchesPosition
+ * @param {Object} options - Options
+ * @param {number} options.contextSentences - Number of sentences before/after match to include (default: 1)
+ * @param {number} options.maxLength - Maximum length of extracted text (default: 500)
+ * @returns {Object} { sentences: string[], matchRanges: [], fullText: string, highlightedText: string }
+ */
+export function extractMatchingSentences(hit, options = {}) {
+  const { contextSentences = 1, maxLength = 500 } = options;
+  const text = hit.text || '';
+  const matchesPosition = hit._matchesPosition?.text || [];
+
+  if (!text || matchesPosition.length === 0) {
+    // No matches - return truncated text
+    return {
+      sentences: [text.slice(0, maxLength)],
+      highlightedSentences: [text.slice(0, maxLength)],
+      matchRanges: [],
+      fullText: text
+    };
+  }
+
+  // Meilisearch returns byte positions, but we need character positions
+  // For texts with multi-byte UTF-8 chars, we'll use the match positions as hints
+  // and find proper sentence boundaries from there
+
+  // Get approximate match regions - these may be off for UTF-8 but give us areas to look
+  const matchRegions = matchesPosition.map(m => ({
+    start: m.start,
+    length: m.length
+  }));
+
+  // Extract sentences containing matches using character-based boundary detection
+  const extractedSentences = [];
+  const seenRanges = new Set(); // Avoid duplicating overlapping sentences
+
+  for (const region of matchRegions) {
+    // Use the byte position as a hint - clamp to text length for safety
+    const hintPosition = Math.min(region.start, text.length - 1);
+
+    // Extract the sentence at this position with context
+    const sentence = extractSentenceAtPosition(text, hintPosition, contextSentences);
+
+    // Create a key to detect duplicates/overlaps
+    const rangeKey = `${sentence.start}-${sentence.end}`;
+    if (seenRanges.has(rangeKey)) continue;
+
+    // Check for overlapping ranges (merge nearby)
+    let isOverlapping = false;
+    for (const existing of extractedSentences) {
+      if (sentence.start <= existing.end && sentence.end >= existing.start) {
+        // Merge: extend existing range
+        existing.start = Math.min(existing.start, sentence.start);
+        existing.end = Math.max(existing.end, sentence.end);
+        existing.text = text.slice(existing.start, existing.end).trim();
+        isOverlapping = true;
+        break;
+      }
+    }
+
+    if (!isOverlapping) {
+      extractedSentences.push(sentence);
+      seenRanges.add(rangeKey);
+    }
+  }
+
+  // Sort by position and limit to maxLength
+  extractedSentences.sort((a, b) => a.start - b.start);
+
+  const excerptParts = [];
+  let totalLength = 0;
+
+  for (const sentence of extractedSentences) {
+    if (totalLength + sentence.text.length > maxLength && excerptParts.length > 0) {
+      break;
+    }
+    excerptParts.push(sentence.text);
+    totalLength += sentence.text.length + 5; // +5 for " ... " separator
+  }
+
+  // If somehow we got nothing, return truncated text
+  if (excerptParts.length === 0) {
+    excerptParts.push(text.slice(0, maxLength));
+  }
+
+  // For now, highlightedSentences = sentences (AI will add phrase highlighting later)
+  // We don't apply byte-based highlighting since it can cut words
+  return {
+    sentences: excerptParts,
+    highlightedSentences: excerptParts,  // Same as sentences - AI will highlight
+    matchRanges: matchRegions,
+    fullText: text
+  };
+}
+
+/**
+ * Apply <mark> highlighting to text based on match positions
+ * @param {string} blockText - The text block to highlight
+ * @param {number} blockStart - The starting position of this block in the original text
+ * @param {Array} matchPositions - Array of {start, end} positions in original text
+ * @returns {string} Text with <mark> tags around matches
+ */
+function applyHighlighting(blockText, blockStart, matchPositions) {
+  // Find matches that fall within this block
+  const blockEnd = blockStart + blockText.length;
+  const relevantMatches = matchPositions
+    .filter(m => m.start >= blockStart && m.end <= blockEnd)
+    .map(m => ({
+      start: m.start - blockStart,  // Convert to block-relative position
+      end: m.end - blockStart
+    }))
+    .sort((a, b) => a.start - b.start);
+
+  if (relevantMatches.length === 0) {
+    return blockText;
+  }
+
+  // Build highlighted text by inserting <mark> tags
+  let result = '';
+  let lastEnd = 0;
+
+  for (const match of relevantMatches) {
+    // Add text before this match
+    result += blockText.slice(lastEnd, match.start);
+    // Add highlighted match
+    result += '<mark>' + blockText.slice(match.start, match.end) + '</mark>';
+    lastEnd = match.end;
+  }
+  // Add remaining text after last match
+  result += blockText.slice(lastEnd);
+
+  return result;
+}
+
+/**
+ * Find sentence start by scanning backward from position
+ * Looks for sentence-ending punctuation (.!?) followed by whitespace
+ */
+function findSentenceStart(text, position) {
+  // Scan backward from position
+  for (let i = position - 1; i >= 0; i--) {
+    const char = text[i];
+    // If we find whitespace after sentence-ending punctuation, sentence starts after whitespace
+    if (/\s/.test(char) && i > 0 && /[.!?]/.test(text[i - 1])) {
+      return i + 1;
+    }
+    // Also check for newlines which often start sentences
+    if (char === '\n') {
+      return i + 1;
+    }
+  }
+  return 0; // Start of text
+}
+
+/**
+ * Find sentence end by scanning forward from position
+ * Looks for sentence-ending punctuation (.!?) followed by whitespace or end
+ */
+function findSentenceEnd(text, position) {
+  // Scan forward from position
+  for (let i = position; i < text.length; i++) {
+    const char = text[i];
+    if (/[.!?]/.test(char)) {
+      // Check if followed by whitespace, end, or quote+whitespace
+      const next = text[i + 1];
+      const nextNext = text[i + 2];
+      if (!next || /\s/.test(next) || (next === '"' && (!nextNext || /\s/.test(nextNext)))) {
+        // Include the punctuation and any trailing quote
+        let end = i + 1;
+        if (text[end] === '"' || text[end] === "'") end++;
+        return end;
+      }
+    }
+  }
+  return text.length; // End of text
+}
+
+/**
+ * Extract sentence containing the given position
+ * Includes context sentences before/after if requested
+ */
+function extractSentenceAtPosition(text, position, contextSentences = 1) {
+  // Find the sentence containing this position
+  const sentenceStart = findSentenceStart(text, position);
+  const sentenceEnd = findSentenceEnd(text, position);
+
+  // Expand to include context sentences
+  let expandedStart = sentenceStart;
+  let expandedEnd = sentenceEnd;
+
+  // Add sentences before
+  for (let i = 0; i < contextSentences; i++) {
+    if (expandedStart > 0) {
+      expandedStart = findSentenceStart(text, expandedStart - 1);
+    }
+  }
+
+  // Add sentences after
+  for (let i = 0; i < contextSentences; i++) {
+    if (expandedEnd < text.length) {
+      expandedEnd = findSentenceEnd(text, expandedEnd + 1);
+    }
+  }
+
+  return {
+    start: expandedStart,
+    end: expandedEnd,
+    text: text.slice(expandedStart, expandedEnd).trim()
+  };
+}
+
+/**
+ * Process search hits to extract relevant sentences
+ * Returns hits with added `excerpt` and `highlightedText` fields
+ *
+ * @param {Array} hits - Meilisearch search hits
+ * @param {Object} options - Options for sentence extraction
+ * @returns {Array} Hits with excerpt and highlightedText fields added
+ */
+export function enrichHitsWithExcerpts(hits, options = {}) {
+  return hits.map(hit => {
+    const extracted = extractMatchingSentences(hit, options);
+    return {
+      ...hit,
+      // Join contiguous blocks with ellipsis separator
+      excerpt: extracted.sentences.join(' ... '),
+      excerptBlocks: extracted.sentences,  // Array of contiguous text blocks (plain)
+      // Highlighted version with <mark> tags around search matches
+      highlightedText: extracted.highlightedSentences.join(' ... '),
+      highlightedBlocks: extracted.highlightedSentences,  // Array with highlighting
+      matchRanges: extracted.matchRanges
+    };
+  });
+}
+
 export const search = {
   getMeili,
   initializeIndexes,
@@ -388,6 +688,8 @@ export const search = {
   deleteDocument,
   getStats,
   healthCheck,
+  extractMatchingSentences,
+  enrichHitsWithExcerpts,
   INDEXES
 };
 

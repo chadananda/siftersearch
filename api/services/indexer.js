@@ -5,7 +5,7 @@
  * Supports text, markdown, and JSON formats.
  */
 
-import { createEmbeddings } from '../lib/ai.js';
+import { aiService } from '../lib/ai-services.js';
 import { indexDocument, deleteDocument, getMeili, INDEXES } from '../lib/search.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
@@ -156,7 +156,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   logger.info({ documentId, chunks: chunks.length }, 'Generating embeddings');
 
   // Generate embeddings for all chunks
-  const embeddingResult = await createEmbeddings(chunks);
+  const embeddingResult = { embeddings: await aiService('embedding').embed(chunks) };
   const embeddings = embeddingResult.embeddings;
 
   // Create document record

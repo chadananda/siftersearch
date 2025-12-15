@@ -21,13 +21,13 @@ This pipeline transforms a simple query into a scholarly research experience.
 ## Architecture
 
 ```
-User Query                                      Admin
+User Query                                      Admin / Media
     │                                             │
     ▼                                             ▼
-┌─────────────┐                           ┌────────────┐
-│   SIFTER    │ ◄── Orchestrator          │ LIBRARIAN  │
-│ (Routing)   │                           │ (Curation) │
-└─────────────┘                           └────────────┘
+┌─────────────┐                           ┌────────────┐   ┌─────────────┐
+│   SIFTER    │ ◄── Orchestrator          │ LIBRARIAN  │   │ TRANSCRIBER │
+│ (Routing)   │                           │ (Curation) │   │ (Audio→Text)│
+└─────────────┘                           └────────────┘   └─────────────┘
     │
     ├───────────────┬───────────────┬───────────────┬───────────────┐
     ▼               ▼               ▼               ▼               ▼
@@ -97,6 +97,15 @@ Manages the SifterSearch library collection. Handles document ingestion, metadat
 **Key capability:** AI-powered document analysis with ISBN lookup, cover image discovery, and duplicate detection via semantic search.
 
 [Read Librarian Documentation →](/docs/agents/librarian)
+
+---
+
+### Transcriber - Audio/Video to Text
+Converts talks, lectures, and classes into searchable Markdown documents using Whisper AI. Supports YouTube, Vimeo, and direct audio/video URLs, with AI-powered formatting that cleans up transcripts and adds proper structure.
+
+**Key capability:** Local Whisper for production (no API costs) or OpenAI API for development, with proper handling of sacred terms and diacriticals.
+
+[Read Transcriber Documentation →](/docs/agents/transcriber)
 
 ---
 

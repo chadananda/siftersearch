@@ -11,6 +11,7 @@
  * - Narrator: Audio narration with ElevenLabs and pronunciation dictionary
  * - Memory: Semantic memory for user conversations and context recall
  * - Librarian: Library management, document ingestion, and curation
+ * - Transcriber: Audio/video to Markdown transcription via Whisper
  */
 
 import { BaseAgent } from './base-agent.js';
@@ -21,8 +22,9 @@ import { TranslatorAgent } from './agent-translator.js';
 import { NarratorAgent } from './agent-narrator.js';
 import { MemoryAgent } from './agent-memory.js';
 import { LibrarianAgent } from './agent-librarian.js';
+import { TranscriberAgent } from './agent-transcriber.js';
 
-export { BaseAgent, SifterAgent, ResearcherAgent, AnalyzerAgent, TranslatorAgent, NarratorAgent, MemoryAgent, LibrarianAgent };
+export { BaseAgent, SifterAgent, ResearcherAgent, AnalyzerAgent, TranslatorAgent, NarratorAgent, MemoryAgent, LibrarianAgent, TranscriberAgent };
 
 /**
  * Create a fully wired agent system
@@ -35,9 +37,10 @@ export function createAgentSystem(options = {}) {
   const narrator = new NarratorAgent(options.narrator);
   const memory = new MemoryAgent(options.memory);
   const librarian = new LibrarianAgent(options.librarian);
+  const transcriber = new TranscriberAgent(options.transcriber);
 
   // Wire up the orchestrator with sub-agents
-  sifter.registerAgents({ researcher, analyzer, translator, narrator, memory, librarian });
+  sifter.registerAgents({ researcher, analyzer, translator, narrator, memory, librarian, transcriber });
 
   return {
     sifter,
@@ -47,6 +50,7 @@ export function createAgentSystem(options = {}) {
     narrator,
     memory,
     librarian,
+    transcriber,
 
     // Convenience method for processing queries
     async process(query, opts = {}) {
@@ -64,5 +68,6 @@ export default {
   NarratorAgent,
   MemoryAgent,
   LibrarianAgent,
+  TranscriberAgent,
   createAgentSystem
 };

@@ -19,13 +19,12 @@
 
 import { BaseAgent } from './base-agent.js';
 import { query, queryOne } from '../lib/db.js';
-import { ai } from '../lib/ai.js';
-import { config } from '../lib/config.js';
+import { aiService } from '../lib/ai-services.js';
 
 export class MemoryAgent extends BaseAgent {
   constructor(options = {}) {
     super('memory', {
-      model: options.model || config.ai.search.model || 'gpt-4o-mini',
+      service: options.service || 'fast',
       temperature: 0.3,
       maxTokens: 500,
       systemPrompt: `You are a memory curator for an interfaith spiritual library.
@@ -55,7 +54,7 @@ Be concise and precise in your extractions.`,
 
     try {
       // Generate embedding for the content
-      const embedding = await ai.embed(content);
+      const embedding = await aiService('embedding').embed(content);
 
       // Extract key topics from the content
       const topics = await this.extractTopics(content);
@@ -98,7 +97,7 @@ Be concise and precise in your extractions.`,
 
     try {
       // Generate embedding for search query
-      const queryEmbedding = await ai.embed(searchQuery);
+      const queryEmbedding = await aiService('embedding').embed(searchQuery);
 
       // Fetch all memories for this user (we'll compute similarity in JS)
       // In production with many memories, use vector index or pgvector

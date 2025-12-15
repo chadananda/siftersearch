@@ -19,8 +19,7 @@
 import { BaseAgent } from './base-agent.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { getMeili, INDEXES, hybridSearch } from '../lib/search.js';
-import { ai } from '../lib/ai.js';
-import { config } from '../lib/config.js';
+import { aiService } from '../lib/ai-services.js';
 import { hashContent, parseDocument, ingestDocument } from '../services/ingester.js';
 import * as storage from '../lib/storage.js';
 import matter from 'gray-matter';
@@ -61,7 +60,7 @@ const VALID_RELIGIONS = [
 export class LibrarianAgent extends BaseAgent {
   constructor(options = {}) {
     super('librarian', {
-      model: options.model || config.ai.chat.model || 'gpt-4o',
+      service: options.service || 'quality', // Librarian needs good reasoning
       temperature: 0.3,
       maxTokens: 2000,
       systemPrompt: `You are the Librarian for an interfaith spiritual library called SifterSearch.

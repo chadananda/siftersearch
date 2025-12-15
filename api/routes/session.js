@@ -3,7 +3,7 @@
  * Handles session initialization and conversation tracking
  */
 
-import { ai } from '../lib/ai.js';
+import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 
 // Sifter's personality for generating introductions
@@ -43,7 +43,7 @@ export default async function sessionRoutes(fastify) {
     // For new sessions, generate a personalized intro from Sifter
     if (isNew) {
       try {
-        const introResponse = await ai.chat([
+        const introResponse = await aiService('creative').chat([
           { role: 'system', content: SIFTER_SYSTEM_PROMPT },
           { role: 'user', content: 'A new user just opened SifterSearch for the first time. Give them a warm, brief welcome introducing yourself as Sifter and what you can help them do. Be friendly and inviting. Keep it to 2-3 sentences.' }
         ], {

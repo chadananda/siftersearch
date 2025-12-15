@@ -12,6 +12,11 @@ export default defineConfig({
   site: 'https://siftersearch.com',
   output: 'static',
 
+  // Disable noisy dev toolbar audits
+  devToolbar: {
+    enabled: false
+  },
+
   integrations: [
     svelte(),
     sitemap({

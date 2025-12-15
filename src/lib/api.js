@@ -130,10 +130,23 @@ async function handleResponse(response) {
 
 /**
  * Refresh the access token using the refresh token cookie
+ * Silently returns false if no refresh token exists (anonymous users)
  */
 async function refreshToken() {
   try {
-    const data = await request('/api/auth/refresh', { method: 'POST' });
+    const response = await fetch(`${API_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      // Expected for anonymous users - no refresh token
+      clearAccessToken();
+      return false;
+    }
+
+    const data = await response.json();
     accessToken = data.accessToken;
     return true;
   } catch {
@@ -273,7 +286,9 @@ export const search = {
     });
 
     if (!response.ok) {
-      throw new Error('Stream request failed');
+      const error = new Error('Stream request failed');
+      error.status = response.status;
+      throw error;
     }
 
     const reader = response.body.getReader();

@@ -118,11 +118,12 @@ const aiConfig = {
     maxTokens: getInt('DOC_LLM_MAX_TOKENS', 2000)
   },
 
-  // Embeddings (always OpenAI for consistency)
+  // Embeddings (always OpenAI text-embedding-3-large for maximum semantic quality)
+  // For a classical religious library, 3072 dimensions capture nuanced spiritual meanings
   embeddings: {
     provider: 'openai',
-    model: get('EMBEDDING_MODEL', 'text-embedding-3-small'),
-    dimensions: getInt('EMBEDDING_DIMENSIONS', 1536)
+    model: get('EMBEDDING_MODEL', 'text-embedding-3-large'),
+    dimensions: getInt('EMBEDDING_DIMENSIONS', 3072)
   },
 
   // Provider endpoints
@@ -142,7 +143,7 @@ const dbConfig = {
 // Search configuration
 const searchConfig = {
   host: get('MEILI_HOST', 'http://localhost:7700'),
-  apiKey: get('MEILI_MASTER_KEY'),
+  apiKey: get('MEILISEARCH_KEY') || get('MEILI_MASTER_KEY'),
   maxResults: getInt('SEARCH_MAX_RESULTS', 100),
   snippetSize: getInt('SEARCH_SNIPPET_SIZE', 160),
   timeout: getInt('SEARCH_TIMEOUT_MS', 5000)
@@ -164,6 +165,23 @@ const authConfig = {
   refreshExpiresDays: getInt('JWT_REFRESH_EXPIRES_DAYS', 90)
 };
 
+// Library paths for indexing
+// Dev mode indexes a subset for faster iteration; production indexes full corpus
+const libraryConfig = {
+  // Paths to index - array of directories containing markdown files
+  // Structure expected: Religion/Collection/filename.md
+  paths: isDevMode
+    ? [
+      // Dev: Just a couple collections for testing
+      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library/Baha'i/Core Publications",
+      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library/Baha'i/Pilgrim Notes"
+    ]
+    : [
+      // Production: Full library
+      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library"
+    ]
+};
+
 // Rate limiting
 const rateLimitConfig = {
   enabled: getBool('ENABLE_RATE_LIMITING', true),
@@ -177,6 +195,18 @@ const rateLimitConfig = {
   }
 };
 
+// Public API configuration
+// For external applications to access the search API
+const publicApiConfig = {
+  // Comma-separated list of valid API keys
+  // Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  apiKeys: get('PUBLIC_API_KEYS', '').split(',').filter(k => k.length > 0),
+  // Rate limit per API key (requests per hour)
+  rateLimit: getInt('PUBLIC_API_RATE_LIMIT', 1000),
+  // Max results per request
+  maxResults: getInt('PUBLIC_API_MAX_RESULTS', 50)
+};
+
 export const config = {
   isDevMode,
   isProduction,
@@ -186,6 +216,8 @@ export const config = {
   server: serverConfig,
   auth: authConfig,
   rateLimit: rateLimitConfig,
+  library: libraryConfig,
+  publicApi: publicApiConfig,
   get,
   getBool,
   getInt,

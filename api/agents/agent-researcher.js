@@ -9,7 +9,7 @@
  */
 
 import { BaseAgent } from './base-agent.js';
-import { federatedSearch, batchEmbeddings, hybridSearch, keywordSearch, semanticSearch } from '../lib/search.js';
+import { federatedSearch, batchEmbeddings, hybridSearch, keywordSearch, semanticSearch, enrichHitsWithExcerpts } from '../lib/search.js';
 
 const RESEARCHER_SYSTEM_PROMPT = `You are designing a search strategy for an interfaith religious library. Your goal is to uncover spiritual perspectives that transcend secular materialistic assumptions - discovering higher, more nuanced ways of approaching human problems.
 
@@ -77,7 +77,8 @@ Remember: The most valuable insights come from what TRANSCENDS secular expectati
 export class ResearcherAgent extends BaseAgent {
   constructor(options = {}) {
     super('researcher', {
-      model: options.model || 'gpt-4o-mini',
+      // Use 'fast' service for quick planning
+      service: options.service || 'fast',
       temperature: options.temperature ?? 0.3,
       maxTokens: options.maxTokens || 800,
       systemPrompt: RESEARCHER_SYSTEM_PROMPT,
@@ -116,49 +117,32 @@ export class ResearcherAgent extends BaseAgent {
       ? `\nIMPORTANT: The user has requested to filter results to documents/authors/collections containing: ${filterTerms.join(', ')}. These filters are already applied to the search - incorporate this context into your strategy (e.g., if filtering by "shoghi", focus on Bahá'í materials).`
       : '';
 
-    const planPrompt = `Create a search plan for this query: "${query}"
+    const planPrompt = `Create a FAST search plan for: "${query}"
 
-${traditions.length ? `Focus on traditions: ${traditions.join(', ')}` : ''}
-${strategy === 'complex_search' ? 'Use a comprehensive multi-query approach.' : ''}${filterContext}
+${traditions.length ? `Focus on traditions: ${traditions.join(', ')}` : ''}${filterContext}
 
 Return JSON only:
 {
-  "type": "simple" | "exhaustive" | "comparative",
-  "maxResults": 20,
-  "assumptions": ["obvious answer 1 we might expect", "obvious answer 2"],
-  "reasoning": "overall strategy explanation - what makes this query interesting and how we'll explore it",
+  "type": "simple" | "comparative",
+  "reasoning": "1-sentence strategy",
   "queries": [
     {
       "query": "search string",
-      "mode": "hybrid" | "semantic" | "keyword",
-      "rationale": "why this specific search",
-      "angle": "direct" | "metaphor" | "historical" | "practical" | "paradox" | "unexpected",
-      "filters": { "religion": "optional - filter by tradition like Buddhist, Bahai, Christian, etc." },
-      "limit": 10
+      "mode": "hybrid" | "keyword",
+      "filters": { "religion": "optional" }
     }
-  ],
-  "traditions": ["traditions this plan covers"],
-  "surprises": ["unexpected findings to watch for"],
-  "followUp": ["suggested next searches based on likely findings"]
+  ]
 }
 
-MAX RESULTS GUIDANCE (maxResults field):
-- Simple/direct lookups: maxResults: 10 (fast, focused)
-- Standard queries: maxResults: 20 (balanced)
-- Exhaustive searches ("find all", "every reference", "comprehensive"): maxResults: 50
-- User wants thorough coverage: maxResults: 50
-
-FILTERS: You can add "filters" to any query to narrow results:
-- "religion": Filter by tradition (Buddhist, Bahai, Christian, Islamic, Hindu, Jewish, Sikh, Zoroastrian, etc.)
-- Use filters when the query specifically mentions a tradition or when exploring a specific tradition's perspective
-- Example: For "Buddhist view on suffering", add "filters": { "religion": "Buddhist" }
-- For cross-tradition comparisons, run separate queries with different religion filters
-
-Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast a wide net across traditions.`;
+RULES:
+- Generate 3-5 queries MAX (keep it fast)
+- Use "hybrid" for conceptual, "keyword" for specific terms/names
+- Add religion filter only if query mentions a specific tradition
+- Keep reasoning brief (1 sentence)`;
 
     const response = await this.chat([
       { role: 'user', content: planPrompt }
-    ], { temperature: 0.3, maxTokens: 1500 });
+    ], { temperature: 0.3, maxTokens: 500 });
 
     try {
       const plan = this.parseJSON(response.content);
@@ -282,7 +266,15 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
     }
     const meiliTimeMs = Date.now() - meiliStartTime;
 
-    // STEP 5: Add metadata about which query found each result
+    // STEP 5: Extract matching sentences from results
+    // Uses Meilisearch _matchesPosition to find exactly which sentences contain matches
+    // This reduces token usage when passing results to AI analysis
+    hits = enrichHitsWithExcerpts(hits, {
+      contextSentences: 1,  // Include 1 sentence before/after each match
+      maxLength: 600        // Allow longer excerpts for multiple matches
+    });
+
+    // STEP 6: Add metadata about which query found each result
     // Federation handles deduplication automatically!
     const resultsWithMetadata = hits.map(hit => {
       const queryPosition = hit._federation?.queriesPosition;
@@ -371,6 +363,7 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
 
   /**
    * Quick search - bypasses planning for simple queries
+   * Still enriches results with excerpts for consistency
    */
   async quickSearch(query, options = {}) {
     const { limit = 10, mode = 'hybrid', filters = {} } = options;
@@ -379,7 +372,15 @@ Generate 5-10 queries that explore multiple angles. Challenge assumptions. Cast 
                      mode === 'semantic' ? semanticSearch :
                      hybridSearch;
 
-    return searchFn(query, { limit, filters });
+    const results = await searchFn(query, { limit, filters });
+
+    // Enrich with excerpts for consistent output
+    results.hits = enrichHitsWithExcerpts(results.hits, {
+      contextSentences: 1,
+      maxLength: 600
+    });
+
+    return results;
   }
 
   /**

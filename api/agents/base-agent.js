@@ -3,15 +3,19 @@
  *
  * Foundation for all SifterSearch agents. Provides common functionality
  * for AI interactions, logging, and configuration management.
+ *
+ * Agents specify a service quality level (fast, balanced, quality)
+ * instead of specific models. See ai-services.js for implementations.
  */
 
-import { ai } from '../lib/ai.js';
+import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 
 export class BaseAgent {
   constructor(name, options = {}) {
     this.name = name;
-    this.model = options.model || 'gpt-4o';
+    // Service quality: 'fast', 'balanced', 'quality', 'creative'
+    this.service = options.service || 'balanced';
     this.temperature = options.temperature ?? 0.7;
     this.maxTokens = options.maxTokens || 2000;
     this.systemPrompt = options.systemPrompt || '';
@@ -23,24 +27,30 @@ export class BaseAgent {
    */
   async chat(messages, options = {}) {
     const startTime = Date.now();
+    const service = options.service ?? this.service;
 
     const fullMessages = this.systemPrompt
       ? [{ role: 'system', content: this.systemPrompt }, ...messages]
       : messages;
 
     try {
-      const response = await ai.chat(fullMessages, {
+      const svc = aiService(service);
+      const response = await svc.chat(fullMessages, {
         temperature: options.temperature ?? this.temperature,
         maxTokens: options.maxTokens ?? this.maxTokens,
         stream: options.stream ?? false
       });
 
       const duration = Date.now() - startTime;
-      this.logger.info({ duration, tokens: response.usage?.totalTokens }, 'Chat completed');
+      this.logger.info({
+        duration,
+        service: svc.name,
+        tokens: response.usage?.totalTokens
+      }, 'Chat completed');
 
       return response;
     } catch (error) {
-      this.logger.error({ error: error.message }, 'Chat failed');
+      this.logger.error({ error: error.message, service }, 'Chat failed');
       throw error;
     }
   }
@@ -49,11 +59,13 @@ export class BaseAgent {
    * Execute a streaming chat completion
    */
   async *chatStream(messages, options = {}) {
+    const service = options.service ?? this.service;
+
     const fullMessages = this.systemPrompt
       ? [{ role: 'system', content: this.systemPrompt }, ...messages]
       : messages;
 
-    const stream = await ai.chat(fullMessages, {
+    const stream = await aiService(service).chat(fullMessages, {
       temperature: options.temperature ?? this.temperature,
       maxTokens: options.maxTokens ?? this.maxTokens,
       stream: true

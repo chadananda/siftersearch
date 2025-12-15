@@ -147,6 +147,12 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                 <strong>Librarian</strong>
               </span>
               curates and grows our collection, ensuring every text is properly cataloged and discoverable.
+              And
+              <span class="inline-agent transcriber">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                <strong>Transcriber</strong>
+              </span>
+              turns talks and lectures into searchable text.
             </p>
             <div class="agents-grid">
               <div class="agent agent-featured">
@@ -247,6 +253,20 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
                   curation to keep the library organized and comprehensive.
                 </p>
                 <a href="/docs/agents/librarian" class="agent-link">Learn more &rarr;</a>
+              </div>
+              <div class="agent">
+                <div class="agent-icon transcriber">
+                  <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <h3 class="agent-title">Transcriber</h3>
+                <p class="agent-role">Audio/Video to Text</p>
+                <p class="agent-desc">
+                  Converts talks, lectures, and classes into searchable Markdown documents using
+                  Whisper AI, making spoken wisdom accessible alongside written texts.
+                </p>
+                <a href="/docs/agents/transcriber" class="agent-link">Learn more &rarr;</a>
               </div>
             </div>
           </section>
@@ -486,6 +506,11 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
     color: #8B4513;
   }
 
+  .inline-agent.transcriber {
+    background-color: color-mix(in srgb, #2E8B57 15%, transparent);
+    color: #2E8B57;
+  }
+
   .link {
     color: var(--accent-primary);
     text-decoration: none;
@@ -645,6 +670,11 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
   .agent-icon.librarian {
     background-color: color-mix(in srgb, #8B4513 20%, transparent);
     color: #8B4513;
+  }
+
+  .agent-icon.transcriber {
+    background-color: color-mix(in srgb, #2E8B57 20%, transparent);
+    color: #2E8B57;
   }
 
   .agent-title {

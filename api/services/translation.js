@@ -6,7 +6,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
-import { chatCompletion } from '../lib/ai.js';
+import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import {
   JOB_TYPES,
@@ -290,7 +290,8 @@ When translating English Bahá'í texts to Arabic:
 async function translateText(text, sourceLang, targetLang, quality = 'standard') {
   const systemPrompt = buildTranslationPrompt(sourceLang, targetLang, quality);
 
-  const response = await chatCompletion([
+  // Use 'quality' service for translation - needs good reasoning
+  const response = await aiService('quality').chat([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: text }
   ], {

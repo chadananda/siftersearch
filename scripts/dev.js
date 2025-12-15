@@ -45,9 +45,11 @@ const COLORS = {
   reset: '\x1b[0m'
 };
 
-const MEILI_URL = 'http://127.0.0.1:7700';
-const API_PORT = process.env.API_PORT || '3000';
-const UI_PORT = process.env.APP_PORT || '4321';
+// Dev ports (different from production to allow both on same machine)
+const MEILI_PORT = process.env.MEILI_PORT || '7701';
+const API_PORT = process.env.API_PORT || '3001';
+const UI_PORT = process.env.APP_PORT || '5173';
+const MEILI_URL = `http://127.0.0.1:${MEILI_PORT}`;
 
 const SKIP_PREFLIGHT = process.argv.includes('--quick') || process.argv.includes('-q');
 
@@ -102,7 +104,7 @@ async function startMeilisearch() {
   const meiliKey = process.env.MEILI_MASTER_KEY || process.env.MEILISEARCH_KEY;
   const args = [
     '--db-path', join(ROOT, 'data/meilisearch'),
-    '--http-addr', '127.0.0.1:7700'
+    '--http-addr', `127.0.0.1:${MEILI_PORT}`
   ];
 
   if (meiliKey) {
@@ -212,6 +214,38 @@ function cleanup() {
   process.exit(0);
 }
 
+/**
+ * Kill any stale dev processes on our ports before starting
+ */
+async function killStaleProcesses() {
+  const { execSync } = await import('child_process');
+  const ports = [MEILI_PORT, API_PORT, UI_PORT];
+
+  for (const port of ports) {
+    try {
+      // Find and kill processes on this port (macOS/Linux compatible)
+      if (isMac) {
+        execSync(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`, { stdio: 'ignore' });
+      } else {
+        execSync(`fuser -k ${port}/tcp 2>/dev/null || true`, { stdio: 'ignore' });
+      }
+    } catch {
+      // Ignore errors - port may not be in use
+    }
+  }
+
+  // Also kill any lingering node processes from previous dev runs
+  try {
+    execSync(`pkill -f "node.*api/index.js" 2>/dev/null || true`, { stdio: 'ignore' });
+    execSync(`pkill -f "astro dev" 2>/dev/null || true`, { stdio: 'ignore' });
+  } catch {
+    // Ignore
+  }
+
+  // Brief pause to let ports release
+  await new Promise(r => setTimeout(r, 500));
+}
+
 async function main() {
   const platformName = isMac ? 'macOS' : 'Linux';
 
@@ -231,6 +265,10 @@ ${COLORS.info}══════════════════════
   // Handle cleanup on exit
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
+
+  // Kill any stale processes from previous dev runs
+  log('info', 'Cleaning up stale processes...');
+  await killStaleProcesses();
 
   // Run preflight check (unless --quick flag)
   if (!SKIP_PREFLIGHT) {

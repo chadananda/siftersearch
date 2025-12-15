@@ -33,6 +33,64 @@
     return ms >= 1000 ? (ms / 1000).toFixed(2) + 's' : ms + 'ms';
   }
 
+  // Truncate text at sentence boundary for complete thoughts
+  function truncateAtSentence(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+    // Look for sentence-ending punctuation before maxLength
+    const truncated = text.slice(0, maxLength);
+    // Find the last sentence end (.!?) followed by space or end
+    const sentenceEndMatch = truncated.match(/.*[.!?](?:\s|$)/);
+    if (sentenceEndMatch && sentenceEndMatch[0].length > maxLength * 0.4) {
+      return sentenceEndMatch[0].trim();
+    }
+    // Fallback: find last space to avoid mid-word cut
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.6) {
+      return truncated.slice(0, lastSpace) + '...';
+    }
+    return truncated + '...';
+  }
+
+  // Apply highlighting to text using keyPhrase and coreTerms
+  function applyHighlighting(text, keyPhrase, coreTerms = []) {
+    if (!text) return text;
+    let result = text;
+
+    // Apply keyPhrase highlighting with <mark>
+    if (keyPhrase) {
+      const phraseWords = keyPhrase.split(/\s+/).filter(w => w.length > 0);
+      if (phraseWords.length > 0) {
+        // Build flexible pattern allowing punctuation/whitespace between words
+        const pattern = phraseWords
+          .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('[\\s\\-.,;:!?\'"]*');
+        try {
+          const regex = new RegExp(`(${pattern})`, 'gi');
+          result = result.replace(regex, '<mark>$1</mark>');
+        } catch (e) {
+          // Skip on regex error
+        }
+      }
+    }
+
+    // Apply coreTerms with <b>
+    if (coreTerms?.length > 0) {
+      const sortedTerms = [...coreTerms].sort((a, b) => b.length - a.length);
+      for (const term of sortedTerms) {
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        try {
+          // Match whole words, avoid matching inside HTML tags
+          const termRegex = new RegExp(`(?<!<[^>]*)\\b(${escaped})\\b(?![^<]*>)`, 'gi');
+          result = result.replace(termRegex, '<b>$1</b>');
+        } catch (e) {
+          // Skip on regex error
+        }
+      }
+    }
+
+    return result;
+  }
+
   // PWA update state
   const pwa = getPWAState();
 
@@ -56,7 +114,8 @@
   let readerLoading = $state(false);
   let readerCurrentIndex = $state(0);
   let readerContainerEl;
-  let readerHighlightedText = $state(''); // Store the hit's highlighted text for the current paragraph
+  let readerKeyPhrase = $state(''); // Store keyPhrase for highlighting in reader
+  let readerCoreTerms = $state([]); // Store coreTerms for bold emphasis in reader
   let readerAnimating = $state(false); // For smooth open animation
 
   // Research plan state - shows the researcher agent's strategy
@@ -235,6 +294,7 @@
   let refreshInterval = $state(null);
   const RETRY_DELAY = 10000; // 10 seconds
   const REFRESH_INTERVAL = 30000; // 30 seconds - check for index updates
+  const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
 
   async function loadLibraryStats(silent = false) {
     if (!silent) statsLoading = true;
@@ -258,11 +318,12 @@
         retryInterval = null;
       }
 
-      // Start refresh polling to detect index updates
-      startRefreshPolling();
+      // Adjust polling frequency based on indexing state
+      startRefreshPolling(stats.indexing);
     } catch (err) {
       console.error('Failed to load library stats:', err);
-      if (!silent) libraryStats = null;
+      // Always clear stats on disconnect - don't show stale data
+      libraryStats = null;
       // Start retry polling if not already
       startRetryPolling();
       // Stop refresh polling on disconnect
@@ -288,14 +349,30 @@
     }
   }
 
-  function startRefreshPolling() {
-    if (refreshInterval) return; // Already polling
+  let currentPollingInterval = $state(null);
+
+  function startRefreshPolling(isIndexing = false) {
+    const targetInterval = isIndexing ? INDEXING_REFRESH_INTERVAL : REFRESH_INTERVAL;
+
+    // If interval changed, restart polling
+    if (refreshInterval && currentPollingInterval !== targetInterval) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+    }
+
+    if (refreshInterval) return; // Already polling at correct rate
+
+    currentPollingInterval = targetInterval;
+    if (isIndexing) {
+      console.log('[Library] Indexing detected - polling every 3s');
+    }
+
     refreshInterval = setInterval(() => {
       // Only refresh if page is visible
       if (!document.hidden) {
         loadLibraryStats(true); // silent refresh
       }
-    }, REFRESH_INTERVAL);
+    }, targetInterval);
   }
 
   function stopRefreshPolling() {
@@ -356,7 +433,8 @@
         collection: result.collection
       };
       readerCurrentIndex = targetIndex;
-      readerHighlightedText = result.highlightedText || result.text || '';
+      readerKeyPhrase = result.keyPhrase || '';
+      readerCoreTerms = result.coreTerms || [];
       readerParagraphs = cached.segments;
       readerLoading = false;
 
@@ -400,7 +478,8 @@
       collection: result.collection
     };
     readerCurrentIndex = targetIndex;
-    readerHighlightedText = result.highlightedText || result.text || '';
+    readerKeyPhrase = result.keyPhrase || '';
+    readerCoreTerms = result.coreTerms || [];
     readerParagraphs = [];
 
     setTimeout(() => { readerAnimating = false; }, 400);
@@ -595,7 +674,9 @@
       console.error('Search error:', err?.message || err, err?.stack);
       // Provide a more specific error message based on error type
       let errorMessage = 'An error occurred. Please try again.';
-      if (err?.message === 'Stream request failed') {
+      if (err?.status === 402) {
+        errorMessage = 'You\'ve reached the search limit. Please log in to continue searching.';
+      } else if (err?.message === 'Stream request failed') {
         errorMessage = 'Could not reach the server. Please try again.';
       } else if (err?.name === 'TypeError' && err?.message?.includes('fetch')) {
         errorMessage = 'Network error. Please check your connection.';
@@ -820,8 +901,8 @@
               >
                 <span class="para-num">{paragraph.paragraph_index + 1}</span>
                 <p class="reader-paragraph">
-                  {#if paragraph.paragraph_index === readerCurrentIndex && readerHighlightedText}
-                    {@html formatText(readerHighlightedText)}
+                  {#if paragraph.paragraph_index === readerCurrentIndex && readerKeyPhrase}
+                    {@html formatText(applyHighlighting(paragraph.text, readerKeyPhrase, readerCoreTerms))}
                   {:else}
                     {@html formatText(paragraph.text)}
                   {/if}
@@ -1011,7 +1092,12 @@
                 <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 <strong>Librarian</strong>
               </a>
-              curates and grows our collection, ensuring every text is properly cataloged and discoverable.
+              curates and grows our collection, and
+              <a href="/docs/agents/transcriber" class="inline-agent transcriber">
+                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                <strong>Transcriber</strong>
+              </a>
+              turns talks and lectures into searchable text.
             </p>
           </div>
           <a href="/docs/agents" class="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline">
@@ -1146,7 +1232,19 @@
             </div>
           {:else}
             <div class="stats-unavailable">
-              Library Not Connected
+              <div class="disconnected-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                  <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                  <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                  <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+              </div>
+              <span class="disconnected-text">Server Disconnected</span>
+              <span class="disconnected-hint">Retrying connection...</span>
             </div>
           {/if}
         </div>
@@ -1341,7 +1439,7 @@
                       {#if !expanded}
                         <button class="source-summary-header" onclick={() => toggleResult(message.id || msgIndex, i)}>
                           <span class="source-num">{i + 1}</span>
-                          <span class="source-summary-text">{summary || (plainText.substring(0, 60) + (plainText.length > 60 ? '...' : ''))}</span>
+                          <span class="source-summary-text">{summary || truncateAtSentence(plainText, 100)}</span>
                           <span class="source-summary-title">{title.length > 30 ? title.substring(0, 30) + '...' : title}</span>
                           <svg class="source-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -1351,7 +1449,7 @@
                         <!-- Expanded: full paper card view -->
                         <button class="source-collapse-btn px-3 py-2 sm:px-4" onclick={() => toggleResult(message.id || msgIndex, i)}>
                           <span class="source-num">{i + 1}</span>
-                          <span class="source-summary-expanded">{summary || (plainText.substring(0, 80) + (plainText.length > 80 ? '...' : ''))}</span>
+                          <span class="source-summary-expanded">{summary || truncateAtSentence(plainText, 120)}</span>
                           <svg class="source-expand-icon open" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                           </svg>
@@ -1409,7 +1507,7 @@
                   {:else}
                     <!-- Collapsed: compact single row with number, excerpt, source -->
                     <span class="result-num">{i + 1}</span>
-                    <span class="result-excerpt">{@html formatText(text.substring(0, 120))}{text.length > 120 ? '...' : ''}</span>
+                    <span class="result-excerpt">{@html formatText(truncateAtSentence(text.replace(/<[^>]*>/g, ''), 150))}</span>
                     <span class="result-src">{title}</span>
                   {/if}
                   <svg class="result-chevron {expanded ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -2026,8 +2124,35 @@
   }
 
   .stats-unavailable {
-    font-size: 0.875rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 0.75rem;
+  }
+
+  .disconnected-icon {
+    color: #ef4444;
+    animation: pulse-disconnect 2s ease-in-out infinite;
+  }
+
+  .disconnected-text {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #ef4444;
+  }
+
+  .disconnected-hint {
+    font-size: 0.75rem;
     color: var(--text-muted);
+  }
+
+  @keyframes pulse-disconnect {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
 
   /* Suggestions */
@@ -2071,6 +2196,9 @@
     max-width: 85%;
     padding: 0.75rem 1rem;
     border-radius: 1rem;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
   }
 
   @media (min-width: 768px) {
@@ -2422,6 +2550,8 @@
     background-color: #faf8f3;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     position: relative;
+    user-select: text;
+    -webkit-user-select: text;
   }
 
   /* Floating paragraph number */
@@ -2443,6 +2573,9 @@
     color: #1a1a1a;
     margin: 0;
     margin-left: 1rem; /* Space for paragraph number */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
   }
 
   /* Meilisearch keyword matches - just bold, no background (avoid over-highlighting) */
@@ -3170,6 +3303,9 @@
     color: #1a1a1a;
     margin: 0;
     /* No special padding/border - match source-paper text style */
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
   }
 
   /* Reader paragraph highlighting - only <mark> from the current hit */
@@ -3244,6 +3380,11 @@
   .inline-agent.librarian {
     background-color: color-mix(in srgb, #8B4513 15%, transparent);
     color: #8B4513;
+  }
+
+  .inline-agent.transcriber {
+    background-color: color-mix(in srgb, #2E8B57 15%, transparent);
+    color: #2E8B57;
   }
 
 </style>
