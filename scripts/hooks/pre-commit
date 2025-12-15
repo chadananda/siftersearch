@@ -73,6 +73,16 @@ if [ "$SKIP_CHECKS" != "1" ]; then
     echo -e "${YELLOW}[pre-commit]${NC} Fix build errors or use SKIP_CHECKS=1 to bypass"
     exit 1
   fi
+
+  # Verify server imports (catches missing dependencies)
+  echo -e "${GREEN}[pre-commit]${NC} Checking server imports..."
+  if node scripts/check-server-imports.js 2>&1; then
+    echo -e "${GREEN}[pre-commit]${NC} Server imports OK!"
+  else
+    echo -e "${RED}[pre-commit]${NC} Server import check failed! Missing dependency?"
+    echo -e "${YELLOW}[pre-commit]${NC} Run 'npm install' and check for missing packages"
+    exit 1
+  fi
 else
   echo -e "${YELLOW}[pre-commit]${NC} SKIP_CHECKS=1, skipping quality checks"
 fi

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T18:23:34.921Z",
+  "generated": "2025-12-15T18:42:44.731Z",
   "entries": [
+    {
+      "hash": "4575fef",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Add client-triggered server updates on version mismatch",
+      "scope": null
+    },
     {
       "hash": "c333103",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Integrate ResearcherAgent and display research strategy in search results",
       "scope": null
-    },
-    {
-      "hash": "1ff61df",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Randomize search suggestions from pool of 32 examples",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "4575fef",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Add client-triggered server updates on version mismatch",
+        "scope": null
+      },
       {
         "hash": "c333103",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "New",
         "description": "Integrate ResearcherAgent and display research strategy in search results",
-        "scope": null
-      },
-      {
-        "hash": "1ff61df",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Randomize search suggestions from pool of 32 examples",
         "scope": null
       }
     ]
