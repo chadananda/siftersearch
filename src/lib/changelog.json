@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T15:10:34.697Z",
+  "generated": "2025-12-15T17:23:32.673Z",
   "entries": [
+    {
+      "hash": "87c3951",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "V0.1.0 - AI-powered answer synthesis and improved relevance scoring",
+      "scope": null
+    },
     {
       "hash": "5804842",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
       "scope": null
-    },
-    {
-      "hash": "4699391",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "87c3951",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "V0.1.0 - AI-powered answer synthesis and improved relevance scoring",
+        "scope": null
+      },
       {
         "hash": "5804842",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
-        "scope": null
-      },
-      {
-        "hash": "4699391",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Remove yellow background from Meilisearch em tags, simplify reader highlighting",
         "scope": null
       }
     ]

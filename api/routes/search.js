@@ -10,6 +10,9 @@
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck } from '../lib/search.js';
 import { authenticate, optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { version: serverVersion } = require('../../package.json');
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import { ResearcherAgent } from '../agents/agent-researcher.js';
@@ -272,7 +275,10 @@ export default async function searchRoutes(fastify) {
   // Index statistics
   fastify.get('/stats', async () => {
     const stats = await getStats();
-    return stats;
+    return {
+      ...stats,
+      serverVersion
+    };
   });
 
   // Health check

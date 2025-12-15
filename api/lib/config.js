@@ -167,19 +167,27 @@ const authConfig = {
 
 // Library paths for indexing
 // Dev mode indexes a subset for faster iteration; production indexes full corpus
+// Use LIBRARY_PATH env var to override, or defaults based on home directory
+const homeDir = process.env.HOME || '/home/chad';
+const defaultLibraryBase = `${homeDir}/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library`;
+
 const libraryConfig = {
   // Paths to index - array of directories containing markdown files
   // Structure expected: Religion/Collection/filename.md
-  paths: isDevMode
-    ? [
-      // Dev: Just a couple collections for testing
-      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library/Baha'i/Core Publications",
-      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library/Baha'i/Pilgrim Notes"
-    ]
-    : [
-      // Production: Full library
-      "/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library"
-    ]
+  paths: process.env.LIBRARY_PATH
+    ? [process.env.LIBRARY_PATH]
+    : isDevMode
+      ? [
+        // Dev: Just a couple collections for testing
+        `${defaultLibraryBase}/Baha'i/Core Publications`,
+        `${defaultLibraryBase}/Baha'i/Pilgrim Notes`
+      ]
+      : [
+        // Production: Full library
+        defaultLibraryBase
+      ],
+  // Inbox folder for new documents to be processed by Librarian
+  inboxPath: process.env.LIBRARY_INBOX_PATH || `${homeDir}/Dropbox/SifterSearch Inbox`
 };
 
 // Rate limiting

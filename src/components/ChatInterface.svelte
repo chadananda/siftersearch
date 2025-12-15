@@ -1201,11 +1201,14 @@
                   {/each}
                 </div>
               {/if}
-              {#if libraryStats.lastUpdated}
-                <div class="stats-footer">
-                  Last indexed: {new Date(libraryStats.lastUpdated).toLocaleDateString()}
-                </div>
-              {/if}
+              <div class="stats-footer">
+                {#if libraryStats.lastUpdated}
+                  <span>Last indexed: {new Date(libraryStats.lastUpdated).toLocaleDateString()}</span>
+                {/if}
+                {#if libraryStats.serverVersion}
+                  <span class="server-version">Server v{libraryStats.serverVersion}</span>
+                {/if}
+              </div>
               {#if libraryStats.indexing}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
@@ -2070,6 +2073,14 @@
     font-size: 0.75rem;
     color: var(--text-muted);
     text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .server-version {
+    opacity: 0.7;
   }
 
   .indexing-indicator {
