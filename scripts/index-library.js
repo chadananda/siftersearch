@@ -37,6 +37,7 @@ import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 import { config } from '../api/lib/config.js';
+import { ensureServicesRunning } from '../api/lib/services.js';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -407,11 +408,13 @@ async function indexLibrary() {
     }
   }
 
-  // Ensure Meilisearch indexes are ready
+  // Ensure Meilisearch is running and indexes are ready
   if (!dryRun) {
-    console.log('🔧 Ensuring Meilisearch indexes are ready...');
+    console.log('🔧 Ensuring Meilisearch is running...');
+    await ensureServicesRunning();
+    console.log('🔧 Ensuring indexes are ready...');
     await initializeIndexes();
-    console.log('✅ Indexes ready');
+    console.log('✅ Meilisearch and indexes ready');
 
     // Clear index if requested
     if (clearIndex) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:23:25.540Z",
+  "generated": "2025-12-15T22:25:17.790Z",
   "entries": [
+    {
+      "hash": "761b02d",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Add production env to library watcher, remove skip-existing flag",
+      "scope": null
+    },
     {
       "hash": "951608b",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add email verification and password reset with SendGrid",
       "scope": null
-    },
-    {
-      "hash": "34d44e5",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add comprehensive BDD tests for user tracking",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "761b02d",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Add production env to library watcher, remove skip-existing flag",
+        "scope": null
+      },
       {
         "hash": "951608b",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add email verification and password reset with SendGrid",
-        "scope": null
-      },
-      {
-        "hash": "34d44e5",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add comprehensive BDD tests for user tracking",
         "scope": null
       }
     ]
