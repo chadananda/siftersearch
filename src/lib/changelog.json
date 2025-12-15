@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:25:17.790Z",
+  "generated": "2025-12-15T22:34:12.176Z",
   "entries": [
+    {
+      "hash": "fcd2f94",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Index-library.js now starts Meilisearch automatically via ensureServicesRunning",
+      "scope": null
+    },
     {
       "hash": "761b02d",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add referral tracking, UI fixes, and extended changelog",
       "scope": null
-    },
-    {
-      "hash": "6ef0da7",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Add email verification and password reset with SendGrid",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "fcd2f94",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Index-library.js now starts Meilisearch automatically via ensureServicesRunning",
+        "scope": null
+      },
       {
         "hash": "761b02d",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add referral tracking, UI fixes, and extended changelog",
-        "scope": null
-      },
-      {
-        "hash": "6ef0da7",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Add email verification and password reset with SendGrid",
         "scope": null
       }
     ]

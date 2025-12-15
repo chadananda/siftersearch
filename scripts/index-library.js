@@ -18,6 +18,11 @@
  *   --debounce=N    Debounce time in ms for watch mode (default: 1000)
  */
 
+// Load environment FIRST - must happen before any imports that use config
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env-secrets' });
+dotenv.config({ path: '.env-public' });
+
 import fs from 'fs/promises';
 import { watch } from 'fs';
 import path from 'path';
@@ -27,12 +32,7 @@ import crypto from 'crypto';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-// Load environment files: .env-public (checked in) + .env-secrets (gitignored)
-import dotenv from 'dotenv';
-dotenv.config({ path: path.join(PROJECT_ROOT, '.env-public') });
-dotenv.config({ path: path.join(PROJECT_ROOT, '.env-secrets') });
-
-// Import services
+// Import services (config.js will now see env vars)
 import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
@@ -388,6 +388,7 @@ async function indexLibrary() {
   console.log('📚 Ocean Library Indexer');
   console.log('========================');
   console.log(`Mode: ${config.isDevMode ? 'DEV' : 'PRODUCTION'}`);
+  console.log(`Meilisearch: ${config.search.host}`);
   console.log(`Paths (${resolvedPaths.length}):`);
   resolvedPaths.forEach(p => console.log(`  - ${p}`));
   if (dryRun) console.log('Mode: DRY RUN (no actual indexing)');
