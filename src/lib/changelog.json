@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T22:14:04.676Z",
+  "generated": "2025-12-15T22:16:58.664Z",
   "entries": [
+    {
+      "hash": "7f1ddd8",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Remove navigation preload to avoid console warning on reload",
+      "scope": null
+    },
     {
       "hash": "4a95dd7",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Update E2E tests to match current UI",
       "scope": null
-    },
-    {
-      "hash": "96361f1",
-      "date": "2025-12-13",
-      "type": "New",
-      "description": "Improve user ID unification to transfer all data",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "7f1ddd8",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Remove navigation preload to avoid console warning on reload",
+        "scope": null
+      },
       {
         "hash": "4a95dd7",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "Fixed",
         "description": "Update E2E tests to match current UI",
-        "scope": null
-      },
-      {
-        "hash": "96361f1",
-        "date": "2025-12-13",
-        "type": "New",
-        "description": "Improve user ID unification to transfer all data",
         "scope": null
       }
     ]

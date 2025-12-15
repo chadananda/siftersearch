@@ -66,6 +66,12 @@ export default defineConfig({
         // Runtime caching
         runtimeCaching: [
           {
+            // Don't cache stats endpoint - need fresh version info
+            urlPattern: /^https:\/\/api\.siftersearch\.com\/api\/search\/stats/,
+            handler: 'NetworkOnly'
+          },
+          {
+            // Cache other API responses
             urlPattern: /^https:\/\/api\.siftersearch\.com\/api\//,
             handler: 'StaleWhileRevalidate',
             options: {
