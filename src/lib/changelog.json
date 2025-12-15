@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:41:55.393Z",
+  "generated": "2025-12-15T23:42:57.633Z",
   "entries": [
+    {
+      "hash": "825d64d",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use absolute paths for dotenv config loading",
+      "scope": null
+    },
     {
       "hash": "296e51c",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Memory and Librarian agents to about page",
       "scope": null
-    },
-    {
-      "hash": "8fc23be",
-      "date": "2025-12-13",
-      "type": "Fixed",
-      "description": "Handle duplicate column errors in migration runner",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "825d64d",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use absolute paths for dotenv config loading",
+        "scope": null
+      },
       {
         "hash": "296e51c",
         "date": "2025-12-15",
@@ -699,13 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Add Memory and Librarian agents to about page",
-        "scope": null
-      },
-      {
-        "hash": "8fc23be",
-        "date": "2025-12-13",
-        "type": "Fixed",
-        "description": "Handle duplicate column errors in migration runner",
         "scope": null
       }
     ]
