@@ -67,7 +67,12 @@ function saveState() {
 export async function performUpdate() {
   if (updateSW) {
     saveState();
+    console.log('[PWA] Triggering update...');
     await updateSW(true);
+    // Force reload after service worker updates
+    // This ensures the new SW takes control and serves fresh content
+    console.log('[PWA] Reloading page...');
+    window.location.reload();
   }
 }
 

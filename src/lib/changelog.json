@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T17:23:32.673Z",
+  "generated": "2025-12-15T17:34:36.825Z",
   "entries": [
+    {
+      "hash": "ecf5d2e",
+      "date": "2025-12-15",
+      "type": "New",
+      "description": "Add server version to library stats, configure production library path",
+      "scope": null
+    },
     {
       "hash": "87c3951",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Paragraph numbers start at 1 instead of 0",
       "scope": null
-    },
-    {
-      "hash": "c135295",
-      "date": "2025-12-12",
-      "type": "Fixed",
-      "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "ecf5d2e",
+        "date": "2025-12-15",
+        "type": "New",
+        "description": "Add server version to library stats, configure production library path",
+        "scope": null
+      },
       {
         "hash": "87c3951",
         "date": "2025-12-15",
@@ -701,13 +708,6 @@
         "date": "2025-12-12",
         "type": "Fixed",
         "description": "Paragraph numbers start at 1 instead of 0",
-        "scope": null
-      },
-      {
-        "hash": "c135295",
-        "date": "2025-12-12",
-        "type": "Fixed",
-        "description": "Apply formatText to readerHighlightedText for consistent markdown rendering",
         "scope": null
       }
     ]

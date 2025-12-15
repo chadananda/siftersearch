@@ -58,6 +58,11 @@ export default defineConfig({
       workbox: {
         // Precache static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Clean up old caches when new SW activates
+        cleanupOutdatedCaches: true,
+        // Skip waiting and claim clients immediately
+        skipWaiting: true,
+        clientsClaim: true,
         // Runtime caching
         runtimeCaching: [
           {
