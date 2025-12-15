@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T18:42:44.731Z",
+  "generated": "2025-12-15T18:49:52.514Z",
   "entries": [
+    {
+      "hash": "38e63a7",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Add server import check to pre-commit hooks",
+      "scope": null
+    },
     {
       "hash": "4575fef",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Enhance ResearcherAgent with comprehensive search strategy",
       "scope": null
-    },
-    {
-      "hash": "298d3e2",
-      "date": "2025-12-12",
-      "type": "New",
-      "description": "Integrate ResearcherAgent and display research strategy in search results",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "38e63a7",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Add server import check to pre-commit hooks",
+        "scope": null
+      },
       {
         "hash": "4575fef",
         "date": "2025-12-15",
@@ -699,15 +706,6 @@
         "date": "2025-12-13",
         "type": "New",
         "description": "Enhance ResearcherAgent with comprehensive search strategy",
-        "scope": null
-      }
-    ],
-    "2025-12-12": [
-      {
-        "hash": "298d3e2",
-        "date": "2025-12-12",
-        "type": "New",
-        "description": "Integrate ResearcherAgent and display research strategy in search results",
         "scope": null
       }
     ]

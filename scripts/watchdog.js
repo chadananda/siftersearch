@@ -14,12 +14,21 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import dotenv from 'dotenv';
+
+// Load environment files to get correct ports
+dotenv.config({ path: '.env-secrets' });
+dotenv.config({ path: '.env-public' });
 
 const execAsync = promisify(exec);
 
-// Configuration
-const API_HEALTH_URL = process.env.API_HEALTH_URL || 'http://localhost:3000/health';
-const MEILI_HEALTH_URL = process.env.MEILI_HEALTH_URL || 'http://localhost:7700/health';
+// Get ports from environment (matching config.js defaults)
+const API_PORT = process.env.API_PORT || '3000';
+const MEILI_PORT = process.env.MEILI_PORT || '7700';
+
+// Configuration - use ports from environment
+const API_HEALTH_URL = process.env.API_HEALTH_URL || `http://localhost:${API_PORT}/health`;
+const MEILI_HEALTH_URL = process.env.MEILI_HEALTH_URL || `http://localhost:${MEILI_PORT}/health`;
 const TUNNEL_HEALTH_URL = process.env.TUNNEL_HEALTH_URL || 'https://api.siftersearch.com/health';
 const CHECK_INTERVAL = parseInt(process.env.WATCHDOG_INTERVAL) || 30000; // 30 seconds
 const MAX_FAILURES = parseInt(process.env.WATCHDOG_MAX_FAILURES) || 3;
@@ -109,7 +118,8 @@ async function runHealthCheck() {
     }
   }
 
-  // Check Meilisearch health
+  // Check Meilisearch health (managed externally - systemd or manual)
+  // Watchdog only monitors and logs - does not restart Meilisearch
   const meiliHealth = await checkHealth(MEILI_HEALTH_URL);
   if (meiliHealth.healthy) {
     if (meiliFailures > 0) {
@@ -118,15 +128,10 @@ async function runHealthCheck() {
     meiliFailures = 0;
   } else {
     meiliFailures++;
-    log('warn', `Meilisearch health check failed (${meiliFailures}/${MAX_FAILURES}): ${meiliHealth.error || `status ${meiliHealth.status}`}`);
-
+    log('warn', `Meilisearch health check failed (${meiliFailures}): ${meiliHealth.error || `status ${meiliHealth.status}`}`);
+    // Note: Meilisearch is managed externally (systemd) - watchdog does not restart it
     if (meiliFailures >= MAX_FAILURES) {
-      isRestarting = true;
-      await restartProcess('meilisearch');
-      meiliFailures = 0;
-      // Wait for Meilisearch to come back up
-      await new Promise(resolve => setTimeout(resolve, 15000));
-      isRestarting = false;
+      log('error', `Meilisearch has been down for ${meiliFailures} consecutive checks! Please check systemd: sudo systemctl status meilisearch`);
     }
   }
 

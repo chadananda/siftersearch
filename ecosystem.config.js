@@ -6,6 +6,9 @@
  * View logs: pm2 logs
  * Restart: pm2 restart all
  * Stop: pm2 stop all
+ *
+ * Note: Meilisearch is managed externally (systemd or manual) - not by PM2.
+ * This keeps PM2 focused on the Node.js app and avoids port confusion.
  */
 
 export default {
@@ -34,29 +37,6 @@ export default {
       out_file: './logs/api-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true
-    },
-
-    // Meilisearch Search Engine
-    {
-      name: 'meilisearch',
-      script: 'meilisearch',
-      args: '--db-path ./data/meilisearch --http-addr 127.0.0.1:7700',
-      interpreter: 'none',
-      exec_mode: 'fork',
-      watch: false,
-      max_memory_restart: '2G',
-      env_production: {
-        MEILI_ENV: 'production'
-        // MEILI_MASTER_KEY is loaded from environment
-      },
-      // Restart policies
-      exp_backoff_restart_delay: 100,
-      max_restarts: 5,
-      min_uptime: '30s',
-      // Logging
-      error_file: './logs/meilisearch-error.log',
-      out_file: './logs/meilisearch-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
     // Health Watchdog
