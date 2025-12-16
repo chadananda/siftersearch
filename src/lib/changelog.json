@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-15T23:59:00.534Z",
+  "generated": "2025-12-16T00:06:04.544Z",
   "entries": [
+    {
+      "hash": "37b3d85",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Remove redundant DEV_MODE from PM2 env - config.js defaults to false",
+      "scope": null
+    },
     {
       "hash": "f2c8ad5",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Integrate preflight check into dev script with Mac support",
       "scope": null
-    },
-    {
-      "hash": "adcb060",
-      "date": "2025-12-14",
-      "type": "New",
-      "description": "Improve dev script with local Meilisearch management",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "37b3d85",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Remove redundant DEV_MODE from PM2 env - config.js defaults to false",
+        "scope": null
+      },
       {
         "hash": "f2c8ad5",
         "date": "2025-12-15",
@@ -697,13 +704,6 @@
         "date": "2025-12-14",
         "type": "New",
         "description": "Integrate preflight check into dev script with Mac support",
-        "scope": null
-      },
-      {
-        "hash": "adcb060",
-        "date": "2025-12-14",
-        "type": "New",
-        "description": "Improve dev script with local Meilisearch management",
         "scope": null
       }
     ]
