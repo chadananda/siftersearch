@@ -306,7 +306,8 @@
   async function loadLibraryStats(silent = false) {
     if (!silent) statsLoading = true;
     try {
-      const stats = await search.stats();
+      // Always send client version so server can auto-update if behind
+      const stats = await search.stats(CLIENT_VERSION);
 
       // Check if stats actually changed (compare lastUpdated or counts)
       const hasChanged = !libraryStats ||

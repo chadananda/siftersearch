@@ -232,9 +232,13 @@ export const search = {
 
   /**
    * Get search index statistics
+   * @param {string} clientVersion - Optional client version to report for auto-update
    */
-  async stats() {
-    return request('/api/search/stats');
+  async stats(clientVersion) {
+    const url = clientVersion
+      ? `/api/search/stats?v=${encodeURIComponent(clientVersion)}`
+      : '/api/search/stats';
+    return request(url);
   },
 
   /**
