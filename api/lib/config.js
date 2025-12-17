@@ -98,7 +98,7 @@ const isDevMode = getBool('DEV_MODE', false);
 const isProduction = get('NODE_ENV') === 'production';
 
 // USE_REMOTE_AI: Force remote API providers (OpenAI/Anthropic) instead of local Ollama
-// Use this in production when local LLM isn't available yet
+// Set to true in production when local LLM (Ollama) isn't configured yet
 const useRemoteAI = getBool('USE_REMOTE_AI', false);
 const useRemoteProviders = isDevMode || useRemoteAI;
 

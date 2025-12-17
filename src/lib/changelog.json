@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-17T00:45:51.590Z",
+  "generated": "2025-12-17T00:49:41.256Z",
   "entries": [
+    {
+      "hash": "a77e4a9",
+      "date": "2025-12-16",
+      "type": "Fixed",
+      "description": "Production search and reader highlighting",
+      "scope": null
+    },
     {
       "hash": "538cfe7",
       "date": "2025-12-15",
@@ -343,16 +350,18 @@
       "type": "New",
       "description": "Add cloudflared tunnel to PM2 with watchdog monitoring",
       "scope": null
-    },
-    {
-      "hash": "244f838",
-      "date": "2025-12-14",
-      "type": "New",
-      "description": "Add Omarchy-specific install instructions",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-16": [
+      {
+        "hash": "a77e4a9",
+        "date": "2025-12-16",
+        "type": "Fixed",
+        "description": "Production search and reader highlighting",
+        "scope": null
+      }
+    ],
     "2025-12-15": [
       {
         "hash": "538cfe7",
@@ -697,13 +706,6 @@
         "date": "2025-12-14",
         "type": "New",
         "description": "Add cloudflared tunnel to PM2 with watchdog monitoring",
-        "scope": null
-      },
-      {
-        "hash": "244f838",
-        "date": "2025-12-14",
-        "type": "New",
-        "description": "Add Omarchy-specific install instructions",
         "scope": null
       }
     ]
