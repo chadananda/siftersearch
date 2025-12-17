@@ -11,8 +11,9 @@ const path = require('path');
  * Restart: pm2 restart all
  * Stop: pm2 stop all
  *
- * Auto-updates: Client sends X-Client-Version header; server triggers
- * update-server.js when client is newer. No polling daemon needed.
+ * Auto-updates: Client sends X-Client-Version header with every request.
+ * Server triggers update-server.js when client version is newer.
+ * Works even when deploying from the same machine (checks PM2 version).
  *
  * Note: Meilisearch is managed by the API (starts on demand), not by PM2.
  */

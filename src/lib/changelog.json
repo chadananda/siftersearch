@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-17T01:24:52.767Z",
+  "generated": "2025-12-17T01:28:26.644Z",
   "entries": [
+    {
+      "hash": "8d20dc2",
+      "date": "2025-12-16",
+      "type": "Fixed",
+      "description": "Auto-update now reloads PM2 even when git is up-to-date",
+      "scope": null
+    },
     {
       "hash": "0e02931",
       "date": "2025-12-16",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "V0.1.0 - AI-powered answer synthesis and improved relevance scoring",
       "scope": null
-    },
-    {
-      "hash": "5804842",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Standardize dev server port to 5173",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-16": [
+      {
+        "hash": "8d20dc2",
+        "date": "2025-12-16",
+        "type": "Fixed",
+        "description": "Auto-update now reloads PM2 even when git is up-to-date",
+        "scope": null
+      },
       {
         "hash": "0e02931",
         "date": "2025-12-16",
@@ -697,13 +704,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "V0.1.0 - AI-powered answer synthesis and improved relevance scoring",
-        "scope": null
-      },
-      {
-        "hash": "5804842",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Standardize dev server port to 5173",
         "scope": null
       }
     ]
