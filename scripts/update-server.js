@@ -65,6 +65,38 @@ async function run(command, options = {}) {
 }
 
 /**
+ * Check if PM2 is running the correct version
+ */
+async function checkPm2Version() {
+  const pkgVersion = getCurrentVersion();
+  const pm2Result = await run('pm2 jlist');
+  if (!pm2Result.success) {
+    log('warn', 'Could not check PM2 version');
+    return { needsReload: false };
+  }
+
+  try {
+    const processes = JSON.parse(pm2Result.stdout);
+    const apiProcess = processes.find(p => p.name === 'siftersearch-api');
+    if (!apiProcess) {
+      log('warn', 'API process not found in PM2');
+      return { needsReload: false };
+    }
+
+    const runningVersion = apiProcess.pm2_env?.version || 'unknown';
+    if (runningVersion !== pkgVersion) {
+      log('info', `PM2 running v${runningVersion}, package.json is v${pkgVersion}`);
+      return { needsReload: true, runningVersion, pkgVersion };
+    }
+
+    return { needsReload: false };
+  } catch (err) {
+    log('warn', `Failed to parse PM2 output: ${err.message}`);
+    return { needsReload: false };
+  }
+}
+
+/**
  * Check if there are updates available
  */
 async function checkForUpdates() {
@@ -88,7 +120,13 @@ async function checkForUpdates() {
 
   if (!isBehind) {
     if (VERBOSE) {
-      log('info', 'Already up to date');
+      log('info', 'Already up to date with git');
+    }
+    // Even if git is up to date, check if PM2 needs reload
+    // (handles case where git commit happened locally but PM2 wasn't reloaded)
+    const pm2Check = await checkPm2Version();
+    if (pm2Check.needsReload) {
+      return { hasUpdates: false, needsPm2Reload: true };
     }
     return { hasUpdates: false };
   }
@@ -177,6 +215,24 @@ function getCurrentVersion() {
 }
 
 /**
+ * Reload PM2 only (no git pull needed)
+ */
+async function reloadPm2Only() {
+  log('info', 'Reloading PM2 ecosystem (code already up to date)...');
+  const reloadResult = await run('pm2 reload ecosystem.config.cjs --update-env');
+  if (!reloadResult.success) {
+    log('warn', `PM2 reload warning: ${reloadResult.error}`);
+    const startResult = await run('pm2 startOrReload ecosystem.config.cjs --update-env');
+    if (!startResult.success) {
+      log('error', `Failed to reload PM2: ${startResult.error}`);
+      return false;
+    }
+  }
+  log('info', 'PM2 ecosystem reloaded');
+  return true;
+}
+
+/**
  * Run a single update check
  */
 async function runOnce() {
@@ -188,6 +244,22 @@ async function runOnce() {
   if (updateCheck.error) {
     log('error', `Update check failed: ${updateCheck.error}`);
     return false;
+  }
+
+  // Handle case where git is up to date but PM2 needs reload
+  if (updateCheck.needsPm2Reload) {
+    log('info', 'Git is up to date but PM2 needs reload');
+    if (DRY_RUN) {
+      log('info', 'DRY RUN - skipping PM2 reload');
+      return true;
+    }
+    const success = await reloadPm2Only();
+    if (success) {
+      log('info', '='.repeat(50));
+      log('info', `PM2 reloaded to v${versionBefore}`);
+      log('info', '='.repeat(50));
+    }
+    return success;
   }
 
   if (!updateCheck.hasUpdates) {
