@@ -11,8 +11,10 @@ const path = require('path');
  * Restart: pm2 restart all
  * Stop: pm2 stop all
  *
- * Note: Meilisearch is managed externally (systemd or manual) - not by PM2.
- * This keeps PM2 focused on the Node.js app and avoids port confusion.
+ * Auto-updates: Client sends X-Client-Version header; server triggers
+ * update-server.js when client is newer. No polling daemon needed.
+ *
+ * Note: Meilisearch is managed by the API (starts on demand), not by PM2.
  */
 
 module.exports = {
@@ -56,24 +58,6 @@ module.exports = {
       // Logging
       error_file: './logs/watchdog-error.log',
       out_file: './logs/watchdog-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
-    },
-
-    // Auto-Updater (checks for git updates every 5 minutes)
-    // Runs continuously with built-in interval, not cron
-    {
-      name: 'siftersearch-updater',
-      script: 'scripts/update-server.js',
-      args: '--daemon',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      exp_backoff_restart_delay: 5000,
-      max_restarts: 10,
-      min_uptime: '30s',
-      // Logging
-      error_file: './logs/updater-error.log',
-      out_file: './logs/updater-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
