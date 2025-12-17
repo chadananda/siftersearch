@@ -440,7 +440,7 @@
       if (!source.document_id || documentCache.has(source.document_id)) continue;
 
       // Start preloading in background (don't await - fire and forget)
-      documents.getSegments(source.document_id, { limit: 500 })
+      documents.getSegments(source.document_id, { limit: 5000 })
         .then(response => {
           documentCache.set(source.document_id, {
             segments: response.segments || [],
@@ -489,25 +489,28 @@
 
       // Wait for DOM, position scroll BEFORE content becomes visible
       await tick();
-      if (readerContainerEl) {
-        // Disable smooth scroll for instant positioning
-        readerContainerEl.style.scrollBehavior = 'auto';
+      // Use requestAnimationFrame to ensure browser has finished rendering
+      requestAnimationFrame(() => {
+        if (readerContainerEl) {
+          // Disable smooth scroll for instant positioning
+          readerContainerEl.style.scrollBehavior = 'auto';
 
-        const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
-        if (paragraphEl) {
-          const containerHeight = readerContainerEl.clientHeight;
-          const paragraphTop = paragraphEl.offsetTop;
-          const paragraphHeight = paragraphEl.offsetHeight;
-          const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
-          readerContainerEl.scrollTop = Math.max(0, scrollTop);
+          const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+          if (paragraphEl) {
+            const containerHeight = readerContainerEl.clientHeight;
+            const paragraphTop = paragraphEl.offsetTop;
+            const paragraphHeight = paragraphEl.offsetHeight;
+            const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+            readerContainerEl.scrollTop = Math.max(0, scrollTop);
+          }
+
+          // Re-enable smooth scroll for user navigation
+          readerContainerEl.style.scrollBehavior = 'smooth';
         }
 
-        // Re-enable smooth scroll for user navigation
-        readerContainerEl.style.scrollBehavior = 'smooth';
-      }
-
-      // End animation after CSS transition
-      setTimeout(() => { readerAnimating = false; }, 400);
+        // End animation after CSS transition
+        setTimeout(() => { readerAnimating = false; }, 400);
+      });
       return;
     }
 
@@ -530,7 +533,7 @@
     setTimeout(() => { readerAnimating = false; }, 400);
 
     try {
-      const response = await documents.getSegments(result.document_id, { limit: 500 });
+      const response = await documents.getSegments(result.document_id, { limit: 5000 });
       readerParagraphs = response.segments || [];
 
       // Cache for future use
@@ -541,18 +544,20 @@
 
       // Position scroll so current paragraph is centered (no animation)
       await tick();
-      if (readerContainerEl) {
-        readerContainerEl.style.scrollBehavior = 'auto';
-        const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
-        if (paragraphEl) {
-          const containerHeight = readerContainerEl.clientHeight;
-          const paragraphTop = paragraphEl.offsetTop;
-          const paragraphHeight = paragraphEl.offsetHeight;
-          const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
-          readerContainerEl.scrollTop = Math.max(0, scrollTop);
+      requestAnimationFrame(() => {
+        if (readerContainerEl) {
+          readerContainerEl.style.scrollBehavior = 'auto';
+          const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+          if (paragraphEl) {
+            const containerHeight = readerContainerEl.clientHeight;
+            const paragraphTop = paragraphEl.offsetTop;
+            const paragraphHeight = paragraphEl.offsetHeight;
+            const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+            readerContainerEl.scrollTop = Math.max(0, scrollTop);
+          }
+          readerContainerEl.style.scrollBehavior = 'smooth';
         }
-        readerContainerEl.style.scrollBehavior = 'smooth';
-      }
+      });
     } catch (err) {
       console.error('Failed to load document segments:', err);
       readerParagraphs = [];
@@ -2984,12 +2989,12 @@
     min-width: 0;
     max-width: 600px;
     margin: 0 auto; /* Center the form */
-    padding-left: 5rem; /* Space for QR code on left */
+    margin-left: 5.5rem; /* Hard margin for QR code on left */
   }
 
   @media (min-width: 640px) {
     .input-form {
-      padding-left: 0; /* No extra padding needed on larger screens */
+      margin-left: auto; /* Reset to centered on larger screens */
     }
   }
 

@@ -86,7 +86,9 @@ For each passage, analyze how well it answers the user's question. Return JSON w
   * 70-89: Passage substantially addresses the question with relevant insight
   * 50-69: Passage touches on the topic but doesn't directly answer
   * <50: Passage is tangentially related or off-topic
-- summary: A 10-20 word statement explaining what THIS passage says that answers or relates to the user's question. Write as if completing "This passage says that..."
+- summary: 8-15 words stating the passage's answer. NO introductions. Just the answer itself, lowercase start.
+  GOOD: "justice means giving each person what they deserve", "love is the foundation of all virtues"
+  BAD: "This passage explains that justice means...", "The author says love is..."
 - keyPhrase: CRITICAL - copy a phrase VERBATIM from the quoted text above (5-15 words). Choose the phrase that best captures the answer. Do NOT paraphrase.
 - coreTerms: 1-3 key words from the passage to bold (copy exactly as spelled)
 

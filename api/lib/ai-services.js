@@ -38,7 +38,7 @@ const SERVICE_CONFIG = {
   fast: {
     local: {
       provider: 'ollama',
-      model: 'qwen2.5:7b',        // Fast, good for simple tasks
+      model: 'qwen2.5:14b',       // Use 14b (7b not pulled)
       temperature: 0.3,
       maxTokens: 500
     },
@@ -338,7 +338,8 @@ export function aiService(serviceType, options = {}) {
   }
 
   // Determine which config to use (local vs remote)
-  const useRemote = options.forceRemote || (config.isDevMode && !options.forceLocal);
+  // USE_REMOTE_AI flag forces remote providers even in production
+  const useRemote = options.forceRemote || config.useRemoteAI || (config.isDevMode && !options.forceLocal);
   const svcConfig = useRemote ? serviceConfig.remote : serviceConfig.local;
 
   const serviceName = `${serviceType}:${useRemote ? 'remote' : 'local'}`;
@@ -458,7 +459,7 @@ export function getEmbeddingDimensions(serviceType = 'embedding', options = {}) 
     throw new Error(`Unknown embedding service: ${serviceType}`);
   }
 
-  const useRemote = options.forceRemote || (config.isDevMode && !options.forceLocal);
+  const useRemote = options.forceRemote || config.useRemoteAI || (config.isDevMode && !options.forceLocal);
   const svcConfig = useRemote ? serviceConfig.remote : serviceConfig.local;
 
   return svcConfig.dimensions;

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-16T00:06:04.544Z",
+  "generated": "2025-12-17T00:45:51.590Z",
   "entries": [
+    {
+      "hash": "538cfe7",
+      "date": "2025-12-15",
+      "type": "Fixed",
+      "description": "Use --update-env with PM2 reload to pick up env changes",
+      "scope": null
+    },
     {
       "hash": "37b3d85",
       "date": "2025-12-15",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Omarchy-specific install instructions",
       "scope": null
-    },
-    {
-      "hash": "7a298ce",
-      "date": "2025-12-14",
-      "type": "New",
-      "description": "Integrate preflight check into dev script with Mac support",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-15": [
+      {
+        "hash": "538cfe7",
+        "date": "2025-12-15",
+        "type": "Fixed",
+        "description": "Use --update-env with PM2 reload to pick up env changes",
+        "scope": null
+      },
       {
         "hash": "37b3d85",
         "date": "2025-12-15",
@@ -697,13 +704,6 @@
         "date": "2025-12-14",
         "type": "New",
         "description": "Add Omarchy-specific install instructions",
-        "scope": null
-      },
-      {
-        "hash": "7a298ce",
-        "date": "2025-12-14",
-        "type": "New",
-        "description": "Integrate preflight check into dev script with Mac support",
         "scope": null
       }
     ]

@@ -97,30 +97,35 @@ function getFloat(key, defaultValue = 0.0) {
 const isDevMode = getBool('DEV_MODE', false);
 const isProduction = get('NODE_ENV') === 'production';
 
+// USE_REMOTE_AI: Force remote API providers (OpenAI/Anthropic) instead of local Ollama
+// Use this in production when local LLM isn't available yet
+const useRemoteAI = getBool('USE_REMOTE_AI', false);
+const useRemoteProviders = isDevMode || useRemoteAI;
+
 // AI Provider configuration
-// Dev mode = remote APIs (OpenAI/Anthropic) for laptop development
-// Production = local Ollama for cost savings
+// Dev mode or USE_REMOTE_AI = remote APIs (OpenAI/Anthropic)
+// Production (default) = local Ollama for cost savings
 const aiConfig = {
   // Chat/orchestration provider
   chat: {
-    provider: get('CHAT_LLM_PROVIDER', isDevMode ? 'openai' : 'ollama'),
-    model: get('CHAT_LLM_MODEL', isDevMode ? 'gpt-4o' : 'qwen2.5:32b'),
+    provider: get('CHAT_LLM_PROVIDER', useRemoteProviders ? 'openai' : 'ollama'),
+    model: get('CHAT_LLM_MODEL', useRemoteProviders ? 'gpt-4o' : 'qwen2.5:32b'),
     temperature: getFloat('CHAT_LLM_TEMPERATURE', 0.7),
     maxTokens: getInt('CHAT_LLM_MAX_TOKENS', 1000)
   },
 
   // Search enhancement (query expansion, reranking)
   search: {
-    provider: get('SEARCH_LLM_PROVIDER', isDevMode ? 'openai' : 'ollama'),
-    model: get('SEARCH_LLM_MODEL', isDevMode ? 'gpt-4o-mini' : 'qwen2.5:14b'),
+    provider: get('SEARCH_LLM_PROVIDER', useRemoteProviders ? 'openai' : 'ollama'),
+    model: get('SEARCH_LLM_MODEL', useRemoteProviders ? 'gpt-4o-mini' : 'qwen2.5:14b'),
     temperature: getFloat('SEARCH_LLM_TEMPERATURE', 0.2),
     maxTokens: getInt('SEARCH_LLM_MAX_TOKENS', 500)
   },
 
   // Document processing (summarization, extraction)
   doc: {
-    provider: get('DOC_LLM_PROVIDER', isDevMode ? 'anthropic' : 'ollama'),
-    model: get('DOC_LLM_MODEL', isDevMode ? 'claude-3-haiku-20240307' : 'qwen2.5:14b'),
+    provider: get('DOC_LLM_PROVIDER', useRemoteProviders ? 'anthropic' : 'ollama'),
+    model: get('DOC_LLM_MODEL', useRemoteProviders ? 'claude-3-haiku-20240307' : 'qwen2.5:14b'),
     temperature: getFloat('DOC_LLM_TEMPERATURE', 0.1),
     maxTokens: getInt('DOC_LLM_MAX_TOKENS', 2000)
   },
@@ -233,6 +238,7 @@ const publicApiConfig = {
 export const config = {
   isDevMode,
   isProduction,
+  useRemoteAI,
   ai: aiConfig,
   db: dbConfig,
   search: searchConfig,

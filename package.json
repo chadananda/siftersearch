@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.56",
+  "version": "0.1.57",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -84,7 +84,7 @@
     "@cucumber/pretty-formatter": "^2.4.1",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
-    "@tailwindcss/vite": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.18",
     "@vite-pwa/astro": "^1.1.1",
     "concurrently": "^9.1.2",
     "eslint": "^9.39.1",

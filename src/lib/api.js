@@ -19,15 +19,21 @@ let userId = null;
 export function getUserId() {
   if (userId) return userId;
 
-  if (typeof localStorage !== 'undefined') {
-    // Try new key first, fall back to old session key for migration
-    userId = localStorage.getItem(USER_ID_KEY) || localStorage.getItem(SESSION_KEY);
-    if (!userId) {
-      // Generate new user ID (UUID v4 style)
-      userId = 'user_' + crypto.randomUUID();
+  // Check for browser environment with proper localStorage API
+  if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+    try {
+      // Try new key first, fall back to old session key for migration
+      userId = localStorage.getItem(USER_ID_KEY) || localStorage.getItem(SESSION_KEY);
+      if (!userId) {
+        // Generate new user ID (UUID v4 style)
+        userId = 'user_' + crypto.randomUUID();
+      }
+      // Always store under new key (migrates old session IDs)
+      localStorage.setItem(USER_ID_KEY, userId);
+    } catch (e) {
+      // localStorage might throw in some environments
+      userId = null;
     }
-    // Always store under new key (migrates old session IDs)
-    localStorage.setItem(USER_ID_KEY, userId);
   }
   return userId;
 }
@@ -44,8 +50,12 @@ export function getSessionId() {
  * Check if this is a new user (no previous user ID stored)
  */
 export function isNewUser() {
-  if (typeof localStorage === 'undefined') return true;
-  return !localStorage.getItem(USER_ID_KEY) && !localStorage.getItem(SESSION_KEY);
+  if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') return true;
+  try {
+    return !localStorage.getItem(USER_ID_KEY) && !localStorage.getItem(SESSION_KEY);
+  } catch (e) {
+    return true;
+  }
 }
 
 /**

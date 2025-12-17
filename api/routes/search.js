@@ -747,7 +747,9 @@ Just respond with the acknowledgment, nothing else.`;
           collection: originalHit.collection || originalHit.religion,
           summary: result.summary || result.briefAnswer || '',
           score: result.score || 0,
-          highlightedText: result.highlightedText || originalHit.text
+          highlightedText: result.highlightedText || originalHit.text,
+          keyPhrase: result.keyPhrase || '',
+          coreTerms: result.coreTerms || []
         };
       }).filter(Boolean);
 

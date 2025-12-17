@@ -12,7 +12,21 @@
       "WebFetch(domain:specs.meilisearch.dev)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:learn.omacom.io)"
+      "WebFetch(domain:learn.omacom.io)",
+      "Bash(pacman:*)",
+      "Bash(yay -Ss:*)",
+      "Bash(lspci:*)",
+      "Bash(sudo pacman:*)",
+      "Bash(pm2 status:*)",
+      "Bash(pm2 logs:*)",
+      "Bash(curl:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(node -e:*)",
+      "Bash(pm2 restart:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
