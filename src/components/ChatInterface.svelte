@@ -306,8 +306,8 @@
   async function loadLibraryStats(silent = false) {
     if (!silent) statsLoading = true;
     try {
-      // Always send client version so server can auto-update if behind
-      const stats = await search.stats(CLIENT_VERSION);
+      // Version is now sent in X-Client-Version header on all requests
+      const stats = await search.stats();
 
       // Check if stats actually changed (compare lastUpdated or counts)
       const hasChanged = !libraryStats ||

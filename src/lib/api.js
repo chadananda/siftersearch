@@ -80,6 +80,10 @@ export function clearAccessToken() {
   accessToken = null;
 }
 
+// Client version - set by build process via Vite define
+// eslint-disable-next-line no-undef
+const CLIENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
+
 /**
  * Make an API request
  */
@@ -95,6 +99,11 @@ async function request(path, options = {}) {
   const uid = getUserId();
   if (uid) {
     headers['X-User-ID'] = uid;
+  }
+
+  // Always send client version for auto-update detection
+  if (CLIENT_VERSION) {
+    headers['X-Client-Version'] = CLIENT_VERSION;
   }
 
   if (accessToken) {
@@ -232,13 +241,9 @@ export const search = {
 
   /**
    * Get search index statistics
-   * @param {string} clientVersion - Optional client version to report for auto-update
    */
-  async stats(clientVersion) {
-    const url = clientVersion
-      ? `/api/search/stats?v=${encodeURIComponent(clientVersion)}`
-      : '/api/search/stats';
-    return request(url);
+  async stats() {
+    return request('/api/search/stats');
   },
 
   /**

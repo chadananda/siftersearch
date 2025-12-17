@@ -7,8 +7,15 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
+import { spawn } from 'child_process';
+import { join } from 'path';
+import { createRequire } from 'module';
 import { loggerConfig } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './lib/errors.js';
+
+// Get server version from package.json
+const require = createRequire(import.meta.url);
+const { version: SERVER_VERSION } = require('../package.json');
 import authRoutes from './routes/auth.js';
 import searchRoutes from './routes/search.js';
 import sessionRoutes from './routes/session.js';
@@ -91,11 +98,41 @@ export async function createServer(opts = {}) {
     });
   });
 
+  // Track if update already triggered (to avoid spamming)
+  let updateTriggered = false;
+
+  // Version check hook - trigger auto-update if client is newer
+  server.addHook('onRequest', async (request) => {
+    const clientVersion = request.headers['x-client-version'];
+    if (!clientVersion || updateTriggered) return;
+
+    // Compare versions
+    const clientParts = clientVersion.split('.').map(Number);
+    const serverParts = SERVER_VERSION.split('.').map(Number);
+    const clientNewer = clientParts[0] > serverParts[0] ||
+      (clientParts[0] === serverParts[0] && clientParts[1] > serverParts[1]) ||
+      (clientParts[0] === serverParts[0] && clientParts[1] === serverParts[1] && clientParts[2] > serverParts[2]);
+
+    if (clientNewer) {
+      request.log.info({ clientVersion, serverVersion: SERVER_VERSION }, 'Client newer than server, triggering update');
+      updateTriggered = true;
+
+      // Run update script in background (don't block request)
+      const scriptPath = join(process.cwd(), 'scripts', 'update-server.js');
+      const child = spawn('node', [scriptPath], {
+        detached: true,
+        stdio: 'ignore',
+        cwd: process.cwd()
+      });
+      child.unref();
+    }
+  });
+
   // Health check
   server.get('/health', async () => ({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '0.0.1'
+    version: SERVER_VERSION
   }));
 
   // API routes

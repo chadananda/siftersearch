@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-17T01:09:46.041Z",
+  "generated": "2025-12-17T01:17:21.099Z",
   "entries": [
+    {
+      "hash": "cf4fd17",
+      "date": "2025-12-16",
+      "type": "New",
+      "description": "Server auto-updates when client reports newer version",
+      "scope": null
+    },
     {
       "hash": "8807bda",
       "date": "2025-12-16",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Rate limit handling prompts login, fix playwright tests",
       "scope": null
-    },
-    {
-      "hash": "9f96295",
-      "date": "2025-12-14",
-      "type": "New",
-      "description": "Add documentation site with sidebar navigation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-16": [
+      {
+        "hash": "cf4fd17",
+        "date": "2025-12-16",
+        "type": "New",
+        "description": "Server auto-updates when client reports newer version",
+        "scope": null
+      },
       {
         "hash": "8807bda",
         "date": "2025-12-16",
@@ -697,15 +704,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Rate limit handling prompts login, fix playwright tests",
-        "scope": null
-      }
-    ],
-    "2025-12-14": [
-      {
-        "hash": "9f96295",
-        "date": "2025-12-14",
-        "type": "New",
-        "description": "Add documentation site with sidebar navigation",
         "scope": null
       }
     ]

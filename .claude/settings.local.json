@@ -30,7 +30,12 @@
       "Bash(cat:*)",
       "Bash(meilisearch:*)",
       "Bash(chmod:*)",
-      "Bash(systemctl:*)"
+      "Bash(systemctl:*)",
+      "Bash(git fetch:*)",
+      "Bash(pm2 reload:*)",
+      "Bash(python3:*)",
+      "Bash(node scripts/update-server.js:*)",
+      "Bash(pm2 show:*)"
     ]
   }
 }

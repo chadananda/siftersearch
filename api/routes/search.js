@@ -11,8 +11,6 @@ import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck } fr
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
-import { spawn } from 'child_process';
-import { join } from 'path';
 const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import { aiService } from '../lib/ai-services.js';
@@ -274,38 +272,9 @@ export default async function searchRoutes(fastify) {
     };
   });
 
-  // Track if update already triggered (to avoid spamming)
-  let updateTriggered = false;
-
   // Index statistics
-  // Client sends its version so server can auto-update if behind
-  fastify.get('/stats', async (request) => {
-    const clientVersion = request.query.v;
+  fastify.get('/stats', async () => {
     const stats = await getStats();
-
-    // If client reports a newer version, trigger server update
-    if (clientVersion && !updateTriggered) {
-      const clientParts = clientVersion.split('.').map(Number);
-      const serverParts = serverVersion.split('.').map(Number);
-      const clientNewer = clientParts[0] > serverParts[0] ||
-        (clientParts[0] === serverParts[0] && clientParts[1] > serverParts[1]) ||
-        (clientParts[0] === serverParts[0] && clientParts[1] === serverParts[1] && clientParts[2] > serverParts[2]);
-
-      if (clientNewer) {
-        logger.info({ clientVersion, serverVersion }, 'Client newer than server, triggering update');
-        updateTriggered = true;
-
-        // Run update script in background
-        const scriptPath = join(process.cwd(), 'scripts', 'update-server.js');
-        const child = spawn('node', [scriptPath], {
-          detached: true,
-          stdio: 'ignore',
-          cwd: process.cwd()
-        });
-        child.unref();
-      }
-    }
-
     return {
       ...stats,
       serverVersion
