@@ -460,6 +460,8 @@
    * @param {Object} result - The search result containing document_id, paragraph_index, title, author, etc.
    */
   async function openReader(result) {
+    console.log('openReader called with:', { document_id: result.document_id, paragraph_index: result.paragraph_index, keyPhrase: result.keyPhrase });
+
     if (!result.document_id) {
       console.error('No document_id available for reading');
       return;
@@ -469,6 +471,7 @@
 
     // Check cache first - if preloaded, open instantly without loading state
     const cached = documentCache.get(result.document_id);
+    console.log('Cache lookup:', { cached: !!cached, segmentCount: cached?.segments?.length || 0 });
     if (cached && cached.segments.length > 0) {
       // Set up data first (reader not visible yet)
       readerDocument = {
@@ -534,7 +537,9 @@
     setTimeout(() => { readerAnimating = false; }, 400);
 
     try {
+      console.log('Fetching segments for:', result.document_id);
       const response = await documents.getSegments(result.document_id, { limit: 5000 });
+      console.log('Segments response:', { segmentCount: response?.segments?.length || 0, total: response?.total });
       readerParagraphs = response.segments || [];
 
       // Cache for future use
