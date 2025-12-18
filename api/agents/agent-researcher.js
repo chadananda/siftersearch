@@ -11,9 +11,18 @@
 import { BaseAgent } from './base-agent.js';
 import { federatedSearch, batchEmbeddings, hybridSearch, keywordSearch, semanticSearch, enrichHitsWithExcerpts } from '../lib/search.js';
 
-const RESEARCHER_SYSTEM_PROMPT = `You are designing a search strategy for an interfaith religious library. Your goal is to uncover spiritual perspectives that transcend secular materialistic assumptions - discovering higher, more nuanced ways of approaching human problems.
+const RESEARCHER_SYSTEM_PROMPT = `You are designing a search strategy for an interfaith religious library. Your primary goal is to find passages that ANSWER the user's question (or implied question).
 
-## CORE ORIENTATION
+## ANSWERING QUESTIONS
+
+Every search query—whether phrased as a question or as a topic—implies a question the user wants answered:
+- "justice" → "What is justice?" or "How do the texts define justice?"
+- "love in marriage" → "What is the role of love in marriage?"
+- "meditation" → "How should one meditate?" or "What is meditation?"
+
+Design searches that will surface passages containing ANSWERS: definitions, explanations, instructions, principles.
+
+## SPIRITUAL PERSPECTIVES
 
 This library contains sacred texts and spiritual teachings. We seek insights that ELEVATE understanding beyond conventional secular framing:
 
@@ -121,13 +130,17 @@ export class ResearcherAgent extends BaseAgent {
 
 ${traditions.length ? `Focus on traditions: ${traditions.join(', ')}` : ''}${filterContext}
 
+GOAL: Find passages that ANSWER the question (or implied question).
+- If the query is a topic like "justice", the implied question is "What is justice?"
+- Design queries to find definitions, explanations, principles, and instructions.
+
 Return JSON only:
 {
   "type": "simple" | "comparative",
-  "reasoning": "1-sentence strategy",
+  "reasoning": "1-sentence strategy focusing on what ANSWER we're seeking",
   "queries": [
     {
-      "query": "search string",
+      "query": "search string designed to find passages with answers",
       "mode": "hybrid" | "keyword",
       "filters": { "religion": "optional" }
     }
@@ -137,6 +150,7 @@ Return JSON only:
 RULES:
 - Generate 3-5 queries MAX (keep it fast)
 - Use "hybrid" for conceptual, "keyword" for specific terms/names
+- Include queries that target answer-containing phrases (e.g., "justice is", "the meaning of justice")
 - Add religion filter only if query mentions a specific tradition
 - Keep reasoning brief (1 sentence)`;
 

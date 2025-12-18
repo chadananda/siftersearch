@@ -75,29 +75,36 @@ async function analyzeBatch(query, passages, batchIndex, researchContext = '') {
   const batchPrompt = `User's question: "${query}"
 
 ${passages.map((p, i) => {
-  const text = normalizeForAI(p.excerpt || p.text.slice(0, 400));
+  const text = normalizeForAI(p.excerpt || truncateAtWord(p.text, 400));
   return `[${p.globalIndex}] ${p.title} by ${p.author}:
 "${text}"`;
 }).join('\n\n')}
 
-For each passage, analyze how well it answers the user's question. Return JSON with:
-- score: 0-100 relevance based on how directly the passage answers the question
-  * 90-100: Passage directly defines, explains, or answers the question (e.g., "the meaning of X is...")
-  * 70-89: Passage substantially addresses the question with relevant insight
-  * 50-69: Passage touches on the topic but doesn't directly answer
-  * <50: Passage is tangentially related or off-topic
-- summary: 8-15 words stating the passage's answer. NO introductions. Just the answer itself, lowercase start.
-  GOOD: "justice means giving each person what they deserve", "love is the foundation of all virtues"
-  BAD: "This passage explains that justice means...", "The author says love is..."
-- keyPhrase: CRITICAL - copy a phrase VERBATIM from the quoted text above (5-15 words). Choose the phrase that best captures the answer. Do NOT paraphrase.
-- coreTerms: 1-3 key words from the passage to bold (copy exactly as spelled)
+TASK: For each passage, evaluate how directly it ANSWERS the user's question.
+
+Even when the user's input is a topic or statement (not a question), treat it as an implied question:
+- "justice" → "What is justice?" or "What do the texts say about justice?"
+- "love and marriage" → "What is the relationship between love and marriage?"
+- "meditation practices" → "What are meditation practices?" or "How should one meditate?"
+
+Return JSON with:
+- score: 0-100 based on how DIRECTLY the passage answers the question
+  * 90-100: Contains a clear, direct answer (definitions, explanations, instructions)
+  * 70-89: Substantially addresses the question with relevant insight
+  * 50-69: Related to the topic but doesn't directly answer
+  * <50: Tangentially related or off-topic
+- summary: 8-15 words stating what answer this passage provides. NO meta-commentary.
+  GOOD: "justice means giving each person what they deserve"
+  BAD: "This passage discusses justice" (too vague, doesn't state the answer)
+- keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the phrase that best captures the answer.
+- coreTerms: 1-3 key words to bold (copy exactly)
 
 {"results":[{"globalIndex":0,"score":92,"summary":"justice means giving each person their due according to divine law","keyPhrase":"exact phrase from text","coreTerms":["word1"]}]}`;
 
   try {
     // Use 'fast' service for quick analysis
     const response = await aiService('fast').chat([
-      { role: 'system', content: 'You are a scholarly research assistant analyzing passages from religious and philosophical texts. Your job is to evaluate how well each passage answers the user\'s question. Return only valid JSON. CRITICAL: The keyPhrase MUST be copied character-for-character from the passage text. Prioritize passages that directly define, explain, or answer the question.' },
+      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question (or implied question). High scores go to passages with clear answers, definitions, explanations, or instructions. Low scores go to passages that merely mention the topic without answering. Return only valid JSON. CRITICAL: The keyPhrase MUST be copied character-for-character from the passage text.' },
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying

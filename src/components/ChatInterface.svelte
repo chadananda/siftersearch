@@ -3364,12 +3364,26 @@
     position: relative;
     margin: 0 0 1.5rem;
     cursor: pointer;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .reader-paragraph-wrapper:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  /* Current/active paragraph - the one user clicked "Read More" on */
+  .reader-paragraph-wrapper.current {
+    background: linear-gradient(135deg, rgba(254, 249, 195, 0.4) 0%, rgba(254, 243, 199, 0.3) 100%);
+    border-left: 3px solid #eab308;
+    margin-left: -3px;
   }
 
   .reader-paragraph-wrapper .para-num {
     position: absolute;
-    left: -2rem;
-    top: 0.25rem;
+    left: -2.5rem;
+    top: 0.75rem;
   }
 
   .reader-paragraph {

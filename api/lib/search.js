@@ -539,9 +539,20 @@ export function extractMatchingSentences(hit, options = {}) {
     totalLength += sentence.text.length + 5; // +5 for " ... " separator
   }
 
-  // If somehow we got nothing, return truncated text
+  // If somehow we got nothing, return truncated text at word boundary
   if (excerptParts.length === 0) {
-    excerptParts.push(text.slice(0, maxLength));
+    if (text.length <= maxLength) {
+      excerptParts.push(text);
+    } else {
+      // Find last space before maxLength to avoid cutting mid-word
+      const truncated = text.slice(0, maxLength);
+      const lastSpace = truncated.lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.6) {
+        excerptParts.push(truncated.slice(0, lastSpace));
+      } else {
+        excerptParts.push(truncated);
+      }
+    }
   }
 
   // For now, highlightedSentences = sentences (AI will add phrase highlighting later)
