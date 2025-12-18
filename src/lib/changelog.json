@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-18T04:24:39.154Z",
+  "generated": "2025-12-18T04:29:02.168Z",
   "entries": [
+    {
+      "hash": "5b73745",
+      "date": "2025-12-17",
+      "type": "Fixed",
+      "description": "Truncate excerpts at sentence boundaries, not mid-sentence",
+      "scope": null
+    },
     {
       "hash": "9b2a2b4",
       "date": "2025-12-17",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add client-triggered server updates on version mismatch",
       "scope": null
-    },
-    {
-      "hash": "c333103",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-17": [
+      {
+        "hash": "5b73745",
+        "date": "2025-12-17",
+        "type": "Fixed",
+        "description": "Truncate excerpts at sentence boundaries, not mid-sentence",
+        "scope": null
+      },
       {
         "hash": "9b2a2b4",
         "date": "2025-12-17",
@@ -699,13 +706,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "Add client-triggered server updates on version mismatch",
-        "scope": null
-      },
-      {
-        "hash": "c333103",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
         "scope": null
       }
     ]

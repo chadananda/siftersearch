@@ -15,8 +15,9 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 import { config } from './config.js';
 
-const ANONYMOUS_QUERY_LIMIT = 10;
-const VERIFIED_QUERY_LIMIT = 20; // Total for logged-in but not approved users
+// Rate limits disabled during development - will re-enable for public beta
+const ANONYMOUS_QUERY_LIMIT = 999999;
+const VERIFIED_QUERY_LIMIT = 999999;
 
 /**
  * Extract anonymous user ID from request headers
