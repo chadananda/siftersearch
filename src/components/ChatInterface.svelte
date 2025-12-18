@@ -2336,6 +2336,9 @@
     font-size: 1rem;
     line-height: 1.6;
     white-space: pre-wrap;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
   }
 
   /* AI Analysis */
