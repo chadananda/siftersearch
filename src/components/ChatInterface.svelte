@@ -460,8 +460,6 @@
    * @param {Object} result - The search result containing document_id, paragraph_index, title, author, etc.
    */
   async function openReader(result) {
-    console.log('openReader called with:', { document_id: result.document_id, paragraph_index: result.paragraph_index, keyPhrase: result.keyPhrase });
-
     if (!result.document_id) {
       console.error('No document_id available for reading');
       return;
@@ -471,7 +469,6 @@
 
     // Check cache first - if preloaded, open instantly without loading state
     const cached = documentCache.get(result.document_id);
-    console.log('Cache lookup:', { cached: !!cached, segmentCount: cached?.segments?.length || 0 });
     if (cached && cached.segments.length > 0) {
       // Set up data first (reader not visible yet)
       readerDocument = {
@@ -537,9 +534,7 @@
     setTimeout(() => { readerAnimating = false; }, 400);
 
     try {
-      console.log('Fetching segments for:', result.document_id);
       const response = await documents.getSegments(result.document_id, { limit: 5000 });
-      console.log('Segments response:', { segmentCount: response?.segments?.length || 0, total: response?.total });
       readerParagraphs = response.segments || [];
 
       // Cache for future use
@@ -1502,7 +1497,7 @@
                         <button class="source-summary-header" onclick={() => toggleResult(message.id || msgIndex, i)}>
                           <span class="source-num">{i + 1}</span>
                           <span class="source-summary-text">{summary || truncateAtSentence(plainText, 100)}</span>
-                          <span class="source-summary-title">{title.length > 30 ? title.substring(0, 30) + '...' : title}</span>
+                          <span class="source-summary-author">{author || 'Unknown'}</span>
                           <svg class="source-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                           </svg>
@@ -2573,14 +2568,17 @@
     text-overflow: ellipsis;
   }
 
-  .source-summary-title {
+  .source-summary-author {
     flex-shrink: 0;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    font-weight: 400;
+    font-style: italic;
     padding-left: 0.5rem;
     border-left: 1px solid var(--border-subtle);
     white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .source-expand-icon {

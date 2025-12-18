@@ -472,10 +472,18 @@ export function extractMatchingSentences(hit, options = {}) {
   const matchesPosition = hit._matchesPosition?.text || [];
 
   if (!text || matchesPosition.length === 0) {
-    // No matches - return truncated text
+    // No matches - return truncated text at word boundary
+    let truncated = text;
+    if (text.length > maxLength) {
+      truncated = text.slice(0, maxLength);
+      const lastSpace = truncated.lastIndexOf(' ');
+      if (lastSpace > maxLength * 0.6) {
+        truncated = truncated.slice(0, lastSpace);
+      }
+    }
     return {
-      sentences: [text.slice(0, maxLength)],
-      highlightedSentences: [text.slice(0, maxLength)],
+      sentences: [truncated],
+      highlightedSentences: [truncated],
       matchRanges: [],
       fullText: text
     };
