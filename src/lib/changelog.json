@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-18T04:30:12.768Z",
+  "generated": "2025-12-18T04:33:40.382Z",
   "entries": [
+    {
+      "hash": "1f21fc9",
+      "date": "2025-12-17",
+      "type": "Fixed",
+      "description": "Ensure user chat messages are selectable",
+      "scope": null
+    },
     {
       "hash": "5b73745",
       "date": "2025-12-17",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add server import check to pre-commit hooks",
       "scope": null
-    },
-    {
-      "hash": "4575fef",
-      "date": "2025-12-15",
-      "type": "New",
-      "description": "Add client-triggered server updates on version mismatch",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-17": [
+      {
+        "hash": "1f21fc9",
+        "date": "2025-12-17",
+        "type": "Fixed",
+        "description": "Ensure user chat messages are selectable",
+        "scope": null
+      },
       {
         "hash": "5b73745",
         "date": "2025-12-17",
@@ -699,13 +706,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Add server import check to pre-commit hooks",
-        "scope": null
-      },
-      {
-        "hash": "4575fef",
-        "date": "2025-12-15",
-        "type": "New",
-        "description": "Add client-triggered server updates on version mismatch",
         "scope": null
       }
     ]

@@ -87,12 +87,17 @@ Even when the user's input is a topic or statement (not a question), treat it as
 - "love and marriage" → "What is the relationship between love and marriage?"
 - "meditation practices" → "What are meditation practices?" or "How should one meditate?"
 
+CRITICAL - Keyword matches are NOT enough:
+- A passage containing "meditation" but discussing organizational planning scores <30
+- A passage must address the ACTUAL TOPIC, not just contain the keyword
+- Ask yourself: "Does this passage help answer the question?" If no, score <50
+
 Return JSON with:
 - score: 0-100 based on how DIRECTLY the passage answers the question
   * 90-100: Contains a clear, direct answer (definitions, explanations, instructions)
   * 70-89: Substantially addresses the question with relevant insight
   * 50-69: Related to the topic but doesn't directly answer
-  * <50: Tangentially related or off-topic
+  * <50: OFF-TOPIC - merely mentions keyword in unrelated context, or doesn't address the question
 - summary: 8-15 words stating what answer this passage provides. NO meta-commentary.
   GOOD: "justice means giving each person what they deserve"
   BAD: "This passage discusses justice" (too vague, doesn't state the answer)
