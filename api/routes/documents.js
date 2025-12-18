@@ -189,7 +189,7 @@ export default async function documentsRoutes(fastify) {
       querystring: {
         type: 'object',
         properties: {
-          limit: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+          limit: { type: 'integer', minimum: 1, maximum: 10000, default: 100 },
           offset: { type: 'integer', minimum: 0, default: 0 },
           includeEmbeddings: { type: 'boolean', default: false }
         }
