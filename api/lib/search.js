@@ -540,25 +540,54 @@ export function extractMatchingSentences(hit, options = {}) {
   let totalLength = 0;
 
   for (const sentence of extractedSentences) {
-    if (totalLength + sentence.text.length > maxLength && excerptParts.length > 0) {
-      break;
+    const remainingSpace = maxLength - totalLength;
+
+    if (sentence.text.length <= remainingSpace) {
+      // Sentence fits entirely
+      excerptParts.push(sentence.text);
+      totalLength += sentence.text.length + 5; // +5 for " ... " separator
+    } else if (excerptParts.length === 0 || remainingSpace > maxLength * 0.3) {
+      // First sentence or significant space left - truncate at sentence boundary
+      const truncated = sentence.text.slice(0, remainingSpace);
+      const sentenceEndMatch = truncated.match(/.*[.!?]["']?\s/s);
+      if (sentenceEndMatch && sentenceEndMatch[0].length > remainingSpace * 0.4) {
+        excerptParts.push(sentenceEndMatch[0].trim());
+        totalLength += sentenceEndMatch[0].length + 5;
+      } else if (excerptParts.length === 0) {
+        // First sentence with no good boundary - use word boundary
+        const lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > remainingSpace * 0.5) {
+          excerptParts.push(truncated.slice(0, lastSpace));
+        } else {
+          excerptParts.push(truncated);
+        }
+        totalLength = maxLength; // Stop here
+      }
+      break; // Don't add more after truncating
+    } else {
+      break; // Not enough space for meaningful content
     }
-    excerptParts.push(sentence.text);
-    totalLength += sentence.text.length + 5; // +5 for " ... " separator
   }
 
-  // If somehow we got nothing, return truncated text at word boundary
+  // If somehow we got nothing, return truncated text at sentence boundary
   if (excerptParts.length === 0) {
     if (text.length <= maxLength) {
       excerptParts.push(text);
     } else {
-      // Find last space before maxLength to avoid cutting mid-word
+      // Find the last sentence boundary before maxLength
       const truncated = text.slice(0, maxLength);
-      const lastSpace = truncated.lastIndexOf(' ');
-      if (lastSpace > maxLength * 0.6) {
-        excerptParts.push(truncated.slice(0, lastSpace));
+      // Look for sentence-ending punctuation followed by space or end
+      const sentenceEndMatch = truncated.match(/.*[.!?]["']?\s/s);
+      if (sentenceEndMatch && sentenceEndMatch[0].length > maxLength * 0.5) {
+        excerptParts.push(sentenceEndMatch[0].trim());
       } else {
-        excerptParts.push(truncated);
+        // Fallback: find last space to avoid cutting mid-word
+        const lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > maxLength * 0.6) {
+          excerptParts.push(truncated.slice(0, lastSpace));
+        } else {
+          excerptParts.push(truncated);
+        }
       }
     }
   }

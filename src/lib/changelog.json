@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-18T03:39:33.870Z",
+  "generated": "2025-12-18T04:24:39.154Z",
   "entries": [
+    {
+      "hash": "9b2a2b4",
+      "date": "2025-12-17",
+      "type": "Fixed",
+      "description": "Prevent mid-word text cuts, show author instead of title in collapsed view",
+      "scope": null
+    },
     {
       "hash": "9200a70",
       "date": "2025-12-17",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
       "scope": null
-    },
-    {
-      "hash": "bbf1520",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Only auto-reload PWA when no active conversation",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-17": [
+      {
+        "hash": "9b2a2b4",
+        "date": "2025-12-17",
+        "type": "Fixed",
+        "description": "Prevent mid-word text cuts, show author instead of title in collapsed view",
+        "scope": null
+      },
       {
         "hash": "9200a70",
         "date": "2025-12-17",
@@ -699,13 +706,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use CSS variable for accent-primary-light instead of hardcoded color",
-        "scope": null
-      },
-      {
-        "hash": "bbf1520",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Only auto-reload PWA when no active conversation",
         "scope": null
       }
     ]
