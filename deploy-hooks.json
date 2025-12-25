@@ -1,12 +1,5 @@
 [
   {
-    "id": "2024-12-25-resegment-oversized",
-    "description": "Re-segment paragraphs exceeding 1500 chars after AI segmentation update",
-    "command": "node scripts/resegment-oversized.js",
-    "enabled": true,
-    "timeout": 1800000
-  },
-  {
     "id": "2024-12-25-update-ranking-rules",
     "description": "Update Meilisearch ranking rules with authority position and maxTotalHits",
     "command": "node scripts/update-ranking-rules.js 4",
@@ -26,5 +19,12 @@
     "command": "node scripts/sync-library-nodes.js",
     "enabled": true,
     "timeout": 120000
+  },
+  {
+    "id": "2024-12-25-resegment-oversized",
+    "description": "Re-segment paragraphs exceeding 1500 chars after AI segmentation update",
+    "command": "node scripts/resegment-oversized.js",
+    "enabled": false,
+    "timeout": 1800000
   }
 ]
