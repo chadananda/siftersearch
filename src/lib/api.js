@@ -912,6 +912,45 @@ export const forum = {
 };
 
 // ============================================
+// Donations API
+// ============================================
+
+export const donations = {
+  /**
+   * Get donation tiers
+   */
+  async getTiers() {
+    return request('/api/donations/tiers');
+  },
+
+  /**
+   * Create checkout session
+   */
+  async createCheckout(tierId, frequency, customAmount = null) {
+    return request('/api/donations/create-checkout', {
+      method: 'POST',
+      body: JSON.stringify({ tierId, frequency, customAmount })
+    });
+  },
+
+  /**
+   * Get donation history
+   */
+  async getHistory() {
+    return request('/api/donations/history');
+  },
+
+  /**
+   * Create billing portal session
+   */
+  async createPortalSession() {
+    return request('/api/donations/portal', {
+      method: 'POST'
+    });
+  }
+};
+
+// ============================================
 // Default export
 // ============================================
 
@@ -925,6 +964,7 @@ export default {
   librarian,
   services,
   forum,
+  donations,
   healthCheck,
   triggerServerUpdate,
   setAccessToken,

@@ -1,0 +1,108 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+---
+
+<Layout title="Thank You!">
+  <LiquidBackground slot="background" client:only="svelte" />
+  <div class="success-page">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h1>Thank You!</h1>
+      <p class="message">
+        Your generous support helps us maintain and improve SifterSearch.
+        Together, we're making sacred texts accessible to everyone.
+      </p>
+      <div class="actions">
+        <a href="/" class="primary-btn">Continue Exploring</a>
+        <a href="/support" class="secondary-btn">Manage Subscription</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .success-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .success-card {
+    max-width: 500px;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 1rem;
+  }
+
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--success);
+  }
+
+  .success-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  h1 {
+    margin: 0 0 1rem;
+    font-size: 2rem;
+    color: var(--text-primary);
+  }
+
+  .message {
+    margin: 0 0 2rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .primary-btn, .secondary-btn {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .primary-btn {
+    background: var(--accent-primary);
+    color: white;
+  }
+
+  .primary-btn:hover {
+    background: var(--accent-primary-hover);
+  }
+
+  .secondary-btn {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+  }
+
+  .secondary-btn:hover {
+    background: var(--surface-3);
+  }
+</style>

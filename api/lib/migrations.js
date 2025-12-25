@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 
 /**
  * Get current database schema version
@@ -217,6 +217,45 @@ const migrations = {
     try { await query('CREATE INDEX idx_forum_votes_post ON forum_votes(post_id)'); } catch { /* exists */ }
 
     logger.info('Forum tables created');
+  },
+
+  // Version 5: Add donations table and stripe_customer_id to users
+  5: async () => {
+    // Add stripe_customer_id to users
+    try {
+      await query('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT');
+      logger.info('Added stripe_customer_id to users table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+    }
+
+    // Create donations table
+    await query(`
+      CREATE TABLE IF NOT EXISTS donations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        stripe_session_id TEXT,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'usd',
+        frequency TEXT NOT NULL,
+        tier_id TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Create indexes
+    try { await query('CREATE INDEX idx_donations_user ON donations(user_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_donations_stripe_session ON donations(stripe_session_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_donations_subscription ON donations(stripe_subscription_id)'); } catch { /* exists */ }
+
+    logger.info('Donations table created');
   },
 };
 

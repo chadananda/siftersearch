@@ -28,6 +28,7 @@ import librarianRoutes from './routes/librarian.js';
 import publicApiRoutes from './routes/public-api.js';
 import deployRoutes from './routes/deploy.js';
 import forumRoutes from './routes/forum.js';
+import donationRoutes from './routes/donations.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -149,6 +150,7 @@ export async function createServer(opts = {}) {
   await server.register(publicApiRoutes, { prefix: '/api/v1' });
   await server.register(deployRoutes, { prefix: '/api/deploy' });
   await server.register(forumRoutes, { prefix: '/api/forum' });
+  await server.register(donationRoutes, { prefix: '/api/donations' });
 
   // Error handling
   server.setErrorHandler(errorHandler);
