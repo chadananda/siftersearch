@@ -290,6 +290,17 @@ const migrations = {
 
   // Version 7: Add blocktype and translation columns for enhanced content storage
   7: async () => {
+    // Check if indexed_paragraphs table exists first
+    const tableExists = await queryOne(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='indexed_paragraphs'
+    `);
+
+    if (!tableExists) {
+      logger.info('indexed_paragraphs table does not exist yet, skipping column additions');
+      return;
+    }
+
     // Add blocktype column for markdown block type tracking
     // Allows exact markdown reconstruction from stored content
     try {
