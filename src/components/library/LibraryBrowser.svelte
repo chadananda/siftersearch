@@ -5,6 +5,7 @@
   import DocumentList from './DocumentList.svelte';
   import DocumentDetail from './DocumentDetail.svelte';
   import FilterPanel from './FilterPanel.svelte';
+  import CollectionDetail from './CollectionDetail.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const auth = getAuthState();
@@ -13,6 +14,7 @@
   let treeData = $state([]);
   let documents = $state([]);
   let selectedDocument = $state(null);
+  let selectedNode = $state(null); // Currently selected collection/religion node
   let loading = $state(true);
   let error = $state(null);
   let stats = $state(null);
@@ -43,14 +45,29 @@
     filters.author || filters.yearFrom || filters.yearTo ||
     filters.status !== 'all' || filters.search
   );
+  let showCollectionDetail = $derived(
+    selectedNode && selectedNode.node_type === 'collection' && selectedNode.religionSlug
+  );
 
-  // Fetch tree structure
+  // Fetch tree structure from library nodes
   async function fetchTree() {
     try {
-      const res = await fetch(`${API_BASE}/api/library/tree`);
+      const res = await fetch(`${API_BASE}/api/library/nodes`);
       if (!res.ok) throw new Error('Failed to load library tree');
       const data = await res.json();
-      treeData = data.religions || [];
+      // Transform nodes to match TreeView expected format
+      treeData = (data.nodes || []).map(religion => ({
+        name: religion.name,
+        slug: religion.slug,
+        count: religion.document_count || 0,
+        collections: (religion.children || []).map(c => ({
+          name: c.name,
+          slug: c.slug,
+          count: c.document_count || 0,
+          religionSlug: religion.slug,
+          religionName: religion.name
+        }))
+      }));
     } catch (err) {
       console.error('Tree fetch error:', err);
       error = err.message;
@@ -110,13 +127,21 @@
 
   // Handle tree selection
   function handleTreeSelect(event) {
-    const { religion, collection } = event.detail;
+    const { religion, collection, node } = event.detail;
     filters = {
       ...filters,
       religion: religion || null,
       collection: collection || null
     };
-    fetchDocuments(true);
+
+    // Set selected node for collection detail view
+    if (node && node.node_type === 'collection') {
+      selectedNode = node;
+      selectedDocument = null; // Close any open document detail
+    } else {
+      selectedNode = null;
+      fetchDocuments(true);
+    }
   }
 
   // Handle filter change
@@ -159,6 +184,23 @@
   function handleDocumentUpdate(event) {
     const updatedDoc = event.detail;
     documents = documents.map(d => d.id === updatedDoc.id ? { ...d, ...updatedDoc } : d);
+  }
+
+  // Handle document selection from collection detail
+  function handleCollectionDocumentSelect(doc) {
+    selectedDocument = doc;
+  }
+
+  // Handle collection edit (admin)
+  function handleCollectionEdit(node) {
+    // TODO: Open collection editor modal
+    console.log('Edit collection:', node);
+  }
+
+  // Go back from collection detail to document list
+  function backToDocumentList() {
+    selectedNode = null;
+    fetchDocuments(true);
   }
 
   onMount(() => {
@@ -211,113 +253,124 @@
 
   <!-- Main content area -->
   <main class="library-main">
-    <!-- Top bar with search and filters -->
-    <div class="library-topbar">
-      <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Search documents..."
-          bind:value={filters.search}
-          onkeydown={(e) => e.key === 'Enter' && handleFilterChange()}
-        />
-        {#if filters.search}
-          <button class="search-clear" onclick={() => { filters.search = ''; handleFilterChange(); }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
-        {/if}
-      </div>
-
-      <button
-        class="filter-toggle"
-        class:active={showFilters}
-        onclick={() => showFilters = !showFilters}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-        </svg>
-        Filters
-        {#if hasActiveFilters}
-          <span class="filter-count">{Object.values(filters).filter(v => v && v !== 'all').length}</span>
-        {/if}
-      </button>
-
-      {#if hasActiveFilters}
-        <button class="clear-filters" onclick={clearFilters}>
-          Clear all
-        </button>
-      {/if}
-
-      <div class="result-count">
-        {totalDocuments.toLocaleString()} {totalDocuments === 1 ? 'document' : 'documents'}
-      </div>
-    </div>
-
-    <!-- Filter panel -->
-    {#if showFilters}
-      <FilterPanel
-        bind:filters
-        {stats}
-        on:change={handleFilterChange}
+    {#if showCollectionDetail}
+      <!-- Collection detail view -->
+      <CollectionDetail
+        religionSlug={selectedNode.religionSlug}
+        collectionSlug={selectedNode.slug}
+        onDocumentSelect={handleCollectionDocumentSelect}
+        onEdit={isAdmin ? handleCollectionEdit : null}
       />
-    {/if}
-
-    <!-- Document list -->
-    <div class="document-container">
-      {#if loading && documents.length === 0}
-        <div class="loading-state">
-          <svg class="spinner" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+    {:else}
+      <!-- Default document list view -->
+      <!-- Top bar with search and filters -->
+      <div class="library-topbar">
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
           </svg>
-          <span>Loading documents...</span>
-        </div>
-      {:else if error}
-        <div class="error-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>{error}</span>
-          <button onclick={() => { error = null; fetchDocuments(true); }}>Retry</button>
-        </div>
-      {:else if documents.length === 0}
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
-          <span>No documents found</span>
-          {#if hasActiveFilters}
-            <button onclick={clearFilters}>Clear filters</button>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search documents..."
+            bind:value={filters.search}
+            onkeydown={(e) => e.key === 'Enter' && handleFilterChange()}
+          />
+          {#if filters.search}
+            <button class="search-clear" onclick={() => { filters.search = ''; handleFilterChange(); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
           {/if}
         </div>
-      {:else}
-        <DocumentList
-          {documents}
-          selectedId={selectedDocument?.id}
-          {isAdmin}
-          on:select={(e) => handleDocumentSelect(e.detail)}
-        />
 
-        <!-- Infinite scroll sentinel -->
-        {#if documents.length < totalDocuments}
-          <div bind:this={scrollSentinel} class="scroll-sentinel">
-            {#if loading}
-              <svg class="spinner" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
-              </svg>
+        <button
+          class="filter-toggle"
+          class:active={showFilters}
+          onclick={() => showFilters = !showFilters}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          Filters
+          {#if hasActiveFilters}
+            <span class="filter-count">{Object.values(filters).filter(v => v && v !== 'all').length}</span>
+          {/if}
+        </button>
+
+        {#if hasActiveFilters}
+          <button class="clear-filters" onclick={clearFilters}>
+            Clear all
+          </button>
+        {/if}
+
+        <div class="result-count">
+          {totalDocuments.toLocaleString()} {totalDocuments === 1 ? 'document' : 'documents'}
+        </div>
+      </div>
+
+      <!-- Filter panel -->
+      {#if showFilters}
+        <FilterPanel
+          bind:filters
+          {stats}
+          on:change={handleFilterChange}
+        />
+      {/if}
+
+      <!-- Document list -->
+      <div class="document-container">
+        {#if loading && documents.length === 0}
+          <div class="loading-state">
+            <svg class="spinner" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+            </svg>
+            <span>Loading documents...</span>
+          </div>
+        {:else if error}
+          <div class="error-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{error}</span>
+            <button onclick={() => { error = null; fetchDocuments(true); }}>Retry</button>
+          </div>
+        {:else if documents.length === 0}
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>No documents found</span>
+            {#if hasActiveFilters}
+              <button onclick={clearFilters}>Clear filters</button>
             {/if}
           </div>
+        {:else}
+          <DocumentList
+            {documents}
+            selectedId={selectedDocument?.id}
+            {isAdmin}
+            on:select={(e) => handleDocumentSelect(e.detail)}
+          />
+
+          <!-- Infinite scroll sentinel -->
+          {#if documents.length < totalDocuments}
+            <div bind:this={scrollSentinel} class="scroll-sentinel">
+              {#if loading}
+                <svg class="spinner" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+                </svg>
+              {/if}
+            </div>
+          {/if}
         {/if}
-      {/if}
-    </div>
+      </div>
+    {/if}
   </main>
 
   <!-- Detail panel (slides in from right) -->

@@ -15,16 +15,34 @@
     };
   }
 
-  function selectReligion(religionName) {
-    dispatch('select', { religion: religionName, collection: null });
+  function selectReligion(religion) {
+    dispatch('select', {
+      religion: religion.name,
+      collection: null,
+      node: {
+        node_type: 'religion',
+        name: religion.name,
+        slug: religion.slug
+      }
+    });
   }
 
-  function selectCollection(religionName, collectionName) {
-    dispatch('select', { religion: religionName, collection: collectionName });
+  function selectCollection(religion, collection) {
+    dispatch('select', {
+      religion: religion.name,
+      collection: collection.name,
+      node: {
+        node_type: 'collection',
+        name: collection.name,
+        slug: collection.slug,
+        religionSlug: religion.slug,
+        religionName: religion.name
+      }
+    });
   }
 
   function selectAll() {
-    dispatch('select', { religion: null, collection: null });
+    dispatch('select', { religion: null, collection: null, node: null });
   }
 
   // Auto-expand selected religion
@@ -65,7 +83,7 @@
         <button
           class="tree-item religion"
           class:selected={selectedReligion === religion.name && !selectedCollection}
-          onclick={() => selectReligion(religion.name)}
+          onclick={() => selectReligion(religion)}
         >
           <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -82,7 +100,7 @@
             <button
               class="tree-item collection"
               class:selected={selectedReligion === religion.name && selectedCollection === collection.name}
-              onclick={() => selectCollection(religion.name, collection.name)}
+              onclick={() => selectCollection(religion, collection)}
             >
               <svg class="tree-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>

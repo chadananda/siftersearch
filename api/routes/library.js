@@ -133,6 +133,378 @@ export default async function libraryRoutes(fastify) {
     };
   });
 
+  // ============================================
+  // Library Nodes (Religions & Collections)
+  // ============================================
+
+  /**
+   * Get all library nodes as a tree structure
+   */
+  fastify.get('/nodes', async () => {
+    const meili = getMeili();
+
+    // Get all nodes from database
+    const nodes = await queryAll(`
+      SELECT id, parent_id, node_type, name, slug, description, overview,
+             cover_image_url, authority_default, display_order, metadata
+      FROM library_nodes
+      ORDER BY display_order, name
+    `);
+
+    // Get document counts from Meilisearch
+    const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
+      limit: 10000,
+      attributesToRetrieve: ['religion', 'collection']
+    });
+
+    // Build counts map
+    const religionCounts = {};
+    const collectionCounts = {};
+    for (const doc of searchResult.hits) {
+      const religion = doc.religion || 'Uncategorized';
+      const collection = doc.collection || 'General';
+      religionCounts[religion] = (religionCounts[religion] || 0) + 1;
+      if (!collectionCounts[religion]) collectionCounts[religion] = {};
+      collectionCounts[religion][collection] = (collectionCounts[religion][collection] || 0) + 1;
+    }
+
+    // Build tree structure
+    const religionNodes = nodes.filter(n => n.node_type === 'religion');
+    const collectionNodes = nodes.filter(n => n.node_type === 'collection');
+
+    const tree = religionNodes.map(religion => {
+      const children = collectionNodes
+        .filter(c => c.parent_id === religion.id)
+        .map(c => ({
+          id: c.id,
+          node_type: c.node_type,
+          name: c.name,
+          slug: c.slug,
+          description: c.description,
+          cover_image_url: c.cover_image_url,
+          authority_default: c.authority_default,
+          document_count: collectionCounts[religion.name]?.[c.name] || 0,
+          metadata: c.metadata ? JSON.parse(c.metadata) : null
+        }));
+
+      return {
+        id: religion.id,
+        node_type: religion.node_type,
+        name: religion.name,
+        slug: religion.slug,
+        description: religion.description,
+        cover_image_url: religion.cover_image_url,
+        authority_default: religion.authority_default,
+        document_count: religionCounts[religion.name] || 0,
+        metadata: religion.metadata ? JSON.parse(religion.metadata) : null,
+        children
+      };
+    });
+
+    return { nodes: tree };
+  });
+
+  /**
+   * Get a single library node by ID
+   */
+  fastify.get('/nodes/:id', async (request) => {
+    const { id } = request.params;
+    const meili = getMeili();
+
+    const node = await queryOne(`
+      SELECT id, parent_id, node_type, name, slug, description, overview,
+             cover_image_url, authority_default, display_order, metadata,
+             created_at, updated_at
+      FROM library_nodes WHERE id = ?
+    `, [id]);
+
+    if (!node) {
+      throw ApiError.notFound('Library node not found');
+    }
+
+    // Get parent if this is a collection
+    let parent = null;
+    if (node.parent_id) {
+      parent = await queryOne('SELECT id, name, slug FROM library_nodes WHERE id = ?', [node.parent_id]);
+    }
+
+    // Get document count
+    let documentCount = 0;
+    if (node.node_type === 'collection' && parent) {
+      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+        limit: 0,
+        filter: `religion = "${parent.name}" AND collection = "${node.name}"`
+      });
+      documentCount = result.estimatedTotalHits || 0;
+    } else if (node.node_type === 'religion') {
+      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+        limit: 0,
+        filter: `religion = "${node.name}"`
+      });
+      documentCount = result.estimatedTotalHits || 0;
+    }
+
+    return {
+      node: {
+        ...node,
+        metadata: node.metadata ? JSON.parse(node.metadata) : null,
+        parent,
+        document_count: documentCount
+      }
+    };
+  });
+
+  /**
+   * Get library node by slug path
+   * GET /by-slug/:religionSlug - Get religion
+   * GET /by-slug/:religionSlug/:collectionSlug - Get collection
+   */
+  fastify.get('/by-slug/:religionSlug', async (request) => {
+    const { religionSlug } = request.params;
+    const meili = getMeili();
+
+    const node = await queryOne(`
+      SELECT id, parent_id, node_type, name, slug, description, overview,
+             cover_image_url, authority_default, metadata, created_at, updated_at
+      FROM library_nodes
+      WHERE node_type = 'religion' AND slug = ?
+    `, [religionSlug]);
+
+    if (!node) {
+      throw ApiError.notFound('Religion not found');
+    }
+
+    // Get document count
+    const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+      limit: 0,
+      filter: `religion = "${node.name}"`
+    });
+
+    // Get children (collections)
+    const children = await queryAll(`
+      SELECT id, name, slug, description, cover_image_url, authority_default
+      FROM library_nodes
+      WHERE parent_id = ?
+      ORDER BY display_order, name
+    `, [node.id]);
+
+    return {
+      node: {
+        ...node,
+        metadata: node.metadata ? JSON.parse(node.metadata) : null,
+        document_count: result.estimatedTotalHits || 0,
+        children
+      }
+    };
+  });
+
+  fastify.get('/by-slug/:religionSlug/:collectionSlug', async (request) => {
+    const { religionSlug, collectionSlug } = request.params;
+    const { limit = 50, offset = 0 } = request.query;
+    const meili = getMeili();
+
+    // Get religion first
+    const religion = await queryOne(`
+      SELECT id, name, slug FROM library_nodes
+      WHERE node_type = 'religion' AND slug = ?
+    `, [religionSlug]);
+
+    if (!religion) {
+      throw ApiError.notFound('Religion not found');
+    }
+
+    // Get collection
+    const node = await queryOne(`
+      SELECT id, parent_id, node_type, name, slug, description, overview,
+             cover_image_url, authority_default, metadata, created_at, updated_at
+      FROM library_nodes
+      WHERE node_type = 'collection' AND slug = ? AND parent_id = ?
+    `, [collectionSlug, religion.id]);
+
+    if (!node) {
+      throw ApiError.notFound('Collection not found');
+    }
+
+    // Get documents in this collection
+    const docsResult = await meili.index(INDEXES.DOCUMENTS).search('', {
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      filter: `religion = "${religion.name}" AND collection = "${node.name}"`,
+      sort: ['authority:desc', 'title:asc'],
+      attributesToRetrieve: [
+        'id', 'title', 'author', 'religion', 'collection',
+        'language', 'year', 'description', 'authority', 'paragraph_count'
+      ]
+    });
+
+    return {
+      node: {
+        ...node,
+        metadata: node.metadata ? JSON.parse(node.metadata) : null,
+        parent: { id: religion.id, name: religion.name, slug: religion.slug }
+      },
+      documents: docsResult.hits,
+      total_documents: docsResult.estimatedTotalHits || 0,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    };
+  });
+
+  /**
+   * Create a new library node (admin only)
+   */
+  fastify.post('/nodes', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['node_type', 'name'],
+        properties: {
+          parent_id: { type: 'integer' },
+          node_type: { type: 'string', enum: ['religion', 'collection'] },
+          name: { type: 'string', minLength: 1 },
+          slug: { type: 'string' },
+          description: { type: 'string' },
+          overview: { type: 'string' },
+          cover_image_url: { type: 'string' },
+          authority_default: { type: 'integer', minimum: 1, maximum: 10 },
+          display_order: { type: 'integer' },
+          metadata: { type: 'object' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { parent_id, node_type, name, description, overview,
+            cover_image_url, authority_default, display_order, metadata } = request.body;
+
+    // Generate slug from name if not provided
+    const slug = request.body.slug || name
+      .toLowerCase()
+      .replace(/[''`]/g, '')
+      .replace(/á/g, 'a').replace(/í/g, 'i').replace(/é/g, 'e').replace(/ú/g, 'u')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    // Validate: collections must have a parent
+    if (node_type === 'collection' && !parent_id) {
+      throw ApiError.badRequest('Collections must have a parent religion');
+    }
+
+    // Check for duplicate slug within same parent
+    const existing = await queryOne(
+      'SELECT id FROM library_nodes WHERE slug = ? AND (parent_id = ? OR (parent_id IS NULL AND ? IS NULL))',
+      [slug, parent_id || null, parent_id || null]
+    );
+    if (existing) {
+      throw ApiError.conflict('A node with this slug already exists');
+    }
+
+    await query(`
+      INSERT INTO library_nodes (parent_id, node_type, name, slug, description, overview,
+                                  cover_image_url, authority_default, display_order, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      parent_id || null, node_type, name, slug, description || null, overview || null,
+      cover_image_url || null, authority_default || 5, display_order || 0,
+      metadata ? JSON.stringify(metadata) : null
+    ]);
+
+    const node = await queryOne('SELECT * FROM library_nodes WHERE slug = ? AND parent_id IS ?', [slug, parent_id || null]);
+    logger.info({ nodeId: node.id, name, node_type }, 'Library node created');
+
+    return { success: true, node };
+  });
+
+  /**
+   * Update a library node (admin only)
+   */
+  fastify.put('/nodes/:id', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'integer' } },
+        required: ['id']
+      },
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', minLength: 1 },
+          slug: { type: 'string' },
+          description: { type: 'string' },
+          overview: { type: 'string' },
+          cover_image_url: { type: 'string' },
+          authority_default: { type: 'integer', minimum: 1, maximum: 10 },
+          display_order: { type: 'integer' },
+          metadata: { type: 'object' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+    const updates = request.body;
+
+    // Verify node exists
+    const existing = await queryOne('SELECT * FROM library_nodes WHERE id = ?', [id]);
+    if (!existing) {
+      throw ApiError.notFound('Library node not found');
+    }
+
+    // Build update query
+    const setClauses = [];
+    const values = [];
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) {
+        if (key === 'metadata') {
+          setClauses.push('metadata = ?');
+          values.push(JSON.stringify(value));
+        } else {
+          setClauses.push(`${key} = ?`);
+          values.push(value);
+        }
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+      await query(`UPDATE library_nodes SET ${setClauses.join(', ')} WHERE id = ?`, values);
+    }
+
+    const node = await queryOne('SELECT * FROM library_nodes WHERE id = ?', [id]);
+    logger.info({ nodeId: id, updates: Object.keys(updates) }, 'Library node updated');
+
+    return { success: true, node };
+  });
+
+  /**
+   * Delete a library node (admin only)
+   */
+  fastify.delete('/nodes/:id', {
+    preHandler: [requireAuth, requireAdmin]
+  }, async (request) => {
+    const { id } = request.params;
+
+    const node = await queryOne('SELECT * FROM library_nodes WHERE id = ?', [id]);
+    if (!node) {
+      throw ApiError.notFound('Library node not found');
+    }
+
+    // Check if this religion has collections
+    if (node.node_type === 'religion') {
+      const children = await queryOne('SELECT COUNT(*) as count FROM library_nodes WHERE parent_id = ?', [id]);
+      if (children.count > 0) {
+        throw ApiError.badRequest('Cannot delete religion with existing collections');
+      }
+    }
+
+    await query('DELETE FROM library_nodes WHERE id = ?', [id]);
+    logger.info({ nodeId: id, name: node.name }, 'Library node deleted');
+
+    return { success: true };
+  });
+
   /**
    * List documents with filtering and pagination
    */
