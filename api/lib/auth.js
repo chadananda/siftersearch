@@ -136,21 +136,21 @@ export async function seedAdminUser() {
   }
 
   // Check if admin already exists
-  const existing = await queryOne('SELECT id, tier FROM users WHERE email = ?', [adminEmail.toLowerCase()]);
+  const existing = await queryOne('SELECT id, tier, email_verified FROM users WHERE email = ?', [adminEmail.toLowerCase()]);
 
   if (existing) {
-    // Update to admin tier if not already
-    if (existing.tier !== 'admin') {
-      await query('UPDATE users SET tier = ? WHERE id = ?', ['admin', existing.id]);
+    // Update to admin tier and ensure email_verified if not already
+    if (existing.tier !== 'admin' || !existing.email_verified) {
+      await query('UPDATE users SET tier = ?, email_verified = 1 WHERE id = ?', ['admin', existing.id]);
     }
     return { id: existing.id, email: adminEmail, action: 'updated' };
   }
 
-  // Create admin user
+  // Create admin user (pre-verified since we trust the env credentials)
   const passwordHash = await hashPassword(adminPass);
   const now = new Date().toISOString();
   const result = await query(
-    'INSERT INTO users (email, password_hash, name, tier, approved_at) VALUES (?, ?, ?, ?, ?) RETURNING id',
+    'INSERT INTO users (email, password_hash, name, tier, email_verified, approved_at) VALUES (?, ?, ?, ?, 1, ?) RETURNING id',
     [adminEmail.toLowerCase(), passwordHash, 'Admin', 'admin', now]
   );
 
