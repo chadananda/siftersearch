@@ -121,13 +121,13 @@ Then('I should see {string} in the dropdown menu', async function (linkName) {
 // ============================================
 
 Then('I should see the {string} button', async function (buttonName) {
-  if (buttonName === 'Sign In') {
+  if (buttonName === 'Sign In' || buttonName === 'Connect') {
     expect(this.authToken).to.be.null;
   }
 });
 
 Then('I should not see the {string} button', async function (buttonName) {
-  if (buttonName === 'Sign In') {
+  if (buttonName === 'Sign In' || buttonName === 'Connect') {
     expect(this.authToken).to.not.be.null;
   }
 });

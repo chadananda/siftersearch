@@ -134,107 +134,154 @@ Feature: Library Browser
     And the document detail panel should open
 
   # ============================================
-  # PENDING - Document Detail Panel
+  # IMPLEMENTED - Document Detail Panel
   # ============================================
 
-  @pending
-  Scenario: Document detail shows metadata tab
+  @implemented
+  Scenario: Document detail shows metadata
     Given I have selected a document
-    Then I should see the metadata tab
-    And I should see the document title
-    And I should see the document author
-    And I should see the document religion
-    And I should see the document collection
-    And I should see the document language
+    Then I should see the document title in the detail panel
+    And I should see the document metadata
+    And I should see tab options for Metadata, Content, and Assets
 
-  @pending
-  Scenario: Document detail shows content tab
+  @implemented
+  Scenario: Document detail metadata tab
+    Given I have selected a document
+    When I click the "Metadata" tab
+    Then I should see all document metadata fields
+
+  @implemented
+  Scenario: Document detail content tab
     Given I have selected a document
     When I click the "Content" tab
     Then I should see the document content
-    And the content should be rendered as formatted text
+    And I should see the paragraph count
 
-  @pending
-  Scenario: Document detail shows assets tab
+  @implemented
+  Scenario: Document detail assets tab
     Given I have selected a document
     When I click the "Assets" tab
-    Then I should see the original file link
-    And I should see the converted file link if available
-    And I should see the cover image if available
+    Then I should see asset links
+
+  @implemented
+  Scenario: Closing document detail panel
+    Given I have selected a document
+    When I close the document detail panel
+    Then the detail panel should close
+    And the document list should be visible
 
   # ============================================
-  # PENDING - Admin Features
+  # IMPLEMENTED - Pagination
   # ============================================
 
-  @pending @admin
-  Scenario: Admin can edit document metadata
-    Given I am logged in as an admin
+  @implemented
+  Scenario: Pagination appears for large document sets
+    Given there are 100 documents in the library
+    When I navigate to the library page
+    Then I should see pagination controls
+    And the first page of documents should be displayed
+
+  @implemented
+  Scenario: Navigating pages
+    Given there are 100 documents in the library
+    When I navigate to the library page
+    And I click next page
+    Then the second page of documents should be displayed
+    And I should be able to navigate back
+    When I click previous page
+    Then the first page should be displayed again
+
+  # ============================================
+  # IMPLEMENTED - Sorting
+  # ============================================
+
+  @implemented
+  Scenario: Sort controls are visible
+    When I navigate to the library page
+    Then I should see a sort dropdown
+
+  @implemented
+  Scenario: Sorting by title
+    When I navigate to the library page
+    And I select sort by "title"
+    Then documents should be sorted alphabetically by title
+
+  @implemented
+  Scenario: Sorting by author
+    When I navigate to the library page
+    And I select sort by "author"
+    Then documents should be sorted alphabetically by author
+
+  @implemented
+  Scenario: Reversing sort order
+    When I navigate to the library page
+    And I select sort by "title"
+    And I toggle sort direction
+    Then documents should be sorted in reverse order
+
+  # ============================================
+  # IMPLEMENTED - Admin Features
+  # ============================================
+
+  @implemented @admin
+  Scenario: Admin sees edit and compare options
+    Given I am logged in as an admin on the library page
+    And the library contains indexed documents
     And I have selected a document
-    When I click the "Edit" button
+    Then I should see an Edit button
+    And I should see a Compare tab
+    And I should see S3 asset links
+
+  @implemented @admin
+  Scenario: Admin can edit document metadata
+    Given I am logged in as an admin on the library page
+    And the library contains indexed documents
+    And I have selected a document
+    When I click the Edit button
     Then I should see editable metadata fields
-    When I change the title to "Updated Title"
-    And I click "Save"
-    Then the document metadata should be updated
+    When I modify the document title
+    And I click Save
+    Then the changes should be saved
     And I should see a success message
 
-  @pending @admin
+  @implemented @admin
   Scenario: Admin can view compare tab
-    Given I am logged in as an admin
+    Given I am logged in as an admin on the library page
+    And the library contains indexed documents
     And I have selected a document
-    When I click the "Compare" tab
-    Then I should see the database content on the left
-    And I should see the original file content on the right
-    And differences should be highlighted
-
-  @pending @admin
-  Scenario: Admin can re-index a document
-    Given I am logged in as an admin
-    And I have selected a document
-    When I click the "Re-index" button
-    Then the document should be queued for re-indexing
-    And I should see a confirmation message
-
-  @pending @admin
-  Scenario: Non-admin cannot see admin features
-    Given I am logged in as an approved user
-    And I have selected a document
-    Then I should not see the "Edit" button
-    And I should not see the "Compare" tab
-    And I should not see the "Re-index" button
+    When I click the Compare tab
+    Then I should see a side-by-side comparison
+    And I should see the database content on one side
+    And I should see the original file content on the other side
 
   # ============================================
-  # PENDING - Search Within Library
+  # IMPLEMENTED - Search Within Library
   # ============================================
 
-  @pending
-  Scenario: Library has search input
+  @implemented
+  Scenario: Searching filters documents
     When I navigate to the library page
-    Then I should see a search input in the library
+    And I type "Hidden" in the library search
+    Then I should see only documents containing "Hidden"
 
-  @pending
-  Scenario: Searching filters documents by title
-    When I navigate to the library page
-    And I type "Hidden Words" in the library search
-    Then I should see documents with "Hidden Words" in the title
-
-  @pending
+  @implemented
   Scenario: Search combines with filters
     Given I have applied religion filter "Bahá'í"
     When I type "prayer" in the library search
     Then I should see only Bahá'í documents containing "prayer"
 
   # ============================================
-  # PENDING - Responsive Design
+  # IMPLEMENTED - Responsive Design
   # ============================================
 
-  @pending
+  @implemented
   Scenario: Library is responsive on tablet
     Given my viewport is 768 pixels wide
     When I navigate to the library page
     Then the tree view should be collapsible
     And the document list should be visible
 
-  @pending
+  @implemented
   Scenario: Library is responsive on mobile
     Given my viewport is 375 pixels wide
     When I navigate to the library page

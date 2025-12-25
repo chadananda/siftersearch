@@ -232,9 +232,9 @@
               </svg>
             </button>
             <div class="prompt-content">
-              <div class="prompt-title">Create a free account</div>
+              <div class="prompt-title">Connect your account</div>
               <div class="prompt-text">Save your searches, get more results, and unlock premium features.</div>
-              <button class="prompt-btn" onclick={signInFromPrompt}>Sign In Free</button>
+              <button class="prompt-btn" onclick={signInFromPrompt}>Connect Free</button>
             </div>
             <div class="prompt-arrow"></div>
           </div>
@@ -329,7 +329,7 @@
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                   <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
-                Sign In
+                Connect
               </button>
               <a href="/about" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -419,13 +419,14 @@
     50% { opacity: 0.7; }
   }
 
-  /* Navigation section */
+  /* Navigation section - aligned left, takes 2/3 of available space */
   .navbar-nav {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    flex: 1;
-    justify-content: center;
+    flex: 2;
+    justify-content: flex-start;
+    margin-left: 0.5rem;
   }
 
   .nav-link {
@@ -475,32 +476,35 @@
     .nav-link.show-lg { display: flex; }
   }
 
-  /* Hamburger for collapsed items */
+  /* Hamburger for collapsed items - matches user button style */
   .nav-hamburger {
     position: relative;
   }
 
   .hamburger-btn {
-    padding: 0.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    border-radius: 0.5rem;
-    transition: all 0.15s ease;
+    width: 2.5rem;
+    height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    color: var(--text-secondary);
   }
 
   .hamburger-btn:hover {
-    background: var(--hover-overlay);
+    background: var(--surface-2);
+    border-color: var(--border-strong);
     color: var(--text-primary);
   }
 
   .hamburger-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   /* Nav dropdown for collapsed items */
@@ -564,11 +568,13 @@
     .nav-dropdown-item.hide-above-lg { display: none; }
   }
 
-  /* Right side controls */
+  /* Right side controls - takes 1/3 of remaining space, aligns right */
   .navbar-right {
     display: flex;
     align-items: center;
-    flex-shrink: 0;
+    justify-content: flex-end;
+    flex: 1;
+    gap: 0.5rem;
   }
 
   /* User menu */

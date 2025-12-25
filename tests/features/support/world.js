@@ -50,13 +50,19 @@ class SifterSearchWorld extends World {
     if (!this.libraryData || !this.pageState) return [];
 
     return this.libraryData.documents.filter(doc => {
-      const { religion, collection, language, status, author } = this.pageState.filters;
+      const { religion, collection, language, status, author, search } = this.pageState.filters;
 
       if (religion && doc.religion !== religion) return false;
       if (collection && doc.collection !== collection) return false;
       if (language && doc.language !== language) return false;
       if (status && status !== 'all' && doc.status !== status) return false;
       if (author && !doc.author.toLowerCase().includes(author.toLowerCase())) return false;
+
+      // Search filter - matches title or author
+      if (search) {
+        const searchable = `${doc.title} ${doc.author}`.toLowerCase();
+        if (!searchable.includes(search.toLowerCase())) return false;
+      }
 
       return true;
     });

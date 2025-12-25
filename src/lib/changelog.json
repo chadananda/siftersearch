@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T20:22:52.098Z",
+  "generated": "2025-12-25T20:28:52.324Z",
   "entries": [
+    {
+      "hash": "6031995",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Consolidate user menu and rename Search to Chat",
+      "scope": "navbar"
+    },
     {
       "hash": "9b06c06",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Centralize embedding config - read from config.js only",
       "scope": null
-    },
-    {
-      "hash": "6104536",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "6031995",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Consolidate user menu and rename Search to Chat",
+        "scope": "navbar"
+      },
       {
         "hash": "9b06c06",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Centralize embedding config - read from config.js only",
-        "scope": null
-      },
-      {
-        "hash": "6104536",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
         "scope": null
       }
     ]
