@@ -89,13 +89,15 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/stats', async () => {
     const meili = getMeili();
 
-    // Get counts from Meilisearch
-    const [docsResult, parasResult] = await Promise.all([
+    // Get counts from Meilisearch - use index stats for accurate totals
+    const [docsResult, parasResult, docStats, paraStats] = await Promise.all([
       meili.index(INDEXES.DOCUMENTS).search('', {
         limit: 0,
         facets: ['religion', 'collection', 'language']
       }),
-      meili.index(INDEXES.PARAGRAPHS).search('', { limit: 0 })
+      meili.index(INDEXES.PARAGRAPHS).search('', { limit: 0 }),
+      meili.index(INDEXES.DOCUMENTS).getStats(),
+      meili.index(INDEXES.PARAGRAPHS).getStats()
     ]);
 
     // Get indexing queue status from database
@@ -120,8 +122,8 @@ export default async function libraryRoutes(fastify) {
     const facets = docsResult.facetDistribution || {};
 
     return {
-      totalDocuments: docsResult.estimatedTotalHits || 0,
-      totalParagraphs: parasResult.estimatedTotalHits || 0,
+      totalDocuments: docStats.numberOfDocuments || 0,
+      totalParagraphs: paraStats.numberOfDocuments || 0,
       religions: Object.keys(facets.religion || {}).length,
       collections: Object.keys(facets.collection || {}).length,
       languages: Object.keys(facets.language || {}).length,
