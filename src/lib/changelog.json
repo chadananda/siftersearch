@@ -1,6 +1,20 @@
 {
-  "generated": "2025-12-18T04:33:40.382Z",
+  "generated": "2025-12-25T02:30:18.690Z",
   "entries": [
+    {
+      "hash": "d59e44f",
+      "date": "2025-12-24",
+      "type": "Fixed",
+      "description": "Set email_verified=1 for seeded admin user",
+      "scope": "auth"
+    },
+    {
+      "hash": "fd78999",
+      "date": "2025-12-17",
+      "type": "Fixed",
+      "description": "Penalize keyword-only matches that don't answer question",
+      "scope": "analyzer"
+    },
     {
       "hash": "1f21fc9",
       "date": "2025-12-17",
@@ -336,24 +350,26 @@
       "type": "New",
       "description": "Add automatic library watcher and improve PM2 update handling",
       "scope": null
-    },
-    {
-      "hash": "6722faa",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Watchdog reads ports from env, remove Meilisearch from PM2",
-      "scope": null
-    },
-    {
-      "hash": "38e63a7",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Add server import check to pre-commit hooks",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-24": [
+      {
+        "hash": "d59e44f",
+        "date": "2025-12-24",
+        "type": "Fixed",
+        "description": "Set email_verified=1 for seeded admin user",
+        "scope": "auth"
+      }
+    ],
     "2025-12-17": [
+      {
+        "hash": "fd78999",
+        "date": "2025-12-17",
+        "type": "Fixed",
+        "description": "Penalize keyword-only matches that don't answer question",
+        "scope": "analyzer"
+      },
       {
         "hash": "1f21fc9",
         "date": "2025-12-17",
@@ -692,20 +708,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "Add automatic library watcher and improve PM2 update handling",
-        "scope": null
-      },
-      {
-        "hash": "6722faa",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Watchdog reads ports from env, remove Meilisearch from PM2",
-        "scope": null
-      },
-      {
-        "hash": "38e63a7",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Add server import check to pre-commit hooks",
         "scope": null
       }
     ]
