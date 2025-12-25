@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T04:31:21.907Z",
+  "generated": "2025-12-25T05:11:37.231Z",
   "entries": [
+    {
+      "hash": "6218678",
+      "date": "2025-12-24",
+      "type": "Fixed",
+      "description": "Auto-migrations create base schema and fix refresh_tokens type",
+      "scope": null
+    },
     {
       "hash": "994f582",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent SW caching with _headers, disable reload loop",
       "scope": null
-    },
-    {
-      "hash": "2915d91",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Improve PWA update detection - check every 30s, initial check at 5s",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "6218678",
+        "date": "2025-12-24",
+        "type": "Fixed",
+        "description": "Auto-migrations create base schema and fix refresh_tokens type",
+        "scope": null
+      },
       {
         "hash": "994f582",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Prevent SW caching with _headers, disable reload loop",
-        "scope": null
-      },
-      {
-        "hash": "2915d91",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Improve PWA update detection - check every 30s, initial check at 5s",
         "scope": null
       }
     ]

@@ -9,11 +9,13 @@
   import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
   import { initPWA, performUpdate, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
+  import { updateUsage } from '../lib/usage.svelte.js';
   import changelog from '../lib/changelog.json';
   import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
   import { getUserId } from '../lib/api.js';
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
+  import TierBadge from './TierBadge.svelte';
 
   // Configure marked for inline parsing (no <p> tags wrapping)
   marked.use({
@@ -699,6 +701,10 @@
           if (event.timing?.analyzerTimeMs && researchPlan) {
             researchPlan = { ...researchPlan, analyzerTimeMs: event.timing.analyzerTimeMs };
           }
+          // Update usage limits from response
+          if (event.queryLimit) {
+            updateUsage(event.queryLimit);
+          }
           // Mark streaming complete
           messages = messages.map((m, i) =>
             i === assistantMsgIndex
@@ -998,6 +1004,7 @@
       </button>
       {#if auth.isAuthenticated}
         <div class="auth-section">
+          <TierBadge />
           <span class="user-email">{auth.user?.email}</span>
           <button
             onclick={logout}
@@ -1007,6 +1014,7 @@
           </button>
         </div>
       {:else}
+        <TierBadge />
         <button
           onclick={() => showAuthModal = true}
           class="btn-primary"
@@ -1019,8 +1027,10 @@
     <!-- Mobile navigation -->
     <div class="mobile-nav">
       {#if auth.isAuthenticated}
+        <TierBadge />
         <button onclick={logout} class="btn-secondary btn-small">Sign Out</button>
       {:else}
+        <TierBadge />
         <button onclick={() => showAuthModal = true} class="btn-primary btn-small">Sign In</button>
       {/if}
       <button
