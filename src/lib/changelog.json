@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T03:25:24.766Z",
+  "generated": "2025-12-25T04:09:43.472Z",
   "entries": [
+    {
+      "hash": "778e69d",
+      "date": "2025-12-24",
+      "type": "Fixed",
+      "description": "Use absolute paths for dotenv config",
+      "scope": "migrate"
+    },
     {
       "hash": "0bb51ee",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Run updater in daemon mode instead of cron",
       "scope": null
-    },
-    {
-      "hash": "9ff3944",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Pass deploy secret at build time for client-triggered updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "778e69d",
+        "date": "2025-12-24",
+        "type": "Fixed",
+        "description": "Use absolute paths for dotenv config",
+        "scope": "migrate"
+      },
       {
         "hash": "0bb51ee",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Run updater in daemon mode instead of cron",
-        "scope": null
-      },
-      {
-        "hash": "9ff3944",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Pass deploy secret at build time for client-triggered updates",
         "scope": null
       }
     ]

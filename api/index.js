@@ -24,6 +24,7 @@ import { createServer } from './server.js';
 import { logger } from './lib/logger.js';
 import { ensureServicesRunning, cleanupServices, getServicesStatus } from './lib/services.js';
 import { seedAdminUser } from './lib/auth.js';
+import { runMigrations } from './lib/migrations.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -48,6 +49,17 @@ const start = async () => {
     const host = process.env.HOST || '0.0.0.0';
 
     await server.listen({ port, host });
+
+    // Run database migrations
+    try {
+      const migrationResult = await runMigrations();
+      if (migrationResult.applied > 0) {
+        logger.info(migrationResult, 'Database migrations applied');
+      }
+    } catch (err) {
+      logger.error({ err }, 'Database migration failed');
+      process.exit(1);
+    }
 
     // Seed admin user if configured
     try {
