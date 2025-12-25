@@ -49,22 +49,44 @@
     selectedNode && selectedNode.node_type === 'collection' && selectedNode.religionSlug
   );
 
-  // Fetch tree structure from library nodes
+  // Fetch tree structure - try library nodes first, fallback to tree endpoint
   async function fetchTree() {
     try {
-      const res = await fetch(`${API_BASE}/api/library/nodes`);
+      // Try the new nodes endpoint first (has slugs for collection pages)
+      let res = await fetch(`${API_BASE}/api/library/nodes`);
+      if (res.ok) {
+        const data = await res.json();
+        // Transform nodes to match TreeView expected format
+        treeData = (data.nodes || []).map(religion => ({
+          name: religion.name,
+          slug: religion.slug,
+          count: religion.document_count || 0,
+          collections: (religion.children || []).map(c => ({
+            name: c.name,
+            slug: c.slug,
+            count: c.document_count || 0,
+            religionSlug: religion.slug,
+            religionName: religion.name
+          }))
+        }));
+        return;
+      }
+
+      // Fallback to legacy tree endpoint (no slugs, no collection pages)
+      console.warn('Nodes endpoint unavailable, falling back to tree endpoint');
+      res = await fetch(`${API_BASE}/api/library/tree`);
       if (!res.ok) throw new Error('Failed to load library tree');
       const data = await res.json();
-      // Transform nodes to match TreeView expected format
-      treeData = (data.nodes || []).map(religion => ({
+      // Transform to match expected format (without slugs)
+      treeData = (data.religions || []).map(religion => ({
         name: religion.name,
-        slug: religion.slug,
-        count: religion.document_count || 0,
-        collections: (religion.children || []).map(c => ({
+        slug: null, // No slug available in legacy endpoint
+        count: religion.count || 0,
+        collections: (religion.collections || []).map(c => ({
           name: c.name,
-          slug: c.slug,
-          count: c.document_count || 0,
-          religionSlug: religion.slug,
+          slug: null,
+          count: c.count || 0,
+          religionSlug: null,
           religionName: religion.name
         }))
       }));
