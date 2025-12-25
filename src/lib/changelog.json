@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:43:12.717Z",
+  "generated": "2025-12-25T05:46:48.115Z",
   "entries": [
+    {
+      "hash": "9088631",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add translation side-by-side view for patron+ users",
+      "scope": null
+    },
     {
       "hash": "4e95734",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use absolute path for cloudflared config",
       "scope": null
-    },
-    {
-      "hash": "3382e51",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Convert ecosystem.config.js to CommonJS for PM2 compatibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "9088631",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add translation side-by-side view for patron+ users",
+        "scope": null
+      },
       {
         "hash": "4e95734",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use absolute path for cloudflared config",
-        "scope": null
-      },
-      {
-        "hash": "3382e51",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Convert ecosystem.config.js to CommonJS for PM2 compatibility",
         "scope": null
       }
     ]

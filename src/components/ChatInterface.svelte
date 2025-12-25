@@ -17,6 +17,7 @@
   import ThemeToggle from './ThemeToggle.svelte';
   import TierBadge from './TierBadge.svelte';
   import TranslationView from './TranslationView.svelte';
+  import AudioPlayer from './AudioPlayer.svelte';
 
   // Configure marked for inline parsing (no <p> tags wrapping)
   marked.use({
@@ -125,6 +126,7 @@
   let readerCoreTerms = $state([]); // Store coreTerms for bold emphasis in reader
   let readerAnimating = $state(false); // For smooth open animation
   let showTranslationView = $state(false); // Translation side-by-side view
+  let showAudioPlayer = $state(false); // Audio player overlay
 
   // Research plan state - shows the researcher agent's strategy
   let researchPlan = $state(null);
@@ -960,6 +962,18 @@
                 <path d="M3 5h12M9 3v2m1.048 3.5A7.5 7.5 0 0 0 19.5 15m0 0a7.5 7.5 0 0 1-7.5 7.5m7.5-7.5h-3m0 0l1.5-1.5m-1.5 1.5l1.5 1.5M5 12h3l1-3 2 6 1-3h3" />
               </svg>
             </button>
+            <!-- Audio button (patron+ only) -->
+            <button
+              class="reader-action-btn"
+              onclick={() => showAudioPlayer = !showAudioPlayer}
+              title={showAudioPlayer ? 'Close audio player' : 'Listen to document'}
+              aria-label={showAudioPlayer ? 'Close audio player' : 'Open audio player'}
+              class:active={showAudioPlayer}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
           {/if}
           <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1008,6 +1022,17 @@
           <TranslationView
             documentId={readerDocument.id}
             onClose={() => showTranslationView = false}
+          />
+        </div>
+      {/if}
+
+      <!-- Audio Player Overlay -->
+      {#if showAudioPlayer && readerDocument}
+        <div class="audio-overlay">
+          <AudioPlayer
+            documentId={readerDocument.id}
+            documentTitle={readerDocument.title}
+            onClose={() => showAudioPlayer = false}
           />
         </div>
       {/if}
@@ -3474,6 +3499,28 @@
     to {
       opacity: 1;
       transform: translateX(0);
+    }
+  }
+
+  .audio-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--surface-0);
+    z-index: 10;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
