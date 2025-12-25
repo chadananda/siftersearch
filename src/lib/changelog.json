@@ -1,6 +1,34 @@
 {
-  "generated": "2025-12-25T17:44:41.661Z",
+  "generated": "2025-12-25T19:16:17.823Z",
   "entries": [
+    {
+      "hash": "6993881",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Skip v7 if indexed_paragraphs table missing",
+      "scope": "migrations"
+    },
+    {
+      "hash": "986a381",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Add auto-updater daemon to ecosystem",
+      "scope": "pm2"
+    },
+    {
+      "hash": "5375797",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Make deploy hooks resilient to db failures",
+      "scope": "deploy"
+    },
+    {
+      "hash": "cc3f54a",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Add one-time deploy hooks system",
+      "scope": "deploy"
+    },
     {
       "hash": "dbb2123",
       "date": "2025-12-25",
@@ -322,38 +350,38 @@
       "type": "Fixed",
       "description": "Use DEV_MODE to select Meilisearch port automatically",
       "scope": null
-    },
-    {
-      "hash": "bb080fb",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Add MEILI_HOST to PM2 production environment",
-      "scope": null
-    },
-    {
-      "hash": "5866965",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Add Meilisearch host debug output to library indexer",
-      "scope": null
-    },
-    {
-      "hash": "fcd2f94",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Index-library.js now starts Meilisearch automatically via ensureServicesRunning",
-      "scope": null
-    },
-    {
-      "hash": "761b02d",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Add production env to library watcher, remove skip-existing flag",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "6993881",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Skip v7 if indexed_paragraphs table missing",
+        "scope": "migrations"
+      },
+      {
+        "hash": "986a381",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Add auto-updater daemon to ecosystem",
+        "scope": "pm2"
+      },
+      {
+        "hash": "5375797",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Make deploy hooks resilient to db failures",
+        "scope": "deploy"
+      },
+      {
+        "hash": "cc3f54a",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Add one-time deploy hooks system",
+        "scope": "deploy"
+      },
       {
         "hash": "dbb2123",
         "date": "2025-12-25",
@@ -682,34 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use DEV_MODE to select Meilisearch port automatically",
-        "scope": null
-      },
-      {
-        "hash": "bb080fb",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Add MEILI_HOST to PM2 production environment",
-        "scope": null
-      },
-      {
-        "hash": "5866965",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Add Meilisearch host debug output to library indexer",
-        "scope": null
-      },
-      {
-        "hash": "fcd2f94",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Index-library.js now starts Meilisearch automatically via ensureServicesRunning",
-        "scope": null
-      },
-      {
-        "hash": "761b02d",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Add production env to library watcher, remove skip-existing flag",
         "scope": null
       }
     ]
