@@ -330,7 +330,7 @@ export default async function libraryRoutes(fastify) {
       limit: parseInt(limit),
       offset: parseInt(offset),
       filter: `religion = "${religion.name}" AND collection = "${node.name}"`,
-      sort: ['authority:desc', 'title:asc'],
+      sort: ['title:asc'],  // authority sort requires index config
       attributesToRetrieve: [
         'id', 'title', 'author', 'religion', 'collection',
         'language', 'year', 'description', 'authority', 'paragraph_count'
@@ -538,7 +538,7 @@ export default async function libraryRoutes(fastify) {
       yearFrom,
       yearTo,
       status = 'all',
-      sort = 'authority',  // Default to authority for most authoritative first
+      sort = 'title',  // Default to title (authority requires index config)
       sortDir = sort === 'authority' ? 'desc' : 'asc',  // Authority defaults to desc
       limit = 50,
       offset = 0
