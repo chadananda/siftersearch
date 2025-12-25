@@ -5,15 +5,18 @@
  */
 
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env-public' });
-dotenv.config({ path: '.env-secrets' });
 import { createClient } from '@libsql/client';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = join(__dirname, '..', 'migrations');
+const PROJECT_ROOT = join(__dirname, '..');
+const MIGRATIONS_DIR = join(PROJECT_ROOT, 'migrations');
+
+// Load env files with absolute paths
+dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
+dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 async function getDb() {
   return createClient({

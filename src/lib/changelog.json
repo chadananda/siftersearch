@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T02:41:42.011Z",
+  "generated": "2025-12-25T03:25:24.766Z",
   "entries": [
+    {
+      "hash": "0bb51ee",
+      "date": "2025-12-24",
+      "type": "Fixed",
+      "description": "Use absolute paths for dotenv config loading",
+      "scope": "env"
+    },
     {
       "hash": "bc83ec6",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Pass deploy secret at build time for client-triggered updates",
       "scope": null
-    },
-    {
-      "hash": "78690b6",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "0bb51ee",
+        "date": "2025-12-24",
+        "type": "Fixed",
+        "description": "Use absolute paths for dotenv config loading",
+        "scope": "env"
+      },
       {
         "hash": "bc83ec6",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Pass deploy secret at build time for client-triggered updates",
-        "scope": null
-      },
-      {
-        "hash": "78690b6",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
         "scope": null
       }
     ]
