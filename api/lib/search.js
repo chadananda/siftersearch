@@ -103,6 +103,10 @@ export async function initializeIndexes() {
     ],
     // Custom ranking rules with configurable authority position
     rankingRules: buildRankingRules(),
+    // Increase maxTotalHits for pagination (default 1000 is too low)
+    pagination: {
+      maxTotalHits: 50000
+    },
     // Enable vector search
     embedders: {
       default: {
@@ -135,7 +139,11 @@ export async function initializeIndexes() {
       'authority'  // Doctrinal weight for sorting
     ],
     // Custom ranking rules with configurable authority position
-    rankingRules: buildRankingRules()
+    rankingRules: buildRankingRules(),
+    // Increase maxTotalHits for pagination (default 1000 is too low)
+    pagination: {
+      maxTotalHits: 50000
+    }
   });
 
   logger.info('Search indexes initialized');

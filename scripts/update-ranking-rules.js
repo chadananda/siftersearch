@@ -65,7 +65,8 @@ async function updateRankingRules() {
   const paragraphs = meili.index(INDEXES.PARAGRAPHS);
   await paragraphs.updateSettings({
     rankingRules: rules,
-    sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority']
+    sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority'],
+    pagination: { maxTotalHits: 50000 }
   });
 
   // Update documents index
@@ -73,7 +74,8 @@ async function updateRankingRules() {
   const documents = meili.index(INDEXES.DOCUMENTS);
   await documents.updateSettings({
     rankingRules: rules,
-    sortableAttributes: ['year', 'title', 'created_at', 'authority']
+    sortableAttributes: ['year', 'title', 'created_at', 'authority'],
+    pagination: { maxTotalHits: 50000 }
   });
 
   // Wait for settings to be applied
