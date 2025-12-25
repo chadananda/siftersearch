@@ -176,6 +176,44 @@ function extractMetadataFromPath(filePath, basePath) {
     }
   }
 
+  // Pattern 5: Check if parent folder is an author subfolder
+  // e.g., Baha'i/Core Tablets/The Báb/001-Address.md → author = "The Báb"
+  if (author === 'Unknown' && parts.length > 1) {
+    const parentFolder = parts[parts.length - 2];
+    // Known author subfolders (Central Figures, prominent authors)
+    const knownAuthors = [
+      'The Báb', "Báb", 'Bab',
+      "Bahá'u'lláh", 'Bahaullah', "Baha'u'llah",
+      "'Abdu'l-Bahá", 'Abdul-Baha', "Abdu'l-Baha",
+      'Shoghi Effendi',
+      'Universal House of Justice', 'UHJ',
+      'Muhammad', 'Prophet Muhammad',
+      'Buddha', 'Gautama Buddha',
+      'Jesus', 'Christ',
+      'Rumi', 'Hafiz', 'Saadi',
+      'Compilations'
+    ];
+
+    // Check if parent folder matches a known author
+    const matchedAuthor = knownAuthors.find(a =>
+      a.toLowerCase() === parentFolder.toLowerCase() ||
+      parentFolder.toLowerCase().includes(a.toLowerCase())
+    );
+
+    if (matchedAuthor) {
+      // Use the canonical form from knownAuthors
+      author = matchedAuthor;
+    } else if (
+      // Or if parent folder looks like an author name (has spaces, isn't the collection)
+      parentFolder.includes(' ') &&
+      parentFolder !== collection &&
+      !knownCollections.includes(parentFolder) &&
+      parentFolder.length < 40
+    ) {
+      author = parentFolder;
+    }
+  }
+
   // Generate unique ID from path
   const id = relativePath
     .replace(/\.md$/, '')

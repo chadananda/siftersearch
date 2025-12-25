@@ -12,5 +12,12 @@
     "command": "node scripts/update-ranking-rules.js 4",
     "enabled": true,
     "timeout": 60000
+  },
+  {
+    "id": "2024-12-25-fix-bab-author",
+    "description": "Fix Unknown author on Báb documents - set to 'The Báb'",
+    "command": "node scripts/fix-bab-author.js",
+    "enabled": true,
+    "timeout": 300000
   }
 ]

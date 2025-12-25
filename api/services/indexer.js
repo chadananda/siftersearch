@@ -157,10 +157,14 @@ export async function indexDocumentFromText(text, metadata = {}) {
     extractedMeta = parsed.metadata;
   }
 
-  // Merge metadata (explicit takes precedence)
+  // Merge metadata (frontmatter takes precedence for author, explicit path metadata for other fields)
+  // Author: prefer frontmatter over path-extracted 'Unknown'
+  const finalAuthor = extractedMeta.author ||
+    (metadata.author && metadata.author !== 'Unknown' ? metadata.author : author);
+
   const finalMeta = {
     title: metadata.title || extractedMeta.title || title,
-    author: metadata.author || extractedMeta.author || author,
+    author: finalAuthor,
     religion: metadata.religion || extractedMeta.religion || religion,
     collection: metadata.collection || extractedMeta.collection || collection,
     language: metadata.language || extractedMeta.language || language,

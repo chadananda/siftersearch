@@ -35,7 +35,8 @@
       "Bash(pm2 reload:*)",
       "Bash(python3:*)",
       "Bash(node scripts/update-server.js:*)",
-      "Bash(pm2 show:*)"
+      "Bash(pm2 show:*)",
+      "WebFetch(domain:api.siftersearch.com)"
     ]
   }
 }
