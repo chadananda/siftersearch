@@ -40,8 +40,17 @@ const PROJECT_ROOT = join(__dirname, '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-// Import after env is loaded
-const { query, queryOne, queryAll } = await import('../api/lib/db.js');
+// Import db module - wrap in try/catch for resilience
+let query, queryAll;
+try {
+  const db = await import('../api/lib/db.js');
+  query = db.query;
+  queryAll = db.queryAll;
+} catch (err) {
+  console.error(`[${new Date().toISOString()}] ❌ Failed to connect to database: ${err.message}`);
+  console.error('Deploy hooks skipped - database unavailable');
+  process.exit(0); // Exit cleanly so deployment continues
+}
 
 const HOOKS_FILE = join(PROJECT_ROOT, 'deploy-hooks.json');
 
