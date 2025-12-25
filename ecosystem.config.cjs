@@ -84,6 +84,28 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
+    // Auto-updater daemon (polls git every 5 minutes)
+    {
+      name: 'siftersearch-updater',
+      script: 'scripts/update-server.js',
+      args: '--daemon',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      env: {
+        NODE_ENV: 'production',
+        UPDATE_INTERVAL: '300000'  // 5 minutes
+      },
+      // Restart policies
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '60s',
+      // Logging
+      error_file: './logs/updater-error.log',
+      out_file: './logs/updater-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:3000)
     {
       name: 'cloudflared-tunnel',
