@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T04:09:43.472Z",
+  "generated": "2025-12-25T04:31:21.907Z",
   "entries": [
+    {
+      "hash": "994f582",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Auto-run schema migrations on API startup",
+      "scope": "db"
+    },
     {
       "hash": "778e69d",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve PWA update detection - check every 30s, initial check at 5s",
       "scope": null
-    },
-    {
-      "hash": "c43ce00",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Run updater in daemon mode instead of cron",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "994f582",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Auto-run schema migrations on API startup",
+        "scope": "db"
+      },
       {
         "hash": "778e69d",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Improve PWA update detection - check every 30s, initial check at 5s",
-        "scope": null
-      },
-      {
-        "hash": "c43ce00",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Run updater in daemon mode instead of cron",
         "scope": null
       }
     ]
