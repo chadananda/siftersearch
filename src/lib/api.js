@@ -418,6 +418,55 @@ export const session = {
 };
 
 // ============================================
+// User API
+// ============================================
+
+export const user = {
+  /**
+   * Get current user profile
+   */
+  async getProfile() {
+    return request('/api/user/profile');
+  },
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(updates) {
+    return request('/api/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  /**
+   * Change password
+   */
+  async changePassword(currentPassword, newPassword) {
+    return request('/api/user/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+  },
+
+  /**
+   * Delete account
+   */
+  async deleteAccount() {
+    return request('/api/user', {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Get user's conversation history
+   */
+  async getConversations(limit = 20, offset = 0) {
+    return request(`/api/user/conversations?limit=${limit}&offset=${offset}`);
+  }
+};
+
+// ============================================
 // Health API
 // ============================================
 

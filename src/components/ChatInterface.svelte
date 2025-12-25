@@ -1005,7 +1005,7 @@
       {#if auth.isAuthenticated}
         <div class="auth-section">
           <TierBadge />
-          <span class="user-email">{auth.user?.email}</span>
+          <a href="/profile" class="user-email">{auth.user?.email}</a>
           <button
             onclick={logout}
             class="btn-secondary"
@@ -1054,6 +1054,11 @@
   {#if showMobileMenu}
     <div class="mobile-menu" role="menu">
       <ThemeToggle />
+      {#if auth.isAuthenticated}
+        <a href="/profile" class="mobile-menu-item" role="menuitem" onclick={closeMobileMenu}>
+          Profile
+        </a>
+      {/if}
       <button
         onclick={() => { showAbout = !showAbout; closeMobileMenu(); }}
         class="mobile-menu-item"

@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
+import ProfilePage from '../components/ProfilePage.svelte';
+---
+
+<Layout title="Profile - SifterSearch" description="View and manage your SifterSearch profile.">
+  <LiquidBackground client:only="svelte" />
+  <main class="profile-wrapper">
+    <div class="page-container">
+      <!-- Header -->
+      <header class="header">
+        <a href="/" class="logo-link">
+          <img src="/ocean.svg" alt="SifterSearch" class="logo" />
+          <h1 class="title">SifterSearch</h1>
+        </a>
+        <nav class="nav">
+          <ThemeToggle client:only="svelte" />
+          <a href="/" class="nav-link">Search</a>
+        </nav>
+      </header>
+
+      <!-- Profile Content -->
+      <ProfilePage client:only="svelte" />
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .profile-wrapper {
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: 2rem;
+  }
+
+  .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+
+  .logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+    background: var(--surface-1);
+  }
+</style>

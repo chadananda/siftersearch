@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:11:37.231Z",
+  "generated": "2025-12-25T05:15:51.913Z",
   "entries": [
+    {
+      "hash": "49c24f5",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add TierBadge component with usage tracking",
+      "scope": null
+    },
     {
       "hash": "6218678",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Poll server version every 10 seconds for better monitoring",
       "scope": null
-    },
-    {
-      "hash": "6c05e6b",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Prevent SW caching with _headers, disable reload loop",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "49c24f5",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add TierBadge component with usage tracking",
+        "scope": null
+      },
       {
         "hash": "6218678",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "Poll server version every 10 seconds for better monitoring",
-        "scope": null
-      },
-      {
-        "hash": "6c05e6b",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Prevent SW caching with _headers, disable reload loop",
         "scope": null
       }
     ]
