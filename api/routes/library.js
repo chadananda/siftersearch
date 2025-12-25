@@ -33,52 +33,39 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/tree', async () => {
     const meili = getMeili();
 
-    // Get all unique religions and collections from Meilisearch
+    // Get all religions with their counts from facets
     const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
       limit: 0,
-      facets: ['religion', 'collection']
+      facets: ['religion']
     });
 
-    const facets = searchResult.facetDistribution || {};
-    const religionCounts = facets.religion || {};
-    const collectionCounts = facets.collection || {};
+    const religionCounts = searchResult.facetDistribution?.religion || {};
 
-    // Build tree structure
-    // We need to get religion-collection mapping from documents
-    const documentsResult = await meili.index(INDEXES.DOCUMENTS).search('', {
-      limit: 10000,
-      attributesToRetrieve: ['id', 'title', 'religion', 'collection']
-    });
+    // For each religion, get its collections via faceted search
+    const religions = await Promise.all(
+      Object.entries(religionCounts).map(async ([religionName, count]) => {
+        // Get collections for this religion
+        const religionSearch = await meili.index(INDEXES.DOCUMENTS).search('', {
+          limit: 0,
+          filter: `religion = "${religionName}"`,
+          facets: ['collection']
+        });
 
-    // Group by religion -> collection
-    const tree = {};
-    for (const doc of documentsResult.hits) {
-      const religion = doc.religion || 'Uncategorized';
-      const collection = doc.collection || 'General';
+        const collectionCounts = religionSearch.facetDistribution?.collection || {};
+        const collections = Object.entries(collectionCounts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => a.name.localeCompare(b.name));
 
-      if (!tree[religion]) {
-        tree[religion] = {
-          name: religion,
-          count: religionCounts[religion] || 0,
-          collections: {}
+        return {
+          name: religionName,
+          count,
+          collections
         };
-      }
+      })
+    );
 
-      if (!tree[religion].collections[collection]) {
-        tree[religion].collections[collection] = {
-          name: collection,
-          count: 0
-        };
-      }
-      tree[religion].collections[collection].count++;
-    }
-
-    // Convert to array format
-    const religions = Object.values(tree).map(r => ({
-      name: r.name,
-      count: r.count,
-      collections: Object.values(r.collections).sort((a, b) => a.name.localeCompare(b.name))
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    // Sort religions alphabetically
+    religions.sort((a, b) => a.name.localeCompare(b.name));
 
     return { religions };
   });
