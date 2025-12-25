@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminDashboard from '../../components/admin/AdminDashboard.svelte';
+---
+
+<AdminLayout title="Admin Dashboard">
+  <AdminDashboard client:only="svelte" />
+</AdminLayout>

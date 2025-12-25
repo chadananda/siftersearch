@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:18:24.289Z",
+  "generated": "2025-12-25T05:25:03.141Z",
   "entries": [
+    {
+      "hash": "95e5cc1",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add settings page with password and preferences",
+      "scope": null
+    },
     {
       "hash": "398578a",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
       "scope": null
-    },
-    {
-      "hash": "816ae76",
-      "date": "2025-12-15",
-      "type": "New",
-      "description": "Auto-reload client when server is newer version",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "95e5cc1",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add settings page with password and preferences",
+        "scope": null
+      },
       {
         "hash": "398578a",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
-        "scope": null
-      },
-      {
-        "hash": "816ae76",
-        "date": "2025-12-15",
-        "type": "New",
-        "description": "Auto-reload client when server is newer version",
         "scope": null
       }
     ]

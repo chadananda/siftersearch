@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import PendingApproval from '../../components/admin/PendingApproval.svelte';
+---
+
+<AdminLayout title="Pending Approval">
+  <PendingApproval client:only="svelte" />
+</AdminLayout>

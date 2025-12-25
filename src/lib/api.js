@@ -467,6 +467,76 @@ export const user = {
 };
 
 // ============================================
+// Admin API
+// ============================================
+
+export const admin = {
+  /**
+   * Get dashboard statistics
+   */
+  async getStats() {
+    return request('/api/admin/stats');
+  },
+
+  /**
+   * List users with pagination and filtering
+   */
+  async getUsers(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.tier) params.set('tier', options.tier);
+    if (options.search) params.set('search', options.search);
+    return request(`/api/admin/users?${params.toString()}`);
+  },
+
+  /**
+   * Get users pending approval
+   */
+  async getPending() {
+    return request('/api/admin/pending');
+  },
+
+  /**
+   * Update a user
+   */
+  async updateUser(id, updates) {
+    return request(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  /**
+   * Approve a user
+   */
+  async approveUser(id) {
+    return request(`/api/admin/approve/${id}`, {
+      method: 'POST'
+    });
+  },
+
+  /**
+   * Ban a user
+   */
+  async banUser(id) {
+    return request(`/api/admin/ban/${id}`, {
+      method: 'POST'
+    });
+  },
+
+  /**
+   * Get analytics events
+   */
+  async getAnalytics(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.eventType) params.set('eventType', options.eventType);
+    return request(`/api/admin/analytics?${params.toString()}`);
+  }
+};
+
+// ============================================
 // Health API
 // ============================================
 
