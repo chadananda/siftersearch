@@ -1,0 +1,9 @@
+[
+  {
+    "id": "2024-12-25-resegment-oversized",
+    "description": "Re-segment paragraphs exceeding 1500 chars after AI segmentation update",
+    "command": "node scripts/resegment-oversized.js",
+    "enabled": true,
+    "timeout": 1800000
+  }
+]

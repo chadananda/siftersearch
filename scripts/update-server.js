@@ -182,6 +182,23 @@ async function applyUpdates() {
     log('info', 'Migrations complete');
   }
 
+  // Run deploy hooks (one-time commands defined in deploy-hooks.json)
+  log('info', 'Running deploy hooks...');
+  const hooksResult = await run('node scripts/deploy-hooks.js');
+  if (!hooksResult.success) {
+    log('warn', `Deploy hooks warning: ${hooksResult.stderr || hooksResult.error}`);
+    // Don't fail deployment for hook failures - they're logged in the database
+  } else {
+    if (hooksResult.stdout) {
+      // Show hook output
+      const lines = hooksResult.stdout.split('\n').slice(0, 10);
+      for (const line of lines) {
+        log('info', `  ${line}`);
+      }
+    }
+    log('info', 'Deploy hooks complete');
+  }
+
   // Reload all PM2 processes from ecosystem config
   // --update-env picks up any changes to env variables in the ecosystem file
   log('info', 'Reloading PM2 ecosystem...');
