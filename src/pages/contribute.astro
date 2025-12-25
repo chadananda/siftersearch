@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
+import ThemeToggle from '../components/ThemeToggle.svelte';
+import ContributeForm from '../components/ContributeForm.svelte';
+---
+
+<Layout title="Contribute | SifterSearch" description="Help expand our library by contributing documents">
+  <LiquidBackground client:only="svelte" />
+  <ThemeToggle client:only="svelte" />
+
+  <div class="contribute-page">
+    <nav class="page-nav">
+      <a href="/" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Search
+      </a>
+    </nav>
+
+    <ContributeForm client:only="svelte" />
+  </div>
+</Layout>
+
+<style>
+  .contribute-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+  }
+
+  .page-nav {
+    margin-bottom: 2rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover {
+    color: var(--text-primary);
+  }
+
+  .back-link svg {
+    width: 20px;
+    height: 20px;
+  }
+</style>

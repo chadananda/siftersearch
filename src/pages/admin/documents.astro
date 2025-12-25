@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import DocumentQueue from '../../components/admin/DocumentQueue.svelte';
+---
+
+<AdminLayout title="Document Queue">
+  <DocumentQueue client:only="svelte" />
+</AdminLayout>

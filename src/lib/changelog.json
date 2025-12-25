@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:25:03.141Z",
+  "generated": "2025-12-25T05:32:49.796Z",
   "entries": [
+    {
+      "hash": "59cf9df",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add admin dashboard with user management",
+      "scope": "admin"
+    },
     {
       "hash": "95e5cc1",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
       "scope": null
-    },
-    {
-      "hash": "85cfae0",
-      "date": "2025-12-15",
-      "type": "New",
-      "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "59cf9df",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add admin dashboard with user management",
+        "scope": "admin"
+      },
       {
         "hash": "95e5cc1",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
-        "scope": null
-      },
-      {
-        "hash": "85cfae0",
-        "date": "2025-12-15",
-        "type": "New",
-        "description": "Rename to Ocean 2.0 Library with subtle link to oceanlibrary.com",
         "scope": null
       }
     ]

@@ -537,6 +537,148 @@ export const admin = {
 };
 
 // ============================================
+// Librarian API (Document Ingestion)
+// ============================================
+
+export const librarian = {
+  /**
+   * Get queue statistics
+   */
+  async getStats() {
+    return request('/api/librarian/stats');
+  },
+
+  /**
+   * List queue items
+   */
+  async getQueue(options = {}) {
+    const params = new URLSearchParams();
+    if (options.status) params.set('status', options.status);
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    return request(`/api/librarian/queue?${params.toString()}`);
+  },
+
+  /**
+   * Get queue item details
+   */
+  async getQueueItem(id) {
+    return request(`/api/librarian/queue/${id}`);
+  },
+
+  /**
+   * Add document to queue (upload, URL, or ISBN)
+   */
+  async addToQueue(data) {
+    return request('/api/librarian/queue', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Update queue item (approve/reject/analyze/process)
+   */
+  async updateQueueItem(id, action, data = {}) {
+    return request(`/api/librarian/queue/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ action, ...data })
+    });
+  },
+
+  /**
+   * Delete queue item
+   */
+  async deleteQueueItem(id) {
+    return request(`/api/librarian/queue/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Upload a file to the queue
+   */
+  async uploadFile(file, options = {}) {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line no-undef
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64 = reader.result.split(',')[1];
+          const result = await librarian.addToQueue({
+            source_type: 'upload',
+            file_data: base64,
+            file_name: file.name,
+            content_type: file.type,
+            religion: options.religion,
+            collection: options.collection
+          });
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  },
+
+  /**
+   * Add URL to queue
+   */
+  async addUrl(url, options = {}) {
+    return librarian.addToQueue({
+      source_type: 'url',
+      url,
+      religion: options.religion,
+      collection: options.collection
+    });
+  },
+
+  /**
+   * Add ISBN to queue
+   */
+  async addIsbn(isbn, options = {}) {
+    return librarian.addToQueue({
+      source_type: 'isbn',
+      isbn,
+      religion: options.religion,
+      collection: options.collection
+    });
+  },
+
+  /**
+   * Analyze document content
+   */
+  async analyze(content, options = {}) {
+    return request('/api/librarian/analyze', {
+      method: 'POST',
+      body: JSON.stringify({ content, ...options })
+    });
+  },
+
+  /**
+   * Look up ISBN
+   */
+  async lookupIsbn(isbn) {
+    return request('/api/librarian/lookup-isbn', {
+      method: 'POST',
+      body: JSON.stringify({ isbn })
+    });
+  },
+
+  /**
+   * Check for duplicates
+   */
+  async checkDuplicates(content, threshold = 0.85) {
+    return request('/api/librarian/check-duplicates', {
+      method: 'POST',
+      body: JSON.stringify({ content, threshold })
+    });
+  }
+};
+
+// ============================================
 // Health API
 // ============================================
 
@@ -591,6 +733,9 @@ export default {
   search,
   documents,
   session,
+  user,
+  admin,
+  librarian,
   healthCheck,
   triggerServerUpdate,
   setAccessToken,
