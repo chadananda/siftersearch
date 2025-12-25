@@ -1058,6 +1058,9 @@
         <a href="/profile" class="mobile-menu-item" role="menuitem" onclick={closeMobileMenu}>
           Profile
         </a>
+        <a href="/settings" class="mobile-menu-item" role="menuitem" onclick={closeMobileMenu}>
+          Settings
+        </a>
       {/if}
       <button
         onclick={() => { showAbout = !showAbout; closeMobileMenu(); }}
