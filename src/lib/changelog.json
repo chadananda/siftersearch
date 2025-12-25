@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:32:49.796Z",
+  "generated": "2025-12-25T05:38:45.181Z",
   "entries": [
+    {
+      "hash": "63a049c",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add document contribution UI and admin queue",
+      "scope": null
+    },
     {
       "hash": "59cf9df",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Use package.json description for welcome subtitle",
       "scope": null
-    },
-    {
-      "hash": "ae554c8",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "63a049c",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add document contribution UI and admin queue",
+        "scope": null
+      },
       {
         "hash": "59cf9df",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "New",
         "description": "Use package.json description for welcome subtitle",
-        "scope": null
-      },
-      {
-        "hash": "ae554c8",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Prevent reload loop by tracking reload attempts in sessionStorage",
         "scope": null
       }
     ]

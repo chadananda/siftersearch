@@ -127,6 +127,9 @@
   // Research plan state - shows the researcher agent's strategy
   let researchPlan = $state(null);
 
+  // Search mode: 'fast' (keyword/hybrid quick search) or 'research' (AI-powered deep analysis)
+  let searchMode = $state('fast');
+
   // Preloaded document cache: Map<document_id, { segments: [], total: number }>
   const documentCache = new Map();
 
@@ -292,6 +295,12 @@
   }
 
   const auth = getAuthState();
+
+  // Check if user can access research mode (approved+ only)
+  let canUseResearchMode = $derived(
+    auth.isAuthenticated &&
+    ['approved', 'patron', 'institutional', 'admin'].includes(auth.user?.tier)
+  );
 
   // Library connection status
   let libraryConnected = $derived(!statsLoading && libraryStats !== null);
@@ -659,7 +668,9 @@
       let streamedContent = '';
       let sources = [];
 
-      for await (const event of search.analyzeStream(userMessage)) {
+      // Research mode uses AI-powered analysis; fast mode uses simpler hybrid search
+      const useResearcher = searchMode === 'research' && canUseResearchMode;
+      for await (const event of search.analyzeStream(userMessage, { mode: 'hybrid', useResearcher })) {
         if (event.type === 'thinking') {
           // Conversational acknowledgment for complex queries
           // Display immediately as the message content
@@ -1658,6 +1669,28 @@
         </button>
       </div>
     </form>
+
+    <!-- Research mode toggle (approved+ only) -->
+    {#if canUseResearchMode}
+      <button
+        type="button"
+        onclick={() => searchMode = searchMode === 'fast' ? 'research' : 'fast'}
+        class="mode-toggle"
+        class:active={searchMode === 'research'}
+        title={searchMode === 'research' ? 'Research mode: Deep AI analysis' : 'Fast mode: Quick hybrid search'}
+        aria-label={searchMode === 'research' ? 'Switch to fast mode' : 'Switch to research mode'}
+      >
+        {#if searchMode === 'research'}
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        {:else}
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        {/if}
+      </button>
+    {/if}
 
     <!-- Clear button on the right -->
     {#if input || messages.length > 0}
@@ -3081,6 +3114,30 @@
   }
 
   /* Clear button on the right */
+  /* Research mode toggle button */
+  .mode-toggle {
+    padding: 0.5rem;
+    background-color: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .mode-toggle:hover {
+    background-color: var(--surface-3);
+    color: var(--text-primary);
+  }
+  .mode-toggle.active {
+    background-color: color-mix(in srgb, var(--accent-tertiary) 15%, var(--surface-1));
+    color: var(--accent-tertiary);
+    border-color: var(--accent-tertiary);
+  }
+
   .clear-btn {
     padding: 0.5rem;
     background-color: var(--surface-2);

@@ -297,7 +297,8 @@ export const search = {
       body: JSON.stringify({
         query,
         limit: options.limit || 10,
-        mode: options.mode || 'hybrid'
+        mode: options.mode || 'hybrid',
+        useResearcher: options.useResearcher || false
       })
       // Note: credentials: 'include' removed - not needed and causes CORS issues
       // when server returns Access-Control-Allow-Origin: *
