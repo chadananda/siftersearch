@@ -147,6 +147,12 @@
           </svg>
           <span class="nav-label">Docs</span>
         </a>
+        <a href="/about" class="nav-link show-xl" class:active={currentPage === 'about'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span class="nav-label">About</span>
+        </a>
       </nav>
 
       <!-- Hamburger menu for collapsed items -->
@@ -197,7 +203,7 @@
               </svg>
               Docs
             </a>
-            <a href="/about" class="nav-dropdown-item" role="menuitem" onclick={closeNavMenu}>
+            <a href="/about" class="nav-dropdown-item hide-above-xl" role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
               </svg>
@@ -476,9 +482,18 @@
     .nav-link.show-lg { display: flex; }
   }
 
+  @media (min-width: 1280px) {
+    .nav-link.show-xl { display: flex; }
+  }
+
   /* Hamburger for collapsed items - matches user button style */
   .nav-hamburger {
     position: relative;
+  }
+
+  /* Hide hamburger when all links are visible */
+  @media (min-width: 1280px) {
+    .nav-hamburger { display: none; }
   }
 
   .hamburger-btn {
@@ -566,6 +581,10 @@
 
   @media (min-width: 1100px) {
     .nav-dropdown-item.hide-above-lg { display: none; }
+  }
+
+  @media (min-width: 1280px) {
+    .nav-dropdown-item.hide-above-xl { display: none; }
   }
 
   /* Right side controls - takes 1/3 of remaining space, aligns right */

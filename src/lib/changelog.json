@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T21:12:15.141Z",
+  "generated": "2025-12-25T21:17:14.795Z",
   "entries": [
+    {
+      "hash": "00e147d",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Align links right, restrict Library/Community to logged-in users",
+      "scope": "nav"
+    },
     {
       "hash": "879e4e4",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove DEV_MODE from .env-public, let environment control it",
       "scope": null
-    },
-    {
-      "hash": "825d64d",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use absolute paths for dotenv config loading",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "00e147d",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Align links right, restrict Library/Community to logged-in users",
+        "scope": "nav"
+      },
       {
         "hash": "879e4e4",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Remove DEV_MODE from .env-public, let environment control it",
-        "scope": null
-      },
-      {
-        "hash": "825d64d",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use absolute paths for dotenv config loading",
         "scope": null
       }
     ]
