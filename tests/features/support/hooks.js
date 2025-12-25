@@ -27,12 +27,17 @@ Before(async function (scenario) {
   const tags = scenario.pickle.tags.map(t => t.name);
 
   if (tags.includes('@admin')) {
-    // Could log in as admin user
-    this.testUser = { email: 'admin@test.com', role: 'admin' };
+    this.testUser = { email: 'admin@test.com', tier: 'admin', id: 'admin_1' };
+    this.authToken = 'test_admin_token';
   } else if (tags.includes('@patron')) {
-    this.testUser = { email: 'patron@test.com', role: 'patron' };
+    this.testUser = { email: 'patron@test.com', tier: 'patron', id: 'patron_1' };
+    this.authToken = 'test_patron_token';
   } else if (tags.includes('@approved')) {
-    this.testUser = { email: 'approved@test.com', role: 'approved' };
+    this.testUser = { email: 'approved@test.com', tier: 'approved', id: 'approved_1' };
+    this.authToken = 'test_approved_token';
+  } else if (tags.includes('@verified')) {
+    this.testUser = { email: 'verified@test.com', tier: 'verified', id: 'verified_1' };
+    this.authToken = 'test_verified_token';
   }
 });
 
@@ -61,4 +66,16 @@ After({ tags: '@ui or @accessibility' }, async function () {
     await this.browser.close();
     this.browser = null;
   }
+});
+
+// Before webhook scenarios
+Before({ tags: '@webhook' }, function () {
+  // Set up webhook test context
+  this.webhookSignature = 'test_webhook_signature';
+});
+
+// Before security-related scenarios
+Before({ tags: '@security' }, function () {
+  // Security tests may need special setup
+  console.log('[Cucumber] Security test scenario');
 });

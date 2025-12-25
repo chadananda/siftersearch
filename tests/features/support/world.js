@@ -23,6 +23,12 @@ class SifterSearchWorld extends World {
     // Browser/Page for UI tests (set up in hooks)
     this.browser = null;
     this.page = null;
+
+    // Feature-specific state
+    this.searchCount = 0;
+    this.referralCount = 0;
+    this.webhookSignature = null;
+    this.activeSubscription = null;
   }
 
   /**
@@ -49,7 +55,7 @@ class SifterSearchWorld extends World {
     this.response = await fetch(url, options);
     try {
       this.responseData = await this.response.json();
-    } catch (e) {
+    } catch (_e) {
       this.responseData = null;
     }
 
@@ -68,6 +74,76 @@ class SifterSearchWorld extends World {
   }
 
   /**
+   * Login as a specific tier user (for testing)
+   */
+  async loginAsTier(tier) {
+    const email = `${tier}@test.com`;
+    this.testUser = { email, tier, id: `user_${tier}` };
+    this.authToken = `test_${tier}_token`;
+    return true;
+  }
+
+  /**
+   * Get profile data
+   */
+  async getProfile() {
+    await this.apiRequest('GET', '/api/user/profile');
+    return this.responseData;
+  }
+
+  /**
+   * Update profile
+   */
+  async updateProfile(data) {
+    await this.apiRequest('PATCH', '/api/user/profile', data);
+    return this.responseData;
+  }
+
+  /**
+   * Get forum posts
+   */
+  async getForumPosts(options = {}) {
+    const params = new URLSearchParams();
+    if (options.sort) params.set('sort', options.sort);
+    if (options.category) params.set('category', options.category);
+    const query = params.toString() ? `?${params}` : '';
+    await this.apiRequest('GET', `/api/forum/posts${query}`);
+    return this.responseData?.posts || [];
+  }
+
+  /**
+   * Create forum post
+   */
+  async createForumPost(data) {
+    await this.apiRequest('POST', '/api/forum/posts', data);
+    return this.responseData;
+  }
+
+  /**
+   * Get donation tiers
+   */
+  async getDonationTiers() {
+    await this.apiRequest('GET', '/api/donations/tiers');
+    return this.responseData?.tiers || [];
+  }
+
+  /**
+   * Create checkout session
+   */
+  async createCheckoutSession(data) {
+    await this.apiRequest('POST', '/api/donations/create-checkout', data);
+    return this.responseData;
+  }
+
+  /**
+   * Get referral info
+   */
+  async getReferralInfo() {
+    await this.apiRequest('GET', '/api/user/referrals');
+    return this.responseData;
+  }
+
+  /**
    * Clean up resources
    */
   async cleanup() {
@@ -75,6 +151,10 @@ class SifterSearchWorld extends World {
     this.testUser = null;
     this.response = null;
     this.responseData = null;
+    this.searchCount = 0;
+    this.referralCount = 0;
+    this.webhookSignature = null;
+    this.activeSubscription = null;
   }
 }
 

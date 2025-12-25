@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T06:07:36.991Z",
+  "generated": "2025-12-25T14:46:31.821Z",
   "entries": [
+    {
+      "hash": "fd2db2a",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add Stripe integration and support page",
+      "scope": "donations"
+    },
     {
       "hash": "10828b0",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent double reload on PWA update",
       "scope": null
-    },
-    {
-      "hash": "00a8eef",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Enable skipWaiting for immediate SW updates without cache clearing",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "fd2db2a",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add Stripe integration and support page",
+        "scope": "donations"
+      },
       {
         "hash": "10828b0",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Prevent double reload on PWA update",
-        "scope": null
-      },
-      {
-        "hash": "00a8eef",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Enable skipWaiting for immediate SW updates without cache clearing",
         "scope": null
       }
     ]

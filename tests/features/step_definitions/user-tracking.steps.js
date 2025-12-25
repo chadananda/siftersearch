@@ -144,28 +144,12 @@ Then('the SSE request should include the X-User-ID header', function () {
 
 // ============================================
 // Query Limits
+// Note: Auth steps (I am logged in as..., I am an anonymous user) are in common.steps.js
 // ============================================
-
-Given('I am an anonymous user', function () {
-  userTier = 'anonymous';
-  userId = 'user_' + crypto.randomUUID();
-});
 
 Given('I am an anonymous user who has performed {int} searches', function (count) {
   userTier = 'anonymous';
   queryCount = count;
-});
-
-Given('I am logged in as a verified user', function () {
-  userTier = 'verified';
-});
-
-Given('I am logged in as an approved user', function () {
-  userTier = 'approved';
-});
-
-Given('I am logged in as an admin', function () {
-  userTier = 'admin';
 });
 
 When('I check my query allowance', async function () {
