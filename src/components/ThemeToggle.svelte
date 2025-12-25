@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
 
+  // Props
+  let { minimal = false } = $props();
+
   let theme = $state(null); // 'light', 'dark', or 'system' - null until mounted
 
   function getSystemTheme() {
@@ -68,6 +71,7 @@
 <button
   onclick={cycleTheme}
   class="theme-toggle"
+  class:minimal
   aria-label={getLabel(theme)}
   title={getLabel(theme)}
 >
@@ -109,5 +113,24 @@
   .icon {
     width: 1.25rem;
     height: 1.25rem;
+  }
+
+  /* Minimal mode - for inline use in dropdowns */
+  .theme-toggle.minimal {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0.25rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .theme-toggle.minimal:hover {
+    background: var(--surface-3);
+    border-color: var(--border-default);
+  }
+
+  .theme-toggle.minimal .icon {
+    width: 1rem;
+    height: 1rem;
   }
 </style>

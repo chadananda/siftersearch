@@ -110,7 +110,9 @@ Then('I should see {string} in the dropdown menu', async function (linkName) {
   if (linkName === 'About') {
     expect(true).to.be.true;
   } else {
-    expect(hiddenLinks).to.include(linkName);
+    // Handle legacy "Search" -> "Chat" mapping
+    const actualLinkName = linkName === 'Search' ? 'Chat' : linkName;
+    expect(hiddenLinks).to.include(actualLinkName);
   }
 });
 
@@ -160,7 +162,8 @@ Then('I should not see {string} in the user dropdown', async function (linkName)
 
 When('I click on the {string} navigation link', async function (linkName) {
   const linkPaths = {
-    'Search': '/',
+    'Chat': '/',
+    'Search': '/', // Legacy support
     'Library': '/library',
     'Community': '/community',
     'Docs': '/docs'
@@ -178,7 +181,8 @@ Then('I should be on the library page', async function () {
 
 Then('the {string} link should be active', async function (linkName) {
   const linkPaths = {
-    'Search': '/',
+    'Chat': '/',
+    'Search': '/', // Legacy support
     'Library': '/library',
     'Community': '/community',
     'Docs': '/docs'
@@ -212,9 +216,9 @@ Then('the current theme should be {string}', async function (theme) {
 
 function getVisibleLinks(viewport) {
   const links = [];
-  // Search and Library visible at 640px+
+  // Chat and Library visible at 640px+
   if (viewport >= 640) {
-    links.push('Search', 'Library');
+    links.push('Chat', 'Library');
   }
   // Community visible at 768px+ (md breakpoint)
   if (viewport >= 768) {
@@ -228,7 +232,7 @@ function getVisibleLinks(viewport) {
 }
 
 function getHiddenLinks(viewport) {
-  const allLinks = ['Search', 'Library', 'Community', 'Docs'];
+  const allLinks = ['Chat', 'Library', 'Community', 'Docs'];
   const visible = getVisibleLinks(viewport);
   return allLinks.filter(link => !visible.includes(link));
 }

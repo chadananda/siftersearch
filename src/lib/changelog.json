@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T20:10:26.726Z",
+  "generated": "2025-12-25T20:22:52.098Z",
   "entries": [
+    {
+      "hash": "9b06c06",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Add library browser and unified navigation bar",
+      "scope": null
+    },
     {
       "hash": "6993881",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
       "scope": null
-    },
-    {
-      "hash": "378a288",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use DEV_MODE to select Meilisearch port automatically",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "9b06c06",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Add library browser and unified navigation bar",
+        "scope": null
+      },
       {
         "hash": "6993881",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Auto-recreate paragraphs index if embedding dimensions mismatch",
-        "scope": null
-      },
-      {
-        "hash": "378a288",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use DEV_MODE to select Meilisearch port automatically",
         "scope": null
       }
     ]

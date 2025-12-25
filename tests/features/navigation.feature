@@ -20,7 +20,7 @@ Feature: Navigation Bar
   @implemented
   Scenario: Navigation links are visible on desktop
     Given my viewport is 1200 pixels wide
-    Then I should see the "Search" navigation link
+    Then I should see the "Chat" navigation link
     And I should see the "Library" navigation link
     And I should see the "Community" navigation link
     And I should see the "Docs" navigation link
@@ -28,7 +28,7 @@ Feature: Navigation Bar
   @implemented
   Scenario: Navigation links progressively collapse on smaller screens
     Given my viewport is 800 pixels wide
-    Then I should see the "Search" navigation link
+    Then I should see the "Chat" navigation link
     And I should see the "Library" navigation link
     And I should see the "Community" navigation link
     But I should not see the "Docs" navigation link in the main nav
@@ -51,7 +51,7 @@ Feature: Navigation Bar
   Scenario: Mobile hamburger menu contains all links
     Given my viewport is 500 pixels wide
     When I click the hamburger menu button
-    Then I should see "Search" in the dropdown menu
+    Then I should see "Chat" in the dropdown menu
     And I should see "Library" in the dropdown menu
     And I should see "Community" in the dropdown menu
     And I should see "Docs" in the dropdown menu
@@ -103,10 +103,10 @@ Feature: Navigation Bar
   # ============================================
 
   @implemented
-  Scenario: Clicking Search navigates to home page
-    When I click on the "Search" navigation link
+  Scenario: Clicking Chat navigates to home page
+    When I click on the "Chat" navigation link
     Then I should be on the home page
-    And the "Search" link should be active
+    And the "Chat" link should be active
 
   @implemented
   Scenario: Clicking Library navigates to library page
@@ -127,10 +127,10 @@ Feature: Navigation Bar
   # ============================================
 
   @implemented
-  Scenario: NavBar is consistent across Search page
+  Scenario: NavBar is consistent across Chat page
     Given I am on the search page
     Then I should see the navigation bar
-    And the "Search" link should be active
+    And the "Chat" link should be active
 
   @implemented
   Scenario: NavBar is consistent across Library page

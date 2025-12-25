@@ -19,38 +19,77 @@
   // Local state
   let showAuthModal = $state(false);
   let showNavMenu = $state(false);
-  let showUserDropdown = $state(false);
+  let showUserMenu = $state(false);
+  let showSignInPrompt = $state(false);
+
+  // Track usage for sign-in prompt (shows after 3 searches or 30 seconds)
+  let interactionCount = $state(0);
+  let hasShownPrompt = $state(false);
+
+  // Check localStorage for prompt state
+  $effect(() => {
+    if (typeof localStorage !== 'undefined') {
+      hasShownPrompt = localStorage.getItem('sifter_signin_prompt_shown') === 'true';
+    }
+  });
+
+  // Show prompt after delay if not authenticated and hasn't been shown
+  $effect(() => {
+    if (!auth.isAuthenticated && !hasShownPrompt && typeof window !== 'undefined') {
+      const timer = setTimeout(() => {
+        if (!auth.isAuthenticated && !hasShownPrompt) {
+          showSignInPrompt = true;
+        }
+      }, 45000); // Show after 45 seconds
+      return () => clearTimeout(timer);
+    }
+  });
+
+  function dismissPrompt() {
+    showSignInPrompt = false;
+    hasShownPrompt = true;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('sifter_signin_prompt_shown', 'true');
+    }
+  }
+
+  function signInFromPrompt() {
+    dismissPrompt();
+    showAuthModal = true;
+  }
 
   // Close nav menu
   function closeNavMenu() {
     showNavMenu = false;
   }
 
-  // Close user dropdown
-  function closeUserDropdown() {
-    showUserDropdown = false;
+  // Close user menu
+  function closeUserMenu() {
+    showUserMenu = false;
   }
 
   // Handle click outside to close dropdowns
   function handleClickOutside(event) {
-    if (showUserDropdown && !event.target.closest('.user-menu-container')) {
-      showUserDropdown = false;
+    if (showUserMenu && !event.target.closest('.user-menu-container')) {
+      showUserMenu = false;
     }
     if (showNavMenu && !event.target.closest('.nav-hamburger') && !event.target.closest('.nav-dropdown')) {
       showNavMenu = false;
+    }
+    if (showSignInPrompt && !event.target.closest('.signin-prompt')) {
+      dismissPrompt();
     }
   }
 
   // Check if user is admin
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
 
-  // Navigation items
-  const navItems = [
-    { href: '/', page: 'search', label: 'Search', icon: 'search', priority: 1 },
-    { href: '/library', page: 'library', label: 'Library', icon: 'book', priority: 2 },
-    { href: '/community', page: 'community', label: 'Community', icon: 'users', priority: 3 },
-    { href: '/docs', page: 'docs', label: 'Docs', icon: 'file', priority: 4 }
-  ];
+  // User display
+  let userInitial = $derived(
+    auth.user?.name?.charAt(0)?.toUpperCase() ||
+    auth.user?.email?.charAt(0)?.toUpperCase() ||
+    '?'
+  );
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -76,11 +115,11 @@
     <!-- Center section: Nav links that progressively collapse -->
     <nav class="navbar-nav" aria-label="Main navigation">
       <!-- Always visible nav links (priority 1-2) -->
-      <a href="/" class="nav-link show-sm" class:active={currentPage === 'search'}>
+      <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-        <span class="nav-label">Search</span>
+        <span class="nav-label">Chat</span>
       </a>
       <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -128,11 +167,11 @@
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu">
             <!-- Only show items that are currently hidden -->
-            <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
+            <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-              Search
+              Chat
             </a>
             <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -164,48 +203,102 @@
       </div>
     </nav>
 
-    <!-- Right side: Theme toggle + User menu (always visible) -->
+    <!-- Right side: Single user menu icon -->
     <div class="navbar-right">
-      <ThemeToggle />
-
-      {#if auth.isAuthenticated}
-        <div class="user-menu-container">
-          <button
-            class="user-button"
-            onclick={() => showUserDropdown = !showUserDropdown}
-            aria-expanded={showUserDropdown}
-            aria-haspopup="true"
-          >
-            <TierBadge />
-            <span class="user-email">{auth.user?.email}</span>
-            <svg class="dropdown-arrow" class:open={showUserDropdown} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
+      <div class="user-menu-container">
+        <button
+          class="user-icon-btn"
+          class:authenticated={auth.isAuthenticated}
+          onclick={() => showUserMenu = !showUserMenu}
+          aria-expanded={showUserMenu}
+          aria-haspopup="true"
+          aria-label="User menu"
+        >
+          {#if auth.isAuthenticated}
+            <span class="user-avatar">{userInitial}</span>
+          {:else}
+            <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
-          </button>
+          {/if}
+        </button>
 
-          {#if showUserDropdown}
-            <div class="user-dropdown" role="menu">
-              <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeUserDropdown}>
+        <!-- Sign-in prompt bubble -->
+        {#if showSignInPrompt && !auth.isAuthenticated}
+          <div class="signin-prompt">
+            <button class="prompt-close" onclick={dismissPrompt} aria-label="Dismiss">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+            <div class="prompt-content">
+              <div class="prompt-title">Create a free account</div>
+              <div class="prompt-text">Save your searches, get more results, and unlock premium features.</div>
+              <button class="prompt-btn" onclick={signInFromPrompt}>Sign In Free</button>
+            </div>
+            <div class="prompt-arrow"></div>
+          </div>
+        {/if}
+
+        <!-- User dropdown menu -->
+        {#if showUserMenu}
+          <div class="user-dropdown" role="menu">
+            <!-- User info header -->
+            <div class="dropdown-header">
+              {#if auth.isAuthenticated}
+                <div class="header-user">
+                  <span class="header-avatar">{userInitial}</span>
+                  <div class="header-info">
+                    <div class="header-email">{auth.user?.email}</div>
+                    <TierBadge compact />
+                  </div>
+                </div>
+              {:else}
+                <div class="header-guest">
+                  <svg class="guest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <div class="header-info">
+                    <div class="header-title">Guest User</div>
+                    <TierBadge compact />
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Theme toggle row -->
+            <div class="dropdown-row theme-row">
+              <span class="row-label">Theme</span>
+              <ThemeToggle minimal />
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            {#if auth.isAuthenticated}
+              <!-- Authenticated menu items -->
+              <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                 </svg>
                 Profile
               </a>
-              <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeUserDropdown}>
+              <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
                 Settings
               </a>
-              <a href="/referrals" class="dropdown-item" role="menuitem" onclick={closeUserDropdown}>
+              <a href="/referrals" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
                   <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
                 </svg>
                 Referrals
               </a>
-              <a href="/support" class="dropdown-item" role="menuitem" onclick={closeUserDropdown}>
+              <a href="/support" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -214,7 +307,7 @@
               </a>
               {#if isAdmin}
                 <div class="dropdown-divider"></div>
-                <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserDropdown}>
+                <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserMenu}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
@@ -222,22 +315,32 @@
                 </a>
               {/if}
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeUserDropdown(); }}>
+              <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeUserMenu(); }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
                 Sign Out
               </button>
-            </div>
-          {/if}
-        </div>
-      {:else}
-        <TierBadge />
-        <button class="btn-primary" onclick={() => showAuthModal = true}>
-          Sign In
-        </button>
-      {/if}
+            {:else}
+              <!-- Guest menu items -->
+              <button class="dropdown-item signin-item" role="menuitem" onclick={() => { showAuthModal = true; closeUserMenu(); }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Sign In
+              </button>
+              <a href="/about" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                About
+              </a>
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </header>
@@ -359,18 +462,15 @@
   }
 
   /* Progressive visibility for nav links */
-  /* Small screens (640px+): Show priority 1-2 (Search, Library) */
   @media (min-width: 640px) {
     .nav-link.show-sm { display: flex; }
     .nav-label { display: inline; }
   }
 
-  /* Medium screens (900px+): Show priority 3 (Community) */
   @media (min-width: 900px) {
     .nav-link.show-md { display: flex; }
   }
 
-  /* Large screens (1100px+): Show priority 4 (Docs) */
   @media (min-width: 1100px) {
     .nav-link.show-lg { display: flex; }
   }
@@ -468,7 +568,6 @@
   .navbar-right {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     flex-shrink: 0;
   }
 
@@ -477,62 +576,230 @@
     position: relative;
   }
 
-  .user-button {
+  .user-icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.5rem;
+    justify-content: center;
     background: var(--surface-1);
     border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
+    border-radius: 50%;
     cursor: pointer;
     transition: all 0.15s ease;
+    padding: 0;
   }
 
-  .user-button:hover {
+  .user-icon-btn:hover {
     background: var(--surface-2);
     border-color: var(--border-strong);
   }
 
-  .user-email {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: none;
+  .user-icon-btn.authenticated {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
   }
 
-  @media (min-width: 768px) {
-    .user-email {
-      display: block;
-      max-width: 150px;
+  .user-icon-btn.authenticated:hover {
+    background: var(--accent-primary-hover);
+    border-color: var(--accent-primary-hover);
+  }
+
+  .user-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--text-secondary);
+  }
+
+  .user-avatar {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+  }
+
+  /* Sign-in prompt bubble */
+  .signin-prompt {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    width: 240px;
+    background: var(--accent-primary);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    z-index: 250;
+    animation: fadeSlideIn 0.3s ease;
+  }
+
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
-  .dropdown-arrow {
+  .signin-prompt .prompt-arrow {
+    position: absolute;
+    top: -6px;
+    right: 14px;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-primary);
+    transform: rotate(45deg);
+  }
+
+  .prompt-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .prompt-close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .prompt-close svg {
     width: 0.875rem;
     height: 0.875rem;
-    color: var(--text-muted);
-    transition: transform 0.2s ease;
   }
 
-  .dropdown-arrow.open {
-    transform: rotate(180deg);
+  .prompt-content {
+    color: white;
   }
 
+  .prompt-title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .prompt-text {
+    font-size: 0.8125rem;
+    opacity: 0.9;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+  }
+
+  .prompt-btn {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: white;
+    color: var(--accent-primary);
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .prompt-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  /* User dropdown */
   .user-dropdown {
     position: absolute;
     top: calc(100% + 0.5rem);
     right: 0;
-    min-width: 200px;
+    min-width: 240px;
     background: var(--surface-solid);
     border: 1px solid var(--border-default);
     border-radius: 0.75rem;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     padding: 0.5rem;
     z-index: 200;
+  }
+
+  .dropdown-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .header-user,
+  .header-guest {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 50%;
+  }
+
+  .guest-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.375rem;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-radius: 50%;
+  }
+
+  .header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .header-email {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border-default);
+    margin: 0.375rem 0;
+  }
+
+  .dropdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .row-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
   }
 
   .dropdown-item {
@@ -563,10 +830,14 @@
     flex-shrink: 0;
   }
 
-  .dropdown-divider {
-    height: 1px;
-    background: var(--border-default);
-    margin: 0.375rem 0;
+  .signin-item {
+    color: var(--accent-primary);
+    font-weight: 500;
+  }
+
+  .signin-item:hover {
+    color: var(--accent-primary);
+    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   }
 
   .admin-item {
@@ -585,23 +856,5 @@
   .signout-item:hover {
     color: var(--error);
     background: color-mix(in srgb, var(--error) 10%, transparent);
-  }
-
-  /* Primary button */
-  .btn-primary {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--accent-primary-text);
-    background: var(--accent-primary);
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-    white-space: nowrap;
-  }
-
-  .btn-primary:hover {
-    background: var(--accent-primary-hover);
   }
 </style>
