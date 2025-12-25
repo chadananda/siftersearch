@@ -328,16 +328,29 @@ export default async function libraryRoutes(fastify) {
     }
 
     // Get documents in this collection
-    const docsResult = await meili.index(INDEXES.DOCUMENTS).search('', {
+    const searchOptions = {
       limit: parseInt(limit),
       offset: parseInt(offset),
       filter: `religion = "${religion.name}" AND collection = "${node.name}"`,
-      sort: ['title:asc'],  // authority sort requires index config
+      sort: ['title:asc'],
       attributesToRetrieve: [
         'id', 'title', 'author', 'religion', 'collection',
         'language', 'year', 'description', 'authority', 'paragraph_count'
       ]
-    });
+    };
+
+    // Try search with sort, fallback to no sort if sortable attributes not configured
+    let docsResult;
+    try {
+      docsResult = await meili.index(INDEXES.DOCUMENTS).search('', searchOptions);
+    } catch (err) {
+      if (err.message?.includes('not sortable')) {
+        delete searchOptions.sort;
+        docsResult = await meili.index(INDEXES.DOCUMENTS).search('', searchOptions);
+      } else {
+        throw err;
+      }
+    }
 
     return {
       node: {
@@ -588,7 +601,19 @@ export default async function libraryRoutes(fastify) {
       searchOptions.filter = filters.join(' AND ');
     }
 
-    const result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
+    // Try search with sort, fallback to no sort if sortable attributes not configured
+    let result;
+    try {
+      result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
+    } catch (err) {
+      if (err.message?.includes('not sortable')) {
+        // Sortable attributes not configured - search without sort
+        delete searchOptions.sort;
+        result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
+      } else {
+        throw err;
+      }
+    }
 
     // Get processing status for documents if requested
     let processingDocs = new Set();

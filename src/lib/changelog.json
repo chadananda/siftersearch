@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T22:59:11.542Z",
+  "generated": "2025-12-25T23:01:16.084Z",
   "entries": [
+    {
+      "hash": "f153665",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Use getStats() for accurate document count instead of estimatedTotalHits cap",
+      "scope": null
+    },
     {
       "hash": "3edac0a",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use env instead of env_production in PM2 config",
       "scope": null
-    },
-    {
-      "hash": "d51836a",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use _DEV suffix pattern for environment-specific config",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "f153665",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Use getStats() for accurate document count instead of estimatedTotalHits cap",
+        "scope": null
+      },
       {
         "hash": "3edac0a",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use env instead of env_production in PM2 config",
-        "scope": null
-      },
-      {
-        "hash": "d51836a",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use _DEV suffix pattern for environment-specific config",
         "scope": null
       }
     ]
