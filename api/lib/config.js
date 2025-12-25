@@ -166,7 +166,11 @@ const searchConfig = {
   apiKey: get('MEILISEARCH_KEY') || get('MEILI_MASTER_KEY'),
   maxResults: getInt('SEARCH_MAX_RESULTS', 100),
   snippetSize: getInt('SEARCH_SNIPPET_SIZE', 160),
-  timeout: getInt('SEARCH_TIMEOUT_MS', 5000)
+  timeout: getInt('SEARCH_TIMEOUT_MS', 5000),
+  // Authority ranking position (1-7):
+  // 4 = HIGH weight (after proximity), 5 = MEDIUM (after attribute),
+  // 6 = LOW (after sort), 7 = TIEBREAKER only (after exactness)
+  authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4)
 };
 
 // Server configuration

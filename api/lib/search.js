@@ -30,6 +30,25 @@ export const INDEXES = {
 };
 
 /**
+ * Build ranking rules with authority at the configured position
+ * Base rules: words, typo, proximity, attribute, sort, exactness
+ * authority:desc is inserted at config.search.authorityRankPosition (1-7)
+ * Position 4 = HIGH weight, 5 = MEDIUM, 6 = LOW, 7 = TIEBREAKER
+ */
+function buildRankingRules() {
+  const baseRules = ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'];
+  const position = Math.min(7, Math.max(1, config.search.authorityRankPosition || 4));
+
+  // Insert authority:desc at the configured position (1-indexed, so subtract 1)
+  const insertIndex = position - 1;
+  const rules = [...baseRules];
+  rules.splice(insertIndex, 0, 'authority:desc');
+
+  logger.info({ position, rules }, 'Built ranking rules with authority position');
+  return rules;
+}
+
+/**
  * Initialize indexes with proper settings
  */
 export async function initializeIndexes() {
@@ -82,17 +101,8 @@ export async function initializeIndexes() {
       'paragraph_index',
       'authority'  // Doctrinal weight for sorting
     ],
-    // Custom ranking rules: prioritize relevance, then authority
-    // authority:desc means higher authority documents rank first when relevance is similar
-    rankingRules: [
-      'words',       // Documents with more query words rank higher
-      'typo',        // Fewer typos rank higher
-      'proximity',   // Words closer together rank higher
-      'attribute',   // Matches in title/author rank higher than body text
-      'sort',        // User-requested sort order
-      'exactness',   // Exact matches rank higher
-      'authority:desc'  // Higher doctrinal authority ranks higher (tiebreaker)
-    ],
+    // Custom ranking rules with configurable authority position
+    rankingRules: buildRankingRules(),
     // Enable vector search
     embedders: {
       default: {
@@ -124,16 +134,8 @@ export async function initializeIndexes() {
       'created_at',
       'authority'  // Doctrinal weight for sorting
     ],
-    // Custom ranking rules with authority boost
-    rankingRules: [
-      'words',
-      'typo',
-      'proximity',
-      'attribute',
-      'sort',
-      'exactness',
-      'authority:desc'  // Higher doctrinal authority ranks higher
-    ]
+    // Custom ranking rules with configurable authority position
+    rankingRules: buildRankingRules()
   });
 
   logger.info('Search indexes initialized');
