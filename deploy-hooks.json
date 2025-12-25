@@ -5,5 +5,12 @@
     "command": "node scripts/resegment-oversized.js",
     "enabled": true,
     "timeout": 1800000
+  },
+  {
+    "id": "2024-12-25-update-ranking-rules",
+    "description": "Update Meilisearch ranking rules with authority position and maxTotalHits",
+    "command": "node scripts/update-ranking-rules.js 4",
+    "enabled": true,
+    "timeout": 60000
   }
 ]
