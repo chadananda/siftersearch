@@ -29,6 +29,37 @@ class SifterSearchWorld extends World {
     this.referralCount = 0;
     this.webhookSignature = null;
     this.activeSubscription = null;
+
+    // Library browser state
+    this.libraryData = null;
+    this.pageState = null;
+    this.currentPage = null;
+    this.pageContext = null;
+
+    // Navigation state
+    this.navBarVisible = true;
+    this.hamburgerMenuOpen = false;
+    this.userMenuOpen = false;
+    this.currentTheme = 'light';
+  }
+
+  /**
+   * Get filtered documents based on current filter state
+   */
+  getFilteredDocuments() {
+    if (!this.libraryData || !this.pageState) return [];
+
+    return this.libraryData.documents.filter(doc => {
+      const { religion, collection, language, status, author } = this.pageState.filters;
+
+      if (religion && doc.religion !== religion) return false;
+      if (collection && doc.collection !== collection) return false;
+      if (language && doc.language !== language) return false;
+      if (status && status !== 'all' && doc.status !== status) return false;
+      if (author && !doc.author.toLowerCase().includes(author.toLowerCase())) return false;
+
+      return true;
+    });
   }
 
   /**

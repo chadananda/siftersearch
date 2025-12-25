@@ -152,6 +152,18 @@ export function requireTier(...allowedTiers) {
   };
 }
 
+// Require admin tier
+export async function requireAdmin(request, reply) {
+  await authenticate(request, reply);
+
+  if (request.user.tier !== 'admin') {
+    throw ApiError.forbidden('Admin access required');
+  }
+}
+
+// Alias for authenticated route protection
+export const requireAuth = authenticate;
+
 // Seed admin user from SITE_ADMIN_EMAIL and SITE_ADMIN_PASS environment variables
 export async function seedAdminUser() {
   const adminEmail = process.env.SITE_ADMIN_EMAIL;

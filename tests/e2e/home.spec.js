@@ -58,26 +58,20 @@ test.describe('Home Page', () => {
     await expect(submitButton).toBeVisible();
   });
 
-  test('should open About section', async ({ page }) => {
-    // On mobile, About is a menuitem in hamburger menu. On desktop, it's a direct button.
-    // Note: About opens a popover/region on the same page, not a separate page
-    const menuButton = page.getByRole('button', { name: 'Toggle menu' });
+  test('should navigate to About page via hamburger menu', async ({ page }) => {
+    // About is now in the hamburger menu in the NavBar
+    const hamburgerButton = page.locator('.hamburger-btn');
 
-    // Check if we need to open the mobile menu first
-    if (await menuButton.isVisible()) {
-      await menuButton.click();
-      // Wait for menu to open
-      await page.waitForTimeout(300);
-      // Click the menuitem
-      await page.getByRole('menuitem', { name: 'About' }).click();
-    } else {
-      // Desktop: click the button
-      await page.getByRole('button', { name: 'About' }).click();
-    }
+    // Click the hamburger menu
+    await hamburgerButton.click();
+    await page.waitForTimeout(300);
 
-    // About section should be visible (it's a popover, not a separate page)
-    await expect(page.getByRole('region', { name: 'About SifterSearch' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'About SifterSearch' })).toBeVisible();
+    // Click the About link in the dropdown
+    const aboutLink = page.locator('.nav-dropdown-item:has-text("About")');
+    await aboutLink.click();
+
+    // Should navigate to the about page
+    await expect(page).toHaveURL(/\/about/);
   });
 
   test('should show Sign In button when not authenticated', async ({ page }) => {

@@ -6,16 +6,13 @@
   // Client version - baked in at build time
   const CLIENT_VERSION = __APP_VERSION__;
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
-  import { initAuth, logout, getAuthState } from '../lib/auth.svelte.js';
-  import { initPWA, performUpdate, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
+  import { initAuth, getAuthState } from '../lib/auth.svelte.js';
+  import { initPWA, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
+  import NavBar from './common/NavBar.svelte';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import { updateUsage } from '../lib/usage.svelte.js';
-  import changelog from '../lib/changelog.json';
   import { getReferralUrl, captureReferral, generateQRCode } from '../lib/referral.js';
   import { getUserId } from '../lib/api.js';
-  import AuthModal from './AuthModal.svelte';
-  import ThemeToggle from './ThemeToggle.svelte';
-  import TierBadge from './TierBadge.svelte';
   import TranslationView from './TranslationView.svelte';
   import AudioPlayer from './AudioPlayer.svelte';
 
@@ -105,9 +102,6 @@
   let messages = $state([]);
   let input = $state('');
   let loading = $state(false);
-  let showAuthModal = $state(false);
-  let showAbout = $state(false);
-  let showMobileMenu = $state(false);
   let libraryStats = $state(null);
   let statsLoading = $state(true);
   let expandedResults = $state({}); // Track which results are expanded
@@ -291,11 +285,6 @@
     input = '';
     messages = [];
     inputEl?.focus();
-  }
-
-  // Close mobile menu
-  function closeMobileMenu() {
-    showMobileMenu = false;
   }
 
   const auth = getAuthState();
@@ -871,8 +860,6 @@
   });
 </script>
 
-<AuthModal bind:isOpen={showAuthModal} />
-
 <!-- Full-screen Reading Modal -->
 {#if readerOpen}
   <div
@@ -1044,230 +1031,8 @@
   <!-- Skip to main content link for keyboard users -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- Header -->
-  <header class="header px-3 py-2 sm:px-4 sm:py-3" role="banner">
-    <div class="header-left">
-      <img src="/ocean.svg" alt="SifterSearch" class="logo" />
-      <span class="title" role="text">
-        <span class="title-full">SifterSearch</span>
-        <span class="title-short">Sifter</span>
-        {#if pwa.updateAvailable}<button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>{:else}<span class="version">v.{SHORT_VERSION}</span>{/if}
-      </span>
-    </div>
-
-    <!-- Desktop navigation -->
-    <nav class="header-right desktop-nav" aria-label="Main navigation">
-      <ThemeToggle />
-      <button
-        onclick={() => showAbout = !showAbout}
-        class="nav-link"
-        aria-expanded={showAbout}
-        aria-controls="about-section"
-      >
-        About
-      </button>
-      {#if auth.isAuthenticated}
-        <div class="auth-section">
-          <TierBadge />
-          <a href="/profile" class="user-email">{auth.user?.email}</a>
-          <button
-            onclick={logout}
-            class="btn-secondary"
-          >
-            Sign Out
-          </button>
-        </div>
-      {:else}
-        <TierBadge />
-        <button
-          onclick={() => showAuthModal = true}
-          class="btn-primary"
-        >
-          Sign In
-        </button>
-      {/if}
-    </nav>
-
-    <!-- Mobile navigation -->
-    <div class="mobile-nav">
-      {#if auth.isAuthenticated}
-        <TierBadge />
-        <button onclick={logout} class="btn-secondary btn-small">Sign Out</button>
-      {:else}
-        <TierBadge />
-        <button onclick={() => showAuthModal = true} class="btn-primary btn-small">Sign In</button>
-      {/if}
-      <button
-        class="hamburger-btn"
-        onclick={() => showMobileMenu = !showMobileMenu}
-        aria-label="Toggle menu"
-        aria-expanded={showMobileMenu}
-      >
-        <svg class="hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {#if showMobileMenu}
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          {:else}
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          {/if}
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Mobile menu dropdown -->
-  {#if showMobileMenu}
-    <div class="mobile-menu" role="menu">
-      <ThemeToggle />
-      {#if auth.isAuthenticated}
-        <a href="/profile" class="mobile-menu-item" role="menuitem" onclick={closeMobileMenu}>
-          Profile
-        </a>
-        <a href="/settings" class="mobile-menu-item" role="menuitem" onclick={closeMobileMenu}>
-          Settings
-        </a>
-      {/if}
-      <button
-        onclick={() => { showAbout = !showAbout; closeMobileMenu(); }}
-        class="mobile-menu-item"
-        role="menuitem"
-      >
-        About
-      </button>
-    </div>
-  {/if}
-
-  <!-- Fullscreen About Section -->
-  {#if showAbout}
-    <section id="about-section" class="fixed inset-0 z-50 overflow-y-auto" style="background-color: var(--surface-solid);" role="region" aria-labelledby="about-title">
-      <div class="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-10 flex flex-col gap-6">
-        <!-- Sticky Header -->
-        <div class="sticky top-0 z-10 py-4 -mt-4 flex items-center justify-between border-b border-border" style="background-color: var(--surface-solid);">
-          <h2 id="about-title" class="text-2xl font-bold text-primary">About SifterSearch</h2>
-          <button
-            onclick={() => showAbout = false}
-            aria-label="Close about section"
-            class="p-2 rounded-lg bg-surface-elevated border border-border text-secondary hover:text-primary hover:bg-surface-2 transition-all"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <p class="text-secondary leading-relaxed text-lg">
-          SifterSearch is a private project by Chad Jones to help organize and search the Interfaith
-          supplemental library used in <a href="https://oceanlibrary.com" class="text-accent hover:underline">OceanLibrary.com</a>.
-          Access is by invitation from participants and by approval only.
-        </p>
-
-        <!-- Features Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <h3 class="font-semibold text-primary mb-1">Hybrid Search</h3>
-            <p class="text-secondary">Combines keyword matching with semantic understanding to find relevant passages.</p>
-          </div>
-          <div>
-            <h3 class="font-semibold text-primary mb-1">Multi-Tradition Library</h3>
-            <p class="text-secondary">Search across scriptures, commentaries, and scholarly works from diverse traditions.</p>
-          </div>
-          <div>
-            <h3 class="font-semibold text-primary mb-1">AI-Powered</h3>
-            <p class="text-secondary">Uses OpenAI embeddings for semantic search and Meilisearch for keyword matching.</p>
-          </div>
-          <div>
-            <h3 class="font-semibold text-primary mb-1">Conversational Interface</h3>
-            <p class="text-secondary">Ask questions in natural language and receive contextual responses with citations.</p>
-          </div>
-        </div>
-
-        <!-- Meet the Team Section -->
-        <div class="mt-4 pt-6 border-t border-border">
-          <h3 class="text-xl font-bold text-primary mb-3">
-            <a href="/docs/agents" class="hover:text-accent transition-colors">Meet the Team</a>
-          </h3>
-          <div class="text-secondary leading-relaxed space-y-3 mb-5">
-            <p>
-              Behind every search is a team of AI agents working together. When you ask a question,
-              <a href="/docs/agents/sifter" class="inline-agent sifter">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
-                <strong>Sifter</strong>
-              </a>
-              greets you and coordinates the response.
-              <a href="/docs/agents/researcher" class="inline-agent researcher">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                <strong>Researcher</strong>
-              </a>
-              plans the optimal search strategy, then
-              <a href="/docs/agents/analyzer" class="inline-agent analyzer">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                <strong>Analyzer</strong>
-              </a>
-              scores and highlights the most relevant passages.
-            </p>
-            <p>
-              Meanwhile,
-              <a href="/docs/agents/memory" class="inline-agent memory">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                <strong>Memory</strong>
-              </a>
-              recalls your past conversations to personalize responses. Need audio?
-              <a href="/docs/agents/narrator" class="inline-agent narrator">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                <strong>Narrator</strong>
-              </a>
-              speaks the sacred texts aloud. Want elegant prose?
-              <a href="/docs/agents/translator" class="inline-agent translator">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
-                <strong>Translator</strong>
-              </a>
-              renders text in beautiful, elevated English.
-            </p>
-            <p>
-              And behind the scenes,
-              <a href="/docs/agents/librarian" class="inline-agent librarian">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                <strong>Librarian</strong>
-              </a>
-              curates and grows our collection, and
-              <a href="/docs/agents/transcriber" class="inline-agent transcriber">
-                <svg class="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                <strong>Transcriber</strong>
-              </a>
-              turns talks and lectures into searchable text.
-            </p>
-          </div>
-          <a href="/docs/agents" class="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline">
-            <span>Explore the full agent documentation</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-          </a>
-        </div>
-
-        <!-- What's New Section - Grouped by Date -->
-        {#if changelog?.grouped && Object.keys(changelog.grouped).length > 0}
-          <div class="mt-6 pt-4 border-t border-border">
-            <h3 class="font-semibold text-primary mb-3 text-sm">What's New</h3>
-            {#each Object.entries(changelog.grouped).slice(0, 30) as [date, entries]}
-              <div class="mb-4">
-                <div class="text-xs font-semibold text-muted mb-1.5 uppercase tracking-wide">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                <ul class="list-none p-0 m-0 flex flex-col gap-2">
-                  {#each entries as entry}
-                    <li class="flex items-start gap-2 text-xs">
-                      <span class="flex-shrink-0 px-2 py-0.5 rounded text-[0.65rem] font-semibold uppercase
-                        {entry.type.toLowerCase() === 'new' ? 'bg-success/20 text-success' : ''}
-                        {entry.type.toLowerCase() === 'fixed' ? 'bg-info/20 text-info' : ''}
-                        {entry.type.toLowerCase() === 'improved' ? 'bg-accent-tertiary/20 text-accent-tertiary' : ''}
-                        {entry.type.toLowerCase() === 'updated' ? 'bg-warning/20 text-warning' : ''}">{entry.type}</span>
-                      <span class="text-secondary leading-snug">{entry.description}</span>
-                    </li>
-                  {/each}
-                </ul>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </section>
-  {/if}
+  <!-- Navigation Bar -->
+  <NavBar currentPage="search" />
 
   <!-- SEO content - visible to screen readers and crawlers -->
   <div class="sr-only">
