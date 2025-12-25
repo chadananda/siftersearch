@@ -139,10 +139,12 @@ export async function seedAdminUser() {
   const existing = await queryOne('SELECT id, tier, email_verified FROM users WHERE email = ?', [adminEmail.toLowerCase()]);
 
   if (existing) {
-    // Update to admin tier and ensure email_verified if not already
-    if (existing.tier !== 'admin' || !existing.email_verified) {
-      await query('UPDATE users SET tier = ?, email_verified = 1 WHERE id = ?', ['admin', existing.id]);
-    }
+    // Always sync password hash, tier, and email_verified from env credentials
+    const passwordHash = await hashPassword(adminPass);
+    await query(
+      'UPDATE users SET password_hash = ?, tier = ?, email_verified = 1 WHERE id = ?',
+      [passwordHash, 'admin', existing.id]
+    );
     return { id: existing.id, email: adminEmail, action: 'updated' };
   }
 
