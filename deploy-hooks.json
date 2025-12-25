@@ -19,5 +19,12 @@
     "command": "node scripts/fix-bab-author.js",
     "enabled": true,
     "timeout": 300000
+  },
+  {
+    "id": "2024-12-25-sync-library-nodes",
+    "description": "Populate library_nodes table from Meilisearch facets for collection pages",
+    "command": "node scripts/sync-library-nodes.js",
+    "enabled": true,
+    "timeout": 120000
   }
 ]

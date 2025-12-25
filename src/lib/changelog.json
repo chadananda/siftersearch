@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T23:21:37.176Z",
+  "generated": "2025-12-25T23:22:58.288Z",
   "entries": [
+    {
+      "hash": "53df884",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Prefer frontmatter author over path-extracted 'Unknown'",
+      "scope": "indexer"
+    },
     {
       "hash": "35ea568",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Meilisearch backup and upgrade scripts",
       "scope": null
-    },
-    {
-      "hash": "a77e4a9",
-      "date": "2025-12-16",
-      "type": "Fixed",
-      "description": "Production search and reader highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "53df884",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Prefer frontmatter author over path-extracted 'Unknown'",
+        "scope": "indexer"
+      },
       {
         "hash": "35ea568",
         "date": "2025-12-25",
@@ -701,13 +708,6 @@
         "date": "2025-12-16",
         "type": "New",
         "description": "Add Meilisearch backup and upgrade scripts",
-        "scope": null
-      },
-      {
-        "hash": "a77e4a9",
-        "date": "2025-12-16",
-        "type": "Fixed",
-        "description": "Production search and reader highlighting",
         "scope": null
       }
     ]
