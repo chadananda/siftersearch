@@ -16,6 +16,7 @@
   import AuthModal from './AuthModal.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import TierBadge from './TierBadge.svelte';
+  import TranslationView from './TranslationView.svelte';
 
   // Configure marked for inline parsing (no <p> tags wrapping)
   marked.use({
@@ -123,6 +124,7 @@
   let readerKeyPhrase = $state(''); // Store keyPhrase for highlighting in reader
   let readerCoreTerms = $state([]); // Store coreTerms for bold emphasis in reader
   let readerAnimating = $state(false); // For smooth open animation
+  let showTranslationView = $state(false); // Translation side-by-side view
 
   // Research plan state - shows the researcher agent's strategy
   let researchPlan = $state(null);
@@ -944,11 +946,27 @@
           </div>
         </div>
 
-        <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="reader-actions">
+          <!-- Translation button (patron+ only) -->
+          {#if auth.isAuthenticated && ['patron', 'institutional', 'admin'].includes(auth.user?.tier)}
+            <button
+              class="reader-action-btn"
+              onclick={() => showTranslationView = !showTranslationView}
+              title={showTranslationView ? 'Close translation' : 'Translate document'}
+              aria-label={showTranslationView ? 'Close translation view' : 'Open translation view'}
+              class:active={showTranslationView}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 5h12M9 3v2m1.048 3.5A7.5 7.5 0 0 0 19.5 15m0 0a7.5 7.5 0 0 1-7.5 7.5m7.5-7.5h-3m0 0l1.5-1.5m-1.5 1.5l1.5 1.5M5 12h3l1-3 2 6 1-3h3" />
+              </svg>
+            </button>
+          {/if}
+          <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <!-- Reader Content -->
@@ -983,6 +1001,16 @@
           </div>
         {/if}
       </div>
+
+      <!-- Translation View Overlay -->
+      {#if showTranslationView && readerDocument}
+        <div class="translation-overlay">
+          <TranslationView
+            documentId={readerDocument.id}
+            onClose={() => showTranslationView = false}
+          />
+        </div>
+      {/if}
     </div>
   </div>
 {/if}
@@ -3394,6 +3422,59 @@
   .reader-close-btn:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #1a1a1a;
+  }
+
+  .reader-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .reader-action-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .reader-action-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1a1a1a;
+  }
+
+  .reader-action-btn.active {
+    background: color-mix(in srgb, var(--accent-tertiary) 15%, transparent);
+    color: var(--accent-tertiary);
+    border-color: var(--accent-tertiary);
+  }
+
+  .translation-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--surface-0);
+    z-index: 10;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   /* Reader Content */

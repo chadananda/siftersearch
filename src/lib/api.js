@@ -726,6 +726,103 @@ export async function triggerServerUpdate(clientVersion) {
 }
 
 // ============================================
+// Services API (Translation, Audio)
+// ============================================
+
+export const services = {
+  /**
+   * Get supported translation languages
+   */
+  async getLanguages() {
+    return request('/api/services/translate/languages');
+  },
+
+  /**
+   * Request document translation (patron+ only)
+   */
+  async requestTranslation(documentId, targetLanguage, options = {}) {
+    return request('/api/services/translate', {
+      method: 'POST',
+      body: JSON.stringify({
+        documentId,
+        targetLanguage,
+        sourceLanguage: options.sourceLanguage,
+        quality: options.quality || 'standard',
+        notifyEmail: options.notifyEmail
+      })
+    });
+  },
+
+  /**
+   * Check translation job status
+   */
+  async getTranslationStatus(jobId) {
+    return request(`/api/services/translate/status/${jobId}`);
+  },
+
+  /**
+   * Check if translation exists for document
+   */
+  async checkTranslation(documentId, targetLanguage) {
+    return request(`/api/services/translate/check/${documentId}?lang=${targetLanguage}`);
+  },
+
+  /**
+   * Get available TTS voices
+   */
+  async getVoices() {
+    return request('/api/services/audio/voices');
+  },
+
+  /**
+   * Request audio conversion (patron+ only)
+   */
+  async requestAudio(documentId, options = {}) {
+    return request('/api/services/audio', {
+      method: 'POST',
+      body: JSON.stringify({
+        documentId,
+        voiceId: options.voiceId,
+        format: options.format || 'mp3',
+        notifyEmail: options.notifyEmail
+      })
+    });
+  },
+
+  /**
+   * Check audio job status
+   */
+  async getAudioStatus(jobId) {
+    return request(`/api/services/audio/status/${jobId}`);
+  },
+
+  /**
+   * Check if audio exists for document
+   */
+  async checkAudio(documentId) {
+    return request(`/api/services/audio/check/${documentId}`);
+  },
+
+  /**
+   * Get user's jobs (translation and audio)
+   */
+  async getJobs(options = {}) {
+    const params = new URLSearchParams();
+    if (options.type) params.set('type', options.type);
+    if (options.status) params.set('status', options.status);
+    if (options.limit) params.set('limit', options.limit);
+    return request(`/api/services/jobs?${params.toString()}`);
+  },
+
+  /**
+   * Download completed job result
+   */
+  getDownloadUrl(jobId) {
+    return `${API_URL}/api/services/download/${jobId}`;
+  }
+};
+
+// ============================================
 // Default export
 // ============================================
 
@@ -737,6 +834,7 @@ export default {
   user,
   admin,
   librarian,
+  services,
   healthCheck,
   triggerServerUpdate,
   setAccessToken,
