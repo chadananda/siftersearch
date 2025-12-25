@@ -830,6 +830,88 @@ export const services = {
 };
 
 // ============================================
+// Forum API
+// ============================================
+
+export const forum = {
+  /**
+   * Get list of forum posts
+   */
+  async getPosts(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.sort) params.set('sort', options.sort);
+    if (options.category) params.set('category', options.category);
+    const query = params.toString();
+    return request(`/api/forum/posts${query ? `?${query}` : ''}`);
+  },
+
+  /**
+   * Get a single post with replies
+   */
+  async getPost(postId) {
+    return request(`/api/forum/posts/${postId}`);
+  },
+
+  /**
+   * Create a new post
+   */
+  async createPost(title, content, category = 'general') {
+    return request('/api/forum/posts', {
+      method: 'POST',
+      body: JSON.stringify({ title, content, category })
+    });
+  },
+
+  /**
+   * Reply to a post
+   */
+  async replyToPost(postId, content) {
+    return request(`/api/forum/posts/${postId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    });
+  },
+
+  /**
+   * Update a post
+   */
+  async updatePost(postId, updates) {
+    return request(`/api/forum/posts/${postId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  /**
+   * Delete a post
+   */
+  async deletePost(postId) {
+    return request(`/api/forum/posts/${postId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Vote on a post
+   */
+  async votePost(postId, vote) {
+    return request(`/api/forum/posts/${postId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ vote })
+    });
+  },
+
+  /**
+   * Get forum categories
+   */
+  async getCategories() {
+    return request('/api/forum/categories');
+  }
+};
+
+// ============================================
 // Default export
 // ============================================
 
@@ -842,6 +924,7 @@ export default {
   admin,
   librarian,
   services,
+  forum,
   healthCheck,
   triggerServerUpdate,
   setAccessToken,

@@ -1,0 +1,19 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+import PostDetail from '../../components/forum/PostDetail.svelte';
+---
+
+<Layout title="Forum Post">
+  <LiquidBackground slot="background" client:only="svelte" />
+  <div class="post-page">
+    <PostDetail client:only="svelte" />
+  </div>
+</Layout>
+
+<style>
+  .post-page {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+</style>

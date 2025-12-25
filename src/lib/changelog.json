@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:50:50.547Z",
+  "generated": "2025-12-25T06:00:35.176Z",
   "entries": [
+    {
+      "hash": "c183234",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add referral dashboard with stats, QR code, and share buttons",
+      "scope": "referral"
+    },
     {
       "hash": "ad696e1",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Bump version before build so client has correct version",
       "scope": null
-    },
-    {
-      "hash": "6d7c938",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use os.homedir() for cloudflared config path",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "c183234",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add referral dashboard with stats, QR code, and share buttons",
+        "scope": "referral"
+      },
       {
         "hash": "ad696e1",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Bump version before build so client has correct version",
-        "scope": null
-      },
-      {
-        "hash": "6d7c938",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use os.homedir() for cloudflared config path",
         "scope": null
       }
     ]

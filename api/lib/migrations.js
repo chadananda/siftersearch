@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 /**
  * Get current database schema version
@@ -167,6 +167,56 @@ const migrations = {
     } catch {
       // Index may already exist
     }
+  },
+
+  // Version 4: Add forum tables
+  4: async () => {
+    // Forum posts table (handles both posts and replies via parent_id)
+    await query(`
+      CREATE TABLE IF NOT EXISTS forum_posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        content TEXT NOT NULL,
+        category TEXT DEFAULT 'general',
+        author_id INTEGER NOT NULL,
+        parent_id INTEGER,
+        root_post_id INTEGER,
+        depth INTEGER DEFAULT 0,
+        upvotes INTEGER DEFAULT 0,
+        downvotes INTEGER DEFAULT 0,
+        reply_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        last_activity_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TEXT,
+        FOREIGN KEY (author_id) REFERENCES users(id),
+        FOREIGN KEY (parent_id) REFERENCES forum_posts(id),
+        FOREIGN KEY (root_post_id) REFERENCES forum_posts(id)
+      )
+    `);
+
+    // Forum votes table
+    await query(`
+      CREATE TABLE IF NOT EXISTS forum_votes (
+        user_id INTEGER NOT NULL,
+        post_id INTEGER NOT NULL,
+        vote INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, post_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (post_id) REFERENCES forum_posts(id)
+      )
+    `);
+
+    // Create indexes
+    try { await query('CREATE INDEX idx_forum_posts_author ON forum_posts(author_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_forum_posts_parent ON forum_posts(parent_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_forum_posts_root ON forum_posts(root_post_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_forum_posts_category ON forum_posts(category)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_forum_posts_created ON forum_posts(created_at)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_forum_votes_post ON forum_votes(post_id)'); } catch { /* exists */ }
+
+    logger.info('Forum tables created');
   },
 };
 
