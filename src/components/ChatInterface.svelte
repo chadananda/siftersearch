@@ -1110,27 +1110,22 @@
                   <span class="server-version">Server v{libraryStats.serverVersion}</span>
                 {/if}
               </div>
-              {#if libraryStats.indexing}
+              {#if libraryStats.indexingProgress && (libraryStats.indexingProgress.processing > 0 || libraryStats.indexingProgress.pending > 0)}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
                       <circle cx="4" cy="4" r="3" />
                     </svg>
-                    <span>Indexing in progress</span>
+                    <span>Indexing documents</span>
                   </div>
-                  {#if libraryStats.indexingProgress}
-                    <div class="indexing-progress">
-                      <div class="progress-bar">
-                        <div
-                          class="progress-fill"
-                          style="width: {libraryStats.indexingProgress.total > 0 ? Math.round((libraryStats.indexingProgress.total - libraryStats.indexingProgress.pending) / libraryStats.indexingProgress.total * 100) : 0}%"
-                        ></div>
-                      </div>
-                      <div class="progress-text">
-                        {libraryStats.indexingProgress.processing} processing, {libraryStats.indexingProgress.pending} pending
-                      </div>
-                    </div>
-                  {/if}
+                  <div class="indexing-status">
+                    {#if libraryStats.indexingProgress.processing > 0}
+                      <span class="status-item processing">{libraryStats.indexingProgress.processing} processing</span>
+                    {/if}
+                    {#if libraryStats.indexingProgress.pending > 0}
+                      <span class="status-item pending">{libraryStats.indexingProgress.pending} queued</span>
+                    {/if}
+                  </div>
                 </div>
               {/if}
             </div>
@@ -2037,30 +2032,25 @@
     animation: pulse 1.5s ease-in-out infinite;
   }
 
-  .indexing-progress {
-    margin-top: 0.5rem;
+  .indexing-status {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.375rem;
+    font-size: 0.6875rem;
   }
 
-  .progress-bar {
-    width: 100%;
-    height: 0.375rem;
-    background-color: var(--surface-3);
-    border-radius: 9999px;
-    overflow: hidden;
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
-  .progress-fill {
-    height: 100%;
-    background-color: var(--warning);
-    border-radius: 9999px;
-    transition: width 0.3s ease;
+  .status-item.processing {
+    color: var(--warning);
   }
 
-  .progress-text {
-    margin-top: 0.25rem;
-    font-size: 0.625rem;
+  .status-item.pending {
     color: var(--text-muted);
-    text-align: center;
   }
 
   @keyframes pulse {

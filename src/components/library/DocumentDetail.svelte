@@ -201,95 +201,97 @@
       {:else if error}
         <div class="error-state">{error}</div>
       {:else if activeTab === 'metadata'}
-        <!-- Metadata Tab -->
-        <div class="metadata-form">
-          <div class="form-group">
-            <label>Title</label>
-            {#if isAdmin}
-              <input type="text" bind:value={editableDoc.title} oninput={handleMetadataChange} />
-            {:else}
-              <div class="field-value">{document?.title || '—'}</div>
-            {/if}
-          </div>
-
-          <div class="form-group">
-            <label>Author</label>
-            {#if isAdmin}
-              <input type="text" bind:value={editableDoc.author} oninput={handleMetadataChange} />
-            {:else}
-              <div class="field-value">{document?.author || '—'}</div>
-            {/if}
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Religion</label>
-              {#if isAdmin}
-                <input type="text" bind:value={editableDoc.religion} oninput={handleMetadataChange} />
-              {:else}
-                <div class="field-value">{document?.religion || '—'}</div>
+        <!-- Metadata Tab - Compact table view with editable fields for admins -->
+        <div class="metadata-table">
+          <table class="w-full text-sm">
+            <tbody>
+              <tr class="border-b border-border">
+                <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase w-28">Author</th>
+                <td class="py-2 px-3 text-primary">
+                  {#if isAdmin}
+                    <input type="text" bind:value={editableDoc.author} oninput={handleMetadataChange}
+                      class="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0" />
+                  {:else}
+                    {document?.author || '—'}
+                  {/if}
+                </td>
+              </tr>
+              <tr class="border-b border-border">
+                <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Religion</th>
+                <td class="py-2 px-3 text-primary">
+                  {#if isAdmin}
+                    <input type="text" bind:value={editableDoc.religion} oninput={handleMetadataChange}
+                      class="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0" />
+                  {:else}
+                    {document?.religion || '—'}
+                  {/if}
+                </td>
+              </tr>
+              <tr class="border-b border-border">
+                <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Collection</th>
+                <td class="py-2 px-3 text-primary">
+                  {#if isAdmin}
+                    <input type="text" bind:value={editableDoc.collection} oninput={handleMetadataChange}
+                      class="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0" />
+                  {:else}
+                    {document?.collection || '—'}
+                  {/if}
+                </td>
+              </tr>
+              <tr class="border-b border-border">
+                <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Language</th>
+                <td class="py-2 px-3 text-primary">
+                  {#if isAdmin}
+                    <input type="text" bind:value={editableDoc.language} oninput={handleMetadataChange}
+                      class="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0" />
+                  {:else}
+                    {document?.language || '—'}
+                  {/if}
+                </td>
+              </tr>
+              {#if document?.year}
+                <tr class="border-b border-border">
+                  <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Year</th>
+                  <td class="py-2 px-3 text-primary">
+                    {#if isAdmin}
+                      <input type="number" bind:value={editableDoc.year} oninput={handleMetadataChange}
+                        class="w-full bg-transparent border-none p-0 text-sm focus:outline-none focus:ring-0" />
+                    {:else}
+                      {document?.year}
+                    {/if}
+                  </td>
+                </tr>
               {/if}
-            </div>
-
-            <div class="form-group">
-              <label>Collection</label>
-              {#if isAdmin}
-                <input type="text" bind:value={editableDoc.collection} oninput={handleMetadataChange} />
-              {:else}
-                <div class="field-value">{document?.collection || '—'}</div>
+              <tr class="border-b border-border">
+                <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Size</th>
+                <td class="py-2 px-3 text-muted">{document?.paragraph_count?.toLocaleString() || 0} paragraphs</td>
+              </tr>
+              {#if document?.description}
+                <tr>
+                  <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase align-top">Description</th>
+                  <td class="py-2 px-3 text-secondary whitespace-pre-wrap">
+                    {#if isAdmin}
+                      <textarea bind:value={editableDoc.description} oninput={handleMetadataChange} rows="3"
+                        class="w-full bg-surface-1 border border-border rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"></textarea>
+                    {:else}
+                      {document?.description}
+                    {/if}
+                  </td>
+                </tr>
               {/if}
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Language</label>
-              {#if isAdmin}
-                <input type="text" bind:value={editableDoc.language} oninput={handleMetadataChange} />
-              {:else}
-                <div class="field-value">{document?.language || '—'}</div>
-              {/if}
-            </div>
-
-            <div class="form-group">
-              <label>Year</label>
-              {#if isAdmin}
-                <input type="number" bind:value={editableDoc.year} oninput={handleMetadataChange} />
-              {:else}
-                <div class="field-value">{document?.year || '—'}</div>
-              {/if}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Description</label>
-            {#if isAdmin}
-              <textarea bind:value={editableDoc.description} oninput={handleMetadataChange} rows="4"></textarea>
-            {:else}
-              <div class="field-value description">{document?.description || '—'}</div>
-            {/if}
-          </div>
-
-          <div class="form-group">
-            <label>Paragraphs</label>
-            <div class="field-value">{document?.paragraph_count?.toLocaleString() || 0}</div>
-          </div>
-
-          <div class="form-group">
-            <label>Document ID</label>
-            <div class="field-value mono">{document?.id}</div>
-          </div>
+            </tbody>
+          </table>
         </div>
 
       {:else if activeTab === 'content'}
-        <!-- Content Tab -->
-        <div class="content-view">
+        <!-- Content Tab - Endless scroller style -->
+        <div class="content-scroll">
           {#each paragraphs as para, i}
-            <div class="paragraph" data-index={para.paragraph_index}>
+            <div class="content-block" data-index={para.paragraph_index}>
               {#if para.heading}
-                <h3 class="paragraph-heading">{para.heading}</h3>
+                <h3 class="text-base font-semibold text-primary mb-2">{para.heading}</h3>
               {/if}
-              <p class="paragraph-text">{@html renderMarkdown(para.text)}</p>
+              <div class="text-sm text-secondary leading-relaxed prose prose-sm max-w-none">{@html renderMarkdown(para.text)}</div>
             </div>
           {/each}
           {#if paragraphs.length === 0}
@@ -536,91 +538,35 @@
     color: var(--error);
   }
 
-  /* Metadata form */
-  .metadata-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .form-group label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    background: var(--surface-0);
-    color: var(--text-primary);
-  }
-
-  .form-group input:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 20%, transparent);
-  }
-
-  .field-value {
-    font-size: 0.9375rem;
-    color: var(--text-primary);
-    padding: 0.5rem 0;
-  }
-
-  .field-value.mono {
-    font-family: ui-monospace, monospace;
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-  }
-
-  .field-value.description {
-    white-space: pre-wrap;
-  }
-
-  /* Content view */
-  .content-view {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .paragraph {
-    padding: 0.75rem;
+  /* Metadata table */
+  .metadata-table {
     background: var(--surface-1);
     border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border-default);
   }
 
-  .paragraph-heading {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
+  /* Content scroll - endless scroller style */
+  .content-scroll {
+    display: flex;
+    flex-direction: column;
   }
 
-  .paragraph-text {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 0;
+  .content-block {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .content-block:last-child {
+    border-bottom: none;
+  }
+
+  .content-block :global(p) {
+    margin: 0 0 0.5em 0;
+  }
+
+  .content-block :global(p:last-child) {
+    margin-bottom: 0;
   }
 
   /* Compare view */

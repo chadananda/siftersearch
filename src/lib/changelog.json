@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T20:28:52.324Z",
+  "generated": "2025-12-25T20:39:26.212Z",
   "entries": [
+    {
+      "hash": "4cfda94",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Align nav left, circular hamburger, Connect instead of Sign In",
+      "scope": "navbar"
+    },
     {
       "hash": "6031995",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use getter for embedding config to avoid ES module hoisting",
       "scope": null
-    },
-    {
-      "hash": "aa8766f",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Centralize embedding config - read from config.js only",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "4cfda94",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Align nav left, circular hamburger, Connect instead of Sign In",
+        "scope": "navbar"
+      },
       {
         "hash": "6031995",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use getter for embedding config to avoid ES module hoisting",
-        "scope": null
-      },
-      {
-        "hash": "aa8766f",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Centralize embedding config - read from config.js only",
         "scope": null
       }
     ]

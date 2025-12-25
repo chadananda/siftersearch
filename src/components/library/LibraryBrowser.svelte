@@ -16,6 +16,8 @@
   let loading = $state(true);
   let error = $state(null);
   let stats = $state(null);
+  let scrollSentinel = $state(null);
+  let observer = $state(null);
 
   // Filters
   let filters = $state({
@@ -32,7 +34,7 @@
   let showFilters = $state(false);
   let totalDocuments = $state(0);
   let currentOffset = $state(0);
-  const LIMIT = 50;
+  const LIMIT = 100;
 
   // Derived
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
@@ -163,13 +165,28 @@
     fetchTree();
     fetchDocuments(true);
     fetchStats();
+
+    // Setup infinite scroll observer
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && documents.length < totalDocuments) {
+          loadMore();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    return () => {
+      if (observer) observer.disconnect();
+    };
   });
 
-  // Re-fetch when filters change
+  // Watch sentinel element for infinite scroll
   $effect(() => {
-    // Track filter changes
-    const _ = JSON.stringify(filters);
-    // Don't fetch on mount - onMount handles that
+    if (scrollSentinel && observer) {
+      observer.observe(scrollSentinel);
+      return () => observer.unobserve(scrollSentinel);
+    }
   });
 </script>
 
@@ -288,15 +305,14 @@
           on:select={(e) => handleDocumentSelect(e.detail)}
         />
 
+        <!-- Infinite scroll sentinel -->
         {#if documents.length < totalDocuments}
-          <div class="load-more">
-            <button onclick={loadMore} disabled={loading}>
-              {#if loading}
-                Loading...
-              {:else}
-                Load more ({totalDocuments - documents.length} remaining)
-              {/if}
-            </button>
+          <div bind:this={scrollSentinel} class="scroll-sentinel">
+            {#if loading}
+              <svg class="spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+              </svg>
+            {/if}
           </div>
         {/if}
       {/if}
@@ -552,32 +568,20 @@
     background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   }
 
-  /* Load more */
-  .load-more {
-    padding: 1rem;
-    text-align: center;
+  /* Infinite scroll sentinel */
+  .scroll-sentinel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    min-height: 60px;
   }
 
-  .load-more button {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: var(--surface-1);
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .load-more button:hover:not(:disabled) {
-    background: var(--surface-2);
-    color: var(--text-primary);
-  }
-
-  .load-more button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  .scroll-sentinel .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--text-muted);
+    animation: spin 1s linear infinite;
   }
 
   /* Mobile responsive */
