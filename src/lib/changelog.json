@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T15:14:43.844Z",
+  "generated": "2025-12-25T16:58:57.045Z",
   "entries": [
+    {
+      "hash": "3dea6ad",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Add test mode, persistent login, and user session endpoints",
+      "scope": "auth"
+    },
     {
       "hash": "fd2db2a",
       "date": "2025-12-24",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Remove navigation preload to avoid console warning on reload",
       "scope": null
-    },
-    {
-      "hash": "4a95dd7",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Prevent double reload on PWA update",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-25": [
+      {
+        "hash": "3dea6ad",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Add test mode, persistent login, and user session endpoints",
+        "scope": "auth"
+      }
+    ],
     "2025-12-24": [
       {
         "hash": "fd2db2a",
@@ -701,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Remove navigation preload to avoid console warning on reload",
-        "scope": null
-      },
-      {
-        "hash": "4a95dd7",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Prevent double reload on PWA update",
         "scope": null
       }
     ]

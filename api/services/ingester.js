@@ -11,11 +11,13 @@ import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
+import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
+import { segmentBlocks, detectLanguageFeatures } from './segmenter.js';
 
-// Chunking configuration (same as original indexer)
+// Chunking configuration
 const CHUNK_CONFIG = {
-  maxChunkSize: 1500,      // Max characters per chunk
-  minChunkSize: 100,       // Min characters (skip smaller chunks)
+  maxChunkSize: 1500,      // Max characters per chunk - triggers AI segmentation if exceeded
+  minChunkSize: 20,        // Min characters (lowered to preserve short prayers/invocations)
   overlapSize: 150,        // Overlap between chunks for context
   sentenceDelimiters: /[.!?]\s+/,
   paragraphDelimiters: /\n\n+/
@@ -99,6 +101,61 @@ export function parseDocument(text, options = {}) {
       }
     }
   }
+
+  return chunks;
+}
+
+/**
+ * Parse document with blocktype awareness and AI segmentation
+ *
+ * Returns array of { text, blocktype } objects for storage
+ * Uses AI segmentation for ANY block exceeding maxChunkSize (universal approach)
+ *
+ * @param {string} text - Raw markdown text
+ * @param {object} options - Options including language hint
+ * @returns {Promise<Array<{text: string, blocktype: string}>>}
+ */
+export async function parseDocumentWithBlocks(text, options = {}) {
+  const {
+    maxChunkSize = CHUNK_CONFIG.maxChunkSize,
+    minChunkSize = CHUNK_CONFIG.minChunkSize,
+    language = 'en'
+  } = options;
+
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
+
+  // Detect language for AI hints
+  const features = detectLanguageFeatures(text);
+  const detectedLanguage = language || features.language;
+
+  logger.debug({
+    textLength: text.length,
+    detectedLanguage,
+    isRTL: features.isRTL
+  }, 'Parsing document with block awareness');
+
+  // Parse markdown into typed blocks
+  const blocks = parseMarkdownBlocks(text);
+
+  if (blocks.length === 0) {
+    return [];
+  }
+
+  // Use segmentBlocks for ALL content
+  // It will use AI only for blocks > maxChunkSize
+  const chunks = await segmentBlocks(blocks, {
+    maxChunkSize,
+    minChunkSize,
+    language: detectedLanguage
+  });
+
+  logger.debug({
+    inputBlocks: blocks.length,
+    outputChunks: chunks.length,
+    language: detectedLanguage
+  }, 'Document segmented');
 
   return chunks;
 }
@@ -231,8 +288,11 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     description: extractedMeta.description || metadata.description || ''
   };
 
-  // Parse into chunks/paragraphs
-  const chunks = parseDocument(content);
+  // Parse into chunks/paragraphs with blocktype awareness
+  // Uses AI segmentation for RTL languages without punctuation
+  const chunks = await parseDocumentWithBlocks(content, {
+    language: finalMeta.language
+  });
 
   if (chunks.length === 0) {
     logger.warn({ documentId, filePath }, 'Document has no content to ingest');
@@ -273,7 +333,9 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   let newCount = 0;
 
   for (let index = 0; index < chunks.length; index++) {
-    const chunkText = chunks[index];
+    const chunk = chunks[index];
+    const chunkText = chunk.text;
+    const blocktype = chunk.blocktype || BLOCK_TYPES.PARAGRAPH;
     const contentHash = hashContent(chunkText);
     newContentHashes.add(contentHash);
 
@@ -285,7 +347,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       paragraphStatements.push({
         sql: `
           UPDATE indexed_paragraphs
-          SET paragraph_index = ?, heading = ?, title = ?, author = ?, religion = ?, collection = ?, language = ?, year = ?, synced = 0
+          SET paragraph_index = ?, heading = ?, title = ?, author = ?, religion = ?, collection = ?, language = ?, year = ?, blocktype = ?, synced = 0
           WHERE id = ?
         `,
         args: [
@@ -297,19 +359,20 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
           finalMeta.collection,
           finalMeta.language,
           safeParseYear(finalMeta.year),
+          blocktype,
           existing.id
         ]
       });
       // Mark as used so we don't delete it later
       existingParagraphs.delete(contentHash);
     } else {
-      // New paragraph - insert it
+      // New paragraph - insert it with blocktype
       newCount++;
       paragraphStatements.push({
         sql: `
           INSERT INTO indexed_paragraphs
-          (id, document_id, paragraph_index, text, content_hash, heading, title, author, religion, collection, language, year)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (id, document_id, paragraph_index, text, content_hash, heading, title, author, religion, collection, language, year, blocktype)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
           `${finalDocId}_p${index}`,
@@ -323,7 +386,8 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
           finalMeta.religion,
           finalMeta.collection,
           finalMeta.language,
-          safeParseYear(finalMeta.year)
+          safeParseYear(finalMeta.year),
+          blocktype
         ]
       });
     }
@@ -449,6 +513,7 @@ export async function getDocumentByPath(filePath) {
 export const ingester = {
   hashContent,
   parseDocument,
+  parseDocumentWithBlocks,
   parseMarkdownFrontmatter,
   ingestDocument,
   removeDocument,

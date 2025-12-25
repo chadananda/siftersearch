@@ -58,6 +58,7 @@ export async function initializeIndexes() {
   await paragraphs.updateSettings({
     searchableAttributes: [
       'text',
+      'context',  // AI-generated disambiguation (who, what, where, when)
       'heading',
       'title',
       'author'
@@ -69,6 +70,7 @@ export async function initializeIndexes() {
       'language',
       'year',
       'paragraph_index',
+      'blocktype',  // For filtering by content type (paragraph, heading1, quote, etc.)
       'author',  // For parenthetical filter syntax: (author_name)
       'title'    // For parenthetical filter syntax: (title_keyword)
     ],

@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 6;
+const CURRENT_VERSION = 7;
 
 /**
  * Get current database schema version
@@ -286,6 +286,48 @@ const migrations = {
     try { await query('CREATE INDEX idx_conversations_user ON conversations(user_id)'); } catch { /* exists */ }
 
     logger.info('User session and deletion support added');
+  },
+
+  // Version 7: Add blocktype and translation columns for enhanced content storage
+  7: async () => {
+    // Add blocktype column for markdown block type tracking
+    // Allows exact markdown reconstruction from stored content
+    try {
+      await query('ALTER TABLE indexed_paragraphs ADD COLUMN blocktype TEXT DEFAULT \'paragraph\'');
+      logger.info('Added blocktype column to indexed_paragraphs');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+    }
+
+    // Add translation column for inline English translations (sparse storage)
+    try {
+      await query('ALTER TABLE indexed_paragraphs ADD COLUMN translation TEXT');
+      logger.info('Added translation column to indexed_paragraphs');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+    }
+
+    // Add context column for disambiguation (who, what, where, when)
+    // Will be populated offline by local AI
+    try {
+      await query('ALTER TABLE indexed_paragraphs ADD COLUMN context TEXT');
+      logger.info('Added context column to indexed_paragraphs');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+    }
+
+    // Create index for blocktype filtering
+    try {
+      await query('CREATE INDEX idx_paragraphs_blocktype ON indexed_paragraphs(blocktype)');
+    } catch { /* exists */ }
+
+    logger.info('Content storage enhancements added (blocktype, translation, context)');
   },
 };
 
