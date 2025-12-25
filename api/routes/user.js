@@ -9,7 +9,7 @@
 
 import { query, queryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
-import { authenticate, hashPassword, verifyPassword } from '../lib/auth.js';
+import { authenticate, hashPassword, verifyPassword, revokeAllUserTokens } from '../lib/auth.js';
 
 export default async function userRoutes(fastify) {
   // All routes require authentication
@@ -39,19 +39,19 @@ export default async function userRoutes(fastify) {
     return { user };
   });
 
-  // Update profile
-  fastify.put('/profile', {
-    schema: {
-      body: {
-        type: 'object',
-        properties: {
-          name: { type: 'string', maxLength: 100 },
-          preferred_language: { type: 'string', maxLength: 10 },
-          metadata: { type: 'object' }
-        }
+  // Update profile handler (shared by PUT and PATCH)
+  const updateProfileSchema = {
+    body: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', maxLength: 100 },
+        preferred_language: { type: 'string', maxLength: 10 },
+        metadata: { type: 'object' }
       }
     }
-  }, async (request) => {
+  };
+
+  async function updateProfileHandler(request) {
     const { name, preferred_language, metadata } = request.body;
     const updates = [];
     const values = [];
@@ -96,8 +96,12 @@ export default async function userRoutes(fastify) {
       }
     }
 
-    return { user };
-  });
+    return user;
+  }
+
+  // Register both PUT and PATCH for profile updates
+  fastify.put('/profile', { schema: updateProfileSchema }, updateProfileHandler);
+  fastify.patch('/profile', { schema: updateProfileSchema }, updateProfileHandler);
 
   // Change password
   fastify.put('/password', {
@@ -189,5 +193,117 @@ export default async function userRoutes(fastify) {
     }
 
     return { conversation };
+  });
+
+  // Get active sessions (refresh tokens)
+  fastify.get('/sessions', async (request) => {
+    const sessions = await query(
+      `SELECT id, created_at, expires_at
+       FROM refresh_tokens
+       WHERE user_id = ? AND revoked = 0 AND expires_at > datetime('now')
+       ORDER BY created_at DESC`,
+      [request.user.sub]
+    );
+
+    return {
+      sessions: sessions.rows.map((s, i) => ({
+        id: s.id,
+        created_at: s.created_at,
+        expires_at: s.expires_at,
+        current: i === 0 // Most recent is likely current
+      }))
+    };
+  });
+
+  // Logout from all devices
+  fastify.post('/logout-all', async (request) => {
+    await revokeAllUserTokens(request.user.sub);
+    return { success: true, message: 'All sessions have been logged out' };
+  });
+
+  // Request account deletion (starts deletion process)
+  fastify.post('/request-deletion', async (request) => {
+    // In a real app, this might send a confirmation email
+    // For now, we'll just mark the account for deletion with a grace period
+    const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await query(
+      'UPDATE users SET deletion_requested_at = ? WHERE id = ?',
+      [new Date().toISOString(), request.user.sub]
+    );
+
+    return {
+      success: true,
+      message: 'Account deletion requested',
+      deletion_date: deletionDate.toISOString()
+    };
+  });
+
+  // Confirm and execute account deletion
+  fastify.post('/confirm-deletion', async (request) => {
+    // Revoke all tokens
+    await revokeAllUserTokens(request.user.sub);
+
+    // Soft delete the account
+    await query(
+      `UPDATE users SET
+         tier = 'banned',
+         email = 'deleted_' || id || '_' || email,
+         deletion_requested_at = NULL
+       WHERE id = ?`,
+      [request.user.sub]
+    );
+
+    return { success: true, message: 'Account has been deleted' };
+  });
+
+  // Cancel deletion request
+  fastify.post('/cancel-deletion', async (request) => {
+    await query(
+      'UPDATE users SET deletion_requested_at = NULL WHERE id = ?',
+      [request.user.sub]
+    );
+
+    return { success: true, message: 'Deletion request cancelled' };
+  });
+
+  // Get referral information
+  fastify.get('/referrals', async (request) => {
+    const user = await queryOne('SELECT id, referral_code FROM users WHERE id = ?', [request.user.sub]);
+
+    if (!user) {
+      throw ApiError.notFound('User not found');
+    }
+
+    // Generate referral code if not exists
+    let referralCode = user.referral_code;
+    if (!referralCode) {
+      referralCode = `ref_${request.user.sub.slice(0, 8)}`;
+      await query('UPDATE users SET referral_code = ? WHERE id = ?', [referralCode, request.user.sub]);
+    }
+
+    // Get referral stats
+    const referrals = await query(
+      `SELECT id, name, tier, created_at as joined_at
+       FROM users
+       WHERE referred_by = ?
+       ORDER BY created_at DESC`,
+      [request.user.sub]
+    );
+
+    const stats = {
+      total: referrals.rows.length,
+      approved: referrals.rows.filter(r => r.tier === 'approved' || r.tier === 'patron' || r.tier === 'admin').length,
+      pending: referrals.rows.filter(r => r.tier === 'verified' || r.tier === 'anonymous').length
+    };
+
+    const baseUrl = process.env.PUBLIC_URL || 'https://siftersearch.com';
+
+    return {
+      referral_code: referralCode,
+      referral_url: `${baseUrl}?ref=${referralCode}`,
+      stats,
+      referrals: referrals.rows
+    };
   });
 }

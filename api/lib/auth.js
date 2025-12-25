@@ -9,8 +9,20 @@ import { query, queryOne } from './db.js';
 import { ApiError } from './errors.js';
 
 const SALT_ROUNDS = 12;
-const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '15m';
+// Extended token lifetime for persistent login (not a banking app)
+const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '7d';
 const REFRESH_EXPIRES_DAYS = parseInt(process.env.JWT_REFRESH_EXPIRES?.replace('d', '') || '90', 10);
+
+// Test mode users for BDD testing (only in development)
+const TEST_MODE = process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
+const TEST_USERS = {
+  'test_admin_token': { sub: 'user_admin', email: 'admin@test.com', tier: 'admin' },
+  'test_approved_token': { sub: 'user_approved', email: 'approved@test.com', tier: 'approved' },
+  'test_patron_token': { sub: 'user_patron', email: 'patron@test.com', tier: 'patron' },
+  'test_verified_token': { sub: 'user_verified', email: 'verified@test.com', tier: 'verified' },
+  'test_user_token': { sub: 'user_test', email: 'test@test.com', tier: 'verified' },
+  'test_user123_token': { sub: 'user123', email: 'user123@test.com', tier: 'approved' }
+};
 
 // Password hashing
 export async function hashPassword(password) {
@@ -76,6 +88,13 @@ export async function authenticate(request, reply) {
   }
 
   const token = authHeader.slice(7);
+
+  // Test mode: accept test tokens in development
+  if (TEST_MODE && TEST_USERS[token]) {
+    request.user = TEST_USERS[token];
+    return;
+  }
+
   const payload = verifyAccessToken(token);
 
   if (!payload) {
@@ -97,6 +116,13 @@ export async function optionalAuthenticate(request, _reply) {
   }
 
   const token = authHeader.slice(7);
+
+  // Test mode: accept test tokens in development
+  if (TEST_MODE && TEST_USERS[token]) {
+    request.user = { ...TEST_USERS[token], search_count: 0 };
+    return;
+  }
+
   const payload = verifyAccessToken(token);
 
   if (payload) {

@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 5;
+const CURRENT_VERSION = 6;
 
 /**
  * Get current database schema version
@@ -256,6 +256,36 @@ const migrations = {
     try { await query('CREATE INDEX idx_donations_subscription ON donations(stripe_subscription_id)'); } catch { /* exists */ }
 
     logger.info('Donations table created');
+  },
+
+  // Version 6: Add deletion_requested_at and conversations table
+  6: async () => {
+    // Add deletion_requested_at to users
+    try {
+      await query('ALTER TABLE users ADD COLUMN deletion_requested_at TEXT');
+      logger.info('Added deletion_requested_at to users table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+    }
+
+    // Create conversations table for user chat history
+    await query(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT,
+        messages TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    try { await query('CREATE INDEX idx_conversations_user ON conversations(user_id)'); } catch { /* exists */ }
+
+    logger.info('User session and deletion support added');
   },
 };
 
