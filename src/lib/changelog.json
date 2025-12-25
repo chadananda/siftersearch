@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T02:33:32.546Z",
+  "generated": "2025-12-25T02:41:42.011Z",
   "entries": [
+    {
+      "hash": "bc83ec6",
+      "date": "2025-12-24",
+      "type": "Fixed",
+      "description": "Always sync admin password hash from env on startup",
+      "scope": "auth"
+    },
     {
       "hash": "d59e44f",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
       "scope": null
-    },
-    {
-      "hash": "3696321",
-      "date": "2025-12-15",
-      "type": "New",
-      "description": "Add automatic library watcher and improve PM2 update handling",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "bc83ec6",
+        "date": "2025-12-24",
+        "type": "Fixed",
+        "description": "Always sync admin password hash from env on startup",
+        "scope": "auth"
+      },
       {
         "hash": "d59e44f",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use simple commit message for Cloudflare deploy to avoid UTF-8 errors",
-        "scope": null
-      },
-      {
-        "hash": "3696321",
-        "date": "2025-12-15",
-        "type": "New",
-        "description": "Add automatic library watcher and improve PM2 update handling",
         "scope": null
       }
     ]

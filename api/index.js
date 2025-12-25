@@ -6,11 +6,18 @@
  */
 
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Get project root (one level up from api/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = join(__dirname, '..');
 
 // Load environment files: .env-secrets first (overrides), then .env-public (defaults)
-// Secrets are loaded first so they take precedence over public defaults
-dotenv.config({ path: '.env-secrets' });
-dotenv.config({ path: '.env-public' });
+// Use absolute paths to ensure it works regardless of working directory
+dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
+dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { checkEnvironment, getEnvSummary } from './lib/env-check.js';
 import { createServer } from './server.js';
