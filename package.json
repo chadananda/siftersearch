@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.105",
+  "version": "0.1.106",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -35,6 +35,8 @@
     "postinstall": "node scripts/install-hooks.js",
     "index": "node scripts/index-library.js",
     "index:watch": "node scripts/index-library.js --watch",
+    "resegment": "node scripts/resegment-oversized.js",
+    "resegment:dry": "node scripts/resegment-oversized.js --dry-run --verbose",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
     "version:major": "node scripts/bump-version.js major",

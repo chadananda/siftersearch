@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T16:58:57.045Z",
+  "generated": "2025-12-25T17:40:54.096Z",
   "entries": [
+    {
+      "hash": "8dc72a0",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Add AI semantic segmentation for all oversized content",
+      "scope": "ingester"
+    },
     {
       "hash": "3dea6ad",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Don't cache stats endpoint so server version updates immediately",
       "scope": null
-    },
-    {
-      "hash": "7f1ddd8",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Remove navigation preload to avoid console warning on reload",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "8dc72a0",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Add AI semantic segmentation for all oversized content",
+        "scope": "ingester"
+      },
       {
         "hash": "3dea6ad",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Don't cache stats endpoint so server version updates immediately",
-        "scope": null
-      },
-      {
-        "hash": "7f1ddd8",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Remove navigation preload to avoid console warning on reload",
         "scope": null
       }
     ]
