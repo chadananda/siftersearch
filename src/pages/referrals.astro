@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LiquidBackground from '../components/LiquidBackground.svelte';
+import ReferralDashboard from '../components/ReferralDashboard.svelte';
+---
+
+<Layout title="Referral Program">
+  <LiquidBackground slot="background" client:only="svelte" />
+  <div class="referral-page">
+    <nav class="back-nav">
+      <a href="/" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="icon">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to Search
+      </a>
+    </nav>
+    <ReferralDashboard client:only="svelte" />
+  </div>
+</Layout>
+
+<style>
+  .referral-page {
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .back-nav {
+    max-width: 800px;
+    margin: 0 auto 1rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover {
+    color: var(--text-primary);
+  }
+
+  .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+</style>

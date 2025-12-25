@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T05:46:48.115Z",
+  "generated": "2025-12-25T05:50:50.547Z",
   "entries": [
+    {
+      "hash": "ad696e1",
+      "date": "2025-12-24",
+      "type": "New",
+      "description": "Add audio player component for patron+ users",
+      "scope": null
+    },
     {
       "hash": "9088631",
       "date": "2025-12-24",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use os.homedir() for cloudflared config path",
       "scope": null
-    },
-    {
-      "hash": "62107ec",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use absolute path for cloudflared config",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-24": [
+      {
+        "hash": "ad696e1",
+        "date": "2025-12-24",
+        "type": "New",
+        "description": "Add audio player component for patron+ users",
+        "scope": null
+      },
       {
         "hash": "9088631",
         "date": "2025-12-24",
@@ -701,13 +708,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Use os.homedir() for cloudflared config path",
-        "scope": null
-      },
-      {
-        "hash": "62107ec",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use absolute path for cloudflared config",
         "scope": null
       }
     ]

@@ -464,6 +464,13 @@ export const user = {
    */
   async getConversations(limit = 20, offset = 0) {
     return request(`/api/user/conversations?limit=${limit}&offset=${offset}`);
+  },
+
+  /**
+   * Get user's referral statistics
+   */
+  async getReferralStats() {
+    return request('/api/user/referrals');
   }
 };
 
