@@ -1,11 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
+import NavBar from '../../components/common/NavBar.svelte';
 ---
 
 <Layout title="Thank You!">
-  <LiquidBackground slot="background" client:only="svelte" />
-  <div class="success-page">
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="support" client:load />
+  <main class="success-page">
     <div class="success-card">
       <div class="success-icon">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,12 +24,12 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
         <a href="/support" class="secondary-btn">Manage Subscription</a>
       </div>
     </div>
-  </div>
+  </main>
 </Layout>
 
 <style>
   .success-page {
-    min-height: 100vh;
+    min-height: calc(100vh - 3.5rem);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -1,27 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import LiquidBackground from '../components/LiquidBackground.svelte';
-import ThemeToggle from '../components/ThemeToggle.svelte';
+import NavBar from '../components/common/NavBar.svelte';
 ---
 
 <Layout title="About - SifterSearch" description="About SifterSearch, an AI-powered search tool for the Interfaith supplemental library.">
   <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="about" client:load />
   <main class="about-page">
     <div class="page-wrapper">
-      <!-- Header -->
-      <header class="header">
-        <a href="/" class="logo-link">
-          <img src="/ocean.svg" alt="SifterSearch" class="logo" />
-          <h1 class="title">SifterSearch</h1>
-        </a>
-        <nav class="nav">
-          <ThemeToggle client:only="svelte" />
-          <a href="/" class="nav-link">
-            Search
-          </a>
-        </nav>
-      </header>
-
       <!-- Content -->
       <div class="content">
         <div class="content-inner">
@@ -316,55 +303,7 @@ import ThemeToggle from '../components/ThemeToggle.svelte';
   .page-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-  }
-
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-default);
-    background-color: var(--surface-0-alpha);
-    backdrop-filter: blur(8px);
-  }
-
-  .logo-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .logo {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.5rem;
-  }
-
-  .title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .nav-link {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: color 0.15s;
-  }
-
-  .nav-link:hover {
-    color: var(--text-primary);
+    min-height: calc(100vh - 3.5rem);
   }
 
   /* Content */
