@@ -112,39 +112,40 @@
       </span>
     </a>
 
-    <!-- Center section: Nav links that progressively collapse -->
-    <nav class="navbar-nav" aria-label="Main navigation">
-      <!-- Always visible nav links (priority 1-2) -->
-      <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span class="nav-label">Chat</span>
-      </a>
-      <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
-        <span class="nav-label">Library</span>
-      </a>
+    <!-- Center spacer - pushes right controls to the edge -->
+    <div class="navbar-spacer"></div>
 
-      <!-- Medium breakpoint nav links (priority 3) -->
-      <a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        <span class="nav-label">Community</span>
-      </a>
-
-      <!-- Large breakpoint nav links (priority 4) -->
-      <a href="/docs" class="nav-link show-lg" class:active={currentPage === 'docs'}>
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-        </svg>
-        <span class="nav-label">Docs</span>
-      </a>
+    <!-- Right side: Nav links + hamburger + user menu -->
+    <div class="navbar-right">
+      <!-- Nav links that progressively appear as space allows -->
+      <nav class="navbar-nav" aria-label="Main navigation">
+        <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span class="nav-label">Chat</span>
+        </a>
+        <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span class="nav-label">Library</span>
+        </a>
+        <a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-label">Community</span>
+        </a>
+        <a href="/docs" class="nav-link show-lg" class:active={currentPage === 'docs'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span class="nav-label">Docs</span>
+        </a>
+      </nav>
 
       <!-- Hamburger menu for collapsed items -->
       <div class="nav-hamburger">
@@ -201,10 +202,8 @@
           </div>
         {/if}
       </div>
-    </nav>
 
-    <!-- Right side: Single user menu icon -->
-    <div class="navbar-right">
+      <!-- User menu -->
       <div class="user-menu-container">
         <button
           class="user-icon-btn"

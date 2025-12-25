@@ -9,6 +9,7 @@ import { aiService } from '../lib/ai-services.js';
 import { indexDocument, deleteDocument, getMeili, INDEXES } from '../lib/search.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
+import { getAuthority } from '../lib/authority.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -180,6 +181,16 @@ export async function indexDocumentFromText(text, metadata = {}) {
   const embeddingResult = { embeddings: await aiService('embedding').embed(chunks) };
   const embeddings = embeddingResult.embeddings;
 
+  // Calculate authority (doctrinal weight) based on author, collection, religion
+  const authority = getAuthority({
+    author: finalMeta.author,
+    religion: finalMeta.religion,
+    collection: finalMeta.collection,
+    authority: metadata.authority  // Allow explicit override
+  });
+
+  logger.debug({ documentId, authority, author: finalMeta.author, collection: finalMeta.collection }, 'Calculated document authority');
+
   // Create document record
   const document = {
     id: documentId,
@@ -190,6 +201,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
     language: finalMeta.language,
     year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
     description: finalMeta.description,
+    authority,  // Doctrinal weight (1-10) for ranking
     chunk_count: chunks.length,
     created_at: new Date().toISOString()
   };
@@ -206,6 +218,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
     collection: finalMeta.collection,
     language: finalMeta.language,
     year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
+    authority,  // Doctrinal weight (1-10) for ranking - same as parent document
     heading: extractHeading(content, text), // Try to find section heading
     _vectors: {
       default: embeddings[index]

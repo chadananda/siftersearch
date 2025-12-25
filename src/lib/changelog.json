@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T20:39:26.212Z",
+  "generated": "2025-12-25T21:02:43.390Z",
   "entries": [
+    {
+      "hash": "7b19248",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Improve library browser UI and fix indexing indicator",
+      "scope": "library"
+    },
     {
       "hash": "4cfda94",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Hard-split oversized sentences in document chunking",
       "scope": null
-    },
-    {
-      "hash": "d3c309b",
-      "date": "2025-12-15",
-      "type": "Fixed",
-      "description": "Use getter for embedding config to avoid ES module hoisting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "7b19248",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Improve library browser UI and fix indexing indicator",
+        "scope": "library"
+      },
       {
         "hash": "4cfda94",
         "date": "2025-12-25",
@@ -703,13 +710,6 @@
         "date": "2025-12-15",
         "type": "Fixed",
         "description": "Hard-split oversized sentences in document chunking",
-        "scope": null
-      },
-      {
-        "hash": "d3c309b",
-        "date": "2025-12-15",
-        "type": "Fixed",
-        "description": "Use getter for embedding config to avoid ES module hoisting",
         "scope": null
       }
     ]

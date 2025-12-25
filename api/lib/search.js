@@ -8,6 +8,7 @@ import { MeiliSearch } from 'meilisearch';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
+import { getAuthority } from './authority.js';
 
 let client = null;
 
@@ -72,12 +73,25 @@ export async function initializeIndexes() {
       'paragraph_index',
       'blocktype',  // For filtering by content type (paragraph, heading1, quote, etc.)
       'author',  // For parenthetical filter syntax: (author_name)
-      'title'    // For parenthetical filter syntax: (title_keyword)
+      'title',   // For parenthetical filter syntax: (title_keyword)
+      'authority'  // Doctrinal weight (1-10) for filtering
     ],
     sortableAttributes: [
       'year',
       'created_at',
-      'paragraph_index'
+      'paragraph_index',
+      'authority'  // Doctrinal weight for sorting
+    ],
+    // Custom ranking rules: prioritize relevance, then authority
+    // authority:desc means higher authority documents rank first when relevance is similar
+    rankingRules: [
+      'words',       // Documents with more query words rank higher
+      'typo',        // Fewer typos rank higher
+      'proximity',   // Words closer together rank higher
+      'attribute',   // Matches in title/author rank higher than body text
+      'sort',        // User-requested sort order
+      'exactness',   // Exact matches rank higher
+      'authority:desc'  // Higher doctrinal authority ranks higher (tiebreaker)
     ],
     // Enable vector search
     embedders: {
@@ -101,12 +115,24 @@ export async function initializeIndexes() {
       'religion',
       'collection',
       'language',
-      'year'
+      'year',
+      'authority'  // Doctrinal weight (1-10) for filtering
     ],
     sortableAttributes: [
       'year',
       'title',
-      'created_at'
+      'created_at',
+      'authority'  // Doctrinal weight for sorting
+    ],
+    // Custom ranking rules with authority boost
+    rankingRules: [
+      'words',
+      'typo',
+      'proximity',
+      'attribute',
+      'sort',
+      'exactness',
+      'authority:desc'  // Higher doctrinal authority ranks higher
     ]
   });
 

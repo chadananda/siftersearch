@@ -1,0 +1,162 @@
+# Authority Configuration for SifterSearch
+# ==========================================
+#
+# Authority represents doctrinal weight on a scale of 1-10:
+#   10 = Central Figure revelation (Bahá'u'lláh, The Báb, etc.)
+#    9 = Authoritative interpretation (Shoghi Effendi, 'Abdu'l-Bahá)
+#    8 = Institutional guidance (Universal House of Justice, etc.)
+#    7 = Official compilations and study materials
+#    6 = Reference works and authoritative secondary sources
+#    5 = Published books by scholars
+#    4 = Historical documents
+#    3 = Research papers and studies
+#    2 = News, essays, and personal writings
+#    1 = Pilgrim notes and unverified sources
+#
+# Documents can override their collection's default authority.
+# Search results are boosted by authority to surface important texts first.
+
+# Default authority for documents without a specific collection
+default_authority: 5
+
+# Religion-level defaults (applied if collection not specified)
+# Include both accented and non-accented versions for matching
+religions:
+  Bahá'í: 6
+  Baha'i: 6
+  Islam: 6
+  Buddhism: 5
+  Christianity: 5
+  Judaism: 5
+  Hinduism: 5
+  General: 3
+
+# Collection-specific authority by religion
+# Include both accented and non-accented versions for matching
+collections:
+  Bahá'í:
+    # Central Figure Writings - Highest Authority
+    Core Tablets: 10
+    Core Publications: 10
+    Core Tablet Translations: 9
+
+    # 'Abdu'l-Bahá's Talks and Writings
+    Core Talks: 9
+
+    # Institutional and Administrative
+    Administrative: 8
+    Legal: 8
+    Constitutions: 8
+
+    # Official Compilations and Guides
+    Compilations: 7
+    Study Guides: 7
+    Reference: 7
+
+    # Published Works
+    Bahá'í Books: 5
+
+    # Historical and Research
+    Historical: 4
+    Studies Papers: 3
+    Bahá'i Essays: 3
+    Bahá'i Talks: 3
+
+    # Less Authoritative
+    Press: 2
+    News: 2
+    Essays: 2
+    Pilgrim Notes: 1
+
+  Islam:
+    # Core Scriptures
+    Quran: 10
+    Hadith: 8
+
+    # Scholarly Works
+    Tafsir: 6
+    Fiqh: 6
+    Scholarship: 5
+    General: 4
+
+  Buddhism:
+    # Core Sutras
+    Sutras: 10
+    Vinaya: 9
+    Abhidharma: 8
+
+    # Commentary
+    Commentary: 6
+    Scholarship: 5
+    General: 4
+
+  Christianity:
+    # Scripture
+    Bible: 10
+
+    # Church Documents
+    Patristics: 8
+    Councils: 7
+
+    # Theological Works
+    Theology: 6
+    Scholarship: 5
+    General: 4
+
+  Judaism:
+    # Core Texts
+    Torah: 10
+    Talmud: 9
+    Midrash: 8
+
+    # Commentary
+    Rabbinical: 7
+    Scholarship: 5
+    General: 4
+
+  # Non-accented version for matching (alias of Bahá'í)
+  Baha'i:
+    # Central Figure Writings - Highest Authority
+    Core Tablets: 10
+    Core Publications: 10
+    Core Tablet Translations: 9
+
+    # 'Abdu'l-Bahá's Talks and Writings
+    Core Talks: 9
+
+    # Institutional and Administrative
+    Administrative: 8
+    Legal: 8
+    Constitutions: 8
+
+    # Official Compilations and Guides
+    Compilations: 7
+    Study Guides: 7
+    Reference: 7
+
+    # Published Works
+    Bahá'í Books: 5
+    Baha'i Books: 5
+
+    # Historical and Research
+    Historical: 4
+    Studies Papers: 3
+    Bahá'i Essays: 3
+    Baha'i Essays: 3
+    Bahá'i Talks: 3
+    Baha'i Talks: 3
+
+    # Less Authoritative
+    Press: 2
+    News: 2
+    Essays: 2
+    Pilgrim Notes: 1
+
+# Author-based authority overrides
+# These apply regardless of collection when author matches
+authors:
+  Bahá'u'lláh: 10
+  The Báb: 10
+  "'Abdu'l-Bahá": 9
+  Shoghi Effendi: 9
+  Universal House of Justice: 8

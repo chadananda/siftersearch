@@ -149,6 +149,8 @@ export default async function libraryRoutes(fastify) {
           yearFrom: { type: 'integer' },
           yearTo: { type: 'integer' },
           status: { type: 'string', enum: ['all', 'indexed', 'unindexed', 'processing'] },
+          sort: { type: 'string', enum: ['title', 'authority', 'year', 'author'] },
+          sortDir: { type: 'string', enum: ['asc', 'desc'] },
           limit: { type: 'integer', default: 50, maximum: 200 },
           offset: { type: 'integer', default: 0 }
         }
@@ -164,6 +166,8 @@ export default async function libraryRoutes(fastify) {
       yearFrom,
       yearTo,
       status = 'all',
+      sort = 'authority',  // Default to authority for most authoritative first
+      sortDir = sort === 'authority' ? 'desc' : 'asc',  // Authority defaults to desc
       limit = 50,
       offset = 0
     } = request.query;
@@ -179,13 +183,29 @@ export default async function libraryRoutes(fastify) {
     if (yearFrom) filters.push(`year >= ${yearFrom}`);
     if (yearTo) filters.push(`year <= ${yearTo}`);
 
+    // Build sort array - authority desc, then secondary sort
+    const sortRules = [];
+    if (sort === 'authority') {
+      sortRules.push(`authority:${sortDir}`);
+      sortRules.push('title:asc');  // Secondary sort by title
+    } else if (sort === 'year') {
+      sortRules.push(`year:${sortDir}`);
+      sortRules.push('title:asc');
+    } else if (sort === 'author') {
+      sortRules.push(`author:${sortDir}`);
+      sortRules.push('title:asc');
+    } else {
+      sortRules.push(`title:${sortDir}`);
+    }
+
     const searchOptions = {
       limit,
       offset,
-      sort: ['title:asc'],
+      sort: sortRules,
       attributesToRetrieve: [
         'id', 'title', 'author', 'religion', 'collection',
         'language', 'year', 'description', 'paragraph_count',
+        'authority',  // Include doctrinal weight
         'created_at', 'updated_at', 'cover_url'
       ]
     };
@@ -276,7 +296,7 @@ export default async function libraryRoutes(fastify) {
         limit: paragraphLimit,
         offset: paragraphOffset,
         sort: ['paragraph_index:asc'],
-        attributesToRetrieve: ['id', 'paragraph_index', 'text', 'heading', 'blocktype']
+        attributesToRetrieve: ['id', 'paragraph_index', 'text', 'heading', 'blocktype', 'authority']
       });
       paragraphs = parasResult.hits;
       paragraphTotal = parasResult.estimatedTotalHits || 0;

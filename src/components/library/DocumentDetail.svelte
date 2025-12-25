@@ -238,6 +238,29 @@
                   {/if}
                 </td>
               </tr>
+              {#if isAdmin}
+                <tr class="border-b border-border">
+                  <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Authority</th>
+                  <td class="py-2 px-3">
+                    {#if (document?.authority || 5) >= 10}
+                      <span class="text-accent font-medium">★★★ Sacred Text</span>
+                    {:else if (document?.authority || 5) >= 9}
+                      <span class="text-accent font-medium">★★☆ Authoritative</span>
+                    {:else if (document?.authority || 5) >= 8}
+                      <span class="text-success font-medium">★☆☆ Institutional</span>
+                    {:else if (document?.authority || 5) >= 7}
+                      <span class="text-success">◆ Official</span>
+                    {:else if (document?.authority || 5) >= 5}
+                      <span class="text-secondary">◇ Published</span>
+                    {:else if (document?.authority || 5) >= 3}
+                      <span class="text-muted">○ Research</span>
+                    {:else}
+                      <span class="text-muted">· Unofficial</span>
+                    {/if}
+                    <span class="text-xs text-muted ml-2">({document?.authority || 5})</span>
+                  </td>
+                </tr>
+              {/if}
               <tr class="border-b border-border">
                 <th class="py-2 px-3 text-left text-xs font-semibold text-secondary uppercase">Language</th>
                 <td class="py-2 px-3 text-primary">

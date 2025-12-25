@@ -302,6 +302,7 @@
         <DocumentList
           {documents}
           selectedId={selectedDocument?.id}
+          {isAdmin}
           on:select={(e) => handleDocumentSelect(e.detail)}
         />
 
