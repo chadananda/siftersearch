@@ -156,17 +156,23 @@ export default async function libraryRoutes(fastify) {
 
   /**
    * Get all library nodes as a tree structure
+   * Falls back to Meilisearch facets if library_nodes table is empty
    */
   fastify.get('/nodes', async () => {
     const meili = getMeili();
 
-    // Get all nodes from database
-    const nodes = await queryAll(`
-      SELECT id, parent_id, node_type, name, slug, description, overview,
-             cover_image_url, authority_default, display_order, metadata
-      FROM library_nodes
-      ORDER BY display_order, name
-    `);
+    // Get all nodes from database (may be empty or table may not exist)
+    let nodes = [];
+    try {
+      nodes = await queryAll(`
+        SELECT id, parent_id, node_type, name, slug, description, overview,
+               cover_image_url, authority_default, display_order, metadata
+        FROM library_nodes
+        ORDER BY display_order, name
+      `);
+    } catch {
+      // Table doesn't exist yet - will fall back to Meilisearch
+    }
 
     // Get document counts from Meilisearch
     const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
@@ -185,13 +191,40 @@ export default async function libraryRoutes(fastify) {
       collectionCounts[religion][collection] = (collectionCounts[religion][collection] || 0) + 1;
     }
 
-    // Build tree structure
+    // If library_nodes is empty, build tree from Meilisearch facets
+    if (nodes.length === 0) {
+      const tree = Object.keys(religionCounts)
+        .sort((a, b) => a.localeCompare(b))
+        .map(religionName => {
+          const collections = Object.keys(collectionCounts[religionName] || {})
+            .sort((a, b) => a.localeCompare(b))
+            .map(collName => ({
+              node_type: 'collection',
+              name: collName,
+              slug: collName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              document_count: collectionCounts[religionName][collName] || 0
+            }));
+
+          return {
+            node_type: 'religion',
+            name: religionName,
+            slug: religionName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            document_count: religionCounts[religionName] || 0,
+            children: collections
+          };
+        });
+
+      return { nodes: tree };
+    }
+
+    // Build tree structure from database nodes
     const religionNodes = nodes.filter(n => n.node_type === 'religion');
     const collectionNodes = nodes.filter(n => n.node_type === 'collection');
 
     const tree = religionNodes.map(religion => {
       const children = collectionNodes
         .filter(c => c.parent_id === religion.id)
+        .sort((a, b) => (b.authority_default || 5) - (a.authority_default || 5) || a.name.localeCompare(b.name))
         .map(c => ({
           id: c.id,
           node_type: c.node_type,
