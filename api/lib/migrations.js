@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 7;
+const CURRENT_VERSION = 8;
 
 /**
  * Get current database schema version
@@ -339,6 +339,35 @@ const migrations = {
     } catch { /* exists */ }
 
     logger.info('Content storage enhancements added (blocktype, translation, context)');
+  },
+
+  // Version 8: Add library_nodes table for collection hierarchy and authority
+  8: async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS library_nodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parent_id INTEGER,
+        node_type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        description TEXT,
+        overview TEXT,
+        cover_image_url TEXT,
+        authority_default INTEGER DEFAULT 5,
+        display_order INTEGER DEFAULT 0,
+        metadata TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (parent_id) REFERENCES library_nodes(id)
+      )
+    `);
+
+    try { await query('CREATE INDEX idx_library_nodes_parent ON library_nodes(parent_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_library_nodes_type ON library_nodes(node_type)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_library_nodes_slug ON library_nodes(slug)'); } catch { /* exists */ }
+    try { await query('CREATE UNIQUE INDEX idx_library_nodes_unique ON library_nodes(parent_id, slug)'); } catch { /* exists */ }
+
+    logger.info('Library nodes table created for collection hierarchy');
   },
 };
 

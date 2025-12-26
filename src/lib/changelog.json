@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T03:26:11.910Z",
+  "generated": "2025-12-26T03:30:19.293Z",
   "entries": [
+    {
+      "hash": "35070e2",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Initialize auth in NavBar for all pages",
+      "scope": "auth"
+    },
     {
       "hash": "51d8365",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Increase segments API limit to 10000 for reader",
       "scope": null
-    },
-    {
-      "hash": "a22a14c",
-      "date": "2025-12-17",
-      "type": "Updated",
-      "description": "Add console logging to openReader for troubleshooting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "35070e2",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Initialize auth in NavBar for all pages",
+        "scope": "auth"
+      },
       {
         "hash": "51d8365",
         "date": "2025-12-25",
@@ -699,13 +706,6 @@
         "date": "2025-12-17",
         "type": "Fixed",
         "description": "Increase segments API limit to 10000 for reader",
-        "scope": null
-      },
-      {
-        "hash": "a22a14c",
-        "date": "2025-12-17",
-        "type": "Updated",
-        "description": "Add console logging to openReader for troubleshooting",
         "scope": null
       }
     ]
