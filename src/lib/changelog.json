@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T03:05:10.890Z",
+  "generated": "2025-12-26T03:11:46.882Z",
   "entries": [
+    {
+      "hash": "827d946",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Improve religion count badge visibility",
+      "scope": "library"
+    },
     {
       "hash": "0322efa",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Send client version in header for auto-update",
       "scope": null
-    },
-    {
-      "hash": "cf4fd17",
-      "date": "2025-12-16",
-      "type": "New",
-      "description": "Server auto-updates when client reports newer version",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "827d946",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Improve religion count badge visibility",
+        "scope": "library"
+      },
       {
         "hash": "0322efa",
         "date": "2025-12-25",
@@ -701,13 +708,6 @@
         "date": "2025-12-16",
         "type": "New",
         "description": "Send client version in header for auto-update",
-        "scope": null
-      },
-      {
-        "hash": "cf4fd17",
-        "date": "2025-12-16",
-        "type": "New",
-        "description": "Server auto-updates when client reports newer version",
         "scope": null
       }
     ]

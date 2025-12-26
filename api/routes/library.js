@@ -33,6 +33,24 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/tree', async () => {
     const meili = getMeili();
 
+    // Get all library nodes (religions and collections) with authority_default
+    const nodes = await queryAll(`
+      SELECT r.name as religion_name, r.slug as religion_slug,
+             c.name as collection_name, c.slug as collection_slug, c.authority_default
+      FROM library_nodes r
+      LEFT JOIN library_nodes c ON c.parent_id = r.id AND c.node_type = 'collection'
+      WHERE r.node_type = 'religion'
+      ORDER BY r.name, c.authority_default DESC NULLS LAST, c.name
+    `);
+
+    // Build lookup map for authority
+    const authorityMap = {};
+    for (const row of nodes) {
+      if (row.collection_name) {
+        authorityMap[`${row.religion_name}:${row.collection_name}`] = row.authority_default;
+      }
+    }
+
     // Get all religions with their counts from facets
     const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
       limit: 0,
@@ -53,8 +71,18 @@ export default async function libraryRoutes(fastify) {
 
         const collectionCounts = religionSearch.facetDistribution?.collection || {};
         const collections = Object.entries(collectionCounts)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .map(([name, count]) => ({
+            name,
+            count,
+            authority_default: authorityMap[`${religionName}:${name}`] ?? null
+          }))
+          // Sort by authority (higher first), then alphabetically
+          .sort((a, b) => {
+            const authA = a.authority_default ?? 0;
+            const authB = b.authority_default ?? 0;
+            if (authB !== authA) return authB - authA;
+            return a.name.localeCompare(b.name);
+          });
 
         return {
           name: religionName,
