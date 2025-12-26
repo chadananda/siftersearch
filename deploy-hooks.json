@@ -30,7 +30,14 @@
   {
     "id": "2024-12-26-populate-library-nodes",
     "description": "Populate library_nodes table after migration v8 created it",
-    "command": "node scripts/sync-library-nodes.js",
+    "command": "node scripts/sync-library-nodes.js --force",
+    "enabled": true,
+    "timeout": 120000
+  },
+  {
+    "id": "2024-12-26-fix-authority-values",
+    "description": "Re-sync library nodes with fixed authority normalization",
+    "command": "node scripts/sync-library-nodes.js --force",
     "enabled": true,
     "timeout": 120000
   },

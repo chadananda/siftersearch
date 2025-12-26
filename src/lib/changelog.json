@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T03:56:30.260Z",
+  "generated": "2025-12-26T04:02:38.288Z",
   "entries": [
+    {
+      "hash": "2ddbb9f",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Fallback to Meilisearch when library_nodes empty",
+      "scope": "library"
+    },
     {
       "hash": "13c00ff",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Ensure user chat messages are selectable",
       "scope": null
-    },
-    {
-      "hash": "5b73745",
-      "date": "2025-12-17",
-      "type": "Fixed",
-      "description": "Truncate excerpts at sentence boundaries, not mid-sentence",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "2ddbb9f",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Fallback to Meilisearch when library_nodes empty",
+        "scope": "library"
+      },
       {
         "hash": "13c00ff",
         "date": "2025-12-25",
@@ -699,13 +706,6 @@
         "date": "2025-12-17",
         "type": "Fixed",
         "description": "Ensure user chat messages are selectable",
-        "scope": null
-      },
-      {
-        "hash": "5b73745",
-        "date": "2025-12-17",
-        "type": "Fixed",
-        "description": "Truncate excerpts at sentence boundaries, not mid-sentence",
         "scope": null
       }
     ]

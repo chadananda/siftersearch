@@ -7,7 +7,11 @@
  * Creates religion and collection nodes based on document facets.
  *
  * Usage:
- *   node scripts/sync-library-nodes.js [--dry-run]
+ *   node scripts/sync-library-nodes.js [--dry-run] [--force]
+ *
+ * Options:
+ *   --dry-run  Show what would be done without making changes
+ *   --force    Clear existing data and re-sync (updates authority values)
  */
 
 import dotenv from 'dotenv';
@@ -19,6 +23,7 @@ import { getMeili, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 
 const dryRun = process.argv.includes('--dry-run');
+const forceSync = process.argv.includes('--force');
 
 /**
  * Convert a string to a URL-safe slug
@@ -40,9 +45,13 @@ function slugify(str) {
  * Get authority default for a religion/collection from authority config
  */
 function getDefaultAuthority(religion, collection = null) {
+  // Normalize religion name to handle accent/apostrophe variations
+  const normalizeReligion = (r) => r.replace(/á/g, 'a').replace(/í/g, 'i').replace(/'/g, '');
+  const normalized = normalizeReligion(religion);
+
   // These match the authority-config.yml values
   const religionAuthority = {
-    "Bahá'í": 6,
+    "Bahai": 6,
     "Islam": 6,
     "Buddhism": 5,
     "Christianity": 5,
@@ -52,13 +61,13 @@ function getDefaultAuthority(religion, collection = null) {
   };
 
   const collectionAuthority = {
-    "Bahá'í": {
+    "Bahai": {
       "Core Tablets": 10,
       "Core Talks": 9,
       "Administrative": 8,
       "Compilations": 7,
       "Core Publications": 7,
-      "Bahá'í Books": 5,
+      "Bahai Books": 5,
       "Historical": 4,
       "Studies Papers": 3,
       "Pilgrim Notes": 1
@@ -70,10 +79,10 @@ function getDefaultAuthority(religion, collection = null) {
     }
   };
 
-  if (collection && collectionAuthority[religion]?.[collection]) {
-    return collectionAuthority[religion][collection];
+  if (collection && collectionAuthority[normalized]?.[collection]) {
+    return collectionAuthority[normalized][collection];
   }
-  return religionAuthority[religion] || 5;
+  return religionAuthority[normalized] || 5;
 }
 
 async function syncLibraryNodes() {
@@ -82,6 +91,11 @@ async function syncLibraryNodes() {
 
   if (dryRun) {
     console.log('🔍 DRY RUN - No changes will be made\n');
+  }
+
+  if (forceSync && !dryRun) {
+    console.log('🔄 FORCE SYNC - Clearing existing data...\n');
+    await query('DELETE FROM library_nodes');
   }
 
   const meili = getMeili();
