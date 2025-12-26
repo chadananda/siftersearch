@@ -4,12 +4,9 @@
   let { religions = [], selectedReligion = null, selectedCollection = null } = $props();
 
   const dispatch = createEventDispatcher();
-
-  // Accordion: only one religion expanded at a time
   let expandedReligion = $state(null);
 
   function toggleReligion(religionName) {
-    // Accordion behavior: collapse if same, otherwise expand new one
     expandedReligion = expandedReligion === religionName ? null : religionName;
   }
 
@@ -17,11 +14,7 @@
     dispatch('select', {
       religion: religion.name,
       collection: null,
-      node: {
-        node_type: 'religion',
-        name: religion.name,
-        slug: religion.slug
-      }
+      node: { node_type: 'religion', name: religion.name, slug: religion.slug }
     });
   }
 
@@ -39,7 +32,6 @@
     });
   }
 
-  // Auto-expand selected religion
   $effect(() => {
     if (selectedReligion && expandedReligion !== selectedReligion) {
       expandedReligion = selectedReligion;
@@ -47,34 +39,37 @@
   });
 </script>
 
-<div class="tree-view">
+<div class="flex-1 overflow-y-auto py-2">
   {#each religions as religion}
-    <div class="religion-section">
-      <!-- Religion bar - full width, clickable -->
+    {@const isExpanded = expandedReligion === religion.name}
+    {@const isSelected = selectedReligion === religion.name && !selectedCollection}
+    <div class="mb-1">
       <button
-        class="religion-bar"
-        class:expanded={expandedReligion === religion.name}
-        class:selected={selectedReligion === religion.name && !selectedCollection}
-        onclick={() => {
-          toggleReligion(religion.name);
-          selectReligion(religion);
-        }}
+        class="w-full py-2.5 px-4 border-l-[3px] border-l-accent flex justify-between items-center text-sm font-medium text-left cursor-pointer transition-all
+               {isExpanded ? 'bg-accent text-white' : isSelected ? 'bg-accent/20' : 'bg-surface-2 hover:bg-surface-3 text-primary'}"
+        onclick={() => { toggleReligion(religion.name); selectReligion(religion); }}
       >
-        <span class="religion-name">{religion.name}</span>
-        <span class="religion-count">{religion.count.toLocaleString()}</span>
+        <span class="flex-1 truncate">{religion.name}</span>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full min-w-[2.5rem] text-center
+                     {isExpanded ? 'bg-white/15' : 'bg-surface-3 text-muted'}">
+          {religion.count.toLocaleString()}
+        </span>
       </button>
 
-      <!-- Collections (pills) -->
-      {#if expandedReligion === religion.name && religion.collections?.length > 0}
-        <div class="collection-list">
+      {#if isExpanded && religion.collections?.length > 0}
+        <div class="flex flex-wrap gap-1.5 p-2 pl-3 bg-surface-1 border-l-[3px] border-l-accent/30">
           {#each religion.collections as collection}
+            {@const collSelected = selectedReligion === religion.name && selectedCollection === collection.name}
             <button
-              class="collection-pill"
-              class:selected={selectedReligion === religion.name && selectedCollection === collection.name}
+              class="flex items-center gap-1.5 py-1.5 px-2.5 rounded-full text-[0.8125rem] cursor-pointer transition-all whitespace-nowrap
+                     {collSelected ? 'bg-accent/15 text-accent border border-accent' : 'bg-surface-2 border border-border-subtle text-secondary hover:bg-surface-3 hover:text-primary hover:border-border'}"
               onclick={() => selectCollection(religion, collection)}
             >
-              <span class="collection-name">{collection.name}</span>
-              <span class="collection-count">{collection.count}</span>
+              <span class="max-w-[140px] truncate">{collection.name}</span>
+              <span class="text-[0.6875rem] font-semibold px-1.5 py-0.5 rounded
+                           {collSelected ? 'bg-accent text-white' : 'bg-accent/20 text-accent'}">
+                {collection.count}
+              </span>
             </button>
           {/each}
         </div>
@@ -82,126 +77,3 @@
     </div>
   {/each}
 </div>
-
-<style>
-  .tree-view {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.5rem 0;
-  }
-
-  .religion-section {
-    margin-bottom: 0.25rem;
-  }
-
-  /* Religion bar - full width, solid background */
-  .religion-bar {
-    width: 100%;
-    padding: 0.625rem 1rem;
-    background: var(--surface-2);
-    border: none;
-    border-left: 3px solid var(--accent-primary);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    transition: all 0.15s ease;
-    text-align: left;
-  }
-
-  .religion-bar:hover {
-    background: var(--surface-3);
-  }
-
-  .religion-bar.expanded {
-    background: var(--accent-primary);
-    color: white;
-    border-left-color: var(--accent-primary);
-  }
-
-  .religion-bar.selected:not(.expanded) {
-    background: color-mix(in srgb, var(--accent-primary) 20%, var(--surface-2));
-  }
-
-  .religion-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .religion-count {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.125rem 0.5rem;
-    border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.15);
-    min-width: 2.5rem;
-    text-align: center;
-  }
-
-  .religion-bar:not(.expanded) .religion-count {
-    background: var(--surface-3);
-    color: var(--text-muted);
-  }
-
-  /* Collection pills */
-  .collection-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--surface-1);
-    border-left: 3px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
-  }
-
-  .collection-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.625rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: 1rem;
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-
-  .collection-pill:hover {
-    background: var(--surface-3);
-    color: var(--text-primary);
-    border-color: var(--border-default);
-  }
-
-  .collection-pill.selected {
-    background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-  }
-
-  .collection-name {
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .collection-count {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    padding: 0.0625rem 0.375rem;
-    border-radius: 0.5rem;
-    background: var(--surface-3);
-    color: var(--text-muted);
-  }
-
-  .collection-pill.selected .collection-count {
-    background: var(--accent-primary);
-    color: white;
-  }
-</style>
