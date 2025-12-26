@@ -51,7 +51,7 @@
       >
         <span class="flex-1 truncate">{religion.name}</span>
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full min-w-[2.5rem] text-center
-                     {isExpanded ? 'bg-white/15' : 'bg-surface-3 text-muted'}">
+                     {isExpanded ? 'bg-white/20 text-white' : 'bg-accent/20 text-accent'}">
           {religion.count.toLocaleString()}
         </span>
       </button>
