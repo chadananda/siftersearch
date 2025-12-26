@@ -6,255 +6,317 @@
     onEdit = null
   } = $props();
 
-  // Authority level display
-  const authorityLabels = {
-    10: 'Sacred Text',
-    9: 'Authoritative',
-    8: 'Official',
-    7: 'Compiled',
-    6: 'Reliable',
-    5: 'Standard',
-    4: 'Historical',
-    3: 'Academic',
-    2: 'Secondary',
-    1: 'Informal'
+  // Authority level display with colors
+  const authorityConfig = {
+    10: { label: 'Sacred Text', class: 'sacred' },
+    9: { label: 'Authoritative', class: 'authoritative' },
+    8: { label: 'Official', class: 'official' },
+    7: { label: 'Compiled', class: 'compiled' },
+    6: { label: 'Reliable', class: 'reliable' },
+    5: { label: 'Standard', class: 'standard' },
+    4: { label: 'Historical', class: 'historical' },
+    3: { label: 'Academic', class: 'academic' },
+    2: { label: 'Secondary', class: 'secondary' },
+    1: { label: 'Informal', class: 'informal' }
   };
 
-  let authorityLabel = $derived(
-    authorityLabels[node?.authority_default] || 'Standard'
+  let authority = $derived(
+    authorityConfig[node?.authority_default] || { label: 'Standard', class: 'standard' }
   );
 </script>
 
-<header class="collection-header">
-  {#if node?.cover_image_url}
-    <div class="cover-image">
-      <img src={node.cover_image_url} alt={node.name} />
-      <div class="cover-overlay"></div>
-    </div>
-  {:else}
-    <div class="cover-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-      </svg>
-    </div>
-  {/if}
+<header class="collection-hero">
+  <!-- Background layer -->
+  <div class="hero-background">
+    {#if node?.cover_image_url}
+      <img src={node.cover_image_url} alt="" class="cover-image" />
+    {/if}
+    <div class="gradient-overlay"></div>
+  </div>
 
-  <div class="header-content">
+  <!-- Content layer -->
+  <div class="hero-content">
+    <!-- Breadcrumb navigation -->
     {#if node?.parent}
       <nav class="breadcrumb">
-        <a href="/library">Library</a>
-        <span class="separator">/</span>
-        <a href="/library/{node.parent.slug}">{node.parent.name}</a>
-        <span class="separator">/</span>
+        <a href="/library" class="crumb">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          Library
+        </a>
+        <span class="separator">›</span>
+        <a href="/library/{node.parent.slug}" class="crumb">{node.parent.name}</a>
+        <span class="separator">›</span>
         <span class="current">{node.name}</span>
       </nav>
     {/if}
 
-    <div class="title-row">
-      <h1 class="collection-title">{node?.name || 'Collection'}</h1>
+    <!-- Title section -->
+    <div class="title-section">
+      <h1 class="title">{node?.name || 'Collection'}</h1>
       {#if isAdmin && onEdit}
-        <button class="edit-btn" onclick={onEdit}>
+        <button class="edit-btn" onclick={onEdit} title="Edit collection">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
-          Edit
         </button>
       {/if}
     </div>
 
+    <!-- Description -->
     {#if node?.description}
-      <p class="collection-description">{node.description}</p>
+      <p class="description">{node.description}</p>
     {/if}
 
-    <div class="collection-stats">
-      <div class="stat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
-        <span>{documentCount.toLocaleString()} {documentCount === 1 ? 'document' : 'documents'}</span>
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat documents">
+        <span class="stat-value">{documentCount.toLocaleString()}</span>
+        <span class="stat-label">{documentCount === 1 ? 'document' : 'documents'}</span>
       </div>
-      <div class="stat authority">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-        <span>{authorityLabel}</span>
+
+      <div class="stat-divider"></div>
+
+      <div class="stat authority {authority.class}">
+        <span class="authority-stars">
+          {#if node?.authority_default >= 10}★★★
+          {:else if node?.authority_default >= 8}★★☆
+          {:else if node?.authority_default >= 5}★☆☆
+          {:else}☆☆☆
+          {/if}
+        </span>
+        <span class="stat-label">{authority.label}</span>
       </div>
     </div>
   </div>
 </header>
 
 <style>
-  .collection-header {
+  .collection-hero {
     position: relative;
-    background: var(--surface-1);
-    border-radius: 0.75rem;
+    min-height: 180px;
+    border-radius: 1rem;
     overflow: hidden;
     margin-bottom: 1.5rem;
-    border: 1px solid var(--border-default);
+  }
+
+  /* Background layer */
+  .hero-background {
+    position: absolute;
+    inset: 0;
   }
 
   .cover-image {
-    position: relative;
-    height: 160px;
-    overflow: hidden;
-  }
-
-  .cover-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    filter: brightness(0.4) saturate(1.2);
   }
 
-  .cover-overlay {
+  .gradient-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 0%, var(--surface-1) 100%);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-primary) 85%, black) 0%,
+      color-mix(in srgb, var(--accent-primary) 60%, var(--surface-0)) 50%,
+      var(--surface-1) 100%
+    );
   }
 
-  .cover-placeholder {
-    height: 100px;
+  .collection-hero:has(.cover-image) .gradient-overlay {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      var(--surface-1) 100%
+    );
+  }
+
+  /* Content layer */
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 2rem;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%);
-    color: var(--text-muted);
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .cover-placeholder svg {
-    width: 3rem;
-    height: 3rem;
-    opacity: 0.5;
-  }
-
-  .header-content {
-    padding: 1.25rem 1.5rem;
-  }
-
+  /* Breadcrumb */
   .breadcrumb {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.8125rem;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
   }
 
-  .breadcrumb a {
-    color: var(--text-secondary);
+  .crumb {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
+    transition: color 0.15s ease;
   }
 
-  .breadcrumb a:hover {
-    color: var(--accent-primary);
+  .crumb:hover {
+    color: white;
   }
 
-  .breadcrumb .separator {
-    color: var(--text-muted);
+  .crumb svg {
+    width: 0.875rem;
+    height: 0.875rem;
   }
 
-  .breadcrumb .current {
-    color: var(--text-primary);
+  .separator {
+    color: rgba(255, 255, 255, 0.4);
   }
 
-  .title-row {
+  .current {
+    color: white;
+    font-weight: 500;
+  }
+
+  /* Title section */
+  .title-section {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.5rem;
   }
 
-  .collection-title {
+  .title {
     margin: 0;
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: white;
     line-height: 1.2;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    flex: 1;
   }
 
   .edit-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: var(--surface-2);
-    border: 1px solid var(--border-default);
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0.5rem;
+    color: white;
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
   }
 
   .edit-btn:hover {
-    background: var(--surface-3);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
   }
 
   .edit-btn svg {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1rem;
+    height: 1rem;
+    display: block;
   }
 
-  .collection-description {
-    margin: 0 0 1rem;
-    font-size: 0.9375rem;
-    color: var(--text-secondary);
+  /* Description */
+  .description {
+    margin: 0;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.85);
     line-height: 1.5;
+    max-width: 600px;
   }
 
-  .collection-stats {
+  /* Stats bar */
+  .stats-bar {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
+    margin-top: 0.5rem;
   }
 
   .stat {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.375rem;
-    font-size: 0.875rem;
-    color: var(--text-muted);
   }
 
-  .stat svg {
-    width: 1rem;
-    height: 1rem;
+  .stat.documents {
+    color: white;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 0.8125rem;
+    opacity: 0.8;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 1.5rem;
+    background: rgba(255, 255, 255, 0.3);
   }
 
   .stat.authority {
-    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
+  .authority-stars {
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Authority color classes */
+  .stat.sacred { color: #fbbf24; }
+  .stat.authoritative { color: #f59e0b; }
+  .stat.official { color: #34d399; }
+  .stat.compiled { color: #60a5fa; }
+  .stat.reliable { color: #a78bfa; }
+  .stat.standard { color: rgba(255, 255, 255, 0.9); }
+  .stat.historical { color: #fb923c; }
+  .stat.academic { color: #94a3b8; }
+  .stat.secondary { color: #cbd5e1; }
+  .stat.informal { color: #94a3b8; }
+
+  /* Responsive */
   @media (max-width: 640px) {
-    .cover-image {
-      height: 120px;
+    .collection-hero {
+      min-height: 160px;
+      border-radius: 0.75rem;
     }
 
-    .header-content {
-      padding: 1rem;
+    .hero-content {
+      padding: 1rem 1.25rem;
     }
 
-    .collection-title {
+    .title {
       font-size: 1.5rem;
     }
 
-    .title-row {
-      flex-direction: column;
+    .description {
+      font-size: 0.875rem;
+    }
+
+    .stats-bar {
+      flex-wrap: wrap;
       gap: 0.75rem;
     }
 
-    .edit-btn {
-      align-self: flex-start;
+    .stat-divider {
+      display: none;
     }
 
-    .collection-stats {
-      flex-wrap: wrap;
-      gap: 1rem;
+    .stat-value {
+      font-size: 1.125rem;
     }
   }
 </style>

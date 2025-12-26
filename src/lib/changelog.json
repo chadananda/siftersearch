@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-25T23:35:01.185Z",
+  "generated": "2025-12-26T01:49:31.788Z",
   "entries": [
+    {
+      "hash": "0322efa",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Use faceted queries for tree instead of document iteration",
+      "scope": "library"
+    },
     {
       "hash": "53df884",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Server auto-updates when client reports newer version",
       "scope": null
-    },
-    {
-      "hash": "8807bda",
-      "date": "2025-12-16",
-      "type": "New",
-      "description": "Add Meilisearch backup and upgrade scripts",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "0322efa",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Use faceted queries for tree instead of document iteration",
+        "scope": "library"
+      },
       {
         "hash": "53df884",
         "date": "2025-12-25",
@@ -701,13 +708,6 @@
         "date": "2025-12-16",
         "type": "New",
         "description": "Server auto-updates when client reports newer version",
-        "scope": null
-      },
-      {
-        "hash": "8807bda",
-        "date": "2025-12-16",
-        "type": "New",
-        "description": "Add Meilisearch backup and upgrade scripts",
         "scope": null
       }
     ]
