@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T03:11:46.882Z",
+  "generated": "2025-12-26T03:15:51.137Z",
   "entries": [
+    {
+      "hash": "f26c335",
+      "date": "2025-12-25",
+      "type": "New",
+      "description": "Sort collections by doctrinal authority",
+      "scope": "library"
+    },
     {
       "hash": "827d946",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Auto-update now reloads PM2 even when git is up-to-date",
       "scope": null
-    },
-    {
-      "hash": "0e02931",
-      "date": "2025-12-16",
-      "type": "New",
-      "description": "Send client version in header for auto-update",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "f26c335",
+        "date": "2025-12-25",
+        "type": "New",
+        "description": "Sort collections by doctrinal authority",
+        "scope": "library"
+      },
       {
         "hash": "827d946",
         "date": "2025-12-25",
@@ -701,13 +708,6 @@
         "date": "2025-12-16",
         "type": "Fixed",
         "description": "Auto-update now reloads PM2 even when git is up-to-date",
-        "scope": null
-      },
-      {
-        "hash": "0e02931",
-        "date": "2025-12-16",
-        "type": "New",
-        "description": "Send client version in header for auto-update",
         "scope": null
       }
     ]

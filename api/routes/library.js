@@ -33,22 +33,22 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/tree', async () => {
     const meili = getMeili();
 
-    // Get all library nodes (religions and collections) with authority_default
-    const nodes = await queryAll(`
-      SELECT r.name as religion_name, r.slug as religion_slug,
-             c.name as collection_name, c.slug as collection_slug, c.authority_default
-      FROM library_nodes r
-      LEFT JOIN library_nodes c ON c.parent_id = r.id AND c.node_type = 'collection'
-      WHERE r.node_type = 'religion'
-      ORDER BY r.name, c.authority_default DESC NULLS LAST, c.name
-    `);
-
-    // Build lookup map for authority
+    // Try to get authority data from library_nodes (may not exist in all environments)
     const authorityMap = {};
-    for (const row of nodes) {
-      if (row.collection_name) {
-        authorityMap[`${row.religion_name}:${row.collection_name}`] = row.authority_default;
+    try {
+      const nodes = await queryAll(`
+        SELECT r.name as religion_name, c.name as collection_name, c.authority_default
+        FROM library_nodes r
+        LEFT JOIN library_nodes c ON c.parent_id = r.id AND c.node_type = 'collection'
+        WHERE r.node_type = 'religion'
+      `);
+      for (const row of nodes) {
+        if (row.collection_name) {
+          authorityMap[`${row.religion_name}:${row.collection_name}`] = row.authority_default;
+        }
       }
+    } catch {
+      // library_nodes table doesn't exist - continue without authority sorting
     }
 
     // Get all religions with their counts from facets
