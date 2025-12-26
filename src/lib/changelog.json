@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T03:17:09.040Z",
+  "generated": "2025-12-26T03:26:11.910Z",
   "entries": [
+    {
+      "hash": "51d8365",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Add resync hook for library nodes authority data",
+      "scope": "deploy"
+    },
     {
       "hash": "ee37b8f",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Add console logging to openReader for troubleshooting",
       "scope": null
-    },
-    {
-      "hash": "2f97260",
-      "date": "2025-12-17",
-      "type": "Fixed",
-      "description": "Improve search relevancy and reader highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "51d8365",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Add resync hook for library nodes authority data",
+        "scope": "deploy"
+      },
       {
         "hash": "ee37b8f",
         "date": "2025-12-25",
@@ -699,13 +706,6 @@
         "date": "2025-12-17",
         "type": "Updated",
         "description": "Add console logging to openReader for troubleshooting",
-        "scope": null
-      },
-      {
-        "hash": "2f97260",
-        "date": "2025-12-17",
-        "type": "Fixed",
-        "description": "Improve search relevancy and reader highlighting",
         "scope": null
       }
     ]

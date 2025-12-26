@@ -1,5 +1,6 @@
 <script>
-  import { logout, getAuthState } from '../../lib/auth.svelte.js';
+  import { onMount } from 'svelte';
+  import { initAuth, logout, getAuthState } from '../../lib/auth.svelte.js';
   import { performUpdate, getPWAState } from '../../lib/pwa.svelte.js';
   import ThemeToggle from '../ThemeToggle.svelte';
   import TierBadge from '../TierBadge.svelte';
@@ -15,6 +16,11 @@
   // Auth and PWA state
   const auth = getAuthState();
   const pwa = getPWAState();
+
+  // Initialize auth on mount (restores session from refresh token cookie)
+  onMount(() => {
+    initAuth();
+  });
 
   // Local state
   let showAuthModal = $state(false);
