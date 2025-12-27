@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T20:51:46.215Z",
+  "generated": "2025-12-27T21:01:42.820Z",
   "entries": [
+    {
+      "hash": "de069d0",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Improve religion/collection headers with Tailwind",
+      "scope": "library"
+    },
     {
       "hash": "1a8633a",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add research mode toggle for approved+ users",
       "scope": "search"
-    },
-    {
-      "hash": "63a049c",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add document contribution UI and admin queue",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "de069d0",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Improve religion/collection headers with Tailwind",
+        "scope": "library"
+      },
       {
         "hash": "1a8633a",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add research mode toggle for approved+ users",
         "scope": "search"
-      },
-      {
-        "hash": "63a049c",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add document contribution UI and admin queue",
-        "scope": null
       }
     ]
   }

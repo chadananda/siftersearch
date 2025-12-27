@@ -12,9 +12,9 @@ def main():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={'width': 1280, 'height': 900})
 
-        # Navigate to library page (use local for testing)
+        # Navigate to library page
         print("Navigating to library page...")
-        page.goto('http://localhost:4321/library')
+        page.goto('https://siftersearch.com/library')
         page.wait_for_load_state('networkidle')
         page.wait_for_timeout(2000)
 

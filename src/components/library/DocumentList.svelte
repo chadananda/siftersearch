@@ -67,16 +67,6 @@
     return 'Book';
   }
 
-  function getAuthorityInfo(authority) {
-    if (!authority) return null;
-    if (authority >= 10) return { label: '★★★', class: 'text-accent' };
-    if (authority >= 9) return { label: '★★☆', class: 'text-accent' };
-    if (authority >= 8) return { label: '★☆☆', class: 'text-success' };
-    if (authority >= 7) return { label: '◆', class: 'text-success' };
-    if (authority >= 5) return { label: '◇', class: 'text-secondary' };
-    if (authority >= 3) return { label: '○', class: 'text-muted' };
-    return { label: '·', class: 'text-muted' };
-  }
 </script>
 
 <style>
@@ -158,7 +148,6 @@
 <div class="flex flex-col gap-1">
   {#each documents as doc}
     {@const size = getSizeLabel(doc.paragraph_count)}
-    {@const auth = getAuthorityInfo(doc.authority)}
     {@const isExpanded = expandedDocId === doc.id}
 
     <div class="border rounded-lg overflow-hidden transition-colors
@@ -176,8 +165,8 @@
           {/if}
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          {#if auth}
-            <span class="text-[0.6875rem] font-semibold px-1.5 py-0.5 rounded {auth.class}">{auth.label}</span>
+          {#if isAdmin && doc.authority}
+            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted" title="Authority score">{doc.authority}</span>
           {/if}
           {#if size}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
