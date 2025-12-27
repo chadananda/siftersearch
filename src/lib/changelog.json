@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T14:39:04.834Z",
+  "generated": "2025-12-27T14:48:02.608Z",
   "entries": [
+    {
+      "hash": "eef7226",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
+      "scope": null
+    },
     {
       "hash": "2255c58",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add user profile page with edit functionality",
       "scope": null
-    },
-    {
-      "hash": "49c24f5",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add TierBadge component with usage tracking",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "eef7226",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
+        "scope": null
+      },
       {
         "hash": "2255c58",
         "date": "2025-12-27",
@@ -701,13 +708,6 @@
         "date": "2025-12-24",
         "type": "New",
         "description": "Add user profile page with edit functionality",
-        "scope": null
-      },
-      {
-        "hash": "49c24f5",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add TierBadge component with usage tracking",
         "scope": null
       }
     ]

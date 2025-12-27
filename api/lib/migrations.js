@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 9;
+const CURRENT_VERSION = 10;
 
 /**
  * Get current database schema version
@@ -399,6 +399,17 @@ const migrations = {
     }
 
     logger.info('Religion symbols seeded');
+  },
+
+  // Version 10: Add revoked_at column to refresh_tokens for grace period during navigation
+  // Fixes race condition where token rotation during page navigation causes logout
+  10: async () => {
+    try {
+      await query('ALTER TABLE refresh_tokens ADD COLUMN revoked_at TEXT');
+      logger.info('Added revoked_at column to refresh_tokens for grace period support');
+    } catch {
+      // Column already exists
+    }
   },
 };
 

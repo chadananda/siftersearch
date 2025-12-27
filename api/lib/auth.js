@@ -63,20 +63,45 @@ export async function createRefreshToken(userId) {
   return { id, expiresAt };
 }
 
+// Grace period in seconds for recently revoked tokens (handles navigation race condition)
+const REVOKE_GRACE_PERIOD_SECONDS = 30;
+
 export async function verifyRefreshToken(tokenId) {
-  const token = await queryOne(
+  // First check for valid non-revoked token
+  let token = await queryOne(
     'SELECT * FROM refresh_tokens WHERE id = ? AND revoked = 0 AND expires_at > datetime("now")',
     [tokenId]
   );
+
+  // If not found, check for recently revoked token (grace period for navigation race condition)
+  // This handles the case where token was rotated but browser sent old cookie during navigation
+  if (!token) {
+    token = await queryOne(
+      `SELECT * FROM refresh_tokens
+       WHERE id = ?
+       AND revoked = 1
+       AND revoked_at IS NOT NULL
+       AND expires_at > datetime("now")
+       AND datetime(revoked_at, '+' || ? || ' seconds') > datetime("now")`,
+      [tokenId, REVOKE_GRACE_PERIOD_SECONDS]
+    );
+  }
+
   return token;
 }
 
 export async function revokeRefreshToken(tokenId) {
-  await query('UPDATE refresh_tokens SET revoked = 1 WHERE id = ?', [tokenId]);
+  await query(
+    'UPDATE refresh_tokens SET revoked = 1, revoked_at = datetime("now") WHERE id = ?',
+    [tokenId]
+  );
 }
 
 export async function revokeAllUserTokens(userId) {
-  await query('UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?', [userId]);
+  await query(
+    'UPDATE refresh_tokens SET revoked = 1, revoked_at = datetime("now") WHERE user_id = ?',
+    [userId]
+  );
 }
 
 // Fastify authentication hook
