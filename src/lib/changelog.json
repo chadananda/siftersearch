@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T14:53:10.544Z",
+  "generated": "2025-12-27T20:14:45.881Z",
   "entries": [
+    {
+      "hash": "1419e47",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Show Chat to anon users, redirect on logout, fix SQL query",
+      "scope": null
+    },
     {
       "hash": "e1eb1c2",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add admin dashboard with user management",
       "scope": "admin"
-    },
-    {
-      "hash": "95e5cc1",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add settings page with password and preferences",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "1419e47",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Show Chat to anon users, redirect on logout, fix SQL query",
+        "scope": null
+      },
       {
         "hash": "e1eb1c2",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add admin dashboard with user management",
         "scope": "admin"
-      },
-      {
-        "hash": "95e5cc1",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add settings page with password and preferences",
-        "scope": null
       }
     ]
   }

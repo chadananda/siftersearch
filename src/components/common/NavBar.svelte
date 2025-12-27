@@ -227,10 +227,10 @@
         <button
           class="user-icon-btn"
           class:authenticated={auth.isAuthenticated}
-          onclick={() => showUserMenu = !showUserMenu}
-          aria-expanded={showUserMenu}
-          aria-haspopup="true"
-          aria-label="User menu"
+          onclick={() => auth.isAuthenticated ? showUserMenu = !showUserMenu : showAuthModal = true}
+          aria-expanded={auth.isAuthenticated ? showUserMenu : undefined}
+          aria-haspopup={auth.isAuthenticated ? "true" : undefined}
+          aria-label={auth.isAuthenticated ? "User menu" : "Sign in"}
         >
           {#if auth.isAuthenticated}
             <span class="user-avatar">{userInitial}</span>
@@ -258,30 +258,18 @@
           </div>
         {/if}
 
-        <!-- User dropdown menu -->
-        {#if showUserMenu}
+        <!-- User dropdown menu (only for authenticated users) -->
+        {#if showUserMenu && auth.isAuthenticated}
           <div class="user-dropdown" role="menu">
             <!-- User info header -->
             <div class="dropdown-header">
-              {#if auth.isAuthenticated}
-                <div class="header-user">
-                  <span class="header-avatar">{userInitial}</span>
-                  <div class="header-info">
-                    <div class="header-email">{auth.user?.email}</div>
-                    <TierBadge compact />
-                  </div>
+              <div class="header-user">
+                <span class="header-avatar">{userInitial}</span>
+                <div class="header-info">
+                  <div class="header-email">{auth.user?.email}</div>
+                  <TierBadge compact />
                 </div>
-              {:else}
-                <div class="header-guest">
-                  <svg class="guest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  <div class="header-info">
-                    <div class="header-title">Guest User</div>
-                    <TierBadge compact />
-                  </div>
-                </div>
-              {/if}
+              </div>
             </div>
 
             <div class="dropdown-divider"></div>
@@ -294,68 +282,51 @@
 
             <div class="dropdown-divider"></div>
 
-            {#if auth.isAuthenticated}
-              <!-- Authenticated menu items -->
-              <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-                Profile
-              </a>
-              <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
-                Settings
-              </a>
-              <a href="/referrals" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                  <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-                Referrals
-              </a>
-              <a href="/support" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                Support
-              </a>
-              {#if isAdmin}
-                <div class="dropdown-divider"></div>
-                <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserMenu}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                  Admin Panel
-                </a>
-              {/if}
+            <!-- Account menu items -->
+            <a href="/profile" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              Profile
+            </a>
+            <a href="/settings" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Settings
+            </a>
+            <a href="/referrals" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              Referrals
+            </a>
+            <a href="/support" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              Support
+            </a>
+            {#if isAdmin}
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeUserMenu(); }}>
+              <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                Sign Out
-              </button>
-            {:else}
-              <!-- Guest menu items -->
-              <button class="dropdown-item signin-item" role="menuitem" onclick={() => { showAuthModal = true; closeUserMenu(); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                  <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-                </svg>
-                Connect
-              </button>
-              <a href="/about" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
-                About
+                Admin Panel
               </a>
             {/if}
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item signout-item" role="menuitem" onclick={() => { logout(); closeUserMenu(); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Sign Out
+            </button>
           </div>
         {/if}
       </div>
@@ -766,8 +737,7 @@
     padding: 0.5rem 0.75rem;
   }
 
-  .header-user,
-  .header-guest {
+  .header-user {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -786,15 +756,6 @@
     border-radius: 50%;
   }
 
-  .guest-icon {
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0.375rem;
-    background: var(--surface-2);
-    color: var(--text-muted);
-    border-radius: 50%;
-  }
-
   .header-info {
     display: flex;
     flex-direction: column;
@@ -810,12 +771,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .header-title {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--text-primary);
   }
 
   .dropdown-divider {
@@ -862,16 +817,6 @@
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
-  }
-
-  .signin-item {
-    color: var(--accent-primary);
-    font-weight: 500;
-  }
-
-  .signin-item:hover {
-    color: var(--accent-primary);
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
   }
 
   .admin-item {
