@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T21:01:42.820Z",
+  "generated": "2025-12-27T23:10:22.190Z",
   "entries": [
+    {
+      "hash": "128faa9",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Remove authority star system from public document views",
+      "scope": null
+    },
     {
       "hash": "de069d0",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add translation side-by-side view for patron+ users",
       "scope": null
-    },
-    {
-      "hash": "4e95734",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add research mode toggle for approved+ users",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "128faa9",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Remove authority star system from public document views",
+        "scope": null
+      },
       {
         "hash": "de069d0",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add translation side-by-side view for patron+ users",
         "scope": null
-      },
-      {
-        "hash": "4e95734",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add research mode toggle for approved+ users",
-        "scope": "search"
       }
     ]
   }

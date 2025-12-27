@@ -140,14 +140,14 @@
 <div class="collection-detail">
   {#if loading && !node}
     <div class="loading-state">
-      <svg class="spinner" viewBox="0 0 24 24">
+      <svg class="spinner" viewBox="0 0 24 24" width="48" height="48">
         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
       </svg>
       <span>Loading collection...</span>
     </div>
   {:else if error}
     <div class="error-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -215,13 +215,13 @@
 
       {#if loading}
         <div class="loading-state small">
-          <svg class="spinner" viewBox="0 0 24 24">
+          <svg class="spinner" viewBox="0 0 24 24" width="32" height="32">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
           </svg>
         </div>
       {:else if documents.length === 0}
         <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
           </svg>
@@ -248,7 +248,7 @@
         {#if hasMore}
           <div bind:this={scrollSentinel} class="scroll-sentinel">
             {#if loadingMore}
-              <svg class="spinner" viewBox="0 0 24 24">
+              <svg class="spinner" viewBox="0 0 24 24" width="24" height="24">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
               </svg>
             {/if}

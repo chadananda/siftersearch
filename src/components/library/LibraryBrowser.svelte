@@ -228,51 +228,6 @@
         onEdit={isAdmin ? () => handleEditNode(selectedNode) : null}
       />
     {:else}
-      <!-- Top bar -->
-      <div class="p-3 border-b border-border flex items-center gap-3 flex-wrap">
-        <div class="flex-1 min-w-[200px] max-w-[400px] relative">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            placeholder="Search documents..."
-            bind:value={filters.search}
-            onkeydown={(e) => e.key === 'Enter' && fetchDocuments(true)}
-          />
-          {#if filters.search}
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { filters.search = ''; fetchDocuments(true); }}>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-          {/if}
-        </div>
-
-        <button
-          class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border rounded-lg transition-colors
-                 {showFilters ? 'bg-accent text-white border-accent' : 'bg-surface-1 text-secondary border-border hover:bg-surface-2'}"
-          onclick={() => showFilters = !showFilters}
-        >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-          </svg>
-          Filters
-          {#if hasActiveFilters}
-            <span class="bg-white text-accent text-xs font-semibold px-1.5 rounded-full">{Object.values(filters).filter(v => v && v !== 'all').length}</span>
-          {/if}
-        </button>
-
-        {#if hasActiveFilters}
-          <button class="px-3 py-2 text-sm font-medium text-error hover:bg-error/10 rounded-lg" onclick={clearFilters}>Clear all</button>
-        {/if}
-
-        <span class="ml-auto text-sm text-muted">{totalDocuments.toLocaleString()} documents</span>
-      </div>
-
-      {#if showFilters}
-        <FilterPanel bind:filters {stats} on:change={() => fetchDocuments(true)} />
-      {/if}
-
       <!-- Document list -->
       <div class="flex-1 overflow-y-auto p-4">
         {#if showReligionHeader}
@@ -283,6 +238,53 @@
             {isAdmin}
             onEdit={handleEditNode}
           />
+        {/if}
+
+        <!-- Search bar -->
+        <div class="mb-4 flex items-center gap-3 flex-wrap">
+          <div class="flex-1 min-w-[200px] max-w-[400px] relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              placeholder="Search documents..."
+              bind:value={filters.search}
+              onkeydown={(e) => e.key === 'Enter' && fetchDocuments(true)}
+            />
+            {#if filters.search}
+              <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { filters.search = ''; fetchDocuments(true); }}>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            {/if}
+          </div>
+
+          <button
+            class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border rounded-lg transition-colors
+                   {showFilters ? 'bg-accent text-white border-accent' : 'bg-surface-1 text-secondary border-border hover:bg-surface-2'}"
+            onclick={() => showFilters = !showFilters}
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            Filters
+            {#if hasActiveFilters}
+              <span class="bg-white text-accent text-xs font-semibold px-1.5 rounded-full">{Object.values(filters).filter(v => v && v !== 'all').length}</span>
+            {/if}
+          </button>
+
+          {#if hasActiveFilters}
+            <button class="px-3 py-2 text-sm font-medium text-error hover:bg-error/10 rounded-lg" onclick={clearFilters}>Clear all</button>
+          {/if}
+
+          <span class="ml-auto text-sm text-muted">{totalDocuments.toLocaleString()} documents</span>
+        </div>
+
+        {#if showFilters}
+          <div class="mb-4">
+            <FilterPanel bind:filters {stats} on:change={() => fetchDocuments(true)} />
+          </div>
         {/if}
 
         {#if loading && documents.length === 0}
