@@ -1,0 +1,415 @@
+#!/usr/bin/env node
+
+/**
+ * Populate Translations
+ *
+ * Translates non-English documents to English and stores in indexed_paragraphs.translation
+ * Uses two translation styles:
+ *   - Scriptural: Neo-biblical style (Shoghi Effendi) for sacred texts
+ *   - Non-scriptural: Modern readable style, with scriptural quotes preserved
+ *
+ * Usage:
+ *   node scripts/populate-translations.js [options]
+ *
+ * Options:
+ *   --dry-run       Show what would be translated without making changes
+ *   --limit=N       Limit to N documents (default: all)
+ *   --document=ID   Translate a specific document
+ *   --force         Re-translate even if translation exists
+ *   --style=TYPE    Force style: 'scriptural' or 'modern' (overrides auto-detect)
+ *   --language=XX   Only translate documents in this language (ar, fa, etc.)
+ */
+
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env-secrets' });
+dotenv.config({ path: '.env-public' });
+
+import { query, queryOne, queryAll } from '../api/lib/db.js';
+import { getMeili, INDEXES } from '../api/lib/search.js';
+import { aiService } from '../api/lib/ai-services.js';
+import { logger } from '../api/lib/logger.js';
+
+// Parse arguments
+const args = process.argv.slice(2);
+const dryRun = args.includes('--dry-run');
+const force = args.includes('--force');
+const limitArg = args.find(a => a.startsWith('--limit='));
+const docArg = args.find(a => a.startsWith('--document='));
+const styleArg = args.find(a => a.startsWith('--style='));
+const langArg = args.find(a => a.startsWith('--language='));
+
+const limit = limitArg ? parseInt(limitArg.split('=')[1]) : null;
+const specificDocId = docArg ? docArg.split('=')[1] : null;
+const forceStyle = styleArg ? styleArg.split('=')[1] : null;
+const filterLanguage = langArg ? langArg.split('=')[1] : null;
+
+// Supported source languages for translation
+const SOURCE_LANGUAGES = {
+  ar: 'Arabic',
+  fa: 'Persian (Farsi)',
+  he: 'Hebrew',
+  ur: 'Urdu'
+};
+
+/**
+ * Collections that should use scriptural (neo-biblical) translation style
+ * Based on doctrinal authority - texts from Central Figures and core scriptures
+ */
+const SCRIPTURAL_COLLECTIONS = {
+  // Bahá'í
+  'Core Tablets': true,
+  'Core Tablet Translations': true,
+  'Core Talks': true,
+  'Compilations': true,  // Often quotes from Central Figures
+  'Core Publications': true,
+  'Pilgrim Notes': true,  // Records of the Central Figures' words
+
+  // Islam
+  'Quran': true,
+  'Hadith': true,
+
+  // Christianity
+  'Bible': true,
+  'Gospels': true,
+  'New Testament': true,
+  'Old Testament': true,
+
+  // Judaism
+  'Torah': true,
+  'Tanakh': true,
+  'Talmud': true,
+
+  // Buddhism
+  'Sutras': true,
+  'Pali Canon': true,
+
+  // Hinduism
+  'Vedas': true,
+  'Upanishads': true,
+  'Bhagavad Gita': true
+};
+
+/**
+ * Authors whose works should always use scriptural style
+ */
+const SCRIPTURAL_AUTHORS = [
+  'Bahá\'u\'lláh',
+  'The Báb',
+  '\'Abdu\'l-Bahá',
+  'Shoghi Effendi',
+  'The Universal House of Justice'
+];
+
+/**
+ * Determine if a document should use scriptural translation style
+ */
+function isScriptural(document) {
+  // Check collection
+  if (SCRIPTURAL_COLLECTIONS[document.collection]) {
+    return true;
+  }
+
+  // Check author
+  if (document.author && SCRIPTURAL_AUTHORS.some(a =>
+    document.author.includes(a) || a.includes(document.author)
+  )) {
+    return true;
+  }
+
+  // Check authority level (8+ is typically scriptural)
+  if (document.authority >= 8) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Build scriptural translation prompt (neo-biblical Shoghi Effendi style)
+ */
+function buildScripturalPrompt(sourceLang) {
+  const sourceName = SOURCE_LANGUAGES[sourceLang] || sourceLang;
+
+  return `You are an expert translator specializing in sacred religious texts. Translate the following ${sourceName} text to English using the neo-biblical style established by Shoghi Effendi in his translations of Bahá'í scripture.
+
+## Translation Style: Neo-Biblical (Shoghi Effendi)
+
+### Vocabulary
+- Use archaic pronouns for the Divine and sacred contexts: Thou, Thee, Thine, Thy, ye
+- Employ elevated verb forms: perceiveth, confesseth, hath, art, doth, sayeth, willeth
+- Use formal religious vocabulary: sovereignty, dominion, majesty, sanctity, effulgence
+- Prefer Latinate and formal English: "vouchsafe" not "grant", "beseech" not "ask"
+
+### Syntax
+- Use inverted word order for emphasis: "Great is the blessedness..."
+- Craft flowing sentences with parallel clauses connected by "and" and "that"
+- Maintain complex sentence structures that mirror the original's cadence
+- Use subjunctive mood where appropriate: "that he may...", "would that..."
+
+### Rhetorical Style
+- Preserve parallelism: "The winds of tests... the tempests of trials..."
+- Maintain metaphors exactly: "lamp of Thy love", "ocean of Thy nearness"
+- Preserve repetition of divine attributes for emphasis
+- Keep exclamatory phrases: "O Lord!", "O my God!"
+
+### Punctuation
+- Use semicolons and colons liberally for flowing prose
+- Employ dashes for parenthetical additions
+- Capitalize Divine pronouns and attributes: "His Holiness", "the Almighty"
+
+### Example Translations (Arabic → English)
+- "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
+- "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
+- "بِاسْمِكَ" → "by Thy Name" / "in Thy Name"
+- "يا مَنْ" → "O Thou Who..." / "O He Who..."
+
+Translate faithfully, preserving the sacred tone. Provide only the translation, no explanations.`;
+}
+
+/**
+ * Build modern translation prompt (readable but respectful of quotations)
+ */
+function buildModernPrompt(sourceLang) {
+  const sourceName = SOURCE_LANGUAGES[sourceLang] || sourceLang;
+
+  return `You are an expert translator. Translate the following ${sourceName} text to clear, readable modern English.
+
+## Translation Style: Modern Academic
+
+### General Guidelines
+- Use clear, accessible modern English
+- Maintain accuracy and preserve meaning
+- Use natural contemporary sentence structures
+- Avoid archaic language except in quotations (see below)
+
+### Handling Scriptural Quotations
+When the text quotes from religious scripture (Qur'an, Bible, Bahá'í Writings, Hadith, etc.):
+- Use elevated, reverent language for these quotations
+- Apply neo-biblical style: "Thou", "Thy", "hath", "doth" for Divine references
+- Mark quotations with appropriate formatting
+- Example: When quoting Qur'an, render as: "He hath said: 'Verily, We have...'"
+
+### Tone
+- Scholarly but accessible
+- Respectful of religious content
+- Clear without being casual
+- Accurate without being stilted
+
+### Structure
+- Use natural English word order
+- Break up overly long sentences for readability
+- Maintain paragraph structure from original
+
+Provide only the translation, no explanations or commentary.`;
+}
+
+/**
+ * Translate a single paragraph
+ */
+async function translateParagraph(text, sourceLang, style) {
+  const systemPrompt = style === 'scriptural'
+    ? buildScripturalPrompt(sourceLang)
+    : buildModernPrompt(sourceLang);
+
+  try {
+    const response = await aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(1000, text.length * 4) // Allow for expansion
+    });
+
+    return response.content.trim();
+  } catch (err) {
+    logger.error({ err: err.message, textLength: text.length }, 'Translation failed');
+    throw err;
+  }
+}
+
+/**
+ * Get documents needing translation
+ */
+async function getDocumentsToTranslate() {
+  const meili = getMeili();
+
+  // Build filter for non-English documents
+  const languages = Object.keys(SOURCE_LANGUAGES);
+  const langFilter = languages.map(l => `language = "${l}"`).join(' OR ');
+
+  let filter = `(${langFilter})`;
+  if (filterLanguage) {
+    filter = `language = "${filterLanguage}"`;
+  }
+  if (specificDocId) {
+    filter = `id = "${specificDocId}"`;
+  }
+
+  const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+    limit: limit || 10000,
+    filter,
+    attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'language', 'authority', 'paragraph_count']
+  });
+
+  return result.hits;
+}
+
+/**
+ * Get paragraphs needing translation for a document
+ */
+async function getParagraphsToTranslate(documentId) {
+  const whereClause = force
+    ? 'WHERE document_id = ?'
+    : 'WHERE document_id = ? AND (translation IS NULL OR translation = \'\')';
+
+  return queryAll(`
+    SELECT id, paragraph_index, text, translation
+    FROM indexed_paragraphs
+    ${whereClause}
+    ORDER BY paragraph_index
+  `, [documentId]);
+}
+
+/**
+ * Update paragraph with translation
+ */
+async function saveTranslation(paragraphId, translation) {
+  if (dryRun) return;
+
+  await query(
+    'UPDATE indexed_paragraphs SET translation = ? WHERE id = ?',
+    [translation, paragraphId]
+  );
+}
+
+/**
+ * Main translation process
+ */
+async function populateTranslations() {
+  console.log('📚 Populating English Translations');
+  console.log('===================================');
+
+  if (dryRun) {
+    console.log('🔍 DRY RUN - No changes will be made\n');
+  }
+
+  if (forceStyle) {
+    console.log(`📝 Forced style: ${forceStyle}\n`);
+  }
+
+  // Check if indexed_paragraphs table exists
+  try {
+    await queryAll('SELECT 1 FROM indexed_paragraphs LIMIT 1');
+  } catch (err) {
+    if (err.message?.includes('no such table')) {
+      console.log('⚠️  indexed_paragraphs table not found (development environment)');
+      console.log('   This script needs to run against the production database.');
+      return;
+    }
+    throw err;
+  }
+
+  // Get documents to translate
+  console.log('Finding documents to translate...');
+  const documents = await getDocumentsToTranslate();
+
+  if (documents.length === 0) {
+    console.log('No documents found matching criteria.');
+    return;
+  }
+
+  console.log(`Found ${documents.length} documents\n`);
+
+  // Statistics
+  let totalParagraphs = 0;
+  let translatedCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  const startTime = Date.now();
+
+  // Process each document
+  for (let docIndex = 0; docIndex < documents.length; docIndex++) {
+    const doc = documents[docIndex];
+    const style = forceStyle || (isScriptural(doc) ? 'scriptural' : 'modern');
+    const styleBadge = style === 'scriptural' ? '📜' : '📖';
+
+    console.log(`\n[${docIndex + 1}/${documents.length}] ${styleBadge} ${doc.title}`);
+    console.log(`   Author: ${doc.author || 'Unknown'} | Collection: ${doc.collection} | Lang: ${doc.language}`);
+    console.log(`   Style: ${style} | Authority: ${doc.authority || 'N/A'}`);
+
+    // Get paragraphs for this document
+    const paragraphs = await getParagraphsToTranslate(doc.id);
+
+    if (paragraphs.length === 0) {
+      console.log('   ⏭️  No paragraphs need translation');
+      continue;
+    }
+
+    console.log(`   📝 ${paragraphs.length} paragraphs to translate`);
+    totalParagraphs += paragraphs.length;
+
+    // Translate each paragraph
+    for (let i = 0; i < paragraphs.length; i++) {
+      const para = paragraphs[i];
+
+      // Skip if already has translation and not forcing
+      if (para.translation && !force) {
+        skippedCount++;
+        continue;
+      }
+
+      // Skip empty text
+      if (!para.text || para.text.trim().length === 0) {
+        skippedCount++;
+        continue;
+      }
+
+      // Progress indicator
+      if (i % 10 === 0 || i === paragraphs.length - 1) {
+        process.stdout.write(`\r   Progress: ${i + 1}/${paragraphs.length} paragraphs`);
+      }
+
+      if (dryRun) {
+        translatedCount++;
+        continue;
+      }
+
+      try {
+        const translation = await translateParagraph(para.text, doc.language, style);
+        await saveTranslation(para.id, translation);
+        translatedCount++;
+
+        // Rate limiting - avoid hitting API limits
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (err) {
+        errorCount++;
+        console.log(`\n   ❌ Error on paragraph ${para.paragraph_index}: ${err.message}`);
+      }
+    }
+
+    console.log(''); // New line after progress
+  }
+
+  // Summary
+  const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+  console.log('\n===================================');
+  console.log('📊 Translation Summary');
+  console.log('===================================');
+  console.log(`Documents processed: ${documents.length}`);
+  console.log(`Total paragraphs: ${totalParagraphs}`);
+  console.log(`Translated: ${translatedCount}`);
+  console.log(`Skipped: ${skippedCount}`);
+  console.log(`Errors: ${errorCount}`);
+  console.log(`Time: ${elapsed} minutes`);
+
+  if (dryRun) {
+    console.log('\n📝 This was a dry run. Run without --dry-run to apply changes.');
+  }
+}
+
+// Run
+populateTranslations().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

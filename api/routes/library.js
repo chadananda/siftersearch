@@ -962,6 +962,81 @@ export default async function libraryRoutes(fastify) {
   });
 
   /**
+   * Get paragraphs with translations for side-by-side view
+   * Returns original text + English translation for non-English documents
+   */
+  fastify.get('/documents/:id/bilingual', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 50, maximum: 200 },
+          offset: { type: 'integer', default: 0 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+    const { limit = 50, offset = 0 } = request.query;
+    const meili = getMeili();
+
+    // Get document metadata
+    let document;
+    try {
+      document = await meili.index(INDEXES.DOCUMENTS).getDocument(id);
+    } catch (err) {
+      if (err.code === 'document_not_found') {
+        throw ApiError.notFound('Document not found');
+      }
+      throw err;
+    }
+
+    // Get paragraphs with translations from SQLite (translations stored there)
+    const paragraphs = await queryAll(`
+      SELECT paragraph_index, text, translation, blocktype, heading
+      FROM indexed_paragraphs
+      WHERE document_id = ?
+      ORDER BY paragraph_index
+      LIMIT ? OFFSET ?
+    `, [id, limit, offset]);
+
+    // Get total count
+    const countResult = await queryOne(
+      'SELECT COUNT(*) as count FROM indexed_paragraphs WHERE document_id = ?',
+      [id]
+    );
+
+    // Determine if document needs RTL display
+    const isRTL = ['ar', 'fa', 'he', 'ur'].includes(document.language);
+
+    return {
+      document: {
+        id: document.id,
+        title: document.title,
+        author: document.author,
+        language: document.language,
+        isRTL
+      },
+      paragraphs: paragraphs.map(p => ({
+        index: p.paragraph_index,
+        original: p.text,
+        translation: p.translation || null,
+        blocktype: p.blocktype || 'paragraph',
+        heading: p.heading
+      })),
+      total: countResult?.count || 0,
+      limit,
+      offset,
+      hasTranslations: paragraphs.some(p => p.translation)
+    };
+  });
+
+  /**
    * Re-index document from original file
    */
   fastify.post('/documents/:id/reindex', {

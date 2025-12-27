@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import BilingualView from './BilingualView.svelte';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
 
@@ -8,24 +9,43 @@
 
   let expandedDocId = $state(null);
   let expandedContent = $state(null);
+  let bilingualContent = $state(null);
   let loadingContent = $state(false);
+
+  // RTL languages that need special handling
+  const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
 
   function toggleDocument(doc) {
     if (expandedDocId === doc.id) {
       expandedDocId = null;
       expandedContent = null;
+      bilingualContent = null;
     } else {
       expandedDocId = doc.id;
       expandedContent = null;
-      loadDocumentContent(doc.id);
+      bilingualContent = null;
+      loadDocumentContent(doc);
     }
     dispatch('select', doc);
   }
 
-  async function loadDocumentContent(docId) {
+  async function loadDocumentContent(doc) {
     loadingContent = true;
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${docId}?paragraphs=true`);
+      // For non-English documents, try bilingual endpoint first
+      const isNonEnglish = doc.language && doc.language !== 'en';
+
+      if (isNonEnglish) {
+        const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=100`);
+        if (bilingualRes.ok) {
+          bilingualContent = await bilingualRes.json();
+          loadingContent = false;
+          return;
+        }
+      }
+
+      // Fallback to standard content
+      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
       if (!res.ok) throw new Error('Failed to load content');
       expandedContent = await res.json();
     } catch (err) {
@@ -33,6 +53,10 @@
     } finally {
       loadingContent = false;
     }
+  }
+
+  function isRTL(language) {
+    return RTL_LANGUAGES.includes(language);
   }
 
   function getSizeLabel(count) {
@@ -141,17 +165,32 @@
               {/if}
             {/if}
 
-            <div class="border border-border-subtle rounded-lg bg-surface-1">
-              <div class="max-h-[300px] overflow-y-auto p-4">
-                {#if expandedContent.paragraphs?.length > 0}
-                  {#each expandedContent.paragraphs as para}
-                    <p class="mb-3 last:mb-0 text-sm leading-relaxed text-secondary">{para.text || para.content || ''}</p>
-                  {/each}
-                {:else}
-                  <p class="text-muted text-sm italic">No content available</p>
-                {/if}
+            <!-- Content display: bilingual or standard -->
+            {#if bilingualContent}
+              <BilingualView
+                paragraphs={bilingualContent.paragraphs}
+                isRTL={bilingualContent.document?.isRTL || isRTL(bilingualContent.document?.language)}
+                maxHeight="300px"
+                loading={loadingContent}
+              />
+            {:else}
+              <div class="border border-border-subtle rounded-lg bg-surface-1">
+                <div class="max-h-[300px] overflow-y-auto p-4">
+                  {#if expandedContent.paragraphs?.length > 0}
+                    {#each expandedContent.paragraphs as para}
+                      {@const docLang = expandedContent.document?.language}
+                      <p
+                        class="mb-3 last:mb-0 text-sm leading-relaxed text-secondary"
+                        dir={isRTL(docLang) ? 'rtl' : 'ltr'}
+                        class:text-right={isRTL(docLang)}
+                      >{para.text || para.content || ''}</p>
+                    {/each}
+                  {:else}
+                    <p class="text-muted text-sm italic">No content available</p>
+                  {/if}
+                </div>
               </div>
-            </div>
+            {/if}
           {/if}
         </div>
       {/if}

@@ -30,6 +30,18 @@ async function fixRtlLanguages() {
 
   const meili = getMeili();
 
+  // Check if indexed_paragraphs table exists
+  try {
+    await queryAll('SELECT 1 FROM indexed_paragraphs LIMIT 1');
+  } catch (err) {
+    if (err.message?.includes('no such table')) {
+      console.log('⚠️  indexed_paragraphs table not found (development environment)');
+      console.log('   This script needs to run against the production database.');
+      return;
+    }
+    throw err;
+  }
+
   // Get all documents marked as English
   const result = await meili.index(INDEXES.DOCUMENTS).search('', {
     limit: 10000,

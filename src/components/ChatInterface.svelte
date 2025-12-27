@@ -136,6 +136,10 @@
   let readerCanGoPrev = $derived(readerArrayIndex > 0);
   let readerCanGoNext = $derived(readerArrayIndex >= 0 && readerArrayIndex < readerParagraphs.length - 1);
 
+  // RTL languages that need special handling
+  const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+  let readerIsRTL = $derived(RTL_LANGUAGES.includes(readerDocument?.language));
+
   // Extract source URL from first few paragraphs (many docs have links to bahai-library.com, oceanoflights.org, etc.)
   let readerSourceUrl = $derived.by(() => {
     if (!readerParagraphs.length) return null;
@@ -480,7 +484,8 @@
         title: result.title,
         author: result.author,
         religion: result.religion,
-        collection: result.collection
+        collection: result.collection,
+        language: result.language || 'en'
       };
       readerCurrentIndex = targetIndex;
       readerKeyPhrase = result.keyPhrase || '';
@@ -528,7 +533,8 @@
       title: result.title,
       author: result.author,
       religion: result.religion,
-      collection: result.collection
+      collection: result.collection,
+      language: result.language || 'en'
     };
     readerCurrentIndex = targetIndex;
     readerKeyPhrase = result.keyPhrase || '';
@@ -982,15 +988,16 @@
             <p>No content available for this document.</p>
           </div>
         {:else}
-          <div class="reader-paragraphs">
+          <div class="reader-paragraphs" class:rtl={readerIsRTL}>
             {#each readerParagraphs as paragraph, i}
               <div
                 class="reader-paragraph-wrapper {paragraph.paragraph_index === readerCurrentIndex ? 'current' : ''}"
+                class:rtl={readerIsRTL}
                 data-paragraph-index={paragraph.paragraph_index}
                 onclick={() => { readerCurrentIndex = paragraph.paragraph_index; }}
               >
                 <span class="para-num">{paragraph.paragraph_index + 1}</span>
-                <p class="reader-paragraph">
+                <p class="reader-paragraph" dir={readerIsRTL ? 'rtl' : 'ltr'}>
                   {#if paragraph.paragraph_index === readerCurrentIndex && readerKeyPhrase}
                     {@html formatText(applyHighlighting(paragraph.text, readerKeyPhrase, readerCoreTerms))}
                   {:else}
@@ -1332,6 +1339,8 @@
 
                     {@const summary = result.summary || ''}
                     {@const highlightedText = result.highlightedText || text}
+                    {@const language = result.language || 'en'}
+                    {@const isRTL = ['ar', 'fa', 'he', 'ur'].includes(language)}
 
                     <div class="source-card {expanded ? 'expanded' : 'collapsed'}" role="article">
                       <!-- Collapsed: single line with number, AI summary (or fallback), title, expand arrow -->
@@ -1355,9 +1364,9 @@
                         </button>
 
                         <!-- Paper-like text area with off-white background -->
-                        <div class="source-paper p-3 sm:p-4 sm:px-5">
+                        <div class="source-paper p-3 sm:p-4 sm:px-5" class:rtl={isRTL}>
                           <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
-                          <p class="source-text">{@html formatText(highlightedText)}</p>
+                          <p class="source-text" dir={isRTL ? 'rtl' : 'ltr'}>{@html formatText(highlightedText)}</p>
                         </div>
 
                         <!-- Citation bar: [religion] > [collection] > [author] > [title] -->
@@ -3375,6 +3384,49 @@
   .reader-paragraph :global(b) {
     font-weight: 700;
     color: inherit;
+  }
+
+  /* RTL support for Arabic, Farsi, Hebrew, Urdu */
+  .reader-paragraphs.rtl {
+    padding-left: 0;
+    padding-right: 2rem;
+  }
+
+  .reader-paragraph-wrapper.rtl {
+    text-align: right;
+  }
+
+  .reader-paragraph-wrapper.rtl .para-num {
+    left: auto;
+    right: -2.5rem;
+    text-align: left;
+  }
+
+  .reader-paragraph-wrapper.rtl.current {
+    border-left: none;
+    border-right: 3px solid #eab308;
+    margin-left: 0;
+    margin-right: -3px;
+  }
+
+  [dir="rtl"] {
+    font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+  }
+
+  /* RTL support for source paper in hit results */
+  .source-paper.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .source-paper.rtl .para-num {
+    left: auto;
+    right: 0.75rem;
+  }
+
+  .source-paper.rtl .source-text {
+    margin-left: 0;
+    margin-right: 1.5rem;
+    text-align: right;
   }
 
   /* Inline agent badges for Meet the Team section */

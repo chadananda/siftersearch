@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T04:44:52.822Z",
+  "generated": "2025-12-27T05:00:35.231Z",
   "entries": [
+    {
+      "hash": "c2059e7",
+      "date": "2025-12-26",
+      "type": "New",
+      "description": "Complete Bahá'í collection authority for all 19 collections",
+      "scope": "authority"
+    },
     {
       "hash": "a3f71f5",
       "date": "2025-12-26",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use absolute paths for dotenv config",
       "scope": "migrate"
-    },
-    {
-      "hash": "0bb51ee",
-      "date": "2025-12-24",
-      "type": "Fixed",
-      "description": "Use absolute paths for dotenv config loading",
-      "scope": "env"
     }
   ],
   "grouped": {
     "2025-12-26": [
+      {
+        "hash": "c2059e7",
+        "date": "2025-12-26",
+        "type": "New",
+        "description": "Complete Bahá'í collection authority for all 19 collections",
+        "scope": "authority"
+      },
       {
         "hash": "a3f71f5",
         "date": "2025-12-26",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Use absolute paths for dotenv config",
         "scope": "migrate"
-      },
-      {
-        "hash": "0bb51ee",
-        "date": "2025-12-24",
-        "type": "Fixed",
-        "description": "Use absolute paths for dotenv config loading",
-        "scope": "env"
       }
     ]
   }
