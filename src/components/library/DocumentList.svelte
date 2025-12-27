@@ -79,6 +79,82 @@
   }
 </script>
 
+<style>
+  /* Paper-like content area - matches source-paper styling from ChatInterface */
+  .paper-content {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0.5rem;
+    background: #faf8f3;
+    overflow: hidden;
+  }
+
+  .paper-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+  }
+
+  .paper-paragraph {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .paper-paragraph:last-child {
+    border-bottom: none;
+  }
+
+  .paper-paragraph:hover {
+    background: rgba(0, 0, 0, 0.02);
+    margin: 0 -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .paper-paragraph.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .para-num {
+    flex-shrink: 0;
+    width: 1.5rem;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-size: 0.6875rem;
+    color: #999;
+    text-align: right;
+    padding-top: 0.25rem;
+  }
+
+  .paper-paragraph.rtl .para-num {
+    text-align: left;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+  }
+
+  .para-text {
+    flex: 1;
+    margin: 0;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: #1a1a1a;
+  }
+
+  .empty-text {
+    font-style: italic;
+    color: #888;
+    font-size: 0.875rem;
+  }
+
+  /* RTL text styling - Amiri for Arabic/Persian */
+  [dir="rtl"] {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.0625rem; /* Slightly larger for Arabic readability */
+    line-height: 1.8;
+  }
+</style>
+
 <div class="flex flex-col gap-1">
   {#each documents as doc}
     {@const size = getSizeLabel(doc.paragraph_count)}
@@ -174,19 +250,21 @@
                 loading={loadingContent}
               />
             {:else}
-              <div class="border border-border-subtle rounded-lg bg-surface-1">
-                <div class="max-h-[300px] overflow-y-auto p-4">
+              <div class="paper-content">
+                <div class="paper-scroll">
                   {#if expandedContent.paragraphs?.length > 0}
-                    {#each expandedContent.paragraphs as para}
+                    {#each expandedContent.paragraphs as para, i}
                       {@const docLang = expandedContent.document?.language}
-                      <p
-                        class="mb-3 last:mb-0 text-sm leading-relaxed text-secondary"
-                        dir={isRTL(docLang) ? 'rtl' : 'ltr'}
-                        class:text-right={isRTL(docLang)}
-                      >{para.text || para.content || ''}</p>
+                      <div class="paper-paragraph" class:rtl={isRTL(docLang)}>
+                        <span class="para-num">{i + 1}</span>
+                        <p
+                          class="para-text"
+                          dir={isRTL(docLang) ? 'rtl' : 'ltr'}
+                        >{para.text || para.content || ''}</p>
+                      </div>
                     {/each}
                   {:else}
-                    <p class="text-muted text-sm italic">No content available</p>
+                    <p class="empty-text">No content available</p>
                   {/if}
                 </div>
               </div>

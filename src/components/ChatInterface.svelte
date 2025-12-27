@@ -2517,7 +2517,7 @@
   }
 
   .source-text {
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #1a1a1a;
@@ -3119,7 +3119,7 @@
   }
 
   .reader-book-title {
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 1.375rem;
     font-weight: 600;
     color: #2c2416;
@@ -3360,7 +3360,7 @@
   }
 
   .reader-paragraph {
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #1a1a1a;
@@ -3409,8 +3409,11 @@
     margin-right: -3px;
   }
 
+  /* RTL text styling - Amiri for Arabic/Persian */
   [dir="rtl"] {
-    font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.125rem; /* Slightly larger for Arabic readability */
+    line-height: 1.85;
   }
 
   /* RTL support for source paper in hit results */

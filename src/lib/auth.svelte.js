@@ -14,27 +14,24 @@ let error = $state(null);
 
 /**
  * Initialize auth state - check if user is logged in
- * Only attempts refresh if there's evidence of a previous login session
+ * Always attempts refresh since httpOnly cookies aren't visible to JavaScript.
+ * The refresh endpoint will fail gracefully for anonymous users (no cookie).
  */
 export async function initAuth() {
   loading = true;
   error = null;
 
   try {
-    // Only try to refresh if we have a marker indicating previous login
-    // This avoids unnecessary 401 errors for anonymous users
-    const hadPreviousSession = typeof document !== 'undefined' &&
-      document.cookie.includes('refresh_token');
-
-    if (hadPreviousSession) {
-      const refreshed = await authApi.refresh();
-      if (refreshed) {
-        const data = await authApi.me();
-        user = data.user;
-      }
+    // Always try to refresh - httpOnly cookies aren't visible to document.cookie
+    // The server will return 401 if no valid refresh token cookie exists (anonymous users)
+    // This silently fails for anonymous users which is the expected behavior
+    const refreshed = await authApi.refresh();
+    if (refreshed) {
+      const data = await authApi.me();
+      user = data.user;
     }
   } catch {
-    // Not logged in or token expired
+    // Not logged in or token expired - this is expected for anonymous users
     user = null;
   } finally {
     loading = false;

@@ -62,11 +62,12 @@
 </div>
 
 <style>
+  /* Paper-like container - matches source-paper styling from ChatInterface */
   .bilingual-container {
     overflow-y: auto;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
-    background: var(--surface-1);
+    background: #faf8f3;
   }
 
   .loading-state {
@@ -75,13 +76,14 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 2rem;
+    color: #666;
   }
 
   .spinner {
     width: 1rem;
     height: 1rem;
-    border: 2px solid var(--border-default);
-    border-top-color: var(--accent-primary);
+    border: 2px solid #ddd;
+    border-top-color: #8b7355;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -90,21 +92,24 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Single column layout */
+  /* Single column layout - paper style */
   .single-column {
-    padding: 0.75rem;
+    padding: 1rem 1.25rem;
   }
 
   .paragraph-row {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    margin-bottom: 0.25rem;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .paragraph-row:last-child {
+    border-bottom: none;
   }
 
   .paragraph-row:hover {
-    background: var(--surface-2);
+    background: rgba(0, 0, 0, 0.02);
   }
 
   .paragraph-row.rtl {
@@ -124,25 +129,25 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border-default);
+    background: #f0ebe0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .header-label {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    background: var(--surface-2);
+    letter-spacing: 0.08em;
+    color: #666;
+    background: #f0ebe0;
   }
 
   .bilingual-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .bilingual-row:last-child {
@@ -150,14 +155,14 @@
   }
 
   .bilingual-row:hover .para-cell {
-    background: var(--surface-2);
+    background: rgba(0, 0, 0, 0.02);
   }
 
   .para-cell {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.625rem 0.75rem;
-    background: var(--surface-0);
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: #faf8f3;
     min-height: 2.5rem;
   }
 
@@ -169,31 +174,37 @@
   .para-num {
     flex-shrink: 0;
     width: 1.5rem;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 0.6875rem;
-    color: var(--text-muted);
+    color: #999;
     text-align: right;
-    padding-top: 0.125rem;
+    padding-top: 0.25rem;
   }
 
   .rtl .para-num {
     text-align: left;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
   }
 
   .para-text {
     flex: 1;
     margin: 0;
-    font-size: 0.875rem;
-    line-height: 1.6;
-    color: var(--text-primary);
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: #1a1a1a;
   }
 
   .para-text.italic {
     font-style: italic;
+    color: #888;
   }
 
-  /* RTL text styling */
+  /* RTL text styling - Amiri for Arabic/Persian */
   [dir="rtl"] {
-    font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.0625rem; /* Slightly larger for Arabic readability */
+    line-height: 1.8;
   }
 
   /* Responsive: stack on mobile */
@@ -204,12 +215,12 @@
     }
 
     .column-header .header-label:first-child {
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }
 
     .para-cell.translation {
-      border-top: 1px dashed var(--border-subtle);
-      background: var(--surface-1);
+      border-top: 1px dashed rgba(0, 0, 0, 0.1);
+      background: #f5f2ea;
     }
   }
 </style>

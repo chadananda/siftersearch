@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T05:00:35.231Z",
+  "generated": "2025-12-27T14:15:03.846Z",
   "entries": [
+    {
+      "hash": "9e727b1",
+      "date": "2025-12-26",
+      "type": "New",
+      "description": "Add side-by-side bilingual view for non-English documents",
+      "scope": null
+    },
     {
       "hash": "c2059e7",
       "date": "2025-12-26",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Auto-run schema migrations on API startup",
       "scope": "db"
-    },
-    {
-      "hash": "778e69d",
-      "date": "2025-12-24",
-      "type": "Fixed",
-      "description": "Use absolute paths for dotenv config",
-      "scope": "migrate"
     }
   ],
   "grouped": {
     "2025-12-26": [
+      {
+        "hash": "9e727b1",
+        "date": "2025-12-26",
+        "type": "New",
+        "description": "Add side-by-side bilingual view for non-English documents",
+        "scope": null
+      },
       {
         "hash": "c2059e7",
         "date": "2025-12-26",
@@ -700,13 +707,6 @@
         "type": "New",
         "description": "Auto-run schema migrations on API startup",
         "scope": "db"
-      },
-      {
-        "hash": "778e69d",
-        "date": "2025-12-24",
-        "type": "Fixed",
-        "description": "Use absolute paths for dotenv config",
-        "scope": "migrate"
       }
     ]
   }
