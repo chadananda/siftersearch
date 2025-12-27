@@ -69,8 +69,8 @@ function getDefaultAuthority(religion, collection = null) {
       "Core Publications": 7,
       "Bahai Books": 5,
       "Historical": 4,
-      "Studies Papers": 3,
-      "Pilgrim Notes": 1
+      "Pilgrim Notes": 4,
+      "Studies Papers": 3
     },
     "Islam": {
       "Quran": 10,

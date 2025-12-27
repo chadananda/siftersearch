@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-26T04:02:38.288Z",
+  "generated": "2025-12-27T03:36:54.117Z",
   "entries": [
+    {
+      "hash": "32465d5",
+      "date": "2025-12-25",
+      "type": "Fixed",
+      "description": "Normalize religion names for authority lookup",
+      "scope": "library"
+    },
     {
       "hash": "2ddbb9f",
       "date": "2025-12-25",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Penalize keyword-only matches that don't answer question",
       "scope": "analyzer"
-    },
-    {
-      "hash": "1f21fc9",
-      "date": "2025-12-17",
-      "type": "Fixed",
-      "description": "Ensure user chat messages are selectable",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-25": [
+      {
+        "hash": "32465d5",
+        "date": "2025-12-25",
+        "type": "Fixed",
+        "description": "Normalize religion names for authority lookup",
+        "scope": "library"
+      },
       {
         "hash": "2ddbb9f",
         "date": "2025-12-25",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Penalize keyword-only matches that don't answer question",
         "scope": "analyzer"
-      },
-      {
-        "hash": "1f21fc9",
-        "date": "2025-12-17",
-        "type": "Fixed",
-        "description": "Ensure user chat messages are selectable",
-        "scope": null
       }
     ]
   }
