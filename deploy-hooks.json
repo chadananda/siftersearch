@@ -49,6 +49,13 @@
     "timeout": 120000
   },
   {
+    "id": "2024-12-26-fix-rtl-languages",
+    "description": "Fix Arabic/Farsi documents incorrectly marked as English",
+    "command": "node scripts/fix-rtl-languages.js",
+    "enabled": true,
+    "timeout": 300000
+  },
+  {
     "id": "2024-12-25-resegment-oversized",
     "description": "Re-segment paragraphs exceeding 1500 chars after AI segmentation update",
     "command": "node scripts/resegment-oversized.js",

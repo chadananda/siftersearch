@@ -274,6 +274,11 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   // Parse frontmatter using gray-matter (handles detection automatically)
   const { content, metadata: extractedMeta } = parseMarkdownFrontmatter(text);
 
+  // Detect language from content if not specified in frontmatter
+  // This catches Arabic/Farsi documents that don't have a language field
+  const detectedLang = detectLanguageFeatures(content);
+  const contentLanguage = detectedLang.language !== 'en' ? detectedLang.language : null;
+
   // Merge metadata: frontmatter takes precedence over filename-extracted data
   // Use frontmatter if available, fall back to filename-extracted, then defaults
   // Exception: if filename-extracted has meaningful data (not "Unknown"), prefer that for some fields
@@ -283,7 +288,8 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
     religion: extractedMeta.religion || metadata.religion || 'General',
     collection: extractedMeta.collection || metadata.collection || 'General',
-    language: extractedMeta.language || metadata.language || 'en',
+    // Language: frontmatter > detected from content > filename metadata > default 'en'
+    language: extractedMeta.language || contentLanguage || metadata.language || 'en',
     year: extractedMeta.year || metadata.year || null,
     description: extractedMeta.description || metadata.description || ''
   };
