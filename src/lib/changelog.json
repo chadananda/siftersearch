@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T20:14:45.881Z",
+  "generated": "2025-12-27T20:51:46.215Z",
   "entries": [
+    {
+      "hash": "1a8633a",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Simplify user menu for anonymous users",
+      "scope": "navbar"
+    },
     {
       "hash": "1419e47",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add document contribution UI and admin queue",
       "scope": null
-    },
-    {
-      "hash": "59cf9df",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add admin dashboard with user management",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "1a8633a",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Simplify user menu for anonymous users",
+        "scope": "navbar"
+      },
       {
         "hash": "1419e47",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add document contribution UI and admin queue",
         "scope": null
-      },
-      {
-        "hash": "59cf9df",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add admin dashboard with user management",
-        "scope": "admin"
       }
     ]
   }

@@ -1,16 +1,5 @@
 <script>
   let { node = null, documentCount = 0, isAdmin = false, onEdit = null } = $props();
-
-  const authorityConfig = {
-    10: { label: 'Sacred Text', stars: '★★★' },
-    9: { label: 'Authoritative', stars: '★★☆' },
-    8: { label: 'Official', stars: '★☆☆' },
-    7: { label: 'Compiled', stars: '◆' },
-    6: { label: 'Reliable', stars: '◇' },
-    5: { label: 'Standard', stars: '○' },
-  };
-
-  let authority = $derived(authorityConfig[node?.authority_default] || { label: 'Standard', stars: '○' });
 </script>
 
 <header class="relative min-h-[180px] rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-accent via-accent/60 to-surface-1">
@@ -61,11 +50,13 @@
         <span class="text-xl font-bold">{documentCount.toLocaleString()}</span>
         <span class="text-[0.8125rem] opacity-80">{documentCount === 1 ? 'document' : 'documents'}</span>
       </div>
-      <div class="w-px h-6 bg-white/30"></div>
-      <div class="flex items-center gap-2 text-amber-400">
-        <span class="text-sm tracking-wide">{authority.stars}</span>
-        <span class="text-[0.8125rem] opacity-80">{authority.label}</span>
-      </div>
+      {#if isAdmin && node?.authority_default}
+        <div class="w-px h-6 bg-white/30"></div>
+        <div class="flex items-baseline gap-1.5 text-white/70">
+          <span class="text-[0.8125rem]">Authority:</span>
+          <span class="text-sm font-medium">{node.authority_default}</span>
+        </div>
+      {/if}
     </div>
   </div>
 </header>
