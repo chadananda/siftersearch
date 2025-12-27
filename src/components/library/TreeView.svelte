@@ -49,7 +49,12 @@
                {isExpanded ? 'bg-accent text-white' : isSelected ? 'bg-accent/20' : 'bg-surface-2 hover:bg-surface-3 text-primary'}"
         onclick={() => { toggleReligion(religion.name); selectReligion(religion); }}
       >
-        <span class="flex-1 truncate">{religion.name}</span>
+        <span class="flex items-center gap-2 flex-1 truncate">
+          {#if religion.symbol}
+            <span class="text-lg opacity-80">{religion.symbol}</span>
+          {/if}
+          <span class="truncate">{religion.name}</span>
+        </span>
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full min-w-[2.5rem] text-center
                      {isExpanded ? 'bg-white/20 text-white' : 'bg-accent/20 text-accent'}">
           {religion.count.toLocaleString()}

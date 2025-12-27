@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T14:34:24.985Z",
+  "generated": "2025-12-27T14:39:04.834Z",
   "entries": [
+    {
+      "hash": "2255c58",
+      "date": "2025-12-27",
+      "type": "New",
+      "description": "Add editable religion and collection headers with symbols",
+      "scope": null
+    },
     {
       "hash": "4006d05",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add TierBadge component with usage tracking",
       "scope": null
-    },
-    {
-      "hash": "6218678",
-      "date": "2025-12-24",
-      "type": "Fixed",
-      "description": "Auto-migrations create base schema and fix refresh_tokens type",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "2255c58",
+        "date": "2025-12-27",
+        "type": "New",
+        "description": "Add editable religion and collection headers with symbols",
+        "scope": null
+      },
       {
         "hash": "4006d05",
         "date": "2025-12-27",
@@ -701,13 +708,6 @@
         "date": "2025-12-24",
         "type": "New",
         "description": "Add TierBadge component with usage tracking",
-        "scope": null
-      },
-      {
-        "hash": "6218678",
-        "date": "2025-12-24",
-        "type": "Fixed",
-        "description": "Auto-migrations create base schema and fix refresh_tokens type",
         "scope": null
       }
     ]

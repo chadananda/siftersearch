@@ -125,13 +125,13 @@
     <div class="navbar-right">
       <!-- Nav links that progressively appear as space allows -->
       <nav class="navbar-nav" aria-label="Main navigation">
-        <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span class="nav-label">Chat</span>
-        </a>
         {#if auth.isAuthenticated}
+          <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="nav-label">Chat</span>
+          </a>
           <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -182,13 +182,13 @@
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu">
             <!-- Only show items that are currently hidden -->
-            <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Chat
-            </a>
             {#if auth.isAuthenticated}
+              <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Chat
+              </a>
               <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
