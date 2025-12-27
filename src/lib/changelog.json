@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T14:48:02.608Z",
+  "generated": "2025-12-27T14:53:10.544Z",
   "entries": [
+    {
+      "hash": "e1eb1c2",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Add grace period for rotated refresh tokens",
+      "scope": "auth"
+    },
     {
       "hash": "eef7226",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add settings page with password and preferences",
       "scope": null
-    },
-    {
-      "hash": "398578a",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add user profile page with edit functionality",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "e1eb1c2",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Add grace period for rotated refresh tokens",
+        "scope": "auth"
+      },
       {
         "hash": "eef7226",
         "date": "2025-12-27",
@@ -701,13 +708,6 @@
         "date": "2025-12-24",
         "type": "New",
         "description": "Add settings page with password and preferences",
-        "scope": null
-      },
-      {
-        "hash": "398578a",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add user profile page with edit functionality",
         "scope": null
       }
     ]

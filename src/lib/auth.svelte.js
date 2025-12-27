@@ -97,6 +97,10 @@ export async function logout() {
       const newUserId = 'user_' + crypto.randomUUID();
       localStorage.setItem(USER_ID_KEY, newUserId);
     }
+    // Redirect to home page after logout
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   }
 }
 

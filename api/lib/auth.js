@@ -76,14 +76,16 @@ export async function verifyRefreshToken(tokenId) {
   // If not found, check for recently revoked token (grace period for navigation race condition)
   // This handles the case where token was rotated but browser sent old cookie during navigation
   if (!token) {
+    // Calculate the cutoff time (now - grace period) in ISO format
+    const cutoffTime = new Date(Date.now() - REVOKE_GRACE_PERIOD_SECONDS * 1000).toISOString();
     token = await queryOne(
       `SELECT * FROM refresh_tokens
        WHERE id = ?
        AND revoked = 1
        AND revoked_at IS NOT NULL
        AND expires_at > datetime("now")
-       AND datetime(revoked_at, '+' || ? || ' seconds') > datetime("now")`,
-      [tokenId, REVOKE_GRACE_PERIOD_SECONDS]
+       AND revoked_at > ?`,
+      [tokenId, cutoffTime]
     );
   }
 
