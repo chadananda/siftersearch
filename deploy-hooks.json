@@ -42,6 +42,13 @@
     "timeout": 120000
   },
   {
+    "id": "2024-12-26-adjust-bahai-authority",
+    "description": "Adjust Bahá'í authority: Compilations/Core Pubs (8), Pilgrim Notes (7), Administrative (4)",
+    "command": "node scripts/sync-library-nodes.js --force",
+    "enabled": true,
+    "timeout": 120000
+  },
+  {
     "id": "2024-12-25-resegment-oversized",
     "description": "Re-segment paragraphs exceeding 1500 chars after AI segmentation update",
     "command": "node scripts/resegment-oversized.js",

@@ -64,12 +64,12 @@ function getDefaultAuthority(religion, collection = null) {
     "Bahai": {
       "Core Tablets": 10,
       "Core Talks": 9,
-      "Administrative": 8,
-      "Compilations": 7,
-      "Core Publications": 7,
+      "Compilations": 8,
+      "Core Publications": 8,
+      "Pilgrim Notes": 7,
       "Bahai Books": 5,
       "Historical": 4,
-      "Pilgrim Notes": 4,
+      "Administrative": 4,
       "Studies Papers": 3
     },
     "Islam": {
