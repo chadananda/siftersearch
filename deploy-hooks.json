@@ -49,6 +49,13 @@
     "timeout": 120000
   },
   {
+    "id": "2024-12-26-complete-bahai-authority",
+    "description": "Complete Bahá'í collection authority for all 19 collections",
+    "command": "node scripts/sync-library-nodes.js --force",
+    "enabled": true,
+    "timeout": 120000
+  },
+  {
     "id": "2024-12-26-fix-rtl-languages",
     "description": "Fix Arabic/Farsi documents incorrectly marked as English",
     "command": "node scripts/fix-rtl-languages.js",

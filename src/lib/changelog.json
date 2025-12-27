@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-27T04:28:55.700Z",
+  "generated": "2025-12-27T04:44:52.822Z",
   "entries": [
+    {
+      "hash": "a3f71f5",
+      "date": "2025-12-26",
+      "type": "Fixed",
+      "description": "Detect Arabic/Farsi language from content",
+      "scope": "ingester"
+    },
     {
       "hash": "ab2e822",
       "date": "2025-12-26",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use absolute paths for dotenv config loading",
       "scope": "env"
-    },
-    {
-      "hash": "bc83ec6",
-      "date": "2025-12-24",
-      "type": "Fixed",
-      "description": "Always sync admin password hash from env on startup",
-      "scope": "auth"
     }
   ],
   "grouped": {
     "2025-12-26": [
+      {
+        "hash": "a3f71f5",
+        "date": "2025-12-26",
+        "type": "Fixed",
+        "description": "Detect Arabic/Farsi language from content",
+        "scope": "ingester"
+      },
       {
         "hash": "ab2e822",
         "date": "2025-12-26",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Use absolute paths for dotenv config loading",
         "scope": "env"
-      },
-      {
-        "hash": "bc83ec6",
-        "date": "2025-12-24",
-        "type": "Fixed",
-        "description": "Always sync admin password hash from env on startup",
-        "scope": "auth"
       }
     ]
   }

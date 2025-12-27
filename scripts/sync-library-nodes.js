@@ -63,14 +63,24 @@ function getDefaultAuthority(religion, collection = null) {
   const collectionAuthority = {
     "Bahai": {
       "Core Tablets": 10,
+      "Core Tablet Translations": 10,
       "Core Talks": 9,
       "Compilations": 8,
       "Core Publications": 8,
       "Pilgrim Notes": 7,
-      "Bahai Books": 5,
-      "Historical": 4,
+      "Baha'i Books": 5,
+      "Constitutions": 5,
+      "Reference": 4,
+      "Baha'i Talks": 4,
       "Administrative": 4,
-      "Studies Papers": 3
+      "Legal": 4,
+      "Historical": 4,
+      "Studies Papers": 3,
+      "Study Guides": 3,
+      "Essays": 3,
+      "Baha'i Essays": 3,
+      "News": 2,
+      "Press": 2
     },
     "Islam": {
       "Quran": 10,
