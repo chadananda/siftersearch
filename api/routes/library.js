@@ -19,6 +19,7 @@ import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin } from '../lib/auth.js';
+import { chatCompletion } from '../lib/ai.js';
 
 export default async function libraryRoutes(fastify) {
 
@@ -165,7 +166,7 @@ export default async function libraryRoutes(fastify) {
     let nodes = [];
     try {
       nodes = await queryAll(`
-        SELECT id, parent_id, node_type, name, slug, description, overview,
+        SELECT id, parent_id, node_type, name, slug, symbol, description, overview,
                cover_image_url, authority_default, display_order, metadata
         FROM library_nodes
         ORDER BY display_order, name
@@ -242,6 +243,7 @@ export default async function libraryRoutes(fastify) {
         node_type: religion.node_type,
         name: religion.name,
         slug: religion.slug,
+        symbol: religion.symbol,
         description: religion.description,
         cover_image_url: religion.cover_image_url,
         authority_default: religion.authority_default,
@@ -262,7 +264,7 @@ export default async function libraryRoutes(fastify) {
     const meili = getMeili();
 
     const node = await queryOne(`
-      SELECT id, parent_id, node_type, name, slug, description, overview,
+      SELECT id, parent_id, node_type, name, slug, symbol, description, overview,
              cover_image_url, authority_default, display_order, metadata,
              created_at, updated_at
       FROM library_nodes WHERE id = ?
@@ -314,7 +316,7 @@ export default async function libraryRoutes(fastify) {
     const meili = getMeili();
 
     const node = await queryOne(`
-      SELECT id, parent_id, node_type, name, slug, description, overview,
+      SELECT id, parent_id, node_type, name, slug, symbol, description, overview,
              cover_image_url, authority_default, metadata, created_at, updated_at
       FROM library_nodes
       WHERE node_type = 'religion' AND slug = ?
@@ -494,6 +496,7 @@ export default async function libraryRoutes(fastify) {
         properties: {
           name: { type: 'string', minLength: 1 },
           slug: { type: 'string' },
+          symbol: { type: 'string', maxLength: 4 },
           description: { type: 'string' },
           overview: { type: 'string' },
           cover_image_url: { type: 'string' },
@@ -539,6 +542,108 @@ export default async function libraryRoutes(fastify) {
     logger.info({ nodeId: id, updates: Object.keys(updates) }, 'Library node updated');
 
     return { success: true, node };
+  });
+
+  /**
+   * Generate AI description for a library node (admin only)
+   * POST /nodes/:id/generate-description
+   */
+  fastify.post('/nodes/:id/generate-description', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'integer' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+    const meili = getMeili();
+
+    // Get the node
+    const node = await queryOne('SELECT * FROM library_nodes WHERE id = ?', [id]);
+    if (!node) {
+      throw ApiError.notFound('Library node not found');
+    }
+
+    // Get document count for context
+    let documentCount = 0;
+    let sampleTitles = [];
+
+    if (node.node_type === 'religion') {
+      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+        limit: 10,
+        filter: `religion = "${node.name}"`,
+        attributesToRetrieve: ['title', 'collection']
+      });
+      documentCount = result.estimatedTotalHits || 0;
+      sampleTitles = result.hits.map(h => h.title).slice(0, 5);
+    } else if (node.node_type === 'collection') {
+      // Get parent religion
+      const parent = await queryOne('SELECT name FROM library_nodes WHERE id = ?', [node.parent_id]);
+      if (parent) {
+        const result = await meili.index(INDEXES.DOCUMENTS).search('', {
+          limit: 10,
+          filter: `religion = "${parent.name}" AND collection = "${node.name}"`,
+          attributesToRetrieve: ['title', 'author']
+        });
+        documentCount = result.estimatedTotalHits || 0;
+        sampleTitles = result.hits.map(h => h.title).slice(0, 5);
+      }
+    }
+
+    // Build prompt based on node type
+    let prompt;
+    if (node.node_type === 'religion') {
+      prompt = `Generate a 2-3 sentence scholarly description for the "${node.name}" religious tradition in our interfaith library.
+
+Context:
+- This is a library containing sacred texts, scriptures, and scholarly works
+- We have ${documentCount} documents in this tradition
+- Sample titles: ${sampleTitles.join(', ') || 'various sacred texts'}
+
+Guidelines:
+- Briefly describe the tradition's origins, core teachings, and historical significance
+- Keep the tone scholarly but accessible
+- Do not use first person
+- Focus on what makes this tradition unique
+- Be respectful and objective
+
+Return ONLY the description text, no quotes or formatting.`;
+    } else {
+      prompt = `Generate a 2-3 sentence description for the "${node.name}" collection within our interfaith library.
+
+Context:
+- This collection contains ${documentCount} documents
+- Sample titles: ${sampleTitles.join(', ') || 'various texts'}
+
+Guidelines:
+- Describe what types of documents are in this collection
+- Explain the significance or importance of these texts
+- Keep the tone scholarly but accessible
+- Do not use first person
+
+Return ONLY the description text, no quotes or formatting.`;
+    }
+
+    try {
+      const result = await chatCompletion([
+        { role: 'user', content: prompt }
+      ], {
+        temperature: 0.7,
+        maxTokens: 200
+      });
+
+      const description = result.content.trim();
+
+      logger.info({ nodeId: id, nodeType: node.node_type, name: node.name }, 'Generated AI description');
+
+      return { description };
+    } catch (err) {
+      logger.error({ err, nodeId: id }, 'Failed to generate AI description');
+      throw ApiError.internal('Failed to generate description');
+    }
   });
 
   /**

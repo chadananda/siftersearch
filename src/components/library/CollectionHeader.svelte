@@ -52,6 +52,8 @@
 
     {#if node?.description}
       <p class="text-white/85 text-base leading-relaxed max-w-[600px]">{node.description}</p>
+    {:else if isAdmin}
+      <p class="text-white/50 text-base italic">No description. Click Edit to add one or generate with AI.</p>
     {/if}
 
     <div class="flex items-center gap-4 mt-2">

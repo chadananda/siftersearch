@@ -5,6 +5,8 @@
   import DocumentList from './DocumentList.svelte';
   import FilterPanel from './FilterPanel.svelte';
   import CollectionDetail from './CollectionDetail.svelte';
+  import ReligionHeader from './ReligionHeader.svelte';
+  import NodeEditModal from './NodeEditModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const auth = getAuthState();
@@ -13,6 +15,7 @@
   let treeData = $state([]);
   let documents = $state([]);
   let selectedNode = $state(null);
+  let selectedReligionNode = $state(null);  // Full religion node with symbol/description
   let loading = $state(true);
   let error = $state(null);
   let stats = $state(null);
@@ -21,6 +24,8 @@
   let showFilters = $state(false);
   let totalDocuments = $state(0);
   let currentOffset = $state(0);
+  let editModalOpen = $state(false);
+  let editingNode = $state(null);
   const LIMIT = 100;
 
   // Filters
@@ -45,6 +50,9 @@
   let showCollectionDetail = $derived(
     selectedNode?.node_type === 'collection' && selectedNode?.religionSlug
   );
+  let showReligionHeader = $derived(
+    selectedReligionNode && !showCollectionDetail
+  );
 
   async function fetchTree() {
     try {
@@ -52,12 +60,19 @@
       if (res.ok) {
         const data = await res.json();
         treeData = (data.nodes || []).map(religion => ({
+          id: religion.id,
           name: religion.name,
           slug: religion.slug,
+          symbol: religion.symbol,
+          description: religion.description,
           count: religion.document_count || 0,
           collections: (religion.children || []).map(c => ({
+            id: c.id,
             name: c.name,
             slug: c.slug,
+            description: c.description,
+            cover_image_url: c.cover_image_url,
+            authority_default: c.authority_default,
             count: c.document_count || 0,
             religionSlug: religion.slug,
             religionName: religion.name
@@ -119,16 +134,45 @@
   function handleTreeSelect(event) {
     const { religion, collection, node } = event.detail;
     filters = { ...filters, religion: religion || null, collection: collection || null };
+
     if (node?.node_type === 'collection') {
       selectedNode = node;
-    } else {
+      // Find the religion this collection belongs to
+      const religionData = treeData.find(r => r.name === religion);
+      selectedReligionNode = religionData || null;
+    } else if (node?.node_type === 'religion' || religion) {
+      // Religion selected (no collection)
       selectedNode = null;
+      // Find full religion data including symbol
+      const religionData = treeData.find(r => r.name === religion);
+      selectedReligionNode = religionData ? {
+        ...religionData,
+        node_type: 'religion',
+        collectionCount: religionData.collections?.length || 0
+      } : null;
+      fetchDocuments(true);
+    } else {
+      // Nothing selected, clear all
+      selectedNode = null;
+      selectedReligionNode = null;
       fetchDocuments(true);
     }
   }
 
+  function handleEditNode(node) {
+    editingNode = node;
+    editModalOpen = true;
+  }
+
+  function handleSaveNode(updatedNode) {
+    // Refresh tree data to get updated symbol/description
+    fetchTree();
+  }
+
   function clearFilters() {
     filters = { search: '', religion: null, collection: null, language: null, author: null, yearFrom: null, yearTo: null, status: 'all' };
+    selectedNode = null;
+    selectedReligionNode = null;
     fetchDocuments(true);
   }
 
@@ -181,7 +225,7 @@
       <CollectionDetail
         religionSlug={selectedNode.religionSlug}
         collectionSlug={selectedNode.slug}
-        onEdit={isAdmin ? () => console.log('Edit:', selectedNode) : null}
+        onEdit={isAdmin ? () => handleEditNode(selectedNode) : null}
       />
     {:else}
       <!-- Top bar -->
@@ -231,6 +275,16 @@
 
       <!-- Document list -->
       <div class="flex-1 overflow-y-auto p-4">
+        {#if showReligionHeader}
+          <ReligionHeader
+            religion={selectedReligionNode}
+            documentCount={totalDocuments}
+            collectionCount={selectedReligionNode?.collectionCount || 0}
+            {isAdmin}
+            onEdit={handleEditNode}
+          />
+        {/if}
+
         {#if loading && documents.length === 0}
           <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
             <svg class="w-8 h-8 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
@@ -264,3 +318,11 @@
     {/if}
   </main>
 </div>
+
+<!-- Edit Modal -->
+<NodeEditModal
+  node={editingNode}
+  isOpen={editModalOpen}
+  onClose={() => { editModalOpen = false; editingNode = null; }}
+  onSave={handleSaveNode}
+/>

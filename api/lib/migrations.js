@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 8;
+const CURRENT_VERSION = 9;
 
 /**
  * Get current database schema version
@@ -368,6 +368,37 @@ const migrations = {
     try { await query('CREATE UNIQUE INDEX idx_library_nodes_unique ON library_nodes(parent_id, slug)'); } catch { /* exists */ }
 
     logger.info('Library nodes table created for collection hierarchy');
+  },
+
+  // Version 9: Add symbol column to library_nodes for religion icons
+  9: async () => {
+    try {
+      await query('ALTER TABLE library_nodes ADD COLUMN symbol TEXT');
+      logger.info('Added symbol column to library_nodes');
+    } catch {
+      // Column already exists
+    }
+
+    // Seed default symbols for common religions
+    const RELIGION_SYMBOLS = {
+      "Bahá'í": "🟙",      // 9-pointed star (U+1F7D9)
+      "Islam": "☪",       // Star and crescent
+      "Christianity": "✝", // Latin cross
+      "Judaism": "✡",     // Star of David
+      "Buddhism": "☸",    // Dharma wheel
+      "Hinduism": "ॐ",    // Om symbol
+      "Zoroastrianism": "𐎠", // Old Persian symbol
+      "Sikhism": "☬",     // Khanda
+    };
+
+    for (const [name, symbol] of Object.entries(RELIGION_SYMBOLS)) {
+      await query(
+        "UPDATE library_nodes SET symbol = ? WHERE node_type = 'religion' AND name = ? AND symbol IS NULL",
+        [symbol, name]
+      );
+    }
+
+    logger.info('Religion symbols seeded');
   },
 };
 
