@@ -228,7 +228,8 @@ function extractMetadataFromPath(filePath, basePath) {
     religion,
     collection,
     year,
-    language: 'en', // Default to English
+    // Don't set language here - let frontmatter take precedence
+    // language detection happens in indexer.js from frontmatter
     description: `From ${relativePath}`
   };
 }

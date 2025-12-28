@@ -19,6 +19,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import { getAuthority } from '../lib/authority.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
+import { detectLanguageFeatures } from './segmenter.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -324,12 +325,20 @@ export async function indexDocumentFromText(text, metadata = {}) {
   const finalAuthor = extractedMeta.author ||
     (metadata.author && metadata.author !== 'Unknown' ? metadata.author : author);
 
+  // Detect language from content - this is more reliable than frontmatter
+  // Arabic/Farsi detection should OVERRIDE frontmatter 'en' since it's often wrong
+  const detectedLang = detectLanguageFeatures(content);
+  const contentLanguage = detectedLang.language !== 'en' ? detectedLang.language : null;
+
+  // Language priority: content detection (for RTL) > frontmatter > metadata > default
+  const finalLanguage = contentLanguage || extractedMeta.language || metadata.language || language;
+
   const finalMeta = {
     title: metadata.title || extractedMeta.title || title,
     author: finalAuthor,
     religion: metadata.religion || extractedMeta.religion || religion,
     collection: metadata.collection || extractedMeta.collection || collection,
-    language: metadata.language || extractedMeta.language || language,
+    language: finalLanguage,
     year: metadata.year || extractedMeta.year || year,
     description: metadata.description || extractedMeta.description || description
   };

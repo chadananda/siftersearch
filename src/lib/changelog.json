@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T23:11:07.776Z",
+  "generated": "2025-12-28T23:19:14.832Z",
   "entries": [
+    {
+      "hash": "8c4be44",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add content-type aware translation styles",
+      "scope": "translation"
+    },
     {
       "hash": "b2bc28d",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prefer frontmatter author over path-extracted 'Unknown'",
       "scope": "indexer"
-    },
-    {
-      "hash": "35ea568",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Increase Meilisearch maxTotalHits from 1000 to 50000",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "8c4be44",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add content-type aware translation styles",
+        "scope": "translation"
+      },
       {
         "hash": "b2bc28d",
         "date": "2025-12-28",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Prefer frontmatter author over path-extracted 'Unknown'",
         "scope": "indexer"
-      },
-      {
-        "hash": "35ea568",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Increase Meilisearch maxTotalHits from 1000 to 50000",
-        "scope": null
       }
     ]
   }
