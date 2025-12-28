@@ -6,6 +6,17 @@
  * checks their content for Arabic/Farsi script, and updates the language field.
  */
 
+import dotenv from 'dotenv';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..');
+
+// Load env files (same as deploy-hooks.js)
+dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
+dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
+
 import { query, queryAll } from '../api/lib/db.js';
 import { getMeili, INDEXES } from '../api/lib/search.js';
 
