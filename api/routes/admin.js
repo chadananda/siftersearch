@@ -417,14 +417,14 @@ export default async function adminRoutes(fastify) {
         libraryNodes: nodes?.count || 0
       })).catch(() => ({ docs: 0, content: 0, users: 0, libraryNodes: 0 })),
       // Meilisearch stats
-      getSearchStats().catch(() => ({ documents: { numberOfDocuments: 0 }, paragraphs: { numberOfDocuments: 0 } }))
+      getSearchStats().catch(() => ({ totalDocuments: 0, totalPassages: 0 }))
     ]);
 
     return {
       database: dbStats,
       meilisearch: {
-        documents: searchStats.documents?.numberOfDocuments || 0,
-        paragraphs: searchStats.paragraphs?.numberOfDocuments || 0
+        documents: searchStats.totalDocuments || 0,
+        paragraphs: searchStats.totalPassages || 0
       },
       backgroundTasks: {
         running: [...backgroundTasks.values()].filter(t => t.status === 'running').length,
@@ -773,14 +773,15 @@ export default async function adminRoutes(fastify) {
       const stats = await getSearchStats();
       return {
         documents: {
-          count: stats.documents?.numberOfDocuments || 0,
-          isIndexing: stats.documents?.isIndexing || false,
-          fieldDistribution: stats.documents?.fieldDistribution || {}
+          count: stats.totalDocuments || 0,
+          isIndexing: stats.indexing || false,
+          religions: stats.religions || 0,
+          collections: stats.collections || 0
         },
         paragraphs: {
-          count: stats.paragraphs?.numberOfDocuments || 0,
-          isIndexing: stats.paragraphs?.isIndexing || false,
-          fieldDistribution: stats.paragraphs?.fieldDistribution || {}
+          count: stats.totalPassages || 0,
+          isIndexing: stats.indexing || false,
+          collectionCounts: stats.collectionCounts || {}
         }
       };
     } catch (err) {
