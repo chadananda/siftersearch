@@ -21,6 +21,11 @@
 <header class="relative min-h-[160px] rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-accent via-accent/60 to-surface-1">
   <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-surface-1/50"></div>
 
+  <!-- Large artistic background symbol -->
+  <div class="absolute -right-8 -bottom-8 text-[12rem] leading-none text-white/[0.07] font-normal select-none pointer-events-none">
+    {symbol}
+  </div>
+
   <div class="relative z-10 p-6 flex flex-col gap-3">
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-[0.8125rem]">

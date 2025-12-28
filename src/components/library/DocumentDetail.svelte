@@ -193,7 +193,7 @@
     <div class="detail-content">
       {#if loading && paragraphs.length === 0}
         <div class="loading-state">
-          <svg class="spinner" viewBox="0 0 24 24">
+          <svg class="spinner" viewBox="0 0 24 24" width="32" height="32">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
           </svg>
           Loading...

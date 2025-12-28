@@ -6,6 +6,7 @@
   import FilterPanel from './FilterPanel.svelte';
   import CollectionDetail from './CollectionDetail.svelte';
   import ReligionHeader from './ReligionHeader.svelte';
+  import LibraryHeader from './LibraryHeader.svelte';
   import NodeEditModal from './NodeEditModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -53,6 +54,12 @@
   let showReligionHeader = $derived(
     selectedReligionNode && !showCollectionDetail
   );
+  let showLibraryHeader = $derived(
+    !showCollectionDetail && !showReligionHeader
+  );
+
+  // Debounce timer for search
+  let searchDebounceTimer = null;
 
   async function fetchTree() {
     try {
@@ -230,7 +237,13 @@
     {:else}
       <!-- Document list -->
       <div class="flex-1 overflow-y-auto p-4">
-        {#if showReligionHeader}
+        {#if showLibraryHeader}
+          <LibraryHeader
+            totalDocuments={stats?.totalDocuments || totalDocuments}
+            totalReligions={treeData.length}
+            totalCollections={treeData.reduce((sum, r) => sum + (r.collections?.length || 0), 0)}
+          />
+        {:else if showReligionHeader}
           <ReligionHeader
             religion={selectedReligionNode}
             documentCount={totalDocuments}
@@ -249,9 +262,12 @@
             <input
               type="text"
               class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder="Search documents..."
+              placeholder="Search by title or author..."
               bind:value={filters.search}
-              onkeydown={(e) => e.key === 'Enter' && fetchDocuments(true)}
+              oninput={() => {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => fetchDocuments(true), 300);
+              }}
             />
             {#if filters.search}
               <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { filters.search = ''; fetchDocuments(true); }}>

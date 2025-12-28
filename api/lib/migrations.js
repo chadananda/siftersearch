@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 10;
+const CURRENT_VERSION = 11;
 
 /**
  * Get current database schema version
@@ -410,6 +410,15 @@ const migrations = {
     } catch {
       // Column already exists
     }
+  },
+
+  // Version 11: Ensure Baha'i symbol is set (may have been missed if node was created after migration 9)
+  11: async () => {
+    // Force update Baha'i symbol regardless of current value
+    await query(
+      "UPDATE library_nodes SET symbol = '🟙' WHERE node_type = 'religion' AND name LIKE '%Bah%'"
+    );
+    logger.info('Bahai symbol updated to 🟙 (U+1F7D9)');
   },
 };
 
