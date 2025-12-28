@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T14:20:23.024Z",
+  "generated": "2025-12-28T14:24:40.795Z",
   "entries": [
+    {
+      "hash": "f648734",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Add v14 migration to fix content table schema",
+      "scope": null
+    },
     {
       "hash": "b120eb4",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add collection detail pages with hierarchy support",
       "scope": "library"
-    },
-    {
-      "hash": "5191177",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Add About to progressive links, hide hamburger when all visible",
-      "scope": "nav"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "f648734",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Add v14 migration to fix content table schema",
+        "scope": null
+      },
       {
         "hash": "b120eb4",
         "date": "2025-12-28",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add collection detail pages with hierarchy support",
         "scope": "library"
-      },
-      {
-        "hash": "5191177",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Add About to progressive links, hide hamburger when all visible",
-        "scope": "nav"
       }
     ]
   }
