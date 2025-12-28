@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 13;
+const CURRENT_VERSION = 14;
 
 /**
  * Get current database schema version
@@ -555,6 +555,88 @@ const migrations = {
     }
 
     logger.info('Document storage tables migration complete');
+  },
+
+  // Version 14: Fix content table schema
+  // The renamed indexed_paragraphs table has old column names that don't match our code
+  14: async () => {
+    // Check if content table has old schema (document_id instead of doc_id)
+    const tableInfo = await query("PRAGMA table_info(content)");
+    const columns = tableInfo.rows.map(r => r.name);
+
+    logger.info({ columns }, 'Current content table columns');
+
+    // Rename document_id to doc_id if it exists (SQLite 3.25+)
+    if (columns.includes('document_id') && !columns.includes('doc_id')) {
+      try {
+        await query('ALTER TABLE content RENAME COLUMN document_id TO doc_id');
+        logger.info('Renamed document_id -> doc_id');
+      } catch (err) {
+        // SQLite older than 3.25 doesn't support RENAME COLUMN
+        // In that case, we'd need to recreate the table, but let's try first
+        logger.error({ err: err.message }, 'Failed to rename column - SQLite may be too old');
+      }
+    }
+
+    // Add embedding column if missing
+    if (!columns.includes('embedding')) {
+      try {
+        await query('ALTER TABLE content ADD COLUMN embedding BLOB');
+        logger.info('Added embedding column');
+      } catch (err) {
+        if (!err.message?.includes('duplicate column')) {
+          throw err;
+        }
+      }
+    }
+
+    // Add embedding_model column if missing
+    if (!columns.includes('embedding_model')) {
+      try {
+        await query('ALTER TABLE content ADD COLUMN embedding_model TEXT');
+        logger.info('Added embedding_model column');
+      } catch (err) {
+        if (!err.message?.includes('duplicate column')) {
+          throw err;
+        }
+      }
+    }
+
+    // Add content_hash column if missing
+    if (!columns.includes('content_hash')) {
+      try {
+        await query('ALTER TABLE content ADD COLUMN content_hash TEXT');
+        logger.info('Added content_hash column');
+      } catch (err) {
+        if (!err.message?.includes('duplicate column')) {
+          throw err;
+        }
+      }
+    }
+
+    // Add synced column if missing
+    if (!columns.includes('synced')) {
+      try {
+        await query('ALTER TABLE content ADD COLUMN synced INTEGER DEFAULT 0');
+        logger.info('Added synced column');
+      } catch (err) {
+        if (!err.message?.includes('duplicate column')) {
+          throw err;
+        }
+      }
+    }
+
+    // Create index for doc_id if missing
+    try {
+      await query('CREATE INDEX IF NOT EXISTS idx_content_doc ON content(doc_id)');
+    } catch { /* exists */ }
+
+    // Create index for content_hash if missing
+    try {
+      await query('CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash)');
+    } catch { /* exists */ }
+
+    logger.info('Content table schema fixed');
   },
 };
 

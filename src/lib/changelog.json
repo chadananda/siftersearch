@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T14:16:40.145Z",
+  "generated": "2025-12-28T14:20:23.024Z",
   "entries": [
+    {
+      "hash": "b120eb4",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
+      "scope": null
+    },
     {
       "hash": "1d95af6",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add About to progressive links, hide hamburger when all visible",
       "scope": "nav"
-    },
-    {
-      "hash": "00e147d",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Align links right, restrict Library/Community to logged-in users",
-      "scope": "nav"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "b120eb4",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
+        "scope": null
+      },
       {
         "hash": "1d95af6",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Add About to progressive links, hide hamburger when all visible",
-        "scope": "nav"
-      },
-      {
-        "hash": "00e147d",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Align links right, restrict Library/Community to logged-in users",
         "scope": "nav"
       }
     ]
