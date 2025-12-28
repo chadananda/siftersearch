@@ -17,14 +17,18 @@
  * GET /api/admin/index/status - Get indexing queue status
  *
  * Server Management (requires admin JWT or X-Internal-Key header):
- * GET /api/admin/server/status - Get database/Meilisearch stats
+ * GET /api/admin/server/status - Overview: database + Meilisearch stats + task counts
+ * GET /api/admin/server/tables - List database tables with row counts
+ * GET /api/admin/server/indexes - Meilisearch index details and field distribution
  * POST /api/admin/server/migrate - Run database migrations
+ * POST /api/admin/server/validate - Validate script parameters without running
  * POST /api/admin/server/reindex - Re-index library (filters: religion, collection, path, documentId)
  * POST /api/admin/server/fix-languages - Fix RTL language detection (filters: limit, religion, dryRun)
  * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
- * GET /api/admin/server/tasks - Get status of background tasks
+ * GET /api/admin/server/tasks - List all background tasks with status
  * GET /api/admin/server/tasks/:taskId - Get detailed task output
- * DELETE /api/admin/server/tasks - Clear completed tasks
+ * POST /api/admin/server/tasks/:taskId/cancel - Cancel a running task
+ * DELETE /api/admin/server/tasks - Clear completed tasks from memory
  */
 
 import { query, queryOne, queryAll } from '../lib/db.js';
@@ -454,7 +458,8 @@ export default async function adminRoutes(fastify) {
       startedAt: new Date().toISOString(),
       output: [],
       errors: [],
-      exitCode: null
+      exitCode: null,
+      childProcess: null
     };
 
     backgroundTasks.set(taskId, task);
@@ -463,6 +468,9 @@ export default async function adminRoutes(fastify) {
       cwd: process.cwd(),
       env: { ...process.env, FORCE_COLOR: '0' }
     });
+
+    // Store reference for cancellation
+    task.childProcess = child;
 
     child.stdout.on('data', (data) => {
       const lines = data.toString().split('\n').filter(l => l.trim());
@@ -479,15 +487,20 @@ export default async function adminRoutes(fastify) {
     });
 
     child.on('close', (code) => {
-      task.status = code === 0 ? 'completed' : 'failed';
+      // Don't override cancelled status
+      if (task.status === 'running') {
+        task.status = code === 0 ? 'completed' : 'failed';
+      }
       task.exitCode = code;
-      task.completedAt = new Date().toISOString();
-      logger.info({ taskId, exitCode: code }, 'Background task completed');
+      task.completedAt = task.completedAt || new Date().toISOString();
+      task.childProcess = null; // Clean up reference
+      logger.info({ taskId, exitCode: code, status: task.status }, 'Background task completed');
     });
 
     child.on('error', (err) => {
       task.status = 'failed';
       task.errors.push(err.message);
+      task.childProcess = null;
       logger.error({ taskId, error: err.message }, 'Background task error');
     });
 
@@ -686,5 +699,136 @@ export default async function adminRoutes(fastify) {
       }
     }
     return { cleared, remaining: backgroundTasks.size };
+  });
+
+  /**
+   * Cancel a running task (kills the child process)
+   */
+  fastify.post('/server/tasks/:taskId/cancel', { preHandler: requireInternal }, async (request) => {
+    const { taskId } = request.params;
+    const task = backgroundTasks.get(taskId);
+
+    if (!task) {
+      throw ApiError.notFound('Task not found');
+    }
+
+    if (task.status !== 'running') {
+      throw ApiError.badRequest(`Task is not running (status: ${task.status})`);
+    }
+
+    // Kill the child process if it exists
+    if (task.childProcess && !task.childProcess.killed) {
+      task.childProcess.kill('SIGTERM');
+      task.status = 'cancelled';
+      task.completedAt = new Date().toISOString();
+      logger.info({ taskId }, 'Task cancelled via API');
+    }
+
+    return {
+      success: true,
+      taskId,
+      status: task.status
+    };
+  });
+
+  /**
+   * Get database table info for debugging
+   */
+  fastify.get('/server/tables', { preHandler: requireInternal }, async () => {
+    const tables = await queryAll(`
+      SELECT name, type FROM sqlite_master
+      WHERE type IN ('table', 'index')
+      ORDER BY type, name
+    `);
+
+    // Get row counts for each table
+    const tableCounts = {};
+    for (const t of tables.filter(t => t.type === 'table' && !t.name.startsWith('sqlite_'))) {
+      try {
+        const result = await queryOne(`SELECT COUNT(*) as count FROM "${t.name}"`);
+        tableCounts[t.name] = result?.count || 0;
+      } catch {
+        tableCounts[t.name] = 'error';
+      }
+    }
+
+    return {
+      tables: tables.filter(t => t.type === 'table').map(t => t.name),
+      indexes: tables.filter(t => t.type === 'index').map(t => t.name),
+      counts: tableCounts
+    };
+  });
+
+  /**
+   * Get Meilisearch index info for debugging
+   */
+  fastify.get('/server/indexes', { preHandler: requireInternal }, async () => {
+    try {
+      const stats = await getSearchStats();
+      return {
+        documents: {
+          count: stats.documents?.numberOfDocuments || 0,
+          isIndexing: stats.documents?.isIndexing || false,
+          fieldDistribution: stats.documents?.fieldDistribution || {}
+        },
+        paragraphs: {
+          count: stats.paragraphs?.numberOfDocuments || 0,
+          isIndexing: stats.paragraphs?.isIndexing || false,
+          fieldDistribution: stats.paragraphs?.fieldDistribution || {}
+        }
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  /**
+   * Validate script parameters without running (dry validation)
+   */
+  fastify.post('/server/validate', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['script'],
+        properties: {
+          script: { type: 'string', enum: ['reindex', 'fix-languages', 'populate-translations'] },
+          params: { type: 'object' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { script, params = {} } = request.body;
+
+    const validation = { valid: true, warnings: [], errors: [] };
+
+    // Validate based on script type
+    switch (script) {
+      case 'reindex':
+        if (params.religion && params.collection) {
+          validation.warnings.push('Both religion and collection specified - will filter by both');
+        }
+        if (params.documentId && (params.religion || params.collection || params.path)) {
+          validation.warnings.push('documentId specified - other filters will be ignored');
+        }
+        break;
+
+      case 'fix-languages':
+        if (params.dryRun) {
+          validation.warnings.push('Dry run mode - no changes will be made');
+        }
+        break;
+
+      case 'populate-translations':
+        if (!params.limit && !params.documentId) {
+          validation.warnings.push('No limit or documentId - will process all documents');
+        }
+        if (params.force) {
+          validation.warnings.push('Force mode - will regenerate existing translations');
+        }
+        break;
+    }
+
+    return validation;
   });
 }

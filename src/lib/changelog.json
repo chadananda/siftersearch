@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T13:16:21.019Z",
+  "generated": "2025-12-28T13:18:13.070Z",
   "entries": [
+    {
+      "hash": "4a82bc1",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add granular server management API controls",
+      "scope": null
+    },
     {
       "hash": "05045cd",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Align nav left, circular hamburger, Connect instead of Sign In",
       "scope": "navbar"
-    },
-    {
-      "hash": "6031995",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Consolidate user menu and rename Search to Chat",
-      "scope": "navbar"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "4a82bc1",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add granular server management API controls",
+        "scope": null
+      },
       {
         "hash": "05045cd",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "New",
         "description": "Align nav left, circular hamburger, Connect instead of Sign In",
-        "scope": "navbar"
-      },
-      {
-        "hash": "6031995",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Consolidate user menu and rename Search to Chat",
         "scope": "navbar"
       }
     ]
