@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T13:29:59.818Z",
+  "generated": "2025-12-28T13:32:50.006Z",
   "entries": [
+    {
+      "hash": "813600e",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Allow internal API key auth for server management routes",
+      "scope": null
+    },
     {
       "hash": "5db303c",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add doctrinal weight ranking to search results",
       "scope": "authority"
-    },
-    {
-      "hash": "7b19248",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Improve library browser UI and fix indexing indicator",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "813600e",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Allow internal API key auth for server management routes",
+        "scope": null
+      },
       {
         "hash": "5db303c",
         "date": "2025-12-28",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add doctrinal weight ranking to search results",
         "scope": "authority"
-      },
-      {
-        "hash": "7b19248",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Improve library browser UI and fix indexing indicator",
-        "scope": "library"
       }
     ]
   }

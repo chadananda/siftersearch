@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 12;
+const CURRENT_VERSION = 13;
 
 /**
  * Get current database schema version
@@ -479,6 +479,82 @@ const migrations = {
     try { await query('CREATE INDEX idx_content_synced ON content(synced)'); } catch { /* exists */ }
 
     logger.info('Document storage tables created (docs, content)');
+  },
+
+  // Version 13: Rename legacy table names to new names if they exist
+  // Handles servers that ran old v12 with indexed_documents/indexed_paragraphs
+  13: async () => {
+    // Check if old tables exist and new tables don't
+    const oldDocsExists = await queryOne(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='indexed_documents'
+    `);
+    const newDocsExists = await queryOne(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='docs'
+    `);
+
+    if (oldDocsExists && !newDocsExists) {
+      logger.info('Renaming indexed_documents -> docs');
+      await query('ALTER TABLE indexed_documents RENAME TO docs');
+    }
+
+    const oldContentExists = await queryOne(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='indexed_paragraphs'
+    `);
+    const newContentExists = await queryOne(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='content'
+    `);
+
+    if (oldContentExists && !newContentExists) {
+      logger.info('Renaming indexed_paragraphs -> content');
+      await query('ALTER TABLE indexed_paragraphs RENAME TO content');
+    }
+
+    // If neither old nor new tables exist, create the new ones
+    if (!oldDocsExists && !newDocsExists) {
+      await query(`
+        CREATE TABLE IF NOT EXISTS docs (
+          id TEXT PRIMARY KEY,
+          file_path TEXT UNIQUE,
+          file_hash TEXT,
+          title TEXT,
+          author TEXT,
+          religion TEXT,
+          collection TEXT,
+          language TEXT DEFAULT 'en',
+          year INTEGER,
+          description TEXT,
+          paragraph_count INTEGER DEFAULT 0,
+          source_file TEXT,
+          cover_url TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
+
+    if (!oldContentExists && !newContentExists) {
+      await query(`
+        CREATE TABLE IF NOT EXISTS content (
+          id TEXT PRIMARY KEY,
+          doc_id TEXT NOT NULL,
+          paragraph_index INTEGER NOT NULL,
+          text TEXT NOT NULL,
+          content_hash TEXT,
+          heading TEXT,
+          blocktype TEXT DEFAULT 'paragraph',
+          translation TEXT,
+          context TEXT,
+          embedding BLOB,
+          embedding_model TEXT,
+          synced INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (doc_id) REFERENCES docs(id) ON DELETE CASCADE
+        )
+      `);
+    }
+
+    logger.info('Document storage tables migration complete');
   },
 };
 
