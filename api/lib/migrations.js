@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 11;
+const CURRENT_VERSION = 12;
 
 /**
  * Get current database schema version
@@ -419,6 +419,87 @@ const migrations = {
       "UPDATE library_nodes SET symbol = '🟙' WHERE node_type = 'religion' AND name LIKE '%Bah%'"
     );
     logger.info('Bahai symbol updated to 🟙 (U+1F7D9)');
+  },
+
+  // Version 12: Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)
+  // These tables store the source of truth for document data, separate from Meilisearch indexes
+  // This allows re-indexing without losing expensive processing (translations, context, embeddings)
+  12: async () => {
+    // Create indexed_documents table - stores document metadata
+    await query(`
+      CREATE TABLE IF NOT EXISTS indexed_documents (
+        id TEXT PRIMARY KEY,
+        file_path TEXT UNIQUE,
+        file_hash TEXT,
+        title TEXT,
+        author TEXT,
+        religion TEXT,
+        collection TEXT,
+        language TEXT DEFAULT 'en',
+        year INTEGER,
+        description TEXT,
+        paragraph_count INTEGER DEFAULT 0,
+        source_file TEXT,
+        cover_url TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexed_paragraphs table - stores segmented paragraph data
+    await query(`
+      CREATE TABLE IF NOT EXISTS indexed_paragraphs (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        paragraph_index INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        content_hash TEXT,
+        heading TEXT,
+        title TEXT,
+        author TEXT,
+        religion TEXT,
+        collection TEXT,
+        language TEXT DEFAULT 'en',
+        year INTEGER,
+        blocktype TEXT DEFAULT 'paragraph',
+        translation TEXT,
+        context TEXT,
+        embedded INTEGER DEFAULT 0,
+        synced INTEGER DEFAULT 0,
+        embedding_error TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (document_id) REFERENCES indexed_documents(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Create paragraph_embeddings table - stores expensive vector embeddings
+    // Separate table to allow selective embedding regeneration
+    await query(`
+      CREATE TABLE IF NOT EXISTS paragraph_embeddings (
+        paragraph_id TEXT PRIMARY KEY,
+        embedding BLOB,
+        model TEXT,
+        dimensions INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paragraph_id) REFERENCES indexed_paragraphs(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Create indexes for efficient queries
+    try { await query('CREATE INDEX idx_docs_file_path ON indexed_documents(file_path)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_docs_religion ON indexed_documents(religion)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_docs_collection ON indexed_documents(collection)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_docs_language ON indexed_documents(language)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_docs_author ON indexed_documents(author)'); } catch { /* exists */ }
+
+    try { await query('CREATE INDEX idx_paras_document ON indexed_paragraphs(document_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_paras_content_hash ON indexed_paragraphs(content_hash)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_paras_embedded ON indexed_paragraphs(embedded)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_paras_synced ON indexed_paragraphs(synced)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_paras_language ON indexed_paragraphs(language)'); } catch { /* exists */ }
+
+    logger.info('Document storage tables created (indexed_documents, indexed_paragraphs, paragraph_embeddings)');
   },
 };
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T03:36:53.189Z",
+  "generated": "2025-12-28T03:57:44.301Z",
   "entries": [
+    {
+      "hash": "88fcc34",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Rewrite RTL language fix to use Meilisearch only",
+      "scope": null
+    },
     {
       "hash": "fba7269",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add selective re-segmentation for oversized paragraphs",
       "scope": "scripts"
-    },
-    {
-      "hash": "8dc72a0",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add AI semantic segmentation for all oversized content",
-      "scope": "ingester"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "88fcc34",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Rewrite RTL language fix to use Meilisearch only",
+        "scope": null
+      },
       {
         "hash": "fba7269",
         "date": "2025-12-27",
@@ -700,13 +707,6 @@
         "type": "New",
         "description": "Add selective re-segmentation for oversized paragraphs",
         "scope": "scripts"
-      },
-      {
-        "hash": "8dc72a0",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add AI semantic segmentation for all oversized content",
-        "scope": "ingester"
       }
     ]
   }
