@@ -50,7 +50,9 @@
         onclick={() => { toggleReligion(religion.name); selectReligion(religion); }}
       >
         <span class="flex items-center gap-3 flex-1 truncate">
-          {#if religion.symbol}
+          {#if religion.name?.toLowerCase().includes('baha')}
+            <img src="/bahai-star.svg" alt="Baha'i" class="w-8 h-8 {isExpanded ? 'invert' : ''}" />
+          {:else if religion.symbol}
             <span class="text-3xl leading-none">{religion.symbol}</span>
           {/if}
           <span class="truncate">{religion.name}</span>

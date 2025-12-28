@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T03:02:18.969Z",
+  "generated": "2025-12-28T03:20:16.357Z",
   "entries": [
+    {
+      "hash": "abe2ee0",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Prioritize Arabic/Farsi detection over frontmatter language",
+      "scope": null
+    },
     {
       "hash": "ebda30a",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add community forum with threaded discussions",
       "scope": "forum"
-    },
-    {
-      "hash": "c183234",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add referral dashboard with stats, QR code, and share buttons",
-      "scope": "referral"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "abe2ee0",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Prioritize Arabic/Farsi detection over frontmatter language",
+        "scope": null
+      },
       {
         "hash": "ebda30a",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add community forum with threaded discussions",
         "scope": "forum"
-      },
-      {
-        "hash": "c183234",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add referral dashboard with stats, QR code, and share buttons",
-        "scope": "referral"
       }
     ]
   }

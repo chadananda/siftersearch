@@ -16,14 +16,19 @@
   const symbol = $derived(religion?.symbol || '📚');
   const name = $derived(religion?.name || 'Unknown');
   const description = $derived(religion?.description || '');
+  const isBahai = $derived(name?.toLowerCase().includes('baha'));
 </script>
 
 <header class="relative min-h-[160px] rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-accent via-accent/60 to-surface-1">
   <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-surface-1/50"></div>
 
   <!-- Large artistic background symbol -->
-  <div class="absolute -right-8 -bottom-8 text-[12rem] leading-none text-white/[0.07] font-normal select-none pointer-events-none">
-    {symbol}
+  <div class="absolute -right-8 -bottom-8 select-none pointer-events-none">
+    {#if isBahai}
+      <img src="/bahai-star.svg" alt="" class="w-48 h-48 opacity-[0.07] invert" />
+    {:else}
+      <span class="text-[12rem] leading-none text-white/[0.07] font-normal">{symbol}</span>
+    {/if}
   </div>
 
   <div class="relative z-10 p-6 flex flex-col gap-3">
@@ -42,7 +47,11 @@
     <!-- Title row with symbol -->
     <div class="flex items-center gap-4">
       <div class="w-16 h-16 flex items-center justify-center bg-white/15 backdrop-blur rounded-xl border border-white/20 shrink-0">
-        <span class="text-4xl">{symbol}</span>
+        {#if isBahai}
+          <img src="/bahai-star.svg" alt="Baha'i" class="w-10 h-10 invert" />
+        {:else}
+          <span class="text-4xl">{symbol}</span>
+        {/if}
       </div>
       <div class="flex-1">
         <div class="flex items-center gap-3">
