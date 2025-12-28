@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T02:54:19.779Z",
+  "generated": "2025-12-28T03:02:18.969Z",
   "entries": [
+    {
+      "hash": "ebda30a",
+      "date": "2025-12-27",
+      "type": "New",
+      "description": "Library UI improvements - artistic headers, larger symbols, Baha'i fix",
+      "scope": null
+    },
     {
       "hash": "c556f3a",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add referral dashboard with stats, QR code, and share buttons",
       "scope": "referral"
-    },
-    {
-      "hash": "ad696e1",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add audio player component for patron+ users",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "ebda30a",
+        "date": "2025-12-27",
+        "type": "New",
+        "description": "Library UI improvements - artistic headers, larger symbols, Baha'i fix",
+        "scope": null
+      },
       {
         "hash": "c556f3a",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add referral dashboard with stats, QR code, and share buttons",
         "scope": "referral"
-      },
-      {
-        "hash": "ad696e1",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add audio player component for patron+ users",
-        "scope": null
       }
     ]
   }

@@ -274,8 +274,8 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   // Parse frontmatter using gray-matter (handles detection automatically)
   const { content, metadata: extractedMeta } = parseMarkdownFrontmatter(text);
 
-  // Detect language from content if not specified in frontmatter
-  // This catches Arabic/Farsi documents that don't have a language field
+  // Detect language from content - this is more reliable than frontmatter
+  // Arabic/Farsi detection should OVERRIDE frontmatter 'en' since it's often wrong
   const detectedLang = detectLanguageFeatures(content);
   const contentLanguage = detectedLang.language !== 'en' ? detectedLang.language : null;
 
@@ -288,8 +288,9 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
     religion: extractedMeta.religion || metadata.religion || 'General',
     collection: extractedMeta.collection || metadata.collection || 'General',
-    // Language: frontmatter > detected from content > filename metadata > default 'en'
-    language: extractedMeta.language || contentLanguage || metadata.language || 'en',
+    // Language: detected Arabic/Farsi > frontmatter > filename metadata > default 'en'
+    // Content detection takes priority because frontmatter often incorrectly says 'en' for RTL texts
+    language: contentLanguage || extractedMeta.language || metadata.language || 'en',
     year: extractedMeta.year || metadata.year || null,
     description: extractedMeta.description || metadata.description || ''
   };
