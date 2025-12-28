@@ -105,9 +105,13 @@ export async function createServer(opts = {}) {
   let updateTriggered = false;
 
   // Version check hook - trigger auto-update if client is newer
+  // Only triggers for authenticated requests to prevent DDOS abuse
   server.addHook('onRequest', async (request) => {
     const clientVersion = request.headers['x-client-version'];
-    if (!clientVersion || updateTriggered) return;
+    const hasAuth = request.headers.authorization?.startsWith('Bearer ');
+
+    // Only trigger for authenticated requests with version header
+    if (!clientVersion || updateTriggered || !hasAuth) return;
 
     // Compare versions
     const clientParts = clientVersion.split('.').map(Number);
