@@ -193,12 +193,12 @@ export const requireAuth = authenticate;
 
 /**
  * Internal API key authentication for server-to-server operations.
- * Checks for INTERNAL_API_KEY header first, falls back to admin JWT.
+ * Checks for X-Internal-Key header (using DEPLOY_SECRET), falls back to admin JWT.
  * Use this for endpoints that need to be called by deploy scripts or other servers.
  */
 export async function requireInternal(request, reply) {
   const internalKey = request.headers['x-internal-key'];
-  const expectedKey = process.env.INTERNAL_API_KEY;
+  const expectedKey = process.env.DEPLOY_SECRET;
 
   // If internal key is configured and matches, allow access
   if (expectedKey && internalKey === expectedKey) {
