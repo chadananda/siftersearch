@@ -1142,6 +1142,71 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Test translation endpoint - translates text with Shoghi Effendi style
+   * Public for testing, rate limited in production
+   */
+  fastify.post('/translate', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['text'],
+        properties: {
+          text: { type: 'string', maxLength: 2000 },
+          sourceLang: { type: 'string', default: 'ar' },
+          targetLang: { type: 'string', default: 'en' },
+          quality: { type: 'string', enum: ['standard', 'high'], default: 'high' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { text, sourceLang = 'ar', targetLang = 'en', quality = 'high' } = request.body;
+
+    // Build Shoghi Effendi style prompt for high quality Arabic→English
+    let systemPrompt = `Translate the following text from ${sourceLang === 'ar' ? 'Arabic' : sourceLang === 'fa' ? 'Persian' : sourceLang} to English. Provide only the translation.`;
+
+    if (quality === 'high' && (sourceLang === 'ar' || sourceLang === 'fa') && targetLang === 'en') {
+      systemPrompt = `You are an expert translator specializing in Bahá'í sacred writings. Translate the following text to English, emulating Shoghi Effendi's distinctive translation style.
+
+## Style Guidelines:
+- Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
+- Employ elevated diction: perceiveth, confesseth, hath, art, doth
+- Render divine attributes formally: sovereignty, dominion, majesty
+- Use inverted word order for emphasis where appropriate
+- Craft flowing sentences with parallel clauses
+- Preserve metaphors and rhetorical devices
+
+## Example Correspondences:
+- "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
+- "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
+- "بِأَنْ تَحْفَظَهُمْ" → "to keep them safe"
+
+Provide only the translation, no explanations.`;
+    }
+
+    try {
+      const response = await chatCompletion([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: text }
+      ], {
+        temperature: 0.3,
+        maxTokens: text.length * 4
+      });
+
+      return {
+        original: text,
+        translation: response.content.trim(),
+        sourceLang,
+        targetLang,
+        quality,
+        style: quality === 'high' ? 'shoghi-effendi' : 'standard'
+      };
+    } catch (err) {
+      logger.error({ err: err.message }, 'Translation failed');
+      throw ApiError.internal('Translation failed: ' + err.message);
+    }
+  });
+
+  /**
    * Re-index document from original file
    */
   fastify.post('/documents/:id/reindex', {
