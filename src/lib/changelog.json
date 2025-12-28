@@ -1,6 +1,20 @@
 {
-  "generated": "2025-12-28T04:39:48.837Z",
+  "generated": "2025-12-28T13:09:40.328Z",
   "entries": [
+    {
+      "hash": "b37009a",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add admin API endpoints for remote server management",
+      "scope": null
+    },
+    {
+      "hash": "09e016f",
+      "date": "2025-12-27",
+      "type": "New",
+      "description": "Add public translation endpoint with Shoghi Effendi style",
+      "scope": null
+    },
     {
       "hash": "139550a",
       "date": "2025-12-27",
@@ -336,24 +350,26 @@
       "type": "New",
       "description": "Add library browser and unified navigation bar",
       "scope": null
-    },
-    {
-      "hash": "6993881",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Skip v7 if indexed_paragraphs table missing",
-      "scope": "migrations"
-    },
-    {
-      "hash": "986a381",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Add auto-updater daemon to ecosystem",
-      "scope": "pm2"
     }
   ],
   "grouped": {
+    "2025-12-28": [
+      {
+        "hash": "b37009a",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add admin API endpoints for remote server management",
+        "scope": null
+      }
+    ],
     "2025-12-27": [
+      {
+        "hash": "09e016f",
+        "date": "2025-12-27",
+        "type": "New",
+        "description": "Add public translation endpoint with Shoghi Effendi style",
+        "scope": null
+      },
       {
         "hash": "139550a",
         "date": "2025-12-27",
@@ -693,20 +709,6 @@
         "type": "New",
         "description": "Add library browser and unified navigation bar",
         "scope": null
-      },
-      {
-        "hash": "6993881",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Skip v7 if indexed_paragraphs table missing",
-        "scope": "migrations"
-      },
-      {
-        "hash": "986a381",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Add auto-updater daemon to ecosystem",
-        "scope": "pm2"
       }
     ]
   }

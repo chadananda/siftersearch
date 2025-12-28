@@ -12,13 +12,26 @@
  * POST /api/admin/index/batch - Batch index documents
  * DELETE /api/admin/index/:id - Remove document from index
  * GET /api/admin/index/status - Get indexing queue status
+ *
+ * Server Management (requires admin JWT or X-Internal-Key header):
+ * POST /api/admin/server/reindex - Start library re-indexing
+ * POST /api/admin/server/fix-languages - Fix RTL language detection
+ * POST /api/admin/server/populate-translations - Start translation population
+ * GET /api/admin/server/tasks - Get status of background tasks
+ * GET /api/admin/server/tasks/:taskId - Get detailed task output
+ * DELETE /api/admin/server/tasks - Clear completed tasks
  */
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
-import { requireTier } from '../lib/auth.js';
+import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats } from '../lib/search.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus } from '../services/indexer.js';
+import { spawn } from 'child_process';
+import { logger } from '../lib/logger.js';
+
+// Track background tasks
+const backgroundTasks = new Map();
 
 export default async function adminRoutes(fastify) {
   // All routes require admin tier
@@ -364,5 +377,224 @@ export default async function adminRoutes(fastify) {
     } catch (err) {
       throw ApiError.internal(`Failed to get indexing status: ${err.message}`);
     }
+  });
+
+  // ===== Server Management Routes =====
+  // These routes use requireInternal which accepts either:
+  // 1. X-Internal-Key header with INTERNAL_API_KEY value (for server-to-server)
+  // 2. Standard admin JWT authentication
+
+  /**
+   * Helper to run a script as a background task
+   */
+  function runBackgroundTask(taskId, scriptPath, args = []) {
+    const task = {
+      id: taskId,
+      script: scriptPath,
+      status: 'running',
+      startedAt: new Date().toISOString(),
+      output: [],
+      errors: [],
+      exitCode: null
+    };
+
+    backgroundTasks.set(taskId, task);
+
+    const child = spawn('node', [scriptPath, ...args], {
+      cwd: process.cwd(),
+      env: { ...process.env, FORCE_COLOR: '0' }
+    });
+
+    child.stdout.on('data', (data) => {
+      const lines = data.toString().split('\n').filter(l => l.trim());
+      task.output.push(...lines);
+      // Keep only last 100 lines
+      if (task.output.length > 100) {
+        task.output = task.output.slice(-100);
+      }
+    });
+
+    child.stderr.on('data', (data) => {
+      const lines = data.toString().split('\n').filter(l => l.trim());
+      task.errors.push(...lines);
+    });
+
+    child.on('close', (code) => {
+      task.status = code === 0 ? 'completed' : 'failed';
+      task.exitCode = code;
+      task.completedAt = new Date().toISOString();
+      logger.info({ taskId, exitCode: code }, 'Background task completed');
+    });
+
+    child.on('error', (err) => {
+      task.status = 'failed';
+      task.errors.push(err.message);
+      logger.error({ taskId, error: err.message }, 'Background task error');
+    });
+
+    return task;
+  }
+
+  /**
+   * Start library re-indexing (background task)
+   */
+  fastify.post('/server/reindex', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          force: { type: 'boolean', default: false },
+          limit: { type: 'integer', minimum: 1 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { force = false, limit } = request.body || {};
+
+    // Check if already running
+    const existing = backgroundTasks.get('reindex');
+    if (existing && existing.status === 'running') {
+      throw ApiError.conflict('Re-indexing is already in progress');
+    }
+
+    const args = [];
+    if (force) args.push('--force');
+    if (limit) args.push(`--limit=${limit}`);
+
+    const task = runBackgroundTask('reindex', 'scripts/index-library.js', args);
+
+    logger.info({ args }, 'Library re-indexing started via API');
+
+    return {
+      success: true,
+      taskId: 'reindex',
+      message: 'Library re-indexing started in background',
+      status: task.status
+    };
+  });
+
+  /**
+   * Fix RTL language detection (background task)
+   */
+  fastify.post('/server/fix-languages', { preHandler: requireInternal }, async () => {
+    // Check if already running
+    const existing = backgroundTasks.get('fix-languages');
+    if (existing && existing.status === 'running') {
+      throw ApiError.conflict('Language fix is already in progress');
+    }
+
+    const task = runBackgroundTask('fix-languages', 'scripts/fix-rtl-languages.js');
+
+    logger.info('RTL language fix started via API');
+
+    return {
+      success: true,
+      taskId: 'fix-languages',
+      message: 'RTL language fix started in background',
+      status: task.status
+    };
+  });
+
+  /**
+   * Start translation population (background task)
+   */
+  fastify.post('/server/populate-translations', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', minimum: 1 },
+          language: { type: 'string', enum: ['ar', 'fa', 'he', 'ur'] },
+          documentId: { type: 'string' },
+          force: { type: 'boolean', default: false }
+        }
+      }
+    }
+  }, async (request) => {
+    const { limit, language, documentId, force } = request.body || {};
+
+    // Check if already running
+    const existing = backgroundTasks.get('translations');
+    if (existing && existing.status === 'running') {
+      throw ApiError.conflict('Translation population is already in progress');
+    }
+
+    const args = [];
+    if (limit) args.push(`--limit=${limit}`);
+    if (language) args.push(`--language=${language}`);
+    if (documentId) args.push(`--document=${documentId}`);
+    if (force) args.push('--force');
+
+    const task = runBackgroundTask('translations', 'scripts/populate-translations.js', args);
+
+    logger.info({ args }, 'Translation population started via API');
+
+    return {
+      success: true,
+      taskId: 'translations',
+      message: 'Translation population started in background',
+      status: task.status
+    };
+  });
+
+  /**
+   * Get status of background tasks
+   */
+  fastify.get('/server/tasks', { preHandler: requireInternal }, async () => {
+    const tasks = {};
+    for (const [id, task] of backgroundTasks) {
+      tasks[id] = {
+        id: task.id,
+        script: task.script,
+        status: task.status,
+        startedAt: task.startedAt,
+        completedAt: task.completedAt,
+        exitCode: task.exitCode,
+        outputLines: task.output.length,
+        errorLines: task.errors.length,
+        lastOutput: task.output.slice(-10),
+        lastErrors: task.errors.slice(-5)
+      };
+    }
+    return { tasks };
+  });
+
+  /**
+   * Get detailed output for a specific task
+   */
+  fastify.get('/server/tasks/:taskId', { preHandler: requireInternal }, async (request) => {
+    const { taskId } = request.params;
+    const task = backgroundTasks.get(taskId);
+
+    if (!task) {
+      throw ApiError.notFound('Task not found');
+    }
+
+    return {
+      id: task.id,
+      script: task.script,
+      status: task.status,
+      startedAt: task.startedAt,
+      completedAt: task.completedAt,
+      exitCode: task.exitCode,
+      output: task.output,
+      errors: task.errors
+    };
+  });
+
+  /**
+   * Clear completed tasks from memory
+   */
+  fastify.delete('/server/tasks', { preHandler: requireInternal }, async () => {
+    let cleared = 0;
+    for (const [id, task] of backgroundTasks) {
+      if (task.status !== 'running') {
+        backgroundTasks.delete(id);
+        cleared++;
+      }
+    }
+    return { cleared, remaining: backgroundTasks.size };
   });
 }
