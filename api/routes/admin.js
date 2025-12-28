@@ -43,11 +43,12 @@ import { logger } from '../lib/logger.js';
 const backgroundTasks = new Map();
 
 export default async function adminRoutes(fastify) {
-  // All routes require admin tier
-  fastify.addHook('preHandler', requireTier('admin'));
+  // Note: Server management routes (/server/*) use requireInternal which accepts
+  // either X-Internal-Key header or admin JWT. Other routes use requireTier('admin').
+  // We don't use a global hook here to allow route-specific auth handlers.
 
   // Dashboard statistics
-  fastify.get('/stats', async () => {
+  fastify.get('/stats', { preHandler: requireTier('admin') }, async () => {
     const [userStats, searchStats, analyticsStats] = await Promise.all([
       queryOne(`
         SELECT
@@ -82,6 +83,7 @@ export default async function adminRoutes(fastify) {
 
   // List users with pagination and filtering
   fastify.get('/users', {
+    preHandler: requireTier('admin'),
     schema: {
       querystring: {
         type: 'object',
@@ -141,7 +143,7 @@ export default async function adminRoutes(fastify) {
   });
 
   // Get users pending approval
-  fastify.get('/pending', async () => {
+  fastify.get('/pending', { preHandler: requireTier('admin') }, async () => {
     const users = await queryAll(`
       SELECT id, email, name, created_at, referred_by
       FROM users
@@ -154,6 +156,7 @@ export default async function adminRoutes(fastify) {
 
   // Update user
   fastify.put('/users/:id', {
+    preHandler: requireTier('admin'),
     schema: {
       params: {
         type: 'object',
@@ -214,7 +217,7 @@ export default async function adminRoutes(fastify) {
   });
 
   // Approve a user (shortcut for setting tier to 'approved')
-  fastify.post('/approve/:id', async (request) => {
+  fastify.post('/approve/:id', { preHandler: requireTier('admin') }, async (request) => {
     const { id } = request.params;
 
     const user = await queryOne('SELECT id, tier FROM users WHERE id = ?', [id]);
@@ -240,7 +243,7 @@ export default async function adminRoutes(fastify) {
   });
 
   // Ban a user
-  fastify.post('/ban/:id', async (request) => {
+  fastify.post('/ban/:id', { preHandler: requireTier('admin') }, async (request) => {
     const { id } = request.params;
 
     const user = await queryOne('SELECT id FROM users WHERE id = ?', [id]);
@@ -260,6 +263,7 @@ export default async function adminRoutes(fastify) {
 
   // Recent analytics events
   fastify.get('/analytics', {
+    preHandler: requireTier('admin'),
     schema: {
       querystring: {
         type: 'object',
@@ -297,6 +301,7 @@ export default async function adminRoutes(fastify) {
 
   // Index a single document from text
   fastify.post('/index', {
+    preHandler: requireTier('admin'),
     schema: {
       body: {
         type: 'object',
@@ -332,6 +337,7 @@ export default async function adminRoutes(fastify) {
 
   // Batch index documents from JSON
   fastify.post('/index/batch', {
+    preHandler: requireTier('admin'),
     schema: {
       body: {
         type: 'object',
@@ -368,7 +374,7 @@ export default async function adminRoutes(fastify) {
   });
 
   // Remove a document from the index
-  fastify.delete('/index/:id', async (request) => {
+  fastify.delete('/index/:id', { preHandler: requireTier('admin') }, async (request) => {
     const { id } = request.params;
 
     try {
@@ -380,7 +386,7 @@ export default async function adminRoutes(fastify) {
   });
 
   // Get indexing queue status
-  fastify.get('/index/status', async () => {
+  fastify.get('/index/status', { preHandler: requireTier('admin') }, async () => {
     try {
       return await getIndexingStatus();
     } catch (err) {
