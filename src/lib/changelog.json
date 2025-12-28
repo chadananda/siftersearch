@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T15:03:09.089Z",
+  "generated": "2025-12-28T23:11:07.776Z",
   "entries": [
+    {
+      "hash": "b2bc28d",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
+      "scope": null
+    },
     {
       "hash": "fbc817a",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Increase Meilisearch maxTotalHits from 1000 to 50000",
       "scope": null
-    },
-    {
-      "hash": "1153b37",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add configurable authority ranking position for search",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "b2bc28d",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
+        "scope": null
+      },
       {
         "hash": "fbc817a",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Increase Meilisearch maxTotalHits from 1000 to 50000",
-        "scope": null
-      },
-      {
-        "hash": "1153b37",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add configurable authority ranking position for search",
         "scope": null
       }
     ]

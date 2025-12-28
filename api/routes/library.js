@@ -1142,8 +1142,10 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
-   * Test translation endpoint - translates text with Shoghi Effendi style
-   * Public for testing, rate limited in production
+   * Translation endpoint with content-type awareness
+   * - scripture/poetry/classical: Shoghi Effendi biblical style
+   * - historical: Modern clear English, but citations within use biblical style
+   * - auto: AI detects content type and applies appropriate style
    */
   fastify.post('/translate', {
     schema: {
@@ -1151,36 +1153,107 @@ Return ONLY the description text, no quotes or formatting.`;
         type: 'object',
         required: ['text'],
         properties: {
-          text: { type: 'string', maxLength: 2000 },
+          text: { type: 'string', maxLength: 5000 },
           sourceLang: { type: 'string', default: 'ar' },
           targetLang: { type: 'string', default: 'en' },
+          contentType: {
+            type: 'string',
+            enum: ['scripture', 'poetry', 'historical', 'auto'],
+            default: 'auto',
+            description: 'scripture/poetry use biblical style; historical uses modern English with biblical citations'
+          },
           quality: { type: 'string', enum: ['standard', 'high'], default: 'high' }
         }
       }
     }
   }, async (request) => {
-    const { text, sourceLang = 'ar', targetLang = 'en', quality = 'high' } = request.body;
+    const { text, sourceLang = 'ar', targetLang = 'en', contentType = 'auto', quality = 'high' } = request.body;
 
-    // Build Shoghi Effendi style prompt for high quality Arabic→English
-    let systemPrompt = `Translate the following text from ${sourceLang === 'ar' ? 'Arabic' : sourceLang === 'fa' ? 'Persian' : sourceLang} to English. Provide only the translation.`;
+    const langName = sourceLang === 'ar' ? 'Arabic' : sourceLang === 'fa' ? 'Persian' : sourceLang;
+
+    // Build content-type aware prompt
+    let systemPrompt = `Translate the following ${langName} text to English. Provide only the translation.`;
 
     if (quality === 'high' && (sourceLang === 'ar' || sourceLang === 'fa') && targetLang === 'en') {
-      systemPrompt = `You are an expert translator specializing in Bahá'í sacred writings. Translate the following text to English, emulating Shoghi Effendi's distinctive translation style.
+
+      if (contentType === 'scripture' || contentType === 'poetry') {
+        // Pure biblical style for sacred/poetic content
+        systemPrompt = `You are an expert translator specializing in Bahá'í sacred writings. Translate this ${langName} text to English using Shoghi Effendi's distinctive biblical translation style.
 
 ## Style Guidelines:
 - Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
-- Employ elevated diction: perceiveth, confesseth, hath, art, doth
-- Render divine attributes formally: sovereignty, dominion, majesty
+- Employ elevated diction: perceiveth, confesseth, hath, art, doth, verily
+- Render divine attributes formally: sovereignty, dominion, majesty, glory
 - Use inverted word order for emphasis where appropriate
 - Craft flowing sentences with parallel clauses
-- Preserve metaphors and rhetorical devices
+- Preserve metaphors, imagery, and rhetorical devices
+- Maintain poetic rhythm and cadence
 
 ## Example Correspondences:
 - "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
 - "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
-- "بِأَنْ تَحْفَظَهُمْ" → "to keep them safe"
+- "قُلْ" (Say/Proclaim) → "Say:" or "Proclaim:"
 
 Provide only the translation, no explanations.`;
+
+      } else if (contentType === 'historical') {
+        // Modern English for narrative, biblical for embedded citations
+        systemPrompt = `You are an expert translator of ${langName} historical and narrative texts. Translate to clear, modern English suitable for scholarly readers.
+
+## Style Guidelines for Narrative Text:
+- Use clear, modern English prose
+- Maintain historical accuracy and terminology
+- Keep sentences readable and well-structured
+- Preserve the author's narrative voice
+
+## IMPORTANT: Embedded Citations
+When the text quotes or cites scripture, prayers, poetry, prophecy, or tradition (hadith), render those citations in Shoghi Effendi's biblical style:
+- Use: Thou, Thee, Thine, Thy for the Divine
+- Use: hath, art, doth, verily, perceiveth
+- Preserve the elevated, sacred tone of the original
+
+## Example:
+Historical narrative: "The Báb then recited a prayer, saying..."
+→ Modern English for narrative
+Citation within: "سُبْحانَكَ يا إِلهي"
+→ "Glorified art Thou, O Lord my God!"
+
+Provide only the translation, no explanations.`;
+
+      } else {
+        // Auto-detect: AI determines content type
+        systemPrompt = `You are an expert translator of ${langName} religious and historical texts. Analyze the content and translate appropriately:
+
+## Content Type Detection:
+1. **Scripture, Prayers, Poetry, Prophecy**: Use Shoghi Effendi's biblical style
+   - Archaic pronouns: Thou, Thee, Thine, Thy
+   - Elevated diction: perceiveth, hath, art, doth, verily
+   - Formal divine attributes: sovereignty, dominion, majesty
+
+2. **Historical Narrative, Letters, Chronicles**: Use clear modern English
+   - Readable scholarly prose
+   - Historical accuracy
+   - Modern sentence structure
+
+3. **Mixed Content** (narrative with embedded citations):
+   - Modern English for the narrative portions
+   - Biblical style for any quoted scripture, prayers, poetry, prophecy, or hadith
+
+## Indicators of Sacred Content:
+- Invocations to God (يا الله, سبحان)
+- Prayer language (أسألك, أدعوك)
+- Quranic/scriptural quotations
+- Poetic meter and rhyme
+- Prophetic declarations
+
+## Indicators of Historical Content:
+- Third-person narrative
+- Dates, places, names
+- Chronicle-style reporting
+- Letters and correspondence
+
+Provide only the translation, no explanations.`;
+      }
     }
 
     try {
@@ -1189,7 +1262,7 @@ Provide only the translation, no explanations.`;
         { role: 'user', content: text }
       ], {
         temperature: 0.3,
-        maxTokens: text.length * 4
+        maxTokens: Math.max(text.length * 4, 1000)
       });
 
       return {
@@ -1197,8 +1270,10 @@ Provide only the translation, no explanations.`;
         translation: response.content.trim(),
         sourceLang,
         targetLang,
+        contentType,
         quality,
-        style: quality === 'high' ? 'shoghi-effendi' : 'standard'
+        style: contentType === 'historical' ? 'modern-with-biblical-citations' :
+               contentType === 'auto' ? 'auto-detected' : 'shoghi-effendi'
       };
     } catch (err) {
       logger.error({ err: err.message }, 'Translation failed');

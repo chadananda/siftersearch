@@ -46,6 +46,11 @@ const TRANSLATIONS_DIR = process.env.TRANSLATIONS_DIR || './data/translations';
 /**
  * Request a document translation
  * Returns job ID for tracking
+ *
+ * @param contentType - 'scripture' | 'historical' | 'auto' (default)
+ *   - scripture: Shoghi Effendi biblical style throughout
+ *   - historical: Modern English with biblical citations
+ *   - auto: Detect from document collection
  */
 export async function requestTranslation({
   userId,
@@ -53,7 +58,8 @@ export async function requestTranslation({
   targetLanguage,
   sourceLanguage = null,
   notifyEmail,
-  quality = 'standard' // standard, high
+  quality = 'standard', // standard, high
+  contentType = null // scripture, historical, auto (null = auto-detect from collection)
 }) {
   if (!SUPPORTED_LANGUAGES[targetLanguage]) {
     throw new Error(`Unsupported target language: ${targetLanguage}`);
@@ -67,7 +73,8 @@ export async function requestTranslation({
     params: {
       targetLanguage,
       sourceLanguage,
-      quality
+      quality,
+      contentType
     },
     notifyEmail
   });
@@ -81,7 +88,7 @@ export async function requestTranslation({
  */
 export async function processTranslationJob(job) {
   const { documentId, params } = job;
-  const { targetLanguage, sourceLanguage, quality } = params;
+  const { targetLanguage, sourceLanguage, quality, contentType: requestedContentType } = params;
 
   logger.info({ jobId: job.id, documentId, targetLanguage }, 'Starting translation job');
 
@@ -93,6 +100,10 @@ export async function processTranslationJob(job) {
     // Get document metadata
     const document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
     const detectedSourceLang = sourceLanguage || document.language || 'en';
+
+    // Detect content type from collection if not explicitly specified
+    const contentType = requestedContentType || detectContentType(document.collection);
+    logger.info({ documentId, collection: document.collection, contentType }, 'Content type detected');
 
     // Skip if already in target language
     if (detectedSourceLang === targetLanguage) {
@@ -138,11 +149,11 @@ export async function processTranslationJob(job) {
         } catch (err) {
           // Cache file missing, re-translate
           logger.warn({ segmentId: segment.id }, 'Cache file missing, re-translating');
-          translatedText = await translateText(segment.text, detectedSourceLang, targetLanguage, quality);
+          translatedText = await translateText(segment.text, detectedSourceLang, targetLanguage, quality, contentType);
         }
       } else {
-        // Translate
-        translatedText = await translateText(segment.text, detectedSourceLang, targetLanguage, quality);
+        // Translate with content-type awareness
+        translatedText = await translateText(segment.text, detectedSourceLang, targetLanguage, quality, contentType);
 
         // Store in cache
         const segmentPath = await saveSegmentTranslation(documentId, segment.id, targetLanguage, translatedText);
@@ -218,10 +229,48 @@ export async function processTranslationJob(job) {
   }
 }
 
+// Collections that contain scripture, prayers, poetry (use biblical style)
+const SCRIPTURE_COLLECTIONS = [
+  'Core Tablets', 'Core Tablet Translations', 'Core Publications',
+  'Compilations', 'Prayers', 'Hidden Words', 'Kitab-i-Aqdas',
+  'Kitab-i-Iqan', 'Seven Valleys', 'Four Valleys'
+];
+
+// Collections that are primarily historical narrative (use modern English with biblical citations)
+const HISTORICAL_COLLECTIONS = [
+  'Historical', 'Pilgrim Notes', 'News', 'Press', 'Administrative',
+  'Letters', 'Memoirs', 'Chronicles'
+];
+
 /**
- * Build translation prompt with style examples for Bahá'í texts
+ * Detect content type from document collection
+ * Returns: 'scripture' | 'historical' | 'auto'
  */
-function buildTranslationPrompt(sourceLang, targetLang, quality) {
+function detectContentType(collection) {
+  if (!collection) return 'auto';
+
+  const collLower = collection.toLowerCase();
+
+  // Check for scripture/poetry collections
+  for (const sc of SCRIPTURE_COLLECTIONS) {
+    if (collLower.includes(sc.toLowerCase())) return 'scripture';
+  }
+
+  // Check for historical collections
+  for (const hc of HISTORICAL_COLLECTIONS) {
+    if (collLower.includes(hc.toLowerCase())) return 'historical';
+  }
+
+  return 'auto';
+}
+
+/**
+ * Build translation prompt with content-type awareness
+ * - scripture/poetry: Shoghi Effendi biblical style
+ * - historical: Modern English with biblical citations
+ * - auto: AI detects and applies appropriate style
+ */
+function buildTranslationPrompt(sourceLang, targetLang, quality, contentType = 'auto') {
   const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
   const targetName = SUPPORTED_LANGUAGES[targetLang] || targetLang;
 
@@ -230,7 +279,91 @@ function buildTranslationPrompt(sourceLang, targetLang, quality) {
     return `Translate the following text from ${sourceName} to ${targetName}. Preserve the meaning and provide only the translation.`;
   }
 
-  // High quality - detailed guidance for scholarly/religious texts
+  // High quality Arabic/Persian → English with content-type awareness
+  if ((sourceLang === 'ar' || sourceLang === 'fa') && targetLang === 'en') {
+
+    if (contentType === 'scripture') {
+      // Pure biblical style for sacred content
+      return `You are an expert translator specializing in Bahá'í sacred writings. Translate this ${sourceName} text to English using Shoghi Effendi's distinctive biblical translation style.
+
+## Style Guidelines:
+- Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
+- Employ elevated diction: perceiveth, confesseth, hath, art, doth, verily
+- Render divine attributes formally: sovereignty, dominion, majesty, glory
+- Use inverted word order for emphasis where appropriate
+- Craft flowing sentences with parallel clauses
+- Preserve metaphors, imagery, and rhetorical devices
+- Maintain poetic rhythm and cadence
+
+## Example Correspondences:
+- "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
+- "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
+- "قُلْ" (Say/Proclaim) → "Say:" or "Proclaim:"
+- "لا خَوْفٌ عَلَيْهِمْ" → "on whom shall come no fear"
+
+Provide only the translation, no explanations.`;
+
+    } else if (contentType === 'historical') {
+      // Modern English for narrative, biblical for citations
+      return `You are an expert translator of ${sourceName} historical and narrative texts. Translate to clear, modern English suitable for scholarly readers.
+
+## Style Guidelines for Narrative Text:
+- Use clear, modern English prose
+- Maintain historical accuracy and terminology
+- Keep sentences readable and well-structured
+- Preserve the author's narrative voice
+
+## IMPORTANT: Embedded Citations
+When the text quotes or cites scripture, prayers, poetry, prophecy, or tradition (hadith), render those citations in Shoghi Effendi's biblical style:
+- Use: Thou, Thee, Thine, Thy for the Divine
+- Use: hath, art, doth, verily, perceiveth
+- Preserve the elevated, sacred tone of the original
+
+## Example:
+Historical narrative: "The Báb then recited a prayer, saying..."
+→ Modern English for narrative
+Citation within: "سُبْحانَكَ يا إِلهي"
+→ "Glorified art Thou, O Lord my God!"
+
+Provide only the translation, no explanations.`;
+
+    } else {
+      // Auto-detect: AI determines content type
+      return `You are an expert translator of ${sourceName} religious and historical texts. Analyze the content and translate appropriately:
+
+## Content Type Detection:
+1. **Scripture, Prayers, Poetry, Prophecy**: Use Shoghi Effendi's biblical style
+   - Archaic pronouns: Thou, Thee, Thine, Thy
+   - Elevated diction: perceiveth, hath, art, doth, verily
+   - Formal divine attributes: sovereignty, dominion, majesty
+
+2. **Historical Narrative, Letters, Chronicles**: Use clear modern English
+   - Readable scholarly prose
+   - Historical accuracy
+   - Modern sentence structure
+
+3. **Mixed Content** (narrative with embedded citations):
+   - Modern English for the narrative portions
+   - Biblical style for any quoted scripture, prayers, poetry, prophecy, or hadith
+
+## Indicators of Sacred Content:
+- Invocations to God (يا الله, سبحان)
+- Prayer language (أسألك, أدعوك)
+- Quranic/scriptural quotations
+- Poetic meter and rhyme
+- Prophetic declarations
+
+## Indicators of Historical Content:
+- Third-person narrative
+- Dates, places, names
+- Chronicle-style reporting
+- Letters and correspondence
+
+Provide only the translation, no explanations.`;
+    }
+  }
+
+  // Default high-quality prompt for other language pairs
   let prompt = `You are an expert translator specializing in religious and scholarly texts, particularly Bahá'í sacred writings. Translate the following text from ${sourceName} to ${targetName}.
 
 ## Translation Guidelines:
@@ -239,35 +372,6 @@ function buildTranslationPrompt(sourceLang, targetLang, quality) {
 - Use elevated, formal language appropriate to sacred texts
 - Preserve parallelism and rhetorical devices
 - Provide only the translation without explanations`;
-
-  // Add Shoghi Effendi style guidance for Arabic→English translations
-  if (sourceLang === 'ar' && targetLang === 'en') {
-    prompt += `
-
-## Style Reference: Shoghi Effendi's Translation Style
-When translating Arabic Bahá'í texts to English, emulate the Guardian's distinctive style:
-
-### Vocabulary:
-- Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
-- Employ elevated diction: perceiveth, confesseth, hath, art, doth
-- Render divine attributes formally: sovereignty, dominion, majesty
-
-### Syntax:
-- Use inverted word order for emphasis where appropriate
-- Craft flowing sentences with parallel clauses
-- Link subordinate clauses with "and" and "that"
-
-### Rhetorical Devices:
-- Preserve parallelism (e.g., "The winds of tests... the tempests of trials")
-- Maintain metaphors (e.g., "lamp of Thy love", "ocean of Thy nearness")
-- Repeat divine attributes for emphasis
-
-### Example Correspondences:
-- "سُبْحانَكَ يا إِلهي" → "Glorified art Thou, O Lord my God!"
-- "أَسْئَلُكَ" → "I beseech Thee" / "I entreat Thee"
-- "بِأَنْ تَحْفَظَهُمْ" → "to keep them safe"
-- "لا خَوْفٌ عَلَيْهِمْ وَلا هُمْ يَحْزَنُونَ" → "on whom shall come no fear and who shall not be put to grief"`;
-  }
 
   // Add guidance for English→Arabic (reverse translation)
   if (sourceLang === 'en' && targetLang === 'ar') {
@@ -285,10 +389,10 @@ When translating English Bahá'í texts to Arabic:
 }
 
 /**
- * Translate a single text segment
+ * Translate a single text segment with content-type awareness
  */
-async function translateText(text, sourceLang, targetLang, quality = 'standard') {
-  const systemPrompt = buildTranslationPrompt(sourceLang, targetLang, quality);
+async function translateText(text, sourceLang, targetLang, quality = 'standard', contentType = 'auto') {
+  const systemPrompt = buildTranslationPrompt(sourceLang, targetLang, quality, contentType);
 
   // Use 'quality' service for translation - needs good reasoning
   const response = await aiService('quality').chat([
@@ -296,7 +400,7 @@ async function translateText(text, sourceLang, targetLang, quality = 'standard')
     { role: 'user', content: text }
   ], {
     temperature: 0.3,
-    maxTokens: text.length * 3 // Allow for expansion in translation
+    maxTokens: Math.max(text.length * 3, 500) // Allow for expansion in translation
   });
 
   return response.content.trim();
