@@ -31,6 +31,7 @@
  * DELETE /api/admin/server/tasks - Clear completed tasks from memory
  */
 
+import { join } from 'path';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
@@ -853,7 +854,7 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
-   * Migrate existing embeddings from Meilisearch to libsql
+   * Migrate existing embeddings from Meilisearch to libsql (background task)
    * This preserves paid-for OpenAI embeddings so we don't have to regenerate them
    */
   fastify.post('/server/migrate-embeddings', {
@@ -870,18 +871,34 @@ export default async function adminRoutes(fastify) {
   }, async (request) => {
     const { dryRun = false, batchSize = 100 } = request.body || {};
 
-    logger.info({ dryRun, batchSize }, 'Starting embedding migration from Meilisearch');
-
-    try {
-      const stats = await migrateEmbeddingsFromMeilisearch({ dryRun, batchSize });
+    // Check if already running
+    const existingTask = [...backgroundTasks.values()].find(
+      t => t.script.includes('migrate-embeddings') && t.status === 'running'
+    );
+    if (existingTask) {
       return {
-        success: true,
-        dryRun,
-        ...stats
+        success: false,
+        message: 'Embedding migration already running',
+        taskId: existingTask.id
       };
-    } catch (err) {
-      logger.error({ err: err.message }, 'Embedding migration failed');
-      throw ApiError.internal('Migration failed: ' + err.message);
     }
+
+    const taskId = `migrate-embeddings-${Date.now()}`;
+    const scriptPath = join(process.cwd(), 'scripts', 'migrate-embeddings.js');
+    const args = [];
+    if (dryRun) args.push('--dry-run');
+    args.push(`--batch-size=${batchSize}`);
+
+    logger.info({ taskId, dryRun, batchSize }, 'Starting embedding migration as background task');
+
+    const task = runBackgroundTask(taskId, scriptPath, args);
+
+    return {
+      success: true,
+      taskId: task.id,
+      message: `Embedding migration started${dryRun ? ' (dry run)' : ''}. Check /server/tasks/${task.id} for progress.`,
+      dryRun,
+      batchSize
+    };
   });
 }

@@ -580,7 +580,7 @@ export async function getIndexingStatus() {
  * @returns {Promise<{documents: number, paragraphs: number, embeddings: number}>}
  */
 export async function migrateEmbeddingsFromMeilisearch(options = {}) {
-  const { batchSize = 100, dryRun = false } = options;
+  const { batchSize = 100, dryRun = false, onProgress = null } = options;
   const meili = getMeili();
   const now = new Date().toISOString();
 
@@ -590,6 +590,11 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
     // Get all documents from Meilisearch (we need their metadata)
     const docsIndex = meili.index(INDEXES.DOCUMENTS);
     const parasIndex = meili.index(INDEXES.PARAGRAPHS);
+
+    // Get total count for progress reporting
+    const docStats = await docsIndex.getStats();
+    const totalDocs = docStats.numberOfDocuments || 0;
+    logger.info({ totalDocs }, 'Starting embedding migration');
 
     // Fetch documents in batches
     let offset = 0;
@@ -608,7 +613,7 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
         break;
       }
 
-      logger.info({ offset, count: docs.length }, 'Processing document batch');
+      logger.info({ offset, count: docs.length, total: totalDocs }, 'Processing document batch');
 
       for (const doc of docs) {
         try {
@@ -625,6 +630,9 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
             stats.documents++;
             stats.paragraphs += paragraphs.length;
             stats.embeddings += paragraphs.filter(p => p._vectors?.default).length;
+            if (onProgress) {
+              onProgress({ ...stats, total: totalDocs });
+            }
             continue;
           }
 
@@ -657,6 +665,11 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
           ]);
 
           stats.documents++;
+
+          // Report progress after each document
+          if (onProgress) {
+            onProgress({ ...stats, total: totalDocs });
+          }
 
           // Store paragraphs with embeddings
           for (const para of paragraphs) {
