@@ -587,6 +587,16 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
   const stats = { documents: 0, paragraphs: 0, embeddings: 0, errors: 0 };
 
   try {
+    // Detect content table schema - check if document_id column exists
+    let hasDocumentIdColumn = false;
+    try {
+      const tableInfo = await queryAll(`PRAGMA table_info(content)`);
+      hasDocumentIdColumn = tableInfo.some(col => col.name === 'document_id');
+      logger.info({ hasDocumentIdColumn }, 'Content table schema detected');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Could not check content schema');
+    }
+
     // Get all documents from Meilisearch (we need their metadata)
     const docsIndex = meili.index(INDEXES.DOCUMENTS);
     const parasIndex = meili.index(INDEXES.PARAGRAPHS);
@@ -680,30 +690,64 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
 
             const contentHash = computeContentHash(para.text);
 
-            await query(`
-              INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-                text = excluded.text,
-                content_hash = excluded.content_hash,
-                heading = excluded.heading,
-                embedding = excluded.embedding,
-                embedding_model = excluded.embedding_model,
-                synced = 1,
-                updated_at = excluded.updated_at
-            `, [
-              para.id,
-              doc.id,
-              para.paragraph_index,
-              para.text,
-              contentHash,
-              para.heading || null,
-              'paragraph',
-              embeddingBlob,
-              embedding ? EMBEDDING_MODEL : null,
-              now,
-              now
-            ]);
+            // Use appropriate INSERT based on detected schema
+            if (hasDocumentIdColumn) {
+              // Old schema: has both doc_id and document_id columns
+              await query(`
+                INSERT INTO content (id, doc_id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                  doc_id = excluded.doc_id,
+                  document_id = excluded.document_id,
+                  text = excluded.text,
+                  content_hash = excluded.content_hash,
+                  heading = excluded.heading,
+                  embedding = excluded.embedding,
+                  embedding_model = excluded.embedding_model,
+                  synced = 1,
+                  updated_at = excluded.updated_at
+              `, [
+                para.id,
+                doc.id,
+                doc.id,  // document_id (same value)
+                para.paragraph_index,
+                para.text,
+                contentHash,
+                para.heading || null,
+                'paragraph',
+                embeddingBlob,
+                embedding ? EMBEDDING_MODEL : null,
+                now,
+                now
+              ]);
+            } else {
+              // New schema: only doc_id column
+              await query(`
+                INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                  doc_id = excluded.doc_id,
+                  text = excluded.text,
+                  content_hash = excluded.content_hash,
+                  heading = excluded.heading,
+                  embedding = excluded.embedding,
+                  embedding_model = excluded.embedding_model,
+                  synced = 1,
+                  updated_at = excluded.updated_at
+              `, [
+                para.id,
+                doc.id,
+                para.paragraph_index,
+                para.text,
+                contentHash,
+                para.heading || null,
+                'paragraph',
+                embeddingBlob,
+                embedding ? EMBEDDING_MODEL : null,
+                now,
+                now
+              ]);
+            }
 
             stats.paragraphs++;
             if (embedding) stats.embeddings++;

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T14:46:49.141Z",
+  "generated": "2025-12-28T14:52:02.975Z",
   "entries": [
+    {
+      "hash": "c23d897",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add background task for embedding migration from Meilisearch to libsql",
+      "scope": null
+    },
     {
       "hash": "15a59cc",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add fallback for unsortable attributes in library search",
       "scope": null
-    },
-    {
-      "hash": "f153665",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Use getStats() for accurate document count instead of estimatedTotalHits cap",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "c23d897",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add background task for embedding migration from Meilisearch to libsql",
+        "scope": null
+      },
       {
         "hash": "15a59cc",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Add fallback for unsortable attributes in library search",
-        "scope": null
-      },
-      {
-        "hash": "f153665",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Use getStats() for accurate document count instead of estimatedTotalHits cap",
         "scope": null
       }
     ]
