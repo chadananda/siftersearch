@@ -51,9 +51,9 @@
       >
         <span class="flex items-center gap-3 flex-1 truncate">
           {#if religion.name?.toLowerCase().includes('baha')}
-            <img src="/bahai-star.svg" alt="Baha'i" class="w-8 h-8 {isExpanded ? 'invert' : ''}" />
+            <img src="/bahai-star.svg" alt="Baha'i" class="w-10 h-10 {isExpanded ? 'brightness-0 invert' : 'opacity-80'}" />
           {:else if religion.symbol}
-            <span class="text-3xl leading-none">{religion.symbol}</span>
+            <span class="text-4xl leading-none {isExpanded ? 'text-white' : 'text-accent'}">{religion.symbol}</span>
           {/if}
           <span class="truncate">{religion.name}</span>
         </span>
