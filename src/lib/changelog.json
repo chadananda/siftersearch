@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T14:52:02.975Z",
+  "generated": "2025-12-28T15:03:09.089Z",
   "entries": [
+    {
+      "hash": "fbc817a",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Handle both doc_id and document_id columns in migration",
+      "scope": null
+    },
     {
       "hash": "c23d897",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add configurable authority ranking position for search",
       "scope": null
-    },
-    {
-      "hash": "4d82055",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Add fallback for unsortable attributes in library search",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "fbc817a",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Handle both doc_id and document_id columns in migration",
+        "scope": null
+      },
       {
         "hash": "c23d897",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "New",
         "description": "Add configurable authority ranking position for search",
-        "scope": null
-      },
-      {
-        "hash": "4d82055",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Add fallback for unsortable attributes in library search",
         "scope": null
       }
     ]

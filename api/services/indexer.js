@@ -33,6 +33,31 @@ const CHUNK_CONFIG = {
 const EMBEDDING_MODEL = 'text-embedding-3-small';
 
 /**
+ * Retry a database operation with exponential backoff for SQLITE_BUSY errors
+ * @param {Function} fn - Async function to execute
+ * @param {number} maxRetries - Maximum retries (default: 5)
+ * @param {number} baseDelay - Base delay in ms (default: 100)
+ * @returns {Promise<any>}
+ */
+async function withRetry(fn, maxRetries = 5, baseDelay = 100) {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (err.message?.includes('SQLITE_BUSY') && i < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, i) + Math.random() * 50;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
+/**
  * Compute content hash for change detection
  * Hash includes text and any context that affects embedding quality
  * @param {string} text - The paragraph text
@@ -646,8 +671,8 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
             continue;
           }
 
-          // Store document in libsql
-          await query(`
+          // Store document in libsql (with retry for SQLITE_BUSY)
+          await withRetry(() => query(`
             INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
@@ -672,7 +697,7 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
             paragraphs.length,
             now,
             now
-          ]);
+          ]));
 
           stats.documents++;
 
@@ -690,10 +715,10 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
 
             const contentHash = computeContentHash(para.text);
 
-            // Use appropriate INSERT based on detected schema
+            // Use appropriate INSERT based on detected schema (with retry for SQLITE_BUSY)
             if (hasDocumentIdColumn) {
               // Old schema: has both doc_id and document_id columns
-              await query(`
+              await withRetry(() => query(`
                 INSERT INTO content (id, doc_id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
@@ -719,10 +744,10 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
                 embedding ? EMBEDDING_MODEL : null,
                 now,
                 now
-              ]);
+              ]));
             } else {
               // New schema: only doc_id column
-              await query(`
+              await withRetry(() => query(`
                 INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
@@ -746,7 +771,7 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
                 embedding ? EMBEDDING_MODEL : null,
                 now,
                 now
-              ]);
+              ]));
             }
 
             stats.paragraphs++;
