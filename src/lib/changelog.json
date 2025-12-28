@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T04:22:36.386Z",
+  "generated": "2025-12-28T04:30:59.099Z",
   "entries": [
+    {
+      "hash": "528d967",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Improve library religion icon size and color",
+      "scope": "ui"
+    },
     {
       "hash": "66bf563",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make deploy hooks resilient to db failures",
       "scope": "deploy"
-    },
-    {
-      "hash": "cc3f54a",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add one-time deploy hooks system",
-      "scope": "deploy"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "528d967",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Improve library religion icon size and color",
+        "scope": "ui"
+      },
       {
         "hash": "66bf563",
         "date": "2025-12-27",
@@ -699,13 +706,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Make deploy hooks resilient to db failures",
-        "scope": "deploy"
-      },
-      {
-        "hash": "cc3f54a",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add one-time deploy hooks system",
         "scope": "deploy"
       }
     ]
