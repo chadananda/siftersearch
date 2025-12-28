@@ -35,7 +35,7 @@ import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats } from '../lib/search.js';
-import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus } from '../services/indexer.js';
+import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
 
@@ -836,5 +836,51 @@ export default async function adminRoutes(fastify) {
     }
 
     return validation;
+  });
+
+  // ========================================
+  // Embedding Cache Management
+  // ========================================
+
+  /**
+   * Get embedding cache statistics
+   * Shows how many embeddings are cached in libsql
+   */
+  fastify.get('/server/embedding-cache', { preHandler: requireInternal }, async () => {
+    const stats = await getEmbeddingCacheStats();
+    return stats;
+  });
+
+  /**
+   * Migrate existing embeddings from Meilisearch to libsql
+   * This preserves paid-for OpenAI embeddings so we don't have to regenerate them
+   */
+  fastify.post('/server/migrate-embeddings', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          dryRun: { type: 'boolean', default: false },
+          batchSize: { type: 'number', default: 100 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { dryRun = false, batchSize = 100 } = request.body || {};
+
+    logger.info({ dryRun, batchSize }, 'Starting embedding migration from Meilisearch');
+
+    try {
+      const stats = await migrateEmbeddingsFromMeilisearch({ dryRun, batchSize });
+      return {
+        success: true,
+        dryRun,
+        ...stats
+      };
+    } catch (err) {
+      logger.error({ err: err.message }, 'Embedding migration failed');
+      throw ApiError.internal('Migration failed: ' + err.message);
+    }
   });
 }

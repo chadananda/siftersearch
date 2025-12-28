@@ -3,13 +3,22 @@
  *
  * Handles parsing, chunking, embedding generation, and indexing of documents.
  * Supports text, markdown, and JSON formats.
+ *
+ * EMBEDDING CACHING STRATEGY:
+ * - Embeddings are expensive (OpenAI API calls)
+ * - We store embeddings in libsql alongside paragraph text
+ * - content_hash tracks if text/context changed
+ * - Only regenerate embeddings when content actually changes
+ * - Metadata-only updates (authority, collection) reuse cached embeddings
  */
 
+import crypto from 'crypto';
 import { aiService } from '../lib/ai-services.js';
 import { indexDocument, deleteDocument, getMeili, INDEXES } from '../lib/search.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import { getAuthority } from '../lib/authority.js';
+import { query, queryOne, queryAll } from '../lib/db.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -19,6 +28,133 @@ const CHUNK_CONFIG = {
   sentenceDelimiters: /[.!?]\s+/,
   paragraphDelimiters: /\n\n+/
 };
+
+// Current embedding model identifier (update when changing models)
+const EMBEDDING_MODEL = 'text-embedding-3-small';
+
+/**
+ * Compute content hash for change detection
+ * Hash includes text and any context that affects embedding quality
+ * @param {string} text - The paragraph text
+ * @param {string} [context] - Optional context (who, what, where, when)
+ * @returns {string} MD5 hash
+ */
+function computeContentHash(text, context = '') {
+  const content = `${text}|||${context}`.trim();
+  return crypto.createHash('md5').update(content).digest('hex');
+}
+
+/**
+ * Get cached embeddings from libsql for paragraphs that haven't changed
+ * @param {string} docId - Document ID
+ * @param {Array<{text: string, hash: string}>} paragraphs - Paragraphs with hashes
+ * @returns {Promise<Map<number, Float32Array>>} Map of paragraph_index to embedding
+ */
+async function getCachedEmbeddings(docId, paragraphs) {
+  const cached = new Map();
+
+  try {
+    // Get existing content rows for this document
+    const existing = await queryAll(
+      `SELECT paragraph_index, content_hash, embedding, embedding_model
+       FROM content WHERE doc_id = ?`,
+      [docId]
+    );
+
+    for (const row of existing) {
+      const para = paragraphs[row.paragraph_index];
+      // Check if hash matches AND we have an embedding with current model
+      if (para &&
+          row.content_hash === para.hash &&
+          row.embedding &&
+          row.embedding_model === EMBEDDING_MODEL) {
+        // Convert BLOB back to Float32Array
+        const buffer = row.embedding;
+        if (buffer && buffer.length > 0) {
+          cached.set(row.paragraph_index, new Float32Array(buffer.buffer || buffer));
+        }
+      }
+    }
+
+    logger.debug({ docId, cached: cached.size, total: paragraphs.length }, 'Embedding cache hits');
+  } catch (err) {
+    logger.warn({ err: err.message, docId }, 'Failed to get cached embeddings');
+  }
+
+  return cached;
+}
+
+/**
+ * Store document and content in libsql
+ * @param {Object} document - Document metadata
+ * @param {Array<Object>} paragraphs - Paragraphs with text, hash, embedding
+ */
+async function storeInLibsql(document, paragraphs) {
+  const now = new Date().toISOString();
+
+  try {
+    // Upsert document
+    await query(`
+      INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        author = excluded.author,
+        religion = excluded.religion,
+        collection = excluded.collection,
+        language = excluded.language,
+        year = excluded.year,
+        description = excluded.description,
+        paragraph_count = excluded.paragraph_count,
+        updated_at = excluded.updated_at
+    `, [
+      document.id,
+      document.title,
+      document.author,
+      document.religion,
+      document.collection,
+      document.language,
+      document.year,
+      document.description,
+      paragraphs.length,
+      now,
+      now
+    ]);
+
+    // Delete existing paragraphs for this document (simpler than complex upsert)
+    await query('DELETE FROM content WHERE doc_id = ?', [document.id]);
+
+    // Insert all paragraphs
+    for (const para of paragraphs) {
+      // Convert Float32Array to Buffer for BLOB storage
+      const embeddingBlob = para.embedding
+        ? Buffer.from(para.embedding.buffer || para.embedding)
+        : null;
+
+      await query(`
+        INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `, [
+        para.id,
+        document.id,
+        para.paragraph_index,
+        para.text,
+        para.content_hash,
+        para.heading || null,
+        para.blocktype || 'paragraph',
+        embeddingBlob,
+        para.embedding ? EMBEDDING_MODEL : null,
+        now,
+        now
+      ]);
+    }
+
+    logger.debug({ docId: document.id, paragraphs: paragraphs.length }, 'Stored in libsql');
+  } catch (err) {
+    logger.error({ err: err.message, docId: document.id }, 'Failed to store in libsql');
+    throw err;
+  }
+}
 
 /**
  * Parse document text into paragraphs/chunks
@@ -133,6 +269,7 @@ export function parseMarkdownFrontmatter(text) {
 
 /**
  * Index a document from raw text
+ * Uses embedding cache in libsql to avoid regenerating unchanged paragraphs
  */
 export async function indexDocumentFromText(text, metadata = {}) {
   const documentId = metadata.id || `doc_${nanoid(12)}`;
@@ -179,11 +316,45 @@ export async function indexDocumentFromText(text, metadata = {}) {
     throw new Error('Document has no content to index');
   }
 
-  logger.info({ documentId, chunks: chunks.length }, 'Generating embeddings');
+  // Compute content hashes for change detection
+  const chunksWithHashes = chunks.map((text, index) => ({
+    text,
+    index,
+    hash: computeContentHash(text)
+  }));
 
-  // Generate embeddings for all chunks
-  const embeddingResult = { embeddings: await aiService('embedding').embed(chunks) };
-  const embeddings = embeddingResult.embeddings;
+  // Check for cached embeddings in libsql
+  const cachedEmbeddings = await getCachedEmbeddings(documentId, chunksWithHashes);
+  const cachedCount = cachedEmbeddings.size;
+
+  // Find chunks that need new embeddings
+  const chunksToEmbed = chunksWithHashes.filter((_, i) => !cachedEmbeddings.has(i));
+
+  logger.info({
+    documentId,
+    chunks: chunks.length,
+    cached: cachedCount,
+    toGenerate: chunksToEmbed.length
+  }, 'Embedding status');
+
+  // Generate embeddings only for new/changed chunks
+  let newEmbeddings = [];
+  if (chunksToEmbed.length > 0) {
+    const textsToEmbed = chunksToEmbed.map(c => c.text);
+    newEmbeddings = await aiService('embedding').embed(textsToEmbed);
+    logger.info({ documentId, generated: newEmbeddings.length }, 'Generated new embeddings');
+  }
+
+  // Merge cached and new embeddings
+  const embeddings = [];
+  let newEmbeddingIndex = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    if (cachedEmbeddings.has(i)) {
+      embeddings.push(cachedEmbeddings.get(i));
+    } else {
+      embeddings.push(newEmbeddings[newEmbeddingIndex++]);
+    }
+  }
 
   // Calculate authority (doctrinal weight) based on author, collection, religion
   const authority = getAuthority({
@@ -210,7 +381,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
     created_at: new Date().toISOString()
   };
 
-  // Create paragraph records with embeddings
+  // Create paragraph records with embeddings (for Meilisearch)
   const paragraphs = chunks.map((text, index) => ({
     id: `${documentId}_p${index}`,
     document_id: documentId,
@@ -233,10 +404,25 @@ export async function indexDocumentFromText(text, metadata = {}) {
   // Index in Meilisearch
   await indexDocument(document, paragraphs);
 
+  // Also store in libsql (with embeddings for caching)
+  const libsqlParagraphs = chunks.map((text, index) => ({
+    id: `${documentId}_p${index}`,
+    paragraph_index: index,
+    text,
+    content_hash: chunksWithHashes[index].hash,
+    heading: extractHeading(content, text),
+    blocktype: 'paragraph',
+    embedding: embeddings[index]
+  }));
+
+  await storeInLibsql(document, libsqlParagraphs);
+
   return {
     documentId,
     title: finalMeta.title,
     chunks: chunks.length,
+    cached: cachedCount,
+    generated: chunks.length - cachedCount,
     success: true
   };
 }
@@ -385,6 +571,177 @@ export async function getIndexingStatus() {
   };
 }
 
+/**
+ * Migrate existing embeddings from Meilisearch to libsql
+ * This preserves paid-for OpenAI embeddings so we don't have to regenerate them
+ * @param {Object} options
+ * @param {number} options.batchSize - Documents per batch (default: 100)
+ * @param {boolean} options.dryRun - If true, just count documents
+ * @returns {Promise<{documents: number, paragraphs: number, embeddings: number}>}
+ */
+export async function migrateEmbeddingsFromMeilisearch(options = {}) {
+  const { batchSize = 100, dryRun = false } = options;
+  const meili = getMeili();
+  const now = new Date().toISOString();
+
+  const stats = { documents: 0, paragraphs: 0, embeddings: 0, errors: 0 };
+
+  try {
+    // Get all documents from Meilisearch (we need their metadata)
+    const docsIndex = meili.index(INDEXES.DOCUMENTS);
+    const parasIndex = meili.index(INDEXES.PARAGRAPHS);
+
+    // Fetch documents in batches
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      // Get batch of documents
+      const docsResponse = await docsIndex.getDocuments({
+        limit: batchSize,
+        offset
+      });
+
+      const docs = docsResponse.results;
+      if (docs.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      logger.info({ offset, count: docs.length }, 'Processing document batch');
+
+      for (const doc of docs) {
+        try {
+          // Get paragraphs for this document with vectors
+          const parasResponse = await parasIndex.search('', {
+            filter: `document_id = "${doc.id}"`,
+            limit: 1000,
+            retrieveVectors: true
+          });
+
+          const paragraphs = parasResponse.hits;
+
+          if (dryRun) {
+            stats.documents++;
+            stats.paragraphs += paragraphs.length;
+            stats.embeddings += paragraphs.filter(p => p._vectors?.default).length;
+            continue;
+          }
+
+          // Store document in libsql
+          await query(`
+            INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              title = excluded.title,
+              author = excluded.author,
+              religion = excluded.religion,
+              collection = excluded.collection,
+              language = excluded.language,
+              year = excluded.year,
+              description = excluded.description,
+              paragraph_count = excluded.paragraph_count,
+              updated_at = excluded.updated_at
+          `, [
+            doc.id,
+            doc.title,
+            doc.author,
+            doc.religion,
+            doc.collection,
+            doc.language,
+            doc.year,
+            doc.description,
+            paragraphs.length,
+            now,
+            now
+          ]);
+
+          stats.documents++;
+
+          // Store paragraphs with embeddings
+          for (const para of paragraphs) {
+            const embedding = para._vectors?.default;
+            const embeddingBlob = embedding
+              ? Buffer.from(new Float32Array(embedding).buffer)
+              : null;
+
+            const contentHash = computeContentHash(para.text);
+
+            await query(`
+              INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                text = excluded.text,
+                content_hash = excluded.content_hash,
+                heading = excluded.heading,
+                embedding = excluded.embedding,
+                embedding_model = excluded.embedding_model,
+                synced = 1,
+                updated_at = excluded.updated_at
+            `, [
+              para.id,
+              doc.id,
+              para.paragraph_index,
+              para.text,
+              contentHash,
+              para.heading || null,
+              'paragraph',
+              embeddingBlob,
+              embedding ? EMBEDDING_MODEL : null,
+              now,
+              now
+            ]);
+
+            stats.paragraphs++;
+            if (embedding) stats.embeddings++;
+          }
+
+          logger.debug({ docId: doc.id, paragraphs: paragraphs.length }, 'Migrated document');
+        } catch (err) {
+          logger.error({ err: err.message, docId: doc.id }, 'Failed to migrate document');
+          stats.errors++;
+        }
+      }
+
+      offset += batchSize;
+      if (docs.length < batchSize) {
+        hasMore = false;
+      }
+    }
+
+    logger.info(stats, 'Migration complete');
+    return stats;
+  } catch (err) {
+    logger.error({ err: err.message }, 'Migration failed');
+    throw err;
+  }
+}
+
+/**
+ * Get embedding cache statistics
+ */
+export async function getEmbeddingCacheStats() {
+  try {
+    const [docCount, paraCount, embeddingCount] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs'),
+      queryOne('SELECT COUNT(*) as count FROM content'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL')
+    ]);
+
+    return {
+      documents: docCount?.count || 0,
+      paragraphs: paraCount?.count || 0,
+      withEmbeddings: embeddingCount?.count || 0,
+      cacheHitRate: paraCount?.count > 0
+        ? Math.round((embeddingCount?.count || 0) / paraCount.count * 100)
+        : 0
+    };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to get cache stats');
+    return { documents: 0, paragraphs: 0, withEmbeddings: 0, cacheHitRate: 0 };
+  }
+}
+
 export const indexer = {
   parseDocument,
   parseMarkdownFrontmatter,
@@ -393,7 +750,9 @@ export const indexer = {
   indexFromJSON,
   removeDocument,
   reindexAll,
-  getIndexingStatus
+  getIndexingStatus,
+  migrateEmbeddingsFromMeilisearch,
+  getEmbeddingCacheStats
 };
 
 export default indexer;
