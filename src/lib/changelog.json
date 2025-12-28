@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T13:11:12.287Z",
+  "generated": "2025-12-28T13:16:21.019Z",
   "entries": [
+    {
+      "hash": "05045cd",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Require authentication for auto-update trigger",
+      "scope": null
+    },
     {
       "hash": "bf98589",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Consolidate user menu and rename Search to Chat",
       "scope": "navbar"
-    },
-    {
-      "hash": "9b06c06",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add library browser and unified navigation bar",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "05045cd",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Require authentication for auto-update trigger",
+        "scope": null
+      },
       {
         "hash": "bf98589",
         "date": "2025-12-28",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Consolidate user menu and rename Search to Chat",
         "scope": "navbar"
-      },
-      {
-        "hash": "9b06c06",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add library browser and unified navigation bar",
-        "scope": null
       }
     ]
   }

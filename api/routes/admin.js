@@ -3,20 +3,25 @@
  *
  * All routes require admin tier authentication.
  *
+ * User Management:
  * GET /api/admin/stats - Dashboard statistics
  * GET /api/admin/users - List users
  * PUT /api/admin/users/:id - Update user (tier, ban, etc.)
  * GET /api/admin/pending - Users awaiting approval
  * POST /api/admin/approve/:id - Approve a user
+ *
+ * Document Indexing:
  * POST /api/admin/index - Index a document
  * POST /api/admin/index/batch - Batch index documents
  * DELETE /api/admin/index/:id - Remove document from index
  * GET /api/admin/index/status - Get indexing queue status
  *
  * Server Management (requires admin JWT or X-Internal-Key header):
- * POST /api/admin/server/reindex - Start library re-indexing
- * POST /api/admin/server/fix-languages - Fix RTL language detection
- * POST /api/admin/server/populate-translations - Start translation population
+ * GET /api/admin/server/status - Get database/Meilisearch stats
+ * POST /api/admin/server/migrate - Run database migrations
+ * POST /api/admin/server/reindex - Re-index library (filters: religion, collection, path, documentId)
+ * POST /api/admin/server/fix-languages - Fix RTL language detection (filters: limit, religion, dryRun)
+ * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
  * GET /api/admin/server/tasks - Get status of background tasks
  * GET /api/admin/server/tasks/:taskId - Get detailed task output
  * DELETE /api/admin/server/tasks - Clear completed tasks
@@ -385,6 +390,60 @@ export default async function adminRoutes(fastify) {
   // 2. Standard admin JWT authentication
 
   /**
+   * Get server status - database stats, Meilisearch stats, etc.
+   */
+  fastify.get('/server/status', { preHandler: requireInternal }, async () => {
+    const [dbStats, searchStats] = await Promise.all([
+      // Database stats
+      Promise.all([
+        queryOne('SELECT COUNT(*) as count FROM docs'),
+        queryOne('SELECT COUNT(*) as count FROM content'),
+        queryOne('SELECT COUNT(*) as count FROM users'),
+        queryOne('SELECT COUNT(*) as count FROM library_nodes')
+      ]).then(([docs, content, users, nodes]) => ({
+        docs: docs?.count || 0,
+        content: content?.count || 0,
+        users: users?.count || 0,
+        libraryNodes: nodes?.count || 0
+      })).catch(() => ({ docs: 0, content: 0, users: 0, libraryNodes: 0 })),
+      // Meilisearch stats
+      getSearchStats().catch(() => ({ documents: { numberOfDocuments: 0 }, paragraphs: { numberOfDocuments: 0 } }))
+    ]);
+
+    return {
+      database: dbStats,
+      meilisearch: {
+        documents: searchStats.documents?.numberOfDocuments || 0,
+        paragraphs: searchStats.paragraphs?.numberOfDocuments || 0
+      },
+      backgroundTasks: {
+        running: [...backgroundTasks.values()].filter(t => t.status === 'running').length,
+        completed: [...backgroundTasks.values()].filter(t => t.status === 'completed').length,
+        failed: [...backgroundTasks.values()].filter(t => t.status === 'failed').length
+      }
+    };
+  });
+
+  /**
+   * Run database migrations
+   */
+  fastify.post('/server/migrate', { preHandler: requireInternal }, async () => {
+    const { runMigrations } = await import('../lib/migrations.js');
+
+    try {
+      const result = await runMigrations();
+      logger.info(result, 'Migrations run via API');
+      return {
+        success: true,
+        ...result
+      };
+    } catch (err) {
+      logger.error({ error: err.message }, 'Migration failed via API');
+      throw ApiError.internal(`Migration failed: ${err.message}`);
+    }
+  });
+
+  /**
    * Helper to run a script as a background task
    */
   function runBackgroundTask(taskId, scriptPath, args = []) {
@@ -437,6 +496,7 @@ export default async function adminRoutes(fastify) {
 
   /**
    * Start library re-indexing (background task)
+   * Supports granular filtering by religion, collection, or path pattern
    */
   fastify.post('/server/reindex', {
     preHandler: requireInternal,
@@ -445,12 +505,16 @@ export default async function adminRoutes(fastify) {
         type: 'object',
         properties: {
           force: { type: 'boolean', default: false },
-          limit: { type: 'integer', minimum: 1 }
+          limit: { type: 'integer', minimum: 1 },
+          religion: { type: 'string', description: 'Filter by religion name (e.g., "Bahai", "Islam")' },
+          collection: { type: 'string', description: 'Filter by collection name' },
+          path: { type: 'string', description: 'Filter by path pattern (glob)' },
+          documentId: { type: 'string', description: 'Re-index a single document by ID' }
         }
       }
     }
   }, async (request) => {
-    const { force = false, limit } = request.body || {};
+    const { force = false, limit, religion, collection, path, documentId } = request.body || {};
 
     // Check if already running
     const existing = backgroundTasks.get('reindex');
@@ -461,6 +525,10 @@ export default async function adminRoutes(fastify) {
     const args = [];
     if (force) args.push('--force');
     if (limit) args.push(`--limit=${limit}`);
+    if (religion) args.push(`--religion=${religion}`);
+    if (collection) args.push(`--collection=${collection}`);
+    if (path) args.push(`--path=${path}`);
+    if (documentId) args.push(`--document=${documentId}`);
 
     const task = runBackgroundTask('reindex', 'scripts/index-library.js', args);
 
@@ -470,28 +538,50 @@ export default async function adminRoutes(fastify) {
       success: true,
       taskId: 'reindex',
       message: 'Library re-indexing started in background',
+      filters: { force, limit, religion, collection, path, documentId },
       status: task.status
     };
   });
 
   /**
    * Fix RTL language detection (background task)
+   * Scans documents and corrects language field based on content analysis
    */
-  fastify.post('/server/fix-languages', { preHandler: requireInternal }, async () => {
+  fastify.post('/server/fix-languages', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', minimum: 1, description: 'Limit number of documents to process' },
+          religion: { type: 'string', description: 'Filter by religion name' },
+          dryRun: { type: 'boolean', default: false, description: 'Preview changes without applying' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { limit, religion, dryRun } = request.body || {};
+
     // Check if already running
     const existing = backgroundTasks.get('fix-languages');
     if (existing && existing.status === 'running') {
       throw ApiError.conflict('Language fix is already in progress');
     }
 
-    const task = runBackgroundTask('fix-languages', 'scripts/fix-rtl-languages.js');
+    const args = [];
+    if (limit) args.push(`--limit=${limit}`);
+    if (religion) args.push(`--religion=${religion}`);
+    if (dryRun) args.push('--dry-run');
 
-    logger.info('RTL language fix started via API');
+    const task = runBackgroundTask('fix-languages', 'scripts/fix-rtl-languages.js', args);
+
+    logger.info({ args }, 'RTL language fix started via API');
 
     return {
       success: true,
       taskId: 'fix-languages',
       message: 'RTL language fix started in background',
+      filters: { limit, religion, dryRun },
       status: task.status
     };
   });
