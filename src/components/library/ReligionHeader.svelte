@@ -48,7 +48,7 @@
     <div class="flex items-center gap-4">
       <div class="w-16 h-16 flex items-center justify-center bg-white/15 backdrop-blur rounded-xl border border-white/20 shrink-0">
         {#if isBahai}
-          <img src="/bahai-star.svg" alt="Baha'i" class="w-10 h-10 invert" />
+          <img src="/bahai-star.svg" alt="Baha'i" class="w-9 h-9 invert" />
         {:else}
           <span class="text-4xl">{symbol}</span>
         {/if}

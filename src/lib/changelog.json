@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T14:24:40.795Z",
+  "generated": "2025-12-28T14:30:54.819Z",
   "entries": [
+    {
+      "hash": "ddf4666",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
+      "scope": null
+    },
     {
       "hash": "f648734",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add fallback to tree endpoint when nodes unavailable",
       "scope": "library"
-    },
-    {
-      "hash": "a7afd8e",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add collection detail pages with hierarchy support",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "ddf4666",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
+        "scope": null
+      },
       {
         "hash": "f648734",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Add fallback to tree endpoint when nodes unavailable",
-        "scope": "library"
-      },
-      {
-        "hash": "a7afd8e",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add collection detail pages with hierarchy support",
         "scope": "library"
       }
     ]
