@@ -3,7 +3,7 @@
 /**
  * Populate Translations
  *
- * Translates non-English documents to English and stores in indexed_paragraphs.translation
+ * Translates non-English documents to English and stores in content.translation
  * Uses two translation styles:
  *   - Scriptural: Neo-biblical style (Shoghi Effendi) for sacred texts
  *   - Non-scriptural: Modern readable style, with scriptural quotes preserved
@@ -296,12 +296,12 @@ async function getDocumentsToTranslate() {
  */
 async function getParagraphsToTranslate(documentId) {
   const whereClause = force
-    ? 'WHERE document_id = ?'
-    : 'WHERE document_id = ? AND (translation IS NULL OR translation = \'\')';
+    ? 'WHERE doc_id = ?'
+    : 'WHERE doc_id = ? AND (translation IS NULL OR translation = \'\')';
 
   return queryAll(`
     SELECT id, paragraph_index, text, translation
-    FROM indexed_paragraphs
+    FROM content
     ${whereClause}
     ORDER BY paragraph_index
   `, [documentId]);
@@ -314,7 +314,7 @@ async function saveTranslation(paragraphId, translation) {
   if (dryRun) return;
 
   await query(
-    'UPDATE indexed_paragraphs SET translation = ? WHERE id = ?',
+    'UPDATE content SET translation = ? WHERE id = ?',
     [translation, paragraphId]
   );
 }
@@ -334,13 +334,13 @@ async function populateTranslations() {
     console.log(`📝 Forced style: ${forceStyle}\n`);
   }
 
-  // Check if indexed_paragraphs table exists
+  // Check if content table exists
   try {
-    await queryAll('SELECT 1 FROM indexed_paragraphs LIMIT 1');
+    await queryAll('SELECT 1 FROM content LIMIT 1');
   } catch (err) {
     if (err.message?.includes('no such table')) {
-      console.log('⚠️  indexed_paragraphs table not found (development environment)');
-      console.log('   This script needs to run against the production database.');
+      console.log('⚠️  content table not found - run migrations first');
+      console.log('   This script needs to run against a migrated database.');
       return;
     }
     throw err;

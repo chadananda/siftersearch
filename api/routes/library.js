@@ -967,7 +967,7 @@ Return ONLY the description text, no quotes or formatting.`;
       if (setClauses.length > 0) {
         setClauses.push('updated_at = CURRENT_TIMESTAMP');
         values.push(id);
-        await query(`UPDATE indexed_documents SET ${setClauses.join(', ')} WHERE id = ?`, values);
+        await query(`UPDATE docs SET ${setClauses.join(', ')} WHERE id = ?`, values);
       }
     } catch (err) {
       logger.warn({ err, id }, 'Failed to update SQLite document record');
@@ -1104,15 +1104,15 @@ Return ONLY the description text, no quotes or formatting.`;
     // Get paragraphs with translations from SQLite (translations stored there)
     const paragraphs = await queryAll(`
       SELECT paragraph_index, text, translation, blocktype, heading
-      FROM indexed_paragraphs
-      WHERE document_id = ?
+      FROM content
+      WHERE doc_id = ?
       ORDER BY paragraph_index
       LIMIT ? OFFSET ?
     `, [id, limit, offset]);
 
     // Get total count
     const countResult = await queryOne(
-      'SELECT COUNT(*) as count FROM indexed_paragraphs WHERE document_id = ?',
+      'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
       [id]
     );
 

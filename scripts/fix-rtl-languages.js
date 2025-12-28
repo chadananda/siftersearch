@@ -5,7 +5,9 @@
  * Scans all documents marked as 'en' in Meilisearch,
  * checks their content for Arabic/Farsi script, and updates the language field.
  *
- * Works with Meilisearch only (no SQLite dependency).
+ * Updates both:
+ * - libsql docs table (source of truth)
+ * - Meilisearch index (search index)
  */
 
 import dotenv from 'dotenv';
@@ -20,6 +22,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { getMeili, INDEXES } from '../api/lib/search.js';
+import { query } from '../api/lib/db.js';
 
 // Arabic Unicode ranges
 const ARABIC_PATTERN = /[\u0600-\u06FF]/;
@@ -129,8 +132,24 @@ async function fixDocumentLanguages() {
     console.log(`  ... and ${fixes.length - 20} more\n`);
   }
 
-  // Update Meilisearch
-  console.log('\n🔄 Updating Meilisearch...');
+  // Update libsql (source of truth)
+  console.log('\n🔄 Updating libsql docs table...');
+  for (const fix of fixes) {
+    try {
+      await query('UPDATE docs SET language = ? WHERE id = ?', [fix.newLang, fix.id]);
+    } catch (err) {
+      // Table may not exist yet if migration hasn't run
+      if (err.message?.includes('no such table')) {
+        console.log('  ⚠️  docs table not found - run migrations first');
+        break;
+      }
+      throw err;
+    }
+  }
+  console.log(`  Updated ${fixes.length} documents in libsql`);
+
+  // Update Meilisearch (search index)
+  console.log('\n🔄 Updating Meilisearch index...');
   const meiliUpdates = fixes.map(fix => ({
     id: fix.id,
     language: fix.newLang

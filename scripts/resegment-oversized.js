@@ -49,13 +49,13 @@ const documentArg = args.find(arg => arg.startsWith('--document='));
 const documentFilter = documentArg ? documentArg.split('=')[1] : null;
 
 /**
- * Check if indexed_paragraphs table exists
+ * Check if content table exists
  */
 async function tableExists() {
   try {
     const result = await queryOne(`
       SELECT name FROM sqlite_master
-      WHERE type='table' AND name='indexed_paragraphs'
+      WHERE type='table' AND name='content'
     `);
     return result !== null;
   } catch {
@@ -70,7 +70,7 @@ async function findOversizedParagraphs() {
   // Check if table exists first
   if (!await tableExists()) {
     console.log('');
-    console.log('⚠️  The indexed_paragraphs table does not exist.');
+    console.log('⚠️  The content table does not exist.');
     console.log('   This script is designed to run on production where documents are indexed.');
     console.log('   Run document ingestion first to populate the database.');
     console.log('');
@@ -79,27 +79,28 @@ async function findOversizedParagraphs() {
 
   let sql = `
     SELECT
-      p.id,
-      p.document_id,
-      p.paragraph_index,
-      p.text,
-      p.blocktype,
-      p.heading,
-      p.title,
-      p.author,
-      p.religion,
-      p.collection,
-      p.language,
-      p.year,
-      LENGTH(p.text) as text_length
-    FROM indexed_paragraphs p
-    WHERE LENGTH(p.text) > ?
+      c.id,
+      c.doc_id,
+      c.paragraph_index,
+      c.text,
+      c.blocktype,
+      c.heading,
+      d.title,
+      d.author,
+      d.religion,
+      d.collection,
+      d.language,
+      d.year,
+      LENGTH(c.text) as text_length
+    FROM content c
+    JOIN docs d ON c.doc_id = d.id
+    WHERE LENGTH(c.text) > ?
   `;
 
   const params = [MAX_CHUNK_SIZE];
 
   if (documentFilter) {
-    sql += ' AND p.document_id = ?';
+    sql += ' AND c.doc_id = ?';
     params.push(documentFilter);
   }
 
@@ -134,7 +135,7 @@ async function deleteParagraphFromMeili(paragraphId) {
  * Re-segment a single oversized paragraph
  */
 async function resegmentParagraph(paragraph) {
-  const { id, document_id, text, blocktype, heading, title, author, religion, collection, language, year } = paragraph;
+  const { id, doc_id, text, blocktype, heading, title, author, religion, collection, language, year } = paragraph;
 
   // Detect language features for segmentation
   const features = detectLanguageFeatures(text);
@@ -164,7 +165,7 @@ async function resegmentParagraph(paragraph) {
   return {
     segmented: true,
     segments,
-    metadata: { document_id, blocktype, heading, title, author, religion, collection, language: detectedLanguage, year }
+    metadata: { doc_id, blocktype, heading, title, author, religion, collection, language: detectedLanguage, year }
   };
 }
 
@@ -172,7 +173,7 @@ async function resegmentParagraph(paragraph) {
  * Apply resegmentation changes to database
  */
 async function applyResegmentation(oldParagraph, result) {
-  const { id: oldId, document_id, paragraph_index } = oldParagraph;
+  const { id: oldId, doc_id, paragraph_index } = oldParagraph;
   const { segments, metadata } = result;
 
   // Delete old paragraph from Meilisearch first
@@ -181,9 +182,9 @@ async function applyResegmentation(oldParagraph, result) {
   // Prepare SQL statements
   const statements = [];
 
-  // Delete old paragraph from SQLite
+  // Delete old paragraph from libsql
   statements.push({
-    sql: 'DELETE FROM indexed_paragraphs WHERE id = ?',
+    sql: 'DELETE FROM content WHERE id = ?',
     args: [oldId]
   });
 
@@ -192,27 +193,21 @@ async function applyResegmentation(oldParagraph, result) {
   for (let i = 0; i < segments.length; i++) {
     const segmentText = segments[i];
     const contentHash = hashContent(segmentText);
-    const newId = `${document_id}_p${paragraph_index}_${i}`;
+    const newId = `${doc_id}_p${paragraph_index}_${i}`;
 
     statements.push({
       sql: `
-        INSERT INTO indexed_paragraphs
-        (id, document_id, paragraph_index, text, content_hash, heading, title, author, religion, collection, language, year, blocktype, embedded, synced)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+        INSERT INTO content
+        (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, synced)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0)
       `,
       args: [
         newId,
-        document_id,
+        doc_id,
         paragraph_index + (i * 0.001), // Use fractional index to maintain order
         segmentText,
         contentHash,
         metadata.heading,
-        metadata.title,
-        metadata.author,
-        metadata.religion,
-        metadata.collection,
-        metadata.language,
-        metadata.year,
         metadata.blocktype
       ]
     });
@@ -224,7 +219,7 @@ async function applyResegmentation(oldParagraph, result) {
   return {
     oldId,
     newCount: segments.length,
-    newIds: segments.map((_, i) => `${document_id}_p${paragraph_index}_${i}`)
+    newIds: segments.map((_, i) => `${doc_id}_p${paragraph_index}_${i}`)
   };
 }
 
@@ -264,11 +259,11 @@ async function main() {
   // Show summary by document
   const byDocument = {};
   for (const p of oversized) {
-    if (!byDocument[p.document_id]) {
-      byDocument[p.document_id] = { count: 0, maxSize: 0, title: p.title };
+    if (!byDocument[p.doc_id]) {
+      byDocument[p.doc_id] = { count: 0, maxSize: 0, title: p.title };
     }
-    byDocument[p.document_id].count++;
-    byDocument[p.document_id].maxSize = Math.max(byDocument[p.document_id].maxSize, p.text_length);
+    byDocument[p.doc_id].count++;
+    byDocument[p.doc_id].maxSize = Math.max(byDocument[p.doc_id].maxSize, p.text_length);
   }
 
   console.log('📊 Summary by document:');

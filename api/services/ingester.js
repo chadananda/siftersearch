@@ -244,7 +244,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
 
   if (filePath) {
     existingDoc = await queryOne(
-      'SELECT id, file_hash FROM indexed_documents WHERE file_path = ?',
+      'SELECT id, file_hash FROM docs WHERE file_path = ?',
       [filePath]
     );
 
@@ -261,7 +261,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     // Document changed - get existing paragraphs for smart diffing
     if (existingDoc) {
       const paragraphs = await queryAll(
-        'SELECT id, content_hash, embedded, synced FROM indexed_paragraphs WHERE document_id = ?',
+        'SELECT id, content_hash, embedding, synced FROM content WHERE doc_id = ?',
         [existingDoc.id]
       );
       for (const p of paragraphs) {
@@ -316,7 +316,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
 
   // Insert/update document record
   await query(`
-    INSERT OR REPLACE INTO indexed_documents
+    INSERT OR REPLACE INTO docs
     (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `, [
@@ -353,19 +353,13 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       reusedCount++;
       paragraphStatements.push({
         sql: `
-          UPDATE indexed_paragraphs
-          SET paragraph_index = ?, heading = ?, title = ?, author = ?, religion = ?, collection = ?, language = ?, year = ?, blocktype = ?, synced = 0
+          UPDATE content
+          SET paragraph_index = ?, heading = ?, blocktype = ?, synced = 0
           WHERE id = ?
         `,
         args: [
           index,
           extractHeading(content, chunkText),
-          finalMeta.title,
-          finalMeta.author,
-          finalMeta.religion,
-          finalMeta.collection,
-          finalMeta.language,
-          safeParseYear(finalMeta.year),
           blocktype,
           existing.id
         ]
@@ -377,9 +371,9 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       newCount++;
       paragraphStatements.push({
         sql: `
-          INSERT INTO indexed_paragraphs
-          (id, document_id, paragraph_index, text, content_hash, heading, title, author, religion, collection, language, year, blocktype)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO content
+          (id, doc_id, paragraph_index, text, content_hash, heading, blocktype)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
           `${finalDocId}_p${index}`,
@@ -388,12 +382,6 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
           chunkText,
           contentHash,
           extractHeading(content, chunkText),
-          finalMeta.title,
-          finalMeta.author,
-          finalMeta.religion,
-          finalMeta.collection,
-          finalMeta.language,
-          safeParseYear(finalMeta.year),
           blocktype
         ]
       });
@@ -408,7 +396,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     // Note: We DON'T delete from paragraph_embeddings by paragraph_id anymore
     // The embeddings table is keyed by content_hash, so they persist for reuse
     paragraphStatements.push({
-      sql: `DELETE FROM indexed_paragraphs WHERE id = ?`,
+      sql: `DELETE FROM content WHERE id = ?`,
       args: [oldParagraph.id]
     });
   }
@@ -442,13 +430,12 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
 }
 
 /**
- * Remove a document and all its paragraphs
+ * Remove a document and all its content
  */
 export async function removeDocument(documentId) {
-  // Delete paragraphs first (foreign key constraint)
-  await query('DELETE FROM paragraph_embeddings WHERE paragraph_id IN (SELECT id FROM indexed_paragraphs WHERE document_id = ?)', [documentId]);
-  await query('DELETE FROM indexed_paragraphs WHERE document_id = ?', [documentId]);
-  await query('DELETE FROM indexed_documents WHERE id = ?', [documentId]);
+  // Delete content first (foreign key constraint), then doc
+  await query('DELETE FROM content WHERE doc_id = ?', [documentId]);
+  await query('DELETE FROM docs WHERE id = ?', [documentId]);
 
   logger.info({ documentId }, 'Document removed from SQLite');
   return { documentId, removed: true };
@@ -458,42 +445,40 @@ export async function removeDocument(documentId) {
  * Get ingestion statistics
  */
 export async function getIngestionStats() {
-  const docCount = await queryOne('SELECT COUNT(*) as count FROM indexed_documents');
-  const paraTotal = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs');
-  const paraUnembedded = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 0');
-  const paraEmbedded = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 1');
-  const paraUnsynced = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedded = 1 AND synced = 0');
-  const paraSynced = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE synced = 1');
-  const paraFailed = await queryOne('SELECT COUNT(*) as count FROM indexed_paragraphs WHERE embedding_error IS NOT NULL');
+  const docCount = await queryOne('SELECT COUNT(*) as count FROM docs');
+  const contentTotal = await queryOne('SELECT COUNT(*) as count FROM content');
+  const contentEmbedded = await queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL');
+  const contentUnembedded = await queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NULL');
+  const contentSynced = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 1');
+  const contentUnsynced = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0');
 
   return {
     documents: docCount?.count || 0,
-    paragraphs: {
-      total: paraTotal?.count || 0,
-      unembedded: paraUnembedded?.count || 0,
-      embedded: paraEmbedded?.count || 0,
-      unsynced: paraUnsynced?.count || 0,
-      synced: paraSynced?.count || 0,
-      failed: paraFailed?.count || 0
+    content: {
+      total: contentTotal?.count || 0,
+      embedded: contentEmbedded?.count || 0,
+      unembedded: contentUnembedded?.count || 0,
+      synced: contentSynced?.count || 0,
+      unsynced: contentUnsynced?.count || 0
     }
   };
 }
 
 /**
- * Get documents that need processing
+ * Get documents that need embedding
  */
 export async function getUnprocessedDocuments(limit = 100) {
-  const docs = await queryAll(`
+  const results = await queryAll(`
     SELECT d.*,
-           (SELECT COUNT(*) FROM indexed_paragraphs p WHERE p.document_id = d.id AND p.embedded = 0) as unembedded_count
-    FROM indexed_documents d
+           (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.embedding IS NULL) as unembedded_count
+    FROM docs d
     WHERE EXISTS (
-      SELECT 1 FROM indexed_paragraphs p WHERE p.document_id = d.id AND p.embedded = 0
+      SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.embedding IS NULL
     )
     LIMIT ?
   `, [limit]);
 
-  return docs;
+  return results;
 }
 
 /**
@@ -501,7 +486,7 @@ export async function getUnprocessedDocuments(limit = 100) {
  */
 export async function isFileIngested(filePath) {
   const doc = await queryOne(
-    'SELECT id, file_hash FROM indexed_documents WHERE file_path = ?',
+    'SELECT id, file_hash FROM docs WHERE file_path = ?',
     [filePath]
   );
   return doc !== null;
@@ -512,7 +497,7 @@ export async function isFileIngested(filePath) {
  */
 export async function getDocumentByPath(filePath) {
   return queryOne(
-    'SELECT * FROM indexed_documents WHERE file_path = ?',
+    'SELECT * FROM docs WHERE file_path = ?',
     [filePath]
   );
 }

@@ -570,11 +570,11 @@ Respond with JSON:
         SELECT
           d.id, d.title, d.author, d.religion, d.collection,
           d.paragraph_count, d.created_at,
-          (SELECT COUNT(*) FROM indexed_paragraphs p
-           WHERE p.document_id = d.id AND p.embedding_error IS NOT NULL) as error_count
-        FROM indexed_documents d
+          (SELECT COUNT(*) FROM content c
+           WHERE c.doc_id = d.id AND c.embedding IS NULL) as unembedded_count
+        FROM docs d
         WHERE d.paragraph_count >= ?
-        ORDER BY error_count DESC, d.created_at DESC
+        ORDER BY unembedded_count DESC, d.created_at DESC
         LIMIT ?
       `, [minParagraphs, limit * 2]);
 
@@ -583,12 +583,12 @@ Respond with JSON:
       for (const doc of documents) {
         const docIssues = [];
 
-        // Check for embedding errors
-        if (doc.error_count > 0) {
+        // Check for missing embeddings
+        if (doc.unembedded_count > 0) {
           docIssues.push({
-            type: 'embedding_errors',
-            severity: doc.error_count > 5 ? 'high' : 'medium',
-            count: doc.error_count
+            type: 'missing_embeddings',
+            severity: doc.unembedded_count > 5 ? 'high' : 'medium',
+            count: doc.unembedded_count
           });
         }
 
@@ -649,7 +649,7 @@ Respond with JSON:
       // Get current library stats for this religion
       const currentBooks = await queryAll(`
         SELECT DISTINCT title, author
-        FROM indexed_documents
+        FROM docs
         WHERE religion = ?
         LIMIT 100
       `, [religion]);
@@ -709,14 +709,14 @@ Respond with JSON:
       const religionStats = await queryAll(`
         SELECT religion, COUNT(*) as document_count,
                SUM(paragraph_count) as total_paragraphs
-        FROM indexed_documents
+        FROM docs
         GROUP BY religion
         ORDER BY document_count DESC
       `);
 
       const collectionStats = await queryAll(`
         SELECT collection, COUNT(*) as document_count
-        FROM indexed_documents
+        FROM docs
         GROUP BY collection
         ORDER BY document_count DESC
       `);
@@ -726,7 +726,7 @@ Respond with JSON:
           COUNT(*) as total_documents,
           SUM(paragraph_count) as total_paragraphs,
           COUNT(DISTINCT author) as unique_authors
-        FROM indexed_documents
+        FROM docs
       `);
 
       return {
@@ -893,7 +893,7 @@ Respond with JSON:
 
         // Update document record with source file
         await query(`
-          UPDATE indexed_documents SET source_file = ? WHERE id = ?
+          UPDATE docs SET source_file = ? WHERE id = ?
         `, [libraryPath, documentId]);
 
         results.local = { path: libraryPath };
@@ -912,7 +912,7 @@ Respond with JSON:
   async storeCoverImage(documentId, imageUrl) {
     if (!storage.hasCloudStorage()) {
       // Just update the cover_url directly
-      await query(`UPDATE indexed_documents SET cover_url = ? WHERE id = ?`, [imageUrl, documentId]);
+      await query(`UPDATE docs SET cover_url = ? WHERE id = ?`, [imageUrl, documentId]);
       return { url: imageUrl, stored: false };
     }
 
@@ -924,7 +924,7 @@ Respond with JSON:
       const result = await storage.uploadImageFromUrl(imageUrl, key);
 
       // Update document with stored cover URL
-      await query(`UPDATE indexed_documents SET cover_url = ? WHERE id = ?`, [result.url, documentId]);
+      await query(`UPDATE docs SET cover_url = ? WHERE id = ?`, [result.url, documentId]);
 
       // Record in document_assets
       await query(`
@@ -938,7 +938,7 @@ Respond with JSON:
     } catch (err) {
       this.logger.error({ err, documentId, imageUrl }, 'Failed to store cover image');
       // Fall back to using the original URL
-      await query(`UPDATE indexed_documents SET cover_url = ? WHERE id = ?`, [imageUrl, documentId]);
+      await query(`UPDATE docs SET cover_url = ? WHERE id = ?`, [imageUrl, documentId]);
       return { url: imageUrl, stored: false };
     }
   }

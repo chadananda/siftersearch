@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T03:57:44.301Z",
+  "generated": "2025-12-28T04:13:24.886Z",
   "entries": [
+    {
+      "hash": "66bf563",
+      "date": "2025-12-27",
+      "type": "New",
+      "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
+      "scope": null
+    },
     {
       "hash": "88fcc34",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add one-time deploy hooks system",
       "scope": "deploy"
-    },
-    {
-      "hash": "dbb2123",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add selective re-segmentation for oversized paragraphs",
-      "scope": "scripts"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "66bf563",
+        "date": "2025-12-27",
+        "type": "New",
+        "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
+        "scope": null
+      },
       {
         "hash": "88fcc34",
         "date": "2025-12-27",
@@ -700,13 +707,6 @@
         "type": "New",
         "description": "Add one-time deploy hooks system",
         "scope": "deploy"
-      },
-      {
-        "hash": "dbb2123",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add selective re-segmentation for oversized paragraphs",
-        "scope": "scripts"
       }
     ]
   }

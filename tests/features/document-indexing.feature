@@ -84,28 +84,27 @@ Feature: Document Indexing and Processing
   # ============================================
 
   @pending
-  Scenario: Phase 1 - Ingest documents to SQLite
+  Scenario: Phase 1 - Ingest documents to libsql
     Given markdown files in the library folder
     When the ingestion phase runs
-    Then documents should be stored in indexed_documents table
-    And paragraphs should be stored in indexed_paragraphs table
-    And paragraphs should have embedded=0 status
+    Then documents should be stored in docs table
+    And paragraphs should be stored in content table
+    And content should have embedding=NULL status
 
   @pending
   Scenario: Phase 2 - Batch embedding generation
-    Given paragraphs with embedded=0 status
+    Given content with embedding=NULL status
     When the embedding worker runs with batch size 100
-    Then embeddings should be generated for each paragraph
-    And embeddings should be stored in paragraph_embeddings table
-    And paragraph status should change to embedded=1
+    Then embeddings should be generated for each content row
+    And embeddings should be stored inline in content table
+    And content embedding field should be populated
 
   @pending
   Scenario: Phase 3 - Sync to Meilisearch
-    Given paragraphs with embedded=1 and synced=0 status
+    Given content with embedding IS NOT NULL and synced=0 status
     When the sync phase runs
-    Then paragraphs should be pushed to Meilisearch
-    And paragraph status should change to synced=1
-    And temporary embeddings should be cleaned up
+    Then content should be pushed to Meilisearch
+    And content status should change to synced=1
 
   @pending
   Scenario: Resumable indexing on failure
