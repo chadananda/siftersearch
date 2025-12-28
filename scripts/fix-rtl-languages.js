@@ -1,116 +1,123 @@
 #!/usr/bin/env node
-
 /**
- * Fix RTL Language Detection
+ * Fix Arabic/Farsi Document Languages
  *
- * Scans documents marked as 'en' and re-detects language from content.
- * Updates documents that are actually Arabic or Farsi.
- *
- * Usage:
- *   node scripts/fix-rtl-languages.js [--dry-run]
+ * Scans all documents marked as 'en' in SQLite and Meilisearch,
+ * checks their content for Arabic/Farsi script, and updates the language field.
  */
-
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env-secrets' });
-dotenv.config({ path: '.env-public' });
 
 import { query, queryAll } from '../api/lib/db.js';
 import { getMeili, INDEXES } from '../api/lib/search.js';
-import { detectLanguageFeatures } from '../api/services/segmenter.js';
 
-const dryRun = process.argv.includes('--dry-run');
+// Arabic Unicode ranges
+const ARABIC_PATTERN = /[\u0600-\u06FF]/;
+const EXTENDED_ARABIC_PATTERN = /[\u0750-\u077F]|[\uFB50-\uFDFF]|[\uFE70-\uFEFF]/;
+// Farsi-specific characters: پ چ ژ گ ی
+const FARSI_PATTERN = /[\u067E\u0686\u0698\u06AF\u06CC]/;
 
-async function fixRtlLanguages() {
-  console.log('🔍 Scanning for incorrectly labeled RTL documents');
-  console.log('================================================');
+function detectLanguage(text) {
+  if (!text) return 'en';
 
-  if (dryRun) {
-    console.log('DRY RUN - No changes will be made\n');
-  }
+  const hasArabic = ARABIC_PATTERN.test(text) || EXTENDED_ARABIC_PATTERN.test(text);
+  const hasFarsi = FARSI_PATTERN.test(text);
+
+  if (hasFarsi) return 'fa';
+  if (hasArabic) return 'ar';
+  return 'en';
+}
+
+async function fixDocumentLanguages() {
+  console.log('🔍 Scanning documents for Arabic/Farsi content...\n');
 
   const meili = getMeili();
+  const index = meili.index(INDEXES.DOCUMENTS);
 
-  // Check if indexed_paragraphs table exists
-  try {
-    await queryAll('SELECT 1 FROM indexed_paragraphs LIMIT 1');
-  } catch (err) {
-    if (err.message?.includes('no such table')) {
-      console.log('⚠️  indexed_paragraphs table not found (development environment)');
-      console.log('   This script needs to run against the production database.');
-      return;
-    }
-    throw err;
-  }
+  // Get all documents marked as 'en' from SQLite
+  const docs = await queryAll(`
+    SELECT d.id, d.title, d.language, d.author,
+           (SELECT GROUP_CONCAT(text, ' ') FROM indexed_paragraphs WHERE document_id = d.id LIMIT 5) as sample_content
+    FROM indexed_documents d
+    WHERE d.language = 'en'
+  `);
 
-  // Get all documents marked as English
-  const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-    limit: 10000,
-    filter: "language = 'en'",
-    attributesToRetrieve: ['id', 'title', 'author', 'language']
-  });
+  console.log(`Found ${docs.length} documents marked as 'en'\n`);
 
-  console.log(`Found ${result.hits.length} documents marked as 'en'\n`);
-
-  // Get paragraphs for each document and check language
   let fixedCount = 0;
   const fixes = [];
 
-  for (const doc of result.hits) {
-    // Get first few paragraphs to detect language
-    const paragraphs = await queryAll(
-      'SELECT text FROM indexed_paragraphs WHERE document_id = ? LIMIT 5',
-      [doc.id]
-    );
+  for (const doc of docs) {
+    const detectedLang = detectLanguage(doc.sample_content);
 
-    if (paragraphs.length === 0) continue;
-
-    const sampleText = paragraphs.map(p => p.text).join('\n');
-    const detected = detectLanguageFeatures(sampleText);
-
-    if (detected.language !== 'en') {
+    if (detectedLang !== 'en') {
       fixes.push({
         id: doc.id,
         title: doc.title,
         author: doc.author,
-        oldLang: 'en',
-        newLang: detected.language,
-        isRTL: detected.isRTL
+        oldLang: doc.language,
+        newLang: detectedLang
       });
-    }
-  }
-
-  console.log(`Found ${fixes.length} documents with incorrect language:\n`);
-
-  for (const fix of fixes) {
-    console.log(`  ${fix.newLang.toUpperCase()} | ${fix.author} | ${fix.title?.substring(0, 50)}`);
-
-    if (!dryRun) {
-      // Update SQLite
-      await query(
-        'UPDATE indexed_documents SET language = ? WHERE id = ?',
-        [fix.newLang, fix.id]
-      );
-
-      // Update Meilisearch
-      await meili.index(INDEXES.DOCUMENTS).updateDocuments([{
-        id: fix.id,
-        language: fix.newLang
-      }]);
-
       fixedCount++;
     }
   }
 
-  if (!dryRun && fixedCount > 0) {
-    console.log(`\n✅ Fixed ${fixedCount} documents`);
-  } else if (dryRun && fixes.length > 0) {
-    console.log(`\n📝 Would fix ${fixes.length} documents (dry-run)`);
-  } else {
-    console.log('\n✅ No fixes needed');
+  if (fixes.length === 0) {
+    console.log('✅ No documents need fixing - all languages are correct.');
+    return;
+  }
+
+  console.log(`Found ${fixedCount} documents that need language correction:\n`);
+
+  // Show first 10 for preview
+  for (const fix of fixes.slice(0, 10)) {
+    console.log(`  - "${fix.title}" by ${fix.author}: ${fix.oldLang} → ${fix.newLang}`);
+  }
+  if (fixes.length > 10) {
+    console.log(`  ... and ${fixes.length - 10} more\n`);
+  }
+
+  // Update SQLite
+  console.log('\n📝 Updating SQLite...');
+  for (const fix of fixes) {
+    await query(
+      'UPDATE indexed_documents SET language = ? WHERE id = ?',
+      [fix.newLang, fix.id]
+    );
+  }
+  console.log(`✅ Updated ${fixes.length} documents in SQLite`);
+
+  // Update Meilisearch
+  console.log('\n🔄 Updating Meilisearch...');
+  const meiliUpdates = fixes.map(fix => ({
+    id: fix.id,
+    language: fix.newLang
+  }));
+
+  // Batch update in Meilisearch
+  const batchSize = 100;
+  for (let i = 0; i < meiliUpdates.length; i += batchSize) {
+    const batch = meiliUpdates.slice(i, i + batchSize);
+    const task = await index.updateDocuments(batch, { primaryKey: 'id' });
+    console.log(`  Batch ${Math.floor(i / batchSize) + 1}: Updated ${batch.length} documents (task ${task.taskUid})`);
+  }
+
+  console.log(`\n✅ Complete! Fixed ${fixes.length} documents.`);
+
+  // Summary by language
+  const byLang = fixes.reduce((acc, f) => {
+    acc[f.newLang] = (acc[f.newLang] || 0) + 1;
+    return acc;
+  }, {});
+
+  console.log('\nSummary:');
+  for (const [lang, count] of Object.entries(byLang)) {
+    console.log(`  ${lang}: ${count} documents`);
   }
 }
 
-fixRtlLanguages().catch(err => {
-  console.error('Error:', err);
-  process.exit(1);
-});
+// Run
+fixDocumentLanguages()
+  .then(() => process.exit(0))
+  .catch(err => {
+    console.error('Error:', err);
+    process.exit(1);
+  });

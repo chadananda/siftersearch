@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T03:20:16.357Z",
+  "generated": "2025-12-28T03:22:02.092Z",
   "entries": [
+    {
+      "hash": "9dd9491",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
+      "scope": null
+    },
     {
       "hash": "abe2ee0",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Stripe integration and support page",
       "scope": "donations"
-    },
-    {
-      "hash": "10828b0",
-      "date": "2025-12-24",
-      "type": "New",
-      "description": "Add community forum with threaded discussions",
-      "scope": "forum"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "9dd9491",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
+        "scope": null
+      },
       {
         "hash": "abe2ee0",
         "date": "2025-12-27",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add Stripe integration and support page",
         "scope": "donations"
-      },
-      {
-        "hash": "10828b0",
-        "date": "2025-12-24",
-        "type": "New",
-        "description": "Add community forum with threaded discussions",
-        "scope": "forum"
       }
     ]
   }
