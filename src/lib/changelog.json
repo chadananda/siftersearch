@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T03:35:10.554Z",
+  "generated": "2025-12-28T03:36:53.189Z",
   "entries": [
+    {
+      "hash": "fba7269",
+      "date": "2025-12-27",
+      "type": "Fixed",
+      "description": "Load env files in RTL language fix script",
+      "scope": null
+    },
     {
       "hash": "adebd80",
       "date": "2025-12-27",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add AI semantic segmentation for all oversized content",
       "scope": "ingester"
-    },
-    {
-      "hash": "3dea6ad",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add test mode, persistent login, and user session endpoints",
-      "scope": "auth"
     }
   ],
   "grouped": {
     "2025-12-27": [
+      {
+        "hash": "fba7269",
+        "date": "2025-12-27",
+        "type": "Fixed",
+        "description": "Load env files in RTL language fix script",
+        "scope": null
+      },
       {
         "hash": "adebd80",
         "date": "2025-12-27",
@@ -700,13 +707,6 @@
         "type": "New",
         "description": "Add AI semantic segmentation for all oversized content",
         "scope": "ingester"
-      },
-      {
-        "hash": "3dea6ad",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add test mode, persistent login, and user session endpoints",
-        "scope": "auth"
       }
     ]
   }

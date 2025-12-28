@@ -2,8 +2,10 @@
 /**
  * Fix Arabic/Farsi Document Languages
  *
- * Scans all documents marked as 'en' in SQLite and Meilisearch,
+ * Scans all documents marked as 'en' in Meilisearch,
  * checks their content for Arabic/Farsi script, and updates the language field.
+ *
+ * Works with Meilisearch only (no SQLite dependency).
  */
 
 import dotenv from 'dotenv';
@@ -17,7 +19,6 @@ const PROJECT_ROOT = join(__dirname, '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryAll } from '../api/lib/db.js';
 import { getMeili, INDEXES } from '../api/lib/search.js';
 
 // Arabic Unicode ranges
@@ -38,26 +39,61 @@ function detectLanguage(text) {
 }
 
 async function fixDocumentLanguages() {
-  console.log('🔍 Scanning documents for Arabic/Farsi content...\n');
+  console.log('🔍 Scanning Meilisearch documents for Arabic/Farsi content...\n');
 
   const meili = getMeili();
-  const index = meili.index(INDEXES.DOCUMENTS);
+  const docsIndex = meili.index(INDEXES.DOCUMENTS);
+  const parasIndex = meili.index(INDEXES.PARAGRAPHS);
 
-  // Get all documents marked as 'en' from SQLite
-  const docs = await queryAll(`
-    SELECT d.id, d.title, d.language, d.author,
-           (SELECT GROUP_CONCAT(text, ' ') FROM indexed_paragraphs WHERE document_id = d.id LIMIT 5) as sample_content
-    FROM indexed_documents d
-    WHERE d.language = 'en'
-  `);
+  // Get all documents marked as 'en' from Meilisearch
+  // Use search with filter to get documents with language='en'
+  let allDocs = [];
+  let offset = 0;
+  const limit = 1000;
 
-  console.log(`Found ${docs.length} documents marked as 'en'\n`);
+  console.log('Fetching documents marked as English...');
+
+  while (true) {
+    const result = await docsIndex.search('', {
+      filter: 'language = "en"',
+      limit,
+      offset,
+      attributesToRetrieve: ['id', 'title', 'author', 'language']
+    });
+
+    allDocs = allDocs.concat(result.hits);
+    console.log(`  Fetched ${allDocs.length} documents so far...`);
+
+    if (result.hits.length < limit) break;
+    offset += limit;
+  }
+
+  console.log(`\nFound ${allDocs.length} documents marked as 'en'\n`);
+
+  if (allDocs.length === 0) {
+    console.log('✅ No documents marked as English found.');
+    return;
+  }
 
   let fixedCount = 0;
   const fixes = [];
 
-  for (const doc of docs) {
-    const detectedLang = detectLanguage(doc.sample_content);
+  // Check each document's paragraphs for Arabic/Farsi content
+  console.log('Checking content for Arabic/Farsi script...');
+
+  for (let i = 0; i < allDocs.length; i++) {
+    const doc = allDocs[i];
+
+    // Get a sample of paragraphs for this document
+    const parasResult = await parasIndex.search('', {
+      filter: `document_id = "${doc.id}"`,
+      limit: 10,
+      attributesToRetrieve: ['text']
+    });
+
+    // Combine paragraph texts for language detection
+    const sampleContent = parasResult.hits.map(p => p.text).join(' ');
+    const detectedLang = detectLanguage(sampleContent);
 
     if (detectedLang !== 'en') {
       fixes.push({
@@ -69,7 +105,14 @@ async function fixDocumentLanguages() {
       });
       fixedCount++;
     }
+
+    // Progress indicator every 50 documents
+    if ((i + 1) % 50 === 0) {
+      console.log(`  Checked ${i + 1}/${allDocs.length} documents (${fixes.length} need fixing)`);
+    }
   }
+
+  console.log(`  Checked ${allDocs.length}/${allDocs.length} documents\n`);
 
   if (fixes.length === 0) {
     console.log('✅ No documents need fixing - all languages are correct.');
@@ -78,23 +121,13 @@ async function fixDocumentLanguages() {
 
   console.log(`Found ${fixedCount} documents that need language correction:\n`);
 
-  // Show first 10 for preview
-  for (const fix of fixes.slice(0, 10)) {
+  // Show first 20 for preview
+  for (const fix of fixes.slice(0, 20)) {
     console.log(`  - "${fix.title}" by ${fix.author}: ${fix.oldLang} → ${fix.newLang}`);
   }
-  if (fixes.length > 10) {
-    console.log(`  ... and ${fixes.length - 10} more\n`);
+  if (fixes.length > 20) {
+    console.log(`  ... and ${fixes.length - 20} more\n`);
   }
-
-  // Update SQLite
-  console.log('\n📝 Updating SQLite...');
-  for (const fix of fixes) {
-    await query(
-      'UPDATE indexed_documents SET language = ? WHERE id = ?',
-      [fix.newLang, fix.id]
-    );
-  }
-  console.log(`✅ Updated ${fixes.length} documents in SQLite`);
 
   // Update Meilisearch
   console.log('\n🔄 Updating Meilisearch...');
@@ -107,7 +140,7 @@ async function fixDocumentLanguages() {
   const batchSize = 100;
   for (let i = 0; i < meiliUpdates.length; i += batchSize) {
     const batch = meiliUpdates.slice(i, i + batchSize);
-    const task = await index.updateDocuments(batch, { primaryKey: 'id' });
+    const task = await docsIndex.updateDocuments(batch, { primaryKey: 'id' });
     console.log(`  Batch ${Math.floor(i / batchSize) + 1}: Updated ${batch.length} documents (task ${task.taskUid})`);
   }
 
