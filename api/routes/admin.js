@@ -906,6 +906,50 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Control PM2 processes (stop/start/restart library watcher)
+   */
+  fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {
+    const { action, process: processName } = request.params;
+
+    // Only allow specific processes and actions for security
+    const allowedProcesses = ['siftersearch-library-watcher'];
+    const allowedActions = ['stop', 'start', 'restart'];
+
+    if (!allowedProcesses.includes(processName)) {
+      throw ApiError.badRequest(`Process not allowed: ${processName}`);
+    }
+    if (!allowedActions.includes(action)) {
+      throw ApiError.badRequest(`Action not allowed: ${action}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      const pm2Process = spawn('pm2', [action, processName], {
+        cwd: join(import.meta.dirname, '../..'),
+        env: { ...process.env }
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pm2Process.stdout.on('data', (data) => { stdout += data.toString(); });
+      pm2Process.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pm2Process.on('close', (code) => {
+        if (code === 0) {
+          logger.info({ action, processName }, 'PM2 command executed');
+          resolve({ success: true, action, process: processName, output: stdout.trim() });
+        } else {
+          reject(ApiError.internal(`PM2 command failed: ${stderr || stdout}`));
+        }
+      });
+
+      pm2Process.on('error', (err) => {
+        reject(ApiError.internal(`Failed to execute PM2: ${err.message}`));
+      });
+    });
+  });
+
+  /**
    * Validate script parameters without running (dry validation)
    */
   fastify.post('/server/validate', {
