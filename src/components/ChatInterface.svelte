@@ -841,6 +841,48 @@
     }
   }
 
+  /**
+   * Open the reader directly by document ID (for URL deep linking)
+   * @param {string|number} documentId - The document ID to open
+   */
+  async function openReaderByDocumentId(documentId) {
+    if (!documentId) return;
+
+    readerAnimating = true;
+    readerLoading = true;
+    readerOpen = true;
+    readerKeyPhrase = '';
+    readerCoreTerms = [];
+
+    try {
+      // Fetch document details
+      const docRes = await fetch(`${API_BASE}/api/library/documents/${documentId}?paragraphs=true`);
+      if (!docRes.ok) throw new Error('Document not found');
+      const docData = await docRes.json();
+
+      readerDocument = {
+        id: documentId,
+        title: docData.document?.title || 'Document',
+        author: docData.document?.author || '',
+        religion: docData.document?.religion || '',
+        collection: docData.document?.collection || '',
+        language: docData.document?.language || 'en'
+      };
+
+      readerParagraphs = (docData.paragraphs || []).map((p, i) => ({
+        paragraph_index: p.paragraph_index ?? i,
+        text: p.text || p.content || ''
+      }));
+      readerCurrentIndex = 0;
+    } catch (err) {
+      console.error('Failed to open document:', err);
+      readerOpen = false;
+    } finally {
+      readerLoading = false;
+      setTimeout(() => { readerAnimating = false; }, 400);
+    }
+  }
+
   onMount(async () => {
     initAuth();
     // Register conversation checker before initializing PWA
@@ -853,6 +895,17 @@
 
     // Capture referral code from URL if present
     captureReferral();
+
+    // Check for document deep link: /?read=documentId
+    const urlParams = new URLSearchParams(window.location.search);
+    const readDocId = urlParams.get('read');
+    if (readDocId) {
+      // Remove the parameter from URL without reload
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      // Open the document in reader
+      await openReaderByDocumentId(readDocId);
+    }
 
     // Generate QR code with referral URL (using current user's ID)
     const userId = getUserId();
@@ -2018,7 +2071,8 @@
   }
 
   .server-version {
-    color: var(--accent-primary-light);
+    color: var(--text-secondary);
+    font-weight: 500;
   }
 
   .indexing-indicator {

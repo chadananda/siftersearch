@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T14:49:16.718Z",
+  "generated": "2025-12-29T20:37:36.713Z",
   "entries": [
+    {
+      "hash": "2b0b2fd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Improve document view UI and scroll behavior",
+      "scope": "library"
+    },
     {
       "hash": "de0f902",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add grace period for rotated refresh tokens",
       "scope": "auth"
-    },
-    {
-      "hash": "eef7226",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "2b0b2fd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Improve document view UI and scroll behavior",
+        "scope": "library"
+      },
       {
         "hash": "de0f902",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Add grace period for rotated refresh tokens",
         "scope": "auth"
-      },
-      {
-        "hash": "eef7226",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
-        "scope": null
       }
     ]
   }

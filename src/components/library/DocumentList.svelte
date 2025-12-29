@@ -11,7 +11,7 @@
   let expandedContent = $state(null);
   let bilingualContent = $state(null);
   let loadingContent = $state(false);
-  let fullscreenDocId = $state(null);
+  let translating = $state(null); // Document ID being translated
 
   // RTL languages that need special handling
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
@@ -82,29 +82,52 @@
     return LANG_NAMES[code] || code?.toUpperCase() || '';
   }
 
-  function toggleFullscreen(docId) {
-    fullscreenDocId = fullscreenDocId === docId ? null : docId;
+  function openReader(docId) {
+    // Navigate to main page with reader deep link
+    window.location.href = `/?read=${docId}`;
   }
 
-  function closeFullscreen() {
-    fullscreenDocId = null;
-  }
+  // Request translation for a document
+  async function requestTranslation(docId) {
+    translating = docId;
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/server/populate-translations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: docId,
+          force: false
+        })
+      });
 
-  // Close fullscreen on escape
-  function handleKeydown(e) {
-    if (e.key === 'Escape' && fullscreenDocId) {
-      closeFullscreen();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Translation request failed');
+      }
+
+      const data = await res.json();
+      console.log('Translation started:', data);
+
+      // Reload the document content to get new translations
+      const doc = documents.find(d => d.id === docId);
+      if (doc) {
+        await loadDocumentContent(doc);
+      }
+    } catch (err) {
+      console.error('Translation error:', err);
+      alert(`Translation failed: ${err.message}`);
+    } finally {
+      translating = null;
     }
   }
-</script>
 
-<svelte:window onkeydown={handleKeydown} />
+</script>
 
 <div class="flex flex-col gap-1 w-full">
   {#each documents as doc (doc.id)}
     {@const size = getSizeLabel(doc.paragraph_count)}
     {@const isExpanded = expandedDocId === doc.id}
-    {@const isFullscreen = fullscreenDocId === doc.id}
     {@const langName = getLangName(doc.language)}
 
     <div class="border rounded-lg overflow-hidden transition-colors
@@ -138,60 +161,73 @@
       <!-- Expanded content -->
       {#if isExpanded}
         {@const hasTranslations = bilingualContent?.paragraphs?.some(p => p.translation)}
-        {@const showBilingual = bilingualContent && hasTranslations}
         {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
+        {@const needsTranslation = docLang && docLang !== 'en' && !hasTranslations}
 
-        <div class="bg-surface-0 overflow-hidden {isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : ''}" style="position: relative;">
-          <!-- Floating toolbar - overlaid on content -->
-          <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1">
-            {#if doc.year}
-              <span class="text-[0.6875rem] text-white/70">{doc.year}</span>
-              <span class="text-white/30">·</span>
-            {/if}
-            {#if doc.paragraph_count}
-              <span class="text-[0.6875rem] text-white/70">{doc.paragraph_count} ¶</span>
-            {/if}
-            {#if bilingualContent && !hasTranslations && docLang !== 'en'}
-              <span class="text-white/30">·</span>
-              <span class="text-[0.6875rem] text-amber-300" title="Translation not yet available">⏳</span>
-            {/if}
-            {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
-              {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
-              {#if originalFile?.storage_url}
-                <a
-                  href={originalFile.storage_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="p-1 text-white/70 hover:text-white rounded transition-colors"
-                  title="Edit source file"
-                >
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                </a>
+        <div class="bg-surface-0 overflow-hidden">
+          <!-- Toolbar -->
+          <div class="flex items-center justify-between px-3 py-1.5 bg-surface-1 border-b border-border-subtle">
+            <div class="flex items-center gap-2 text-xs text-muted">
+              {#if doc.year}
+                <span>{doc.year}</span>
               {/if}
-            {/if}
-            <button
-              class="p-1 text-white/70 hover:text-white rounded transition-colors"
-              onclick={() => toggleFullscreen(doc.id)}
-              title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
-            >
-              {#if isFullscreen}
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
-                </svg>
-              {:else}
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              {#if doc.paragraph_count}
+                <span>{doc.paragraph_count} paragraphs</span>
+              {/if}
+              {#if needsTranslation}
+                <span class="text-amber-500" title="Translation not yet available">• No translation</span>
+              {/if}
+            </div>
+            <div class="flex items-center gap-1">
+              {#if isAdmin && needsTranslation}
+                <button
+                  class="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
+                  onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                  disabled={translating === doc.id}
+                  title="Translate document to English"
+                >
+                  {#if translating === doc.id}
+                    <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                  {:else}
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                    </svg>
+                  {/if}
+                  Translate
+                </button>
+              {/if}
+              {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
+                {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
+                {#if originalFile?.storage_url}
+                  <a
+                    href={originalFile.storage_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+                    title="Edit source file"
+                  >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  </a>
+                {/if}
+              {/if}
+              <button
+                class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+                onclick={(e) => { e.stopPropagation(); openReader(doc.id); }}
+                title="View fullscreen"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
                 </svg>
-              {/if}
-            </button>
+              </button>
+            </div>
           </div>
 
-          <!-- Content area - no extra padding since toolbar is overlaid -->
-          <div class="{isFullscreen ? 'p-4 pt-12' : ''}">
+          <!-- Content area -->
+          <div>
             {#if loadingContent}
-              <div class="flex items-center gap-2 py-4 text-muted text-sm">
+              <div class="flex items-center gap-2 py-4 px-3 text-muted text-sm">
                 <span class="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"></span>
                 Loading content...
               </div>
@@ -201,12 +237,12 @@
               <BilingualView
                 paragraphs={bilingualContent.paragraphs}
                 isRTL={bilingualContent.document?.isRTL || isRTL(bilingualContent.document?.language)}
-                maxHeight={isFullscreen ? 'none' : '300px'}
+                maxHeight="300px"
                 loading={loadingContent}
               />
             {:else if expandedContent}
               <div class="paper-content">
-                <div class="paper-scroll" style="max-height: {isFullscreen ? 'none' : '300px'}">
+                <div class="paper-scroll" style="max-height: 300px">
                   {#if expandedContent.paragraphs?.length > 0}
                     {#each expandedContent.paragraphs as para, i}
                       {@const docLang = expandedContent.document?.language}
@@ -230,11 +266,6 @@
     </div>
   {/each}
 </div>
-
-<!-- Fullscreen backdrop -->
-{#if fullscreenDocId}
-  <div class="fixed inset-0 bg-black/50 z-40" onclick={closeFullscreen}></div>
-{/if}
 
 <style>
   /* Paper-like content area */

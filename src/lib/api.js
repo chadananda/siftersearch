@@ -698,32 +698,35 @@ export async function healthCheck() {
 // Deploy API
 // ============================================
 
-const DEPLOY_SECRET = import.meta.env.PUBLIC_DEPLOY_SECRET || '';
-
 /**
  * Trigger server update when client detects version mismatch
+ * Requires admin authentication (JWT)
  */
 export async function triggerServerUpdate(clientVersion) {
-  if (!DEPLOY_SECRET) {
-    console.log('[Deploy] No deploy secret configured, skipping update trigger');
-    return { skipped: true };
+  if (!accessToken) {
+    console.log('[Deploy] Not authenticated, skipping update trigger');
+    return { skipped: true, reason: 'not_authenticated' };
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/deploy/trigger-update`, {
+    const response = await fetch(`${API_URL}/api/admin/server/pull-update`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secret: DEPLOY_SECRET,
-        clientVersion
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({ clientVersion })
     });
 
     if (response.ok) {
-      console.log('[Deploy] Server update triggered successfully');
+      console.log('[Deploy] Server update triggered via admin auth');
       return await response.json();
+    } else if (response.status === 403) {
+      console.log('[Deploy] Not an admin, skipping update trigger');
+      return { skipped: true, reason: 'not_admin' };
     } else {
-      console.warn('[Deploy] Failed to trigger update:', response.status);
+      console.warn('[Deploy] Update trigger failed:', response.status);
       return { error: response.status };
     }
   } catch (err) {

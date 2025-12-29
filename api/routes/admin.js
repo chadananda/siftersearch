@@ -735,6 +735,46 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Pull and restart server (for version updates)
+   * Called by client when it detects client version > server version
+   */
+  fastify.post('/server/pull-update', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          clientVersion: { type: 'string' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { clientVersion } = request.body || {};
+
+    // Check if update already running
+    const existing = backgroundTasks.get('pull-update');
+    if (existing && existing.status === 'running') {
+      return {
+        success: false,
+        message: 'Update already in progress',
+        status: existing.status
+      };
+    }
+
+    logger.info({ clientVersion }, 'Server update triggered by admin');
+
+    const task = runBackgroundTask('pull-update', 'scripts/update-server.js', []);
+
+    return {
+      success: true,
+      taskId: 'pull-update',
+      message: 'Server update started in background',
+      clientVersion,
+      status: task.status
+    };
+  });
+
+  /**
    * Get status of background tasks
    */
   fastify.get('/server/tasks', { preHandler: requireInternal }, async () => {
