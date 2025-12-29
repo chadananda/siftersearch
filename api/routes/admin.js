@@ -881,7 +881,7 @@ export default async function adminRoutes(fastify) {
   fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async () => {
     try {
       const meili = getMeili();
-      const tasks = await meili.getTasks({ limit: 20, from: 0 });
+      const tasks = await meili.tasks.getTasks({ limit: 20 });
       return {
         total: tasks.total,
         results: tasks.results.map(t => ({
