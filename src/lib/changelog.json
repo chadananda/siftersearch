@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T13:14:49.859Z",
+  "generated": "2025-12-29T14:40:20.450Z",
   "entries": [
+    {
+      "hash": "de0f902",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Unify header styles and fix width/overflow issues",
+      "scope": "library"
+    },
     {
       "hash": "0f65e3f",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
       "scope": null
-    },
-    {
-      "hash": "2255c58",
-      "date": "2025-12-27",
-      "type": "New",
-      "description": "Add editable religion and collection headers with symbols",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "de0f902",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Unify header styles and fix width/overflow issues",
+        "scope": "library"
+      },
       {
         "hash": "0f65e3f",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "Fixed",
         "description": "Hide Chat/Library from anon users, show religion symbols in sidebar",
-        "scope": null
-      },
-      {
-        "hash": "2255c58",
-        "date": "2025-12-27",
-        "type": "New",
-        "description": "Add editable religion and collection headers with symbols",
         "scope": null
       }
     ]
