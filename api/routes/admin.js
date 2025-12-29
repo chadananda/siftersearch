@@ -906,6 +906,37 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Cancel pending Meilisearch tasks
+   * POST /server/meili-cancel?beforeDate=2025-12-29T00:00:00Z
+   */
+  fastify.post('/server/meili-cancel', { preHandler: requireInternal }, async (request) => {
+    try {
+      const meili = getMeili();
+      const { beforeDate } = request.query || {};
+
+      if (!beforeDate) {
+        throw ApiError.badRequest('beforeDate query parameter required (ISO date string)');
+      }
+
+      // Cancel all enqueued tasks before the specified date
+      const result = await meili.cancelTasks({
+        statuses: ['enqueued'],
+        beforeEnqueuedAt: new Date(beforeDate)
+      });
+
+      logger.info({ beforeDate, taskUid: result.taskUid }, 'Meilisearch task cancellation requested');
+
+      return {
+        success: true,
+        message: `Cancellation task created for enqueued tasks before ${beforeDate}`,
+        taskUid: result.taskUid
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {
