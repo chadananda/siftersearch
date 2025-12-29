@@ -153,14 +153,8 @@
           </div>
         </button>
         <div class="flex items-center gap-1.5 shrink-0">
-          {#if needsTranslation}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500" title="Translation not available">No translation</span>
-          {/if}
           {#if langName && langName !== 'English'}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-accent/10 text-accent">{langName}</span>
-          {/if}
-          {#if isAdmin && doc.authority}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted" title="Authority score">{doc.authority}</span>
           {/if}
           {#if size}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
@@ -215,8 +209,7 @@
 
       <!-- Expanded content -->
       {#if isExpanded}
-        <div class="bg-surface-0 overflow-hidden">
-
+        <div class="bg-surface-0 overflow-hidden relative">
           <!-- Content area -->
           <div>
             {#if loadingContent}
@@ -254,6 +247,11 @@
               </div>
             {/if}
           </div>
+          {#if isAdmin && doc.authority}
+            <div class="absolute bottom-1 right-2 text-[0.625rem] px-1.5 py-0.5 rounded bg-black/50 text-white/70" title="Authority score">
+              Authority: {doc.authority}
+            </div>
+          {/if}
         </div>
       {/if}
     </div>

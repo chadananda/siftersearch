@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T23:13:32.865Z",
+  "generated": "2025-12-29T23:22:34.253Z",
   "entries": [
+    {
+      "hash": "0c4615e",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Move tools to title row, eliminate toolbar line",
+      "scope": "library"
+    },
     {
       "hash": "38cc20a",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve religion/collection headers with Tailwind",
       "scope": "library"
-    },
-    {
-      "hash": "1a8633a",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Simplify user menu for anonymous users",
-      "scope": "navbar"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "0c4615e",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Move tools to title row, eliminate toolbar line",
+        "scope": "library"
+      },
       {
         "hash": "38cc20a",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Improve religion/collection headers with Tailwind",
         "scope": "library"
-      },
-      {
-        "hash": "1a8633a",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Simplify user menu for anonymous users",
-        "scope": "navbar"
       }
     ]
   }
