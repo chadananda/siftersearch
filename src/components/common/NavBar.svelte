@@ -387,10 +387,10 @@
 
   .version {
     font-size: 0.625rem;
-    font-weight: 500;
-    color: var(--text-muted);
+    font-weight: 600;
+    color: var(--text-primary);
     padding: 0.125rem 0.375rem;
-    background: var(--surface-2);
+    background: var(--surface-3);
     border-radius: 0.25rem;
     margin-left: 0.25rem;
   }

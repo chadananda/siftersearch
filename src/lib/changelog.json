@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T20:37:36.713Z",
+  "generated": "2025-12-29T20:51:17.127Z",
   "entries": [
+    {
+      "hash": "184159b",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add fullscreen reader and translate button",
+      "scope": "library"
+    },
     {
       "hash": "2b0b2fd",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Show Chat to anon users, redirect on logout, fix SQL query",
       "scope": null
-    },
-    {
-      "hash": "e1eb1c2",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Add grace period for rotated refresh tokens",
-      "scope": "auth"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "184159b",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add fullscreen reader and translate button",
+        "scope": "library"
+      },
       {
         "hash": "2b0b2fd",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Show Chat to anon users, redirect on logout, fix SQL query",
         "scope": null
-      },
-      {
-        "hash": "e1eb1c2",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Add grace period for rotated refresh tokens",
-        "scope": "auth"
       }
     ]
   }
