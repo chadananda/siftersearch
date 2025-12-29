@@ -878,12 +878,17 @@ export default async function adminRoutes(fastify) {
   /**
    * Get Meilisearch task queue status
    */
-  fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async () => {
+  fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async (request) => {
     try {
       const meili = getMeili();
-      const tasks = await meili.tasks.getTasks({ limit: 20 });
+      const { status, limit = 20 } = request.query || {};
+      const query = { limit: Math.min(Number(limit), 100) };
+      if (status) query.statuses = [status];
+
+      const tasks = await meili.tasks.getTasks(query);
       return {
         total: tasks.total,
+        query,
         results: tasks.results.map(t => ({
           uid: t.uid,
           status: t.status,
