@@ -17,7 +17,7 @@
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
 </script>
 
-<div class="bilingual-container" style="max-height: {maxHeight}">
+<div class="bilingual-container w-full" style="max-height: {maxHeight}">
   {#if loading}
     <div class="loading-state">
       <span class="spinner"></span>
@@ -65,9 +65,11 @@
   /* Paper-like container - matches source-paper styling from ChatInterface */
   .bilingual-container {
     overflow-y: auto;
+    overflow-x: hidden;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
     background: #faf8f3;
+    max-width: 100%;
   }
 
   .loading-state {
@@ -188,11 +190,14 @@
 
   .para-text {
     flex: 1;
+    min-width: 0;
     margin: 0;
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 0.9375rem;
     line-height: 1.65;
     color: #1a1a1a;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .para-text.italic {

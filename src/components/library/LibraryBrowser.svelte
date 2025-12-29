@@ -211,7 +211,14 @@
   <!-- Sidebar -->
   <aside class="w-64 flex-shrink-0 border-r border-border bg-surface-1 flex flex-col overflow-hidden">
     <div class="p-4 border-b border-border flex items-center justify-between gap-2">
-      <h2 class="text-lg font-semibold text-primary">Library</h2>
+      <button
+        class="flex items-center gap-2 text-lg font-semibold text-primary hover:text-accent transition-colors cursor-pointer bg-transparent border-none p-0"
+        onclick={clearFilters}
+        title="View all documents"
+      >
+        <img src="/ocean-noback.svg" alt="" class="w-5 h-5" />
+        Library
+      </button>
       {#if stats}
         <span class="text-xs font-medium text-muted bg-surface-2 px-2 py-1 rounded-full">
           {stats.totalDocuments.toLocaleString()}

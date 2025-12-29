@@ -11,9 +11,16 @@
   let expandedContent = $state(null);
   let bilingualContent = $state(null);
   let loadingContent = $state(false);
+  let fullscreenDocId = $state(null);
 
   // RTL languages that need special handling
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+
+  // Language display names
+  const LANG_NAMES = {
+    en: 'English', ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu',
+    es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese'
+  };
 
   function toggleDocument(doc) {
     if (expandedDocId === doc.id) {
@@ -71,20 +78,173 @@
     return 'Book';
   }
 
+  function getLangName(code) {
+    return LANG_NAMES[code] || code?.toUpperCase() || '';
+  }
+
+  function toggleFullscreen(docId) {
+    fullscreenDocId = fullscreenDocId === docId ? null : docId;
+  }
+
+  function closeFullscreen() {
+    fullscreenDocId = null;
+  }
+
+  // Close fullscreen on escape
+  function handleKeydown(e) {
+    if (e.key === 'Escape' && fullscreenDocId) {
+      closeFullscreen();
+    }
+  }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
+<div class="flex flex-col gap-1 w-full">
+  {#each documents as doc}
+    {@const size = getSizeLabel(doc.paragraph_count)}
+    {@const isExpanded = expandedDocId === doc.id}
+    {@const isFullscreen = fullscreenDocId === doc.id}
+    {@const langName = getLangName(doc.language)}
+
+    <div class="border rounded-lg overflow-hidden transition-colors
+                {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
+      <!-- Title row -->
+      <button
+        class="w-full flex items-center gap-2 py-2.5 px-3 text-left cursor-pointer transition-colors
+               {isExpanded ? 'bg-accent/10 border-b border-border-subtle' : 'bg-surface-1 hover:bg-surface-2'}"
+        onclick={() => toggleDocument(doc)}
+      >
+        <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
+        <div class="flex-1 min-w-0 flex items-baseline gap-2">
+          <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
+          {#if doc.author}
+            <span class="text-xs text-secondary shrink-0">{doc.author}</span>
+          {/if}
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          {#if langName && langName !== 'English'}
+            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-accent/10 text-accent">{langName}</span>
+          {/if}
+          {#if isAdmin && doc.authority}
+            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted" title="Authority score">{doc.authority}</span>
+          {/if}
+          {#if size}
+            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
+          {/if}
+        </div>
+      </button>
+
+      <!-- Expanded content -->
+      {#if isExpanded}
+        <div class="bg-surface-0 border-t border-border-subtle overflow-hidden {isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : ''}">
+          <!-- Toolbar -->
+          <div class="flex items-center justify-between px-3 py-2 bg-surface-1 border-b border-border-subtle">
+            <div class="flex items-center gap-3 text-xs text-muted">
+              {#if doc.year}
+                <span>{doc.year}</span>
+              {/if}
+              {#if doc.paragraph_count}
+                <span>{doc.paragraph_count.toLocaleString()} paragraphs</span>
+              {/if}
+            </div>
+            <div class="flex items-center gap-2">
+              {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
+                {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
+                {#if originalFile?.storage_url}
+                  <a
+                    href={originalFile.storage_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+                    title="Edit source file"
+                  >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  </a>
+                {/if}
+              {/if}
+              <button
+                class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+                onclick={() => toggleFullscreen(doc.id)}
+                title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+              >
+                {#if isFullscreen}
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                  </svg>
+                {:else}
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                  </svg>
+                {/if}
+              </button>
+            </div>
+          </div>
+
+          <!-- Content area -->
+          <div class="{isFullscreen ? 'p-6' : 'p-3'}">
+            {#if loadingContent}
+              <div class="flex items-center gap-2 py-4 text-muted text-sm">
+                <span class="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"></span>
+                Loading content...
+              </div>
+            {:else if expandedContent?.error}
+              <div class="p-3 bg-error/10 text-error rounded text-sm">Failed to load: {expandedContent.error}</div>
+            {:else if bilingualContent}
+              <BilingualView
+                paragraphs={bilingualContent.paragraphs}
+                isRTL={bilingualContent.document?.isRTL || isRTL(bilingualContent.document?.language)}
+                maxHeight={isFullscreen ? 'none' : '300px'}
+                loading={loadingContent}
+              />
+            {:else if expandedContent}
+              <div class="paper-content">
+                <div class="paper-scroll" style="max-height: {isFullscreen ? 'none' : '300px'}">
+                  {#if expandedContent.paragraphs?.length > 0}
+                    {#each expandedContent.paragraphs as para, i}
+                      {@const docLang = expandedContent.document?.language}
+                      <div class="paper-paragraph" class:rtl={isRTL(docLang)}>
+                        <span class="para-num">{i + 1}</span>
+                        <p
+                          class="para-text"
+                          dir={isRTL(docLang) ? 'rtl' : 'ltr'}
+                        >{para.text || para.content || ''}</p>
+                      </div>
+                    {/each}
+                  {:else}
+                    <p class="empty-text">No content available</p>
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/each}
+</div>
+
+<!-- Fullscreen backdrop -->
+{#if fullscreenDocId}
+  <div class="fixed inset-0 bg-black/50 z-40" onclick={closeFullscreen}></div>
+{/if}
+
 <style>
-  /* Paper-like content area - matches source-paper styling from ChatInterface */
+  /* Paper-like content area */
   .paper-content {
+    width: 100%;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
     background: #faf8f3;
     overflow: hidden;
+    max-width: 100%;
   }
 
   .paper-scroll {
-    max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1rem 1.25rem;
   }
 
@@ -128,11 +288,14 @@
 
   .para-text {
     flex: 1;
+    min-width: 0;
     margin: 0;
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 0.9375rem;
     line-height: 1.65;
     color: #1a1a1a;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .empty-text {
@@ -141,130 +304,10 @@
     font-size: 0.875rem;
   }
 
-  /* RTL text styling - Amiri for Arabic/Persian */
+  /* RTL text styling */
   [dir="rtl"] {
     font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1.0625rem; /* Slightly larger for Arabic readability */
+    font-size: 1.0625rem;
     line-height: 1.8;
   }
 </style>
-
-<div class="flex flex-col gap-1">
-  {#each documents as doc}
-    {@const size = getSizeLabel(doc.paragraph_count)}
-    {@const isExpanded = expandedDocId === doc.id}
-
-    <div class="border rounded-lg overflow-hidden transition-colors
-                {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
-      <button
-        class="w-full flex items-center gap-2 py-2.5 px-3 text-left cursor-pointer transition-colors
-               {isExpanded ? 'bg-accent/10 border-b border-border-subtle' : 'bg-surface-1 hover:bg-surface-2'}"
-        onclick={() => toggleDocument(doc)}
-      >
-        <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
-        <div class="flex-1 min-w-0 flex items-baseline gap-2">
-          <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
-          {#if doc.author}
-            <span class="text-xs text-secondary shrink-0">{doc.author}</span>
-          {/if}
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          {#if isAdmin && doc.authority}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted" title="Authority score">{doc.authority}</span>
-          {/if}
-          {#if size}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
-          {/if}
-        </div>
-      </button>
-
-      {#if isExpanded}
-        <div class="p-4 bg-surface-0 border-t border-border-subtle">
-          {#if loadingContent}
-            <div class="flex items-center gap-2 py-4 text-muted text-sm">
-              <span class="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"></span>
-              Loading content...
-            </div>
-          {:else if expandedContent?.error}
-            <div class="p-3 bg-error/10 text-error rounded text-sm">Failed to load: {expandedContent.error}</div>
-          {:else if expandedContent}
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3 mb-4">
-              {#if expandedContent.document?.author}
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Author</span>
-                  <span class="text-sm text-primary">{expandedContent.document.author}</span>
-                </div>
-              {/if}
-              {#if expandedContent.document?.year}
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Year</span>
-                  <span class="text-sm text-primary">{expandedContent.document.year}</span>
-                </div>
-              {/if}
-              {#if expandedContent.document?.language}
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Language</span>
-                  <span class="text-sm text-primary">{expandedContent.document.language}</span>
-                </div>
-              {/if}
-              {#if expandedContent.document?.paragraph_count}
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Paragraphs</span>
-                  <span class="text-sm text-primary">{expandedContent.document.paragraph_count.toLocaleString()}</span>
-                </div>
-              {/if}
-            </div>
-
-            {#if isAdmin && expandedContent.assets?.length > 0}
-              {@const originalFile = expandedContent.assets.find(a => a.asset_type === 'original')}
-              {#if originalFile?.storage_url}
-                <div class="mb-4">
-                  <a
-                    href={originalFile.storage_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 text-accent text-[0.8125rem] font-medium rounded hover:bg-surface-3 transition-colors"
-                  >
-                    Edit Source
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                  </a>
-                </div>
-              {/if}
-            {/if}
-
-            <!-- Content display: bilingual or standard -->
-            {#if bilingualContent}
-              <BilingualView
-                paragraphs={bilingualContent.paragraphs}
-                isRTL={bilingualContent.document?.isRTL || isRTL(bilingualContent.document?.language)}
-                maxHeight="300px"
-                loading={loadingContent}
-              />
-            {:else}
-              <div class="paper-content">
-                <div class="paper-scroll">
-                  {#if expandedContent.paragraphs?.length > 0}
-                    {#each expandedContent.paragraphs as para, i}
-                      {@const docLang = expandedContent.document?.language}
-                      <div class="paper-paragraph" class:rtl={isRTL(docLang)}>
-                        <span class="para-num">{i + 1}</span>
-                        <p
-                          class="para-text"
-                          dir={isRTL(docLang) ? 'rtl' : 'ltr'}
-                        >{para.text || para.content || ''}</p>
-                      </div>
-                    {/each}
-                  {:else}
-                    <p class="empty-text">No content available</p>
-                  {/if}
-                </div>
-              </div>
-            {/if}
-          {/if}
-        </div>
-      {/if}
-    </div>
-  {/each}
-</div>
