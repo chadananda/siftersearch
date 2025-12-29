@@ -137,23 +137,23 @@
   });
 </script>
 
-<div class="collection-detail">
+<div class="p-4 max-w-[900px] mx-auto">
   {#if loading && !node}
-    <div class="loading-state">
-      <svg class="spinner" viewBox="0 0 24 24" width="48" height="48">
+    <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted text-center">
+      <svg class="w-12 h-12 animate-spin" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
       </svg>
       <span>Loading collection...</span>
     </div>
   {:else if error}
-    <div class="error-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+    <div class="flex flex-col items-center justify-center gap-4 py-12 text-error text-center">
+      <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <span>{error}</span>
-      <button onclick={() => { error = null; fetchCollection(true); }}>Retry</button>
+      <button class="px-4 py-2 text-sm text-accent border border-accent rounded-lg hover:bg-accent/10" onclick={() => { error = null; fetchCollection(true); }}>Retry</button>
     </div>
   {:else if node}
     <CollectionHeader
@@ -165,46 +165,46 @@
 
     <!-- Overview section (if has content) -->
     {#if overviewHtml}
-      <section class="overview-section">
-        <h2>About this Collection</h2>
-        <div class="overview-content">
+      <section class="mt-6 mb-6 p-5 bg-surface-1 border border-border rounded-xl">
+        <h2 class="m-0 mb-3 text-base font-semibold text-primary">About this Collection</h2>
+        <div class="text-[0.9375rem] text-secondary leading-relaxed prose prose-sm">
           {@html overviewHtml}
         </div>
       </section>
     {/if}
 
     <!-- Search within collection -->
-    <div class="collection-search">
-      <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="mt-6 mb-6">
+      <div class="flex items-center gap-2 relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/>
           <path d="m21 21-4.35-4.35"/>
         </svg>
         <input
           type="text"
-          class="search-input"
+          class="flex-1 py-2.5 pl-10 pr-9 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           placeholder="Search within {node.name}..."
           bind:value={searchQuery}
           onkeydown={(e) => e.key === 'Enter' && handleSearch()}
         />
         {#if searchQuery}
-          <button class="search-clear" onclick={() => { searchQuery = ''; handleSearch(); }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="absolute right-[5.5rem] top-1/2 -translate-y-1/2 p-1 bg-transparent border-none cursor-pointer text-muted hover:text-primary rounded" onclick={() => { searchQuery = ''; handleSearch(); }}>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
         {/if}
-        <button class="search-btn" onclick={handleSearch}>
+        <button class="py-2.5 px-4 text-sm font-medium text-white bg-accent border-none rounded-lg cursor-pointer hover:bg-accent-hover transition-colors" onclick={handleSearch}>
           Search
         </button>
       </div>
     </div>
 
     <!-- Documents section -->
-    <section class="documents-section">
-      <div class="section-header">
-        <h2>Documents</h2>
-        <span class="document-count">
+    <section class="bg-surface-1 border border-border rounded-xl overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b border-border bg-surface-1">
+        <h2 class="m-0 text-base font-semibold text-primary">Documents</h2>
+        <span class="text-[0.8125rem] text-muted">
           {#if searchQuery}
             {totalDocuments.toLocaleString()} {totalDocuments === 1 ? 'result' : 'results'}
           {:else}
@@ -214,14 +214,14 @@
       </div>
 
       {#if loading}
-        <div class="loading-state small">
-          <svg class="spinner" viewBox="0 0 24 24" width="32" height="32">
+        <div class="flex flex-col items-center justify-center gap-4 py-8 text-muted">
+          <svg class="w-8 h-8 animate-spin" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
           </svg>
         </div>
       {:else if documents.length === 0}
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+        <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted text-center">
+          <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
           </svg>
@@ -233,7 +233,7 @@
             {/if}
           </span>
           {#if searchQuery}
-            <button onclick={() => { searchQuery = ''; handleSearch(); }}>Clear search</button>
+            <button class="px-4 py-2 text-sm text-accent border border-accent rounded-lg hover:bg-accent/10" onclick={() => { searchQuery = ''; handleSearch(); }}>Clear search</button>
           {/if}
         </div>
       {:else}
@@ -246,9 +246,9 @@
 
         <!-- Infinite scroll sentinel -->
         {#if hasMore}
-          <div bind:this={scrollSentinel} class="scroll-sentinel">
+          <div bind:this={scrollSentinel} class="flex justify-center items-center py-8 min-h-[60px]">
             {#if loadingMore}
-              <svg class="spinner" viewBox="0 0 24 24" width="24" height="24">
+              <svg class="w-6 h-6 text-muted animate-spin" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
               </svg>
             {/if}
@@ -260,242 +260,11 @@
 </div>
 
 <style>
-  .collection-detail {
-    padding: 1rem;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  /* Loading and error states */
-  .loading-state,
-  .error-state,
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 3rem;
-    color: var(--text-muted);
-    text-align: center;
-  }
-
-  .loading-state.small {
-    padding: 2rem;
-  }
-
-  .loading-state svg,
-  .error-state svg,
-  .empty-state svg {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .spinner {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .error-state {
-    color: var(--error);
-  }
-
-  .error-state button,
-  .empty-state button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    color: var(--accent-primary);
-    background: none;
-    border: 1px solid var(--accent-primary);
-    border-radius: 0.5rem;
-    cursor: pointer;
-  }
-
-  .error-state button:hover,
-  .empty-state button:hover {
-    background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
-  }
-
-  /* Overview section */
-  .overview-section {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding: 1.25rem;
-    background: var(--surface-1);
-    border: 1px solid var(--border-default);
-    border-radius: 0.75rem;
-  }
-
-  .overview-section h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .overview-content {
-    font-size: 0.9375rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-
-  .overview-content :global(p) {
+  /* Prose styles for rendered markdown */
+  .prose :global(p) {
     margin: 0 0 0.75rem;
   }
-
-  .overview-content :global(p:last-child) {
+  .prose :global(p:last-child) {
     margin-bottom: 0;
-  }
-
-  /* Search section */
-  .collection-search {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .search-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: relative;
-  }
-
-  .search-icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1rem;
-    height: 1rem;
-    color: var(--text-muted);
-    pointer-events: none;
-  }
-
-  .search-input {
-    flex: 1;
-    padding: 0.625rem 2.25rem 0.625rem 2.5rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    background: var(--surface-0);
-    color: var(--text-primary);
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 20%, transparent);
-  }
-
-  .search-clear {
-    position: absolute;
-    right: 5.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 0.25rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-muted);
-    border-radius: 0.25rem;
-  }
-
-  .search-clear:hover {
-    color: var(--text-primary);
-    background: var(--hover-overlay);
-  }
-
-  .search-clear svg {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .search-btn {
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: white;
-    background: var(--accent-primary);
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .search-btn:hover {
-    background: var(--accent-primary-hover);
-  }
-
-  /* Documents section */
-  .documents-section {
-    background: var(--surface-1);
-    border: 1px solid var(--border-default);
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-default);
-    background: var(--surface-1);
-  }
-
-  .section-header h2 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .document-count {
-    font-size: 0.8125rem;
-    color: var(--text-muted);
-  }
-
-  /* Scroll sentinel */
-  .scroll-sentinel {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-    min-height: 60px;
-  }
-
-  .scroll-sentinel .spinner {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: var(--text-muted);
-  }
-
-  /* Responsive */
-  @media (max-width: 640px) {
-    .collection-detail {
-      padding: 0.75rem;
-    }
-
-    .search-container {
-      flex-wrap: wrap;
-    }
-
-    .search-input {
-      width: 100%;
-      padding-right: 2.5rem;
-    }
-
-    .search-clear {
-      right: 0.75rem;
-    }
-
-    .search-btn {
-      width: 100%;
-      margin-top: 0.5rem;
-    }
   }
 </style>
