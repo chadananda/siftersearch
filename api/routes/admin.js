@@ -35,7 +35,7 @@ import { join } from 'path';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
-import { getStats as getSearchStats } from '../lib/search.js';
+import { getStats as getSearchStats, getMeili } from '../lib/search.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
@@ -869,6 +869,31 @@ export default async function adminRoutes(fastify) {
           isIndexing: stats.indexing || false,
           collectionCounts: stats.collectionCounts || {}
         }
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  /**
+   * Get Meilisearch task queue status
+   */
+  fastify.get('/server/meili-tasks', { preHandler: requireInternal }, async () => {
+    try {
+      const meili = getMeili();
+      const tasks = await meili.getTasks({ limit: 20, from: 0 });
+      return {
+        total: tasks.total,
+        results: tasks.results.map(t => ({
+          uid: t.uid,
+          status: t.status,
+          type: t.type,
+          indexUid: t.indexUid,
+          enqueuedAt: t.enqueuedAt,
+          startedAt: t.startedAt,
+          finishedAt: t.finishedAt,
+          error: t.error?.message
+        }))
       };
     } catch (err) {
       return { error: err.message };

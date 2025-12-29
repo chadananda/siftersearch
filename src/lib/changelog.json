@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T04:04:27.365Z",
+  "generated": "2025-12-29T04:53:47.211Z",
   "entries": [
+    {
+      "hash": "61171d1",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Update BOTH documents and paragraphs indexes for RTL languages",
+      "scope": "language"
+    },
     {
       "hash": "7e6ecc2",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Sort collections by doctrinal authority",
       "scope": "library"
-    },
-    {
-      "hash": "827d946",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Improve religion count badge visibility",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "61171d1",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Update BOTH documents and paragraphs indexes for RTL languages",
+        "scope": "language"
+      },
       {
         "hash": "7e6ecc2",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "New",
         "description": "Sort collections by doctrinal authority",
-        "scope": "library"
-      },
-      {
-        "hash": "827d946",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Improve religion count badge visibility",
         "scope": "library"
       }
     ]
