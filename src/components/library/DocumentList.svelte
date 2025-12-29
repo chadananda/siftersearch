@@ -101,7 +101,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="flex flex-col gap-1 w-full">
-  {#each documents as doc}
+  {#each documents as doc (doc.id)}
     {@const size = getSizeLabel(doc.paragraph_count)}
     {@const isExpanded = expandedDocId === doc.id}
     {@const isFullscreen = fullscreenDocId === doc.id}
@@ -137,54 +137,59 @@
 
       <!-- Expanded content -->
       {#if isExpanded}
-        <div class="bg-surface-0 border-t border-border-subtle overflow-hidden {isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : ''}">
-          <!-- Toolbar -->
-          <div class="flex items-center justify-between px-3 py-2 bg-surface-1 border-b border-border-subtle">
-            <div class="flex items-center gap-3 text-xs text-muted">
-              {#if doc.year}
-                <span>{doc.year}</span>
-              {/if}
-              {#if doc.paragraph_count}
-                <span>{doc.paragraph_count.toLocaleString()} paragraphs</span>
-              {/if}
-            </div>
-            <div class="flex items-center gap-2">
-              {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
-                {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
-                {#if originalFile?.storage_url}
-                  <a
-                    href={originalFile.storage_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="p-1.5 text-muted hover:text-accent rounded transition-colors"
-                    title="Edit source file"
-                  >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                  </a>
-                {/if}
-              {/if}
-              <button
-                class="p-1.5 text-muted hover:text-accent rounded transition-colors"
-                onclick={() => toggleFullscreen(doc.id)}
-                title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
-              >
-                {#if isFullscreen}
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+        {@const hasTranslations = bilingualContent?.paragraphs?.some(p => p.translation)}
+        {@const showBilingual = bilingualContent && hasTranslations}
+        {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
+
+        <div class="bg-surface-0 overflow-hidden {isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : ''}" style="position: relative;">
+          <!-- Floating toolbar - overlaid on content -->
+          <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1">
+            {#if doc.year}
+              <span class="text-[0.6875rem] text-white/70">{doc.year}</span>
+              <span class="text-white/30">·</span>
+            {/if}
+            {#if doc.paragraph_count}
+              <span class="text-[0.6875rem] text-white/70">{doc.paragraph_count} ¶</span>
+            {/if}
+            {#if bilingualContent && !hasTranslations && docLang !== 'en'}
+              <span class="text-white/30">·</span>
+              <span class="text-[0.6875rem] text-amber-300" title="Translation not yet available">⏳</span>
+            {/if}
+            {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
+              {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
+              {#if originalFile?.storage_url}
+                <a
+                  href={originalFile.storage_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="p-1 text-white/70 hover:text-white rounded transition-colors"
+                  title="Edit source file"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                   </svg>
-                {:else}
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                  </svg>
-                {/if}
-              </button>
-            </div>
+                </a>
+              {/if}
+            {/if}
+            <button
+              class="p-1 text-white/70 hover:text-white rounded transition-colors"
+              onclick={() => toggleFullscreen(doc.id)}
+              title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+            >
+              {#if isFullscreen}
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                </svg>
+              {:else}
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              {/if}
+            </button>
           </div>
 
-          <!-- Content area -->
-          <div class="{isFullscreen ? 'p-6' : 'p-3'}">
+          <!-- Content area - no extra padding since toolbar is overlaid -->
+          <div class="{isFullscreen ? 'p-4 pt-12' : ''}">
             {#if loadingContent}
               <div class="flex items-center gap-2 py-4 text-muted text-sm">
                 <span class="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"></span>

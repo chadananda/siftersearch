@@ -113,15 +113,20 @@
   // Setup intersection observer for infinite scroll
   let scrollSentinel = $state(null);
   let observer = $state(null);
+  let isLoadingMore = $state(false); // Debounce flag
 
   onMount(() => {
     observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingMore && hasMore) {
+        // Guard against multiple triggers
+        if (entries[0].isIntersecting && !loading && !loadingMore && !isLoadingMore && hasMore && documents.length > 0) {
+          isLoadingMore = true;
           loadMore();
+          // Reset debounce after a delay
+          setTimeout(() => { isLoadingMore = false; }, 500);
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '100px', threshold: 0 }
     );
 
     return () => {
