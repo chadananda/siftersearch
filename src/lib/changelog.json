@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T12:04:26.092Z",
+  "generated": "2025-12-29T12:13:28.770Z",
   "entries": [
+    {
+      "hash": "157177d",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add revoked_at column to refresh_tokens table",
+      "scope": null
+    },
     {
       "hash": "d9113a2",
       "date": "2025-12-28",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Raise Pilgrim Notes authority to 4 (middle tier)",
       "scope": null
-    },
-    {
-      "hash": "32465d5",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Normalize religion names for authority lookup",
-      "scope": "library"
     }
   ],
   "grouped": {
+    "2025-12-29": [
+      {
+        "hash": "157177d",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add revoked_at column to refresh_tokens table",
+        "scope": null
+      }
+    ],
     "2025-12-28": [
       {
         "hash": "d9113a2",
@@ -700,15 +709,6 @@
         "type": "Fixed",
         "description": "Raise Pilgrim Notes authority to 4 (middle tier)",
         "scope": null
-      }
-    ],
-    "2025-12-25": [
-      {
-        "hash": "32465d5",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Normalize religion names for authority lookup",
-        "scope": "library"
       }
     ]
   }

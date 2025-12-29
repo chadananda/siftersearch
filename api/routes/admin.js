@@ -852,6 +852,23 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Get table schema for debugging
+   */
+  fastify.get('/server/schema/:table', { preHandler: requireInternal }, async (request) => {
+    const { table } = request.params;
+    // Sanitize table name to prevent SQL injection
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(table)) {
+      throw ApiError.badRequest('Invalid table name');
+    }
+    try {
+      const columns = await queryAll(`PRAGMA table_info("${table}")`);
+      return { table, columns };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  /**
    * Get Meilisearch index info for debugging
    */
   fastify.get('/server/indexes', { preHandler: requireInternal }, async () => {
