@@ -197,7 +197,7 @@ export const auth = {
   },
 
   async logout() {
-    await request('/api/auth/logout', { method: 'POST' });
+    await request('/api/auth/logout', { method: 'POST', body: JSON.stringify({}) });
     clearAccessToken();
   },
 
