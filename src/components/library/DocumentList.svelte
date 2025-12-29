@@ -38,9 +38,13 @@
       if (isNonEnglish) {
         const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=100`);
         if (bilingualRes.ok) {
-          bilingualContent = await bilingualRes.json();
-          loadingContent = false;
-          return;
+          const data = await bilingualRes.json();
+          // Only use bilingual if it has paragraphs, otherwise fall back
+          if (data.paragraphs?.length > 0) {
+            bilingualContent = data;
+            loadingContent = false;
+            return;
+          }
         }
       }
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T12:31:05.109Z",
+  "generated": "2025-12-29T12:36:10.914Z",
   "entries": [
+    {
+      "hash": "e2a3123",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Send empty JSON body on logout to fix 400 error",
+      "scope": null
+    },
     {
       "hash": "48711fb",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add side-by-side bilingual view for non-English documents",
       "scope": null
-    },
-    {
-      "hash": "c2059e7",
-      "date": "2025-12-26",
-      "type": "New",
-      "description": "Complete Bahá'í collection authority for all 19 collections",
-      "scope": "authority"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "e2a3123",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Send empty JSON body on logout to fix 400 error",
+        "scope": null
+      },
       {
         "hash": "48711fb",
         "date": "2025-12-29",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add side-by-side bilingual view for non-English documents",
         "scope": null
-      },
-      {
-        "hash": "c2059e7",
-        "date": "2025-12-26",
-        "type": "New",
-        "description": "Complete Bahá'í collection authority for all 19 collections",
-        "scope": "authority"
       }
     ]
   }
