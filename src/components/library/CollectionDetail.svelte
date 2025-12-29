@@ -322,6 +322,7 @@
 
   /* Overview section */
   .overview-section {
+    margin-top: 1.5rem;
     margin-bottom: 1.5rem;
     padding: 1.25rem;
     background: var(--surface-1);
@@ -352,6 +353,7 @@
 
   /* Search section */
   .collection-search {
+    margin-top: 1.5rem;
     margin-bottom: 1.5rem;
   }
 

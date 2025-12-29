@@ -2,7 +2,7 @@
   let { node = null, documentCount = 0, isAdmin = false, onEdit = null } = $props();
 </script>
 
-<header class="relative min-h-[180px] rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-accent via-accent/60 to-surface-1">
+<header class="relative min-h-[180px] rounded-2xl overflow-hidden bg-gradient-to-br from-accent via-accent/60 to-surface-1">
   {#if node?.cover_image_url}
     <img src={node.cover_image_url} alt="" class="absolute inset-0 w-full h-full object-cover brightness-[0.4] saturate-[1.2]" />
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-surface-1"></div>
