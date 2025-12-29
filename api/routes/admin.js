@@ -998,6 +998,43 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Get PM2 logs for debugging
+   */
+  fastify.get('/server/logs', { preHandler: requireInternal }, async (request) => {
+    const { lines = 50, process: processName = 'siftersearch-api' } = request.query || {};
+    const allowedProcesses = ['siftersearch-api', 'siftersearch-library-watcher', 'siftersearch-watchdog'];
+
+    if (!allowedProcesses.includes(processName)) {
+      throw ApiError.badRequest(`Process not allowed: ${processName}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      const pm2Process = spawn('pm2', ['logs', processName, '--lines', String(lines), '--nostream'], {
+        cwd: join(import.meta.dirname, '../..'),
+        env: { ...process.env }
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      pm2Process.stdout.on('data', (data) => { stdout += data.toString(); });
+      pm2Process.stderr.on('data', (data) => { stderr += data.toString(); });
+
+      pm2Process.on('close', (code) => {
+        if (code === 0) {
+          resolve({ process: processName, lines: Number(lines), logs: stdout.trim() });
+        } else {
+          reject(ApiError.internal(`PM2 logs failed: ${stderr || stdout}`));
+        }
+      });
+
+      pm2Process.on('error', (err) => {
+        reject(ApiError.internal(`Failed to get PM2 logs: ${err.message}`));
+      });
+    });
+  });
+
+  /**
    * Validate script parameters without running (dry validation)
    */
   fastify.post('/server/validate', {

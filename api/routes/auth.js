@@ -366,34 +366,40 @@ export default async function authRoutes(fastify) {
 
   // Refresh token
   fastify.post('/refresh', async (request, reply) => {
-    const tokenId = request.cookies[REFRESH_COOKIE];
-    if (!tokenId) {
-      throw ApiError.unauthorized('No refresh token');
+    try {
+      const tokenId = request.cookies[REFRESH_COOKIE];
+      if (!tokenId) {
+        throw ApiError.unauthorized('No refresh token');
+      }
+
+      const token = await verifyRefreshToken(tokenId);
+      if (!token) {
+        reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
+        throw ApiError.unauthorized('Invalid or expired refresh token');
+      }
+
+      const user = await queryOne('SELECT * FROM users WHERE id = ?', [token.user_id]);
+      if (!user || user.tier === 'banned') {
+        reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
+        throw ApiError.unauthorized('Account not found or suspended');
+      }
+
+      // Rotate refresh token
+      await revokeRefreshToken(tokenId);
+      const newRefresh = await createRefreshToken(user.id);
+      const accessToken = createAccessToken(user);
+
+      reply
+        .setCookie(REFRESH_COOKIE, newRefresh.id, {
+          ...COOKIE_OPTIONS,
+          expires: newRefresh.expiresAt
+        })
+        .send({ accessToken });
+    } catch (err) {
+      // Log the actual error for debugging
+      console.error('[AUTH REFRESH ERROR]', err.message, err.stack);
+      throw err;
     }
-
-    const token = await verifyRefreshToken(tokenId);
-    if (!token) {
-      reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
-      throw ApiError.unauthorized('Invalid or expired refresh token');
-    }
-
-    const user = await queryOne('SELECT * FROM users WHERE id = ?', [token.user_id]);
-    if (!user || user.tier === 'banned') {
-      reply.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
-      throw ApiError.unauthorized('Account not found or suspended');
-    }
-
-    // Rotate refresh token
-    await revokeRefreshToken(tokenId);
-    const newRefresh = await createRefreshToken(user.id);
-    const accessToken = createAccessToken(user);
-
-    reply
-      .setCookie(REFRESH_COOKIE, newRefresh.id, {
-        ...COOKIE_OPTIONS,
-        expires: newRefresh.expiresAt
-      })
-      .send({ accessToken });
   });
 
   // Logout
