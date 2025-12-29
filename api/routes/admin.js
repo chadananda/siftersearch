@@ -919,7 +919,7 @@ export default async function adminRoutes(fastify) {
       }
 
       // Cancel all enqueued tasks before the specified date
-      const result = await meili.cancelTasks({
+      const result = await meili.tasks.cancelTasks({
         statuses: ['enqueued'],
         beforeEnqueuedAt: new Date(beforeDate)
       });
