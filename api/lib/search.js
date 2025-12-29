@@ -130,6 +130,7 @@ export async function initializeIndexes() {
       'collection',
       'language',
       'year',
+      'author',    // For filtering by author
       'authority'  // Doctrinal weight (1-10) for filtering
     ],
     sortableAttributes: [
