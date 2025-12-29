@@ -88,8 +88,9 @@ export function detectVerseMarkers(text) {
 }
 
 /**
- * Get AI-suggested break positions for semantic paragraph segmentation
- * CRITICAL: AI only returns character positions - never generates text
+ * Get AI-suggested break points using text markers
+ * AI identifies paragraph boundaries by MEANING and returns text markers (not positions)
+ * Code then finds those markers in the text to determine actual split positions
  *
  * @param {string} text - Input text (any language)
  * @param {object} options - Options
@@ -104,29 +105,45 @@ export async function getAIBreakPositions(text, options = {}) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' :
                        language === 'ar' ? 'Arabic' : 'English';
 
-  const systemPrompt = `You are an expert in semantic text analysis. Your task is to identify natural paragraph break points in continuous text for search indexing.
+  const systemPrompt = `You are an expert in semantic text analysis for ${languageHint} religious and classical texts. Your task is to identify natural paragraph break points based purely on MEANING.
 
-CRITICAL RULES:
-1. Return ONLY character position indices where breaks should occur
-2. Do NOT modify, translate, or generate any text content
-3. Positions must be valid indices within the original text
-4. Look for: topic shifts, new arguments, rhetorical transitions, thematic boundaries
-5. Aim for chunks of roughly ${maxChunkSize} characters each
-6. Break at natural semantic boundaries - complete thoughts, not mid-sentence`;
+CRITICAL APPROACH:
+1. Read the text and understand its semantic structure
+2. Identify ${targetChunks - 1} to ${targetChunks + 1} natural paragraph breaks based on meaning transitions
+3. For each break, provide the EXACT TEXT that ends one paragraph and begins the next
+4. DO NOT rely on punctuation - classical texts often lack punctuation
+5. Identify breaks by semantic transitions only:
+   - Topic shifts or new subjects
+   - New arguments or ideas
+   - Rhetorical transitions (e.g., "And He said...", "Then...")
+   - Natural pauses in discourse
+6. Preserve as complete units:
+   - Complete invocations and prayers
+   - Poetic verses (do not split couplets)
+   - Quranic/scriptural quotations
+   - Lists of divine attributes
 
-  const userPrompt = `Analyze this ${languageHint} text and identify ${targetChunks - 1} to ${targetChunks + 1} natural paragraph break points based on meaning and topic shifts.
+RESPONSE FORMAT:
+For each paragraph break, provide:
+- endMarker: The EXACT last 3-8 words that end one paragraph (copy exactly from text)
+- startMarker: The EXACT first 3-8 words that begin the next paragraph (copy exactly from text)`;
 
-TEXT (${text.length} characters):
+  const userPrompt = `Analyze this ${languageHint} text and identify ${targetChunks - 1} to ${targetChunks + 1} natural paragraph breaks based on meaning and topic transitions.
+
+TEXT:
 ${text}
 
 Respond with JSON only:
 {
-  "breakPositions": [123, 456, 789],
+  "breaks": [
+    {"endMarker": "exact ending words", "startMarker": "exact starting words"},
+    {"endMarker": "exact ending words", "startMarker": "exact starting words"}
+  ],
   "confidence": 0.85,
-  "reasoning": "Brief explanation of break logic"
+  "reasoning": "Brief explanation of why these are natural paragraph boundaries"
 }
 
-IMPORTANT: Positions must be valid character indices (0 to ${text.length - 1}). Create ${targetChunks} roughly equal semantic chunks.`;
+IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coherence is more important than equal chunk sizes.`;
 
   try {
     const response = await aiService('quality').chat([
@@ -134,7 +151,7 @@ IMPORTANT: Positions must be valid character indices (0 to ${text.length - 1}). 
       { role: 'user', content: userPrompt }
     ], {
       temperature: 0.2, // Low temperature for consistent results
-      max_tokens: 500
+      max_tokens: 1000
     });
 
     // Parse JSON response
@@ -146,10 +163,48 @@ IMPORTANT: Positions must be valid character indices (0 to ${text.length - 1}). 
     }
 
     const result = JSON.parse(jsonMatch[0]);
+    const breaks = result.breaks || [];
 
-    // Validate positions
-    const validPositions = (result.breakPositions || [])
-      .filter(pos => typeof pos === 'number' && pos > 0 && pos < text.length)
+    // Convert text markers to positions
+    const breakPositions = [];
+
+    for (const breakPoint of breaks) {
+      const { endMarker, startMarker } = breakPoint;
+
+      if (!endMarker || !startMarker) continue;
+
+      // Find the startMarker in the text - this is where the new paragraph begins
+      const startIdx = text.indexOf(startMarker);
+
+      if (startIdx > 0) {
+        breakPositions.push(startIdx);
+        logger.debug({
+          endMarker: endMarker.slice(0, 30),
+          startMarker: startMarker.slice(0, 30),
+          position: startIdx
+        }, 'Found paragraph break');
+      } else {
+        // Try fuzzy matching - remove extra spaces and try again
+        const normalizedText = text.replace(/\s+/g, ' ');
+        const normalizedMarker = startMarker.replace(/\s+/g, ' ');
+        const normalizedIdx = normalizedText.indexOf(normalizedMarker);
+
+        if (normalizedIdx > 0) {
+          // Convert normalized position back to original text position
+          // This is approximate but should be close
+          const ratio = text.length / normalizedText.length;
+          const approxPos = Math.round(normalizedIdx * ratio);
+          breakPositions.push(findWordBoundary(text, approxPos));
+          logger.debug({ startMarker: startMarker.slice(0, 30), approxPos }, 'Found break via fuzzy match');
+        } else {
+          logger.warn({ startMarker: startMarker.slice(0, 30) }, 'Could not find startMarker in text');
+        }
+      }
+    }
+
+    // Sort and dedupe
+    const validPositions = [...new Set(breakPositions)]
+      .filter(pos => pos > 0 && pos < text.length)
       .sort((a, b) => a - b);
 
     return {
@@ -164,8 +219,68 @@ IMPORTANT: Positions must be valid character indices (0 to ${text.length - 1}). 
 }
 
 /**
+ * Find the nearest word boundary to a position
+ * Word boundaries are spaces - we NEVER split within a word
+ * For unpunctuated Arabic/Persian text, this ensures words stay intact
+ *
+ * @param {string} text - Text to search
+ * @param {number} position - Target position
+ * @param {number} maxDistance - Maximum distance to search (default 30)
+ * @returns {number} Adjusted position at word boundary (after a space)
+ */
+function findWordBoundary(text, position, maxDistance = 30) {
+  if (position <= 0 || position >= text.length) {
+    return position;
+  }
+
+  // Check if we're already at a word boundary (right after a space)
+  if (position > 0 && /\s/.test(text[position - 1])) {
+    return position;
+  }
+
+  // Check if we're on a space
+  if (/\s/.test(text[position])) {
+    // Move to right after the space
+    let endPos = position;
+    while (endPos < text.length && /\s/.test(text[endPos])) {
+      endPos++;
+    }
+    return endPos;
+  }
+
+  // Search forward first (find the end of the current word)
+  for (let i = 1; i <= maxDistance; i++) {
+    const checkPos = position + i;
+    if (checkPos < text.length && /\s/.test(text[checkPos])) {
+      // Found space, return position right after it
+      let endPos = checkPos;
+      while (endPos < text.length && /\s/.test(text[endPos])) {
+        endPos++;
+      }
+      return endPos;
+    }
+  }
+
+  // Search backward (find the start of the current word)
+  for (let i = 1; i <= maxDistance; i++) {
+    const checkPos = position - i;
+    if (checkPos >= 0 && /\s/.test(text[checkPos])) {
+      // Found space, return position right after it
+      let endPos = checkPos;
+      while (endPos < text.length && /\s/.test(text[endPos])) {
+        endPos++;
+      }
+      return endPos;
+    }
+  }
+
+  // No word boundary found within range - return original position
+  return position;
+}
+
+/**
  * Split text at specified positions
- * CRITICAL: Verifies text integrity after splitting
+ * CRITICAL: Snaps positions to word boundaries and verifies text integrity
  *
  * @param {string} text - Original text
  * @param {number[]} positions - Break positions
@@ -177,11 +292,19 @@ export function splitAtPositions(text, positions) {
     return [text].filter(Boolean);
   }
 
-  const sortedPositions = [...positions].sort((a, b) => a - b);
+  // Snap positions to word boundaries
+  const adjustedPositions = positions
+    .map(pos => findWordBoundary(text, pos))
+    .sort((a, b) => a - b);
+
+  // Remove duplicates and invalid positions
+  const uniquePositions = [...new Set(adjustedPositions)]
+    .filter(pos => pos > 0 && pos < text.length);
+
   const segments = [];
   let lastPos = 0;
 
-  for (const pos of sortedPositions) {
+  for (const pos of uniquePositions) {
     if (pos > lastPos && pos < text.length) {
       const segment = text.slice(lastPos, pos).trim();
       if (segment) {
@@ -304,7 +427,9 @@ export function regexSegment(text, options = {}) {
 }
 
 /**
- * Hard-split text at character boundaries (last resort)
+ * Hard-split text at word boundaries (last resort for unpunctuated text)
+ * For classical Arabic/Persian texts that lack punctuation
+ * Splits at natural word boundaries while maintaining maxSize constraint
  *
  * @param {string} text - Text to split
  * @param {number} maxSize - Maximum chunk size
@@ -315,15 +440,48 @@ function hardSplitText(text, maxSize) {
   let remaining = text;
 
   while (remaining.length > maxSize) {
-    // Try to find a word boundary
-    let splitPoint = remaining.lastIndexOf(' ', maxSize);
-    if (splitPoint < maxSize * 0.5) {
-      // No good word boundary, just split at max
-      splitPoint = maxSize;
+    // First try: find sentence-ending punctuation within range
+    const sentenceEndPattern = /[.!?؟۔。！？]\s*/g;
+    let bestSplit = -1;
+    let match;
+
+    while ((match = sentenceEndPattern.exec(remaining)) !== null) {
+      const endPos = match.index + match[0].length;
+      if (endPos <= maxSize) {
+        bestSplit = endPos;
+      } else {
+        break;
+      }
     }
 
-    chunks.push(remaining.slice(0, splitPoint).trim());
-    remaining = remaining.slice(splitPoint).trim();
+    if (bestSplit > maxSize * 0.3) {
+      // Found good sentence boundary
+      chunks.push(remaining.slice(0, bestSplit).trim());
+      remaining = remaining.slice(bestSplit).trim();
+      continue;
+    }
+
+    // Second try: for unpunctuated text, find the last space within maxSize
+    // This ensures we never split within a word
+    let splitPoint = remaining.lastIndexOf(' ', maxSize);
+
+    if (splitPoint > maxSize * 0.3) {
+      // Good word boundary found
+      chunks.push(remaining.slice(0, splitPoint).trim());
+      remaining = remaining.slice(splitPoint).trim();
+    } else {
+      // Look for first space after maxSize (accept slightly larger chunk)
+      const spaceAfter = remaining.indexOf(' ', maxSize);
+      if (spaceAfter > 0 && spaceAfter < maxSize * 1.5) {
+        chunks.push(remaining.slice(0, spaceAfter).trim());
+        remaining = remaining.slice(spaceAfter).trim();
+      } else {
+        // Absolute last resort: take entire remaining text if no spaces
+        // This handles edge cases like one very long word (shouldn't happen)
+        chunks.push(remaining.trim());
+        remaining = '';
+      }
+    }
   }
 
   if (remaining) {

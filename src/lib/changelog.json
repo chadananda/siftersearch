@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-28T23:19:14.832Z",
+  "generated": "2025-12-29T03:20:19.240Z",
   "entries": [
+    {
+      "hash": "315cd0b",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Correctly detect Arabic/Persian language for documents",
+      "scope": "indexer"
+    },
     {
       "hash": "8c4be44",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use faceted queries for tree instead of document iteration",
       "scope": "library"
-    },
-    {
-      "hash": "53df884",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Prefer frontmatter author over path-extracted 'Unknown'",
-      "scope": "indexer"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "315cd0b",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Correctly detect Arabic/Persian language for documents",
+        "scope": "indexer"
+      },
       {
         "hash": "8c4be44",
         "date": "2025-12-28",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Use faceted queries for tree instead of document iteration",
         "scope": "library"
-      },
-      {
-        "hash": "53df884",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Prefer frontmatter author over path-extracted 'Unknown'",
-        "scope": "indexer"
       }
     ]
   }

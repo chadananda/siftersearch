@@ -386,6 +386,89 @@ export default async function adminRoutes(fastify) {
     }
   });
 
+  // Remove all documents by author from the index
+  fastify.delete('/index/by-author/:author', {
+    preHandler: requireInternal,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['author'],
+        properties: {
+          author: { type: 'string', description: 'Author name (partial match)' }
+        }
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          dryRun: { type: 'boolean', default: false, description: 'Preview without deleting' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { author } = request.params;
+    const { dryRun = false } = request.query;
+    const { getMeili, INDEXES } = await import('../lib/search.js');
+
+    try {
+      const meili = getMeili();
+
+      // Search for all documents by this author
+      const results = await meili.index(INDEXES.DOCUMENTS).search('', {
+        filter: `author = "${author}"`,
+        limit: 1000
+      });
+
+      // If no exact match, try contains
+      let docs = results.hits;
+      if (docs.length === 0) {
+        const allDocs = await meili.index(INDEXES.DOCUMENTS).search(author, {
+          attributesToSearchOn: ['author'],
+          limit: 1000
+        });
+        docs = allDocs.hits.filter(d =>
+          d.author && d.author.toLowerCase().includes(author.toLowerCase())
+        );
+      }
+
+      if (docs.length === 0) {
+        return { success: true, message: `No documents found for author: ${author}`, deleted: 0 };
+      }
+
+      if (dryRun) {
+        return {
+          success: true,
+          dryRun: true,
+          message: `Would delete ${docs.length} documents`,
+          documents: docs.map(d => ({ id: d.id, title: d.title, author: d.author }))
+        };
+      }
+
+      // Delete all found documents
+      let deleted = 0;
+      const errors = [];
+
+      for (const doc of docs) {
+        try {
+          await removeDocument(doc.id);
+          deleted++;
+        } catch (err) {
+          errors.push({ id: doc.id, error: err.message });
+        }
+      }
+
+      logger.info({ author, deleted, errors: errors.length }, 'Deleted documents by author');
+
+      return {
+        success: true,
+        message: `Deleted ${deleted} documents by author: ${author}`,
+        deleted,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    } catch (err) {
+      throw ApiError.internal(`Failed to delete documents by author: ${err.message}`);
+    }
+  });
+
   // Get indexing queue status
   fastify.get('/index/status', { preHandler: requireTier('admin') }, async () => {
     try {
@@ -528,13 +611,14 @@ export default async function adminRoutes(fastify) {
           limit: { type: 'integer', minimum: 1 },
           religion: { type: 'string', description: 'Filter by religion name (e.g., "Bahai", "Islam")' },
           collection: { type: 'string', description: 'Filter by collection name' },
+          author: { type: 'string', description: 'Filter by author name (partial match, e.g., "Bab")' },
           path: { type: 'string', description: 'Filter by path pattern (glob)' },
           documentId: { type: 'string', description: 'Re-index a single document by ID' }
         }
       }
     }
   }, async (request) => {
-    const { force = false, limit, religion, collection, path, documentId } = request.body || {};
+    const { force = false, limit, religion, collection, author, path, documentId } = request.body || {};
 
     // Check if already running
     const existing = backgroundTasks.get('reindex');
@@ -547,6 +631,7 @@ export default async function adminRoutes(fastify) {
     if (limit) args.push(`--limit=${limit}`);
     if (religion) args.push(`--religion=${religion}`);
     if (collection) args.push(`--collection=${collection}`);
+    if (author) args.push(`--author=${author}`);
     if (path) args.push(`--path=${path}`);
     if (documentId) args.push(`--document=${documentId}`);
 
@@ -558,7 +643,7 @@ export default async function adminRoutes(fastify) {
       success: true,
       taskId: 'reindex',
       message: 'Library re-indexing started in background',
-      filters: { force, limit, religion, collection, path, documentId },
+      filters: { force, limit, religion, collection, author, path, documentId },
       status: task.status
     };
   });

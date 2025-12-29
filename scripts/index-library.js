@@ -54,6 +54,8 @@ const envLimit = process.env.INDEX_LIMIT ? parseInt(process.env.INDEX_LIMIT, 10)
 const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : envLimit;
 const religionArg = args.find(arg => arg.startsWith('--religion='));
 const religionFilter = religionArg ? religionArg.split('=')[1] : null;
+const authorArg = args.find(arg => arg.startsWith('--author='));
+const authorFilter = authorArg ? authorArg.split('=')[1] : null;
 const debounceArg = args.find(arg => arg.startsWith('--debounce='));
 const debounceMs = debounceArg ? parseInt(debounceArg.split('=')[1], 10) : 1000;
 
@@ -299,6 +301,20 @@ async function indexFile(filePath, basePath, force = false) {
       return { success: true, skipped: true, reason: 'too_short' };
     }
 
+    // Apply author filter (check frontmatter for author)
+    if (authorFilter) {
+      const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      let docAuthor = metadata.author || '';
+      if (frontmatterMatch) {
+        const authorMatch = frontmatterMatch[1].match(/^author:\s*(.+)$/m);
+        if (authorMatch) docAuthor = authorMatch[1].trim();
+      }
+      // Case-insensitive partial match (e.g., "Bab" matches "The Báb")
+      if (!docAuthor.toLowerCase().includes(authorFilter.toLowerCase())) {
+        return { success: true, skipped: true, reason: 'author_filter' };
+      }
+    }
+
     // If document exists, remove it first (re-indexing)
     const exists = await documentExists(metadata.id);
     if (exists) {
@@ -434,6 +450,7 @@ async function indexLibrary() {
   if (watchMode) console.log('Mode: WATCH (continuous sync)');
   if (limit < Infinity) console.log(`Limit: ${limit} documents`);
   if (religionFilter) console.log(`Religion filter: ${religionFilter}`);
+  if (authorFilter) console.log(`Author filter: ${authorFilter}`);
   if (skipExisting) console.log('Skipping existing documents');
   if (clearIndex) console.log('⚠️  Will CLEAR existing index first');
   console.log('');
