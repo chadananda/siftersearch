@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T12:17:02.906Z",
+  "generated": "2025-12-29T12:25:24.731Z",
   "entries": [
+    {
+      "hash": "844950a",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
+      "scope": null
+    },
     {
       "hash": "4f8c512",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Detect Arabic/Farsi language from content",
       "scope": "ingester"
-    },
-    {
-      "hash": "ab2e822",
-      "date": "2025-12-26",
-      "type": "Fixed",
-      "description": "Adjust Bahá'í collection authority rankings",
-      "scope": "authority"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "844950a",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
+        "scope": null
+      },
       {
         "hash": "4f8c512",
         "date": "2025-12-29",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Detect Arabic/Farsi language from content",
         "scope": "ingester"
-      },
-      {
-        "hash": "ab2e822",
-        "date": "2025-12-26",
-        "type": "Fixed",
-        "description": "Adjust Bahá'í collection authority rankings",
-        "scope": "authority"
       }
     ]
   }

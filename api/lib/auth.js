@@ -67,10 +67,12 @@ export async function createRefreshToken(userId) {
 const REVOKE_GRACE_PERIOD_SECONDS = 30;
 
 export async function verifyRefreshToken(tokenId) {
+  const now = new Date().toISOString();
+
   // First check for valid non-revoked token
   let token = await queryOne(
-    'SELECT * FROM refresh_tokens WHERE id = ? AND revoked = 0 AND expires_at > datetime("now")',
-    [tokenId]
+    'SELECT * FROM refresh_tokens WHERE id = ? AND revoked = 0 AND expires_at > ?',
+    [tokenId, now]
   );
 
   // If not found, check for recently revoked token (grace period for navigation race condition)
@@ -83,9 +85,9 @@ export async function verifyRefreshToken(tokenId) {
        WHERE id = ?
        AND revoked = 1
        AND revoked_at IS NOT NULL
-       AND expires_at > datetime("now")
+       AND expires_at > ?
        AND revoked_at > ?`,
-      [tokenId, cutoffTime]
+      [tokenId, now, cutoffTime]
     );
   }
 
@@ -93,16 +95,18 @@ export async function verifyRefreshToken(tokenId) {
 }
 
 export async function revokeRefreshToken(tokenId) {
+  const now = new Date().toISOString();
   await query(
-    'UPDATE refresh_tokens SET revoked = 1, revoked_at = datetime("now") WHERE id = ?',
-    [tokenId]
+    'UPDATE refresh_tokens SET revoked = 1, revoked_at = ? WHERE id = ?',
+    [now, tokenId]
   );
 }
 
 export async function revokeAllUserTokens(userId) {
+  const now = new Date().toISOString();
   await query(
-    'UPDATE refresh_tokens SET revoked = 1, revoked_at = datetime("now") WHERE user_id = ?',
-    [userId]
+    'UPDATE refresh_tokens SET revoked = 1, revoked_at = ? WHERE user_id = ?',
+    [now, userId]
   );
 }
 
