@@ -1,6 +1,55 @@
 {
-  "generated": "2025-12-29T04:53:47.211Z",
+  "generated": "2025-12-29T11:50:56.177Z",
   "entries": [
+    {
+      "hash": "d9113a2",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Use correct meili.tasks.cancelTasks method",
+      "scope": "admin"
+    },
+    {
+      "hash": "baa8688",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add meili-cancel endpoint to cancel old queued tasks",
+      "scope": "admin"
+    },
+    {
+      "hash": "b79b1a0",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add PM2 control endpoint to stop/start library watcher",
+      "scope": "admin"
+    },
+    {
+      "hash": "ca286d8",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add author to filterable attributes in Meilisearch paragraphs index",
+      "scope": "search"
+    },
+    {
+      "hash": "db8745a",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add status filter and limit param to meili-tasks endpoint",
+      "scope": "admin"
+    },
+    {
+      "hash": "0f69c92",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
+      "scope": "admin"
+    },
+    {
+      "hash": "58f3d8b",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
+      "scope": "admin"
+    },
     {
       "hash": "61171d1",
       "date": "2025-12-28",
@@ -301,59 +350,59 @@
       "type": "Fixed",
       "description": "Normalize religion names for authority lookup",
       "scope": "library"
-    },
-    {
-      "hash": "2ddbb9f",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Fallback to Meilisearch when library_nodes empty",
-      "scope": "library"
-    },
-    {
-      "hash": "13c00ff",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Add new hook to populate library_nodes after migration",
-      "scope": "deploy"
-    },
-    {
-      "hash": "36df0f6",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Add library_nodes table migration for authority sorting",
-      "scope": "db"
-    },
-    {
-      "hash": "35070e2",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Initialize auth in NavBar for all pages",
-      "scope": "auth"
-    },
-    {
-      "hash": "51d8365",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Add resync hook for library nodes authority data",
-      "scope": "deploy"
-    },
-    {
-      "hash": "ee37b8f",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Gracefully handle missing library_nodes table",
-      "scope": "library"
-    },
-    {
-      "hash": "f26c335",
-      "date": "2025-12-25",
-      "type": "New",
-      "description": "Sort collections by doctrinal authority",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "d9113a2",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Use correct meili.tasks.cancelTasks method",
+        "scope": "admin"
+      },
+      {
+        "hash": "baa8688",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add meili-cancel endpoint to cancel old queued tasks",
+        "scope": "admin"
+      },
+      {
+        "hash": "b79b1a0",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add PM2 control endpoint to stop/start library watcher",
+        "scope": "admin"
+      },
+      {
+        "hash": "ca286d8",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add author to filterable attributes in Meilisearch paragraphs index",
+        "scope": "search"
+      },
+      {
+        "hash": "db8745a",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add status filter and limit param to meili-tasks endpoint",
+        "scope": "admin"
+      },
+      {
+        "hash": "0f69c92",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
+        "scope": "admin"
+      },
+      {
+        "hash": "58f3d8b",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
+        "scope": "admin"
+      },
       {
         "hash": "61171d1",
         "date": "2025-12-28",
@@ -659,55 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Normalize religion names for authority lookup",
-        "scope": "library"
-      },
-      {
-        "hash": "2ddbb9f",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Fallback to Meilisearch when library_nodes empty",
-        "scope": "library"
-      },
-      {
-        "hash": "13c00ff",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Add new hook to populate library_nodes after migration",
-        "scope": "deploy"
-      },
-      {
-        "hash": "36df0f6",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Add library_nodes table migration for authority sorting",
-        "scope": "db"
-      },
-      {
-        "hash": "35070e2",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Initialize auth in NavBar for all pages",
-        "scope": "auth"
-      },
-      {
-        "hash": "51d8365",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Add resync hook for library nodes authority data",
-        "scope": "deploy"
-      },
-      {
-        "hash": "ee37b8f",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Gracefully handle missing library_nodes table",
-        "scope": "library"
-      },
-      {
-        "hash": "f26c335",
-        "date": "2025-12-25",
-        "type": "New",
-        "description": "Sort collections by doctrinal authority",
         "scope": "library"
       }
     ]

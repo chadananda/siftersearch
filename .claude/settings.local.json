@@ -36,7 +36,8 @@
       "Bash(python3:*)",
       "Bash(node scripts/update-server.js:*)",
       "Bash(pm2 show:*)",
-      "WebFetch(domain:api.siftersearch.com)"
+      "WebFetch(domain:api.siftersearch.com)",
+      "WebFetch(domain:meilisearch.github.io)"
     ]
   }
 }
