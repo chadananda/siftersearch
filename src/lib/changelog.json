@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T20:51:17.127Z",
+  "generated": "2025-12-29T23:13:32.865Z",
   "entries": [
+    {
+      "hash": "38cc20a",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Increase contrast on version badge",
+      "scope": "ui"
+    },
     {
       "hash": "184159b",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Simplify user menu for anonymous users",
       "scope": "navbar"
-    },
-    {
-      "hash": "1419e47",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Show Chat to anon users, redirect on logout, fix SQL query",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "38cc20a",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Increase contrast on version badge",
+        "scope": "ui"
+      },
       {
         "hash": "184159b",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Simplify user menu for anonymous users",
         "scope": "navbar"
-      },
-      {
-        "hash": "1419e47",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Show Chat to anon users, redirect on logout, fix SQL query",
-        "scope": null
       }
     ]
   }

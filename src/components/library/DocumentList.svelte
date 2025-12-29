@@ -129,23 +129,33 @@
     {@const size = getSizeLabel(doc.paragraph_count)}
     {@const isExpanded = expandedDocId === doc.id}
     {@const langName = getLangName(doc.language)}
+    {@const hasTranslations = isExpanded && bilingualContent?.paragraphs?.some(p => p.translation)}
+    {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
+    {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
 
     <div class="border rounded-lg overflow-hidden transition-colors
                 {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
       <!-- Title row -->
-      <button
-        class="w-full flex items-center gap-2 py-2.5 px-3 text-left cursor-pointer transition-colors
+      <div
+        class="w-full flex items-center gap-2 py-2.5 px-3 transition-colors
                {isExpanded ? 'bg-accent/10 border-b border-border-subtle' : 'bg-surface-1 hover:bg-surface-2'}"
-        onclick={() => toggleDocument(doc)}
       >
-        <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
-        <div class="flex-1 min-w-0 flex items-baseline gap-2">
-          <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
-          {#if doc.author}
-            <span class="text-xs text-secondary shrink-0">{doc.author}</span>
-          {/if}
-        </div>
+        <button
+          class="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer"
+          onclick={() => toggleDocument(doc)}
+        >
+          <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
+          <div class="flex-1 min-w-0 flex items-baseline gap-2">
+            <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
+            {#if doc.author}
+              <span class="text-xs text-secondary shrink-0">{doc.author}</span>
+            {/if}
+          </div>
+        </button>
         <div class="flex items-center gap-1.5 shrink-0">
+          {#if needsTranslation}
+            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500" title="Translation not available">No translation</span>
+          {/if}
           {#if langName && langName !== 'English'}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-accent/10 text-accent">{langName}</span>
           {/if}
@@ -155,74 +165,57 @@
           {#if size}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
           {/if}
+          {#if isExpanded}
+            {#if isAdmin && needsTranslation}
+              <button
+                class="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
+                onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                disabled={translating === doc.id}
+                title="Translate document to English"
+              >
+                {#if translating === doc.id}
+                  <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                {:else}
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                  </svg>
+                {/if}
+                Translate
+              </button>
+            {/if}
+            {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
+              {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
+              {#if originalFile?.storage_url}
+                <a
+                  href={originalFile.storage_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+                  title="Edit source file"
+                  onclick={(e) => e.stopPropagation()}
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              {/if}
+            {/if}
+            <button
+              class="p-1.5 text-muted hover:text-accent rounded transition-colors"
+              onclick={(e) => { e.stopPropagation(); openReader(doc.id); }}
+              title="View fullscreen"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>
+          {/if}
         </div>
-      </button>
+      </div>
 
       <!-- Expanded content -->
       {#if isExpanded}
-        {@const hasTranslations = bilingualContent?.paragraphs?.some(p => p.translation)}
-        {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
-        {@const needsTranslation = docLang && docLang !== 'en' && !hasTranslations}
-
         <div class="bg-surface-0 overflow-hidden">
-          <!-- Toolbar -->
-          <div class="flex items-center justify-between px-3 py-1.5 bg-surface-1 border-b border-border-subtle">
-            <div class="flex items-center gap-2 text-xs text-muted">
-              {#if doc.year}
-                <span>{doc.year}</span>
-              {/if}
-              {#if doc.paragraph_count}
-                <span>{doc.paragraph_count} paragraphs</span>
-              {/if}
-              {#if needsTranslation}
-                <span class="text-amber-500" title="Translation not yet available">• No translation</span>
-              {/if}
-            </div>
-            <div class="flex items-center gap-1">
-              {#if isAdmin && needsTranslation}
-                <button
-                  class="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
-                  onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                  disabled={translating === doc.id}
-                  title="Translate document to English"
-                >
-                  {#if translating === doc.id}
-                    <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                  {:else}
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
-                    </svg>
-                  {/if}
-                  Translate
-                </button>
-              {/if}
-              {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
-                {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
-                {#if originalFile?.storage_url}
-                  <a
-                    href={originalFile.storage_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="p-1.5 text-muted hover:text-accent rounded transition-colors"
-                    title="Edit source file"
-                  >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                  </a>
-                {/if}
-              {/if}
-              <button
-                class="p-1.5 text-muted hover:text-accent rounded transition-colors"
-                onclick={(e) => { e.stopPropagation(); openReader(doc.id); }}
-                title="View fullscreen"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-                </svg>
-              </button>
-            </div>
-          </div>
 
           <!-- Content area -->
           <div>
