@@ -148,14 +148,14 @@ async function fixDocumentLanguages() {
   }
   console.log(`  Updated ${fixes.length} documents in libsql`);
 
-  // Update Meilisearch (search index)
-  console.log('\n🔄 Updating Meilisearch index...');
+  // Update Meilisearch DOCUMENTS index
+  console.log('\n🔄 Updating Meilisearch DOCUMENTS index...');
   const meiliUpdates = fixes.map(fix => ({
     id: fix.id,
     language: fix.newLang
   }));
 
-  // Batch update in Meilisearch
+  // Batch update documents
   const batchSize = 100;
   for (let i = 0; i < meiliUpdates.length; i += batchSize) {
     const batch = meiliUpdates.slice(i, i + batchSize);
@@ -163,7 +163,37 @@ async function fixDocumentLanguages() {
     console.log(`  Batch ${Math.floor(i / batchSize) + 1}: Updated ${batch.length} documents (task ${task.taskUid})`);
   }
 
-  console.log(`\n✅ Complete! Fixed ${fixes.length} documents.`);
+  // Update Meilisearch PARAGRAPHS index
+  console.log('\n🔄 Updating Meilisearch PARAGRAPHS index...');
+  let paragraphsUpdated = 0;
+
+  for (const fix of fixes) {
+    // Get all paragraphs for this document
+    const parasResult = await parasIndex.search('', {
+      filter: `document_id = "${fix.id}"`,
+      limit: 1000,
+      attributesToRetrieve: ['id']
+    });
+
+    if (parasResult.hits.length > 0) {
+      const paraUpdates = parasResult.hits.map(p => ({
+        id: p.id,
+        language: fix.newLang
+      }));
+
+      // Batch update paragraphs
+      for (let i = 0; i < paraUpdates.length; i += batchSize) {
+        const batch = paraUpdates.slice(i, i + batchSize);
+        await parasIndex.updateDocuments(batch, { primaryKey: 'id' });
+      }
+
+      paragraphsUpdated += parasResult.hits.length;
+    }
+  }
+
+  console.log(`  Updated ${paragraphsUpdated} paragraphs across ${fixes.length} documents`);
+
+  console.log(`\n✅ Complete! Fixed ${fixes.length} documents and ${paragraphsUpdated} paragraphs.`);
 
   // Summary by language
   const byLang = fixes.reduce((acc, f) => {

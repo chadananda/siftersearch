@@ -68,5 +68,12 @@
     "command": "node scripts/resegment-oversized.js",
     "enabled": false,
     "timeout": 1800000
+  },
+  {
+    "id": "2024-12-28-fix-rtl-languages-with-paragraphs",
+    "description": "Fix Arabic/Farsi documents: update both documents AND paragraphs indexes",
+    "command": "node scripts/fix-rtl-languages.js",
+    "enabled": true,
+    "timeout": 600000
   }
 ]

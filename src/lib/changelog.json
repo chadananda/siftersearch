@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T03:20:19.240Z",
+  "generated": "2025-12-29T04:04:27.365Z",
   "entries": [
+    {
+      "hash": "7e6ecc2",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "AI-based semantic paragraph splitting for Arabic/Persian",
+      "scope": "segmentation"
+    },
     {
       "hash": "315cd0b",
       "date": "2025-12-28",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve religion count badge visibility",
       "scope": "library"
-    },
-    {
-      "hash": "0322efa",
-      "date": "2025-12-25",
-      "type": "Fixed",
-      "description": "Use faceted queries for tree instead of document iteration",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-28": [
+      {
+        "hash": "7e6ecc2",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "AI-based semantic paragraph splitting for Arabic/Persian",
+        "scope": "segmentation"
+      },
       {
         "hash": "315cd0b",
         "date": "2025-12-28",
@@ -701,13 +708,6 @@
         "date": "2025-12-25",
         "type": "Fixed",
         "description": "Improve religion count badge visibility",
-        "scope": "library"
-      },
-      {
-        "hash": "0322efa",
-        "date": "2025-12-25",
-        "type": "Fixed",
-        "description": "Use faceted queries for tree instead of document iteration",
         "scope": "library"
       }
     ]
