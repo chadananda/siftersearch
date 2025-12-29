@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T12:36:10.914Z",
+  "generated": "2025-12-29T12:41:53.184Z",
   "entries": [
+    {
+      "hash": "deca725",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fall back to standard content when bilingual returns no paragraphs",
+      "scope": null
+    },
     {
       "hash": "e2a3123",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Paper styling, persistent login, and translation improvements",
       "scope": null
-    },
-    {
-      "hash": "9e727b1",
-      "date": "2025-12-26",
-      "type": "New",
-      "description": "Add side-by-side bilingual view for non-English documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "deca725",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fall back to standard content when bilingual returns no paragraphs",
+        "scope": null
+      },
       {
         "hash": "e2a3123",
         "date": "2025-12-29",
@@ -699,15 +706,6 @@
         "date": "2025-12-27",
         "type": "New",
         "description": "Paper styling, persistent login, and translation improvements",
-        "scope": null
-      }
-    ],
-    "2025-12-26": [
-      {
-        "hash": "9e727b1",
-        "date": "2025-12-26",
-        "type": "New",
-        "description": "Add side-by-side bilingual view for non-English documents",
         "scope": null
       }
     ]
