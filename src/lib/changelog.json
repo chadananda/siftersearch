@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T14:53:14.073Z",
+  "generated": "2025-12-30T14:57:09.008Z",
   "entries": [
+    {
+      "hash": "dc2d512",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "Increase limit from 200 to 500 for full document loading",
+      "scope": "bilingual"
+    },
     {
       "hash": "29641dd",
       "date": "2025-12-29",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Add v13 migration to rename legacy table names",
       "scope": null
-    },
-    {
-      "hash": "813600e",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Allow internal API key auth for server management routes",
-      "scope": null
     }
   ],
   "grouped": {
+    "2025-12-30": [
+      {
+        "hash": "dc2d512",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "Increase limit from 200 to 500 for full document loading",
+        "scope": "bilingual"
+      }
+    ],
     "2025-12-29": [
       {
         "hash": "29641dd",
@@ -697,13 +706,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Add v13 migration to rename legacy table names",
-        "scope": null
-      },
-      {
-        "hash": "813600e",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Allow internal API key auth for server management routes",
         "scope": null
       }
     ]

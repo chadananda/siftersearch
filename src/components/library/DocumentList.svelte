@@ -222,9 +222,13 @@
         const batch = untranslated.slice(i, i + BATCH_SIZE);
         const paragraphIds = batch.map(p => p.id);
 
+        const token = localStorage.getItem('sifter_access_token');
         const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translate-batch`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
           credentials: 'include',
           body: JSON.stringify({ paragraphIds })
         });
