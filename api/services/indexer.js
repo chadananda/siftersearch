@@ -18,7 +18,7 @@ import { indexDocument, deleteDocument, getMeili, INDEXES } from '../lib/search.
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import { getAuthority } from '../lib/authority.js';
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } from '../lib/db.js';
 import { detectLanguageFeatures } from './segmenter.js';
 
 // Chunking configuration
@@ -622,9 +622,10 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
 
   try {
     // Detect content table schema - check if document_id column exists
+    // Use batch connection to avoid blocking auth queries
     let hasDocumentIdColumn = false;
     try {
-      const tableInfo = await queryAll(`PRAGMA table_info(content)`);
+      const tableInfo = await batchQueryAll(`PRAGMA table_info(content)`);
       hasDocumentIdColumn = tableInfo.some(col => col.name === 'document_id');
       logger.info({ hasDocumentIdColumn }, 'Content table schema detected');
     } catch (err) {
@@ -681,7 +682,8 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
           }
 
           // Store document in libsql (with retry for SQLITE_BUSY)
-          await withRetry(() => query(`
+          // Uses batch connection to avoid blocking auth
+          await withRetry(() => batchQuery(`
             INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
@@ -725,9 +727,10 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
             const contentHash = computeContentHash(para.text);
 
             // Use appropriate INSERT based on detected schema (with retry for SQLITE_BUSY)
+            // Uses batch connection to avoid blocking auth
             if (hasDocumentIdColumn) {
               // Old schema: has both doc_id and document_id columns
-              await withRetry(() => query(`
+              await withRetry(() => batchQuery(`
                 INSERT INTO content (id, doc_id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
@@ -756,7 +759,7 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
               ]));
             } else {
               // New schema: only doc_id column
-              await withRetry(() => query(`
+              await withRetry(() => batchQuery(`
                 INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
@@ -812,11 +815,12 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
  * Get embedding cache statistics
  */
 export async function getEmbeddingCacheStats() {
+  // Uses batch connection - typically called during migrations
   try {
     const [docCount, paraCount, embeddingCount] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs'),
-      queryOne('SELECT COUNT(*) as count FROM content'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL')
+      batchQueryOne('SELECT COUNT(*) as count FROM docs'),
+      batchQueryOne('SELECT COUNT(*) as count FROM content'),
+      batchQueryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL')
     ]);
 
     return {

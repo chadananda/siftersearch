@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:36:51.371Z",
+  "generated": "2025-12-30T03:40:38.533Z",
   "entries": [
+    {
+      "hash": "ec95183",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Remove auth requirement from version-triggered updates",
+      "scope": null
+    },
     {
       "hash": "8e9a0b7",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add public translation endpoint with Shoghi Effendi style",
       "scope": null
-    },
-    {
-      "hash": "139550a",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Make Baha'i star icon use currentColor for proper teal/white styling",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "ec95183",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Remove auth requirement from version-triggered updates",
+        "scope": null
+      },
       {
         "hash": "8e9a0b7",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "New",
         "description": "Add public translation endpoint with Shoghi Effendi style",
-        "scope": null
-      },
-      {
-        "hash": "139550a",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Make Baha'i star icon use currentColor for proper teal/white styling",
         "scope": null
       }
     ]
