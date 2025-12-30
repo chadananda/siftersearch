@@ -8,7 +8,7 @@
     document = null,
     paragraphs = [],
     loading = false,
-    currentIndex = 0,
+    currentIndex = -1,  // -1 means no specific paragraph selected
     keyPhrase = '',
     coreTerms = [],
     bilingualContent = null,
@@ -71,13 +71,14 @@
     }
   }
 
-  // Scroll to current paragraph when opened
+  // Scroll to current paragraph when opened (only if a specific paragraph is selected)
   $effect(() => {
     if (open && !loading && paragraphs.length > 0 && containerEl) {
       animating = true;
       tick().then(() => {
         requestAnimationFrame(() => {
-          if (containerEl) {
+          // Only scroll to specific paragraph if currentIndex >= 0
+          if (containerEl && currentIndex >= 0) {
             containerEl.style.scrollBehavior = 'auto';
             const paragraphEl = containerEl.querySelector(`[data-paragraph-index="${currentIndex}"]`);
             if (paragraphEl) {
@@ -230,14 +231,15 @@
           <div class="reader-paragraphs" class:rtl={isRTL}>
             {#each paragraphs as paragraph, i}
               {@const paraIndex = paragraph.paragraph_index ?? i}
+              {@const isCurrent = currentIndex >= 0 && paraIndex === currentIndex}
               <div
-                class="reader-paragraph-wrapper {paraIndex === currentIndex ? 'current' : ''}"
+                class="reader-paragraph-wrapper {isCurrent ? 'current' : ''}"
                 class:rtl={isRTL}
                 data-paragraph-index={paraIndex}
               >
                 <span class="para-num">{paraIndex + 1}</span>
                 <p class="reader-paragraph" dir={isRTL ? 'rtl' : 'ltr'}>
-                  {#if paraIndex === currentIndex && keyPhrase}
+                  {#if isCurrent && keyPhrase}
                     {@html formatText(applyHighlighting(paragraph.text || paragraph.content, keyPhrase, coreTerms))}
                   {:else}
                     {@html formatText(paragraph.text || paragraph.content)}
