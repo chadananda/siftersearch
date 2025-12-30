@@ -1195,14 +1195,14 @@ Return ONLY the description text, no quotes or formatting.`;
     const { id } = request.params;
     const meili = getMeili();
 
-    // Get counts from libsql
+    // Get counts from libsql (support both doc_id and document_id columns)
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
       FROM content
-      WHERE doc_id = ?
-    `, [id]);
+      WHERE doc_id = ? OR document_id = ?
+    `, [id, id]);
 
     // If libsql has no data, get total from Meilisearch
     // TODO: Run migration to sync all documents, then remove this fallback
@@ -1462,14 +1462,14 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('Document is already in English');
     }
 
-    // Get paragraphs to translate
+    // Get paragraphs to translate (support both doc_id and document_id columns)
     const placeholders = paragraphIds.map(() => '?').join(',');
     const paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation
       FROM content
-      WHERE doc_id = ? AND id IN (${placeholders})
+      WHERE (doc_id = ? OR document_id = ?) AND id IN (${placeholders})
       ORDER BY paragraph_index
-    `, [documentId, ...paragraphIds]);
+    `, [documentId, documentId, ...paragraphIds]);
 
     if (paragraphs.length === 0) {
       return { translations: [], message: 'No paragraphs found' };
