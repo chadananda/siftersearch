@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T02:37:26.536Z",
+  "generated": "2025-12-30T02:41:37.335Z",
   "entries": [
+    {
+      "hash": "168f852",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add real-time translation progress with batch API",
+      "scope": "translation"
+    },
     {
       "hash": "0d3f6bd",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Update RTL language fix script for deploy hook",
       "scope": null
-    },
-    {
-      "hash": "9dd9491",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "168f852",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add real-time translation progress with batch API",
+        "scope": "translation"
+      },
       {
         "hash": "0d3f6bd",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "Fixed",
         "description": "Update RTL language fix script for deploy hook",
-        "scope": null
-      },
-      {
-        "hash": "9dd9491",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
         "scope": null
       }
     ]

@@ -1103,7 +1103,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Get paragraphs with translations from SQLite (translations stored there)
     const paragraphs = await queryAll(`
-      SELECT paragraph_index, text, translation, blocktype, heading
+      SELECT id, paragraph_index, text, translation, blocktype, heading
       FROM content
       WHERE doc_id = ?
       ORDER BY paragraph_index
@@ -1128,6 +1128,7 @@ Return ONLY the description text, no quotes or formatting.`;
         isRTL
       },
       paragraphs: paragraphs.map(p => ({
+        id: p.id,
         index: p.paragraph_index,
         original: p.text,
         translation: p.translation || null,

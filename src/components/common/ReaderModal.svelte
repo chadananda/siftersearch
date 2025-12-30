@@ -46,14 +46,13 @@
   );
   let sourceDomain = $derived(sourceUrl ? new URL(sourceUrl).hostname.replace('www.', '') : null);
 
-  // Merged paragraphs with live translations
-  let mergedParagraphs = $derived(() => {
-    if (!bilingualContent?.paragraphs) return [];
-    return bilingualContent.paragraphs.map(p => ({
+  // Merged paragraphs with live translations - reactive to liveTranslations changes
+  let mergedParagraphs = $derived(
+    bilingualContent?.paragraphs?.map(p => ({
       ...p,
       translation: liveTranslations.get(p.id) || p.translation
-    }));
-  });
+    })) ?? []
+  );
 
   // Progress percentage
   let progressPercent = $derived(
@@ -337,7 +336,7 @@
           </div>
         {:else if bilingualContent?.paragraphs?.length > 0 || translating}
           <BilingualView
-            paragraphs={mergedParagraphs()}
+            paragraphs={mergedParagraphs}
             isRTL={bilingualContent?.document?.isRTL || isRTL}
             maxHeight="none"
             loading={false}
