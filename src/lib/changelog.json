@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T05:15:27.697Z",
+  "generated": "2025-12-30T14:53:14.073Z",
   "entries": [
+    {
+      "hash": "29641dd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add auth header and support both doc_id/document_id columns",
+      "scope": "translation"
+    },
     {
       "hash": "dd763c3",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Allow internal API key auth for server management routes",
       "scope": null
-    },
-    {
-      "hash": "5db303c",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add testing and debugging API endpoints",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "29641dd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add auth header and support both doc_id/document_id columns",
+        "scope": "translation"
+      },
       {
         "hash": "dd763c3",
         "date": "2025-12-29",
@@ -697,13 +704,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Allow internal API key auth for server management routes",
-        "scope": null
-      },
-      {
-        "hash": "5db303c",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add testing and debugging API endpoints",
         "scope": null
       }
     ]

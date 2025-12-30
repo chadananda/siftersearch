@@ -1080,7 +1080,7 @@ Return ONLY the description text, no quotes or formatting.`;
       querystring: {
         type: 'object',
         properties: {
-          limit: { type: 'integer', default: 50, maximum: 200 },
+          limit: { type: 'integer', default: 50, maximum: 500 },
           offset: { type: 'integer', default: 0 }
         }
       }
