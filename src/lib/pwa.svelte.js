@@ -13,6 +13,21 @@ let refreshing = false;
 let hasActiveConversation = () => false;
 
 /**
+ * Save current app state before refresh
+ */
+function saveState() {
+  try {
+    // Save any important state to sessionStorage
+    const state = {
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem('sifter_update_state', JSON.stringify(state));
+  } catch (e) {
+    console.warn('[PWA] Could not save state:', e);
+  }
+}
+
+/**
  * Initialize PWA service worker registration
  * Call this once from a top-level component
  */
@@ -21,18 +36,14 @@ export async function initPWA() {
 
   // Listen for controller change (new SW took over)
   // With skipWaiting:true, this fires when new SW activates
-  // This is the ONLY place we trigger reload to avoid double-reload
+  // Always reload to get fresh content - save state first
   navigator.serviceWorker?.addEventListener('controllerchange', () => {
     if (refreshing) return;
-
-    // Check if user has active conversation
-    if (hasActiveConversation()) {
-      console.log('[PWA] New SW active, but user has conversation - showing update prompt');
-      updateAvailable = true;
-      return;
-    }
-
     refreshing = true;
+
+    // Save any important state before reload
+    saveState();
+
     console.log('[PWA] New service worker activated, reloading...');
     window.location.reload();
   });
@@ -46,16 +57,16 @@ export async function initPWA() {
         console.log(`[PWA] Service worker registered: ${swUrl}`);
         // Check for updates periodically
         if (r) {
-          // Initial check after 3 seconds
+          // Initial check after 2 seconds
           setTimeout(() => {
             console.log('[PWA] Initial update check...');
             r.update();
-          }, 3000);
+          }, 2000);
 
-          // Then check every 60 seconds (SW update detection)
+          // Check frequently (every 15 seconds) to pick up updates quickly
           setInterval(() => {
             r.update();
-          }, 60 * 1000);
+          }, 15 * 1000);
         }
       },
       onRegisterError(error) {
@@ -74,21 +85,6 @@ export async function initPWA() {
     });
   } catch (e) {
     console.log('[PWA] Service worker not available:', e.message);
-  }
-}
-
-/**
- * Save current app state before refresh
- */
-function saveState() {
-  try {
-    // Save any important state to sessionStorage
-    const state = {
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('sifter_update_state', JSON.stringify(state));
-  } catch (e) {
-    console.warn('[PWA] Could not save state:', e);
   }
 }
 

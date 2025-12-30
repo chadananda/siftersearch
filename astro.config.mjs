@@ -30,7 +30,7 @@ export default defineConfig({
       }),
     }),
     AstroPWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',  // Auto-update without user prompt
       devOptions: {
         enabled: false
       },
