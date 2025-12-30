@@ -1101,8 +1101,8 @@ Return ONLY the description text, no quotes or formatting.`;
       throw err;
     }
 
-    // Get paragraphs with translations from SQLite (translations stored there)
-    const paragraphs = await queryAll(`
+    // Try to get paragraphs with translations from SQLite (translations stored there)
+    let paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation, blocktype, heading
       FROM content
       WHERE doc_id = ?
@@ -1110,11 +1110,37 @@ Return ONLY the description text, no quotes or formatting.`;
       LIMIT ? OFFSET ?
     `, [id, limit, offset]);
 
-    // Get total count
+    let total = 0;
+    let fromMeilisearch = false;
+
+    // Get total count from SQLite
     const countResult = await queryOne(
       'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
       [id]
     );
+    total = countResult?.count || 0;
+
+    // If SQLite has no content, fallback to Meilisearch paragraphs
+    if (paragraphs.length === 0) {
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `document_id = "${id}"`,
+        limit,
+        offset,
+        sort: ['paragraph_index:asc']
+      });
+
+      paragraphs = parasResult.hits.map(p => ({
+        id: p.id,
+        paragraph_index: p.paragraph_index,
+        text: p.text,
+        translation: null,
+        blocktype: p.blocktype || 'paragraph',
+        heading: p.heading
+      }));
+
+      total = parasResult.estimatedTotalHits || paragraphs.length;
+      fromMeilisearch = true;
+    }
 
     // Determine if document needs RTL display
     const isRTL = ['ar', 'fa', 'he', 'ur'].includes(document.language);
@@ -1135,10 +1161,11 @@ Return ONLY the description text, no quotes or formatting.`;
         blocktype: p.blocktype || 'paragraph',
         heading: p.heading
       })),
-      total: countResult?.count || 0,
+      total,
       limit,
       offset,
-      hasTranslations: paragraphs.some(p => p.translation)
+      hasTranslations: paragraphs.some(p => p.translation),
+      fromMeilisearch // Let frontend know data came from search index (no translations available)
     };
   });
 
@@ -1156,6 +1183,7 @@ Return ONLY the description text, no quotes or formatting.`;
     }
   }, async (request) => {
     const { id } = request.params;
+    const meili = getMeili();
 
     // Get counts from SQLite
     const stats = await queryOne(`
@@ -1165,6 +1193,19 @@ Return ONLY the description text, no quotes or formatting.`;
       FROM content
       WHERE doc_id = ?
     `, [id]);
+
+    // If SQLite has no data, get total from Meilisearch
+    if (!stats?.total) {
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `document_id = "${id}"`,
+        limit: 0
+      });
+      return {
+        total: parasResult.estimatedTotalHits || 0,
+        translated: 0,
+        percent: 0
+      };
+    }
 
     return {
       total: stats?.total || 0,
