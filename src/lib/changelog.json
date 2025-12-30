@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:14:21.053Z",
+  "generated": "2025-12-30T03:16:53.807Z",
   "entries": [
+    {
+      "hash": "8e9a0b7",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add Meilisearch fallback for unsynced documents",
+      "scope": "bilingual"
+    },
     {
       "hash": "394365f",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make Baha'i star icon use currentColor for proper teal/white styling",
       "scope": null
-    },
-    {
-      "hash": "528d967",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Improve library religion icon size and color",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "8e9a0b7",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add Meilisearch fallback for unsynced documents",
+        "scope": "bilingual"
+      },
       {
         "hash": "394365f",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Make Baha'i star icon use currentColor for proper teal/white styling",
         "scope": null
-      },
-      {
-        "hash": "528d967",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Improve library religion icon size and color",
-        "scope": "ui"
       }
     ]
   }

@@ -75,5 +75,12 @@
     "command": "node scripts/fix-rtl-languages.js",
     "enabled": true,
     "timeout": 600000
+  },
+  {
+    "id": "2024-12-30-sync-meilisearch-to-libsql",
+    "description": "Sync all documents and paragraphs from Meilisearch to libsql for bilingual/translation features",
+    "command": "node scripts/migrate-embeddings.js",
+    "enabled": true,
+    "timeout": 3600000
   }
 ]
