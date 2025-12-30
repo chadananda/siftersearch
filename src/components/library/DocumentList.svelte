@@ -202,23 +202,38 @@
   async function requestTranslation(docId) {
     translating = docId;
     try {
-      const res = await fetch(`${API_BASE}/api/admin/server/populate-translations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: docId,
-          force: false
-        })
+      // First get the paragraphs that need translation
+      const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${docId}/bilingual?limit=500`, {
+        credentials: 'include'
       });
+      if (!bilingualRes.ok) throw new Error('Failed to load document content');
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Translation request failed');
+      const bilingual = await bilingualRes.json();
+      const untranslated = bilingual.paragraphs?.filter(p => !p.translation && p.id) || [];
+
+      if (untranslated.length === 0) {
+        console.log('No paragraphs need translation');
+        return;
       }
 
-      const data = await res.json();
-      console.log('Translation started:', data);
+      // Translate in batches of 10
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < untranslated.length; i += BATCH_SIZE) {
+        const batch = untranslated.slice(i, i + BATCH_SIZE);
+        const paragraphIds = batch.map(p => p.id);
+
+        const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translate-batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ paragraphIds })
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Batch translation failed:', errorData);
+        }
+      }
 
       // Reload the document content to get new translations
       const doc = documents.find(d => d.id === docId);
@@ -233,37 +248,12 @@
     }
   }
 
-  // Request translation from modal
+  // Request translation from modal - just open the modal and let ReaderModal handle it
   async function handleModalTranslate(docId) {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/server/populate-translations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: docId,
-          force: false
-        })
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Translation request failed');
-      }
-
-      const data = await res.json();
-      console.log('Translation started:', data);
-
-      // Reload modal content
-      if (modalDoc) {
-        const doc = documents.find(d => d.id === docId);
-        if (doc) {
-          await openReader(doc);
-        }
-      }
-    } catch (err) {
-      console.error('Translation error:', err);
-      alert(`Translation failed: ${err.message}`);
+    const doc = documents.find(d => d.id === docId);
+    if (doc) {
+      await openReader(doc);
+      // ReaderModal has its own translate button that handles this properly
     }
   }
 

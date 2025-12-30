@@ -291,8 +291,8 @@
                 <div class="progress-fill" style="width: {progressPercent}%"></div>
               </div>
             </div>
-          {:else if isAdmin && needsTranslation}
-            <!-- Translate button (admin only, non-English docs with untranslated paragraphs) -->
+          {:else if auth.isAuthenticated && needsTranslation}
+            <!-- Translate button (logged-in users, non-English docs with untranslated paragraphs) -->
             <button
               class="reader-action-btn"
               onclick={startTranslation}

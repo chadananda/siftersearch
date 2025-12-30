@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:03:18.946Z",
+  "generated": "2025-12-30T03:09:56.338Z",
   "entries": [
+    {
+      "hash": "18f22d2",
+      "date": "2025-12-29",
+      "type": "Updated",
+      "description": "Remove Meilisearch fallback - fix data at source instead",
+      "scope": null
+    },
     {
       "hash": "9a01493",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
       "scope": null
-    },
-    {
-      "hash": "88fcc34",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Rewrite RTL language fix to use Meilisearch only",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "18f22d2",
+        "date": "2025-12-29",
+        "type": "Updated",
+        "description": "Remove Meilisearch fallback - fix data at source instead",
+        "scope": null
+      },
       {
         "hash": "9a01493",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "New",
         "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
-        "scope": null
-      },
-      {
-        "hash": "88fcc34",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Rewrite RTL language fix to use Meilisearch only",
         "scope": null
       }
     ]

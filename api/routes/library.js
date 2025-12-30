@@ -1364,7 +1364,7 @@ Provide only the translation, no explanations.`;
    * Translates up to 10 paragraphs in parallel, saves to DB, returns results
    */
   fastify.post('/documents/:id/translate-batch', {
-    preHandler: [requireAuth, requireAdmin],
+    preHandler: [requireAuth],
     schema: {
       params: {
         type: 'object',
