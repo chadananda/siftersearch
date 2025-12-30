@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T01:26:04.437Z",
+  "generated": "2025-12-30T01:48:50.494Z",
   "entries": [
+    {
+      "hash": "db86d14",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add fullscreen modal for document viewing",
+      "scope": "library"
+    },
     {
       "hash": "edf333e",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "SVG sizing and layout order for library headers",
       "scope": null
-    },
-    {
-      "hash": "128faa9",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Remove authority star system from public document views",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "db86d14",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add fullscreen modal for document viewing",
+        "scope": "library"
+      },
       {
         "hash": "edf333e",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "Fixed",
         "description": "SVG sizing and layout order for library headers",
-        "scope": null
-      },
-      {
-        "hash": "128faa9",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Remove authority star system from public document views",
         "scope": null
       }
     ]
