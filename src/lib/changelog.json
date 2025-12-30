@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T02:16:22.519Z",
+  "generated": "2025-12-30T02:37:26.536Z",
   "entries": [
+    {
+      "hash": "0d3f6bd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fix translate button visibility logic",
+      "scope": "reader"
+    },
     {
       "hash": "be46314",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
       "scope": null
-    },
-    {
-      "hash": "abe2ee0",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Prioritize Arabic/Farsi detection over frontmatter language",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "0d3f6bd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fix translate button visibility logic",
+        "scope": "reader"
+      },
       {
         "hash": "be46314",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "Fixed",
         "description": "Use SVG for Baha'i symbol (Unicode U+1F7D9 not widely supported)",
-        "scope": null
-      },
-      {
-        "hash": "abe2ee0",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Prioritize Arabic/Farsi detection over frontmatter language",
         "scope": null
       }
     ]

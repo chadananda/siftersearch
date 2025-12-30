@@ -91,14 +91,65 @@
     return LANG_NAMES[code] || code?.toUpperCase() || '';
   }
 
-  async function openReader(doc) {
+  // Track which documents have translation stats loaded
+  let docTranslationStats = $state(new Map()); // doc.id → { translated: n, total: n }
+  let loadingStats = $state(new Set());
+
+  // Load translation stats for non-English docs
+  async function loadTranslationStats(doc) {
+    if (!doc.language || doc.language === 'en' || docTranslationStats.has(doc.id) || loadingStats.has(doc.id)) {
+      return;
+    }
+    loadingStats = new Set([...loadingStats, doc.id]);
+    try {
+      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=1`);
+      if (res.ok) {
+        const data = await res.json();
+        const total = data.total || 0;
+        const translated = data.paragraphs?.filter(p => p.translation)?.length || 0;
+        // Get full stats by fetching all paragraphs counts
+        const statsRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          docTranslationStats = new Map(docTranslationStats).set(doc.id, stats);
+        } else {
+          // Fallback: estimate based on initial data
+          docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total });
+        }
+      }
+    } catch {
+      // Ignore errors
+    } finally {
+      const newSet = new Set(loadingStats);
+      newSet.delete(doc.id);
+      loadingStats = newSet;
+    }
+  }
+
+  // Get translation percentage for a doc
+  function getTranslationPercent(docId) {
+    const stats = docTranslationStats.get(docId);
+    if (!stats || !stats.total) return null;
+    return Math.round((stats.translated / stats.total) * 100);
+  }
+
+  // Svelte action to load translation stats when element mounts
+  function loadStatsOnMount(node, { doc }) {
+    loadTranslationStats(doc);
+    return {
+      destroy() {}
+    };
+  }
+
+  async function openReader(doc, autoTranslate = false) {
     modalDoc = {
       id: doc.id,
       title: doc.title,
       author: doc.author,
       religion: doc.religion,
       collection: doc.collection,
-      language: doc.language || 'en'
+      language: doc.language || 'en',
+      autoTranslate  // Flag to auto-start translation
     };
     modalOpen = true;
     modalLoading = true;
@@ -223,9 +274,17 @@
     {@const size = getSizeLabel(doc.paragraph_count)}
     {@const isExpanded = expandedDocId === doc.id}
     {@const langName = getLangName(doc.language)}
+    {@const isNonEnglish = doc.language && doc.language !== 'en'}
     {@const hasTranslations = isExpanded && bilingualContent?.paragraphs?.some(p => p.translation)}
     {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
     {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
+    {@const translationPercent = getTranslationPercent(doc.id)}
+    {@const statsLoading = loadingStats.has(doc.id)}
+
+    <!-- Load translation stats for non-English docs when they become visible -->
+    {#if isNonEnglish && isAdmin && !docTranslationStats.has(doc.id) && !loadingStats.has(doc.id)}
+      <div class="hidden" use:loadStatsOnMount={{ doc }}></div>
+    {/if}
 
     <div class="group border rounded-lg overflow-hidden transition-colors
                 {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
@@ -253,6 +312,45 @@
           {#if size}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
           {/if}
+
+          <!-- Translation status for non-English docs (collapsed view) -->
+          {#if !isExpanded && isAdmin && isNonEnglish}
+            {#if statsLoading}
+              <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">
+                <svg class="w-3 h-3 animate-spin inline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+              </span>
+            {:else if translationPercent !== null}
+              <span
+                class="text-[0.625rem] px-1.5 py-0.5 rounded {translationPercent === 100 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}"
+                title="{translationPercent}% translated"
+              >
+                {translationPercent}%
+              </span>
+              {#if translationPercent < 100}
+                <button
+                  class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
+                  onclick={(e) => { e.stopPropagation(); openReader(doc, true); }}
+                  title="Translate document"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                  </svg>
+                </button>
+              {/if}
+            {:else}
+              <!-- No stats yet, show translate button -->
+              <button
+                class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
+                onclick={(e) => { e.stopPropagation(); openReader(doc, true); }}
+                title="Translate document"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                </svg>
+              </button>
+            {/if}
+          {/if}
+
           {#if isExpanded}
             {#if isAdmin && needsTranslation}
               <button

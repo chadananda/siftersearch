@@ -10,11 +10,16 @@
     isRTL = false,
     showOriginalOnly = false,
     maxHeight = '300px',
-    loading = false
+    loading = false,
+    translatingIds = new Set()  // IDs of paragraphs currently being translated
   } = $props();
 
-  // Check if any translations exist
+  // Check if any translations exist or if translation is in progress
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
+  let isTranslating = $derived(translatingIds.size > 0);
+
+  // Should show two columns if we have translations OR translation is in progress
+  let showBilingual = $derived(hasTranslations || isTranslating);
 </script>
 
 <div class="bilingual-container w-full" style="max-height: {maxHeight}">
@@ -25,7 +30,7 @@
     </div>
   {:else if paragraphs.length === 0}
     <p class="text-muted text-sm italic p-4">No content available</p>
-  {:else if !hasTranslations || showOriginalOnly}
+  {:else if !showBilingual || showOriginalOnly}
     <!-- Single column: original only -->
     <div class="single-column">
       {#each paragraphs as para}
@@ -43,16 +48,22 @@
         <span class="header-label">English Translation</span>
       </div>
       {#each paragraphs as para}
+        {@const isParaTranslating = translatingIds.has(para.id)}
         <div class="bilingual-row">
           <div class="para-cell original" class:rtl={isRTL}>
             <span class="para-num">{para.index + 1}</span>
             <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
           </div>
-          <div class="para-cell translation">
+          <div class="para-cell translation" class:translating={isParaTranslating}>
             {#if para.translation}
               <p class="para-text">{para.translation}</p>
+            {:else if isParaTranslating}
+              <div class="translating-indicator">
+                <span class="cell-spinner"></span>
+                <span class="translating-text">Translating...</span>
+              </div>
             {:else}
-              <p class="para-text text-muted italic">Translation pending...</p>
+              <p class="para-text text-muted italic">—</p>
             {/if}
           </div>
         </div>
@@ -203,6 +214,33 @@
   .para-text.italic {
     font-style: italic;
     color: #888;
+  }
+
+  /* Translation in progress indicator */
+  .para-cell.translating {
+    background: rgba(8, 145, 178, 0.05);
+  }
+
+  .translating-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.875rem;
+  }
+
+  .cell-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(8, 145, 178, 0.2);
+    border-top-color: #0891b2;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .translating-text {
+    font-style: italic;
+    color: #0891b2;
   }
 
   /* RTL text styling - Amiri for Arabic/Persian */

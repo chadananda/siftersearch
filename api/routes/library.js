@@ -1142,6 +1142,37 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Get translation statistics for a document
+   * Returns count of translated vs total paragraphs
+   */
+  fastify.get('/documents/:id/translation-stats', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Get counts from SQLite
+    const stats = await queryOne(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
+      FROM content
+      WHERE doc_id = ?
+    `, [id]);
+
+    return {
+      total: stats?.total || 0,
+      translated: stats?.translated || 0,
+      percent: stats?.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
+    };
+  });
+
+  /**
    * Translation endpoint with content-type awareness
    * - scripture/poetry/classical: Shoghi Effendi biblical style
    * - historical: Modern clear English, but citations within use biblical style
@@ -1321,5 +1352,161 @@ Provide only the translation, no explanations.`;
       logger.error({ err, documentId: id }, 'Failed to queue document for re-indexing');
       throw ApiError.internal('Failed to queue re-index');
     }
+  });
+
+  // ============================================
+  // Batch Translation (Admin)
+  // ============================================
+
+  /**
+   * Translate a batch of paragraphs for a document
+   * Translates up to 10 paragraphs in parallel, saves to DB, returns results
+   */
+  fastify.post('/documents/:id/translate-batch', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      },
+      body: {
+        type: 'object',
+        required: ['paragraphIds'],
+        properties: {
+          paragraphIds: {
+            type: 'array',
+            items: { type: 'string' },
+            maxItems: 10
+          },
+          style: {
+            type: 'string',
+            enum: ['scriptural', 'modern', 'auto'],
+            default: 'auto'
+          }
+        }
+      }
+    }
+  }, async (request) => {
+    const { id: documentId } = request.params;
+    const { paragraphIds, style = 'auto' } = request.body;
+
+    if (!paragraphIds || paragraphIds.length === 0) {
+      throw ApiError.badRequest('No paragraph IDs provided');
+    }
+
+    // Get document info for translation context
+    const meili = getMeili();
+    let document;
+    try {
+      document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
+    } catch {
+      throw ApiError.notFound('Document not found');
+    }
+
+    const sourceLang = document.language || 'ar';
+    if (sourceLang === 'en') {
+      throw ApiError.badRequest('Document is already in English');
+    }
+
+    // Get paragraphs to translate
+    const placeholders = paragraphIds.map(() => '?').join(',');
+    const paragraphs = await queryAll(`
+      SELECT id, paragraph_index, text, translation
+      FROM content
+      WHERE doc_id = ? AND id IN (${placeholders})
+      ORDER BY paragraph_index
+    `, [documentId, ...paragraphIds]);
+
+    if (paragraphs.length === 0) {
+      return { translations: [], message: 'No paragraphs found' };
+    }
+
+    // Determine translation style
+    const SCRIPTURAL_COLLECTIONS = ['Core Tablets', 'Core Tablet Translations', 'Core Talks', 'Quran', 'Bible', 'Torah'];
+    const SCRIPTURAL_AUTHORS = ['Bahá\'u\'lláh', 'The Báb', '\'Abdu\'l-Bahá', 'Shoghi Effendi'];
+    const isScriptural = style === 'scriptural' ||
+      (style === 'auto' && (
+        SCRIPTURAL_COLLECTIONS.includes(document.collection) ||
+        SCRIPTURAL_AUTHORS.some(a => document.author?.includes(a)) ||
+        (document.authority && document.authority >= 8)
+      ));
+
+    const translationStyle = isScriptural ? 'scriptural' : 'modern';
+
+    // Build translation prompt
+    const langNames = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu' };
+    const langName = langNames[sourceLang] || sourceLang;
+
+    const systemPrompt = translationStyle === 'scriptural'
+      ? `You are an expert translator of ${langName} sacred texts. Translate to English using Shoghi Effendi's neo-biblical style:
+- Archaic pronouns for Divine: Thou, Thee, Thine, Thy
+- Elevated verbs: perceiveth, hath, art, doth
+- Formal vocabulary: vouchsafe, beseech, sovereignty
+- Preserve exclamations: "O Lord!", "O my God!"
+Provide only the translation.`
+      : `You are an expert translator of ${langName} texts. Translate to clear modern English.
+If the text contains scripture quotes, prayers, or divine speech, use elevated biblical style for those portions.
+Provide only the translation.`;
+
+    // Translate paragraphs in parallel
+    const translations = await Promise.all(
+      paragraphs.map(async (para) => {
+        // Skip if no text
+        if (!para.text || para.text.trim().length === 0) {
+          return { id: para.id, paragraphIndex: para.paragraph_index, translation: '', skipped: true };
+        }
+
+        try {
+          const response = await chatCompletion({
+            model: 'quality',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: para.text }
+            ],
+            temperature: 0.3,
+            maxTokens: Math.max(1000, para.text.length * 4)
+          });
+
+          const translation = response.content.trim();
+
+          // Save to database
+          await query(
+            'UPDATE content SET translation = ? WHERE id = ?',
+            [translation, para.id]
+          );
+
+          return {
+            id: para.id,
+            paragraphIndex: para.paragraph_index,
+            translation,
+            success: true
+          };
+        } catch (err) {
+          logger.error({ err: err.message, paragraphId: para.id }, 'Paragraph translation failed');
+          return {
+            id: para.id,
+            paragraphIndex: para.paragraph_index,
+            error: err.message,
+            success: false
+          };
+        }
+      })
+    );
+
+    const successCount = translations.filter(t => t.success).length;
+    logger.info({
+      documentId,
+      requested: paragraphIds.length,
+      translated: successCount,
+      style: translationStyle
+    }, 'Batch translation completed');
+
+    return {
+      translations,
+      style: translationStyle,
+      successCount,
+      totalRequested: paragraphIds.length
+    };
   });
 }

@@ -19,6 +19,7 @@
 
   const auth = getAuthState();
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
+  const BATCH_SIZE = 10;
 
   // RTL languages
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
@@ -27,6 +28,12 @@
   let animating = $state(false);
   let containerEl = $state(null);
 
+  // Translation progress state
+  let translating = $state(false);
+  let translationProgress = $state({ completed: 0, total: 0 });
+  let translatingIds = $state(new Set());  // Paragraph IDs currently being translated
+  let liveTranslations = $state(new Map()); // id → translation text (real-time updates)
+
   // Derived
   let isRTL = $derived(RTL_LANGUAGES.includes(document?.language));
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
@@ -34,9 +41,26 @@
   let needsTranslation = $derived(
     document?.language &&
     document.language !== 'en' &&
+    !translating &&
     (!bilingualContent?.paragraphs?.length || !bilingualContent.paragraphs.every(p => p.translation))
   );
   let sourceDomain = $derived(sourceUrl ? new URL(sourceUrl).hostname.replace('www.', '') : null);
+
+  // Merged paragraphs with live translations
+  let mergedParagraphs = $derived(() => {
+    if (!bilingualContent?.paragraphs) return [];
+    return bilingualContent.paragraphs.map(p => ({
+      ...p,
+      translation: liveTranslations.get(p.id) || p.translation
+    }));
+  });
+
+  // Progress percentage
+  let progressPercent = $derived(
+    translationProgress.total > 0
+      ? Math.round((translationProgress.completed / translationProgress.total) * 100)
+      : 0
+  );
 
   // Format text with highlights
   function formatText(text) {
@@ -70,6 +94,77 @@
     }
   }
 
+  // Reset translation state when modal closes
+  $effect(() => {
+    if (!open) {
+      translating = false;
+      translationProgress = { completed: 0, total: 0 };
+      translatingIds = new Set();
+      liveTranslations = new Map();
+    }
+  });
+
+  // Batch translation function
+  async function startTranslation() {
+    if (!document?.id || !bilingualContent?.paragraphs) return;
+
+    // Find paragraphs that need translation
+    const untranslatedParas = bilingualContent.paragraphs.filter(p => !p.translation && p.id);
+    if (untranslatedParas.length === 0) return;
+
+    translating = true;
+    translationProgress = { completed: 0, total: untranslatedParas.length };
+
+    // Process in batches
+    for (let i = 0; i < untranslatedParas.length; i += BATCH_SIZE) {
+      const batch = untranslatedParas.slice(i, i + BATCH_SIZE);
+      const batchIds = batch.map(p => p.id);
+
+      // Mark these as translating
+      translatingIds = new Set([...translatingIds, ...batchIds]);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/translate-batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ paragraphIds: batchIds })
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Batch translation failed:', errorData);
+          // Continue with next batch even if this one fails
+        } else {
+          const data = await res.json();
+          // Update live translations as they come in
+          if (data.translations) {
+            const newTranslations = new Map(liveTranslations);
+            data.translations.forEach(t => {
+              if (t.success && t.translation) {
+                newTranslations.set(t.id, t.translation);
+              }
+            });
+            liveTranslations = newTranslations;
+            translationProgress = {
+              ...translationProgress,
+              completed: translationProgress.completed + data.successCount
+            };
+          }
+        }
+      } catch (err) {
+        console.error('Translation batch error:', err);
+      }
+
+      // Remove from translating set
+      const newSet = new Set(translatingIds);
+      batchIds.forEach(id => newSet.delete(id));
+      translatingIds = newSet;
+    }
+
+    translating = false;
+  }
+
   // Scroll to current paragraph when opened (only if a specific paragraph is selected)
   $effect(() => {
     if (open && !loading && paragraphs.length > 0 && containerEl) {
@@ -92,6 +187,17 @@
           setTimeout(() => { animating = false; }, 400);
         });
       });
+    }
+  });
+
+  // Auto-start translation if document has autoTranslate flag
+  $effect(() => {
+    if (open && !loading && document?.autoTranslate && bilingualContent?.paragraphs && !translating) {
+      // Check if there are untranslated paragraphs
+      const hasUntranslated = bilingualContent.paragraphs.some(p => !p.translation);
+      if (hasUntranslated) {
+        startTranslation();
+      }
     }
   });
 </script>
@@ -172,11 +278,25 @@
         </div>
 
         <div class="reader-actions">
-          <!-- Translate button (admin only, non-English docs with untranslated paragraphs) -->
-          {#if isAdmin && needsTranslation && onTranslate}
+          <!-- Translation progress bar -->
+          {#if translating}
+            <div class="translation-progress">
+              <div class="progress-info">
+                <svg class="progress-spinner" viewBox="0 0 24 24" width="16" height="16">
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+                </svg>
+                <span class="progress-text">Translating {translationProgress.completed}/{translationProgress.total}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {progressPercent}%"></div>
+              </div>
+            </div>
+          {:else if isAdmin && needsTranslation}
+            <!-- Translate button (admin only, non-English docs with untranslated paragraphs) -->
             <button
               class="reader-action-btn"
-              onclick={() => onTranslate(document.id)}
+              onclick={startTranslation}
               title="Translate document to English"
               aria-label="Translate document"
             >
@@ -215,12 +335,13 @@
             <div class="reader-loading-spinner"></div>
             <p>Loading document...</p>
           </div>
-        {:else if bilingualContent?.paragraphs?.length > 0}
+        {:else if bilingualContent?.paragraphs?.length > 0 || translating}
           <BilingualView
-            paragraphs={bilingualContent.paragraphs}
-            isRTL={bilingualContent.document?.isRTL || isRTL}
+            paragraphs={mergedParagraphs()}
+            isRTL={bilingualContent?.document?.isRTL || isRTL}
             maxHeight="none"
             loading={false}
+            {translatingIds}
           />
         {:else if paragraphs.length === 0}
           <div class="reader-empty">
@@ -411,6 +532,46 @@
   .reader-action-btn:hover {
     background: rgba(0, 0, 0, 0.05);
     color: #1a1a1a;
+  }
+
+  /* Translation progress */
+  .translation-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 140px;
+    padding-right: 0.5rem;
+  }
+
+  .progress-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #666;
+  }
+
+  .progress-spinner {
+    animation: readerSpin 1s linear infinite;
+    color: var(--accent-primary, #0891b2);
+  }
+
+  .progress-text {
+    white-space: nowrap;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-primary, #0891b2);
+    border-radius: 2px;
+    transition: width 0.3s ease;
   }
 
   .reader-close-btn {
