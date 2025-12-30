@@ -30,12 +30,11 @@
   // Derived
   let isRTL = $derived(RTL_LANGUAGES.includes(document?.language));
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
-  let canTranslate = $derived(
-    auth.isAuthenticated &&
-    ['patron', 'institutional', 'admin', 'superadmin'].includes(auth.user?.tier) &&
+  // Show translate button if: non-English doc AND (no translations OR some paragraphs lack translations)
+  let needsTranslation = $derived(
     document?.language &&
     document.language !== 'en' &&
-    !bilingualContent?.paragraphs?.some(p => p.translation)
+    (!bilingualContent?.paragraphs?.length || !bilingualContent.paragraphs.every(p => p.translation))
   );
   let sourceDomain = $derived(sourceUrl ? new URL(sourceUrl).hostname.replace('www.', '') : null);
 
@@ -173,8 +172,8 @@
         </div>
 
         <div class="reader-actions">
-          <!-- Translate button (admin + non-English + no translations) -->
-          {#if isAdmin && canTranslate && onTranslate}
+          <!-- Translate button (admin only, non-English docs with untranslated paragraphs) -->
+          {#if isAdmin && needsTranslation && onTranslate}
             <button
               class="reader-action-btn"
               onclick={() => onTranslate(document.id)}
