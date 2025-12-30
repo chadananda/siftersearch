@@ -1102,26 +1102,38 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Try to get paragraphs with translations from libsql (translations stored there)
-    let paragraphs = await queryAll(`
-      SELECT id, paragraph_index, text, translation, blocktype, heading
-      FROM content
-      WHERE doc_id = ?
-      ORDER BY paragraph_index
-      LIMIT ? OFFSET ?
-    `, [id, limit, offset]);
-
+    let paragraphs = [];
     let total = 0;
+    let useFallback = false;
 
-    // Get total count from libsql
-    const countResult = await queryOne(
-      'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
-      [id]
-    );
-    total = countResult?.count || 0;
+    try {
+      paragraphs = await queryAll(`
+        SELECT id, paragraph_index, text, translation, blocktype, heading
+        FROM content
+        WHERE doc_id = ? OR document_id = ?
+        ORDER BY paragraph_index
+        LIMIT ? OFFSET ?
+      `, [id, id, limit, offset]);
 
-    // If libsql has no content, fallback to Meilisearch paragraphs
-    // TODO: Run migration to sync all documents, then remove this fallback
-    if (paragraphs.length === 0) {
+      // Get total count from libsql
+      const countResult = await queryOne(
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ? OR document_id = ?',
+        [id, id]
+      );
+      total = countResult?.count || 0;
+
+      // If libsql has no content, use fallback
+      if (paragraphs.length === 0) {
+        useFallback = true;
+      }
+    } catch (err) {
+      // libsql unavailable (e.g., SQLITE_BUSY) - fall back to Meilisearch
+      request.log.warn({ err: err.message, docId: id }, 'libsql unavailable, using Meilisearch fallback');
+      useFallback = true;
+    }
+
+    // Fallback to Meilisearch paragraphs when libsql unavailable or empty
+    if (useFallback) {
       const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
         filter: `document_id = "${id}"`,
         limit,

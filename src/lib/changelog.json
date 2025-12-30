@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:51:04.724Z",
+  "generated": "2025-12-30T04:00:35.310Z",
   "entries": [
+    {
+      "hash": "c6172bc",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Use correct content schema with document_id as primary column",
+      "scope": "migration"
+    },
     {
       "hash": "f0c7d3c",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Require authentication for auto-update trigger",
       "scope": null
-    },
-    {
-      "hash": "bf98589",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add admin API endpoints for remote server management",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "c6172bc",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Use correct content schema with document_id as primary column",
+        "scope": "migration"
+      },
       {
         "hash": "f0c7d3c",
         "date": "2025-12-29",
@@ -697,13 +704,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Require authentication for auto-update trigger",
-        "scope": null
-      },
-      {
-        "hash": "bf98589",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add admin API endpoints for remote server management",
         "scope": null
       }
     ]
