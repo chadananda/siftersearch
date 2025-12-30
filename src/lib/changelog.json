@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T02:58:13.648Z",
+  "generated": "2025-12-30T03:03:18.946Z",
   "entries": [
+    {
+      "hash": "9a01493",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fallback to Meilisearch when SQLite has no content",
+      "scope": "bilingual"
+    },
     {
       "hash": "40124ea",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Rewrite RTL language fix to use Meilisearch only",
       "scope": null
-    },
-    {
-      "hash": "fba7269",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Load env files in RTL language fix script",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "9a01493",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fallback to Meilisearch when SQLite has no content",
+        "scope": "bilingual"
+      },
       {
         "hash": "40124ea",
         "date": "2025-12-29",
@@ -699,13 +706,6 @@
         "date": "2025-12-27",
         "type": "Fixed",
         "description": "Rewrite RTL language fix to use Meilisearch only",
-        "scope": null
-      },
-      {
-        "hash": "fba7269",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Load env files in RTL language fix script",
         "scope": null
       }
     ]
