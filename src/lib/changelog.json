@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T22:57:08.105Z",
+  "generated": "2025-12-30T23:02:31.267Z",
   "entries": [
+    {
+      "hash": "279da81",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "Use api module token instead of localStorage",
+      "scope": null
+    },
     {
       "hash": "b523417",
       "date": "2025-12-30",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
       "scope": null
-    },
-    {
-      "hash": "f648734",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Add v14 migration to fix content table schema",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-30": [
+      {
+        "hash": "279da81",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "Use api module token instead of localStorage",
+        "scope": null
+      },
       {
         "hash": "b523417",
         "date": "2025-12-30",
@@ -699,13 +706,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
-        "scope": null
-      },
-      {
-        "hash": "f648734",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Add v14 migration to fix content table schema",
         "scope": null
       }
     ]

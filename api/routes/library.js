@@ -1472,7 +1472,26 @@ Provide only the translation, no explanations.`;
     `, [documentId, documentId, ...paragraphIds]);
 
     if (paragraphs.length === 0) {
-      return { translations: [], message: 'No paragraphs found' };
+      // Debug: check what's in the content table for this document
+      const countResult = await queryOne(
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ? OR document_id = ?',
+        [documentId, documentId]
+      );
+      logger.warn({
+        documentId,
+        requestedIds: paragraphIds.slice(0, 3),
+        contentTableCount: countResult?.count || 0
+      }, 'No paragraphs found for translation - content table may be empty');
+
+      return {
+        translations: [],
+        message: 'No paragraphs found in content table',
+        debug: {
+          documentId,
+          requestedIdsSample: paragraphIds.slice(0, 3),
+          contentTableCount: countResult?.count || 0
+        }
+      };
     }
 
     // Determine translation style
