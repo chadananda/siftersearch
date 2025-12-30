@@ -105,13 +105,12 @@ export async function createServer(opts = {}) {
   let updateTriggered = false;
 
   // Version check hook - trigger auto-update if client is newer
-  // Only triggers for authenticated requests to prevent DDOS abuse
+  // Rate limited by updateTriggered flag - only one update per server lifetime
   server.addHook('onRequest', async (request) => {
     const clientVersion = request.headers['x-client-version'];
-    const hasAuth = request.headers.authorization?.startsWith('Bearer ');
 
-    // Only trigger for authenticated requests with version header
-    if (!clientVersion || updateTriggered || !hasAuth) return;
+    // Only trigger once per server lifetime, with version header
+    if (!clientVersion || updateTriggered) return;
 
     // Compare versions
     const clientParts = clientVersion.split('.').map(Number);
