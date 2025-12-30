@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:40:38.533Z",
+  "generated": "2025-12-30T03:51:04.724Z",
   "entries": [
+    {
+      "hash": "f0c7d3c",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Separate connections for auth vs batch operations",
+      "scope": "db"
+    },
     {
       "hash": "ec95183",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add admin API endpoints for remote server management",
       "scope": null
-    },
-    {
-      "hash": "09e016f",
-      "date": "2025-12-27",
-      "type": "New",
-      "description": "Add public translation endpoint with Shoghi Effendi style",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "f0c7d3c",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Separate connections for auth vs batch operations",
+        "scope": "db"
+      },
       {
         "hash": "ec95183",
         "date": "2025-12-29",
@@ -697,15 +704,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add admin API endpoints for remote server management",
-        "scope": null
-      }
-    ],
-    "2025-12-27": [
-      {
-        "hash": "09e016f",
-        "date": "2025-12-27",
-        "type": "New",
-        "description": "Add public translation endpoint with Shoghi Effendi style",
         "scope": null
       }
     ]
