@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T18:52:04.873Z",
+  "generated": "2025-12-30T22:57:08.105Z",
   "entries": [
+    {
+      "hash": "b523417",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "PWA auto-update and auth header for translation",
+      "scope": null
+    },
     {
       "hash": "59d1e7f",
       "date": "2025-12-30",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add v14 migration to fix content table schema",
       "scope": null
-    },
-    {
-      "hash": "b120eb4",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-30": [
+      {
+        "hash": "b523417",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "PWA auto-update and auth header for translation",
+        "scope": null
+      },
       {
         "hash": "59d1e7f",
         "date": "2025-12-30",
@@ -699,13 +706,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Add v14 migration to fix content table schema",
-        "scope": null
-      },
-      {
-        "hash": "b120eb4",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
         "scope": null
       }
     ]

@@ -1,6 +1,7 @@
 <script>
   import { tick } from 'svelte';
   import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAccessToken } from '../../lib/api.js';
   import BilingualView from '../library/BilingualView.svelte';
 
   let {
@@ -123,7 +124,7 @@
       translatingIds = new Set([...translatingIds, ...batchIds]);
 
       try {
-        const token = localStorage.getItem('sifter_access_token');
+        const token = getAccessToken();
         const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/translate-batch`, {
           method: 'POST',
           headers: {

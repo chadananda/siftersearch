@@ -80,6 +80,13 @@ export function clearAccessToken() {
   accessToken = null;
 }
 
+/**
+ * Get the current access token for authenticated requests
+ */
+export function getAccessToken() {
+  return accessToken;
+}
+
 // Client version - set by build process via Vite define
 // eslint-disable-next-line no-undef
 const CLIENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;

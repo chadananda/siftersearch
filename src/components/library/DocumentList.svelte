@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import BilingualView from './BilingualView.svelte';
   import ReaderModal from '../common/ReaderModal.svelte';
+  import { getAccessToken } from '../../lib/api.js';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
 
@@ -222,7 +223,7 @@
         const batch = untranslated.slice(i, i + BATCH_SIZE);
         const paragraphIds = batch.map(p => p.id);
 
-        const token = localStorage.getItem('sifter_access_token');
+        const token = getAccessToken();
         const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translate-batch`, {
           method: 'POST',
           headers: {

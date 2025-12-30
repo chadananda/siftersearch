@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { marked } from 'marked';
+  import { getAccessToken } from '../../lib/api.js';
 
   let { document = null, isAdmin = false } = $props();
 
@@ -63,7 +64,7 @@
 
     loading = true;
     try {
-      const token = localStorage.getItem('sifter_access_token');
+      const token = getAccessToken();
       const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/content`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -81,7 +82,7 @@
     error = null;
 
     try {
-      const token = localStorage.getItem('sifter_access_token');
+      const token = getAccessToken();
       const res = await fetch(`${API_BASE}/api/library/documents/${document.id}`, {
         method: 'PUT',
         headers: {
@@ -117,7 +118,7 @@
 
     saving = true;
     try {
-      const token = localStorage.getItem('sifter_access_token');
+      const token = getAccessToken();
       const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/reindex`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
