@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T04:00:35.310Z",
+  "generated": "2025-12-30T04:02:44.852Z",
   "entries": [
+    {
+      "hash": "fd6a1b5",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Gracefully fall back to Meilisearch when libsql is busy",
+      "scope": "library"
+    },
     {
       "hash": "c6172bc",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add granular server management API controls",
       "scope": null
-    },
-    {
-      "hash": "05045cd",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Require authentication for auto-update trigger",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "fd6a1b5",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Gracefully fall back to Meilisearch when libsql is busy",
+        "scope": "library"
+      },
       {
         "hash": "c6172bc",
         "date": "2025-12-29",
@@ -697,13 +704,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add granular server management API controls",
-        "scope": null
-      },
-      {
-        "hash": "05045cd",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Require authentication for auto-update trigger",
         "scope": null
       }
     ]

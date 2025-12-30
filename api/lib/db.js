@@ -1,18 +1,17 @@
 /**
- * Turso/libsql Database Client
+ * libsql Database Client
  *
- * Uses separate connections for:
- * - Primary: Auth, users, sessions (must be fast, never blocked)
- * - Batch: Content migrations, bulk operations (can be slow)
+ * Uses local SQLite file with WAL mode for concurrent access.
+ * WAL (Write-Ahead Logging) allows multiple readers + one writer simultaneously.
  */
 
 import { createClient } from '@libsql/client';
 import { logger } from './logger.js';
 
-let primaryDb = null;
-let batchDb = null;
+let db = null;
+let walEnabled = false;
 
-function createConnection(name) {
+async function createConnection() {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
 
@@ -25,53 +24,53 @@ function createConnection(name) {
     ...(authToken && { authToken })
   });
 
-  logger.info({ url: url.replace(/\/\/.*@/, '//***@'), connection: name }, 'Database connected');
+  // Enable WAL mode for local SQLite files (allows concurrent access)
+  // Only do this once, and only for local file databases
+  if (!walEnabled && url.startsWith('file:')) {
+    try {
+      await client.execute('PRAGMA journal_mode=WAL');
+      await client.execute('PRAGMA busy_timeout=30000'); // 30 second timeout
+      walEnabled = true;
+      logger.info('SQLite WAL mode enabled');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Could not enable WAL mode');
+    }
+  }
+
+  logger.info({ url: url.replace(/\/\/.*@/, '//***@') }, 'Database connected');
   return client;
 }
 
-// Primary connection - for auth, users, sessions (never blocked by batch ops)
-export function getDb() {
-  if (!primaryDb) {
-    primaryDb = createConnection('primary');
+// Get database connection (creates if needed, enables WAL mode)
+export async function getDb() {
+  if (!db) {
+    db = await createConnection();
   }
-  return primaryDb;
+  return db;
 }
 
-// Batch connection - for migrations, bulk content operations
-export function getBatchDb() {
-  if (!batchDb) {
-    batchDb = createConnection('batch');
-  }
-  return batchDb;
-}
+// Alias for backward compatibility
+export const getBatchDb = getDb;
 
-// Execute a query with parameters (uses primary connection)
+// Execute a query with parameters
 export async function query(sql, params = []) {
-  const client = getDb();
+  const client = await getDb();
   const result = await client.execute({ sql, args: params });
   return result;
 }
 
-// Execute a batch query (uses separate batch connection to avoid blocking primary)
-export async function batchQuery(sql, params = []) {
-  const client = getBatchDb();
-  const result = await client.execute({ sql, args: params });
-  return result;
-}
+// Alias for backward compatibility (WAL mode handles concurrency)
+export const batchQuery = query;
 
 // Execute multiple statements in a transaction
 export async function transaction(statements) {
-  const client = getDb();
+  const client = await getDb();
   const results = await client.batch(statements, 'write');
   return results;
 }
 
-// Batch transaction (for migrations - won't block auth)
-export async function batchTransaction(statements) {
-  const client = getBatchDb();
-  const results = await client.batch(statements, 'write');
-  return results;
-}
+// Alias for backward compatibility
+export const batchTransaction = transaction;
 
 // Get a single row
 export async function queryOne(sql, params = []) {
@@ -85,16 +84,9 @@ export async function queryAll(sql, params = []) {
   return result.rows;
 }
 
-// Batch versions for content operations
-export async function batchQueryOne(sql, params = []) {
-  const result = await batchQuery(sql, params);
-  return result.rows[0] || null;
-}
-
-export async function batchQueryAll(sql, params = []) {
-  const result = await batchQuery(sql, params);
-  return result.rows;
-}
+// Aliases for backward compatibility
+export const batchQueryOne = queryOne;
+export const batchQueryAll = queryAll;
 
 export default {
   getDb,
