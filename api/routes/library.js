@@ -1101,8 +1101,8 @@ Return ONLY the description text, no quotes or formatting.`;
       throw err;
     }
 
-    // Get paragraphs with translations from SQLite (translations stored there)
-    const paragraphs = await queryAll(`
+    // Try to get paragraphs with translations from libsql (translations stored there)
+    let paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation, blocktype, heading
       FROM content
       WHERE doc_id = ?
@@ -1110,11 +1110,36 @@ Return ONLY the description text, no quotes or formatting.`;
       LIMIT ? OFFSET ?
     `, [id, limit, offset]);
 
-    // Get total count
+    let total = 0;
+
+    // Get total count from libsql
     const countResult = await queryOne(
       'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
       [id]
     );
+    total = countResult?.count || 0;
+
+    // If libsql has no content, fallback to Meilisearch paragraphs
+    // TODO: Run migration to sync all documents, then remove this fallback
+    if (paragraphs.length === 0) {
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `document_id = "${id}"`,
+        limit,
+        offset,
+        sort: ['paragraph_index:asc']
+      });
+
+      paragraphs = parasResult.hits.map(p => ({
+        id: p.id,
+        paragraph_index: p.paragraph_index,
+        text: p.text,
+        translation: null,
+        blocktype: p.blocktype || 'paragraph',
+        heading: p.heading
+      }));
+
+      total = parasResult.estimatedTotalHits || paragraphs.length;
+    }
 
     // Determine if document needs RTL display
     const isRTL = ['ar', 'fa', 'he', 'ur'].includes(document.language);
@@ -1135,7 +1160,7 @@ Return ONLY the description text, no quotes or formatting.`;
         blocktype: p.blocktype || 'paragraph',
         heading: p.heading
       })),
-      total: countResult?.count || 0,
+      total,
       limit,
       offset,
       hasTranslations: paragraphs.some(p => p.translation)
@@ -1156,8 +1181,9 @@ Return ONLY the description text, no quotes or formatting.`;
     }
   }, async (request) => {
     const { id } = request.params;
+    const meili = getMeili();
 
-    // Get counts from SQLite
+    // Get counts from libsql
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
@@ -1165,6 +1191,20 @@ Return ONLY the description text, no quotes or formatting.`;
       FROM content
       WHERE doc_id = ?
     `, [id]);
+
+    // If libsql has no data, get total from Meilisearch
+    // TODO: Run migration to sync all documents, then remove this fallback
+    if (!stats?.total) {
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `document_id = "${id}"`,
+        limit: 0
+      });
+      return {
+        total: parasResult.estimatedTotalHits || 0,
+        translated: 0,
+        percent: 0
+      };
+    }
 
     return {
       total: stats?.total || 0,

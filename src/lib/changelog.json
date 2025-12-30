@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-30T03:09:56.338Z",
+  "generated": "2025-12-30T03:14:21.053Z",
   "entries": [
+    {
+      "hash": "394365f",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Allow all authenticated users to translate documents",
+      "scope": "translate"
+    },
     {
       "hash": "18f22d2",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve library religion icon size and color",
       "scope": "ui"
-    },
-    {
-      "hash": "66bf563",
-      "date": "2025-12-27",
-      "type": "New",
-      "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "394365f",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Allow all authenticated users to translate documents",
+        "scope": "translate"
+      },
       {
         "hash": "18f22d2",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Improve library religion icon size and color",
         "scope": "ui"
-      },
-      {
-        "hash": "66bf563",
-        "date": "2025-12-27",
-        "type": "New",
-        "description": "Add document storage tables (indexed_documents, indexed_paragraphs, paragraph_embeddings)",
-        "scope": null
       }
     ]
   }
