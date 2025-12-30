@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-29T23:22:34.253Z",
+  "generated": "2025-12-30T01:26:04.437Z",
   "entries": [
+    {
+      "hash": "edf333e",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Simplify title row, move authority to content overlay",
+      "scope": "library"
+    },
     {
       "hash": "0c4615e",
       "date": "2025-12-29",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove authority star system from public document views",
       "scope": null
-    },
-    {
-      "hash": "de069d0",
-      "date": "2025-12-27",
-      "type": "Fixed",
-      "description": "Improve religion/collection headers with Tailwind",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2025-12-29": [
+      {
+        "hash": "edf333e",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Simplify title row, move authority to content overlay",
+        "scope": "library"
+      },
       {
         "hash": "0c4615e",
         "date": "2025-12-29",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Remove authority star system from public document views",
         "scope": null
-      },
-      {
-        "hash": "de069d0",
-        "date": "2025-12-27",
-        "type": "Fixed",
-        "description": "Improve religion/collection headers with Tailwind",
-        "scope": "library"
       }
     ]
   }

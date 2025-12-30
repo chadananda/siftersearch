@@ -13,6 +13,13 @@
   let loadingContent = $state(false);
   let translating = $state(null); // Document ID being translated
 
+  // Fullscreen modal state
+  let modalOpen = $state(false);
+  let modalDoc = $state(null);
+  let modalContent = $state(null);
+  let modalBilingual = $state(null);
+  let modalLoading = $state(false);
+
   // RTL languages that need special handling
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
 
@@ -82,9 +89,49 @@
     return LANG_NAMES[code] || code?.toUpperCase() || '';
   }
 
-  function openReader(docId) {
-    // Navigate to main page with reader deep link
-    window.location.href = `/?read=${docId}`;
+  async function openReader(doc) {
+    modalDoc = doc;
+    modalOpen = true;
+    modalLoading = true;
+    modalContent = null;
+    modalBilingual = null;
+
+    try {
+      const isNonEnglish = doc.language && doc.language !== 'en';
+
+      if (isNonEnglish) {
+        const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=500`);
+        if (bilingualRes.ok) {
+          const data = await bilingualRes.json();
+          if (data.paragraphs?.length > 0) {
+            modalBilingual = data;
+            modalLoading = false;
+            return;
+          }
+        }
+      }
+
+      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
+      if (!res.ok) throw new Error('Failed to load content');
+      modalContent = await res.json();
+    } catch (err) {
+      modalContent = { error: err.message };
+    } finally {
+      modalLoading = false;
+    }
+  }
+
+  function closeModal() {
+    modalOpen = false;
+    modalDoc = null;
+    modalContent = null;
+    modalBilingual = null;
+  }
+
+  function handleKeydown(e) {
+    if (e.key === 'Escape' && modalOpen) {
+      closeModal();
+    }
   }
 
   // Request translation for a document
@@ -133,7 +180,7 @@
     {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
     {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
 
-    <div class="border rounded-lg overflow-hidden transition-colors
+    <div class="group border rounded-lg overflow-hidden transition-colors
                 {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
       <!-- Title row -->
       <div
@@ -194,16 +241,18 @@
                 </a>
               {/if}
             {/if}
-            <button
-              class="p-1.5 text-muted hover:text-accent rounded transition-colors"
-              onclick={(e) => { e.stopPropagation(); openReader(doc.id); }}
-              title="View fullscreen"
-            >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-              </svg>
-            </button>
           {/if}
+          <!-- Fullscreen button - visible on hover or when expanded -->
+          <button
+            class="p-1.5 text-muted hover:text-accent rounded transition-all
+                   {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+            onclick={(e) => { e.stopPropagation(); openReader(doc); }}
+            title="View fullscreen"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -258,7 +307,138 @@
   {/each}
 </div>
 
+<!-- Fullscreen Modal -->
+{#if modalOpen}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+    onclick={closeModal}
+    onkeydown={handleKeydown}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div
+      class="relative w-full max-w-4xl max-h-[90vh] bg-surface-0 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-surface-1">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-semibold text-primary truncate">{modalDoc?.title || 'Document'}</h2>
+          {#if modalDoc?.author}
+            <p class="text-sm text-secondary">{modalDoc.author}</p>
+          {/if}
+        </div>
+        <button
+          class="p-2 text-muted hover:text-primary hover:bg-surface-2 rounded-lg transition-colors"
+          onclick={closeModal}
+          title="Close (Esc)"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="flex-1 overflow-auto">
+        {#if modalLoading}
+          <div class="flex items-center justify-center py-12 text-muted">
+            <span class="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin mr-3"></span>
+            Loading document...
+          </div>
+        {:else if modalContent?.error}
+          <div class="p-6 text-error">Failed to load: {modalContent.error}</div>
+        {:else if modalBilingual}
+          <BilingualView
+            paragraphs={modalBilingual.paragraphs}
+            isRTL={modalBilingual.document?.isRTL || isRTL(modalBilingual.document?.language)}
+            maxHeight="none"
+            loading={modalLoading}
+          />
+        {:else if modalContent}
+          <div class="modal-paper">
+            {#if modalContent.paragraphs?.length > 0}
+              {#each modalContent.paragraphs as para, i}
+                {@const docLang = modalContent.document?.language}
+                <div class="modal-paragraph" class:rtl={isRTL(docLang)}>
+                  <span class="modal-para-num">{i + 1}</span>
+                  <p
+                    class="modal-para-text"
+                    dir={isRTL(docLang) ? 'rtl' : 'ltr'}
+                  >{para.text || para.content || ''}</p>
+                </div>
+              {/each}
+            {:else}
+              <p class="p-6 text-muted italic">No content available</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<svelte:window onkeydown={handleKeydown} />
+
 <style>
+  /* Modal paper styling */
+  .modal-paper {
+    padding: 2rem 2.5rem;
+    background: linear-gradient(to bottom, #fdfbf7 0%, #f8f5ef 100%);
+    min-height: 300px;
+  }
+
+  .modal-paragraph {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .modal-paragraph:last-child {
+    border-bottom: none;
+  }
+
+  .modal-paragraph:hover {
+    background: rgba(0, 0, 0, 0.02);
+    margin: 0 -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-radius: 0.375rem;
+  }
+
+  .modal-paragraph.rtl {
+    flex-direction: row-reverse;
+  }
+
+  .modal-para-num {
+    flex-shrink: 0;
+    width: 2rem;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-size: 0.75rem;
+    color: #999;
+    text-align: right;
+    padding-top: 0.25rem;
+  }
+
+  .modal-paragraph.rtl .modal-para-num {
+    text-align: left;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+  }
+
+  .modal-para-text {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: #1a1a1a;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
   /* Paper-like content area */
   .paper-content {
     width: 100%;
