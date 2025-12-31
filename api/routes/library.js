@@ -1625,13 +1625,47 @@ Provide only the translation.`;
     }
 
     // Get paragraph count for progress tracking
-    const countResult = await queryOne(
+    let countResult = await queryOne(
       'SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated FROM content WHERE doc_id = ?',
       [documentId]
     );
 
-    const total = countResult?.total || 0;
-    const alreadyTranslated = countResult?.translated || 0;
+    let total = countResult?.total || 0;
+    let alreadyTranslated = countResult?.translated || 0;
+
+    // If content table is empty, populate from Meilisearch
+    if (total === 0) {
+      logger.info({ documentId }, 'Content table empty, populating from Meilisearch');
+
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `document_id = "${documentId}"`,
+        limit: 10000,
+        sort: ['paragraph_index:asc'],
+        attributesToRetrieve: ['id', 'paragraph_index', 'text', 'heading', 'blocktype']
+      });
+
+      if (parasResult.hits.length === 0) {
+        throw ApiError.badRequest('Document has no content to translate');
+      }
+
+      // Insert paragraphs into content table
+      for (const para of parasResult.hits) {
+        await query(`
+          INSERT OR IGNORE INTO content (doc_id, para_index, text, heading, blocktype)
+          VALUES (?, ?, ?, ?, ?)
+        `, [documentId, para.paragraph_index, para.text, para.heading || null, para.blocktype || null]);
+      }
+
+      logger.info({ documentId, count: parasResult.hits.length }, 'Populated content table from Meilisearch');
+
+      // Re-count after population
+      countResult = await queryOne(
+        'SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated FROM content WHERE doc_id = ?',
+        [documentId]
+      );
+      total = countResult?.total || 0;
+      alreadyTranslated = countResult?.translated || 0;
+    }
 
     if (total === 0) {
       throw ApiError.badRequest('Document has no content to translate');

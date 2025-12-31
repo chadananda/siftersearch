@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T13:47:01.820Z",
+  "generated": "2025-12-31T13:51:52.071Z",
   "entries": [
+    {
+      "hash": "ae8a35b",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Add empty JSON body to queue-translation POST request",
+      "scope": null
+    },
     {
       "hash": "43eee68",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add content-type aware translation styles",
       "scope": "translation"
-    },
-    {
-      "hash": "b2bc28d",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "ae8a35b",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Add empty JSON body to queue-translation POST request",
+        "scope": null
+      },
       {
         "hash": "43eee68",
         "date": "2025-12-31",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add content-type aware translation styles",
         "scope": "translation"
-      },
-      {
-        "hash": "b2bc28d",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
-        "scope": null
       }
     ]
   }
