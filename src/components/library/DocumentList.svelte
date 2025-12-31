@@ -292,24 +292,24 @@
 
           <!-- Language + Translation compound pill -->
           {#if langName && langName !== 'English'}
-            <div class="inline-flex items-center rounded overflow-hidden text-[0.6875rem] font-medium">
+            <div class="inline-flex items-center rounded-sm overflow-hidden text-[0.6875rem] font-semibold border border-accent/40">
               <!-- Language section (left) -->
-              <span class="px-1.5 py-0.5 bg-accent/25 text-accent">{langName}</span>
+              <span class="px-2 py-0.5 bg-accent text-white">{langName}</span>
 
               <!-- Translation action/progress section (right) -->
               {#if statsLoading}
-                <span class="px-1.5 py-0.5 bg-surface-2 text-secondary flex items-center">
+                <span class="px-2 py-0.5 bg-surface-1 text-primary flex items-center">
                   <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
                 </span>
               {:else if translating === doc.id}
                 <!-- Translating: show spinner + percent -->
-                <span class="px-1.5 py-0.5 bg-warning/25 text-warning flex items-center gap-1">
+                <span class="px-2 py-0.5 bg-warning text-white flex items-center gap-1">
                   <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
                   <span>{translationPercent ?? 0}%</span>
                 </span>
               {:else if translationPercent === 100}
                 <!-- Complete: show checkmark + 100% -->
-                <span class="px-1.5 py-0.5 bg-success/25 text-success flex items-center gap-1">
+                <span class="px-2 py-0.5 bg-success text-white flex items-center gap-1">
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>100%</span>
                 </span>
@@ -317,7 +317,7 @@
                 <!-- Needs translation: clickable button -->
                 <button
                   onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                  class="px-1.5 py-0.5 bg-accent/30 text-accent hover:bg-accent/40 flex items-center gap-1 transition-colors cursor-pointer"
+                  class="px-2 py-0.5 bg-surface-1 text-accent hover:bg-accent hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
                   title="Translate to English"
                 >
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -329,7 +329,7 @@
                 </button>
               {:else if translationPercent !== null}
                 <!-- Not admin, show percent if any -->
-                <span class="px-1.5 py-0.5 bg-surface-2 text-secondary">{translationPercent}%</span>
+                <span class="px-2 py-0.5 bg-surface-1 text-primary">{translationPercent}%</span>
               {/if}
             </div>
           {/if}
