@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T13:30:26.746Z",
+  "generated": "2025-12-31T13:40:38.217Z",
   "entries": [
+    {
+      "hash": "362def3",
+      "date": "2025-12-31",
+      "type": "New",
+      "description": "Server-side translation queue with priority",
+      "scope": "translation"
+    },
     {
       "hash": "161cb03",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Handle both doc_id and document_id columns in migration",
       "scope": null
-    },
-    {
-      "hash": "c23d897",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add background task for embedding migration from Meilisearch to libsql",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "362def3",
+        "date": "2025-12-31",
+        "type": "New",
+        "description": "Server-side translation queue with priority",
+        "scope": "translation"
+      },
       {
         "hash": "161cb03",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Handle both doc_id and document_id columns in migration",
-        "scope": null
-      },
-      {
-        "hash": "c23d897",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add background task for embedding migration from Meilisearch to libsql",
         "scope": null
       }
     ]

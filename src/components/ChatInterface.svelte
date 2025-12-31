@@ -417,8 +417,8 @@
     if (refreshInterval) return; // Already polling at correct rate
 
     currentPollingInterval = targetInterval;
-    if (isIndexing) {
-      console.log('[Library] Indexing detected - polling every 3s');
+    if (isActive) {
+      console.log('[Library] Indexing/translating detected - polling every 3s');
     }
 
     refreshInterval = setInterval(() => {
