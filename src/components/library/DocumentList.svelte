@@ -210,7 +210,7 @@
       if (!bilingualRes.ok) throw new Error('Failed to load document content');
 
       const bilingual = await bilingualRes.json();
-      const untranslated = bilingual.paragraphs?.filter(p => !p.translation && p.id) || [];
+      const untranslated = bilingual.paragraphs?.filter(p => p && !p.translation && p.id) || [];
 
       if (untranslated.length === 0) {
         console.log('No paragraphs need translation');

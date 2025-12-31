@@ -109,7 +109,7 @@
     if (!document?.id || !bilingualContent?.paragraphs) return;
 
     // Find paragraphs that need translation
-    const untranslatedParas = bilingualContent.paragraphs.filter(p => !p.translation && p.id);
+    const untranslatedParas = bilingualContent.paragraphs.filter(p => p && !p.translation && p.id);
     if (untranslatedParas.length === 0) return;
 
     translating = true;
@@ -150,9 +150,10 @@
               }
             });
             liveTranslations = newTranslations;
+            const batchSuccess = data.successCount ?? data.translations.filter(t => t.success).length;
             translationProgress = {
               ...translationProgress,
-              completed: translationProgress.completed + data.successCount
+              completed: translationProgress.completed + batchSuccess
             };
           }
         }
