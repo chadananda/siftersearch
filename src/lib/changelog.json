@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T14:56:22.708Z",
+  "generated": "2025-12-31T17:58:29.618Z",
   "entries": [
+    {
+      "hash": "c6a8fa5",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use correct column name paragraph_index in content table insert",
+      "scope": null
+    },
     {
       "hash": "d20f4e1",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "AI-based semantic paragraph splitting for Arabic/Persian",
       "scope": "segmentation"
-    },
-    {
-      "hash": "315cd0b",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Correctly detect Arabic/Persian language for documents",
-      "scope": "indexer"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "c6a8fa5",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use correct column name paragraph_index in content table insert",
+        "scope": null
+      },
       {
         "hash": "d20f4e1",
         "date": "2025-12-31",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "AI-based semantic paragraph splitting for Arabic/Persian",
         "scope": "segmentation"
-      },
-      {
-        "hash": "315cd0b",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Correctly detect Arabic/Persian language for documents",
-        "scope": "indexer"
       }
     ]
   }
