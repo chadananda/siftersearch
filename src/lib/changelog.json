@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T13:40:38.217Z",
+  "generated": "2025-12-31T13:47:01.820Z",
   "entries": [
+    {
+      "hash": "43eee68",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "ReferenceError isIndexing not defined in startRefreshPolling",
+      "scope": null
+    },
     {
       "hash": "362def3",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
       "scope": null
-    },
-    {
-      "hash": "fbc817a",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Handle both doc_id and document_id columns in migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "43eee68",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "ReferenceError isIndexing not defined in startRefreshPolling",
+        "scope": null
+      },
       {
         "hash": "362def3",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
-        "scope": null
-      },
-      {
-        "hash": "fbc817a",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Handle both doc_id and document_id columns in migration",
         "scope": null
       }
     ]

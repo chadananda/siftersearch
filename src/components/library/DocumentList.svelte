@@ -210,6 +210,7 @@
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
+        body: JSON.stringify({}),
         credentials: 'include'
       });
 
