@@ -286,79 +286,55 @@
           </div>
         </button>
         <div class="flex items-center gap-1.5 shrink-0">
-          {#if langName && langName !== 'English'}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-accent/10 text-accent">{langName}</span>
-          {/if}
           {#if size}
             <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
           {/if}
 
-          <!-- Translation status for non-English docs (collapsed view) -->
-          {#if !isExpanded && isAdmin && isNonEnglish}
-            {#if statsLoading}
-              <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">
-                <svg class="w-3 h-3 animate-spin inline" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-              </span>
-            {:else if translationPercent !== null}
-              <span
-                class="text-[0.625rem] px-1.5 py-0.5 rounded {translationPercent === 100 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}"
-                title="{translationPercent}% translated"
-              >
-                {translationPercent}%
-              </span>
-              {#if translationPercent < 100}
+          <!-- Language + Translation compound pill -->
+          {#if langName && langName !== 'English'}
+            <div class="inline-flex items-center rounded overflow-hidden text-[0.6875rem] font-medium">
+              <!-- Language section (left) -->
+              <span class="px-1.5 py-0.5 bg-accent/25 text-accent">{langName}</span>
+
+              <!-- Translation action/progress section (right) -->
+              {#if statsLoading}
+                <span class="px-1.5 py-0.5 bg-surface-2 text-secondary flex items-center">
+                  <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                </span>
+              {:else if translating === doc.id}
+                <!-- Translating: show spinner + percent -->
+                <span class="px-1.5 py-0.5 bg-warning/25 text-warning flex items-center gap-1">
+                  <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                  <span>{translationPercent ?? 0}%</span>
+                </span>
+              {:else if translationPercent === 100}
+                <!-- Complete: show checkmark + 100% -->
+                <span class="px-1.5 py-0.5 bg-success/25 text-success flex items-center gap-1">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>100%</span>
+                </span>
+              {:else if isAdmin}
+                <!-- Needs translation: clickable button -->
                 <button
-                  class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
                   onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                  disabled={translating === doc.id}
-                  title="Queue translation"
+                  class="px-1.5 py-0.5 bg-accent/30 text-accent hover:bg-accent/40 flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Translate to English"
                 >
-                  {#if translating === doc.id}
-                    <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                  {:else}
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
-                    </svg>
-                  {/if}
-                </button>
-              {/if}
-            {:else}
-              <!-- No stats yet, show translate button -->
-              <button
-                class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
-                onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                disabled={translating === doc.id}
-                title="Queue translation"
-              >
-                {#if translating === doc.id}
-                  <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                {:else}
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
                   </svg>
-                {/if}
-              </button>
-            {/if}
+                  {#if translationPercent !== null && translationPercent > 0}
+                    <span>{translationPercent}%</span>
+                  {/if}
+                </button>
+              {:else if translationPercent !== null}
+                <!-- Not admin, show percent if any -->
+                <span class="px-1.5 py-0.5 bg-surface-2 text-secondary">{translationPercent}%</span>
+              {/if}
+            </div>
           {/if}
 
           {#if isExpanded}
-            {#if isAdmin && needsTranslation}
-              <button
-                class="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
-                onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                disabled={translating === doc.id}
-                title="Translate document to English"
-              >
-                {#if translating === doc.id}
-                  <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                {:else}
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
-                  </svg>
-                {/if}
-                Translate
-              </button>
-            {/if}
             {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
               {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
               {#if originalFile?.storage_url}

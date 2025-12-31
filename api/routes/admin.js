@@ -37,6 +37,7 @@ import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats, getMeili } from '../lib/search.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
+import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-worker.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
 
@@ -1183,6 +1184,70 @@ export default async function adminRoutes(fastify) {
       message: `Embedding migration started${dryRun ? ' (dry run)' : ''}. Check /server/tasks/${task.id} for progress.`,
       dryRun,
       batchSize
+    };
+  });
+
+  // ========================================================================
+  // Content Sync Management (Content Table → Meilisearch)
+  // ========================================================================
+
+  /**
+   * GET /server/sync/status - Get sync worker status and pending counts
+   */
+  fastify.get('/server/sync/status', { preHandler: requireInternal }, async () => {
+    const [stats, unsynced] = await Promise.all([
+      getSyncStats(),
+      getUnsyncedCount()
+    ]);
+
+    return {
+      worker: stats,
+      pending: unsynced
+    };
+  });
+
+  /**
+   * POST /server/sync/now - Force immediate sync cycle
+   */
+  fastify.post('/server/sync/now', { preHandler: requireInternal }, async () => {
+    logger.info('Manual sync triggered via admin API');
+    const result = await forceSyncNow();
+    return {
+      success: true,
+      message: 'Sync cycle completed',
+      stats: result
+    };
+  });
+
+  /**
+   * GET /server/sync/orphaned - Find documents without content table entries
+   */
+  fastify.get('/server/sync/orphaned', { preHandler: requireInternal }, async () => {
+    // Find documents in docs table that have no content entries
+    const orphaned = await queryAll(`
+      SELECT d.id, d.title, d.file_path, d.language, d.paragraph_count
+      FROM docs d
+      LEFT JOIN content c ON c.doc_id = d.id
+      WHERE c.id IS NULL
+      LIMIT 100
+    `);
+
+    // Also find documents with partial content (fewer paragraphs than expected)
+    const partial = await queryAll(`
+      SELECT d.id, d.title, d.file_path, d.paragraph_count as expected,
+             COUNT(c.id) as actual
+      FROM docs d
+      LEFT JOIN content c ON c.doc_id = d.id
+      GROUP BY d.id
+      HAVING actual < expected AND actual > 0
+      LIMIT 100
+    `);
+
+    return {
+      orphaned: orphaned.length,
+      partial: partial.length,
+      orphanedDocs: orphaned,
+      partialDocs: partial
     };
   });
 }

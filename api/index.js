@@ -25,6 +25,7 @@ import { logger } from './lib/logger.js';
 import { ensureServicesRunning, cleanupServices, getServicesStatus } from './lib/services.js';
 import { seedAdminUser } from './lib/auth.js';
 import { runMigrations } from './lib/migrations.js';
+import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -74,6 +75,14 @@ const start = async () => {
       logger.warn({ err }, 'Failed to seed admin user');
     }
 
+    // Start background content sync worker (keeps Content Table → Meilisearch in sync)
+    try {
+      startSyncWorker();
+      logger.info('Content sync worker started');
+    } catch (err) {
+      logger.warn({ err }, 'Failed to start sync worker');
+    }
+
     // Log startup summary
     const envSummary = getEnvSummary();
     logger.info({
@@ -110,6 +119,7 @@ const start = async () => {
 // Graceful shutdown
 const shutdown = async (signal) => {
   logger.info({ signal }, 'Shutting down');
+  stopSyncWorker();
   cleanupServices();
   process.exit(0);
 };
