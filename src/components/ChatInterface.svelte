@@ -372,8 +372,8 @@
         retryInterval = null;
       }
 
-      // Adjust polling frequency based on indexing state
-      startRefreshPolling(stats.indexing);
+      // Adjust polling frequency based on indexing/translating state
+      startRefreshPolling(stats.indexing || stats.translating);
     } catch (err) {
       console.error('Failed to load library stats:', err);
       // Always clear stats on disconnect - don't show stale data
@@ -405,8 +405,8 @@
 
   let currentPollingInterval = $state(null);
 
-  function startRefreshPolling(isIndexing = false) {
-    const targetInterval = isIndexing ? INDEXING_REFRESH_INTERVAL : REFRESH_INTERVAL;
+  function startRefreshPolling(isActive = false) {
+    const targetInterval = isActive ? INDEXING_REFRESH_INTERVAL : REFRESH_INTERVAL;
 
     // If interval changed, restart polling
     if (refreshInterval && currentPollingInterval !== targetInterval) {
@@ -1184,6 +1184,27 @@
                     {/if}
                     {#if libraryStats.indexingProgress.pending > 0}
                       <span class="status-item pending">{libraryStats.indexingProgress.pending} queued</span>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+              {#if libraryStats.translationProgress && (libraryStats.translationProgress.processing > 0 || libraryStats.translationProgress.pending > 0)}
+                <div class="indexing-indicator translating">
+                  <div class="indexing-header">
+                    <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
+                      <circle cx="4" cy="4" r="3" />
+                    </svg>
+                    <span>Translating documents</span>
+                  </div>
+                  <div class="indexing-status">
+                    {#if libraryStats.translationProgress.processing > 0}
+                      <span class="status-item processing">{libraryStats.translationProgress.processing} translating</span>
+                    {/if}
+                    {#if libraryStats.translationProgress.pending > 0}
+                      <span class="status-item pending">{libraryStats.translationProgress.pending} queued</span>
+                    {/if}
+                    {#if libraryStats.translationProgress.totalItems > 0}
+                      <span class="status-item progress">{libraryStats.translationProgress.totalProgress}/{libraryStats.translationProgress.totalItems} paragraphs</span>
                     {/if}
                   </div>
                 </div>
@@ -2114,6 +2135,14 @@
 
   .status-item.pending {
     color: var(--text-muted);
+  }
+
+  .status-item.progress {
+    color: var(--accent);
+  }
+
+  .indexing-indicator.translating {
+    color: var(--accent);
   }
 
   @keyframes pulse {

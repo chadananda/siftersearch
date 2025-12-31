@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 14;
+const CURRENT_VERSION = 15;
 
 /**
  * Get current database schema version
@@ -610,6 +610,73 @@ const migrations = {
       logger.error({ err: err.message }, 'Content table schema fix failed');
       // Don't throw - let the server start anyway
     }
+  },
+
+  // Version 15: Add jobs and processed_cache tables for background job queue
+  15: async () => {
+    // Jobs table for background processing (translation, audio, etc.)
+    await query(`
+      CREATE TABLE IF NOT EXISTS jobs (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        user_id INTEGER,
+        document_id TEXT,
+        params TEXT,
+        status TEXT DEFAULT 'pending',
+        priority INTEGER DEFAULT 0,
+        progress INTEGER DEFAULT 0,
+        total_items INTEGER DEFAULT 0,
+        result_url TEXT,
+        result_path TEXT,
+        error_message TEXT,
+        notify_email TEXT,
+        notified_at TEXT,
+        expires_at TEXT,
+        started_at TEXT,
+        completed_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Processed content cache
+    await query(`
+      CREATE TABLE IF NOT EXISTS processed_cache (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id TEXT NOT NULL,
+        segment_id TEXT,
+        process_type TEXT NOT NULL,
+        source_language TEXT,
+        target_language TEXT,
+        voice_id TEXT,
+        content_hash TEXT NOT NULL,
+        result_path TEXT,
+        result_url TEXT,
+        file_size INTEGER,
+        access_count INTEGER DEFAULT 0,
+        last_accessed_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes
+    try { await query('CREATE INDEX idx_jobs_status ON jobs(status)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_jobs_type ON jobs(type)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_jobs_user ON jobs(user_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_jobs_document ON jobs(document_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_jobs_priority ON jobs(priority DESC, created_at ASC)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_cache_doc ON processed_cache(document_id)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX idx_cache_hash ON processed_cache(content_hash)'); } catch { /* exists */ }
+
+    // If jobs table already exists, add priority column
+    try {
+      await query('ALTER TABLE jobs ADD COLUMN priority INTEGER DEFAULT 0');
+      logger.info('Added priority column to jobs table');
+    } catch {
+      // Column already exists
+    }
+
+    logger.info('Jobs and cache tables created');
   },
 };
 

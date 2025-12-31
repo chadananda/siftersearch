@@ -41,18 +41,21 @@
       {/each}
     </div>
   {:else}
-    <!-- Two columns: original + translation -->
+    <!-- Three columns: original + number + translation -->
     <div class="bilingual-grid">
       <div class="column-header">
         <span class="header-label">Original</span>
+        <span class="header-label num-header"></span>
         <span class="header-label">English Translation</span>
       </div>
       {#each paragraphs as para}
         {@const isParaTranslating = translatingIds.has(para.id)}
         <div class="bilingual-row">
           <div class="para-cell original" class:rtl={isRTL}>
-            <span class="para-num">{para.index + 1}</span>
             <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
+          </div>
+          <div class="para-num-cell">
+            <span class="para-num">{para.index + 1}</span>
           </div>
           <div class="para-cell translation" class:translating={isParaTranslating}>
             {#if para.translation}
@@ -137,7 +140,7 @@
 
   .column-header {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2rem 1fr;
     gap: 1px;
     position: sticky;
     top: 0;
@@ -156,11 +159,23 @@
     background: #f0ebe0;
   }
 
+  .header-label.num-header {
+    padding: 0.5rem 0;
+  }
+
   .bilingual-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2rem 1fr;
     gap: 1px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .para-num-cell {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.875rem 0;
+    background: #f5f2ea;
   }
 
   .bilingual-row:last-child {
@@ -173,30 +188,21 @@
 
   .para-cell {
     display: flex;
-    gap: 0.75rem;
     padding: 0.875rem 1rem;
     background: #faf8f3;
     min-height: 2.5rem;
   }
 
   .para-cell.original.rtl {
-    flex-direction: row-reverse;
     text-align: right;
   }
 
   .para-num {
-    flex-shrink: 0;
-    width: 1.5rem;
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 0.6875rem;
     color: #999;
-    text-align: right;
+    text-align: center;
     padding-top: 0.25rem;
-  }
-
-  .rtl .para-num {
-    text-align: left;
-    font-family: 'Amiri', 'Traditional Arabic', serif;
   }
 
   .para-text {
@@ -286,6 +292,29 @@
 
     .column-header .header-label:first-child {
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .column-header .num-header {
+      display: none;
+    }
+
+    .para-num-cell {
+      display: none;
+    }
+
+    .para-cell.original {
+      position: relative;
+      padding-left: 2.5rem;
+    }
+
+    .para-cell.original::before {
+      content: attr(data-num);
+      position: absolute;
+      left: 0.5rem;
+      top: 0.875rem;
+      font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+      font-size: 0.6875rem;
+      color: #999;
     }
 
     .para-cell.translation {

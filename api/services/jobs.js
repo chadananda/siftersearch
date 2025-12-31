@@ -27,6 +27,7 @@ export const JOB_STATUS = {
 
 /**
  * Create a new job
+ * @param priority - Higher number = higher priority (document authority score)
  */
 export async function createJob({
   type,
@@ -34,19 +35,20 @@ export async function createJob({
   documentId,
   params,
   notifyEmail,
+  priority = 0,
   expiresInDays = 7
 }) {
   const id = `job_${nanoid(16)}`;
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
   await query(
-    `INSERT INTO jobs (id, type, user_id, document_id, params, notify_email, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, type, userId, documentId, JSON.stringify(params), notifyEmail, expiresAt.toISOString()]
+    `INSERT INTO jobs (id, type, user_id, document_id, params, notify_email, priority, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, type, userId, documentId, JSON.stringify(params), notifyEmail, priority, expiresAt.toISOString()]
   );
 
-  logger.info({ jobId: id, type, documentId }, 'Job created');
-  return { id, type, status: JOB_STATUS.PENDING };
+  logger.info({ jobId: id, type, documentId, priority }, 'Job created');
+  return { id, type, status: JOB_STATUS.PENDING, priority };
 }
 
 /**
@@ -91,21 +93,24 @@ export async function getUserJobs(userId, options = {}) {
 
 /**
  * Get next pending job to process
+ * Orders by priority DESC (higher authority first), then created_at ASC
  */
 export async function getNextPendingJob(type = null) {
+  const now = new Date().toISOString();
   let sql = `
     SELECT * FROM jobs
     WHERE status = 'pending'
-    AND (expires_at IS NULL OR expires_at > datetime('now'))
+    AND (expires_at IS NULL OR expires_at > ?)
   `;
-  const params = [];
+  const params = [now];
 
   if (type) {
     sql += ' AND type = ?';
     params.push(type);
   }
 
-  sql += ' ORDER BY created_at ASC LIMIT 1';
+  // Higher priority (authority) first, then FIFO within same priority
+  sql += ' ORDER BY COALESCE(priority, 0) DESC, created_at ASC LIMIT 1';
 
   const job = await queryOne(sql, params);
   if (job) {
@@ -252,8 +257,10 @@ export async function storeInCache({
  * Clean up expired jobs
  */
 export async function cleanupExpiredJobs() {
+  const now = new Date().toISOString();
   const result = await query(
-    `DELETE FROM jobs WHERE expires_at < datetime('now') AND status IN ('completed', 'failed')`
+    `DELETE FROM jobs WHERE expires_at < ? AND status IN ('completed', 'failed')`,
+    [now]
   );
   if (result.rowsAffected > 0) {
     logger.info({ count: result.rowsAffected }, 'Cleaned up expired jobs');
@@ -265,6 +272,7 @@ export async function cleanupExpiredJobs() {
  * Get job statistics
  */
 export async function getJobStats() {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const stats = await queryOne(`
     SELECT
       COUNT(*) as total,
@@ -273,8 +281,8 @@ export async function getJobStats() {
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
       SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
     FROM jobs
-    WHERE created_at > datetime('now', '-30 days')
-  `);
+    WHERE created_at > ?
+  `, [thirtyDaysAgo]);
 
   const cacheStats = await queryOne(`
     SELECT

@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T12:57:41.193Z",
+  "generated": "2025-12-31T13:30:26.746Z",
   "entries": [
+    {
+      "hash": "161cb03",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Translation reactivity and auto-populate content table from Meilisearch",
+      "scope": null
+    },
     {
       "hash": "bca725a",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add background task for embedding migration from Meilisearch to libsql",
       "scope": null
-    },
-    {
-      "hash": "15a59cc",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Correct getSearchStats property names in admin endpoints",
-      "scope": null
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "161cb03",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Translation reactivity and auto-populate content table from Meilisearch",
+        "scope": null
+      },
       {
         "hash": "bca725a",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add background task for embedding migration from Meilisearch to libsql",
-        "scope": null
-      },
-      {
-        "hash": "15a59cc",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Correct getSearchStats property names in admin endpoints",
         "scope": null
       }
     ]

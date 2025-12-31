@@ -22,6 +22,7 @@ import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier } from '../lib/auth.js';
 import { LibrarianAgent } from '../agents/agent-librarian.js';
+import { logger } from '../lib/logger.js';
 
 const librarian = new LibrarianAgent();
 
@@ -147,19 +148,75 @@ export default async function librarianRoutes(fastify) {
     if (religion) sourceData.religion = religion;
     if (collection) sourceData.collection = collection;
 
+    // Insert as 'analyzing' and start analysis immediately
     const result = await query(
       `INSERT INTO ingestion_queue (source_type, source_data, status, created_by)
-       VALUES (?, ?, 'pending', ?)`,
+       VALUES (?, ?, 'analyzing', ?)`,
       [source_type, JSON.stringify(sourceData), request.user.sub]
     );
 
+    const itemId = result.lastInsertRowid;
+
+    // Start analysis in background (don't await)
+    analyzeQueueItem(itemId, source_type, sourceData).catch(err => {
+      logger.error({ itemId, err: err.message }, 'Background analysis failed');
+    });
+
     return {
-      id: result.lastInsertRowid,
-      status: 'pending',
+      id: itemId,
+      status: 'analyzing',
       source_type,
-      message: 'Item added to queue'
+      message: 'Item added and analysis started'
     };
   });
+
+  // Background analysis function
+  async function analyzeQueueItem(itemId, sourceType, sourceData) {
+    try {
+      // Get content based on source type
+      let content = '';
+      if (sourceData.url) {
+        const response = await fetch(sourceData.url);
+        content = await response.text();
+      } else if (sourceData.file_data) {
+        content = Buffer.from(sourceData.file_data, 'base64').toString('utf-8');
+      }
+
+      if (!content) {
+        throw new Error('No content to analyze');
+      }
+
+      // Run analysis
+      const analysisResult = await librarian.analyzeDocument(content, {
+        filename: sourceData.file_name,
+        source: sourceData.url || sourceData.isbn
+      });
+
+      // Get metadata suggestions
+      const suggestedMetadata = await librarian.suggestMetadata(content, {
+        religion: sourceData.religion
+      });
+
+      // Update with results
+      await query(
+        `UPDATE ingestion_queue
+         SET status = 'awaiting_review',
+             analysis_result = ?,
+             suggested_metadata = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [JSON.stringify(analysisResult), JSON.stringify(suggestedMetadata), itemId]
+      );
+
+      logger.info({ itemId }, 'Queue item analysis completed');
+    } catch (err) {
+      await query(
+        `UPDATE ingestion_queue SET status = 'failed', error_message = ? WHERE id = ?`,
+        [err.message, itemId]
+      );
+      throw err;
+    }
+  }
 
   // Update queue item (approve/reject/analyze)
   fastify.put('/queue/:id', {

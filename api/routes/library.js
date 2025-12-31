@@ -135,6 +135,32 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
+    // Get translation queue status
+    let translationStats = { pending: 0, processing: 0, completed: 0, totalProgress: 0, totalItems: 0 };
+    try {
+      const transStats = await queryOne(`
+        SELECT
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+          SUM(CASE WHEN status IN ('pending', 'processing') THEN progress ELSE 0 END) as total_progress,
+          SUM(CASE WHEN status IN ('pending', 'processing') THEN total_items ELSE 0 END) as total_items
+        FROM jobs
+        WHERE type = 'translation'
+      `);
+      if (transStats) {
+        translationStats = {
+          pending: transStats.pending || 0,
+          processing: transStats.processing || 0,
+          completed: transStats.completed || 0,
+          totalProgress: transStats.total_progress || 0,
+          totalItems: transStats.total_items || 0
+        };
+      }
+    } catch {
+      // Table may not exist yet
+    }
+
     const facets = docsResult.facetDistribution || {};
 
     return {
@@ -147,7 +173,9 @@ export default async function libraryRoutes(fastify) {
       collectionCounts: facets.collection || {},
       languageCounts: facets.language || {},
       indexing: indexingStats.pending > 0 || indexingStats.processing > 0,
-      indexingProgress: indexingStats
+      indexingProgress: indexingStats,
+      translating: translationStats.pending > 0 || translationStats.processing > 0,
+      translationProgress: translationStats
     };
   });
 
@@ -1101,56 +1129,34 @@ Return ONLY the description text, no quotes or formatting.`;
       throw err;
     }
 
-    // Try to get paragraphs with translations from libsql (translations stored there)
+    // Get paragraphs with translations from libsql (source of truth for content)
     let paragraphs = [];
     let total = 0;
-    let useFallback = false;
 
     try {
       paragraphs = await queryAll(`
         SELECT id, paragraph_index, text, translation, blocktype, heading
         FROM content
-        WHERE doc_id = ? OR document_id = ?
+        WHERE doc_id = ?
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
-      `, [id, id, limit, offset]);
+      `, [id, limit, offset]);
 
       // Get total count from libsql
       const countResult = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE doc_id = ? OR document_id = ?',
-        [id, id]
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+        [id]
       );
       total = countResult?.count || 0;
 
-      // If libsql has no content, use fallback
-      if (paragraphs.length === 0) {
-        useFallback = true;
+      // If libsql has no content, document needs reindexing
+      if (paragraphs.length === 0 && total === 0) {
+        request.log.warn({ docId: id }, 'No content in libsql - document needs reindexing');
       }
     } catch (err) {
-      // libsql unavailable (e.g., SQLITE_BUSY) - fall back to Meilisearch
-      request.log.warn({ err: err.message, docId: id }, 'libsql unavailable, using Meilisearch fallback');
-      useFallback = true;
-    }
-
-    // Fallback to Meilisearch paragraphs when libsql unavailable or empty
-    if (useFallback) {
-      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `document_id = "${id}"`,
-        limit,
-        offset,
-        sort: ['paragraph_index:asc']
-      });
-
-      paragraphs = parasResult.hits.map(p => ({
-        id: p.id,
-        paragraph_index: p.paragraph_index,
-        text: p.text,
-        translation: null,
-        blocktype: p.blocktype || 'paragraph',
-        heading: p.heading
-      }));
-
-      total = parasResult.estimatedTotalHits || paragraphs.length;
+      // libsql unavailable (e.g., SQLITE_BUSY) - return error, don't fallback
+      request.log.error({ err: err.message, docId: id }, 'libsql unavailable for bilingual');
+      throw ApiError.serviceUnavailable('Database temporarily unavailable, please try again');
     }
 
     // Determine if document needs RTL display
@@ -1195,14 +1201,14 @@ Return ONLY the description text, no quotes or formatting.`;
     const { id } = request.params;
     const meili = getMeili();
 
-    // Get counts from libsql (support both doc_id and document_id columns)
+    // Get counts from libsql
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
       FROM content
-      WHERE doc_id = ? OR document_id = ?
-    `, [id, id]);
+      WHERE doc_id = ?
+    `, [id]);
 
     // If libsql has no data, get total from Meilisearch
     // TODO: Run migration to sync all documents, then remove this fallback
@@ -1462,71 +1468,19 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('Document is already in English');
     }
 
-    // Get paragraphs to translate (support both doc_id and document_id columns)
+    // Get paragraphs to translate from libsql (source of truth)
     const placeholders = paragraphIds.map(() => '?').join(',');
-    let paragraphs = await queryAll(`
+    const paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation
       FROM content
-      WHERE (doc_id = ? OR document_id = ?) AND id IN (${placeholders})
+      WHERE doc_id = ? AND id IN (${placeholders})
       ORDER BY paragraph_index
-    `, [documentId, documentId, ...paragraphIds]);
+    `, [documentId, ...paragraphIds]);
 
-    // If content table is empty for this document, populate from Meilisearch
+    // If no paragraphs found, log and return empty (content sync should be done via script)
     if (paragraphs.length === 0) {
-      const countResult = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE doc_id = ? OR document_id = ?',
-        [documentId, documentId]
-      );
-
-      if (countResult?.count === 0) {
-        // Content table empty - populate from Meilisearch paragraphs
-        logger.info({ documentId }, 'Content table empty, populating from Meilisearch');
-
-        const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-          filter: `document_id = "${documentId}"`,
-          limit: 1000,
-          sort: ['paragraph_index:asc']
-        });
-
-        if (parasResult.hits.length > 0) {
-          // Insert paragraphs into content table
-          for (const p of parasResult.hits) {
-            await query(`
-              INSERT OR IGNORE INTO content (id, doc_id, document_id, paragraph_index, text, blocktype, heading)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [p.id, documentId, documentId, p.paragraph_index, p.text, p.blocktype || 'paragraph', p.heading || null]);
-          }
-
-          logger.info({ documentId, inserted: parasResult.hits.length }, 'Populated content table from Meilisearch');
-
-          // Now query again for the requested paragraphs
-          paragraphs = await queryAll(`
-            SELECT id, paragraph_index, text, translation
-            FROM content
-            WHERE (doc_id = ? OR document_id = ?) AND id IN (${placeholders})
-            ORDER BY paragraph_index
-          `, [documentId, documentId, ...paragraphIds]);
-        }
-      }
-
-      // Still no paragraphs? Return error
-      if (paragraphs.length === 0) {
-        logger.warn({
-          documentId,
-          requestedIds: paragraphIds.slice(0, 3),
-          contentTableCount: countResult?.count || 0
-        }, 'No paragraphs found for translation');
-
-        return {
-          translations: [],
-          message: 'No paragraphs found - document may need reindexing',
-          debug: {
-            documentId,
-            requestedIdsSample: paragraphIds.slice(0, 3),
-            contentTableCount: countResult?.count || 0
-          }
-        };
-      }
+      logger.warn({ documentId, requestedIds: paragraphIds.slice(0, 3) }, 'No paragraphs in content table - run sync-content script');
+      return { translations: [], message: 'Content not yet synced' };
     }
 
     // Determine translation style
@@ -1614,6 +1568,166 @@ Provide only the translation.`;
       style: translationStyle,
       successCount,
       totalRequested: paragraphIds.length
+    };
+  });
+
+  // ============================================
+  // Translation Queue
+  // ============================================
+
+  /**
+   * Queue a document for translation (FIFO)
+   * The job processor will translate all paragraphs in the background
+   */
+  fastify.post('/documents/:id/queue-translation', {
+    preHandler: [requireAuth],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id: documentId } = request.params;
+    const userId = request.user.id;
+    const meili = getMeili();
+
+    // Get document info
+    let document;
+    try {
+      document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
+    } catch {
+      throw ApiError.notFound('Document not found');
+    }
+
+    // Check if already in English
+    if (!document.language || document.language === 'en') {
+      throw ApiError.badRequest('Document is already in English');
+    }
+
+    // Check if already queued or in progress
+    const existingJob = await queryOne(`
+      SELECT id, status, progress, total_items FROM jobs
+      WHERE document_id = ? AND type = 'translation' AND status IN ('pending', 'processing')
+      ORDER BY created_at DESC LIMIT 1
+    `, [documentId]);
+
+    if (existingJob) {
+      return {
+        queued: true,
+        jobId: existingJob.id,
+        status: existingJob.status,
+        progress: existingJob.progress || 0,
+        total: existingJob.total_items || 0,
+        message: 'Translation already in queue'
+      };
+    }
+
+    // Get paragraph count for progress tracking
+    const countResult = await queryOne(
+      'SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated FROM content WHERE doc_id = ?',
+      [documentId]
+    );
+
+    const total = countResult?.total || 0;
+    const alreadyTranslated = countResult?.translated || 0;
+
+    if (total === 0) {
+      throw ApiError.badRequest('Document has no content to translate');
+    }
+
+    if (alreadyTranslated === total) {
+      return {
+        queued: false,
+        message: 'All paragraphs already translated',
+        progress: total,
+        total
+      };
+    }
+
+    // Get document authority for priority (higher authority = higher priority)
+    let priority = 0;
+    if (document.authority !== undefined) {
+      priority = document.authority;
+    } else if (document.collection) {
+      // Try to get authority from library_nodes
+      const node = await queryOne(`
+        SELECT c.authority_default FROM library_nodes r
+        JOIN library_nodes c ON c.parent_id = r.id AND c.node_type = 'collection'
+        WHERE r.node_type = 'religion' AND r.name = ? AND c.name = ?
+      `, [document.religion, document.collection]);
+      if (node?.authority_default) {
+        priority = node.authority_default;
+      }
+    }
+
+    // Create job with priority
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date().toISOString();
+
+    await query(`
+      INSERT INTO jobs (id, type, status, user_id, document_id, params, priority, progress, total_items, created_at)
+      VALUES (?, 'translation', 'pending', ?, ?, ?, ?, ?, ?, ?)
+    `, [jobId, userId, documentId, JSON.stringify({ targetLanguage: 'en', sourceLanguage: document.language }), priority, alreadyTranslated, total, now]);
+
+    logger.info({ jobId, documentId, userId, priority, total, alreadyTranslated }, 'Translation job queued');
+
+    return {
+      queued: true,
+      jobId,
+      status: 'pending',
+      progress: alreadyTranslated,
+      total,
+      message: 'Document queued for translation'
+    };
+  });
+
+  /**
+   * Get translation queue status for a document
+   */
+  fastify.get('/documents/:id/translation-status', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id: documentId } = request.params;
+
+    // Get latest job for this document
+    const job = await queryOne(`
+      SELECT id, status, progress, total_items, error_message, created_at, started_at, completed_at
+      FROM jobs
+      WHERE document_id = ? AND type = 'translation'
+      ORDER BY created_at DESC LIMIT 1
+    `, [documentId]);
+
+    // Get current translation stats
+    const stats = await queryOne(`
+      SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
+      FROM content WHERE doc_id = ?
+    `, [documentId]);
+
+    return {
+      hasJob: !!job,
+      job: job ? {
+        id: job.id,
+        status: job.status,
+        progress: job.progress || 0,
+        total: job.total_items || 0,
+        error: job.error_message,
+        createdAt: job.created_at,
+        startedAt: job.started_at,
+        completedAt: job.completed_at
+      } : null,
+      stats: {
+        translated: stats?.translated || 0,
+        total: stats?.total || 0,
+        percent: stats?.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
+      }
     };
   });
 }

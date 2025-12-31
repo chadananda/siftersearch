@@ -6,6 +6,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
+import { query, queryAll } from '../lib/db.js';
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -17,6 +18,7 @@ import {
   checkCache,
   storeInCache
 } from './jobs.js';
+import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -85,6 +87,10 @@ export async function requestTranslation({
 /**
  * Process a translation job
  * Called by job worker
+ *
+ * Two modes:
+ * 1. In-app translation (targetLanguage = 'en', source = ar/fa): Saves to content.translation
+ * 2. File-based translation: Saves to files for download
  */
 export async function processTranslationJob(job) {
   const { documentId, params } = job;
@@ -110,7 +116,15 @@ export async function processTranslationJob(job) {
       throw new Error('Document is already in target language');
     }
 
-    // Get all segments
+    // In-app translation mode: Arabic/Persian -> English, save to content table
+    const isInAppTranslation = targetLanguage === 'en' && ['ar', 'fa', 'he', 'ur'].includes(detectedSourceLang);
+
+    if (isInAppTranslation) {
+      return await processInAppTranslation(job, document, detectedSourceLang, contentType);
+    }
+
+    // File-based translation mode (original behavior for export)
+    // Get all segments from Meilisearch
     const segmentsResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
       filter: `document_id = "${documentId}"`,
       limit: 10000,
@@ -227,6 +241,104 @@ export async function processTranslationJob(job) {
     await updateJobStatus(job.id, JOB_STATUS.FAILED, { errorMessage: err.message });
     throw err;
   }
+}
+
+/**
+ * Process in-app translation (Arabic/Persian -> English)
+ * Saves translations directly to content.translation column
+ */
+async function processInAppTranslation(job, document, sourceLang, contentType) {
+  const { documentId } = job;
+
+  // Get untranslated paragraphs from content table
+  const paragraphs = await queryAll(`
+    SELECT id, paragraph_index, text
+    FROM content
+    WHERE doc_id = ? AND (translation IS NULL OR translation = '')
+    ORDER BY paragraph_index
+  `, [documentId]);
+
+  const totalParagraphs = paragraphs.length;
+
+  if (totalParagraphs === 0) {
+    logger.info({ jobId: job.id, documentId }, 'No paragraphs need translation');
+    await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
+      progress: 0,
+      totalItems: 0
+    });
+    return { success: true, translated: 0 };
+  }
+
+  await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalParagraphs });
+
+  let translatedCount = 0;
+  const batchSize = 5; // Translate in batches of 5
+
+  for (let i = 0; i < paragraphs.length; i += batchSize) {
+    const batch = paragraphs.slice(i, i + batchSize);
+
+    // Translate batch in parallel
+    const translations = await Promise.all(
+      batch.map(async (para) => {
+        try {
+          const translation = await translateText(
+            para.text,
+            sourceLang,
+            'en',
+            'high', // Use high quality for in-app translations
+            contentType
+          );
+          return { id: para.id, translation, success: true };
+        } catch (err) {
+          logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate paragraph');
+          return { id: para.id, success: false, error: err.message };
+        }
+      })
+    );
+
+    // Save translations to content table
+    const now = new Date().toISOString();
+    for (const result of translations) {
+      if (result.success && result.translation) {
+        await query(`
+          UPDATE content
+          SET translation = ?, updated_at = ?
+          WHERE id = ?
+        `, [result.translation, now, result.id]);
+        translatedCount++;
+      }
+    }
+
+    // Update job progress
+    await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
+      progress: i + batch.length,
+      totalItems: totalParagraphs
+    });
+
+    logger.info({
+      jobId: job.id,
+      progress: i + batch.length,
+      total: totalParagraphs
+    }, 'Translation batch completed');
+  }
+
+  await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
+    progress: totalParagraphs,
+    totalItems: totalParagraphs
+  });
+
+  logger.info({
+    jobId: job.id,
+    documentId,
+    translated: translatedCount,
+    total: totalParagraphs
+  }, 'In-app translation completed');
+
+  return {
+    success: true,
+    translated: translatedCount,
+    total: totalParagraphs
+  };
 }
 
 // Collections that contain scripture, prayers, poetry (use biblical style)

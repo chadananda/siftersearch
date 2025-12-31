@@ -199,55 +199,39 @@
     modalSourceUrl = null;
   }
 
-  // Request translation for a document (for inline expanded view)
+  // Queue document for translation (background job)
   async function requestTranslation(docId) {
     translating = docId;
     try {
-      // First get the paragraphs that need translation
-      const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${docId}/bilingual?limit=500`, {
+      const token = getAccessToken();
+      const res = await fetch(`${API_BASE}/api/library/documents/${docId}/queue-translation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
         credentials: 'include'
       });
-      if (!bilingualRes.ok) throw new Error('Failed to load document content');
 
-      const bilingual = await bilingualRes.json();
-      const untranslated = bilingual.paragraphs?.filter(p => p && !p.translation && p.id) || [];
-
-      if (untranslated.length === 0) {
-        console.log('No paragraphs need translation');
-        return;
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to queue translation');
       }
 
-      // Translate in batches of 10
-      const BATCH_SIZE = 10;
-      for (let i = 0; i < untranslated.length; i += BATCH_SIZE) {
-        const batch = untranslated.slice(i, i + BATCH_SIZE);
-        const paragraphIds = batch.map(p => p.id);
+      const data = await res.json();
 
-        const token = getAccessToken();
-        const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translate-batch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          credentials: 'include',
-          body: JSON.stringify({ paragraphIds })
+      // Update local translation stats
+      if (data.total) {
+        docTranslationStats = new Map(docTranslationStats).set(docId, {
+          translated: data.progress || 0,
+          total: data.total
         });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          console.error('Batch translation failed:', errorData);
-        }
       }
 
-      // Reload the document content to get new translations
-      const doc = documents.find(d => d.id === docId);
-      if (doc) {
-        await loadDocumentContent(doc);
-      }
+      console.log('Translation queued:', data);
     } catch (err) {
-      console.error('Translation error:', err);
-      alert(`Translation failed: ${err.message}`);
+      console.error('Translation queue error:', err);
+      alert(`Failed to queue translation: ${err.message}`);
     } finally {
       translating = null;
     }
@@ -324,24 +308,34 @@
               {#if translationPercent < 100}
                 <button
                   class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
-                  onclick={(e) => { e.stopPropagation(); openReader(doc, true); }}
-                  title="Translate document"
+                  onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                  disabled={translating === doc.id}
+                  title="Queue translation"
                 >
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
-                  </svg>
+                  {#if translating === doc.id}
+                    <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                  {:else}
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                    </svg>
+                  {/if}
                 </button>
               {/if}
             {:else}
               <!-- No stats yet, show translate button -->
               <button
                 class="p-1 text-accent hover:bg-accent/10 rounded transition-colors cursor-pointer"
-                onclick={(e) => { e.stopPropagation(); openReader(doc, true); }}
-                title="Translate document"
+                onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                disabled={translating === doc.id}
+                title="Queue translation"
               >
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
-                </svg>
+                {#if translating === doc.id}
+                  <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                {:else}
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
+                  </svg>
+                {/if}
               </button>
             {/if}
           {/if}
