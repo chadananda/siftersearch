@@ -1650,10 +1650,11 @@ Provide only the translation.`;
 
       // Insert paragraphs into content table
       for (const para of parasResult.hits) {
+        const contentId = `${documentId}_${para.paragraph_index}`;
         await query(`
-          INSERT OR IGNORE INTO content (doc_id, para_index, text, heading, blocktype)
-          VALUES (?, ?, ?, ?, ?)
-        `, [documentId, para.paragraph_index, para.text, para.heading || null, para.blocktype || null]);
+          INSERT OR IGNORE INTO content (id, doc_id, paragraph_index, text, heading, blocktype)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [contentId, documentId, para.paragraph_index, para.text, para.heading || null, para.blocktype || null]);
       }
 
       logger.info({ documentId, count: parasResult.hits.length }, 'Populated content table from Meilisearch');
