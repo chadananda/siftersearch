@@ -1464,34 +1464,69 @@ Provide only the translation, no explanations.`;
 
     // Get paragraphs to translate (support both doc_id and document_id columns)
     const placeholders = paragraphIds.map(() => '?').join(',');
-    const paragraphs = await queryAll(`
+    let paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation
       FROM content
       WHERE (doc_id = ? OR document_id = ?) AND id IN (${placeholders})
       ORDER BY paragraph_index
     `, [documentId, documentId, ...paragraphIds]);
 
+    // If content table is empty for this document, populate from Meilisearch
     if (paragraphs.length === 0) {
-      // Debug: check what's in the content table for this document
       const countResult = await queryOne(
         'SELECT COUNT(*) as count FROM content WHERE doc_id = ? OR document_id = ?',
         [documentId, documentId]
       );
-      logger.warn({
-        documentId,
-        requestedIds: paragraphIds.slice(0, 3),
-        contentTableCount: countResult?.count || 0
-      }, 'No paragraphs found for translation - content table may be empty');
 
-      return {
-        translations: [],
-        message: 'No paragraphs found in content table',
-        debug: {
-          documentId,
-          requestedIdsSample: paragraphIds.slice(0, 3),
-          contentTableCount: countResult?.count || 0
+      if (countResult?.count === 0) {
+        // Content table empty - populate from Meilisearch paragraphs
+        logger.info({ documentId }, 'Content table empty, populating from Meilisearch');
+
+        const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+          filter: `document_id = "${documentId}"`,
+          limit: 1000,
+          sort: ['paragraph_index:asc']
+        });
+
+        if (parasResult.hits.length > 0) {
+          // Insert paragraphs into content table
+          for (const p of parasResult.hits) {
+            await query(`
+              INSERT OR IGNORE INTO content (id, doc_id, document_id, paragraph_index, text, blocktype, heading)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `, [p.id, documentId, documentId, p.paragraph_index, p.text, p.blocktype || 'paragraph', p.heading || null]);
+          }
+
+          logger.info({ documentId, inserted: parasResult.hits.length }, 'Populated content table from Meilisearch');
+
+          // Now query again for the requested paragraphs
+          paragraphs = await queryAll(`
+            SELECT id, paragraph_index, text, translation
+            FROM content
+            WHERE (doc_id = ? OR document_id = ?) AND id IN (${placeholders})
+            ORDER BY paragraph_index
+          `, [documentId, documentId, ...paragraphIds]);
         }
-      };
+      }
+
+      // Still no paragraphs? Return error
+      if (paragraphs.length === 0) {
+        logger.warn({
+          documentId,
+          requestedIds: paragraphIds.slice(0, 3),
+          contentTableCount: countResult?.count || 0
+        }, 'No paragraphs found for translation');
+
+        return {
+          translations: [],
+          message: 'No paragraphs found - document may need reindexing',
+          debug: {
+            documentId,
+            requestedIdsSample: paragraphIds.slice(0, 3),
+            contentTableCount: countResult?.count || 0
+          }
+        };
+      }
     }
 
     // Determine translation style

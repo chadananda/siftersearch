@@ -33,7 +33,7 @@
   let translating = $state(false);
   let translationProgress = $state({ completed: 0, total: 0 });
   let translatingIds = $state(new Set());  // Paragraph IDs currently being translated
-  let liveTranslations = $state(new Map()); // id → translation text (real-time updates)
+  let liveTranslations = $state({});  // id → translation text (object for better Svelte reactivity)
 
   // Derived
   let isRTL = $derived(RTL_LANGUAGES.includes(document?.language));
@@ -51,7 +51,7 @@
   let mergedParagraphs = $derived(
     bilingualContent?.paragraphs?.map(p => ({
       ...p,
-      translation: liveTranslations.get(p.id) || p.translation
+      translation: liveTranslations[p.id] || p.translation
     })) ?? []
   );
 
@@ -100,17 +100,33 @@
       translating = false;
       translationProgress = { completed: 0, total: 0 };
       translatingIds = new Set();
-      liveTranslations = new Map();
+      liveTranslations = {};
     }
   });
 
   // Batch translation function
   async function startTranslation() {
-    if (!document?.id || !bilingualContent?.paragraphs) return;
+    if (!document?.id || !bilingualContent?.paragraphs) {
+      console.log('[Translation] No document or paragraphs', { docId: document?.id, hasParagraphs: !!bilingualContent?.paragraphs });
+      return;
+    }
+
+    // Debug: log all paragraphs
+    console.log('[Translation] All paragraphs:', bilingualContent.paragraphs.slice(0, 3).map(p => ({
+      id: p.id,
+      index: p.index,
+      hasTranslation: !!p.translation,
+      original: p.original?.substring(0, 50)
+    })));
 
     // Find paragraphs that need translation
     const untranslatedParas = bilingualContent.paragraphs.filter(p => p && !p.translation && p.id);
-    if (untranslatedParas.length === 0) return;
+    console.log('[Translation] Untranslated paragraphs:', untranslatedParas.length, 'sample IDs:', untranslatedParas.slice(0, 3).map(p => p.id));
+
+    if (untranslatedParas.length === 0) {
+      console.log('[Translation] No paragraphs need translation');
+      return;
+    }
 
     translating = true;
     translationProgress = { completed: 0, total: untranslatedParas.length };
@@ -141,12 +157,14 @@
           // Continue with next batch even if this one fails
         } else {
           const data = await res.json();
+          console.log('[Translation] Batch response:', data);
           // Update live translations as they come in
-          if (data.translations) {
-            const newTranslations = new Map(liveTranslations);
+          if (data.translations && data.translations.length > 0) {
+            const newTranslations = { ...liveTranslations };
             data.translations.forEach(t => {
               if (t.success && t.translation) {
-                newTranslations.set(t.id, t.translation);
+                newTranslations[t.id] = t.translation;
+                console.log('[Translation] Added translation for paragraph', t.id);
               }
             });
             liveTranslations = newTranslations;
@@ -155,6 +173,9 @@
               ...translationProgress,
               completed: translationProgress.completed + batchSuccess
             };
+            console.log('[Translation] Progress:', translationProgress.completed, '/', translationProgress.total);
+          } else {
+            console.log('[Translation] No translations in response:', data);
           }
         }
       } catch (err) {
@@ -539,13 +560,19 @@
     color: #1a1a1a;
   }
 
-  /* Translation progress */
+  /* Translation progress - smooth animations */
   .translation-progress {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
-    min-width: 140px;
+    min-width: 160px;
     padding-right: 0.5rem;
+    animation: fadeInProgress 0.3s ease-out;
+  }
+
+  @keyframes fadeInProgress {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .progress-info {
@@ -557,12 +584,14 @@
   }
 
   .progress-spinner {
-    animation: readerSpin 1s linear infinite;
+    animation: readerSpin 1.2s ease-in-out infinite;
     color: var(--accent-primary, #0891b2);
   }
 
   .progress-text {
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transition: opacity 0.2s ease;
   }
 
   .progress-bar {
@@ -574,9 +603,23 @@
 
   .progress-fill {
     height: 100%;
-    background: var(--accent-primary, #0891b2);
+    background: linear-gradient(90deg, var(--accent-primary, #0891b2), #06b6d4);
     border-radius: 2px;
-    transition: width 0.3s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .reader-close-btn {

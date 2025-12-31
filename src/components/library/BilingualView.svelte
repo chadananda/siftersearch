@@ -216,9 +216,14 @@
     color: #888;
   }
 
-  /* Translation in progress indicator */
+  /* Translation in progress indicator - smooth transitions */
   .para-cell.translating {
     background: rgba(8, 145, 178, 0.05);
+    transition: background 0.4s ease;
+  }
+
+  .para-cell.translation {
+    transition: background 0.4s ease, opacity 0.3s ease;
   }
 
   .translating-indicator {
@@ -227,6 +232,12 @@
     gap: 0.5rem;
     color: #666;
     font-size: 0.875rem;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .cell-spinner {
@@ -235,12 +246,28 @@
     border: 2px solid rgba(8, 145, 178, 0.2);
     border-top-color: #0891b2;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 1s ease-in-out infinite;
   }
 
   .translating-text {
     font-style: italic;
     color: #0891b2;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  /* Smooth appearance of new translation text */
+  .para-cell.translation .para-text {
+    animation: slideIn 0.4s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
   /* RTL text styling - Amiri for Arabic/Persian */
