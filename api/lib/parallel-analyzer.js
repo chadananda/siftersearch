@@ -100,14 +100,15 @@ Return JSON with:
   * <50: OFF-TOPIC - merely mentions keyword in unrelated context, or doesn't address the question
 - summary: 8-15 words stating THE ACTUAL ANSWER from the passage. Write it as a direct answer to the question.
   CRITICAL: Start with the answer itself, NEVER with "Addresses...", "Discusses...", "This passage...", "The text..."
-  GOOD: "Wisdom is love and amity among people" (direct answer)
-  GOOD: "Justice means giving each person their due" (direct answer)
-  BAD: "Addresses the concept of wisdom" (meta-commentary, not an answer)
-  BAD: "Discusses justice in religious context" (describes the passage, doesn't answer)
+  GOOD: "Prayer is conversation with God" (direct answer)
+  GOOD: "True freedom comes through self-mastery" (direct answer)
+  BAD: "Addresses the concept of prayer" (meta-commentary, not an answer)
+  BAD: "Discusses freedom in religious context" (describes the passage, doesn't answer)
 - keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the phrase that best captures the answer.
 - coreTerms: 1-3 key words to bold (copy exactly)
 
-{"results":[{"globalIndex":0,"score":92,"summary":"justice means giving each person their due according to divine law","keyPhrase":"exact phrase from text","coreTerms":["word1"]}]}`;
+OUTPUT FORMAT (do not copy example values - analyze the actual passages):
+{"results":[{"globalIndex":N,"score":N,"summary":"YOUR_ANALYSIS","keyPhrase":"COPY_FROM_TEXT","coreTerms":["term1"]}]}`;
 
   try {
     // Use 'fast' service for quick analysis
