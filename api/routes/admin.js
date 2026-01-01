@@ -1228,7 +1228,7 @@ export default async function adminRoutes(fastify) {
     const orphaned = await queryAll(`
       SELECT d.id, d.title, d.file_path, d.language, d.paragraph_count
       FROM docs d
-      LEFT JOIN content c ON c.doc_id = d.id
+      LEFT JOIN content c ON c.document_id = d.id
       WHERE c.id IS NULL
       LIMIT 100
     `);
@@ -1238,7 +1238,7 @@ export default async function adminRoutes(fastify) {
       SELECT d.id, d.title, d.file_path, d.paragraph_count as expected,
              COUNT(c.id) as actual
       FROM docs d
-      LEFT JOIN content c ON c.doc_id = d.id
+      LEFT JOIN content c ON c.document_id = d.id
       GROUP BY d.id
       HAVING actual < expected AND actual > 0
       LIMIT 100
