@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:56:39.588Z",
+  "generated": "2026-01-01T19:58:51.098Z",
   "entries": [
+    {
+      "hash": "ba9e1b1",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add system user for API/automation jobs",
+      "scope": null
+    },
     {
       "hash": "53fc622",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Move tools to title row, eliminate toolbar line",
       "scope": "library"
-    },
-    {
-      "hash": "38cc20a",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Increase contrast on version badge",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "ba9e1b1",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add system user for API/automation jobs",
+        "scope": null
+      },
       {
         "hash": "53fc622",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Move tools to title row, eliminate toolbar line",
         "scope": "library"
-      },
-      {
-        "hash": "38cc20a",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Increase contrast on version badge",
-        "scope": "ui"
       }
     ]
   }

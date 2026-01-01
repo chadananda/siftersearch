@@ -1627,10 +1627,17 @@ Provide only the translation.`;
     }
   }, async (request) => {
     const { id: documentId } = request.params;
-    // user_id is INTEGER NOT NULL in jobs table, so handle system users (strings like 'system_admin')
-    // Use 0 as a placeholder for system/API jobs (foreign key is not enforced by libsql by default)
+    // user_id is INTEGER NOT NULL in jobs table with foreign key constraint
+    // For system users (strings like 'system_admin'), look up an admin user from the database
     const rawUserId = request.user.sub;
-    const userId = typeof rawUserId === 'number' ? rawUserId : 0;
+    let userId;
+    if (typeof rawUserId === 'number') {
+      userId = rawUserId;
+    } else {
+      // System user - find any admin user to assign the job to
+      const adminUser = await queryOne("SELECT id FROM users WHERE tier = 'admin' LIMIT 1");
+      userId = adminUser?.id || 1; // Fallback to id=1 if no admin found
+    }
 
     // Get document info from libsql (source of truth)
     const document = await queryOne(`
