@@ -98,9 +98,12 @@ Return JSON with:
   * 70-89: Substantially addresses the question with relevant insight
   * 50-69: Related to the topic but doesn't directly answer
   * <50: OFF-TOPIC - merely mentions keyword in unrelated context, or doesn't address the question
-- summary: 8-15 words stating what answer this passage provides. NO meta-commentary.
-  GOOD: "justice means giving each person what they deserve"
-  BAD: "This passage discusses justice" (too vague, doesn't state the answer)
+- summary: 8-15 words stating THE ACTUAL ANSWER from the passage. Write it as a direct answer to the question.
+  CRITICAL: Start with the answer itself, NEVER with "Addresses...", "Discusses...", "This passage...", "The text..."
+  GOOD: "Wisdom is love and amity among people" (direct answer)
+  GOOD: "Justice means giving each person their due" (direct answer)
+  BAD: "Addresses the concept of wisdom" (meta-commentary, not an answer)
+  BAD: "Discusses justice in religious context" (describes the passage, doesn't answer)
 - keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the phrase that best captures the answer.
 - coreTerms: 1-3 key words to bold (copy exactly)
 
@@ -109,7 +112,7 @@ Return JSON with:
   try {
     // Use 'fast' service for quick analysis
     const response = await aiService('fast').chat([
-      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question (or implied question). High scores go to passages with clear answers, definitions, explanations, or instructions. Low scores go to passages that merely mention the topic without answering. Return only valid JSON. CRITICAL: The keyPhrase MUST be copied character-for-character from the passage text.' },
+      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question. The summary field must state THE ACTUAL ANSWER from the passage (e.g., "Wisdom is love and amity among people"), NEVER meta-commentary like "Addresses wisdom" or "Discusses the concept". Return only valid JSON. CRITICAL: keyPhrase MUST be copied character-for-character from the passage text.' },
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
