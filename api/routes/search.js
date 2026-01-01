@@ -709,6 +709,7 @@ Just respond with the acknowledgment, nothing else.`;
       author: hit.author || 'Unknown',
       religion: hit.religion || '',
       collection: hit.collection || '',
+      authority: hit.authority || 5, // Doctrinal weight (1-10, default 5)
       _searchQuery: hit._searchQuery // Which search query found this
     }));
 
@@ -745,6 +746,7 @@ Just respond with the acknowledgment, nothing else.`;
           author: originalHit.author,
           religion: originalHit.religion,
           collection: originalHit.collection || originalHit.religion,
+          authority: result.authority || originalHit.authority || 5,
           summary: result.summary || result.briefAnswer || '',
           score: result.score || 0,
           highlightedText: result.highlightedText || originalHit.text,

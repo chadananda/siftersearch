@@ -275,10 +275,26 @@ export async function analyzePassagesParallel(query, passages, options = {}) {
 
   const analysisTimeMs = Date.now() - startTime;
 
-  // Sort by score (highest first)
+  // Apply authority boost to scores before sorting
+  // Authority (1-10) affects final ranking: high authority sources get boosted
+  // Formula: boostedScore = rawScore * (1 + (authority - 5) * 0.05)
+  // - Authority 10 = +25% boost (sacred texts, authoritative)
+  // - Authority 5 = no change (baseline)
+  // - Authority 1 = -20% reduction (unofficial sources)
+  for (const result of allResults) {
+    const passage = passages[result.globalIndex];
+    const authority = passage?.authority || 5;
+    const rawScore = result.score || 0;
+    const boostFactor = 1 + (authority - 5) * 0.05;
+    result.rawScore = rawScore;
+    result.authority = authority;
+    result.score = Math.round(rawScore * boostFactor);
+  }
+
+  // Sort by boosted score (highest first)
   allResults.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  // Filter to relevant results (score >= 40)
+  // Filter to relevant results (score >= 40 after boost)
   // Lower threshold to include more marginally relevant passages
   const relevantResults = allResults.filter(r => (r.score || 0) >= 40);
 
