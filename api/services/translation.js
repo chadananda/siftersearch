@@ -93,7 +93,7 @@ export async function requestTranslation({
  * 2. File-based translation: Saves to files for download
  */
 export async function processTranslationJob(job) {
-  const { documentId, params } = job;
+  const { document_id: documentId, params } = job;
   const { targetLanguage, sourceLanguage, quality, contentType: requestedContentType } = params;
 
   logger.info({ jobId: job.id, documentId, targetLanguage }, 'Starting translation job');
