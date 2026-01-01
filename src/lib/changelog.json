@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:30:47.767Z",
+  "generated": "2026-01-01T19:34:31.885Z",
   "entries": [
+    {
+      "hash": "49bae7a",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add /admin/update endpoint for manual server updates",
+      "scope": null
+    },
     {
       "hash": "1d3338f",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Unify header styles and fix width/overflow issues",
       "scope": "library"
-    },
-    {
-      "hash": "0f65e3f",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add proper spacing between header and content sections",
-      "scope": "CollectionDetail"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "49bae7a",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add /admin/update endpoint for manual server updates",
+        "scope": null
+      },
       {
         "hash": "1d3338f",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Unify header styles and fix width/overflow issues",
         "scope": "library"
-      },
-      {
-        "hash": "0f65e3f",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add proper spacing between header and content sections",
-        "scope": "CollectionDetail"
       }
     ]
   }

@@ -1627,7 +1627,9 @@ Provide only the translation.`;
     }
   }, async (request) => {
     const { id: documentId } = request.params;
-    const userId = request.user.sub;
+    // user_id is INTEGER in jobs table, so handle system users (strings like 'system_admin')
+    const rawUserId = request.user.sub;
+    const userId = typeof rawUserId === 'number' ? rawUserId : null;
 
     // Get document info from libsql (source of truth)
     const document = await queryOne(`
@@ -1709,7 +1711,7 @@ Provide only the translation.`;
       VALUES (?, 'translation', 'pending', ?, ?, ?, ?, ?, ?, ?)
     `, [jobId, userId, documentId, JSON.stringify({ targetLanguage: 'en', sourceLanguage: document.language }), priority, alreadyTranslated, total, now]);
 
-    logger.info({ jobId, documentId, userId, priority, total, alreadyTranslated }, 'Translation job queued');
+    logger.info({ jobId, documentId, userId: rawUserId, priority, total, alreadyTranslated }, 'Translation job queued');
 
     return {
       queued: true,
