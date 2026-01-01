@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T20:16:57.148Z",
+  "generated": "2026-01-01T21:07:22.103Z",
   "entries": [
+    {
+      "hash": "78297e1",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add siftersearch-jobs to allowed PM2 restart processes",
+      "scope": null
+    },
     {
       "hash": "d8f67f9",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Fix translate button visibility logic",
       "scope": "reader"
-    },
-    {
-      "hash": "be46314",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "No highlighted paragraph in library popup",
-      "scope": "reader"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "78297e1",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add siftersearch-jobs to allowed PM2 restart processes",
+        "scope": null
+      },
       {
         "hash": "d8f67f9",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Fix translate button visibility logic",
-        "scope": "reader"
-      },
-      {
-        "hash": "be46314",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "No highlighted paragraph in library popup",
         "scope": "reader"
       }
     ]

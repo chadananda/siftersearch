@@ -279,8 +279,8 @@
   /* RTL text styling - Amiri for Arabic/Persian */
   [dir="rtl"] {
     font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1.0625rem; /* Slightly larger for Arabic readability */
-    line-height: 1.8;
+    font-size: 1.25rem; /* Larger for Arabic/Farsi readability - English is more compact */
+    line-height: 1.85;
   }
 
   /* Responsive: stack on mobile */
