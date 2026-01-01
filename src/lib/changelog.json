@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T21:14:50.725Z",
+  "generated": "2026-01-01T21:30:40.155Z",
   "entries": [
+    {
+      "hash": "ee0f091",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Default to research mode for approved users",
+      "scope": null
+    },
     {
       "hash": "951abde",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
       "scope": "translation"
-    },
-    {
-      "hash": "168f852",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Add real-time translation progress with batch API",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "ee0f091",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Default to research mode for approved users",
+        "scope": null
+      },
       {
         "hash": "951abde",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
-        "scope": "translation"
-      },
-      {
-        "hash": "168f852",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Add real-time translation progress with batch API",
         "scope": "translation"
       }
     ]
