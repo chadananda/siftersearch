@@ -737,6 +737,32 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Trigger server update (shortcut for /server/pull-update)
+   * Pulls latest from git and reloads PM2
+   */
+  fastify.post('/update', { preHandler: requireInternal }, async () => {
+    // Check if update already running
+    const existing = backgroundTasks.get('pull-update');
+    if (existing && existing.status === 'running') {
+      return {
+        success: false,
+        message: 'Update already in progress',
+        status: existing.status
+      };
+    }
+
+    logger.info('Server update triggered via /update endpoint');
+    const task = runBackgroundTask('pull-update', 'scripts/update-server.js', []);
+
+    return {
+      success: true,
+      taskId: 'pull-update',
+      message: 'Server update started in background',
+      status: task.status
+    };
+  });
+
+  /**
    * Pull and restart server (for version updates)
    * Called by client when it detects client version > server version
    */

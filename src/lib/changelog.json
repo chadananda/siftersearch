@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:24:20.371Z",
+  "generated": "2026-01-01T19:30:47.767Z",
   "entries": [
+    {
+      "hash": "1d3338f",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add DEPLOY_SECRET authentication for API calls",
+      "scope": null
+    },
     {
       "hash": "f0bbe17",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add proper spacing between header and content sections",
       "scope": "CollectionDetail"
-    },
-    {
-      "hash": "deca725",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Fall back to standard content when bilingual returns no paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "1d3338f",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add DEPLOY_SECRET authentication for API calls",
+        "scope": null
+      },
       {
         "hash": "f0bbe17",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Add proper spacing between header and content sections",
         "scope": "CollectionDetail"
-      },
-      {
-        "hash": "deca725",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Fall back to standard content when bilingual returns no paragraphs",
-        "scope": null
       }
     ]
   }
