@@ -75,7 +75,7 @@ export async function initializeIndexes() {
     }
   }
 
-  await paragraphs.updateSettings({
+  const paragraphsTask = await paragraphs.updateSettings({
     searchableAttributes: [
       'text',
       'context',  // AI-generated disambiguation (who, what, where, when)
@@ -115,11 +115,13 @@ export async function initializeIndexes() {
       }
     }
   });
+  // Wait for settings update to complete (Meilisearch updates are async)
+  await paragraphs.waitForTask(paragraphsTask.taskUid);
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
 
-  await documents.updateSettings({
+  const documentsTask = await documents.updateSettings({
     searchableAttributes: [
       'title',
       'author',
@@ -146,6 +148,8 @@ export async function initializeIndexes() {
       maxTotalHits: 50000
     }
   });
+  // Wait for settings update to complete
+  await documents.waitForTask(documentsTask.taskUid);
 
   logger.info('Search indexes initialized');
 }

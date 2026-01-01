@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T22:23:29.215Z",
+  "generated": "2026-01-01T22:30:04.033Z",
   "entries": [
+    {
+      "hash": "740c6ee",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Require faithful summaries that accurately represent passage content",
+      "scope": null
+    },
     {
       "hash": "83544ab",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove auth requirement from version-triggered updates",
       "scope": null
-    },
-    {
-      "hash": "8e9a0b7",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add Meilisearch fallback for unsynced documents",
-      "scope": "bilingual"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "740c6ee",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Require faithful summaries that accurately represent passage content",
+        "scope": null
+      },
       {
         "hash": "83544ab",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Remove auth requirement from version-triggered updates",
         "scope": null
-      },
-      {
-        "hash": "8e9a0b7",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add Meilisearch fallback for unsynced documents",
-        "scope": "bilingual"
       }
     ]
   }
