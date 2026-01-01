@@ -84,6 +84,28 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
+    // Job Processor (handles translation, audio generation, etc.)
+    {
+      name: 'siftersearch-jobs',
+      script: 'api/workers/job-processor.js',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      env: {
+        NODE_ENV: 'production',
+        JOB_POLL_INTERVAL: '5000',  // 5 seconds
+        MAX_CONCURRENT_JOBS: '2'
+      },
+      // Restart policies
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '30s',
+      // Logging
+      error_file: './logs/jobs-error.log',
+      out_file: './logs/jobs-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Auto-updater daemon (polls git every 5 minutes)
     {
       name: 'siftersearch-updater',

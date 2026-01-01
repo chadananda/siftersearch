@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T07:24:48.504Z",
+  "generated": "2026-01-01T07:25:52.284Z",
   "entries": [
+    {
+      "hash": "7b19e64",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add translation progress polling and remove size labels",
+      "scope": null
+    },
     {
       "hash": "c933bcd",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
       "scope": null
-    },
-    {
-      "hash": "4f8c512",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add schema debug endpoint to diagnose auth refresh error",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "7b19e64",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add translation progress polling and remove size labels",
+        "scope": null
+      },
       {
         "hash": "c933bcd",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4f8c512",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add schema debug endpoint to diagnose auth refresh error",
         "scope": null
       }
     ]
