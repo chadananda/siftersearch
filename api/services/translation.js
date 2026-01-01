@@ -93,6 +93,15 @@ export async function requestTranslation({
  * 2. File-based translation: Saves to files for download
  */
 export async function processTranslationJob(job) {
+  // Debug: log full job structure to trace undefined values
+  logger.info({
+    jobId: job.id,
+    jobKeys: Object.keys(job),
+    document_id: job.document_id,
+    documentIdPresent: 'document_id' in job,
+    rawJob: JSON.stringify(job).substring(0, 500)
+  }, 'Job received for processing');
+
   const { document_id: documentId, params } = job;
   const { targetLanguage, sourceLanguage, quality, contentType: requestedContentType } = params;
 
