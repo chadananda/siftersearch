@@ -571,7 +571,7 @@ Respond with JSON:
           d.id, d.title, d.author, d.religion, d.collection,
           d.paragraph_count, d.created_at,
           (SELECT COUNT(*) FROM content c
-           WHERE c.doc_id = d.id AND c.embedding IS NULL) as unembedded_count
+           WHERE c.document_id = d.id AND c.embedding IS NULL) as unembedded_count
         FROM docs d
         WHERE d.paragraph_count >= ?
         ORDER BY unembedded_count DESC, d.created_at DESC

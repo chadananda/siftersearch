@@ -254,7 +254,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   const paragraphs = await queryAll(`
     SELECT id, paragraph_index, text
     FROM content
-    WHERE doc_id = ? AND (translation IS NULL OR translation = '')
+    WHERE document_id = ? AND (translation IS NULL OR translation = '')
     ORDER BY paragraph_index
   `, [documentId]);
 

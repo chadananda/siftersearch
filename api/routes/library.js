@@ -913,11 +913,11 @@ Return ONLY the description text, no quotes or formatting.`;
         queryAll(`
           SELECT id, paragraph_index, text, heading, blocktype, translation
           FROM content
-          WHERE doc_id = ?
+          WHERE document_id = ?
           ORDER BY paragraph_index
           LIMIT ? OFFSET ?
         `, [id, paragraphLimit, paragraphOffset]),
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE document_id = ?`, [id])
       ]);
       paragraphs = paras;
       paragraphTotal = countResult?.count || 0;
@@ -1006,7 +1006,7 @@ Return ONLY the description text, no quotes or formatting.`;
       // If metadata that propagates to paragraphs changed, mark paragraphs for re-sync
       // This ensures sync-worker will update Meilisearch even if direct push below fails
       if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
-        await query('UPDATE content SET synced = 0, updated_at = CURRENT_TIMESTAMP WHERE doc_id = ?', [id]);
+        await query('UPDATE content SET synced = 0, updated_at = CURRENT_TIMESTAMP WHERE document_id = ?', [id]);
       }
     }
 
@@ -1078,7 +1078,7 @@ Return ONLY the description text, no quotes or formatting.`;
     const paragraphs = await queryAll(`
       SELECT text, heading, blocktype, paragraph_index
       FROM content
-      WHERE doc_id = ?
+      WHERE document_id = ?
       ORDER BY paragraph_index
     `, [id]);
 
@@ -1176,14 +1176,14 @@ Return ONLY the description text, no quotes or formatting.`;
       paragraphs = await queryAll(`
         SELECT id, paragraph_index, text, translation, blocktype, heading
         FROM content
-        WHERE doc_id = ?
+        WHERE document_id = ?
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
       `, [id, limit, offset]);
 
       // Get total count from libsql
       const countResult = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+        'SELECT COUNT(*) as count FROM content WHERE document_id = ?',
         [id]
       );
       total = countResult?.count || 0;
@@ -1245,7 +1245,7 @@ Return ONLY the description text, no quotes or formatting.`;
         COUNT(*) as total,
         SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
       FROM content
-      WHERE doc_id = ?
+      WHERE document_id = ?
     `, [id]);
 
     // If libsql has no data, document needs to be re-indexed
@@ -1508,7 +1508,7 @@ Provide only the translation, no explanations.`;
     const paragraphs = await queryAll(`
       SELECT id, paragraph_index, text, translation
       FROM content
-      WHERE doc_id = ? AND id IN (${placeholders})
+      WHERE document_id = ? AND id IN (${placeholders})
       ORDER BY paragraph_index
     `, [documentId, ...paragraphIds]);
 
@@ -1662,7 +1662,7 @@ Provide only the translation.`;
 
     // Get paragraph count for progress tracking (content table is the source of truth)
     const countResult = await queryOne(
-      'SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated FROM content WHERE doc_id = ?',
+      'SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated FROM content WHERE document_id = ?',
       [documentId]
     );
 
@@ -1744,7 +1744,7 @@ Provide only the translation.`;
     // Get current translation stats
     const stats = await queryOne(`
       SELECT COUNT(*) as total, SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
-      FROM content WHERE doc_id = ?
+      FROM content WHERE document_id = ?
     `, [documentId]);
 
     return {

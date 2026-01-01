@@ -83,7 +83,7 @@ async function getCachedEmbeddings(docId, paragraphs) {
     // Get existing content rows for this document
     const existing = await queryAll(
       `SELECT paragraph_index, content_hash, embedding, embedding_model
-       FROM content WHERE doc_id = ?`,
+       FROM content WHERE document_id = ?`,
       [docId]
     );
 
@@ -148,7 +148,7 @@ async function storeInLibsql(document, paragraphs) {
     ]);
 
     // Delete existing paragraphs for this document (simpler than complex upsert)
-    await query('DELETE FROM content WHERE doc_id = ?', [document.id]);
+    await query('DELETE FROM content WHERE document_id = ?', [document.id]);
 
     // Insert all paragraphs
     for (const para of paragraphs) {
@@ -158,7 +158,7 @@ async function storeInLibsql(document, paragraphs) {
         : null;
 
       await query(`
-        INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        INSERT INTO content (id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `, [
         para.id,

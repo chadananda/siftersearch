@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T06:37:34.946Z",
+  "generated": "2026-01-01T06:57:33.107Z",
   "entries": [
+    {
+      "hash": "0174fe7",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use document_id in orphaned endpoint queries",
+      "scope": null
+    },
     {
       "hash": "467512f",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct meili.tasks.cancelTasks method",
       "scope": "admin"
-    },
-    {
-      "hash": "baa8688",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add meili-cancel endpoint to cancel old queued tasks",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "0174fe7",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use document_id in orphaned endpoint queries",
+        "scope": null
+      },
       {
         "hash": "467512f",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Use correct meili.tasks.cancelTasks method",
-        "scope": "admin"
-      },
-      {
-        "hash": "baa8688",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add meili-cancel endpoint to cancel old queued tasks",
         "scope": "admin"
       }
     ]
