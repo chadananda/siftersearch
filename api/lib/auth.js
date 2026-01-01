@@ -120,6 +120,12 @@ export async function authenticate(request, reply) {
 
   const token = authHeader.slice(7);
 
+  // DEPLOY_SECRET: authenticate as admin for API/automation calls
+  if (process.env.DEPLOY_SECRET && token === process.env.DEPLOY_SECRET) {
+    request.user = { sub: 'system_admin', email: 'admin@siftersearch.com', tier: 'admin' };
+    return;
+  }
+
   // Test mode: accept test tokens in development
   if (TEST_MODE && TEST_USERS[token]) {
     request.user = TEST_USERS[token];
@@ -147,6 +153,12 @@ export async function optionalAuthenticate(request, _reply) {
   }
 
   const token = authHeader.slice(7);
+
+  // DEPLOY_SECRET: authenticate as admin for API/automation calls
+  if (process.env.DEPLOY_SECRET && token === process.env.DEPLOY_SECRET) {
+    request.user = { sub: 'system_admin', email: 'admin@siftersearch.com', tier: 'admin', search_count: 0 };
+    return;
+  }
 
   // Test mode: accept test tokens in development
   if (TEST_MODE && TEST_USERS[token]) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:13:21.088Z",
+  "generated": "2026-01-01T19:24:20.371Z",
   "entries": [
+    {
+      "hash": "f0bbe17",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Correct chatCompletion call signature in batch translation",
+      "scope": null
+    },
     {
       "hash": "b3e3bc5",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Fall back to standard content when bilingual returns no paragraphs",
       "scope": null
-    },
-    {
-      "hash": "e2a3123",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Send empty JSON body on logout to fix 400 error",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "f0bbe17",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Correct chatCompletion call signature in batch translation",
+        "scope": null
+      },
       {
         "hash": "b3e3bc5",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Fall back to standard content when bilingual returns no paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "e2a3123",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Send empty JSON body on logout to fix 400 error",
         "scope": null
       }
     ]
