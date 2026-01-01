@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T22:16:24.724Z",
+  "generated": "2026-01-01T22:23:29.215Z",
   "entries": [
+    {
+      "hash": "83544ab",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
+      "scope": null
+    },
     {
       "hash": "cc0e5ef",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add Meilisearch fallback for unsynced documents",
       "scope": "bilingual"
-    },
-    {
-      "hash": "394365f",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Allow all authenticated users to translate documents",
-      "scope": "translate"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "83544ab",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
+        "scope": null
+      },
       {
         "hash": "cc0e5ef",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Add Meilisearch fallback for unsynced documents",
         "scope": "bilingual"
-      },
-      {
-        "hash": "394365f",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Allow all authenticated users to translate documents",
-        "scope": "translate"
       }
     ]
   }

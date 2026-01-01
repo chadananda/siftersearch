@@ -98,13 +98,17 @@ Return JSON with:
   * 70-89: Substantially addresses the question with relevant insight
   * 50-69: Related to the topic but doesn't directly answer
   * <50: OFF-TOPIC - merely mentions keyword in unrelated context, or doesn't address the question
-- summary: 8-15 words stating THE ACTUAL ANSWER from the passage. Write it as a direct answer to the question.
-  CRITICAL: Start with the answer itself, NEVER with "Addresses...", "Discusses...", "This passage...", "The text..."
-  GOOD: "Prayer is conversation with God" (direct answer)
-  GOOD: "True freedom comes through self-mastery" (direct answer)
-  BAD: "Addresses the concept of prayer" (meta-commentary, not an answer)
-  BAD: "Discusses freedom in religious context" (describes the passage, doesn't answer)
-- keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the phrase that best captures the answer.
+- summary: 8-15 words describing WHAT THE PASSAGE ACTUALLY SAYS - be faithful to the text!
+  CRITICAL RULES:
+  1. NEVER fabricate claims the passage doesn't make
+  2. If the passage discusses X, say it discusses X - don't claim it "answers" something it doesn't
+  3. Start with the main point, NEVER with "Addresses...", "Discusses...", "This passage..."
+  EXAMPLES:
+  - Passage about prayer's purpose → "Prayer is conversation with God"
+  - Passage about letters in 'Báb' having mystical meaning → "The three letters of 'Báb' symbolize stages of divine Action"
+  - Passage mentioning justice but focused on something else → score <50, or summary reflects actual topic
+  BAD: Claiming a passage "answers" or "explains" something it merely mentions
+- keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the most meaningful phrase.
 - coreTerms: 1-3 key words to bold (copy exactly)
 
 OUTPUT FORMAT (do not copy example values - analyze the actual passages):
@@ -113,7 +117,7 @@ OUTPUT FORMAT (do not copy example values - analyze the actual passages):
   try {
     // Use 'fast' service for quick analysis
     const response = await aiService('fast').chat([
-      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question. The summary field must state THE ACTUAL ANSWER from the passage (e.g., "Wisdom is love and amity among people"), NEVER meta-commentary like "Addresses wisdom" or "Discusses the concept". Return only valid JSON. CRITICAL: keyPhrase MUST be copied character-for-character from the passage text.' },
+      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question. CRITICAL: The summary must FAITHFULLY represent what the passage actually says - never fabricate claims or connections the passage doesn\'t make. If a passage mentions a keyword but discusses something else, say what it actually discusses and score it low. Return only valid JSON. CRITICAL: keyPhrase MUST be copied character-for-character from the passage text.' },
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
