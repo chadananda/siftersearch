@@ -30,11 +30,10 @@ export default async function libraryRoutes(fastify) {
   /**
    * Get tree structure for library navigation
    * Returns religions with nested collections and document counts
+   * Uses libsql docs table as source of truth
    */
   fastify.get('/tree', async () => {
-    const meili = getMeili();
-
-    // Try to get authority data from library_nodes (may not exist in all environments)
+    // Get authority data from library_nodes
     const authorityMap = {};
     try {
       const nodes = await queryAll(`
@@ -52,69 +51,85 @@ export default async function libraryRoutes(fastify) {
       // library_nodes table doesn't exist - continue without authority sorting
     }
 
-    // Get all religions with their counts from facets
-    const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
-      limit: 0,
-      facets: ['religion']
-    });
+    // Get religion and collection counts from docs table
+    const stats = await queryAll(`
+      SELECT religion, collection, COUNT(*) as count
+      FROM docs
+      WHERE religion IS NOT NULL
+      GROUP BY religion, collection
+      ORDER BY religion, collection
+    `);
 
-    const religionCounts = searchResult.facetDistribution?.religion || {};
-
-    // For each religion, get its collections via faceted search
-    const religions = await Promise.all(
-      Object.entries(religionCounts).map(async ([religionName, count]) => {
-        // Get collections for this religion
-        const religionSearch = await meili.index(INDEXES.DOCUMENTS).search('', {
-          limit: 0,
-          filter: `religion = "${religionName}"`,
-          facets: ['collection']
+    // Build religion -> collections structure
+    const religionMap = new Map();
+    for (const row of stats) {
+      if (!religionMap.has(row.religion)) {
+        religionMap.set(row.religion, { name: row.religion, count: 0, collections: [] });
+      }
+      const religion = religionMap.get(row.religion);
+      religion.count += row.count;
+      if (row.collection) {
+        religion.collections.push({
+          name: row.collection,
+          count: row.count,
+          authority_default: authorityMap[`${row.religion}:${row.collection}`] ?? null
         });
+      }
+    }
 
-        const collectionCounts = religionSearch.facetDistribution?.collection || {};
-        const collections = Object.entries(collectionCounts)
-          .map(([name, count]) => ({
-            name,
-            count,
-            authority_default: authorityMap[`${religionName}:${name}`] ?? null
-          }))
-          // Sort by authority (higher first), then alphabetically
-          .sort((a, b) => {
-            const authA = a.authority_default ?? 0;
-            const authB = b.authority_default ?? 0;
-            if (authB !== authA) return authB - authA;
-            return a.name.localeCompare(b.name);
-          });
+    // Sort collections by authority (higher first), then alphabetically
+    for (const religion of religionMap.values()) {
+      religion.collections.sort((a, b) => {
+        const authA = a.authority_default ?? 0;
+        const authB = b.authority_default ?? 0;
+        if (authB !== authA) return authB - authA;
+        return a.name.localeCompare(b.name);
+      });
+    }
 
-        return {
-          name: religionName,
-          count,
-          collections
-        };
-      })
-    );
-
-    // Sort religions alphabetically
-    religions.sort((a, b) => a.name.localeCompare(b.name));
+    // Convert to array and sort religions alphabetically
+    const religions = Array.from(religionMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     return { religions };
   });
 
   /**
    * Get library statistics
+   * Uses libsql as source of truth for counts
    */
   fastify.get('/stats', async () => {
-    const meili = getMeili();
-
-    // Get counts from Meilisearch - use index stats for accurate totals
-    const [docsResult, parasResult, docStats, paraStats] = await Promise.all([
-      meili.index(INDEXES.DOCUMENTS).search('', {
-        limit: 0,
-        facets: ['religion', 'collection', 'language']
-      }),
-      meili.index(INDEXES.PARAGRAPHS).search('', { limit: 0 }),
-      meili.index(INDEXES.DOCUMENTS).getStats(),
-      meili.index(INDEXES.PARAGRAPHS).getStats()
+    // Get document and paragraph counts from libsql
+    const [docCount, paraCount, facetStats] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs'),
+      queryOne('SELECT COUNT(*) as count FROM content'),
+      queryAll(`
+        SELECT
+          religion,
+          collection,
+          language,
+          COUNT(*) as count
+        FROM docs
+        GROUP BY religion, collection, language
+      `)
     ]);
+
+    // Build facet distributions from query results
+    const religionCounts = {};
+    const collectionCounts = {};
+    const languageCounts = {};
+
+    for (const row of facetStats) {
+      if (row.religion) {
+        religionCounts[row.religion] = (religionCounts[row.religion] || 0) + row.count;
+      }
+      if (row.collection) {
+        collectionCounts[row.collection] = (collectionCounts[row.collection] || 0) + row.count;
+      }
+      if (row.language) {
+        languageCounts[row.language] = (languageCounts[row.language] || 0) + row.count;
+      }
+    }
 
     // Get indexing queue status from database
     let indexingStats = { pending: 0, processing: 0 };
@@ -161,17 +176,15 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
-    const facets = docsResult.facetDistribution || {};
-
     return {
-      totalDocuments: docStats.numberOfDocuments || 0,
-      totalParagraphs: paraStats.numberOfDocuments || 0,
-      religions: Object.keys(facets.religion || {}).length,
-      collections: Object.keys(facets.collection || {}).length,
-      languages: Object.keys(facets.language || {}).length,
-      religionCounts: facets.religion || {},
-      collectionCounts: facets.collection || {},
-      languageCounts: facets.language || {},
+      totalDocuments: docCount?.count || 0,
+      totalParagraphs: paraCount?.count || 0,
+      religions: Object.keys(religionCounts).length,
+      collections: Object.keys(collectionCounts).length,
+      languages: Object.keys(languageCounts).length,
+      religionCounts,
+      collectionCounts,
+      languageCounts,
       indexing: indexingStats.pending > 0 || indexingStats.processing > 0,
       indexingProgress: indexingStats,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
@@ -185,11 +198,10 @@ export default async function libraryRoutes(fastify) {
 
   /**
    * Get all library nodes as a tree structure
-   * Falls back to Meilisearch facets if library_nodes table is empty
+   * Falls back to docs table if library_nodes table is empty
+   * Uses libsql as source of truth
    */
   fastify.get('/nodes', async () => {
-    const meili = getMeili();
-
     // Get all nodes from database (may be empty or table may not exist)
     let nodes = [];
     try {
@@ -200,27 +212,28 @@ export default async function libraryRoutes(fastify) {
         ORDER BY display_order, name
       `);
     } catch {
-      // Table doesn't exist yet - will fall back to Meilisearch
+      // Table doesn't exist yet - will fall back to docs table
     }
 
-    // Get document counts from Meilisearch
-    const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
-      limit: 10000,
-      attributesToRetrieve: ['religion', 'collection']
-    });
+    // Get document counts from docs table
+    const docCounts = await queryAll(`
+      SELECT religion, collection, COUNT(*) as count
+      FROM docs
+      GROUP BY religion, collection
+    `);
 
     // Build counts map
     const religionCounts = {};
     const collectionCounts = {};
-    for (const doc of searchResult.hits) {
-      const religion = doc.religion || 'Uncategorized';
-      const collection = doc.collection || 'General';
-      religionCounts[religion] = (religionCounts[religion] || 0) + 1;
+    for (const row of docCounts) {
+      const religion = row.religion || 'Uncategorized';
+      const collection = row.collection || 'General';
+      religionCounts[religion] = (religionCounts[religion] || 0) + row.count;
       if (!collectionCounts[religion]) collectionCounts[religion] = {};
-      collectionCounts[religion][collection] = (collectionCounts[religion][collection] || 0) + 1;
+      collectionCounts[religion][collection] = (collectionCounts[religion][collection] || 0) + row.count;
     }
 
-    // If library_nodes is empty, build tree from Meilisearch facets
+    // If library_nodes is empty, build tree from docs table facets
     if (nodes.length === 0) {
       const tree = Object.keys(religionCounts)
         .sort((a, b) => a.localeCompare(b))
@@ -286,10 +299,10 @@ export default async function libraryRoutes(fastify) {
 
   /**
    * Get a single library node by ID
+   * Uses libsql for document counts
    */
   fastify.get('/nodes/:id', async (request) => {
     const { id } = request.params;
-    const meili = getMeili();
 
     const node = await queryOne(`
       SELECT id, parent_id, node_type, name, slug, symbol, description, overview,
@@ -308,20 +321,20 @@ export default async function libraryRoutes(fastify) {
       parent = await queryOne('SELECT id, name, slug FROM library_nodes WHERE id = ?', [node.parent_id]);
     }
 
-    // Get document count
+    // Get document count from docs table
     let documentCount = 0;
     if (node.node_type === 'collection' && parent) {
-      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-        limit: 0,
-        filter: `religion = "${parent.name}" AND collection = "${node.name}"`
-      });
-      documentCount = result.estimatedTotalHits || 0;
+      const result = await queryOne(
+        'SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?',
+        [parent.name, node.name]
+      );
+      documentCount = result?.count || 0;
     } else if (node.node_type === 'religion') {
-      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-        limit: 0,
-        filter: `religion = "${node.name}"`
-      });
-      documentCount = result.estimatedTotalHits || 0;
+      const result = await queryOne(
+        'SELECT COUNT(*) as count FROM docs WHERE religion = ?',
+        [node.name]
+      );
+      documentCount = result?.count || 0;
     }
 
     return {
@@ -338,10 +351,10 @@ export default async function libraryRoutes(fastify) {
    * Get library node by slug path
    * GET /by-slug/:religionSlug - Get religion
    * GET /by-slug/:religionSlug/:collectionSlug - Get collection
+   * Uses libsql for document counts
    */
   fastify.get('/by-slug/:religionSlug', async (request) => {
     const { religionSlug } = request.params;
-    const meili = getMeili();
 
     const node = await queryOne(`
       SELECT id, parent_id, node_type, name, slug, symbol, description, overview,
@@ -354,11 +367,11 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Religion not found');
     }
 
-    // Get document count
-    const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-      limit: 0,
-      filter: `religion = "${node.name}"`
-    });
+    // Get document count from docs table
+    const countResult = await queryOne(
+      'SELECT COUNT(*) as count FROM docs WHERE religion = ?',
+      [node.name]
+    );
 
     // Get children (collections)
     const children = await queryAll(`
@@ -372,7 +385,7 @@ export default async function libraryRoutes(fastify) {
       node: {
         ...node,
         metadata: node.metadata ? JSON.parse(node.metadata) : null,
-        document_count: result.estimatedTotalHits || 0,
+        document_count: countResult?.count || 0,
         children
       }
     };
@@ -381,7 +394,6 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/by-slug/:religionSlug/:collectionSlug', async (request) => {
     const { religionSlug, collectionSlug } = request.params;
     const { limit = 50, offset = 0 } = request.query;
-    const meili = getMeili();
 
     // Get religion first
     const religion = await queryOne(`
@@ -405,30 +417,23 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Collection not found');
     }
 
-    // Get documents in this collection
-    const searchOptions = {
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      filter: `religion = "${religion.name}" AND collection = "${node.name}"`,
-      sort: ['title:asc'],
-      attributesToRetrieve: [
-        'id', 'title', 'author', 'religion', 'collection',
-        'language', 'year', 'description', 'authority', 'paragraph_count'
-      ]
-    };
+    // Get documents from docs table
+    const parsedLimit = parseInt(limit);
+    const parsedOffset = parseInt(offset);
 
-    // Try search with sort, fallback to no sort if sortable attributes not configured
-    let docsResult;
-    try {
-      docsResult = await meili.index(INDEXES.DOCUMENTS).search('', searchOptions);
-    } catch (err) {
-      if (err.message?.includes('not sortable')) {
-        delete searchOptions.sort;
-        docsResult = await meili.index(INDEXES.DOCUMENTS).search('', searchOptions);
-      } else {
-        throw err;
-      }
-    }
+    const [documents, countResult] = await Promise.all([
+      queryAll(`
+        SELECT id, title, author, religion, collection, language, year, description, paragraph_count
+        FROM docs
+        WHERE religion = ? AND collection = ?
+        ORDER BY title ASC
+        LIMIT ? OFFSET ?
+      `, [religion.name, node.name, parsedLimit, parsedOffset]),
+      queryOne(
+        'SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?',
+        [religion.name, node.name]
+      )
+    ]);
 
     return {
       node: {
@@ -436,10 +441,10 @@ export default async function libraryRoutes(fastify) {
         metadata: node.metadata ? JSON.parse(node.metadata) : null,
         parent: { id: religion.id, name: religion.name, slug: religion.slug }
       },
-      documents: docsResult.hits,
-      total_documents: docsResult.estimatedTotalHits || 0,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      documents,
+      total_documents: countResult?.count || 0,
+      limit: parsedLimit,
+      offset: parsedOffset
     };
   });
 
@@ -587,7 +592,6 @@ export default async function libraryRoutes(fastify) {
     }
   }, async (request) => {
     const { id } = request.params;
-    const meili = getMeili();
 
     // Get the node
     const node = await queryOne('SELECT * FROM library_nodes WHERE id = ?', [id]);
@@ -595,29 +599,27 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Library node not found');
     }
 
-    // Get document count for context
+    // Get document count and samples from libsql (source of truth)
     let documentCount = 0;
     let sampleTitles = [];
 
     if (node.node_type === 'religion') {
-      const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-        limit: 10,
-        filter: `religion = "${node.name}"`,
-        attributesToRetrieve: ['title', 'collection']
-      });
-      documentCount = result.estimatedTotalHits || 0;
-      sampleTitles = result.hits.map(h => h.title).slice(0, 5);
+      const [countResult, samples] = await Promise.all([
+        queryOne('SELECT COUNT(*) as count FROM docs WHERE religion = ?', [node.name]),
+        queryAll('SELECT title FROM docs WHERE religion = ? LIMIT 5', [node.name])
+      ]);
+      documentCount = countResult?.count || 0;
+      sampleTitles = samples.map(h => h.title);
     } else if (node.node_type === 'collection') {
       // Get parent religion
       const parent = await queryOne('SELECT name FROM library_nodes WHERE id = ?', [node.parent_id]);
       if (parent) {
-        const result = await meili.index(INDEXES.DOCUMENTS).search('', {
-          limit: 10,
-          filter: `religion = "${parent.name}" AND collection = "${node.name}"`,
-          attributesToRetrieve: ['title', 'author']
-        });
-        documentCount = result.estimatedTotalHits || 0;
-        sampleTitles = result.hits.map(h => h.title).slice(0, 5);
+        const [countResult, samples] = await Promise.all([
+          queryOne('SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?', [parent.name, node.name]),
+          queryAll('SELECT title FROM docs WHERE religion = ? AND collection = ? LIMIT 5', [parent.name, node.name])
+        ]);
+        documentCount = countResult?.count || 0;
+        sampleTitles = samples.map(h => h.title);
       }
     }
 
@@ -734,70 +736,109 @@ Return ONLY the description text, no quotes or formatting.`;
       yearFrom,
       yearTo,
       status = 'all',
-      sort = 'title',  // Default to title (authority requires index config)
-      sortDir = sort === 'authority' ? 'desc' : 'asc',  // Authority defaults to desc
+      sort = 'title',
+      sortDir = sort === 'authority' ? 'desc' : 'asc',
       limit = 50,
       offset = 0
     } = request.query;
 
-    const meili = getMeili();
+    // If there's a search term, use Meilisearch for full-text search
+    // Otherwise use libsql for pure listing (faster for browsing)
+    if (search && search.trim()) {
+      const meili = getMeili();
 
-    // Build filter array
-    const filters = [];
-    if (religion) filters.push(`religion = "${religion}"`);
-    if (collection) filters.push(`collection = "${collection}"`);
-    if (language) filters.push(`language = "${language}"`);
-    if (author) filters.push(`author = "${author}"`);
-    if (yearFrom) filters.push(`year >= ${yearFrom}`);
-    if (yearTo) filters.push(`year <= ${yearTo}`);
+      // Build Meilisearch filter array
+      const filters = [];
+      if (religion) filters.push(`religion = "${religion}"`);
+      if (collection) filters.push(`collection = "${collection}"`);
+      if (language) filters.push(`language = "${language}"`);
+      if (author) filters.push(`author = "${author}"`);
+      if (yearFrom) filters.push(`year >= ${yearFrom}`);
+      if (yearTo) filters.push(`year <= ${yearTo}`);
 
-    // Build sort array - authority desc, then secondary sort
-    const sortRules = [];
-    if (sort === 'authority') {
-      sortRules.push(`authority:${sortDir}`);
-      sortRules.push('title:asc');  // Secondary sort by title
-    } else if (sort === 'year') {
-      sortRules.push(`year:${sortDir}`);
-      sortRules.push('title:asc');
-    } else if (sort === 'author') {
-      sortRules.push(`author:${sortDir}`);
-      sortRules.push('title:asc');
-    } else {
-      sortRules.push(`title:${sortDir}`);
-    }
+      const searchOptions = {
+        limit,
+        offset,
+        attributesToRetrieve: [
+          'id', 'title', 'author', 'religion', 'collection',
+          'language', 'year', 'description', 'paragraph_count',
+          'authority', 'created_at', 'updated_at', 'cover_url'
+        ]
+      };
 
-    const searchOptions = {
-      limit,
-      offset,
-      sort: sortRules,
-      attributesToRetrieve: [
-        'id', 'title', 'author', 'religion', 'collection',
-        'language', 'year', 'description', 'paragraph_count',
-        'authority',  // Include doctrinal weight
-        'created_at', 'updated_at', 'cover_url'
-      ]
-    };
-
-    if (filters.length > 0) {
-      searchOptions.filter = filters.join(' AND ');
-    }
-
-    // Try search with sort, fallback to no sort if sortable attributes not configured
-    let result;
-    try {
-      result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
-    } catch (err) {
-      if (err.message?.includes('not sortable')) {
-        // Sortable attributes not configured - search without sort
-        delete searchOptions.sort;
-        result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
-      } else {
-        throw err;
+      if (filters.length > 0) {
+        searchOptions.filter = filters.join(' AND ');
       }
+
+      const result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
+
+      return {
+        documents: result.hits.map(doc => ({ ...doc, status: 'indexed' })),
+        total: result.estimatedTotalHits || 0,
+        limit,
+        offset
+      };
     }
+
+    // Pure listing - use libsql for browsing (source of truth)
+    // Build SQL WHERE clauses
+    const conditions = [];
+    const params = [];
+
+    if (religion) {
+      conditions.push('religion = ?');
+      params.push(religion);
+    }
+    if (collection) {
+      conditions.push('collection = ?');
+      params.push(collection);
+    }
+    if (language) {
+      conditions.push('language = ?');
+      params.push(language);
+    }
+    if (author) {
+      conditions.push('author = ?');
+      params.push(author);
+    }
+    if (yearFrom) {
+      conditions.push('year >= ?');
+      params.push(yearFrom);
+    }
+    if (yearTo) {
+      conditions.push('year <= ?');
+      params.push(yearTo);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Build ORDER BY clause
+    let orderBy = 'title ASC';
+    if (sort === 'authority') {
+      orderBy = `authority ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+    } else if (sort === 'year') {
+      orderBy = `year ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+    } else if (sort === 'author') {
+      orderBy = `author ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+    } else {
+      orderBy = `title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
+    }
+
+    // Get documents and total count
+    const [documents, countResult] = await Promise.all([
+      queryAll(`
+        SELECT id, title, author, religion, collection, language, year, description,
+               paragraph_count, created_at, updated_at, cover_url
+        FROM docs
+        ${whereClause}
+        ORDER BY ${orderBy}
+        LIMIT ? OFFSET ?
+      `, [...params, limit, offset]),
+      queryOne(`SELECT COUNT(*) as count FROM docs ${whereClause}`, params)
+    ]);
 
     // Get processing status for documents if requested
-    let processingDocs = new Set();
+    const processingDocs = new Set();
     if (status !== 'indexed') {
       try {
         const queueItems = await queryAll(`
@@ -816,17 +857,16 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Add status to each document
-    const documents = result.hits.map(doc => ({
+    const documentsWithStatus = documents.map(doc => ({
       ...doc,
       status: processingDocs.has(doc.id) ? 'processing' : 'indexed'
     }));
 
     return {
-      documents,
-      total: result.estimatedTotalHits || 0,
+      documents: documentsWithStatus,
+      total: countResult?.count || 0,
       limit,
-      offset,
-      facets: result.facetDistribution
+      offset
     };
   });
 
@@ -854,32 +894,33 @@ Return ONLY the description text, no quotes or formatting.`;
   }, async (request) => {
     const { id } = request.params;
     const { includeParagraphs = true, paragraphLimit = 100, paragraphOffset = 0 } = request.query;
-    const meili = getMeili();
 
-    // Get document metadata
-    let document;
-    try {
-      document = await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
+    // Get document metadata from libsql (source of truth for library management)
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at
+      FROM docs WHERE id = ?
+    `, [id]);
+
+    if (!document) {
+      throw ApiError.notFound('Document not found');
     }
 
-    // Get paragraphs if requested
+    // Get paragraphs from content table if requested
     let paragraphs = [];
     let paragraphTotal = 0;
     if (includeParagraphs) {
-      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `document_id = "${id}"`,
-        limit: paragraphLimit,
-        offset: paragraphOffset,
-        sort: ['paragraph_index:asc'],
-        attributesToRetrieve: ['id', 'paragraph_index', 'text', 'heading', 'blocktype', 'authority']
-      });
-      paragraphs = parasResult.hits;
-      paragraphTotal = parasResult.estimatedTotalHits || 0;
+      const [paras, countResult] = await Promise.all([
+        queryAll(`
+          SELECT id, paragraph_index, text, heading, blocktype, translation
+          FROM content
+          WHERE doc_id = ?
+          ORDER BY paragraph_index
+          LIMIT ? OFFSET ?
+        `, [id, paragraphLimit, paragraphOffset]),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
+      ]);
+      paragraphs = paras;
+      paragraphTotal = countResult?.count || 0;
     }
 
     // Get assets from database
@@ -935,70 +976,69 @@ Return ONLY the description text, no quotes or formatting.`;
   }, async (request) => {
     const { id } = request.params;
     const updates = request.body;
-    const meili = getMeili();
 
-    // Verify document exists
-    let document;
-    try {
-      document = await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
+    // Verify document exists in libsql (source of truth)
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count
+      FROM docs WHERE id = ?
+    `, [id]);
+
+    if (!document) {
+      throw ApiError.notFound('Document not found');
     }
 
-    // Update document in Meilisearch
+    // Update docs table (source of truth)
+    const setClauses = [];
+    const values = [];
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) {
+        setClauses.push(`${key} = ?`);
+        values.push(value);
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+      await query(`UPDATE docs SET ${setClauses.join(', ')} WHERE id = ?`, values);
+    }
+
+    // Also push to Meilisearch for search consistency
+    const meili = getMeili();
     const updatedDoc = {
       ...document,
       ...updates,
       updated_at: new Date().toISOString()
     };
 
-    await meili.index(INDEXES.DOCUMENTS).updateDocuments([updatedDoc]);
-
-    // Also update paragraphs with inherited metadata
-    if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
-      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `document_id = "${id}"`,
-        limit: 10000,
-        attributesToRetrieve: ['id']
-      });
-
-      const paragraphUpdates = parasResult.hits.map(p => ({
-        id: p.id,
-        ...(updates.title && { title: updates.title }),
-        ...(updates.author && { author: updates.author }),
-        ...(updates.religion && { religion: updates.religion }),
-        ...(updates.collection && { collection: updates.collection }),
-        ...(updates.language && { language: updates.language }),
-        ...(updates.year && { year: updates.year })
-      }));
-
-      if (paragraphUpdates.length > 0) {
-        await meili.index(INDEXES.PARAGRAPHS).updateDocuments(paragraphUpdates);
-      }
-    }
-
-    // Update SQLite if we have the table
     try {
-      const setClauses = [];
-      const values = [];
+      await meili.index(INDEXES.DOCUMENTS).updateDocuments([updatedDoc]);
 
-      for (const [key, value] of Object.entries(updates)) {
-        if (value !== undefined) {
-          setClauses.push(`${key} = ?`);
-          values.push(value);
+      // Update paragraphs with inherited metadata if relevant fields changed
+      if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
+        const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+          filter: `document_id = "${id}"`,
+          limit: 10000,
+          attributesToRetrieve: ['id']
+        });
+
+        const paragraphUpdates = parasResult.hits.map(p => ({
+          id: p.id,
+          ...(updates.title && { title: updates.title }),
+          ...(updates.author && { author: updates.author }),
+          ...(updates.religion && { religion: updates.religion }),
+          ...(updates.collection && { collection: updates.collection }),
+          ...(updates.language && { language: updates.language }),
+          ...(updates.year && { year: updates.year })
+        }));
+
+        if (paragraphUpdates.length > 0) {
+          await meili.index(INDEXES.PARAGRAPHS).updateDocuments(paragraphUpdates);
         }
       }
-
-      if (setClauses.length > 0) {
-        setClauses.push('updated_at = CURRENT_TIMESTAMP');
-        values.push(id);
-        await query(`UPDATE docs SET ${setClauses.join(', ')} WHERE id = ?`, values);
-      }
     } catch (err) {
-      logger.warn({ err, id }, 'Failed to update SQLite document record');
+      logger.warn({ err: err.message, id }, 'Failed to sync document update to Meilisearch');
     }
 
     logger.info({ documentId: id, updates: Object.keys(updates) }, 'Document metadata updated');
@@ -1021,28 +1061,23 @@ Return ONLY the description text, no quotes or formatting.`;
     }
   }, async (request) => {
     const { id } = request.params;
-    const meili = getMeili();
 
-    // Verify document exists
-    try {
-      await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
+    // Verify document exists in libsql (source of truth)
+    const document = await queryOne('SELECT id FROM docs WHERE id = ?', [id]);
+    if (!document) {
+      throw ApiError.notFound('Document not found');
     }
 
-    // Get indexed content (joined paragraphs)
-    const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${id}"`,
-      limit: 10000,
-      sort: ['paragraph_index:asc'],
-      attributesToRetrieve: ['text', 'heading', 'blocktype', 'paragraph_index']
-    });
+    // Get indexed content from content table (source of truth)
+    const paragraphs = await queryAll(`
+      SELECT text, heading, blocktype, paragraph_index
+      FROM content
+      WHERE doc_id = ?
+      ORDER BY paragraph_index
+    `, [id]);
 
     // Reconstruct markdown from indexed paragraphs
-    const indexedContent = parasResult.hits.map(p => {
+    const indexedContent = paragraphs.map(p => {
       let text = p.text || '';
       switch (p.blocktype) {
         case 'heading1': text = `# ${text}`; break;
@@ -1090,7 +1125,7 @@ Return ONLY the description text, no quotes or formatting.`;
         url: originalAsset.storage_url,
         fileName: originalAsset.file_name
       } : null,
-      paragraphCount: parasResult.hits.length
+      paragraphCount: paragraphs.length
     };
   });
 
@@ -1116,17 +1151,15 @@ Return ONLY the description text, no quotes or formatting.`;
   }, async (request) => {
     const { id } = request.params;
     const { limit = 50, offset = 0 } = request.query;
-    const meili = getMeili();
 
-    // Get document metadata
-    let document;
-    try {
-      document = await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
+    // Get document metadata from libsql (source of truth)
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year, description
+      FROM docs WHERE id = ?
+    `, [id]);
+
+    if (!document) {
+      throw ApiError.notFound('Document not found');
     }
 
     // Get paragraphs with translations from libsql (source of truth for content)
@@ -1199,9 +1232,8 @@ Return ONLY the description text, no quotes or formatting.`;
     }
   }, async (request) => {
     const { id } = request.params;
-    const meili = getMeili();
 
-    // Get counts from libsql
+    // Get counts from libsql (source of truth)
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
@@ -1210,24 +1242,20 @@ Return ONLY the description text, no quotes or formatting.`;
       WHERE doc_id = ?
     `, [id]);
 
-    // If libsql has no data, get total from Meilisearch
-    // TODO: Run migration to sync all documents, then remove this fallback
+    // If libsql has no data, document needs to be re-indexed
     if (!stats?.total) {
-      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `document_id = "${id}"`,
-        limit: 0
-      });
       return {
-        total: parasResult.estimatedTotalHits || 0,
+        total: 0,
         translated: 0,
-        percent: 0
+        percent: 0,
+        needsReindex: true
       };
     }
 
     return {
-      total: stats?.total || 0,
-      translated: stats?.translated || 0,
-      percent: stats?.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
+      total: stats.total || 0,
+      translated: stats.translated || 0,
+      percent: stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
     };
   });
 
@@ -1454,12 +1482,13 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('No paragraph IDs provided');
     }
 
-    // Get document info for translation context
-    const meili = getMeili();
-    let document;
-    try {
-      document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
-    } catch {
+    // Get document info from libsql (source of truth)
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year
+      FROM docs WHERE id = ?
+    `, [documentId]);
+
+    if (!document) {
       throw ApiError.notFound('Document not found');
     }
 
@@ -1591,13 +1620,14 @@ Provide only the translation.`;
   }, async (request) => {
     const { id: documentId } = request.params;
     const userId = request.user.id;
-    const meili = getMeili();
 
-    // Get document info
-    let document;
-    try {
-      document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
-    } catch {
+    // Get document info from libsql (source of truth)
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year
+      FROM docs WHERE id = ?
+    `, [documentId]);
+
+    if (!document) {
       throw ApiError.notFound('Document not found');
     }
 

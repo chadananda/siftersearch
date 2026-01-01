@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T02:06:21.043Z",
+  "generated": "2026-01-01T02:18:05.817Z",
   "entries": [
+    {
+      "hash": "f0af752",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Sync script inserts docs and marks content as synced",
+      "scope": null
+    },
     {
       "hash": "a4df923",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add status filter and limit param to meili-tasks endpoint",
       "scope": "admin"
-    },
-    {
-      "hash": "0f69c92",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "f0af752",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Sync script inserts docs and marks content as synced",
+        "scope": null
+      },
       {
         "hash": "a4df923",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add status filter and limit param to meili-tasks endpoint",
-        "scope": "admin"
-      },
-      {
-        "hash": "0f69c92",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
         "scope": "admin"
       }
     ]
