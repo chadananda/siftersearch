@@ -126,7 +126,8 @@
   let researchPlan = $state(null);
 
   // Search mode: 'fast' (keyword/hybrid quick search) or 'research' (AI-powered deep analysis)
-  let searchMode = $state('fast');
+  // Default to 'research' for approved+ users (set in effect below)
+  let searchMode = $state('research');
 
   // Preloaded document cache: Map<document_id, { segments: [], total: number }>
   const documentCache = new Map();
