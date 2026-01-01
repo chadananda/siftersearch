@@ -1048,7 +1048,7 @@ export default async function adminRoutes(fastify) {
     const { action, process: processName } = request.params;
 
     // Only allow specific processes and actions for security
-    const allowedProcesses = ['siftersearch-library-watcher'];
+    const allowedProcesses = ['siftersearch-library-watcher', 'siftersearch-jobs'];
     const allowedActions = ['stop', 'start', 'restart'];
 
     if (!allowedProcesses.includes(processName)) {

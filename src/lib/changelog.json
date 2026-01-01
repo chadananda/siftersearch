@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T20:11:44.719Z",
+  "generated": "2026-01-01T20:16:57.148Z",
   "entries": [
+    {
+      "hash": "d8f67f9",
+      "date": "2026-01-01",
+      "type": "Updated",
+      "description": "Add siftersearch-jobs to allowed log processes",
+      "scope": null
+    },
     {
       "hash": "21f107b",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "No highlighted paragraph in library popup",
       "scope": "reader"
-    },
-    {
-      "hash": "99041ed",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Reusable ReaderModal component with proper styling",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "d8f67f9",
+        "date": "2026-01-01",
+        "type": "Updated",
+        "description": "Add siftersearch-jobs to allowed log processes",
+        "scope": null
+      },
       {
         "hash": "21f107b",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "No highlighted paragraph in library popup",
         "scope": "reader"
-      },
-      {
-        "hash": "99041ed",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Reusable ReaderModal component with proper styling",
-        "scope": "library"
       }
     ]
   }
