@@ -404,6 +404,97 @@ Clear completed/failed tasks from memory. Running tasks are preserved.
 
 ---
 
+## Sync & Watcher Status
+
+Background services that keep the database and search index synchronized. See [Sync Architecture](./sync-architecture.md) for details.
+
+### GET /api/admin/server/sync/status
+
+Get sync worker status and pending counts.
+
+**Response:**
+```json
+{
+  "worker": {
+    "lastRun": "2025-12-31T10:00:00Z",
+    "lastSuccess": "2025-12-31T10:00:00Z",
+    "documentsSynced": 150,
+    "paragraphsSynced": 5000,
+    "errors": 0,
+    "lastCleanup": "2025-12-31T09:55:00Z",
+    "documentsDeleted": 2,
+    "lastFullSync": "2025-12-31T09:00:00Z",
+    "fullSyncMarked": 0,
+    "running": false,
+    "intervals": {
+      "sync": 10000,
+      "cleanup": 300000,
+      "fullSync": 3600000
+    }
+  },
+  "pending": {
+    "documents": 5,
+    "paragraphs": 120
+  }
+}
+```
+
+### POST /api/admin/server/sync/now
+
+Trigger immediate sync cycle. Useful after bulk imports.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Sync cycle completed",
+  "stats": { ... }
+}
+```
+
+### GET /api/admin/server/sync/orphaned
+
+Find documents without content table entries or with missing paragraphs.
+
+**Response:**
+```json
+{
+  "orphaned": 2,
+  "partial": 1,
+  "orphanedDocs": [
+    { "id": "doc-1", "title": "...", "file_path": "...", "paragraph_count": 50 }
+  ],
+  "partialDocs": [
+    { "id": "doc-2", "title": "...", "expected": 30, "actual": 15 }
+  ]
+}
+```
+
+### GET /api/admin/server/watcher/status
+
+Get file watcher status and statistics.
+
+**Response:**
+```json
+{
+  "running": true,
+  "stats": {
+    "enabled": true,
+    "startedAt": "2025-12-31T08:00:00Z",
+    "filesIngested": 25,
+    "filesRemoved": 2,
+    "errors": 0,
+    "lastEvent": {
+      "type": "change",
+      "path": "/library/bahai/writings/example.md",
+      "at": "2025-12-31T10:30:00Z"
+    }
+  }
+}
+```
+
+---
+
 ## Error Responses
 
 All endpoints return consistent error format:

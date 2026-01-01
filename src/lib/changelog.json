@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T05:31:44.181Z",
+  "generated": "2026-01-01T05:41:05.702Z",
   "entries": [
+    {
+      "hash": "e818d42",
+      "date": "2025-12-31",
+      "type": "New",
+      "description": "Complete sync architecture with multi-layer protection",
+      "scope": null
+    },
     {
       "hash": "f0af752",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add author to filterable attributes in Meilisearch paragraphs index",
       "scope": "search"
-    },
-    {
-      "hash": "db8745a",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add status filter and limit param to meili-tasks endpoint",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "e818d42",
+        "date": "2025-12-31",
+        "type": "New",
+        "description": "Complete sync architecture with multi-layer protection",
+        "scope": null
+      },
       {
         "hash": "f0af752",
         "date": "2025-12-31",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add author to filterable attributes in Meilisearch paragraphs index",
         "scope": "search"
-      },
-      {
-        "hash": "db8745a",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add status filter and limit param to meili-tasks endpoint",
-        "scope": "admin"
       }
     ]
   }

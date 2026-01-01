@@ -38,6 +38,7 @@ import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats, getMeili } from '../lib/search.js';
 import { indexDocumentFromText, batchIndexDocuments, indexFromJSON, removeDocument, getIndexingStatus, migrateEmbeddingsFromMeilisearch, getEmbeddingCacheStats } from '../services/indexer.js';
 import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-worker.js';
+import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
 
@@ -1248,6 +1249,20 @@ export default async function adminRoutes(fastify) {
       partial: partial.length,
       orphanedDocs: orphaned,
       partialDocs: partial
+    };
+  });
+
+  // ========================================================================
+  // Library Watcher Management (File System → Content Table)
+  // ========================================================================
+
+  /**
+   * GET /server/watcher/status - Get library watcher status
+   */
+  fastify.get('/server/watcher/status', { preHandler: requireInternal }, async () => {
+    return {
+      running: isWatcherRunning(),
+      stats: getWatcherStats()
     };
   });
 }
