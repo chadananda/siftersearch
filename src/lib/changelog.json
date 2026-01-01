@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T22:08:06.932Z",
+  "generated": "2026-01-01T22:16:24.724Z",
   "entries": [
+    {
+      "hash": "cc0e5ef",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
+      "scope": null
+    },
     {
       "hash": "ff2a8f5",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Allow all authenticated users to translate documents",
       "scope": "translate"
-    },
-    {
-      "hash": "18f22d2",
-      "date": "2025-12-29",
-      "type": "Updated",
-      "description": "Remove Meilisearch fallback - fix data at source instead",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "cc0e5ef",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
+        "scope": null
+      },
       {
         "hash": "ff2a8f5",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Allow all authenticated users to translate documents",
         "scope": "translate"
-      },
-      {
-        "hash": "18f22d2",
-        "date": "2025-12-29",
-        "type": "Updated",
-        "description": "Remove Meilisearch fallback - fix data at source instead",
-        "scope": null
       }
     ]
   }
