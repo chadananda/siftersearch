@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:51:33.487Z",
+  "generated": "2026-01-01T19:56:39.588Z",
   "entries": [
+    {
+      "hash": "53fc622",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add priority column migration and use 0 for system user jobs",
+      "scope": null
+    },
     {
       "hash": "e6e5a10",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Increase contrast on version badge",
       "scope": "ui"
-    },
-    {
-      "hash": "184159b",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Add fullscreen reader and translate button",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "53fc622",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add priority column migration and use 0 for system user jobs",
+        "scope": null
+      },
       {
         "hash": "e6e5a10",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Increase contrast on version badge",
         "scope": "ui"
-      },
-      {
-        "hash": "184159b",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Add fullscreen reader and translate button",
-        "scope": "library"
       }
     ]
   }
