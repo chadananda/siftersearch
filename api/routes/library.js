@@ -1625,7 +1625,7 @@ Provide only the translation.`;
     }
   }, async (request) => {
     const { id: documentId } = request.params;
-    const userId = request.user.id;
+    const userId = request.user.sub;
 
     // Get document info from libsql (source of truth)
     const document = await queryOne(`

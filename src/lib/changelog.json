@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T06:57:33.107Z",
+  "generated": "2026-01-01T07:05:58.541Z",
   "entries": [
+    {
+      "hash": "d1273ab",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use document_id column consistently across all API code",
+      "scope": null
+    },
     {
       "hash": "0174fe7",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add revoked_at column to refresh_tokens table",
       "scope": null
-    },
-    {
-      "hash": "d9113a2",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Use correct meili.tasks.cancelTasks method",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "d1273ab",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use document_id column consistently across all API code",
+        "scope": null
+      },
       {
         "hash": "0174fe7",
         "date": "2025-12-31",
@@ -700,15 +707,6 @@
         "type": "Fixed",
         "description": "Add revoked_at column to refresh_tokens table",
         "scope": null
-      }
-    ],
-    "2025-12-28": [
-      {
-        "hash": "d9113a2",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Use correct meili.tasks.cancelTasks method",
-        "scope": "admin"
       }
     ]
   }
