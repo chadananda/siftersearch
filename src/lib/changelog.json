@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T07:05:58.541Z",
+  "generated": "2026-01-01T07:24:48.504Z",
   "entries": [
+    {
+      "hash": "c933bcd",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use request.user.sub instead of request.user.id in queue-translation",
+      "scope": null
+    },
     {
       "hash": "d1273ab",
       "date": "2025-12-31",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Add schema debug endpoint to diagnose auth refresh error",
       "scope": null
-    },
-    {
-      "hash": "157177d",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add revoked_at column to refresh_tokens table",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-01": [
+      {
+        "hash": "c933bcd",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use request.user.sub instead of request.user.id in queue-translation",
+        "scope": null
+      }
+    ],
     "2025-12-31": [
       {
         "hash": "d1273ab",
@@ -699,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add schema debug endpoint to diagnose auth refresh error",
-        "scope": null
-      },
-      {
-        "hash": "157177d",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add revoked_at column to refresh_tokens table",
         "scope": null
       }
     ]

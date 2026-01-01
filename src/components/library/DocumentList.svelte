@@ -14,6 +14,8 @@
   let bilingualContent = $state(null);
   let loadingContent = $state(false);
   let translating = $state(null); // Document ID being translated
+  let activeJobs = $state(new Map()); // docId → jobId for active translation jobs
+  let pollingInterval = $state(null);
 
   // Fullscreen modal state
   let modalOpen = $state(false);
@@ -80,13 +82,6 @@
     return RTL_LANGUAGES.includes(language);
   }
 
-  function getSizeLabel(count) {
-    if (!count) return '';
-    if (count < 50) return 'Brief';
-    if (count < 200) return 'Medium';
-    if (count < 500) return 'Long';
-    return 'Book';
-  }
 
   function getLangName(code) {
     return LANG_NAMES[code] || code?.toUpperCase() || '';
@@ -229,6 +224,12 @@
         });
       }
 
+      // Track active job for polling
+      if (data.jobId && data.status !== 'completed') {
+        activeJobs = new Map(activeJobs).set(docId, data.jobId);
+        startPolling();
+      }
+
       console.log('Translation queued:', data);
     } catch (err) {
       console.error('Translation queue error:', err);
@@ -237,6 +238,54 @@
       translating = null;
     }
   }
+
+  // Poll for translation job status
+  function startPolling() {
+    if (pollingInterval) return; // Already polling
+
+    pollingInterval = setInterval(async () => {
+      if (activeJobs.size === 0) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        return;
+      }
+
+      // Check status for each active job
+      for (const [docId, _jobId] of activeJobs) {
+        try {
+          const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translation-status`);
+          if (res.ok) {
+            const status = await res.json();
+
+            // Update stats
+            if (status.stats) {
+              docTranslationStats = new Map(docTranslationStats).set(docId, {
+                translated: status.stats.translated || 0,
+                total: status.stats.total || 0
+              });
+            }
+
+            // Remove from active jobs if completed or failed
+            if (!status.job || status.job.status === 'completed' || status.job.status === 'failed') {
+              const newJobs = new Map(activeJobs);
+              newJobs.delete(docId);
+              activeJobs = newJobs;
+            }
+          }
+        } catch (err) {
+          console.error('Polling error for', docId, err);
+        }
+      }
+    }, 3000); // Poll every 3 seconds
+  }
+
+  // Cleanup polling on component destroy
+  import { onDestroy } from 'svelte';
+  onDestroy(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+  });
 
   // Request translation from modal - just open the modal and let ReaderModal handle it
   async function handleModalTranslate(docId) {
@@ -251,7 +300,6 @@
 
 <div class="flex flex-col gap-1 w-full">
   {#each documents as doc (doc.id)}
-    {@const size = getSizeLabel(doc.paragraph_count)}
     {@const isExpanded = expandedDocId === doc.id}
     {@const langName = getLangName(doc.language)}
     {@const isNonEnglish = doc.language && doc.language !== 'en'}
@@ -286,10 +334,6 @@
           </div>
         </button>
         <div class="flex items-center gap-1.5 shrink-0">
-          {#if size}
-            <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-surface-2 text-muted">{size}</span>
-          {/if}
-
           <!-- Language + Translation compound pill -->
           {#if langName && langName !== 'English'}
             <div class="inline-flex items-center rounded-sm overflow-hidden text-[0.6875rem] font-semibold border border-accent/40">
@@ -301,7 +345,7 @@
                 <span class="px-2 py-0.5 bg-surface-1 text-primary flex items-center">
                   <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
                 </span>
-              {:else if translating === doc.id}
+              {:else if translating === doc.id || activeJobs.has(doc.id)}
                 <!-- Translating: show spinner + percent -->
                 <span class="px-2 py-0.5 bg-warning text-white flex items-center gap-1">
                   <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
