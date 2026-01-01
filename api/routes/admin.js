@@ -892,6 +892,26 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Debug endpoint to query a job by ID
+   * Returns raw database row for debugging
+   */
+  fastify.get('/server/jobs/:jobId', { preHandler: requireInternal }, async (request) => {
+    const { jobId } = request.params;
+    const job = await queryOne('SELECT * FROM jobs WHERE id = ?', [jobId]);
+    if (!job) {
+      throw ApiError.notFound('Job not found');
+    }
+    // Return all columns as-is for debugging
+    return {
+      raw: job,
+      columns: Object.keys(job),
+      hasDocumentId: 'document_id' in job,
+      documentIdValue: job.document_id,
+      documentIdType: typeof job.document_id
+    };
+  });
+
+  /**
    * Get database table info for debugging
    */
   fastify.get('/server/tables', { preHandler: requireInternal }, async () => {
