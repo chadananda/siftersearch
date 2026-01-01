@@ -14,17 +14,27 @@ import { getMeili, initializeIndexes } from '../lib/search.js';
 
 // Configuration
 const SYNC_INTERVAL_MS = 10000;  // Poll every 10 seconds
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Cleanup stale Meili docs every 5 minutes
+const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // Full sync check every hour
 const BATCH_SIZE = 100;          // Paragraphs per batch
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
 
 let syncInterval = null;
+let cleanupInterval = null;
+let fullSyncInterval = null;
 let isRunning = false;
+let isCleanupRunning = false;
+let isFullSyncRunning = false;
 let syncStats = {
   lastRun: null,
   lastSuccess: null,
   documentsSynced: 0,
   paragraphsSynced: 0,
-  errors: 0
+  errors: 0,
+  lastCleanup: null,
+  documentsDeleted: 0,
+  lastFullSync: null,
+  fullSyncMarked: 0
 };
 
 /**
@@ -253,6 +263,167 @@ async function runSyncCycle() {
 }
 
 /**
+ * Run cleanup cycle to remove stale documents from Meilisearch
+ * Documents in Meili but not in libsql are considered stale
+ */
+async function runCleanupCycle() {
+  if (isCleanupRunning) {
+    logger.debug('Cleanup cycle already running, skipping');
+    return;
+  }
+
+  isCleanupRunning = true;
+
+  try {
+    const meili = await getMeili();
+    if (!meili) {
+      logger.warn('Meilisearch not available, skipping cleanup');
+      return;
+    }
+
+    // Get all document IDs from Meilisearch
+    const meiliDocs = await meili.index('documents').getDocuments({
+      limit: 10000,
+      fields: ['id']
+    });
+
+    if (!meiliDocs.results || meiliDocs.results.length === 0) {
+      syncStats.lastCleanup = new Date().toISOString();
+      return;
+    }
+
+    // Get all document IDs from libsql
+    const dbDocs = await queryAll('SELECT id FROM docs');
+    const dbIdSet = new Set(dbDocs.map(d => d.id));
+
+    // Find stale documents (in Meili but not in DB)
+    const staleIds = meiliDocs.results
+      .filter(d => !dbIdSet.has(d.id))
+      .map(d => d.id);
+
+    if (staleIds.length > 0) {
+      logger.info({ count: staleIds.length }, 'Found stale documents in Meilisearch');
+
+      // Delete from documents index
+      await meili.index('documents').deleteDocuments(staleIds);
+
+      // Delete paragraphs for each stale document
+      for (const id of staleIds) {
+        try {
+          await meili.index('paragraphs').deleteDocuments({
+            filter: `document_id = "${id}"`
+          });
+        } catch (err) {
+          logger.warn({ id, err: err.message }, 'Failed to delete paragraphs for stale document');
+        }
+      }
+
+      syncStats.documentsDeleted += staleIds.length;
+      logger.info({ count: staleIds.length }, 'Cleaned up stale documents from Meilisearch');
+    }
+
+    syncStats.lastCleanup = new Date().toISOString();
+
+  } catch (err) {
+    logger.error({ err: err.message }, 'Cleanup cycle failed');
+  } finally {
+    isCleanupRunning = false;
+  }
+}
+
+/**
+ * Run hourly full sync check
+ * Ensures all documents in DB are properly synced to Meilisearch
+ * This catches any documents that might have been missed by the regular sync
+ */
+async function runFullSyncCheck() {
+  if (isFullSyncRunning) {
+    logger.debug('Full sync check already running, skipping');
+    return;
+  }
+
+  isFullSyncRunning = true;
+
+  try {
+    const meili = await getMeili();
+    if (!meili) {
+      logger.warn('Meilisearch not available, skipping full sync check');
+      return;
+    }
+
+    // Get all document IDs from libsql
+    const dbDocs = await queryAll('SELECT id FROM docs');
+    const dbIdSet = new Set(dbDocs.map(d => d.id));
+
+    // Get all document IDs from Meilisearch
+    const meiliDocs = await meili.index('documents').getDocuments({
+      limit: 10000,
+      fields: ['id']
+    });
+    const meiliIdSet = new Set((meiliDocs.results || []).map(d => d.id));
+
+    // Find documents in DB but not in Meilisearch
+    const missingInMeili = [...dbIdSet].filter(id => !meiliIdSet.has(id));
+
+    if (missingInMeili.length > 0) {
+      logger.info({ count: missingInMeili.length }, 'Found documents in DB missing from Meilisearch');
+
+      // Mark all their paragraphs as needing sync
+      for (const docId of missingInMeili) {
+        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [docId]);
+      }
+
+      syncStats.fullSyncMarked += missingInMeili.length;
+      logger.info({ count: missingInMeili.length }, 'Marked documents for re-sync');
+    }
+
+    // Also check for documents with all synced=1 paragraphs but might have stale data
+    // This ensures metadata changes are caught even if paragraphs haven't changed
+    const potentiallyStale = await queryAll(`
+      SELECT DISTINCT doc_id FROM content
+      WHERE synced = 1
+      AND updated_at < datetime('now', '-1 hour')
+      LIMIT 100
+    `);
+
+    // For these, compare paragraph counts
+    for (const row of potentiallyStale) {
+      const dbCount = await queryOne(
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+        [row.doc_id]
+      );
+
+      try {
+        const meiliResult = await meili.index('paragraphs').search('', {
+          filter: `document_id = "${row.doc_id}"`,
+          limit: 0
+        });
+
+        // If counts don't match, mark for re-sync
+        if (dbCount?.count !== meiliResult.estimatedTotalHits) {
+          await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
+          syncStats.fullSyncMarked++;
+          logger.info({ docId: row.doc_id, dbCount: dbCount?.count, meiliCount: meiliResult.estimatedTotalHits },
+            'Paragraph count mismatch, marking for re-sync');
+        }
+      } catch {
+        // Document might not exist in Meili, mark for sync
+        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
+        syncStats.fullSyncMarked++;
+      }
+    }
+
+    syncStats.lastFullSync = new Date().toISOString();
+    logger.info('Full sync check complete');
+
+  } catch (err) {
+    logger.error({ err: err.message }, 'Full sync check failed');
+  } finally {
+    isFullSyncRunning = false;
+  }
+}
+
+/**
  * Start the sync worker
  */
 export function startSyncWorker() {
@@ -261,13 +432,29 @@ export function startSyncWorker() {
     return;
   }
 
-  logger.info({ intervalMs: SYNC_INTERVAL_MS }, 'Starting content sync worker');
+  logger.info({
+    syncIntervalMs: SYNC_INTERVAL_MS,
+    cleanupIntervalMs: CLEANUP_INTERVAL_MS,
+    fullSyncIntervalMs: FULL_SYNC_INTERVAL_MS
+  }, 'Starting content sync worker');
 
   // Run initial sync after short delay
   setTimeout(runSyncCycle, 5000);
 
-  // Schedule periodic syncs
+  // Run initial cleanup after 30 seconds
+  setTimeout(runCleanupCycle, 30000);
+
+  // Run initial full sync check after 2 minutes
+  setTimeout(runFullSyncCheck, 2 * 60 * 1000);
+
+  // Schedule periodic syncs (every 10 seconds)
   syncInterval = setInterval(runSyncCycle, SYNC_INTERVAL_MS);
+
+  // Schedule periodic cleanup (every 5 minutes)
+  cleanupInterval = setInterval(runCleanupCycle, CLEANUP_INTERVAL_MS);
+
+  // Schedule periodic full sync check (every hour)
+  fullSyncInterval = setInterval(runFullSyncCheck, FULL_SYNC_INTERVAL_MS);
 }
 
 /**
@@ -277,8 +464,16 @@ export function stopSyncWorker() {
   if (syncInterval) {
     clearInterval(syncInterval);
     syncInterval = null;
-    logger.info('Content sync worker stopped');
   }
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+  if (fullSyncInterval) {
+    clearInterval(fullSyncInterval);
+    fullSyncInterval = null;
+  }
+  logger.info('Content sync worker stopped');
 }
 
 /**
@@ -288,7 +483,13 @@ export function getSyncStats() {
   return {
     ...syncStats,
     running: isRunning,
-    intervalMs: SYNC_INTERVAL_MS
+    cleanupRunning: isCleanupRunning,
+    fullSyncRunning: isFullSyncRunning,
+    intervals: {
+      sync: SYNC_INTERVAL_MS,
+      cleanup: CLEANUP_INTERVAL_MS,
+      fullSync: FULL_SYNC_INTERVAL_MS
+    }
   };
 }
 

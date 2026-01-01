@@ -26,6 +26,8 @@ import { ensureServicesRunning, cleanupServices, getServicesStatus } from './lib
 import { seedAdminUser } from './lib/auth.js';
 import { runMigrations } from './lib/migrations.js';
 import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
+import { startLibraryWatcher, stopLibraryWatcher } from './services/library-watcher.js';
+import { config } from './lib/config.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -83,6 +85,16 @@ const start = async () => {
       logger.warn({ err }, 'Failed to start sync worker');
     }
 
+    // Start library watcher (auto-ingest file changes)
+    try {
+      if (config.library?.paths?.length > 0) {
+        startLibraryWatcher(config.library.paths);
+        logger.info({ paths: config.library.paths }, 'Library watcher started');
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Failed to start library watcher');
+    }
+
     // Log startup summary
     const envSummary = getEnvSummary();
     logger.info({
@@ -120,6 +132,7 @@ const start = async () => {
 const shutdown = async (signal) => {
   logger.info({ signal }, 'Shutting down');
   stopSyncWorker();
+  await stopLibraryWatcher();
   cleanupServices();
   process.exit(0);
 };

@@ -1002,9 +1002,15 @@ Return ONLY the description text, no quotes or formatting.`;
       setClauses.push('updated_at = CURRENT_TIMESTAMP');
       values.push(id);
       await query(`UPDATE docs SET ${setClauses.join(', ')} WHERE id = ?`, values);
+
+      // If metadata that propagates to paragraphs changed, mark paragraphs for re-sync
+      // This ensures sync-worker will update Meilisearch even if direct push below fails
+      if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
+        await query('UPDATE content SET synced = 0, updated_at = CURRENT_TIMESTAMP WHERE doc_id = ?', [id]);
+      }
     }
 
-    // Also push to Meilisearch for search consistency
+    // Also push to Meilisearch for search consistency (immediate update)
     const meili = getMeili();
     const updatedDoc = {
       ...document,
