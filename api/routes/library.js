@@ -1554,15 +1554,17 @@ Provide only the translation.`;
         }
 
         try {
-          const response = await chatCompletion({
-            model: 'quality',
-            messages: [
+          const response = await chatCompletion(
+            [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: para.text }
             ],
-            temperature: 0.3,
-            maxTokens: Math.max(1000, para.text.length * 4)
-          });
+            {
+              model: 'quality',
+              temperature: 0.3,
+              maxTokens: Math.max(1000, para.text.length * 4)
+            }
+          );
 
           const translation = response.content.trim();
 
