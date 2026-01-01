@@ -248,7 +248,7 @@ export async function processTranslationJob(job) {
  * Saves translations directly to content.translation column
  */
 async function processInAppTranslation(job, document, sourceLang, contentType) {
-  const { documentId } = job;
+  const documentId = job.document_id;
 
   // Get untranslated paragraphs from content table
   const paragraphs = await queryAll(`

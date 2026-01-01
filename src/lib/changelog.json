@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:34:31.885Z",
+  "generated": "2026-01-01T19:40:32.780Z",
   "entries": [
+    {
+      "hash": "f83b738",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Handle system users with string IDs in queue-translation",
+      "scope": null
+    },
     {
       "hash": "49bae7a",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve document view UI and scroll behavior",
       "scope": "library"
-    },
-    {
-      "hash": "de0f902",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Unify header styles and fix width/overflow issues",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "f83b738",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Handle system users with string IDs in queue-translation",
+        "scope": null
+      },
       {
         "hash": "49bae7a",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Improve document view UI and scroll behavior",
-        "scope": "library"
-      },
-      {
-        "hash": "de0f902",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Unify header styles and fix width/overflow issues",
         "scope": "library"
       }
     ]
