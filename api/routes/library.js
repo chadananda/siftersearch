@@ -1627,9 +1627,10 @@ Provide only the translation.`;
     }
   }, async (request) => {
     const { id: documentId } = request.params;
-    // user_id is INTEGER in jobs table, so handle system users (strings like 'system_admin')
+    // user_id is INTEGER NOT NULL in jobs table, so handle system users (strings like 'system_admin')
+    // Use 0 as a placeholder for system/API jobs (foreign key is not enforced by libsql by default)
     const rawUserId = request.user.sub;
-    const userId = typeof rawUserId === 'number' ? rawUserId : null;
+    const userId = typeof rawUserId === 'number' ? rawUserId : 0;
 
     // Get document info from libsql (source of truth)
     const document = await queryOne(`

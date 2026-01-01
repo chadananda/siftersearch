@@ -250,6 +250,19 @@ export async function processTranslationJob(job) {
 async function processInAppTranslation(job, document, sourceLang, contentType) {
   const documentId = job.document_id;
 
+  // Debug: log job structure to trace undefined values
+  logger.info({
+    jobId: job.id,
+    jobKeys: Object.keys(job),
+    documentId,
+    documentIdType: typeof documentId,
+    hasDocumentId: documentId !== undefined
+  }, 'processInAppTranslation starting');
+
+  if (!documentId) {
+    throw new Error(`document_id is ${documentId} (type: ${typeof documentId})`);
+  }
+
   // Get untranslated paragraphs from content table
   const paragraphs = await queryAll(`
     SELECT id, paragraph_index, text

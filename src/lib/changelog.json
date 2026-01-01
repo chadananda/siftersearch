@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T19:40:32.780Z",
+  "generated": "2026-01-01T19:51:33.487Z",
   "entries": [
+    {
+      "hash": "e6e5a10",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use correct job.document_id in processInAppTranslation",
+      "scope": null
+    },
     {
       "hash": "f83b738",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add fullscreen reader and translate button",
       "scope": "library"
-    },
-    {
-      "hash": "2b0b2fd",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Improve document view UI and scroll behavior",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "e6e5a10",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use correct job.document_id in processInAppTranslation",
+        "scope": null
+      },
       {
         "hash": "f83b738",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "New",
         "description": "Add fullscreen reader and translate button",
-        "scope": "library"
-      },
-      {
-        "hash": "2b0b2fd",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Improve document view UI and scroll behavior",
         "scope": "library"
       }
     ]
