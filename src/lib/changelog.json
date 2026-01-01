@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T05:51:57.961Z",
+  "generated": "2026-01-01T06:00:49.576Z",
   "entries": [
+    {
+      "hash": "5668e06",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Add endpoint to populate missing content from Meilisearch",
+      "scope": null
+    },
     {
       "hash": "e818d42",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add PM2 control endpoint to stop/start library watcher",
       "scope": "admin"
-    },
-    {
-      "hash": "ca286d8",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add author to filterable attributes in Meilisearch paragraphs index",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "5668e06",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Add endpoint to populate missing content from Meilisearch",
+        "scope": null
+      },
       {
         "hash": "e818d42",
         "date": "2025-12-31",
@@ -702,13 +709,6 @@
         "type": "New",
         "description": "Add PM2 control endpoint to stop/start library watcher",
         "scope": "admin"
-      },
-      {
-        "hash": "ca286d8",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add author to filterable attributes in Meilisearch paragraphs index",
-        "scope": "search"
       }
     ]
   }
