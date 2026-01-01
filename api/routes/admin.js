@@ -1090,7 +1090,7 @@ export default async function adminRoutes(fastify) {
    */
   fastify.get('/server/logs', { preHandler: requireInternal }, async (request) => {
     const { lines = 50, process: processName = 'siftersearch-api' } = request.query || {};
-    const allowedProcesses = ['siftersearch-api', 'siftersearch-library-watcher', 'siftersearch-watchdog'];
+    const allowedProcesses = ['siftersearch-api', 'siftersearch-library-watcher', 'siftersearch-watchdog', 'siftersearch-jobs'];
 
     if (!allowedProcesses.includes(processName)) {
       throw ApiError.badRequest(`Process not allowed: ${processName}`);

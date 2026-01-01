@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T20:07:43.410Z",
+  "generated": "2026-01-01T20:11:44.719Z",
   "entries": [
+    {
+      "hash": "21f107b",
+      "date": "2026-01-01",
+      "type": "Updated",
+      "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
+      "scope": null
+    },
     {
       "hash": "2ac33b9",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Reusable ReaderModal component with proper styling",
       "scope": "library"
-    },
-    {
-      "hash": "db86d14",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Add fullscreen modal for document viewing",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "21f107b",
+        "date": "2026-01-01",
+        "type": "Updated",
+        "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
+        "scope": null
+      },
       {
         "hash": "2ac33b9",
         "date": "2026-01-01",
@@ -701,13 +708,6 @@
         "date": "2025-12-29",
         "type": "New",
         "description": "Reusable ReaderModal component with proper styling",
-        "scope": "library"
-      },
-      {
-        "hash": "db86d14",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Add fullscreen modal for document viewing",
         "scope": "library"
       }
     ]
