@@ -55,7 +55,7 @@ async function syncContentToLibsql() {
   const docsResult = await meili.index(INDEXES.DOCUMENTS).search('', {
     limit: limit || 10000,
     filter,
-    attributesToRetrieve: ['id', 'title', 'language', 'paragraph_count']
+    attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count', 'chunk_count']
   });
 
   console.log(`Found ${docsResult.hits.length} documents\n`);
@@ -84,7 +84,7 @@ async function syncContentToLibsql() {
     // Get paragraphs from Meilisearch
     const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
       filter: `document_id = "${doc.id}"`,
-      limit: 1000,
+      limit: 10000,
       sort: ['paragraph_index:asc']
     });
 
@@ -100,11 +100,24 @@ async function syncContentToLibsql() {
       const now = new Date().toISOString();
       let syncedCount = 0;
 
+      // First, ensure the document exists in docs table (for foreign key)
+      try {
+        await query(`
+          INSERT OR IGNORE INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [doc.id, doc.title, doc.author || null, doc.religion || null, doc.collection || null, doc.language || 'en', doc.year || null, doc.description || null, doc.paragraph_count || doc.chunk_count || parasResult.hits.length, now, now]);
+      } catch (err) {
+        // Document might already exist - that's fine
+        if (!err.message?.includes('UNIQUE constraint')) {
+          logger.warn({ err: err.message, docId: doc.id }, 'Failed to insert document');
+        }
+      }
+
       for (const p of parasResult.hits) {
         try {
           await query(`
-            INSERT OR IGNORE INTO content (id, doc_id, paragraph_index, text, blocktype, heading, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO content (id, doc_id, paragraph_index, text, blocktype, heading, synced, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
           `, [p.id, doc.id, p.paragraph_index, p.text, p.blocktype || 'paragraph', p.heading || null, now, now]);
           syncedCount++;
         } catch (err) {

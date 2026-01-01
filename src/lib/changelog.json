@@ -1,6 +1,13 @@
 {
-  "generated": "2025-12-31T20:27:36.598Z",
+  "generated": "2026-01-01T02:06:21.043Z",
   "entries": [
+    {
+      "hash": "a4df923",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Increase translation pill contrast with solid backgrounds",
+      "scope": null
+    },
     {
       "hash": "034dc84",
       "date": "2025-12-31",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
       "scope": "admin"
-    },
-    {
-      "hash": "58f3d8b",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2025-12-31": [
+      {
+        "hash": "a4df923",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Increase translation pill contrast with solid backgrounds",
+        "scope": null
+      },
       {
         "hash": "034dc84",
         "date": "2025-12-31",
@@ -701,13 +708,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
-        "scope": "admin"
-      },
-      {
-        "hash": "58f3d8b",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
         "scope": "admin"
       }
     ]
