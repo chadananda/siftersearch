@@ -1265,4 +1265,85 @@ export default async function adminRoutes(fastify) {
       stats: getWatcherStats()
     };
   });
+
+  /**
+   * POST /server/populate-content - Populate missing content from Meilisearch
+   * Finds documents with paragraph_count > 0 but no content rows and fetches from Meili
+   */
+  fastify.post('/server/populate-content', { preHandler: requireInternal }, async (request) => {
+    const { limit = 100 } = request.query;
+
+    // Find documents with no content
+    const orphanedDocs = await queryAll(`
+      SELECT d.id, d.title, d.paragraph_count, d.language
+      FROM docs d
+      LEFT JOIN content c ON c.doc_id = d.id
+      WHERE d.paragraph_count > 0
+      GROUP BY d.id
+      HAVING COUNT(c.id) = 0
+      LIMIT ?
+    `, [limit]);
+
+    if (orphanedDocs.length === 0) {
+      return { success: true, message: 'All documents have content', fixed: 0 };
+    }
+
+    const meili = getMeili();
+    let fixed = 0;
+    let errors = [];
+
+    for (const doc of orphanedDocs) {
+      try {
+        const parasResult = await meili.index('paragraphs').search('', {
+          filter: `document_id = "${doc.id}"`,
+          limit: 10000,
+          sort: ['paragraph_index:asc'],
+          attributesToRetrieve: ['id', 'text', 'paragraph_index', 'heading', 'blocktype', '_vectors']
+        });
+
+        if (parasResult.hits.length === 0) {
+          errors.push({ id: doc.id, error: 'No paragraphs in Meilisearch' });
+          continue;
+        }
+
+        const now = new Date().toISOString();
+
+        for (const para of parasResult.hits) {
+          const contentId = para.id || `${doc.id}_p${para.paragraph_index}_${Date.now()}`;
+          const embedding = para._vectors?.default;
+          const embeddingBlob = embedding ? Buffer.from(new Float32Array(embedding).buffer) : null;
+
+          await query(`
+            INSERT OR REPLACE INTO content
+            (id, doc_id, paragraph_index, text, heading, blocktype, embedding, synced, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+          `, [
+            contentId,
+            doc.id,
+            para.paragraph_index || 0,
+            para.text || '',
+            para.heading || '',
+            para.blocktype || 'paragraph',
+            embeddingBlob,
+            now,
+            now
+          ]);
+        }
+
+        fixed++;
+        logger.info({ docId: doc.id, paragraphs: parasResult.hits.length }, 'Populated content from Meilisearch');
+
+      } catch (err) {
+        errors.push({ id: doc.id, error: err.message });
+      }
+    }
+
+    return {
+      success: true,
+      message: `Populated content for ${fixed} documents`,
+      fixed,
+      total: orphanedDocs.length,
+      errors: errors.length > 0 ? errors : undefined
+    };
+  });
 }
