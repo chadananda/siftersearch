@@ -39,9 +39,11 @@
   let isRTL = $derived(RTL_LANGUAGES.includes(document?.language));
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin');
   // Show translate button if: non-English doc AND (no translations OR some paragraphs lack translations)
+  // Also skip if title indicates it's already an English translation
   let needsTranslation = $derived(
     document?.language &&
     document.language !== 'en' &&
+    !document.title?.toLowerCase().includes('in english') &&
     !translating &&
     (!bilingualContent?.paragraphs?.length || !bilingualContent.paragraphs.every(p => p.translation))
   );
