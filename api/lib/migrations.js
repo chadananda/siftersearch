@@ -5,11 +5,11 @@
  * Each version number corresponds to schema changes.
  */
 
-import { query, queryOne, userQuery, userQueryOne } from './db.js';
+import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 19;
+const CURRENT_VERSION = 21;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -837,6 +837,63 @@ const migrations = {
       logger.info('Added encumbered column to docs table');
     } catch (err) {
       if (!err.message.includes('duplicate column')) throw err;
+    }
+  },
+
+  // Version 21: Add flexible metadata JSON column to docs table
+  // Consolidates rarely-queried fields into JSON for schema flexibility
+  // Core columns remain for routing/slugs: id, file_path, title, religion, collection, language, encumbered
+  21: async () => {
+    // Add metadata column for flexible JSON storage
+    try {
+      await query('ALTER TABLE docs ADD COLUMN metadata TEXT DEFAULT "{}"');
+      logger.info('Added metadata column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Add filename column for slug generation fallback
+    try {
+      await query('ALTER TABLE docs ADD COLUMN filename TEXT');
+      logger.info('Added filename column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Migrate existing column data into metadata JSON
+    // This preserves all existing data while consolidating into flexible format
+    const docs = await queryAll(`
+      SELECT id, author, year, description, paragraph_count, source_file, cover_url, file_path
+      FROM docs
+      WHERE metadata IS NULL OR metadata = '{}'
+    `);
+
+    for (const doc of docs) {
+      const metadata = {};
+      if (doc.author) metadata.author = doc.author;
+      if (doc.year) metadata.year = doc.year;
+      if (doc.description) metadata.description = doc.description;
+      if (doc.paragraph_count) metadata.paragraph_count = doc.paragraph_count;
+      if (doc.source_file) metadata.source_file = doc.source_file;
+      if (doc.cover_url) metadata.cover_url = doc.cover_url;
+
+      // Extract filename from file_path for slug generation
+      const filename = doc.file_path ? doc.file_path.split('/').pop() : null;
+
+      await query(`
+        UPDATE docs SET metadata = ?, filename = ? WHERE id = ?
+      `, [JSON.stringify(metadata), filename, doc.id]);
+    }
+
+    logger.info(`Migrated ${docs.length} docs to metadata JSON format`);
+
+    // Create index on commonly queried metadata fields
+    try {
+      await query(`CREATE INDEX IF NOT EXISTS idx_docs_metadata_author
+                   ON docs(json_extract(metadata, '$.author'))`);
+    } catch (err) {
+      // Index creation may fail on older libSQL versions, not critical
+      logger.warn('Could not create metadata author index:', err.message);
     }
   },
 };
