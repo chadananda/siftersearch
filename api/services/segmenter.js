@@ -99,36 +99,45 @@ export function detectVerseMarkers(text) {
 export async function getAIBreakPositions(text, options = {}) {
   const { language = 'en', maxChunkSize = SEGMENT_CONFIG.maxChunkSize } = options;
 
-  // Target ~3-5 chunks for text that's 2-3x maxChunkSize
-  const targetChunks = Math.ceil(text.length / maxChunkSize);
-
   const languageHint = language === 'fa' ? 'Persian/Farsi' :
                        language === 'ar' ? 'Arabic' : 'English';
 
-  const systemPrompt = `You are an expert in semantic text analysis for ${languageHint} religious and classical texts. Your task is to identify natural paragraph break points based purely on MEANING.
+  const systemPrompt = `You are an expert in semantic text analysis for ${languageHint} religious and classical texts. Your task is to identify where to split this text into paragraphs based on CONCEPTUAL BOUNDARIES.
 
-CRITICAL APPROACH:
-1. Read the text and understand its semantic structure
-2. Identify ${targetChunks - 1} to ${targetChunks + 1} natural paragraph breaks based on meaning transitions
-3. For each break, provide the EXACT TEXT that ends one paragraph and begins the next
-4. DO NOT rely on punctuation - classical texts often lack punctuation
-5. Identify breaks by semantic transitions only:
-   - Topic shifts or new subjects
-   - New arguments or ideas
-   - Rhetorical transitions (e.g., "And He said...", "Then...")
-   - Natural pauses in discourse
-6. Preserve as complete units:
-   - Complete invocations and prayers
-   - Poetic verses (do not split couplets)
-   - Quranic/scriptural quotations
-   - Lists of divine attributes
+## CORE PRINCIPLE
+A paragraph is a set of sentences that support ONE main idea or concept. Split when the concept shifts.
 
-RESPONSE FORMAT:
-For each paragraph break, provide:
-- endMarker: The EXACT last 3-8 words that end one paragraph (copy exactly from text)
-- startMarker: The EXACT first 3-8 words that begin the next paragraph (copy exactly from text)`;
+## HOW TO FIND PARAGRAPH BOUNDARIES
+1. Read the text to identify distinct ideas, themes, or topics
+2. Find where the author transitions from one concept to another
+3. A new paragraph begins when:
+   - The subject or topic shifts
+   - A new argument or point is introduced
+   - The author moves from one idea to the next
+   - A rhetorical transition occurs ("And He said...", "Then...", "Know that...")
+   - An address to a different audience begins
 
-  const userPrompt = `Analyze this ${languageHint} text and identify ${targetChunks - 1} to ${targetChunks + 1} natural paragraph breaks based on meaning and topic transitions.
+## ABSOLUTELY NEVER
+- Split in the middle of a sentence
+- Split in the middle of a word
+- Create paragraphs that cut off ideas mid-thought
+- Worry about paragraph SIZE - let conceptual coherence drive the splits
+
+## PRESERVE AS COMPLETE UNITS
+- Full sentences always stay together
+- Complete invocations and prayers
+- Poetic verses and couplets
+- Quranic/scriptural quotations with their context
+- Lists of divine attributes or qualities
+
+## RESPONSE FORMAT
+For each paragraph break you identify:
+- endMarker: The EXACT last 5-10 words that end one paragraph (copy exactly from text)
+- startMarker: The EXACT first 5-10 words that begin the next paragraph (copy exactly from text)
+
+Split by MEANING, not by size. Some paragraphs may be long if they develop one extended idea.`;
+
+  const userPrompt = `Analyze this ${languageHint} text and identify natural paragraph boundaries where the concept or topic shifts.
 
 TEXT:
 ${text}
@@ -146,7 +155,8 @@ Respond with JSON only:
 IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coherence is more important than equal chunk sizes.`;
 
   try {
-    const response = await aiService('quality').chat([
+    // Force remote API for segmentation (OpenAI GPT-4 for best quality)
+    const response = await aiService('quality', { forceRemote: true }).chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ], {
@@ -213,8 +223,9 @@ IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coheren
       reasoning: result.reasoning || 'No reasoning provided'
     };
   } catch (err) {
-    logger.warn({ err: err.message }, 'AI segmentation failed');
-    throw err;
+    // NEVER fall back to fake processing - fail clearly so the issue can be fixed
+    logger.error({ err: err.message }, 'AI segmentation FAILED - not falling back to hard split');
+    throw new Error(`AI segmentation failed: ${err.message}. Source file needs manual review.`);
   }
 }
 
@@ -557,8 +568,10 @@ export async function segmentText(text, options = {}) {
     // Recursively handle any still-oversized chunks
     return applyMaxChunkSize(segments, maxChunkSize, minChunkSize, detectedLanguage);
   } catch (err) {
-    logger.warn({ err: err.message }, 'AI segmentation failed, falling back to hard split');
-    return hardSplitText(normalized, maxChunkSize);
+    // NEVER fall back to hard split - that produces garbage paragraphs
+    // Fail clearly so the source file can be reviewed
+    logger.error({ err: err.message, textLength: normalized.length }, 'AI segmentation FAILED');
+    throw err;
   }
 }
 
@@ -598,19 +611,20 @@ async function applyMaxChunkSize(segments, maxChunkSize, minChunkSize = SEGMENT_
     if (segment.length <= maxChunkSize) {
       result.push(segment);
     } else {
-      // Oversized segment - try AI first, fall back to hard split
-      try {
-        const aiResult = await getAIBreakPositions(segment, { language, maxChunkSize });
-        if (aiResult.breakPositions.length > 0) {
-          const subSegments = splitAtPositions(segment, aiResult.breakPositions);
-          // Recursively apply (in case AI chunks are still too big)
-          const processed = await applyMaxChunkSize(subSegments, maxChunkSize, minChunkSize, language);
-          result.push(...processed);
-        } else {
-          result.push(...hardSplitText(segment, maxChunkSize));
-        }
-      } catch {
-        result.push(...hardSplitText(segment, maxChunkSize));
+      // Oversized segment - use AI to find conceptual breaks
+      // If AI fails, throw error - never produce garbage paragraphs
+      const aiResult = await getAIBreakPositions(segment, { language, maxChunkSize });
+      if (aiResult.breakPositions.length > 0) {
+        const subSegments = splitAtPositions(segment, aiResult.breakPositions);
+        // Recursively apply (in case AI chunks are still too big)
+        const processed = await applyMaxChunkSize(subSegments, maxChunkSize, minChunkSize, language);
+        result.push(...processed);
+      } else {
+        // No break points found but segment is too large
+        // This means the segment is a single large conceptual unit - keep it as-is
+        // Better to have one large meaningful paragraph than multiple garbage splits
+        logger.warn({ segmentLength: segment.length }, 'AI found no break points for oversized segment - keeping as single unit');
+        result.push(segment);
       }
     }
   }

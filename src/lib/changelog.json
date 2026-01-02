@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T17:05:49.037Z",
+  "generated": "2026-01-02T17:38:57.095Z",
   "entries": [
+    {
+      "hash": "c3b86f0",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add segmentation integrity check to prevent text modification",
+      "scope": null
+    },
     {
       "hash": "1f597eb",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct job.document_id in processInAppTranslation",
       "scope": null
-    },
-    {
-      "hash": "f83b738",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Handle system users with string IDs in queue-translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "c3b86f0",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add segmentation integrity check to prevent text modification",
+        "scope": null
+      },
       {
         "hash": "1f597eb",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use correct job.document_id in processInAppTranslation",
-        "scope": null
-      },
-      {
-        "hash": "f83b738",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Handle system users with string IDs in queue-translation",
         "scope": null
       }
     ]
