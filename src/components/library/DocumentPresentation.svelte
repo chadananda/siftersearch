@@ -140,6 +140,10 @@
     // Load initial content
     await loadDocument();
 
+    // Pre-generate QR code for print view
+    const url = window.location.href;
+    qrCodeUrl = await generateQRCodeUrl(url, { width: 120 });
+
     // Scroll to anchor after content loads
     scrollToAnchor();
 
@@ -305,9 +309,7 @@
   }
 
   function openPrintView() {
-    if (document?.id) {
-      window.open(`/print/reading?doc=${document.id}`, '_blank');
-    }
+    window.print();
   }
 
   function openEditor() {
@@ -351,6 +353,27 @@
       <a href="/library" class="back-link">Back to Library</a>
     </div>
   {:else if document}
+    <!-- Print-only header with QR code -->
+    <div class="print-header">
+      <div class="print-meta">
+        <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">{document.title}</div>
+        {#if document.author}
+          <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.25rem;">by {document.author}</div>
+        {/if}
+        <div style="font-size: 0.75rem; color: #888;">
+          {document.religion} · {document.collection}
+          {#if document.language} · {document.language.toUpperCase()}{/if}
+          {#if document.year} · {document.year}{/if}
+        </div>
+      </div>
+      <div class="print-qr">
+        {#if qrCodeUrl}
+          <img src={qrCodeUrl} alt="QR Code" />
+        {/if}
+        <div class="print-url">{typeof window !== 'undefined' ? window.location.href.replace(/^https?:\/\//, '') : ''}</div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header class="document-header">
       <button class="back-button" onclick={goBack} title="Go back">
@@ -518,16 +541,19 @@
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
+            class:bilingual-paragraph={showBilingual && para.translation}
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
-            <button
-              class="para-anchor"
-              onclick={() => copyParagraphLink(para.paragraph_index)}
-              title="Copy link to paragraph {para.paragraph_index}"
-            >
-              {para.paragraph_index}
-            </button>
+            {#if !(showBilingual && para.translation)}
+              <button
+                class="para-anchor"
+                onclick={() => copyParagraphLink(para.paragraph_index)}
+                title="Copy link to paragraph {para.paragraph_index}"
+              >
+                {para.paragraph_index}
+              </button>
+            {/if}
             {#if para.heading}
               <h2 class="paragraph-heading">{para.heading}</h2>
             {/if}
@@ -536,12 +562,17 @@
                 <div class="original-col" dir={getLanguageDirection(document.language)}>
                   <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                 </div>
+                <div class="para-center">
+                  {para.paragraph_index}
+                </div>
                 <div class="translation-col">
                   <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
                 </div>
               </div>
             {:else}
-              <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+              <div class="para-text-wrapper">
+                <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+              </div>
             {/if}
           </div>
         {/each}
@@ -858,19 +889,24 @@
     line-height: 1.5;
   }
 
-  /* Document content */
+  /* Document content - paper background */
   .document-content {
     max-width: 48rem;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem 3rem; /* Extra left padding for paragraph anchors */
+    margin: 2rem auto;
+    padding: 2rem 2.5rem 4rem 2.5rem;
+    background: #faf8f3;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
   }
 
   .document-content.bilingual {
-    max-width: 72rem;
+    max-width: 80rem;
   }
 
   .document-content.rtl {
-    font-family: 'Amiri', serif;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
     font-size: 1.25rem;
     line-height: 2;
   }
@@ -882,35 +918,56 @@
   }
 
   .paragraph {
-    margin-bottom: 1.5rem;
-    position: relative;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     scroll-margin-top: 100px;
   }
 
-  .paragraph.highlighted {
-    background: var(--accent-bg, rgba(59, 130, 246, 0.1));
-    border-left: 3px solid var(--accent-primary);
-    padding-left: 1rem;
-    margin-left: -1rem;
+  .paragraph:last-of-type {
+    border-bottom: none;
+  }
+
+  .paragraph:hover {
+    background: rgba(0, 0, 0, 0.02);
+    margin: 0 -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     border-radius: 0.25rem;
   }
 
+  .paragraph.highlighted {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid var(--accent-primary);
+    padding-left: 0.75rem;
+    margin-left: -0.75rem;
+    border-radius: 0.25rem;
+  }
+
+  /* RTL: reverse the flex direction */
+  .rtl .paragraph {
+    flex-direction: row-reverse;
+  }
+
   .para-anchor {
-    position: absolute;
-    left: -2.5rem;
-    top: 0;
+    flex-shrink: 0;
+    width: 2rem;
+    font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: #999;
+    text-align: right;
+    padding-top: 0.25rem;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.2s;
+    transition: color 0.2s;
   }
 
-  .paragraph:hover .para-anchor {
-    opacity: 1;
+  .rtl .para-anchor {
+    text-align: left;
+    font-family: 'Amiri', 'Traditional Arabic', serif;
   }
 
   .para-anchor:hover {
@@ -956,24 +1013,46 @@
     margin-bottom: 0;
   }
 
-  /* Bilingual layout */
+  /* Bilingual layout - three columns: original | par# | translation */
   .bilingual-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
   }
 
   .original-col {
-    border-right: 1px solid var(--border-subtle);
-    padding-right: 1.5rem;
+    padding-right: 1.25rem;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .original-col[dir="rtl"] {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.125rem;
+    line-height: 1.9;
+    text-align: right;
+  }
+
+  .para-center {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0 0.75rem;
+    padding-top: 0.25rem;
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.75rem;
+    color: #999;
+    min-width: 2.5rem;
   }
 
   .translation-col {
-    padding-left: 0.5rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .translation-col .paragraph-text {
-    color: var(--text-secondary);
+    color: #444;
     font-style: normal;
   }
 
@@ -1166,6 +1245,187 @@
 
     .metadata-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Para text wrapper for flex layout */
+  .para-text-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Print styles */
+  @media print {
+    /* Hide non-essential elements */
+    .document-header {
+      position: static;
+      border-bottom: none;
+      padding: 0;
+      background: none;
+    }
+
+    .back-button,
+    .header-actions,
+    .breadcrumb {
+      display: none !important;
+    }
+
+    .header-content {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .document-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .document-author {
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .metadata-badges {
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge {
+      background: #eee;
+      border: 1px solid #ccc;
+    }
+
+    /* Always show metadata panel in print */
+    .metadata-panel {
+      display: block !important;
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      page-break-inside: avoid;
+    }
+
+    .metadata-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Document content - minimize margins for print */
+    .document-content {
+      max-width: 100%;
+      margin: 0;
+      padding: 0.25rem 0;
+      border: none;
+      box-shadow: none;
+      background: white;
+    }
+
+    .document-content.bilingual {
+      max-width: 100%;
+    }
+
+    .paragraph {
+      page-break-inside: avoid;
+      padding: 0.35rem 0;
+      gap: 0.5rem;
+    }
+
+    .paragraph:hover {
+      background: none;
+      margin: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .para-anchor {
+      color: #666;
+      width: 1.5rem;
+      padding: 0;
+    }
+
+    .para-text-wrapper {
+      padding-right: 0;
+    }
+
+    /* Hide auth gate and load more in print */
+    .auth-gate,
+    .load-more-section {
+      display: none !important;
+    }
+
+    /* Bilingual layout adjustments */
+    .bilingual-row {
+      page-break-inside: avoid;
+      gap: 0;
+    }
+
+    .original-col {
+      border-color: #ccc;
+      padding-right: 0.5rem;
+    }
+
+    .translation-col {
+      border-color: #ccc;
+      padding-left: 0.5rem;
+    }
+
+    .para-center {
+      color: #666;
+      padding: 0 0.25rem;
+      min-width: 1.5rem;
+    }
+
+    /* Print QR code if shown */
+    .qr-modal {
+      display: none;
+    }
+
+    /* General print optimizations */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-size: 11pt;
+    }
+  }
+
+  /* Print-specific class for generating QR in print header */
+  .print-header {
+    display: none;
+  }
+
+  @media print {
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1rem 0;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 1rem;
+    }
+
+    .print-meta {
+      flex: 1;
+    }
+
+    .print-qr {
+      width: 80px;
+      height: 80px;
+      flex-shrink: 0;
+    }
+
+    .print-qr img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .print-url {
+      font-size: 8pt;
+      color: #666;
+      text-align: center;
+      margin-top: 0.25rem;
+      word-break: break-all;
     }
   }
 </style>

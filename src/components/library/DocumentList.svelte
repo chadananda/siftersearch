@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import BilingualView from './BilingualView.svelte';
-  import ReaderModal from '../common/ReaderModal.svelte';
   import { getAccessToken } from '../../lib/api.js';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
@@ -80,13 +79,6 @@
   let activeJobs = $state(new Map()); // docId → jobId for active translation jobs
   let pollingInterval = $state(null);
 
-  // Fullscreen modal state
-  let modalOpen = $state(false);
-  let modalDoc = $state(null);
-  let modalParagraphs = $state([]);
-  let modalBilingual = $state(null);
-  let modalLoading = $state(false);
-  let modalSourceUrl = $state(null);
 
   // RTL languages that need special handling
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
@@ -200,62 +192,6 @@
     };
   }
 
-  async function openReader(doc, autoTranslate = false) {
-    modalDoc = {
-      id: doc.id,
-      title: doc.title,
-      author: doc.author,
-      religion: doc.religion,
-      collection: doc.collection,
-      language: doc.language || 'en',
-      autoTranslate  // Flag to auto-start translation
-    };
-    modalOpen = true;
-    modalLoading = true;
-    modalParagraphs = [];
-    modalBilingual = null;
-    modalSourceUrl = null;
-
-    try {
-      const isNonEnglish = doc.language && doc.language !== 'en';
-
-      if (isNonEnglish) {
-        const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=500`);
-        if (bilingualRes.ok) {
-          const data = await bilingualRes.json();
-          if (data.paragraphs?.length > 0) {
-            modalBilingual = data;
-            modalLoading = false;
-            return;
-          }
-        }
-      }
-
-      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
-      if (!res.ok) throw new Error('Failed to load content');
-      const data = await res.json();
-      modalParagraphs = data.paragraphs || [];
-
-      // Get source URL from assets
-      const originalFile = data.assets?.find(a => a.asset_type === 'original');
-      if (originalFile?.storage_url) {
-        modalSourceUrl = originalFile.storage_url;
-      }
-    } catch (err) {
-      console.error('Failed to load document:', err);
-      modalParagraphs = [];
-    } finally {
-      modalLoading = false;
-    }
-  }
-
-  function closeModal() {
-    modalOpen = false;
-    modalDoc = null;
-    modalParagraphs = [];
-    modalBilingual = null;
-    modalSourceUrl = null;
-  }
 
   // Queue document for translation (background job)
   async function requestTranslation(docId) {
@@ -349,15 +285,6 @@
       clearInterval(pollingInterval);
     }
   });
-
-  // Request translation from modal - just open the modal and let ReaderModal handle it
-  async function handleModalTranslate(docId) {
-    const doc = documents.find(d => d.id === docId);
-    if (doc) {
-      await openReader(doc);
-      // ReaderModal has its own translate button that handles this properly
-    }
-  }
 
 </script>
 
@@ -470,13 +397,15 @@
               {/if}
             {/if}
           {/if}
-          <!-- Open document page link -->
+          <!-- Open in new tab button - visible on hover or when expanded -->
           <a
-            href={getDocumentUrl(doc)}
             class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
                    {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+            href={getDocumentUrl(doc)}
+            target="_blank"
+            rel="noopener"
             onclick={(e) => e.stopPropagation()}
-            title="Open document page"
+            title="Open in new tab"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -484,17 +413,6 @@
               <line x1="10" y1="14" x2="21" y2="3"/>
             </svg>
           </a>
-          <!-- Fullscreen button - visible on hover or when expanded -->
-          <button
-            class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
-                   {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
-            onclick={(e) => { e.stopPropagation(); openReader(doc); }}
-            title="View in modal"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -548,18 +466,6 @@
     </div>
   {/each}
 </div>
-
-<!-- Fullscreen Reader Modal -->
-<ReaderModal
-  open={modalOpen}
-  document={modalDoc}
-  paragraphs={modalParagraphs}
-  loading={modalLoading}
-  bilingualContent={modalBilingual}
-  sourceUrl={modalSourceUrl}
-  onClose={closeModal}
-  onTranslate={handleModalTranslate}
-/>
 
 <style>
   /* Paper-like content area */

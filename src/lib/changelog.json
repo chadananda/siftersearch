@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T21:58:21.790Z",
+  "generated": "2026-01-02T22:24:40.307Z",
   "entries": [
+    {
+      "hash": "57ae7c1",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Correct admin edit button URL path and query param",
+      "scope": null
+    },
     {
       "hash": "2c7080a",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add search filter support to collection detail view",
       "scope": null
-    },
-    {
-      "hash": "8fa5233",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Hide translate button for docs with 'in English' in title",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "57ae7c1",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Correct admin edit button URL path and query param",
+        "scope": null
+      },
       {
         "hash": "2c7080a",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Add search filter support to collection detail view",
-        "scope": null
-      },
-      {
-        "hash": "8fa5233",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Hide translate button for docs with 'in English' in title",
         "scope": null
       }
     ]
