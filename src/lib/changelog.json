@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T15:26:36.847Z",
+  "generated": "2026-01-02T15:30:06.455Z",
   "entries": [
+    {
+      "hash": "2537829",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add Bahá'í transliteration style to translation prompts",
+      "scope": null
+    },
     {
       "hash": "23f8f13",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use document_id column consistently across all API code",
       "scope": null
-    },
-    {
-      "hash": "0174fe7",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use document_id in orphaned endpoint queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "2537829",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add Bahá'í transliteration style to translation prompts",
+        "scope": null
+      },
       {
         "hash": "23f8f13",
         "date": "2026-01-02",
@@ -699,13 +706,6 @@
         "date": "2025-12-31",
         "type": "Fixed",
         "description": "Use document_id column consistently across all API code",
-        "scope": null
-      },
-      {
-        "hash": "0174fe7",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use document_id in orphaned endpoint queries",
         "scope": null
       }
     ]

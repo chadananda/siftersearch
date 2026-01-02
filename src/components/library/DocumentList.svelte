@@ -310,7 +310,7 @@
     {@const statsLoading = loadingStats.has(doc.id)}
 
     <!-- Load translation stats for non-English docs when they become visible -->
-    {#if isNonEnglish && isAdmin && !docTranslationStats.has(doc.id) && !loadingStats.has(doc.id)}
+    {#if isNonEnglish && !docTranslationStats.has(doc.id) && !loadingStats.has(doc.id)}
       <div class="hidden" use:loadStatsOnMount={{ doc }}></div>
     {/if}
 
@@ -357,23 +357,33 @@
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>100%</span>
                 </span>
+              {:else if translationPercent !== null && translationPercent > 0}
+                <!-- Partially translated: show progress -->
+                {#if isAdmin}
+                  <button
+                    onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                    class="px-2 py-0.5 bg-info/20 text-info hover:bg-info hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Continue translation"
+                  >
+                    <span>{translationPercent}%</span>
+                  </button>
+                {:else}
+                  <span class="px-2 py-0.5 bg-info/20 text-info">{translationPercent}%</span>
+                {/if}
               {:else if isAdmin}
-                <!-- Needs translation: clickable button -->
+                <!-- Not translated: admin can start translation -->
                 <button
                   onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
-                  class="px-2 py-0.5 bg-surface-1 text-accent hover:bg-accent hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                  class="px-2 py-0.5 bg-surface-1 text-muted hover:bg-accent hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
                   title="Translate to English"
                 >
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/>
                   </svg>
-                  {#if translationPercent !== null && translationPercent > 0}
-                    <span>{translationPercent}%</span>
-                  {/if}
                 </button>
-              {:else if translationPercent !== null}
-                <!-- Not admin, show percent if any -->
-                <span class="px-2 py-0.5 bg-surface-1 text-primary">{translationPercent}%</span>
+              {:else}
+                <!-- Not translated: show indicator for non-admins -->
+                <span class="px-2 py-0.5 bg-surface-1 text-muted text-[0.625rem]">—</span>
               {/if}
             </div>
           {/if}
