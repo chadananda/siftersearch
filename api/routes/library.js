@@ -1332,6 +1332,122 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Clear ALL translations across all documents (internal key only)
+   * Use with caution - this removes all translation data
+   */
+  fastify.delete('/translations/all', {
+    preHandler: [requireInternal]
+  }, async () => {
+    const result = await query(`
+      UPDATE content
+      SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+      WHERE translation IS NOT NULL
+    `, [new Date().toISOString()]);
+
+    logger.info({ cleared: result.changes }, 'Cleared ALL translations');
+
+    return {
+      success: true,
+      clearedCount: result.changes || 0
+    };
+  });
+
+  /**
+   * Queue translation for all non-English documents (internal key only)
+   * Translates documents in batches using segment-aware translation
+   */
+  fastify.post('/translations/queue-all', {
+    preHandler: [requireInternal],
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 10, maximum: 100 },
+          language: { type: 'string' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { limit = 10, language } = request.body || {};
+
+    // Get non-English documents that need translation
+    let docsQuery = `
+      SELECT d.id, d.language, d.title,
+        (SELECT COUNT(*) FROM content WHERE doc_id = d.id AND (translation IS NULL OR translation = '')) as untranslated
+      FROM docs d
+      WHERE d.language != 'en' AND d.language IS NOT NULL
+    `;
+    const params = [];
+
+    if (language) {
+      docsQuery += ' AND d.language = ?';
+      params.push(language);
+    }
+
+    docsQuery += ' ORDER BY untranslated DESC LIMIT ?';
+    params.push(limit);
+
+    const docs = await queryAll(docsQuery, params);
+
+    // For each document, translate untranslated paragraphs
+    const results = [];
+    for (const doc of docs) {
+      if (doc.untranslated === 0) continue;
+
+      // Get untranslated paragraphs
+      const paragraphs = await queryAll(`
+        SELECT id, paragraph_index, text
+        FROM content
+        WHERE doc_id = ? AND (translation IS NULL OR translation = '')
+        ORDER BY paragraph_index
+        LIMIT 50
+      `, [doc.id]);
+
+      if (paragraphs.length === 0) continue;
+
+      // Translate each paragraph with segments
+      let translated = 0;
+      for (const para of paragraphs) {
+        if (!para.text || para.text.trim().length === 0) continue;
+
+        try {
+          const result = await translateTextWithSegments(
+            para.text,
+            doc.language,
+            'en',
+            'scriptural'
+          );
+
+          const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+          await query(
+            'UPDATE content SET translation = ?, translation_segments = ?, synced = 0, updated_at = ? WHERE id = ?',
+            [result.translation, segmentsJson, new Date().toISOString(), para.id]
+          );
+          translated++;
+        } catch (err) {
+          logger.error({ err: err.message, paraId: para.id }, 'Translation failed');
+        }
+      }
+
+      results.push({
+        documentId: doc.id,
+        title: doc.title,
+        language: doc.language,
+        translated,
+        remaining: doc.untranslated - translated
+      });
+
+      logger.info({ docId: doc.id, translated }, 'Batch translated document');
+    }
+
+    return {
+      success: true,
+      documentsProcessed: results.length,
+      results
+    };
+  });
+
+  /**
    * Test segment translation (admin or internal key)
    * Clears and re-translates one paragraph to verify phrase-level alignment works
    */
@@ -1889,6 +2005,110 @@ Provide only the translation, no explanations.`;
         total: stats?.total || 0,
         percent: stats?.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
       }
+    };
+  });
+
+  // ============================================
+  // Bulk Translation Management (Internal)
+  // ============================================
+
+  /**
+   * Clear ALL translations across all documents
+   * Used to reset and re-translate with new segment-aware process
+   */
+  fastify.delete('/translations/all', {
+    preHandler: [requireInternal]
+  }, async () => {
+    const result = await query(`
+      UPDATE content
+      SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+      WHERE translation IS NOT NULL
+    `, [new Date().toISOString()]);
+
+    logger.info({ cleared: result.changes }, 'Cleared ALL translations');
+
+    return {
+      success: true,
+      clearedCount: result.changes || 0,
+      message: 'All translations cleared'
+    };
+  });
+
+  /**
+   * Queue batch translation for all non-English documents
+   * Creates translation jobs for each document
+   */
+  fastify.post('/translations/queue-all', {
+    preHandler: [requireInternal]
+  }, async () => {
+    // Find all non-English documents with content
+    const docs = await queryAll(`
+      SELECT DISTINCT d.id, d.title, d.language, d.religion, d.collection
+      FROM docs d
+      JOIN content c ON c.doc_id = d.id
+      WHERE d.language IS NOT NULL
+        AND d.language != 'en'
+        AND d.language != ''
+    `);
+
+    if (!docs || docs.length === 0) {
+      return {
+        success: true,
+        queued: 0,
+        message: 'No non-English documents found'
+      };
+    }
+
+    const now = new Date().toISOString();
+    let queued = 0;
+
+    for (const doc of docs) {
+      // Check if there's already a pending job for this doc
+      const existingJob = await queryOne(`
+        SELECT id FROM jobs
+        WHERE document_id = ? AND type = 'translation' AND status IN ('pending', 'processing')
+      `, [doc.id]);
+
+      if (existingJob) {
+        continue; // Skip if already queued
+      }
+
+      // Get paragraph count for this document
+      const stats = await queryOne(`
+        SELECT COUNT(*) as total,
+               SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
+        FROM content WHERE doc_id = ?
+      `, [doc.id]);
+
+      if (!stats?.total || stats.total === 0) continue;
+      if (stats.translated === stats.total) continue; // Already fully translated
+
+      // Create translation job
+      const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      await query(`
+        INSERT INTO jobs (id, type, status, document_id, params, priority, progress, total_items, created_at)
+        VALUES (?, 'translation', 'pending', ?, ?, ?, ?, ?, ?)
+      `, [
+        jobId,
+        doc.id,
+        JSON.stringify({ targetLanguage: 'en', sourceLanguage: doc.language }),
+        0, // Default priority
+        stats.translated || 0,
+        stats.total,
+        now
+      ]);
+
+      queued++;
+    }
+
+    logger.info({ queued, totalDocs: docs.length }, 'Queued batch translation for all non-English docs');
+
+    return {
+      success: true,
+      queued,
+      totalDocuments: docs.length,
+      message: `Queued ${queued} documents for translation`
     };
   });
 }
