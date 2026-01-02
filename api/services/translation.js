@@ -638,16 +638,20 @@ OUTPUT FORMAT (JSON only, no markdown):
   ]
 }
 
-SEGMENTATION RULES:
-- Break at natural phrase boundaries (sentences, clauses, or logical units)
-- Keep segments short enough for easy comparison (1-3 sentences max)
-- Ensure each original phrase maps to exactly one translation phrase
-- Preserve the complete text - every word must be in a segment
-- CRITICAL FOR ARABIC/PERSIAN: NEVER end a segment with a preposition
-  - Prepositions (في، من، إلى، على، عن، ب، ل، و، ف) MUST stay with their objects
-  - "من عند الله" is ONE unit, do NOT split as "من" + "عند الله"
-  - Watch for attached prepositions (بِ، لِ، وَ، فَ، كَ) - keep with following word
-  - Complete idāfa (construct) chains: "نور وجه الله" stays together
+## SEGMENTATION
+
+The purpose of segmentation is **phrase-level study**. Students will see original and translation side-by-side, with each segment highlighted together. Think of it like a scholar carefully dividing a text for annotation.
+
+A segment is a **complete unit of meaning** - a phrase or clause that makes sense on its own and corresponds naturally between languages. Each segment should be something a reader could underline as "this part means that part."
+
+**What makes a good segment:**
+- Grammatically complete: subject-verb-object, prepositional phrase with its object, construct chains intact
+- Semantically coherent: expresses one idea, invocation, attribute, or command
+- Appropriate for study: short enough to compare word-by-word (typically 5-15 words), but not artificially chopped mid-phrase
+
+**Think like a language teacher:** Where would you draw brackets around text to show a student "this phrase = that phrase"? That's your segment boundary.
+
+Every word in the original must appear in exactly one segment. The concatenation of all segments recreates the complete original text.
 
 TRANSLATION STYLE:
 ${styleGuide}
