@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T15:22:36.021Z",
+  "generated": "2026-01-02T15:26:36.847Z",
   "entries": [
+    {
+      "hash": "23f8f13",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Use established religious terminology in translations",
+      "scope": null
+    },
     {
       "hash": "7c1e0d6",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use document_id in orphaned endpoint queries",
       "scope": null
-    },
-    {
-      "hash": "467512f",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use document_id column (not doc_id) in populate-content endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "23f8f13",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Use established religious terminology in translations",
+        "scope": null
+      },
       {
         "hash": "7c1e0d6",
         "date": "2026-01-02",
@@ -699,13 +706,6 @@
         "date": "2025-12-31",
         "type": "Fixed",
         "description": "Use document_id in orphaned endpoint queries",
-        "scope": null
-      },
-      {
-        "hash": "467512f",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use document_id column (not doc_id) in populate-content endpoint",
         "scope": null
       }
     ]

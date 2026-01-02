@@ -430,14 +430,22 @@ Use ESTABLISHED English translations for religious terms and titles. Do NOT tran
 - "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
 - "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
 - "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
-- "الحجة" → "the Proof of God (Ḥujjah)"
+- "الحجة" → "the Proof of God (Ḥujjat)"
 - "النقطة الأولى" → "the Primal Point (Nuqṭiy-i-Úlá)"
 - "مظهر أمر الله" → "Manifestation of God"
 - "أهل البهاء" → "people of Bahá"
 - "أمر الله" → "the Cause of God"
 - "ملكوت" → "Kingdom" / "جبروت" → "Dominion" / "لاهوت" → "Godhead"
 
-For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
+For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence.
+
+## Bahá'í Transliteration Style (REQUIRED):
+Use Bahá'í-standard transliteration with ACCENTS (not macrons), dot-unders, and Arabic-based romanization even for Persian:
+- Long vowels: á, í, ú (NOT ā, ī, ū)
+- Emphatics with dot-under: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ
+- 'ayn and hamza: ' (apostrophe)
+- Examples: Bahá'u'lláh, 'Abdu'l-Bahá, Qá'im, Ḥusayn, Ṭáhirih, Shíráz
+- Persian words use Arabic transliteration: Sháh (not Shāh), Íránian (not Īrānī)
 
 ## Style Guidelines:
 - Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
@@ -489,7 +497,7 @@ Use ESTABLISHED English translations for religious terms and titles. NEVER trans
 - "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
 - "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
 - "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
-- "الحجة" → "the Proof of God (Ḥujjah)"
+- "الحجة" → "the Proof of God (Ḥujjat)"
 - "النقطة الأولى" → "the Primal Point (Nuqṭiy-i-Úlá)"
 - "مظهر أمر الله" → "Manifestation of God"
 - "أهل البهاء" → "people of Bahá"
@@ -499,7 +507,15 @@ Use ESTABLISHED English translations for religious terms and titles. NEVER trans
 - "كتاب مبين" → "perspicuous Book"
 - "صراط مستقيم" → "Straight Path"
 
-For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
+For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence.
+
+## Bahá'í Transliteration Style (REQUIRED):
+Use Bahá'í-standard transliteration with ACCENTS (not macrons), dot-unders, and Arabic-based romanization even for Persian:
+- Long vowels: á, í, ú (NOT ā, ī, ū)
+- Emphatics with dot-under: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ
+- 'ayn and hamza: ' (apostrophe)
+- Examples: Bahá'u'lláh, 'Abdu'l-Bahá, Qá'im, Ḥusayn, Ṭáhirih, Shíráz
+- Persian words use Arabic transliteration: Sháh (not Shāh), Írán (not Īrān)
 
 ## Content Type Detection:
 1. **Scripture, Prayers, Poetry, Prophecy**: Use Shoghi Effendi's biblical style
@@ -600,13 +616,19 @@ NEVER translate religious titles and terms literally. Use established translatio
 - "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
 - "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
 - "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
-- "الحجة" → "the Proof of God (Ḥujjah)"
-- "النقطة الأولى" → "the Primal Point"
+- "الحجة" → "the Proof of God (Ḥujjat)"
+- "النقطة الأولى" → "the Primal Point (Nuqṭiy-i-Úlá)"
 - "مظهر أمر الله" → "Manifestation of God"
 - "أمر الله" → "the Cause of God"
 - "ملكوت" → "Kingdom" / "جبروت" → "Dominion" / "لاهوت" → "Godhead"
 
-For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
+For student study, you MAY include transliterated terms in parentheses on first occurrence.
+
+## Bahá'í Transliteration Style (REQUIRED):
+Use Bahá'í-standard transliteration with ACCENTS (not macrons), dot-unders, and Arabic-based romanization even for Persian:
+- Long vowels: á, í, ú (NOT ā, ī, ū)
+- Emphatics with dot-under: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ
+- Examples: Bahá'u'lláh, 'Abdu'l-Bahá, Qá'im, Ḥusayn, Ṭáhirih
 
 OUTPUT FORMAT (JSON only, no markdown):
 {
