@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T00:49:34.514Z",
+  "generated": "2026-01-02T00:55:52.771Z",
   "entries": [
+    {
+      "hash": "3e03a2a",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Correct column names and Meilisearch SDK API usage",
+      "scope": null
+    },
     {
       "hash": "3d6e34d",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Increase limit from 200 to 500 for full document loading",
       "scope": "bilingual"
-    },
-    {
-      "hash": "29641dd",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add auth header and support both doc_id/document_id columns",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "3e03a2a",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Correct column names and Meilisearch SDK API usage",
+        "scope": null
+      },
       {
         "hash": "3d6e34d",
         "date": "2026-01-01",
@@ -700,15 +707,6 @@
         "type": "Fixed",
         "description": "Increase limit from 200 to 500 for full document loading",
         "scope": "bilingual"
-      }
-    ],
-    "2025-12-29": [
-      {
-        "hash": "29641dd",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add auth header and support both doc_id/document_id columns",
-        "scope": "translation"
       }
     ]
   }
