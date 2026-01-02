@@ -9,7 +9,7 @@ import { query, queryOne, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 18;
+const CURRENT_VERSION = 19;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -800,6 +800,32 @@ const migrations = {
   // See userMigrations below
   18: async () => {
     logger.info('Content DB migration 18: User tables now managed separately');
+  },
+
+  // Version 19: Create email_queue table for job notifications
+  19: async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS email_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        recipient TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body_text TEXT NOT NULL,
+        body_html TEXT,
+        job_id TEXT,
+        status TEXT DEFAULT 'pending',
+        attempts INTEGER DEFAULT 0,
+        last_error TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        sent_at TEXT,
+        FOREIGN KEY (job_id) REFERENCES jobs(id)
+      )
+    `);
+
+    // Create indexes for efficient queue processing
+    await query('CREATE INDEX IF NOT EXISTS idx_email_queue_status ON email_queue(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_email_queue_job ON email_queue(job_id)');
+
+    logger.info('Created email_queue table');
   },
 };
 
