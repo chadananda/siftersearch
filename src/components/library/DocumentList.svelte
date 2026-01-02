@@ -37,14 +37,36 @@
   }
 
   /**
+   * Generate a document slug from title/filename + language
+   * Matches server-side generateDocSlug function
+   */
+  function generateDocSlug(doc) {
+    // Use title if available, otherwise filename without extension
+    let base = doc.title;
+    if (!base && doc.filename) {
+      base = doc.filename.replace(/\.[^.]+$/, '');
+    }
+    if (!base) return '';
+
+    const slug = slugifyPath(base);
+
+    // Add language suffix for non-English documents
+    if (doc.language && doc.language !== 'en') {
+      return `${slug}_${doc.language}`;
+    }
+    return slug;
+  }
+
+  /**
    * Get the semantic URL for a document
    */
   function getDocumentUrl(doc) {
-    if (!doc.slug || !doc.religion || !doc.collection) {
+    const docSlug = generateDocSlug(doc);
+    if (!docSlug || !doc.religion || !doc.collection) {
       // Fallback to query param style if no slug
       return `/library/view?doc=${doc.id}`;
     }
-    return `/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${doc.slug}`;
+    return `/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${docSlug}`;
   }
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';

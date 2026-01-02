@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T20:50:35.630Z",
+  "generated": "2026-01-02T21:00:39.521Z",
   "entries": [
+    {
+      "hash": "db40b19",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add semantic URLs for library documents with SEO hierarchy pages",
+      "scope": null
+    },
     {
       "hash": "d8ae948",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Default to research mode for approved users",
       "scope": null
-    },
-    {
-      "hash": "951abde",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Increase RTL font size in bilingual view for better readability",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "db40b19",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add semantic URLs for library documents with SEO hierarchy pages",
+        "scope": null
+      },
       {
         "hash": "d8ae948",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Default to research mode for approved users",
-        "scope": null
-      },
-      {
-        "hash": "951abde",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Increase RTL font size in bilingual view for better readability",
         "scope": null
       }
     ]

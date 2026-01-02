@@ -21,7 +21,7 @@ import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
-import { slugifyPath } from '../lib/slug.js';
+import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument } from '../services/ingester.js';
@@ -984,6 +984,10 @@ Return ONLY the description text, no quotes or formatting.`;
    * Get document by semantic URL path
    * GET /api/library/by-path/:religion/:collection/:slug
    *
+   * Slugs are generated dynamically from title/filename + language:
+   * - "hidden-words" for English docs
+   * - "kalimat-i-maknunih_fa" for non-English docs
+   *
    * Returns document with progressive content loading:
    * - Non-encumbered: Full content for everyone
    * - Encumbered: Initial paragraphs, then auth-gated fetch for more
@@ -1019,25 +1023,34 @@ Return ONLY the description text, no quotes or formatting.`;
     const userRole = request.user?.role || request.user?.tier || null;
     const canEdit = isAuthenticated && ['admin', 'editor'].includes(userRole);
 
-    // Find document by slug, matching religion/collection by slug comparison
-    // We need to match the URL slugs against stored values
-    const document = await queryOne(`
+    // Parse the slug to extract language suffix if present
+    const { baseSlug, language: slugLang } = parseDocSlug(slug);
+
+    // Get all documents in the matching religion/collection
+    // We'll filter by generated slug since slugs are dynamic
+    const candidates = await queryAll(`
       SELECT id, title, author, religion, collection, language, year, description,
-             paragraph_count, slug, encumbered, file_path, created_at, updated_at
+             paragraph_count, encumbered, file_path, filename, created_at, updated_at
       FROM docs
-      WHERE slug = ?
-    `, [slug]);
+      WHERE religion IS NOT NULL AND collection IS NOT NULL
+    `);
+
+    // Find document by matching:
+    // 1. Religion slug matches
+    // 2. Collection slug matches
+    // 3. Generated document slug matches
+    const document = candidates.find(doc => {
+      const docReligionSlug = slugifyPath(doc.religion || '');
+      const docCollectionSlug = slugifyPath(doc.collection || '');
+      const docSlug = generateDocSlug(doc);
+
+      return docReligionSlug === religion &&
+             docCollectionSlug === collection &&
+             docSlug === slug;
+    });
 
     if (!document) {
       throw ApiError.notFound('Document not found');
-    }
-
-    // Verify religion/collection match (compare slugified versions)
-    const docReligionSlug = slugifyPath(document.religion || '');
-    const docCollectionSlug = slugifyPath(document.collection || '');
-
-    if (docReligionSlug !== religion || docCollectionSlug !== collection) {
-      throw ApiError.notFound('Document not found at this path');
     }
 
     const isEncumbered = document.encumbered === 1;
@@ -1061,7 +1074,7 @@ Return ONLY the description text, no quotes or formatting.`;
           description: document.description,
           paragraphCount: document.paragraph_count,
           encumbered: true,
-          slug: document.slug
+          slug: generateDocSlug(document)
         },
         paragraphs: [],
         total: document.paragraph_count || 0,
@@ -1117,7 +1130,7 @@ Return ONLY the description text, no quotes or formatting.`;
         description: document.description,
         paragraphCount: total,
         encumbered: isEncumbered,
-        slug: document.slug,
+        slug: generateDocSlug(document),
         isRTL
       },
       paragraphs: formattedParagraphs,

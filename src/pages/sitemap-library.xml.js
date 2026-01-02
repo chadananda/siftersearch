@@ -58,16 +58,35 @@ export async function GET() {
     const data = await res.json();
     const documents = data.documents || [];
 
+    /**
+     * Generate a document slug from title/filename + language
+     */
+    function generateDocSlug(doc) {
+      let base = doc.title;
+      if (!base && doc.filename) {
+        base = doc.filename.replace(/\.[^.]+$/, '');
+      }
+      if (!base) return '';
+
+      const slug = slugifyPath(base);
+      if (doc.language && doc.language !== 'en') {
+        return `${slug}_${doc.language}`;
+      }
+      return slug;
+    }
+
     // Filter documents that have all required fields for semantic URLs
-    const validDocs = documents.filter(doc =>
-      doc.slug && doc.religion && doc.collection
-    );
+    const validDocs = documents.filter(doc => {
+      const docSlug = generateDocSlug(doc);
+      return docSlug && doc.religion && doc.collection;
+    });
 
     // Generate URLs
     const urls = validDocs.map(doc => {
       const religionSlug = slugifyPath(doc.religion);
       const collectionSlug = slugifyPath(doc.collection);
-      const url = `${SITE_URL}/library/${religionSlug}/${collectionSlug}/${doc.slug}`;
+      const docSlug = generateDocSlug(doc);
+      const url = `${SITE_URL}/library/${religionSlug}/${collectionSlug}/${docSlug}`;
 
       // Determine priority based on document properties
       // Higher authority or more content = higher priority

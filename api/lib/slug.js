@@ -117,3 +117,52 @@ export function generateUniqueSlug(title, existingSlugs) {
 export function slugifyPath(name) {
   return generateSlug(name);
 }
+
+/**
+ * Generate a document slug from title or filename, with language suffix
+ * @param {object} doc - Document object with title, filename, language
+ * @returns {string} URL-safe slug with language suffix for non-English
+ *
+ * @example
+ * generateDocSlug({ title: "Hidden Words", language: "en" }) // "hidden-words"
+ * generateDocSlug({ title: "Kalimát-i-Maknúnih", language: "fa" }) // "kalimat-i-maknunih_fa"
+ * generateDocSlug({ filename: "tablet.md", language: "ar" }) // "tablet_ar"
+ */
+export function generateDocSlug(doc) {
+  // Use title if available, otherwise use filename without extension
+  let base = doc.title;
+  if (!base && doc.filename) {
+    base = doc.filename.replace(/\.[^.]+$/, ''); // Remove extension
+  }
+  if (!base) return '';
+
+  const slug = generateSlug(base);
+
+  // Add language suffix for non-English documents
+  if (doc.language && doc.language !== 'en') {
+    return `${slug}_${doc.language}`;
+  }
+
+  return slug;
+}
+
+/**
+ * Parse a document slug to extract base slug and language
+ * @param {string} slug - The slug to parse
+ * @returns {{ baseSlug: string, language: string|null }}
+ *
+ * @example
+ * parseDocSlug("hidden-words") // { baseSlug: "hidden-words", language: null }
+ * parseDocSlug("kalimat-i-maknunih_fa") // { baseSlug: "kalimat-i-maknunih", language: "fa" }
+ */
+export function parseDocSlug(slug) {
+  if (!slug) return { baseSlug: '', language: null };
+
+  // Check for language suffix (2-3 letter code after underscore)
+  const match = slug.match(/^(.+)_([a-z]{2,3})$/);
+  if (match) {
+    return { baseSlug: match[1], language: match[2] };
+  }
+
+  return { baseSlug: slug, language: null };
+}

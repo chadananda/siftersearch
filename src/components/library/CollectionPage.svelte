@@ -143,9 +143,27 @@
       .replace(/-+/g, '-');
   }
 
+  /**
+   * Generate a document slug from title/filename + language
+   */
+  function generateDocSlug(doc) {
+    let base = doc.title;
+    if (!base && doc.filename) {
+      base = doc.filename.replace(/\.[^.]+$/, '');
+    }
+    if (!base) return '';
+
+    const slug = slugifyPath(base);
+    if (doc.language && doc.language !== 'en') {
+      return `${slug}_${doc.language}`;
+    }
+    return slug;
+  }
+
   function getDocumentUrl(doc) {
-    if (!doc.slug) return `/library/view?doc=${doc.id}`;
-    return `/library/${religionSlug}/${collectionSlug}/${doc.slug}`;
+    const docSlug = generateDocSlug(doc);
+    if (!docSlug) return `/library/view?doc=${doc.id}`;
+    return `/library/${religionSlug}/${collectionSlug}/${docSlug}`;
   }
 
   // Group documents by author
