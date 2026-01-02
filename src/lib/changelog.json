@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T22:24:40.307Z",
+  "generated": "2026-01-02T23:14:54.659Z",
   "entries": [
+    {
+      "hash": "a95e207",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve document presentation with paper styling, SBS columns, and print support",
+      "scope": null
+    },
     {
       "hash": "57ae7c1",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add embedding coverage stats to server status endpoint",
       "scope": null
-    },
-    {
-      "hash": "a447dc1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add search filter support to collection detail view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "a95e207",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve document presentation with paper styling, SBS columns, and print support",
+        "scope": null
+      },
       {
         "hash": "57ae7c1",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add embedding coverage stats to server status endpoint",
-        "scope": null
-      },
-      {
-        "hash": "a447dc1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add search filter support to collection detail view",
         "scope": null
       }
     ]

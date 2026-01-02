@@ -355,12 +355,15 @@
   {:else if document}
     <!-- Print-only header with QR code -->
     <div class="print-header">
+      <div class="print-logo">
+        <span class="logo-text">SifterSearch</span>
+      </div>
       <div class="print-meta">
-        <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem;">{document.title}</div>
+        <div class="print-title">{document.title}</div>
         {#if document.author}
-          <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.25rem;">by {document.author}</div>
+          <div class="print-author">by {document.author}</div>
         {/if}
-        <div style="font-size: 0.75rem; color: #888;">
+        <div class="print-info">
           {document.religion} · {document.collection}
           {#if document.language} · {document.language.toUpperCase()}{/if}
           {#if document.year} · {document.year}{/if}
@@ -529,7 +532,7 @@
     <main
       class="document-content"
       dir={getLanguageDirection(document.language)}
-      class:rtl={document.isRTL}
+      class:rtl={getLanguageDirection(document.language) === 'rtl'}
       class:bilingual={showBilingual}
     >
       {#if paragraphs.length === 0}
@@ -889,7 +892,7 @@
     line-height: 1.5;
   }
 
-  /* Document content - paper background */
+  /* Document content - paper background with explicit light colors */
   .document-content {
     max-width: 48rem;
     margin: 2rem auto;
@@ -899,6 +902,8 @@
     border-radius: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    /* Explicit light colors - not affected by dark mode */
+    color: #1a1a1a;
   }
 
   .document-content.bilingual {
@@ -914,7 +919,7 @@
   .empty-content {
     text-align: center;
     padding: 3rem;
-    color: var(--text-muted);
+    color: #666;
   }
 
   .paragraph {
@@ -940,7 +945,7 @@
 
   .paragraph.highlighted {
     background: rgba(59, 130, 246, 0.1);
-    border-left: 3px solid var(--accent-primary);
+    border-left: 3px solid #3b82f6;
     padding-left: 0.75rem;
     margin-left: -0.75rem;
     border-radius: 0.25rem;
@@ -982,10 +987,10 @@
   .paragraph-heading {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #1a1a1a;
     margin: 2rem 0 1rem 0;
     padding-top: 1rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .paragraph-heading:first-child {
@@ -997,7 +1002,7 @@
   .paragraph-text {
     font-size: 1rem;
     line-height: 1.75;
-    color: var(--text-primary);
+    color: #1a1a1a;
   }
 
   .rtl .paragraph-text {
@@ -1067,21 +1072,21 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: var(--text-muted);
+    color: #666;
     font-size: 0.875rem;
   }
 
-  /* Auth gate */
+  /* Auth gate - inside document content, uses light colors */
   .auth-gate {
     margin-top: 2rem;
     padding: 2rem;
-    background: linear-gradient(to bottom, transparent, var(--surface-1) 20%);
+    background: linear-gradient(to bottom, transparent, #f0ede6 20%);
     border-radius: 0.5rem;
     text-align: center;
   }
 
   .auth-gate-content {
-    background: var(--surface-2);
+    background: #e8e4dc;
     padding: 2rem;
     border-radius: 0.5rem;
     max-width: 400px;
@@ -1091,17 +1096,17 @@
   .auth-gate-content h3 {
     margin: 0 0 0.5rem 0;
     font-size: 1.25rem;
-    color: var(--text-primary);
+    color: #1a1a1a;
   }
 
   .auth-gate-content p {
     margin: 0 0 0.5rem 0;
-    color: var(--text-secondary);
+    color: #333;
   }
 
   .progress-text {
     font-size: 0.875rem;
-    color: var(--text-muted);
+    color: #666;
     margin-bottom: 1rem !important;
   }
 
@@ -1256,57 +1261,14 @@
 
   /* Print styles */
   @media print {
-    /* Hide non-essential elements */
+    /* Hide the entire interactive toolbar - print-header provides content */
     .document-header {
-      position: static;
-      border-bottom: none;
-      padding: 0;
-      background: none;
-    }
-
-    .back-button,
-    .header-actions,
-    .breadcrumb {
       display: none !important;
     }
 
-    .header-content {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    .document-title {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .document-author {
-      font-size: 1rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .metadata-badges {
-      justify-content: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .badge {
-      background: #eee;
-      border: 1px solid #ccc;
-    }
-
-    /* Always show metadata panel in print */
+    /* Hide metadata panel (info shown in print-header) */
     .metadata-panel {
-      display: block !important;
-      background: #f5f5f5;
-      border: 1px solid #ccc;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      page-break-inside: avoid;
-    }
-
-    .metadata-grid {
-      grid-template-columns: repeat(3, 1fr);
+      display: none !important;
     }
 
     /* Document content - minimize margins for print */
@@ -1337,6 +1299,7 @@
     }
 
     .para-anchor {
+      display: block !important;
       color: #666;
       width: 1.5rem;
       padding: 0;
@@ -1374,9 +1337,10 @@
       min-width: 1.5rem;
     }
 
-    /* Print QR code if shown */
-    .qr-modal {
-      display: none;
+    /* Hide modals in print */
+    .qr-modal,
+    .modal-overlay {
+      display: none !important;
     }
 
     /* General print optimizations */
@@ -1400,32 +1364,65 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      padding: 1rem 0;
-      border-bottom: 1px solid #ccc;
+      padding: 0.75rem 0;
+      border-bottom: 2px solid #333;
       margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .print-logo {
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #333;
+      letter-spacing: -0.02em;
     }
 
     .print-meta {
       flex: 1;
+      text-align: center;
+    }
+
+    .print-title {
+      font-size: 14pt;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 0.125rem;
+    }
+
+    .print-author {
+      font-size: 10pt;
+      color: #444;
+      margin-bottom: 0.125rem;
+    }
+
+    .print-info {
+      font-size: 8pt;
+      color: #666;
     }
 
     .print-qr {
-      width: 80px;
-      height: 80px;
+      width: 72px;
       flex-shrink: 0;
+      text-align: right;
     }
 
     .print-qr img {
-      width: 100%;
-      height: 100%;
+      width: 72px;
+      height: 72px;
     }
 
     .print-url {
-      font-size: 8pt;
+      font-size: 7pt;
       color: #666;
       text-align: center;
-      margin-top: 0.25rem;
+      margin-top: 0.125rem;
       word-break: break-all;
+      line-height: 1.2;
     }
   }
 </style>
