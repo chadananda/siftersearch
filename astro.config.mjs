@@ -3,6 +3,7 @@ import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
+import cloudflare from '@astrojs/cloudflare';
 import { readFileSync } from 'fs';
 
 // Read version from package.json
@@ -10,7 +11,13 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
   site: 'https://siftersearch.com',
-  output: 'static',
+  // Server mode for Cloudflare Pages - allows SSR routes like /library/[...path]
+  output: 'server',
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
 
   // Disable noisy dev toolbar audits
   devToolbar: {
@@ -20,14 +27,27 @@ export default defineConfig({
   integrations: [
     svelte(),
     sitemap({
-      // Filter out any pages that shouldn't be in sitemap
-      filter: (page) => !page.includes('/api/'),
+      // Filter out pages that shouldn't be in the main sitemap
+      // - /api/ routes are server-side
+      // - /library/* dynamic routes are handled by sitemap-library.xml
+      // - /sitemap-library.xml is the custom sitemap endpoint
+      filter: (page) => {
+        if (page.includes('/api/')) return false;
+        if (page.includes('/sitemap-library')) return false;
+        // Exclude catch-all library routes (handled by sitemap-library.xml)
+        if (page.match(/\/library\/[^/]+\/[^/]+\/[^/]+/)) return false;
+        return true;
+      },
       // Customize sitemap entries
       serialize: (item) => ({
         ...item,
         changefreq: item.url === 'https://siftersearch.com/' ? 'weekly' : 'monthly',
         priority: item.url === 'https://siftersearch.com/' ? 1.0 : 0.8,
       }),
+      // Reference the custom library sitemap
+      customPages: [
+        'https://siftersearch.com/sitemap-library.xml'
+      ]
     }),
     AstroPWA({
       registerType: 'autoUpdate',  // Auto-update without user prompt

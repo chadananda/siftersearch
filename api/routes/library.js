@@ -20,7 +20,8 @@ import { getMeili, INDEXES } from '../lib/search.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { requireAuth, requireAdmin, requireInternal } from '../lib/auth.js';
+import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from '../lib/auth.js';
+import { slugifyPath } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument } from '../services/ingester.js';
@@ -381,13 +382,23 @@ export default async function libraryRoutes(fastify) {
       [node.name]
     );
 
-    // Get children (collections)
+    // Get children (collections) with document counts
     const children = await queryAll(`
-      SELECT id, name, slug, description, cover_image_url, authority_default
-      FROM library_nodes
-      WHERE parent_id = ?
-      ORDER BY display_order, name
-    `, [node.id]);
+      SELECT ln.id, ln.name, ln.slug, ln.description, ln.cover_image_url, ln.authority_default,
+             (SELECT COUNT(*) FROM docs d WHERE d.religion = ? AND d.collection = ln.name) as document_count
+      FROM library_nodes ln
+      WHERE ln.parent_id = ?
+      ORDER BY ln.display_order, ln.name
+    `, [node.name, node.id]);
+
+    // Get all documents for this religion (for listing)
+    const documents = await queryAll(`
+      SELECT id, title, author, collection, language, year, slug, paragraph_count
+      FROM docs
+      WHERE religion = ?
+      ORDER BY collection, title
+      LIMIT 500
+    `, [node.name]);
 
     return {
       node: {
@@ -395,7 +406,8 @@ export default async function libraryRoutes(fastify) {
         metadata: node.metadata ? JSON.parse(node.metadata) : null,
         document_count: countResult?.count || 0,
         children
-      }
+      },
+      documents
     };
   });
 
@@ -442,7 +454,7 @@ export default async function libraryRoutes(fastify) {
 
     const [documents, countResult] = await Promise.all([
       queryAll(`
-        SELECT id, title, author, religion, collection, language, year, description, paragraph_count
+        SELECT id, title, author, religion, collection, language, year, description, paragraph_count, slug
         FROM docs
         ${whereClause}
         ORDER BY title ASC
@@ -847,7 +859,7 @@ Return ONLY the description text, no quotes or formatting.`;
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, created_at, updated_at, cover_url
+               paragraph_count, created_at, updated_at, cover_url, slug, encumbered
         FROM docs
         ${whereClause}
         ORDER BY ${orderBy}
@@ -965,6 +977,158 @@ Return ONLY the description text, no quotes or formatting.`;
       paragraphLimit,
       paragraphOffset,
       assets
+    };
+  });
+
+  /**
+   * Get document by semantic URL path
+   * GET /api/library/by-path/:religion/:collection/:slug
+   *
+   * Returns document with progressive content loading:
+   * - Non-encumbered: Full content for everyone
+   * - Encumbered: Initial paragraphs, then auth-gated fetch for more
+   *
+   * Query params:
+   * - limit: number of paragraphs (default 50)
+   * - offset: pagination offset (default 0)
+   */
+  fastify.get('/by-path/:religion/:collection/:slug', {
+    preHandler: [optionalAuthenticate],
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          religion: { type: 'string' },
+          collection: { type: 'string' },
+          slug: { type: 'string' }
+        },
+        required: ['religion', 'collection', 'slug']
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 50, maximum: 200 },
+          offset: { type: 'integer', default: 0 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { religion, collection, slug } = request.params;
+    const { limit = 50, offset = 0 } = request.query;
+    const isAuthenticated = !!request.user;
+    const userRole = request.user?.role || request.user?.tier || null;
+    const canEdit = isAuthenticated && ['admin', 'editor'].includes(userRole);
+
+    // Find document by slug, matching religion/collection by slug comparison
+    // We need to match the URL slugs against stored values
+    const document = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year, description,
+             paragraph_count, slug, encumbered, file_path, created_at, updated_at
+      FROM docs
+      WHERE slug = ?
+    `, [slug]);
+
+    if (!document) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    // Verify religion/collection match (compare slugified versions)
+    const docReligionSlug = slugifyPath(document.religion || '');
+    const docCollectionSlug = slugifyPath(document.collection || '');
+
+    if (docReligionSlug !== religion || docCollectionSlug !== collection) {
+      throw ApiError.notFound('Document not found at this path');
+    }
+
+    const isEncumbered = document.encumbered === 1;
+
+    // For encumbered docs, check if user can access full content
+    // For now: logged in = full access. Future: check sponsorship status
+    const canAccessFull = !isEncumbered || isAuthenticated;
+
+    // If encumbered and not authenticated and requesting beyond initial content, deny
+    const PREVIEW_LIMIT = 20; // Initial paragraphs shown to everyone
+    if (isEncumbered && !isAuthenticated && offset >= PREVIEW_LIMIT) {
+      return {
+        document: {
+          id: document.id,
+          title: document.title,
+          author: document.author,
+          religion: document.religion,
+          collection: document.collection,
+          language: document.language,
+          year: document.year,
+          description: document.description,
+          paragraphCount: document.paragraph_count,
+          encumbered: true,
+          slug: document.slug
+        },
+        paragraphs: [],
+        total: document.paragraph_count || 0,
+        limit,
+        offset,
+        requiresAuth: true,
+        canEdit: false,
+        message: 'Sign in to continue reading'
+      };
+    }
+
+    // Determine effective limit for encumbered preview
+    let effectiveLimit = limit;
+    let effectiveOffset = offset;
+    if (isEncumbered && !isAuthenticated) {
+      // Only return up to PREVIEW_LIMIT paragraphs for unauthenticated users
+      effectiveLimit = Math.min(limit, PREVIEW_LIMIT - offset);
+      if (effectiveLimit <= 0) effectiveLimit = 0;
+    }
+
+    // Fetch paragraphs
+    const [paragraphs, countResult] = await Promise.all([
+      effectiveLimit > 0 ? queryAll(`
+        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
+        FROM content
+        WHERE doc_id = ?
+        ORDER BY paragraph_index
+        LIMIT ? OFFSET ?
+      `, [document.id, effectiveLimit, effectiveOffset]) : [],
+      queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [document.id])
+    ]);
+
+    // Parse translation segments
+    const formattedParagraphs = paragraphs.map(p => ({
+      ...p,
+      segments: p.translation_segments ? JSON.parse(p.translation_segments) : null
+    }));
+
+    const total = countResult?.count || 0;
+
+    // Determine if RTL
+    const isRTL = ['ar', 'fa', 'he', 'ur'].includes(document.language);
+
+    return {
+      document: {
+        id: document.id,
+        title: document.title,
+        author: document.author,
+        religion: document.religion,
+        collection: document.collection,
+        language: document.language,
+        year: document.year,
+        description: document.description,
+        paragraphCount: total,
+        encumbered: isEncumbered,
+        slug: document.slug,
+        isRTL
+      },
+      paragraphs: formattedParagraphs,
+      total,
+      limit: effectiveLimit,
+      offset: effectiveOffset,
+      hasMore: offset + paragraphs.length < total,
+      requiresAuth: isEncumbered && !isAuthenticated && (offset + paragraphs.length >= PREVIEW_LIMIT || offset + limit > PREVIEW_LIMIT),
+      canAccessFull,
+      canEdit,
+      previewLimit: isEncumbered ? PREVIEW_LIMIT : null
     };
   });
 

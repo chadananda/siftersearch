@@ -6,6 +6,47 @@
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
 
+  /**
+   * Generate a URL-safe slug from a string (for religion/collection paths)
+   * Matches the server-side slugifyPath function
+   */
+  function slugifyPath(str) {
+    if (!str) return '';
+    // Diacritics mapping
+    const diacritics = {
+      'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ā': 'a',
+      'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e', 'ē': 'e',
+      'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i', 'ī': 'i',
+      'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'ō': 'o',
+      'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u', 'ū': 'u',
+      'ñ': 'n', 'ç': 'c',
+      'Á': 'a', 'À': 'a', 'Ä': 'a', 'Â': 'a', 'Ā': 'a',
+      'É': 'e', 'È': 'e', 'Ë': 'e', 'Ê': 'e', 'Ē': 'e',
+      'Í': 'i', 'Ì': 'i', 'Ï': 'i', 'Î': 'i', 'Ī': 'i',
+      'Ó': 'o', 'Ò': 'o', 'Ö': 'o', 'Ô': 'o', 'Ō': 'o',
+      'Ú': 'u', 'Ù': 'u', 'Ü': 'u', 'Û': 'u', 'Ū': 'u',
+      'Ñ': 'n', 'Ç': 'c'
+    };
+    return str
+      .toLowerCase()
+      .split('').map(c => diacritics[c] || c).join('')
+      .replace(/[''`']/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-');
+  }
+
+  /**
+   * Get the semantic URL for a document
+   */
+  function getDocumentUrl(doc) {
+    if (!doc.slug || !doc.religion || !doc.collection) {
+      // Fallback to query param style if no slug
+      return `/library/view?doc=${doc.id}`;
+    }
+    return `/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${doc.slug}`;
+  }
+
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const dispatch = createEventDispatcher();
 
@@ -407,12 +448,26 @@
               {/if}
             {/if}
           {/if}
+          <!-- Open document page link -->
+          <a
+            href={getDocumentUrl(doc)}
+            class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
+                   {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+            onclick={(e) => e.stopPropagation()}
+            title="Open document page"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
           <!-- Fullscreen button - visible on hover or when expanded -->
           <button
             class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
                    {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
             onclick={(e) => { e.stopPropagation(); openReader(doc); }}
-            title="View fullscreen"
+            title="View in modal"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>

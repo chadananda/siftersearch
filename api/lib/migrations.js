@@ -827,6 +827,38 @@ const migrations = {
 
     logger.info('Created email_queue table');
   },
+
+  // Version 20: Add slug and encumbered columns to docs table
+  20: async () => {
+    // Add slug column for SEO-friendly URLs
+    try {
+      await query('ALTER TABLE docs ADD COLUMN slug TEXT');
+      logger.info('Added slug column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Add encumbered column for copyright protection
+    try {
+      await query('ALTER TABLE docs ADD COLUMN encumbered INTEGER DEFAULT 0');
+      logger.info('Added encumbered column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Create index for slug lookups
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_slug ON docs(slug)');
+
+    // Create unique index for slug within religion/collection
+    // Note: SQLite doesn't support partial unique indexes well, so we use a composite
+    try {
+      await query('CREATE UNIQUE INDEX idx_docs_slug_unique ON docs(religion, collection, slug)');
+    } catch (err) {
+      if (!err.message.includes('already exists')) throw err;
+    }
+
+    logger.info('Added slug and encumbered columns to docs table');
+  },
 };
 
 /**

@@ -12,8 +12,11 @@ Disallow: /api/
 Disallow: /tmp/
 Disallow: /_astro/
 
-# Sitemap location
-Sitemap: https://siftersearch.com/sitemap.xml
+# Sitemap locations
+# Main sitemap (static pages)
+Sitemap: https://siftersearch.com/sitemap-index.xml
+# Library documents sitemap (5000+ documents)
+Sitemap: https://siftersearch.com/sitemap-library.xml
 
 # Crawl delay (optional, be nice to crawlers)
 Crawl-delay: 1

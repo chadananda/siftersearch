@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T19:44:25.110Z",
+  "generated": "2026-01-02T20:50:35.630Z",
   "entries": [
+    {
+      "hash": "d8ae948",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add document view page at /library/view",
+      "scope": null
+    },
     {
       "hash": "2b6d15f",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Increase RTL font size in bilingual view for better readability",
       "scope": null
-    },
-    {
-      "hash": "78297e1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add siftersearch-jobs to allowed PM2 restart processes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "d8ae948",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add document view page at /library/view",
+        "scope": null
+      },
       {
         "hash": "2b6d15f",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Increase RTL font size in bilingual view for better readability",
-        "scope": null
-      },
-      {
-        "hash": "78297e1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add siftersearch-jobs to allowed PM2 restart processes",
         "scope": null
       }
     ]
