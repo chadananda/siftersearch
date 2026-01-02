@@ -1332,6 +1332,67 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Test segment translation (admin only)
+   * Clears and re-translates one paragraph to verify phrase-level alignment works
+   */
+  fastify.post('/documents/:id/test-segment-translation', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Get document and first paragraph
+    const doc = await queryOne('SELECT id, language FROM docs WHERE id = ?', [id]);
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    const para = await queryOne(`
+      SELECT id, paragraph_index, text FROM content
+      WHERE doc_id = ?
+      ORDER BY paragraph_index
+      LIMIT 1
+    `, [id]);
+
+    if (!para || !para.text) {
+      throw ApiError.badRequest('No content found for document');
+    }
+
+    // Clear this paragraph's translation
+    await query(
+      'UPDATE content SET translation = NULL, translation_segments = NULL WHERE id = ?',
+      [para.id]
+    );
+
+    // Translate with segments
+    const sourceLang = doc.language || 'ar';
+    const result = await translateTextWithSegments(para.text, sourceLang, 'en', 'scriptural');
+
+    // Save result
+    const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+    await query(
+      'UPDATE content SET translation = ?, translation_segments = ?, synced = 0, updated_at = ? WHERE id = ?',
+      [result.translation, segmentsJson, new Date().toISOString(), para.id]
+    );
+
+    return {
+      success: true,
+      documentId: id,
+      paragraphId: para.id,
+      original: para.text,
+      translation: result.translation,
+      segments: result.segments,
+      segmentCount: result.segments?.length || 0
+    };
+  });
+
+  /**
    * Translation endpoint with content-type awareness
    * - scripture/poetry/classical: Shoghi Effendi biblical style
    * - historical: Modern clear English, but citations within use biblical style
