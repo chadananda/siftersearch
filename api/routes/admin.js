@@ -1310,6 +1310,44 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Mark all paragraphs for a document as needing resync
+   * Useful after deleting paragraphs from Meilisearch to trigger re-push
+   */
+  fastify.post('/server/mark-for-sync', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to mark for sync' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.body;
+
+    try {
+      const result = await query(
+        'UPDATE content SET synced = 0 WHERE doc_id = ?',
+        [documentId]
+      );
+
+      logger.info({ documentId, changes: result.changes }, 'Marked paragraphs for resync');
+
+      return {
+        success: true,
+        message: `Marked ${result.changes} paragraphs for resync`,
+        documentId,
+        paragraphsMarked: result.changes
+      };
+    } catch (err) {
+      logger.error({ documentId, err: err.message }, 'Failed to mark paragraphs for sync');
+      return { error: err.message };
+    }
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {

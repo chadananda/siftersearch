@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T18:55:39.380Z",
+  "generated": "2026-01-02T18:57:46.541Z",
   "entries": [
+    {
+      "hash": "4894304",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
+      "scope": null
+    },
     {
       "hash": "8dc7d6c",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Add siftersearch-jobs to allowed log processes",
       "scope": null
-    },
-    {
-      "hash": "21f107b",
-      "date": "2026-01-01",
-      "type": "Updated",
-      "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "4894304",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
+        "scope": null
+      },
       {
         "hash": "8dc7d6c",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Updated",
         "description": "Add siftersearch-jobs to allowed log processes",
-        "scope": null
-      },
-      {
-        "hash": "21f107b",
-        "date": "2026-01-01",
-        "type": "Updated",
-        "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
         "scope": null
       }
     ]
