@@ -24,6 +24,7 @@
   let searchQuery = $state('');
   let totalDocuments = $state(0);
   let currentOffset = $state(0);
+  let searchDebounceTimer = null;
   const LIMIT = 50;
 
   // Derived
@@ -189,7 +190,10 @@
           class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           placeholder="Search in {node.name}..."
           bind:value={searchQuery}
-          onkeydown={(e) => e.key === 'Enter' && handleSearch()}
+          oninput={() => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => handleSearch(), 300);
+          }}
         />
         {#if searchQuery}
           <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { searchQuery = ''; handleSearch(); }}>

@@ -393,7 +393,7 @@ export default async function libraryRoutes(fastify) {
 
   fastify.get('/by-slug/:religionSlug/:collectionSlug', async (request) => {
     const { religionSlug, collectionSlug } = request.params;
-    const { limit = 50, offset = 0 } = request.query;
+    const { limit = 50, offset = 0, search = '' } = request.query;
 
     // Get religion first
     const religion = await queryOne(`
@@ -420,18 +420,29 @@ export default async function libraryRoutes(fastify) {
     // Get documents from docs table
     const parsedLimit = parseInt(limit);
     const parsedOffset = parseInt(offset);
+    const searchTerm = search.trim();
+
+    // Build query with optional search filter
+    let whereClause = 'WHERE religion = ? AND collection = ?';
+    let params = [religion.name, node.name];
+
+    if (searchTerm) {
+      whereClause += ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)';
+      const searchPattern = `%${searchTerm}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
 
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description, paragraph_count
         FROM docs
-        WHERE religion = ? AND collection = ?
+        ${whereClause}
         ORDER BY title ASC
         LIMIT ? OFFSET ?
-      `, [religion.name, node.name, parsedLimit, parsedOffset]),
+      `, [...params, parsedLimit, parsedOffset]),
       queryOne(
-        'SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?',
-        [religion.name, node.name]
+        `SELECT COUNT(*) as count FROM docs ${whereClause}`,
+        params
       )
     ]);
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-01T23:55:03.244Z",
+  "generated": "2026-01-02T00:05:28.967Z",
   "entries": [
+    {
+      "hash": "8fa5233",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Hide translate button for docs with 'in English' in title",
+      "scope": null
+    },
     {
       "hash": "21537af",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct content schema with document_id as primary column",
       "scope": "migration"
-    },
-    {
-      "hash": "f0c7d3c",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Separate connections for auth vs batch operations",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "8fa5233",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Hide translate button for docs with 'in English' in title",
+        "scope": null
+      },
       {
         "hash": "21537af",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Use correct content schema with document_id as primary column",
         "scope": "migration"
-      },
-      {
-        "hash": "f0c7d3c",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Separate connections for auth vs batch operations",
-        "scope": "db"
       }
     ]
   }
