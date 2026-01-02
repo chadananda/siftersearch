@@ -55,7 +55,7 @@
       }
 
       // Fetch bilingual content
-      const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${params.doc}/bilingual?limit=1000`);
+      const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${params.doc}/bilingual?limit=500`);
       if (bilingualRes.ok) {
         const data = await bilingualRes.json();
         paragraphs = data.paragraphs || [];

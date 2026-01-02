@@ -156,7 +156,7 @@ function startAPI() {
     cwd: ROOT,
     env: {
       ...process.env,
-      PORT: API_PORT,
+      API_PORT: API_PORT,
       NODE_ENV: 'development',
       DEV_MODE: 'true'
     }
