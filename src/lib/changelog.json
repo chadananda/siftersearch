@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T23:14:54.659Z",
+  "generated": "2026-01-02T23:16:53.549Z",
   "entries": [
+    {
+      "hash": "ba234b1",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Correct dark mode styling in document presentation page",
+      "scope": null
+    },
     {
       "hash": "a95e207",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add embedding dimension diagnostics and fix model config",
       "scope": null
-    },
-    {
-      "hash": "41cddd6",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add embedding coverage stats to server status endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "ba234b1",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Correct dark mode styling in document presentation page",
+        "scope": null
+      },
       {
         "hash": "a95e207",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add embedding dimension diagnostics and fix model config",
-        "scope": null
-      },
-      {
-        "hash": "41cddd6",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add embedding coverage stats to server status endpoint",
         "scope": null
       }
     ]
