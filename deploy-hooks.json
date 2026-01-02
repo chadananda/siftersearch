@@ -82,5 +82,12 @@
     "command": "node scripts/migrate-embeddings.js",
     "enabled": true,
     "timeout": 3600000
+  },
+  {
+    "id": "2026-01-02-set-test-encumbered",
+    "description": "Mark H.M. Balyuzi book as encumbered for testing content protection",
+    "command": "node scripts/set-test-encumbered.js",
+    "enabled": true,
+    "timeout": 30000
   }
 ]

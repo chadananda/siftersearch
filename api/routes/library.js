@@ -1169,7 +1169,8 @@ Return ONLY the description text, no quotes or formatting.`;
           collection: { type: 'string' },
           language: { type: 'string' },
           year: { type: 'integer' },
-          description: { type: 'string' }
+          description: { type: 'string' },
+          encumbered: { type: 'integer', minimum: 0, maximum: 1 }
         }
       }
     }
