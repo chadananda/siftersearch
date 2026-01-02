@@ -1270,6 +1270,46 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Delete all paragraphs for a document from Meilisearch
+   * Useful when re-ingesting a document that has different paragraph structure
+   */
+  fastify.post('/server/meili-delete-paragraphs', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to delete paragraphs for' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.body;
+
+    try {
+      const meili = getMeili();
+
+      // Delete paragraphs using filter
+      const result = await meili.index('paragraphs').deleteDocuments({
+        filter: `document_id = "${documentId}"`
+      });
+
+      logger.info({ documentId, taskUid: result.taskUid }, 'Meilisearch paragraph deletion requested');
+
+      return {
+        success: true,
+        message: `Paragraph deletion task created for document ${documentId}`,
+        taskUid: result.taskUid,
+        documentId
+      };
+    } catch (err) {
+      logger.error({ documentId, err: err.message }, 'Failed to delete paragraphs from Meilisearch');
+      return { error: err.message };
+    }
+  });
+
+  /**
    * Control PM2 processes (stop/start/restart library watcher)
    */
   fastify.post('/server/pm2/:action/:process', { preHandler: requireInternal }, async (request) => {
