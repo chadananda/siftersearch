@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T18:42:34.979Z",
+  "generated": "2026-01-02T18:49:29.285Z",
   "entries": [
+    {
+      "hash": "7737f8b",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add /server/query-documents endpoint for flexible metadata queries",
+      "scope": null
+    },
     {
       "hash": "58471a7",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Add verbose job logging to trace undefined document_id",
       "scope": null
-    },
-    {
-      "hash": "eed1a69",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Look up admin user for system API jobs instead of using id=0",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "7737f8b",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add /server/query-documents endpoint for flexible metadata queries",
+        "scope": null
+      },
       {
         "hash": "58471a7",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Updated",
         "description": "Add verbose job logging to trace undefined document_id",
-        "scope": null
-      },
-      {
-        "hash": "eed1a69",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Look up admin user for system API jobs instead of using id=0",
         "scope": null
       }
     ]

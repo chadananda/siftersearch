@@ -1462,6 +1462,61 @@ export default async function adminRoutes(fastify) {
     };
   });
 
+  /**
+   * Generate embeddings for paragraphs that don't have them (background task)
+   * Useful after re-ingesting documents when their paragraphs need embeddings
+   */
+  fastify.post('/server/generate-embeddings', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          dryRun: { type: 'boolean', default: false },
+          batchSize: { type: 'number', default: 50 },
+          limit: { type: 'number', description: 'Max paragraphs to process' },
+          language: { type: 'string', description: 'Only process specific language (e.g., ar, fa)' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { dryRun = false, batchSize = 50, limit, language } = request.body || {};
+
+    // Check if already running
+    const existingTask = [...backgroundTasks.values()].find(
+      t => t.script.includes('regenerate-embeddings') && t.status === 'running'
+    );
+    if (existingTask) {
+      return {
+        success: false,
+        message: 'Embedding generation already running',
+        taskId: existingTask.id
+      };
+    }
+
+    const taskId = `generate-embeddings-${Date.now()}`;
+    const scriptPath = join(process.cwd(), 'scripts', 'regenerate-embeddings.js');
+    const args = ['--include-missing'];  // Always include missing embeddings
+    if (dryRun) args.push('--dry-run');
+    args.push(`--batch-size=${batchSize}`);
+    if (limit) args.push(`--limit=${limit}`);
+    if (language) args.push(`--language=${language}`);
+
+    logger.info({ taskId, dryRun, batchSize, limit, language }, 'Starting embedding generation as background task');
+
+    const task = runBackgroundTask(taskId, scriptPath, args);
+
+    return {
+      success: true,
+      taskId: task.id,
+      message: `Embedding generation started${dryRun ? ' (dry run)' : ''}. Check /server/tasks/${task.id} for progress.`,
+      dryRun,
+      batchSize,
+      limit,
+      language
+    };
+  });
+
   // ========================================================================
   // Content Sync Management (Content Table → Meilisearch)
   // ========================================================================
