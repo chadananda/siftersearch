@@ -58,7 +58,7 @@ async function main() {
   if (paragraphs.length === 0) {
     console.log('No paragraphs found for document.');
     console.log('Checking if document exists in documents table...');
-    const doc = await queryOne('SELECT id, title, language FROM documents WHERE id = ?', [DOC_ID]);
+    const doc = await queryOne('SELECT id, title, language FROM docs WHERE id = ?', [DOC_ID]);
     if (doc) {
       console.log(`Document exists: ${doc.title} (${doc.language})`);
       console.log('Content may need to be populated from Meilisearch.');

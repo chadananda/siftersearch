@@ -880,6 +880,54 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * List documents with content available for translation
+   * GET /api/admin/server/translatable-docs
+   */
+  fastify.get('/server/translatable-docs', {
+    preHandler: requireInternal,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          language: { type: 'string', description: 'Filter by language (e.g., ar)' },
+          limit: { type: 'integer', default: 20 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { language, limit = 20 } = request.query || {};
+
+    // Get documents with content, grouped by doc_id
+    let sql = `
+      SELECT
+        c.doc_id,
+        d.title,
+        d.language,
+        COUNT(*) as paragraph_count,
+        SUM(CASE WHEN c.translation IS NOT NULL THEN 1 ELSE 0 END) as translated_count
+      FROM content c
+      LEFT JOIN docs d ON c.doc_id = d.id
+      GROUP BY c.doc_id
+    `;
+
+    const params = [];
+    if (language) {
+      sql += ` HAVING d.language = ?`;
+      params.push(language);
+    }
+
+    sql += ` ORDER BY paragraph_count ASC LIMIT ?`;
+    params.push(limit);
+
+    const docs = await queryAll(sql, params);
+
+    return {
+      documents: docs,
+      count: docs.length
+    };
+  });
+
+  /**
    * Trigger server update (shortcut for /server/pull-update)
    * Pulls latest from git and reloads PM2
    */
