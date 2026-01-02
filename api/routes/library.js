@@ -12,6 +12,8 @@
  * GET /api/library/documents/:id/content - Get original file from storage
  * PUT /api/library/documents/:id/content - Update content + re-index (admin)
  * POST /api/library/documents/:id/reindex - Re-index from original (admin)
+ * GET /api/library/documents/:id/raw - Get raw markdown from source file (admin)
+ * PUT /api/library/documents/:id/raw - Update source file + re-index (admin)
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
@@ -21,6 +23,11 @@ import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal } from '../lib/auth.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
+import { ingestDocument } from '../services/ingester.js';
+import { readFile, writeFile, rename, access } from 'fs/promises';
+import { constants as fsConstants } from 'fs';
+import { join, dirname } from 'path';
+import matter from 'gray-matter';
 
 export default async function libraryRoutes(fastify) {
 
@@ -1993,6 +2000,172 @@ Provide only the translation, no explanations.`;
       queued,
       totalDocuments: docs.length,
       message: `Queued ${queued} documents for translation`
+    };
+  });
+
+  // ============================================
+  // Raw Document Editing (Admin)
+  // ============================================
+
+  /**
+   * Get raw markdown content from source file
+   * Admin only - reads directly from file_path in Dropbox
+   */
+  fastify.get('/documents/:id/raw', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Get document with file_path
+    const doc = await queryOne(`
+      SELECT id, file_path, title, author, religion, collection, language, year, description
+      FROM docs WHERE id = ?
+    `, [id]);
+
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    if (!doc.file_path) {
+      throw ApiError.badRequest('Document has no source file path');
+    }
+
+    // Verify file exists
+    try {
+      await access(doc.file_path, fsConstants.R_OK);
+    } catch {
+      throw ApiError.notFound(`Source file not found: ${doc.file_path}`);
+    }
+
+    // Read raw content
+    const content = await readFile(doc.file_path, 'utf-8');
+
+    // Parse frontmatter to return metadata separately
+    let metadata = {};
+    try {
+      const parsed = matter(content);
+      metadata = parsed.data || {};
+    } catch (err) {
+      logger.warn({ err, filePath: doc.file_path }, 'Failed to parse frontmatter');
+    }
+
+    return {
+      documentId: id,
+      filePath: doc.file_path,
+      content,
+      metadata,
+      document: {
+        title: doc.title,
+        author: doc.author,
+        religion: doc.religion,
+        collection: doc.collection,
+        language: doc.language,
+        year: doc.year,
+        description: doc.description
+      }
+    };
+  });
+
+  /**
+   * Update source file with new content and re-index
+   * Admin only - atomic write to file_path, then re-ingest
+   */
+  fastify.put('/documents/:id/raw', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      },
+      body: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', minLength: 1 }
+        },
+        required: ['content']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+    const { content } = request.body;
+
+    // Get document with file_path
+    const doc = await queryOne(`
+      SELECT id, file_path, title, religion, collection, language
+      FROM docs WHERE id = ?
+    `, [id]);
+
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    if (!doc.file_path) {
+      throw ApiError.badRequest('Document has no source file path');
+    }
+
+    // Validate YAML frontmatter
+    let parsedContent;
+    try {
+      parsedContent = matter(content);
+    } catch (err) {
+      throw ApiError.badRequest(`Invalid YAML frontmatter: ${err.message}`);
+    }
+
+    // Ensure file exists (we're replacing, not creating)
+    try {
+      await access(doc.file_path, fsConstants.W_OK);
+    } catch {
+      throw ApiError.notFound(`Source file not found or not writable: ${doc.file_path}`);
+    }
+
+    // Atomic write: write to temp file, then rename
+    const tempPath = `${doc.file_path}.tmp.${Date.now()}`;
+    try {
+      await writeFile(tempPath, content, 'utf-8');
+      await rename(tempPath, doc.file_path);
+    } catch (err) {
+      // Clean up temp file if rename failed
+      try {
+        await access(tempPath, fsConstants.F_OK);
+        const { unlink } = await import('fs/promises');
+        await unlink(tempPath);
+      } catch {
+        // Temp file doesn't exist or already cleaned up
+      }
+      logger.error({ err, filePath: doc.file_path }, 'Failed to write document file');
+      throw ApiError.internal('Failed to save file');
+    }
+
+    // Re-ingest the document to update the database and search index
+    let ingestResult;
+    try {
+      ingestResult = await ingestDocument(content, { id }, doc.file_path);
+    } catch (err) {
+      logger.error({ err, documentId: id }, 'Failed to re-ingest document after save');
+      throw ApiError.internal('File saved but re-indexing failed. Please manually reindex.');
+    }
+
+    logger.info({
+      documentId: id,
+      filePath: doc.file_path,
+      paragraphCount: ingestResult.paragraphCount,
+      user: request.user?.email
+    }, 'Document raw content updated');
+
+    return {
+      success: true,
+      documentId: id,
+      paragraphCount: ingestResult.paragraphCount,
+      status: ingestResult.status,
+      message: 'Document saved and re-indexed successfully'
     };
   });
 }
