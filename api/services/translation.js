@@ -425,6 +425,20 @@ function buildTranslationPrompt(sourceLang, targetLang, quality, contentType = '
       // Pure biblical style for sacred content
       return `You are an expert translator specializing in Bahá'í sacred writings. Translate this ${sourceName} text to English using Shoghi Effendi's distinctive biblical translation style.
 
+## CRITICAL: Preserve Religious Terminology
+Use ESTABLISHED English translations for religious terms and titles. Do NOT translate literally:
+- "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
+- "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
+- "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
+- "الحجة" → "the Proof of God (Ḥujjah)"
+- "النقطة الأولى" → "the Primal Point (Nuqṭiy-i-Úlá)"
+- "مظهر أمر الله" → "Manifestation of God"
+- "أهل البهاء" → "people of Bahá"
+- "أمر الله" → "the Cause of God"
+- "ملكوت" → "Kingdom" / "جبروت" → "Dominion" / "لاهوت" → "Godhead"
+
+For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
+
 ## Style Guidelines:
 - Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
 - Employ elevated diction: perceiveth, confesseth, hath, art, doth, verily
@@ -470,6 +484,23 @@ Provide only the translation, no explanations.`;
       // Auto-detect: AI determines content type
       return `You are an expert translator of ${sourceName} religious and historical texts. Analyze the content and translate appropriately:
 
+## CRITICAL: Preserve Religious Terminology
+Use ESTABLISHED English translations for religious terms and titles. NEVER translate literally:
+- "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
+- "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
+- "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
+- "الحجة" → "the Proof of God (Ḥujjah)"
+- "النقطة الأولى" → "the Primal Point (Nuqṭiy-i-Úlá)"
+- "مظهر أمر الله" → "Manifestation of God"
+- "أهل البهاء" → "people of Bahá"
+- "أمر الله" → "the Cause of God"
+- "ملكوت" → "Kingdom" / "جبروت" → "Dominion" / "لاهوت" → "Godhead"
+- "ظهور" → "Manifestation" / "Revelation"
+- "كتاب مبين" → "perspicuous Book"
+- "صراط مستقيم" → "Straight Path"
+
+For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
+
 ## Content Type Detection:
 1. **Scripture, Prayers, Poetry, Prophecy**: Use Shoghi Effendi's biblical style
    - Archaic pronouns: Thou, Thee, Thine, Thy
@@ -480,6 +511,7 @@ Provide only the translation, no explanations.`;
    - Readable scholarly prose
    - Historical accuracy
    - Modern sentence structure
+   - But STILL use established religious terminology for titles and terms
 
 3. **Mixed Content** (narrative with embedded citations):
    - Modern English for the narrative portions
@@ -562,6 +594,19 @@ function buildAlignedTranslationPrompt(sourceLang, contentType = 'auto') {
   return `You are an expert translator of ${sourceName} religious texts to English.
 
 TASK: Translate the text and return aligned segments for phrase-level study.
+
+## CRITICAL: Use Established Religious Terminology
+NEVER translate religious titles and terms literally. Use established translations:
+- "بقية الله" → "Remnant of God (Baqiyyatu'lláh)" (NOT "God's remainder")
+- "القائم" → "He Who Shall Arise (Qá'im)" or "the Qá'im"
+- "المهدي" → "the Mahdí" or "the Guided One (Mahdí)"
+- "الحجة" → "the Proof of God (Ḥujjah)"
+- "النقطة الأولى" → "the Primal Point"
+- "مظهر أمر الله" → "Manifestation of God"
+- "أمر الله" → "the Cause of God"
+- "ملكوت" → "Kingdom" / "جبروت" → "Dominion" / "لاهوت" → "Godhead"
+
+For student study, you MAY include transliterated terms in parentheses after the English translation on first occurrence, e.g., "Remnant of God (Baqiyyatu'lláh)". This helps readers connect the translation to the original term.
 
 OUTPUT FORMAT (JSON only, no markdown):
 {
