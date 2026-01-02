@@ -83,6 +83,9 @@ export default defineConfig({
         // Auto-activate new SW immediately - no waiting for tab close
         skipWaiting: true,
         clientsClaim: true,
+        // IMPORTANT: Disable navigation fallback for SSR routes
+        // The default navigateFallback "/" breaks dynamic routes like /library/*
+        navigateFallback: null,
         // Runtime caching
         runtimeCaching: [
           {
