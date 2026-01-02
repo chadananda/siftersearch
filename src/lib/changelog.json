@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T18:57:46.541Z",
+  "generated": "2026-01-02T19:44:25.110Z",
   "entries": [
+    {
+      "hash": "2b6d15f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
+      "scope": null
+    },
     {
       "hash": "4894304",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add siftersearch-jobs to allowed PM2 restart processes",
       "scope": null
-    },
-    {
-      "hash": "d8f67f9",
-      "date": "2026-01-01",
-      "type": "Updated",
-      "description": "Add siftersearch-jobs to allowed log processes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "2b6d15f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
+        "scope": null
+      },
       {
         "hash": "4894304",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Add siftersearch-jobs to allowed PM2 restart processes",
-        "scope": null
-      },
-      {
-        "hash": "d8f67f9",
-        "date": "2026-01-01",
-        "type": "Updated",
-        "description": "Add siftersearch-jobs to allowed log processes",
         "scope": null
       }
     ]
