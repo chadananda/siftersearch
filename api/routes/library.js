@@ -18,7 +18,7 @@ import { getMeili, INDEXES } from '../lib/search.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { requireAuth, requireAdmin } from '../lib/auth.js';
+import { requireAuth, requireAdmin, requireInternal } from '../lib/auth.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 
@@ -1332,11 +1332,11 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
-   * Test segment translation (admin only)
+   * Test segment translation (admin or internal key)
    * Clears and re-translates one paragraph to verify phrase-level alignment works
    */
   fastify.post('/documents/:id/test-segment-translation', {
-    preHandler: [requireAuth, requireAdmin],
+    preHandler: [requireInternal],
     schema: {
       params: {
         type: 'object',
