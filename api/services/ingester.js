@@ -261,7 +261,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     // Document changed - get existing paragraphs for smart diffing
     if (existingDoc) {
       const paragraphs = await queryAll(
-        'SELECT id, content_hash, embedding, synced FROM content WHERE document_id = ?',
+        'SELECT id, content_hash, embedding, synced FROM content WHERE doc_id = ?',
         [existingDoc.id]
       );
       for (const p of paragraphs) {
@@ -372,7 +372,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       paragraphStatements.push({
         sql: `
           INSERT INTO content
-          (id, document_id, paragraph_index, text, content_hash, heading, blocktype)
+          (id, doc_id, paragraph_index, text, content_hash, heading, blocktype)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
@@ -434,7 +434,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
  */
 export async function removeDocument(documentId) {
   // Delete content first (foreign key constraint), then doc
-  await query('DELETE FROM content WHERE document_id = ?', [documentId]);
+  await query('DELETE FROM content WHERE doc_id = ?', [documentId]);
   await query('DELETE FROM docs WHERE id = ?', [documentId]);
 
   logger.info({ documentId }, 'Document removed from SQLite');
@@ -470,10 +470,10 @@ export async function getIngestionStats() {
 export async function getUnprocessedDocuments(limit = 100) {
   const results = await queryAll(`
     SELECT d.*,
-           (SELECT COUNT(*) FROM content c WHERE c.document_id = d.id AND c.embedding IS NULL) as unembedded_count
+           (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.embedding IS NULL) as unembedded_count
     FROM docs d
     WHERE EXISTS (
-      SELECT 1 FROM content c WHERE c.document_id = d.id AND c.embedding IS NULL
+      SELECT 1 FROM content c WHERE c.doc_id = d.id AND c.embedding IS NULL
     )
     LIMIT ?
   `, [limit]);

@@ -84,7 +84,7 @@ async function getCachedEmbeddings(docId, paragraphs) {
     // Get existing content rows for this document
     const existing = await queryAll(
       `SELECT paragraph_index, content_hash, embedding, embedding_model
-       FROM content WHERE document_id = ?`,
+       FROM content WHERE doc_id = ?`,
       [docId]
     );
 
@@ -149,7 +149,7 @@ async function storeInLibsql(document, paragraphs) {
     ]);
 
     // Delete existing paragraphs for this document (simpler than complex upsert)
-    await query('DELETE FROM content WHERE document_id = ?', [document.id]);
+    await query('DELETE FROM content WHERE doc_id = ?', [document.id]);
 
     // Insert all paragraphs
     for (const para of paragraphs) {
@@ -159,7 +159,7 @@ async function storeInLibsql(document, paragraphs) {
         : null;
 
       await query(`
-        INSERT INTO content (id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `, [
         para.id,
@@ -722,13 +722,12 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
               continue;
             }
 
-            // Use document_id as the primary column (NOT NULL in schema)
-            // Also populate doc_id if that column exists for backward compatibility
+            // Use doc_id as the primary column (NOT NULL in schema)
             await withRetry(() => batchQuery(`
-              INSERT INTO content (id, document_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+              INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?11)
               ON CONFLICT(id) DO UPDATE SET
-                document_id = excluded.document_id,
+                doc_id = excluded.doc_id,
                 text = excluded.text,
                 content_hash = excluded.content_hash,
                 heading = excluded.heading,
