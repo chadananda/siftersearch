@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T17:57:03.218Z",
+  "generated": "2026-01-02T18:42:34.979Z",
   "entries": [
+    {
+      "hash": "58471a7",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add /server/reingest-document API endpoint",
+      "scope": null
+    },
     {
       "hash": "4a3ab70",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Look up admin user for system API jobs instead of using id=0",
       "scope": null
-    },
-    {
-      "hash": "ba9e1b1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add system user for API/automation jobs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "58471a7",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add /server/reingest-document API endpoint",
+        "scope": null
+      },
       {
         "hash": "4a3ab70",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Look up admin user for system API jobs instead of using id=0",
-        "scope": null
-      },
-      {
-        "hash": "ba9e1b1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add system user for API/automation jobs",
         "scope": null
       }
     ]

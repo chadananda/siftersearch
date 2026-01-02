@@ -1828,4 +1828,162 @@ export default async function adminRoutes(fastify) {
       sampleWithoutPath
     };
   });
+
+  /**
+   * GET /server/query-documents - Query documents by metadata fields
+   * Flexible endpoint for finding documents by any combination of filters
+   *
+   * Query params:
+   *   author - Filter by author (exact or partial match with *)
+   *   collection - Filter by collection
+   *   religion - Filter by religion
+   *   language - Filter by language code (ar, fa, en, etc.)
+   *   hasFilePath - true/false to filter by file_path presence
+   *   hasContent - true/false to filter by content table entries
+   *   fields - Comma-separated list of fields to return (default: id,title,author)
+   *   limit - Max results (default: 100, max: 1000)
+   *   offset - Pagination offset
+   *
+   * Examples:
+   *   /server/query-documents?author=The Báb&language=ar
+   *   /server/query-documents?hasFilePath=false&limit=50
+   *   /server/query-documents?collection=Core Tablets&fields=id,title,file_path
+   */
+  fastify.get('/server/query-documents', {
+    preHandler: requireInternal,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          author: { type: 'string', description: 'Filter by author (use * for wildcard)' },
+          collection: { type: 'string', description: 'Filter by collection' },
+          religion: { type: 'string', description: 'Filter by religion' },
+          language: { type: 'string', description: 'Filter by language code' },
+          hasFilePath: { type: 'string', enum: ['true', 'false'], description: 'Filter by file_path presence' },
+          hasContent: { type: 'string', enum: ['true', 'false'], description: 'Filter by content entries' },
+          fields: { type: 'string', description: 'Comma-separated fields to return' },
+          limit: { type: 'integer', minimum: 1, maximum: 1000, default: 100 },
+          offset: { type: 'integer', minimum: 0, default: 0 }
+        }
+      }
+    }
+  }, async (request) => {
+    const {
+      author,
+      collection,
+      religion,
+      language,
+      hasFilePath,
+      hasContent,
+      fields = 'id,title,author',
+      limit = 100,
+      offset = 0
+    } = request.query;
+
+    // Allowed fields to prevent SQL injection
+    const allowedFields = ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'file_path', 'file_hash', 'paragraph_count', 'created_at', 'updated_at'];
+    const requestedFields = fields.split(',').map(f => f.trim()).filter(f => allowedFields.includes(f));
+    if (requestedFields.length === 0) {
+      requestedFields.push('id', 'title', 'author');
+    }
+
+    // Build query
+    const conditions = [];
+    const params = [];
+
+    if (author) {
+      if (author.includes('*')) {
+        conditions.push('author LIKE ?');
+        params.push(author.replace(/\*/g, '%'));
+      } else {
+        conditions.push('author = ?');
+        params.push(author);
+      }
+    }
+
+    if (collection) {
+      if (collection.includes('*')) {
+        conditions.push('collection LIKE ?');
+        params.push(collection.replace(/\*/g, '%'));
+      } else {
+        conditions.push('collection = ?');
+        params.push(collection);
+      }
+    }
+
+    if (religion) {
+      conditions.push('religion = ?');
+      params.push(religion);
+    }
+
+    if (language) {
+      conditions.push('language = ?');
+      params.push(language);
+    }
+
+    if (hasFilePath === 'true') {
+      conditions.push('file_path IS NOT NULL');
+    } else if (hasFilePath === 'false') {
+      conditions.push('file_path IS NULL');
+    }
+
+    // Build SQL
+    let sql = `SELECT ${requestedFields.join(', ')} FROM docs`;
+
+    if (hasContent !== undefined) {
+      // Need to join with content table
+      if (hasContent === 'true') {
+        sql = `SELECT DISTINCT ${requestedFields.map(f => 'd.' + f).join(', ')} FROM docs d INNER JOIN content c ON c.doc_id = d.id`;
+      } else {
+        sql = `SELECT ${requestedFields.map(f => 'd.' + f).join(', ')} FROM docs d LEFT JOIN content c ON c.doc_id = d.id WHERE c.id IS NULL`;
+        if (conditions.length > 0) {
+          sql += ' AND ' + conditions.map(c => c.replace(/^(\w+)/, 'd.$1')).join(' AND ');
+        }
+        sql += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const documents = await queryAll(sql, params);
+        const countSql = `SELECT COUNT(DISTINCT d.id) as count FROM docs d LEFT JOIN content c ON c.doc_id = d.id WHERE c.id IS NULL` +
+          (conditions.length > 0 ? ' AND ' + conditions.map(c => c.replace(/^(\w+)/, 'd.$1')).join(' AND ') : '');
+        const countResult = await queryOne(countSql, params.slice(0, -2));
+
+        return {
+          documents,
+          total: countResult?.count || documents.length,
+          limit,
+          offset,
+          filters: { author, collection, religion, language, hasFilePath, hasContent }
+        };
+      }
+    }
+
+    if (conditions.length > 0) {
+      const prefix = hasContent === 'true' ? 'd.' : '';
+      sql += ' WHERE ' + conditions.map(c => c.replace(/^(\w+)/, prefix + '$1')).join(' AND ');
+    }
+
+    sql += ` ORDER BY ${hasContent === 'true' ? 'd.' : ''}id LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const documents = await queryAll(sql, params);
+
+    // Get total count
+    let countSql = `SELECT COUNT(*) as count FROM docs`;
+    if (hasContent === 'true') {
+      countSql = `SELECT COUNT(DISTINCT d.id) as count FROM docs d INNER JOIN content c ON c.doc_id = d.id`;
+    }
+    if (conditions.length > 0) {
+      const prefix = hasContent === 'true' ? 'd.' : '';
+      countSql += ' WHERE ' + conditions.map(c => c.replace(/^(\w+)/, prefix + '$1')).join(' AND ');
+    }
+    const countResult = await queryOne(countSql, params.slice(0, -2));
+
+    return {
+      documents,
+      total: countResult?.count || documents.length,
+      limit,
+      offset,
+      filters: { author, collection, religion, language, hasFilePath, hasContent }
+    };
+  });
 }
