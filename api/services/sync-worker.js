@@ -45,7 +45,7 @@ async function getUnsyncedDocuments() {
     SELECT DISTINCT d.id, d.title, d.author, d.religion, d.collection,
            d.language, d.year, d.description
     FROM docs d
-    INNER JOIN content c ON c.document_id = d.id
+    INNER JOIN content c ON c.doc_id = d.id
     WHERE c.synced = 0
     LIMIT 50
   `);
@@ -57,9 +57,9 @@ async function getUnsyncedDocuments() {
  */
 async function getUnsyncedParagraphs(docId) {
   return queryAll(`
-    SELECT id, document_id, paragraph_index, text, heading, blocktype, embedding, content_hash
+    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash
     FROM content
-    WHERE document_id = ? AND synced = 0
+    WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index
   `, [docId]);
 }
@@ -162,7 +162,7 @@ async function syncDocument(docId) {
     const embedding = blobToFloatArray(p.embedding);
     return {
       id: p.id,
-      document_id: p.document_id,
+      document_id: p.doc_id,
       paragraph_index: p.paragraph_index,
       text: p.text,
       title: doc.title,
@@ -370,7 +370,7 @@ async function runFullSyncCheck() {
 
       // Mark all their paragraphs as needing sync
       for (const docId of missingInMeili) {
-        await query('UPDATE content SET synced = 0 WHERE document_id = ?', [docId]);
+        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [docId]);
       }
 
       syncStats.fullSyncMarked += missingInMeili.length;
@@ -380,7 +380,7 @@ async function runFullSyncCheck() {
     // Also check for documents with all synced=1 paragraphs but might have stale data
     // This ensures metadata changes are caught even if paragraphs haven't changed
     const potentiallyStale = await queryAll(`
-      SELECT DISTINCT document_id FROM content
+      SELECT DISTINCT doc_id FROM content
       WHERE synced = 1
       AND updated_at < datetime('now', '-1 hour')
       LIMIT 100
@@ -389,26 +389,26 @@ async function runFullSyncCheck() {
     // For these, compare paragraph counts
     for (const row of potentiallyStale) {
       const dbCount = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE document_id = ?',
-        [row.document_id]
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+        [row.doc_id]
       );
 
       try {
         const meiliResult = await meili.index('paragraphs').search('', {
-          filter: `document_id = "${row.document_id}"`,
+          filter: `document_id = "${row.doc_id}"`,
           limit: 0
         });
 
         // If counts don't match, mark for re-sync
         if (dbCount?.count !== meiliResult.estimatedTotalHits) {
-          await query('UPDATE content SET synced = 0 WHERE document_id = ?', [row.document_id]);
+          await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
           syncStats.fullSyncMarked++;
-          logger.info({ docId: row.document_id, dbCount: dbCount?.count, meiliCount: meiliResult.estimatedTotalHits },
+          logger.info({ docId: row.doc_id, dbCount: dbCount?.count, meiliCount: meiliResult.estimatedTotalHits },
             'Paragraph count mismatch, marking for re-sync');
         }
       } catch {
         // Document might not exist in Meili, mark for sync
-        await query('UPDATE content SET synced = 0 WHERE document_id = ?', [row.document_id]);
+        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
         syncStats.fullSyncMarked++;
       }
     }
@@ -508,7 +508,7 @@ export async function forceSyncNow() {
 export async function getUnsyncedCount() {
   const result = await queryOne(`
     SELECT
-      COUNT(DISTINCT document_id) as documents,
+      COUNT(DISTINCT doc_id) as documents,
       COUNT(*) as paragraphs
     FROM content
     WHERE synced = 0

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T00:29:01.704Z",
+  "generated": "2026-01-02T00:49:34.514Z",
   "entries": [
+    {
+      "hash": "3d6e34d",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add embedding dimension diagnostics and fix model config",
+      "scope": null
+    },
     {
       "hash": "41cddd6",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add auth header and support both doc_id/document_id columns",
       "scope": "translation"
-    },
-    {
-      "hash": "dd763c3",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Enable SQLite WAL mode for concurrent access",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "3d6e34d",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add embedding dimension diagnostics and fix model config",
+        "scope": null
+      },
       {
         "hash": "41cddd6",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Add auth header and support both doc_id/document_id columns",
         "scope": "translation"
-      },
-      {
-        "hash": "dd763c3",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Enable SQLite WAL mode for concurrent access",
-        "scope": "db"
       }
     ]
   }

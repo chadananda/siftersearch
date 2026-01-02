@@ -116,7 +116,7 @@ export async function initializeIndexes() {
     }
   });
   // Wait for settings update to complete (Meilisearch updates are async)
-  await paragraphs.waitForTask(paragraphsTask.taskUid);
+  await meili.tasks.waitForTask(paragraphsTask.taskUid);
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
@@ -149,7 +149,7 @@ export async function initializeIndexes() {
     }
   });
   // Wait for settings update to complete
-  await documents.waitForTask(documentsTask.taskUid);
+  await meili.tasks.waitForTask(documentsTask.taskUid);
 
   logger.info('Search indexes initialized');
 }
