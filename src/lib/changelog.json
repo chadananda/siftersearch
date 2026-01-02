@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T03:29:37.415Z",
+  "generated": "2026-01-02T03:39:31.413Z",
   "entries": [
+    {
+      "hash": "71eaa84",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Resolve print view bugs and add translation script",
+      "scope": null
+    },
     {
       "hash": "9155580",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use api module token instead of localStorage",
       "scope": null
-    },
-    {
-      "hash": "b523417",
-      "date": "2025-12-30",
-      "type": "Fixed",
-      "description": "PWA auto-update and auth header for translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "71eaa84",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Resolve print view bugs and add translation script",
+        "scope": null
+      },
       {
         "hash": "9155580",
         "date": "2026-01-01",
@@ -699,13 +706,6 @@
         "date": "2025-12-30",
         "type": "Fixed",
         "description": "Use api module token instead of localStorage",
-        "scope": null
-      },
-      {
-        "hash": "b523417",
-        "date": "2025-12-30",
-        "type": "Fixed",
-        "description": "PWA auto-update and auth header for translation",
         "scope": null
       }
     ]
