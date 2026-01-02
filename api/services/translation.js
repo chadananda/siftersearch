@@ -643,6 +643,11 @@ SEGMENTATION RULES:
 - Keep segments short enough for easy comparison (1-3 sentences max)
 - Ensure each original phrase maps to exactly one translation phrase
 - Preserve the complete text - every word must be in a segment
+- CRITICAL FOR ARABIC/PERSIAN: NEVER end a segment with a preposition
+  - Prepositions (في، من، إلى، على، عن، ب، ل، و، ف) MUST stay with their objects
+  - "من عند الله" is ONE unit, do NOT split as "من" + "عند الله"
+  - Watch for attached prepositions (بِ، لِ، وَ، فَ، كَ) - keep with following word
+  - Complete idāfa (construct) chains: "نور وجه الله" stays together
 
 TRANSLATION STYLE:
 ${styleGuide}

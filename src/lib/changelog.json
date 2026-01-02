@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T16:40:35.800Z",
+  "generated": "2026-01-02T16:43:11.477Z",
   "entries": [
+    {
+      "hash": "b25daa1",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add admin document editor with CodeMirror 6",
+      "scope": null
+    },
     {
       "hash": "0785af5",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use snake_case document_id from jobs table in translation processor",
       "scope": null
-    },
-    {
-      "hash": "a0e8c72",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add job processor to PM2 ecosystem",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "b25daa1",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add admin document editor with CodeMirror 6",
+        "scope": null
+      },
       {
         "hash": "0785af5",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use snake_case document_id from jobs table in translation processor",
-        "scope": null
-      },
-      {
-        "hash": "a0e8c72",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add job processor to PM2 ecosystem",
         "scope": null
       }
     ]
