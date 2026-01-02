@@ -312,7 +312,7 @@
 
   function openEditor() {
     if (document?.id) {
-      window.location.href = `/library/edit?doc=${document.id}`;
+      window.location.href = `/admin/edit?id=${document.id}`;
     }
   }
 

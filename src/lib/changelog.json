@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T21:51:54.728Z",
+  "generated": "2026-01-02T21:58:21.790Z",
   "entries": [
+    {
+      "hash": "2c7080a",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Mark Baha'i Books collection as encumbered via migration",
+      "scope": null
+    },
     {
       "hash": "bfb7dc9",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Hide translate button for docs with 'in English' in title",
       "scope": null
-    },
-    {
-      "hash": "21537af",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "2c7080a",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Mark Baha'i Books collection as encumbered via migration",
+        "scope": null
+      },
       {
         "hash": "bfb7dc9",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Hide translate button for docs with 'in English' in title",
-        "scope": null
-      },
-      {
-        "hash": "21537af",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
         "scope": null
       }
     ]
