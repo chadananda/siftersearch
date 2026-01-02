@@ -1514,7 +1514,7 @@ export default async function adminRoutes(fastify) {
     const orphanedDocs = await queryAll(`
       SELECT d.id, d.title, d.paragraph_count, d.language
       FROM docs d
-      LEFT JOIN content c ON c.document_id = d.id
+      LEFT JOIN content c ON c.doc_id = d.id
       WHERE d.paragraph_count > 0
       GROUP BY d.id
       HAVING COUNT(c.id) = 0
@@ -1552,7 +1552,7 @@ export default async function adminRoutes(fastify) {
 
           await query(`
             INSERT OR REPLACE INTO content
-            (id, document_id, paragraph_index, text, heading, blocktype, embedding, synced, created_at, updated_at)
+            (id, doc_id, paragraph_index, text, heading, blocktype, embedding, synced, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
           `, [
             contentId,
