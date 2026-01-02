@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T17:38:57.095Z",
+  "generated": "2026-01-02T17:45:57.623Z",
   "entries": [
+    {
+      "hash": "8aabe59",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Concept-based paragraph segmentation",
+      "scope": null
+    },
     {
       "hash": "c3b86f0",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add priority column migration and use 0 for system user jobs",
       "scope": null
-    },
-    {
-      "hash": "e6e5a10",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use correct job.document_id in processInAppTranslation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "8aabe59",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Concept-based paragraph segmentation",
+        "scope": null
+      },
       {
         "hash": "c3b86f0",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Add priority column migration and use 0 for system user jobs",
-        "scope": null
-      },
-      {
-        "hash": "e6e5a10",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use correct job.document_id in processInAppTranslation",
         "scope": null
       }
     ]

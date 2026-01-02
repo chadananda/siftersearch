@@ -1583,4 +1583,212 @@ export default async function adminRoutes(fastify) {
       errors: errors.length > 0 ? errors : undefined
     };
   });
+
+  // ========================================================================
+  // Source File Linking (Link database records to source markdown files)
+  // ========================================================================
+
+  /**
+   * POST /server/link-source-files - Link database documents to source files
+   * Detects platform (Linux vs macOS) and uses correct Dropbox path
+   *
+   * @param {boolean} dryRun - Preview matches without updating database
+   * @returns {object} Summary of matches and updates
+   */
+  fastify.post('/server/link-source-files', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          dryRun: { type: 'boolean', default: false, description: 'Preview without updating' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { dryRun = false } = request.body || {};
+    const os = await import('os');
+    const { readdir, readFile, stat } = await import('fs/promises');
+    const { join, basename } = await import('path');
+    const matter = (await import('gray-matter')).default;
+
+    // Platform-specific Dropbox path
+    const platform = os.platform();
+    const homeDir = os.homedir();
+    const LIBRARY_ROOT = join(
+      homeDir,
+      'Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library'
+    );
+
+    logger.info({ platform, homeDir, LIBRARY_ROOT, dryRun }, 'Starting source file linking');
+
+    // Recursively find all markdown files
+    async function findMarkdownFiles(dir) {
+      const files = [];
+      async function scan(currentDir) {
+        try {
+          const entries = await readdir(currentDir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = join(currentDir, entry.name);
+            if (entry.isDirectory()) {
+              await scan(fullPath);
+            } else if (entry.name.endsWith('.md')) {
+              files.push(fullPath);
+            }
+          }
+        } catch (err) {
+          logger.warn({ dir: currentDir, error: err.message }, 'Cannot scan directory');
+        }
+      }
+      await scan(dir);
+      return files;
+    }
+
+    // Convert filename to database ID format
+    function filenameToId(filename) {
+      return basename(filename, '.md')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    }
+
+    // Parse source file frontmatter
+    async function parseSourceFile(filePath) {
+      try {
+        const content = await readFile(filePath, 'utf-8');
+        const parsed = matter(content);
+        return {
+          path: filePath,
+          filename: basename(filePath),
+          filenameId: filenameToId(basename(filePath)),
+          title: parsed.data.title || null,
+          author: parsed.data.author || null,
+          language: parsed.data.language || 'en'
+        };
+      } catch (err) {
+        return null;
+      }
+    }
+
+    // Find matching database record
+    function findMatch(sourceFile, allDocs) {
+      // Strategy 1: Exact ID match
+      const exactMatch = allDocs.find(d => d.id === sourceFile.filenameId);
+      if (exactMatch) return { doc: exactMatch, matchType: 'exact_id' };
+
+      // Strategy 2: ID contains filename ID
+      const containsMatch = allDocs.find(d =>
+        d.id.includes(sourceFile.filenameId) ||
+        sourceFile.filenameId.includes(d.id)
+      );
+      if (containsMatch) return { doc: containsMatch, matchType: 'partial_id' };
+
+      // Strategy 3: Title match
+      const normalizeTitle = (t) => t?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+      const sourceTitle = normalizeTitle(sourceFile.title);
+      if (sourceTitle) {
+        const titleMatch = allDocs.find(d => normalizeTitle(d.title) === sourceTitle);
+        if (titleMatch) return { doc: titleMatch, matchType: 'title' };
+      }
+
+      return null;
+    }
+
+    // Check library exists
+    try {
+      await stat(LIBRARY_ROOT);
+    } catch (err) {
+      throw ApiError.badRequest(`Library not found at: ${LIBRARY_ROOT}`);
+    }
+
+    // Find source files
+    const sourceFiles = await findMarkdownFiles(LIBRARY_ROOT);
+    logger.info({ count: sourceFiles.length }, 'Found source files');
+
+    // Get all database documents
+    const allDocs = await queryAll('SELECT id, title, author, language, file_path FROM docs');
+    logger.info({ count: allDocs.length }, 'Found database documents');
+
+    // Match files to documents
+    const matches = [];
+    const unmatched = [];
+
+    for (const filePath of sourceFiles) {
+      const sourceFile = await parseSourceFile(filePath);
+      if (!sourceFile) continue;
+
+      const match = findMatch(sourceFile, allDocs);
+      if (match) {
+        matches.push({
+          docId: match.doc.id,
+          docTitle: match.doc.title,
+          filePath: sourceFile.path,
+          matchType: match.matchType
+        });
+      } else {
+        unmatched.push({ path: filePath, title: sourceFile.title });
+      }
+    }
+
+    // Apply updates if not dry run
+    let updated = 0;
+    if (!dryRun && matches.length > 0) {
+      for (const match of matches) {
+        await query('UPDATE docs SET file_path = ? WHERE id = ?', [match.filePath, match.docId]);
+        updated++;
+      }
+      logger.info({ updated }, 'Updated document file paths');
+    }
+
+    return {
+      success: true,
+      dryRun,
+      platform,
+      libraryRoot: LIBRARY_ROOT,
+      sourceFilesFound: sourceFiles.length,
+      databaseDocuments: allDocs.length,
+      matched: matches.length,
+      unmatched: unmatched.length,
+      updated: dryRun ? 0 : updated,
+      sampleMatches: matches.slice(0, 10).map(m => ({
+        docId: m.docId,
+        matchType: m.matchType,
+        path: m.filePath.replace(LIBRARY_ROOT, '.')
+      })),
+      sampleUnmatched: unmatched.slice(0, 5).map(u => ({
+        path: u.path.replace(LIBRARY_ROOT, '.'),
+        title: u.title
+      }))
+    };
+  });
+
+  /**
+   * GET /server/file-path-stats - Get statistics on documents with/without file paths
+   */
+  fastify.get('/server/file-path-stats', { preHandler: requireInternal }, async () => {
+    const stats = await queryOne(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN file_path IS NOT NULL THEN 1 ELSE 0 END) as with_path,
+        SUM(CASE WHEN file_path IS NULL THEN 1 ELSE 0 END) as without_path
+      FROM docs
+    `);
+
+    const sampleWithPath = await queryAll(`
+      SELECT id, title, file_path FROM docs WHERE file_path IS NOT NULL LIMIT 5
+    `);
+
+    const sampleWithoutPath = await queryAll(`
+      SELECT id, title, author FROM docs WHERE file_path IS NULL LIMIT 10
+    `);
+
+    return {
+      total: stats.total,
+      withFilePath: stats.with_path,
+      withoutFilePath: stats.without_path,
+      coverage: stats.total > 0 ? Math.round(stats.with_path / stats.total * 100) : 0,
+      sampleWithPath,
+      sampleWithoutPath
+    };
+  });
 }
