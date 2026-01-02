@@ -94,6 +94,12 @@ async function testDocument(docId, paragraphNum = 1) {
       'scripture'
     );
 
+    // Check for integrity error
+    if (result.integrityError) {
+      console.log('⚠️  INTEGRITY ERROR: Segments did not match original text!');
+      console.log('    Falling back to plain translation (no segments).\n');
+    }
+
     console.log('=== NEW Translation ===');
     console.log(result.translation);
 
@@ -104,6 +110,17 @@ async function testDocument(docId, paragraphNum = 1) {
         console.log(`    Translation: ${s.translation}`);
       });
       console.log(`\nTotal segments: ${result.segments.length}`);
+
+      // Verify integrity locally too
+      const normalize = t => t.replace(/\s+/g, ' ').trim();
+      const originalNorm = normalize(para.text);
+      const segmentsNorm = normalize(result.segments.map(s => s.original).join(' '));
+      if (originalNorm === segmentsNorm) {
+        console.log('✅ INTEGRITY CHECK PASSED: Segments exactly match original text');
+      } else {
+        console.log('❌ INTEGRITY CHECK FAILED: Segments differ from original!');
+        console.log(`   Original length: ${originalNorm.length}, Segments length: ${segmentsNorm.length}`);
+      }
     }
 
     // Prompt to save

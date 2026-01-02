@@ -702,6 +702,40 @@ async function translateTextWithSegments(text, sourceLang, targetLang, contentTy
     return { translation: plainTranslation, segments: null };
   }
 
+  // SANITY CHECK: Verify segmentation didn't modify the original text
+  // Normalize whitespace for comparison (collapse multiple spaces, trim)
+  const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
+  const originalNormalized = normalizeText(text);
+  const segmentsJoined = normalizeText(result.segments.map(s => s.original).join(' '));
+
+  if (originalNormalized !== segmentsJoined) {
+    // Log detailed diff for debugging
+    const originalLen = originalNormalized.length;
+    const joinedLen = segmentsJoined.length;
+    const lenDiff = Math.abs(originalLen - joinedLen);
+
+    // Find first difference position
+    let diffPos = 0;
+    while (diffPos < originalNormalized.length && diffPos < segmentsJoined.length &&
+           originalNormalized[diffPos] === segmentsJoined[diffPos]) {
+      diffPos++;
+    }
+
+    logger.error({
+      originalLength: originalLen,
+      segmentsLength: joinedLen,
+      lengthDiff: lenDiff,
+      diffPosition: diffPos,
+      originalAround: originalNormalized.substring(Math.max(0, diffPos - 20), diffPos + 40),
+      segmentsAround: segmentsJoined.substring(Math.max(0, diffPos - 20), diffPos + 40),
+      segmentCount: result.segments.length
+    }, 'SEGMENTATION INTEGRITY ERROR: Concatenated segments do not match original text');
+
+    // Fall back to plain translation to avoid data corruption
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, segments: null, integrityError: true };
+  }
+
   // Add IDs to segments and join translations
   const segments = result.segments.map((seg, idx) => ({
     id: idx + 1,
