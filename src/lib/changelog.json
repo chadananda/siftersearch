@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T17:45:57.623Z",
+  "generated": "2026-01-02T17:57:03.218Z",
   "entries": [
+    {
+      "hash": "4a3ab70",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add API endpoints for source file linking",
+      "scope": null
+    },
     {
       "hash": "8aabe59",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add system user for API/automation jobs",
       "scope": null
-    },
-    {
-      "hash": "53fc622",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add priority column migration and use 0 for system user jobs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "4a3ab70",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add API endpoints for source file linking",
+        "scope": null
+      },
       {
         "hash": "8aabe59",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Add system user for API/automation jobs",
-        "scope": null
-      },
-      {
-        "hash": "53fc622",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add priority column migration and use 0 for system user jobs",
         "scope": null
       }
     ]

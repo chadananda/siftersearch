@@ -677,6 +677,43 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Re-ingest a single document from its source file (background task)
+   * Uses the new AI-based segmentation for concept-based paragraph breaks
+   */
+  fastify.post('/server/reingest-document', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to re-ingest' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.body;
+
+    // Check if already running
+    const existing = backgroundTasks.get('reingest');
+    if (existing && existing.status === 'running') {
+      throw ApiError.conflict('Re-ingestion is already in progress');
+    }
+
+    const task = runBackgroundTask('reingest', 'scripts/reingest-document.js', [documentId]);
+
+    logger.info({ documentId }, 'Document re-ingestion started via API');
+
+    return {
+      success: true,
+      taskId: 'reingest',
+      message: `Re-ingestion started for document: ${documentId}`,
+      documentId,
+      status: task.status
+    };
+  });
+
+  /**
    * Fix RTL language detection (background task)
    * Scans documents and corrects language field based on content analysis
    */
