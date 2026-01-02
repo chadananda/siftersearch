@@ -5,7 +5,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import { query, queryOne } from './db.js';
+import { userQuery as query, userQueryOne as queryOne } from './db.js';
 import { ApiError } from './errors.js';
 
 const SALT_ROUNDS = 12;

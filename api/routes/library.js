@@ -15,7 +15,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin, requireInternal } from '../lib/auth.js';
@@ -1748,7 +1748,7 @@ Provide only the translation, no explanations.`;
       userId = rawUserId;
     } else {
       // System user - find any admin user to assign the job to
-      const adminUser = await queryOne("SELECT id FROM users WHERE tier = 'admin' LIMIT 1");
+      const adminUser = await userQueryOne("SELECT id FROM users WHERE tier = 'admin' LIMIT 1");
       userId = adminUser?.id || 1; // Fallback to id=1 if no admin found
     }
 

@@ -5,7 +5,7 @@
  * Uses 6-digit codes for user-friendly verification.
  */
 
-import { query, queryOne } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { sendEmail } from './email.js';
 import crypto from 'crypto';

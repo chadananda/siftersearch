@@ -12,7 +12,7 @@
  * POST /api/forum/posts/:id/vote - Upvote/downvote a post
  */
 
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne, userQueryAll as queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { authenticate, optionalAuthenticate } from '../lib/auth.js';
 

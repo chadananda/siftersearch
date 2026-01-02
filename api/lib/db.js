@@ -1,22 +1,60 @@
 /**
  * libsql Database Client
  *
- * Uses local SQLite file with WAL mode for concurrent access.
- * WAL (Write-Ahead Logging) allows multiple readers + one writer simultaneously.
+ * Two separate databases:
+ * 1. Content DB (local SQLite) - docs, content, library_nodes, jobs, processed_cache
+ * 2. User DB (Turso cloud) - users, sessions, auth, forum, donations, conversations
+ *
+ * This separation ensures content stays local (fast, no sync overhead)
+ * while user data syncs to Turso cloud for cross-device access.
  */
 
 import { createClient } from '@libsql/client';
 import { logger } from './logger.js';
 
-let db = null;
-let walEnabled = false;
+let contentDb = null;
+let userDb = null;
+let contentWalEnabled = false;
+let userWalEnabled = false;
 
-async function createConnection() {
-  const url = process.env.TURSO_DATABASE_URL;
+/**
+ * Create content database connection (local SQLite)
+ * Uses TURSO_DATABASE_URL which should be a local file path
+ */
+async function createContentConnection() {
+  const url = process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db';
+
+  const client = createClient({ url });
+
+  // Enable WAL mode for local SQLite files
+  if (!contentWalEnabled && url.startsWith('file:')) {
+    try {
+      await client.execute('PRAGMA journal_mode=WAL');
+      await client.execute('PRAGMA busy_timeout=30000');
+      contentWalEnabled = true;
+      logger.info('Content DB: WAL mode enabled');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Content DB: Could not enable WAL mode');
+    }
+  }
+
+  logger.info({ url }, 'Content DB connected (local)');
+  return client;
+}
+
+/**
+ * Create user database connection (Turso cloud or local fallback)
+ * Uses USER_DATABASE_URL + TURSO_AUTH_TOKEN for cloud sync
+ * Falls back to content DB if not configured
+ */
+async function createUserConnection() {
+  const url = process.env.USER_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
 
+  // If no separate user DB configured, fall back to content DB
   if (!url) {
-    throw new Error('TURSO_DATABASE_URL is required');
+    logger.info('User DB: No USER_DATABASE_URL configured, using content DB');
+    return null; // Will use content DB as fallback
   }
 
   const client = createClient({
@@ -24,79 +62,126 @@ async function createConnection() {
     ...(authToken && { authToken })
   });
 
-  // Enable WAL mode for local SQLite files (allows concurrent access)
-  // Only do this once, and only for local file databases
-  if (!walEnabled && url.startsWith('file:')) {
+  // Enable WAL mode for local files (Turso cloud doesn't need this)
+  if (!userWalEnabled && url.startsWith('file:')) {
     try {
       await client.execute('PRAGMA journal_mode=WAL');
-      await client.execute('PRAGMA busy_timeout=30000'); // 30 second timeout
-      walEnabled = true;
-      logger.info('SQLite WAL mode enabled');
+      await client.execute('PRAGMA busy_timeout=30000');
+      userWalEnabled = true;
+      logger.info('User DB: WAL mode enabled');
     } catch (err) {
-      logger.warn({ err: err.message }, 'Could not enable WAL mode');
+      logger.warn({ err: err.message }, 'User DB: Could not enable WAL mode');
     }
   }
 
-  logger.info({ url: url.replace(/\/\/.*@/, '//***@') }, 'Database connected');
+  const isCloud = url.includes('turso.io') || url.includes('libsql://');
+  logger.info({ url: url.replace(/\/\/.*@/, '//***@'), isCloud }, 'User DB connected');
   return client;
 }
 
-// Get database connection (creates if needed, enables WAL mode)
+// Get content database connection
 export async function getDb() {
-  if (!db) {
-    db = await createConnection();
+  if (!contentDb) {
+    contentDb = await createContentConnection();
   }
-  return db;
+  return contentDb;
+}
+
+// Get user database connection (falls back to content DB if not configured)
+export async function getUserDb() {
+  if (userDb === null) {
+    userDb = await createUserConnection();
+  }
+  // Fall back to content DB if no user DB configured
+  return userDb || await getDb();
 }
 
 // Alias for backward compatibility
 export const getBatchDb = getDb;
 
-// Execute a query with parameters
+// ============================================
+// Content Database Operations (local)
+// ============================================
+
+// Execute a query on content DB
 export async function query(sql, params = []) {
   const client = await getDb();
   const result = await client.execute({ sql, args: params });
   return result;
 }
 
-// Alias for backward compatibility (WAL mode handles concurrency)
-export const batchQuery = query;
+// Get a single row from content DB
+export async function queryOne(sql, params = []) {
+  const result = await query(sql, params);
+  return result.rows[0] || null;
+}
 
-// Execute multiple statements in a transaction
+// Get all rows from content DB
+export async function queryAll(sql, params = []) {
+  const result = await query(sql, params);
+  return result.rows;
+}
+
+// Execute transaction on content DB
 export async function transaction(statements) {
   const client = await getDb();
   const results = await client.batch(statements, 'write');
   return results;
 }
 
-// Alias for backward compatibility
-export const batchTransaction = transaction;
+// ============================================
+// User Database Operations (Turso cloud)
+// ============================================
 
-// Get a single row
-export async function queryOne(sql, params = []) {
-  const result = await query(sql, params);
+// Execute a query on user DB
+export async function userQuery(sql, params = []) {
+  const client = await getUserDb();
+  const result = await client.execute({ sql, args: params });
+  return result;
+}
+
+// Get a single row from user DB
+export async function userQueryOne(sql, params = []) {
+  const result = await userQuery(sql, params);
   return result.rows[0] || null;
 }
 
-// Get all rows
-export async function queryAll(sql, params = []) {
-  const result = await query(sql, params);
+// Get all rows from user DB
+export async function userQueryAll(sql, params = []) {
+  const result = await userQuery(sql, params);
   return result.rows;
 }
 
+// Execute transaction on user DB
+export async function userTransaction(statements) {
+  const client = await getUserDb();
+  const results = await client.batch(statements, 'write');
+  return results;
+}
+
+// ============================================
 // Aliases for backward compatibility
+// ============================================
+
+export const batchQuery = query;
+export const batchTransaction = transaction;
 export const batchQueryOne = queryOne;
 export const batchQueryAll = queryAll;
 
 export default {
   getDb,
+  getUserDb,
   getBatchDb,
   query,
-  batchQuery,
   queryOne,
   queryAll,
+  batchQuery,
   batchQueryOne,
   batchQueryAll,
   transaction,
-  batchTransaction
+  batchTransaction,
+  userQuery,
+  userQueryOne,
+  userQueryAll,
+  userTransaction
 };

@@ -9,7 +9,7 @@
  * POST /api/anonymous/track - Track activity (search, page view)
  */
 
-import { query, queryOne } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 

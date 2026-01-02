@@ -9,7 +9,7 @@
  * POST /api/donations/portal - Create customer portal session
  */
 
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne, userQueryAll as queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { authenticate, optionalAuthenticate } from '../lib/auth.js';
 import { logger } from '../lib/logger.js';

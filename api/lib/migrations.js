@@ -5,14 +5,15 @@
  * Each version number corresponds to schema changes.
  */
 
-import { query, queryOne } from './db.js';
+import { query, queryOne, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 17;
+const CURRENT_VERSION = 18;
+const USER_DB_CURRENT_VERSION = 1;
 
 /**
- * Get current database schema version
+ * Get current database schema version (content DB)
  */
 async function getSchemaVersion() {
   try {
@@ -35,7 +36,7 @@ async function getSchemaVersion() {
 }
 
 /**
- * Set schema version
+ * Set schema version (content DB)
  */
 async function setSchemaVersion(version) {
   await query(`
@@ -45,6 +46,40 @@ async function setSchemaVersion(version) {
   `);
   await query('DELETE FROM _schema_version');
   await query('INSERT INTO _schema_version (version) VALUES (?)', [version]);
+}
+
+/**
+ * Get current user database schema version
+ */
+async function getUserSchemaVersion() {
+  try {
+    const table = await userQueryOne(`
+      SELECT name FROM sqlite_master
+      WHERE type='table' AND name='_user_schema_version'
+    `);
+
+    if (!table) {
+      return 0;
+    }
+
+    const row = await userQueryOne('SELECT version FROM _user_schema_version LIMIT 1');
+    return row?.version || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Set user database schema version
+ */
+async function setUserSchemaVersion(version) {
+  await userQuery(`
+    CREATE TABLE IF NOT EXISTS _user_schema_version (
+      version INTEGER PRIMARY KEY
+    )
+  `);
+  await userQuery('DELETE FROM _user_schema_version');
+  await userQuery('INSERT INTO _user_schema_version (version) VALUES (?)', [version]);
 }
 
 /**
@@ -760,26 +795,243 @@ const migrations = {
       throw err;  // This is critical, let it fail
     }
   },
+
+  // Version 18: No-op - user tables moved to separate user database
+  // See userMigrations below
+  18: async () => {
+    logger.info('Content DB migration 18: User tables now managed separately');
+  },
 };
 
 /**
- * Run all pending migrations
- * @returns {Promise<{from: number, to: number, applied: number}>}
+ * User database migrations - runs on USER_DATABASE_URL (Turso cloud)
+ * These tables are for user data that syncs to the cloud
  */
-export async function runMigrations() {
+const userMigrations = {
+  // Version 1: Create all user tables in user database
+  1: async () => {
+    // Users table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT,
+        name TEXT,
+        tier TEXT DEFAULT 'anonymous',
+        email_verified INTEGER DEFAULT 0,
+        preferred_language TEXT DEFAULT 'en',
+        referral_code TEXT,
+        referred_by INTEGER,
+        preferences TEXT,
+        interests TEXT,
+        metadata TEXT,
+        approved_at TEXT,
+        search_count INTEGER DEFAULT 0,
+        auth_provider TEXT DEFAULT 'email',
+        stripe_customer_id TEXT,
+        deletion_requested_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Anonymous users table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS anonymous_users (
+        id TEXT PRIMARY KEY,
+        user_agent TEXT,
+        first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        search_count INTEGER DEFAULT 0,
+        last_search_query TEXT,
+        preferences TEXT,
+        interests TEXT,
+        converted_to_user_id INTEGER,
+        converted_at TEXT,
+        unified_to INTEGER,
+        FOREIGN KEY (converted_to_user_id) REFERENCES users(id),
+        FOREIGN KEY (unified_to) REFERENCES users(id)
+      )
+    `);
+
+    // Verification codes table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS verification_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        email TEXT NOT NULL,
+        code TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'email_verification',
+        expires_at TEXT NOT NULL,
+        used_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Refresh tokens table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        expires_at TEXT NOT NULL,
+        revoked INTEGER DEFAULT 0,
+        revoked_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Forum posts table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS forum_posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        content TEXT NOT NULL,
+        category TEXT DEFAULT 'general',
+        author_id INTEGER NOT NULL,
+        parent_id INTEGER,
+        root_post_id INTEGER,
+        depth INTEGER DEFAULT 0,
+        upvotes INTEGER DEFAULT 0,
+        downvotes INTEGER DEFAULT 0,
+        reply_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        last_activity_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TEXT,
+        FOREIGN KEY (author_id) REFERENCES users(id),
+        FOREIGN KEY (parent_id) REFERENCES forum_posts(id),
+        FOREIGN KEY (root_post_id) REFERENCES forum_posts(id)
+      )
+    `);
+
+    // Forum votes table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS forum_votes (
+        user_id INTEGER NOT NULL,
+        post_id INTEGER NOT NULL,
+        vote INTEGER NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, post_id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (post_id) REFERENCES forum_posts(id)
+      )
+    `);
+
+    // Donations table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS donations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        stripe_session_id TEXT,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'usd',
+        frequency TEXT NOT NULL,
+        tier_id TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Conversations table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT,
+        messages TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Anonymous conversations table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS anonymous_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        anonymous_user_id TEXT NOT NULL,
+        user_id INTEGER,
+        title TEXT,
+        messages TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (anonymous_user_id) REFERENCES anonymous_users(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // User profiles table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL UNIQUE,
+        name TEXT,
+        bio TEXT,
+        spiritual_background TEXT,
+        interests TEXT,
+        preferred_sources TEXT,
+        metadata TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Analytics table
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS analytics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        event_type TEXT NOT NULL,
+        details TEXT,
+        cost_usd REAL DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    // Create indexes
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_anonymous_users_converted ON anonymous_users(converted_to_user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes(email)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_forum_posts_author ON forum_posts(author_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_forum_posts_parent ON forum_posts(parent_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_forum_posts_root ON forum_posts(root_post_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_forum_posts_category ON forum_posts(category)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_forum_votes_post ON forum_votes(post_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_donations_user ON donations(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_anon_conversations_user ON anonymous_conversations(anonymous_user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_analytics_user ON analytics(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_analytics_type ON analytics(event_type)'); } catch { /* exists */ }
+
+    logger.info('User database tables created');
+  },
+};
+
+/**
+ * Run all pending content database migrations
+ */
+async function runContentMigrations() {
   const fromVersion = await getSchemaVersion();
 
   if (fromVersion >= CURRENT_VERSION) {
-    logger.debug({ version: fromVersion }, 'Schema up to date');
+    logger.debug({ version: fromVersion }, 'Content DB schema up to date');
     return { from: fromVersion, to: fromVersion, applied: 0 };
   }
 
-  logger.info({ from: fromVersion, to: CURRENT_VERSION }, 'Running schema migrations');
+  logger.info({ from: fromVersion, to: CURRENT_VERSION }, 'Running content DB migrations');
 
   let applied = 0;
   for (let v = fromVersion + 1; v <= CURRENT_VERSION; v++) {
     if (migrations[v]) {
-      logger.info({ version: v }, 'Applying migration');
+      logger.info({ version: v }, 'Applying content migration');
       await migrations[v]();
       applied++;
     }
@@ -787,6 +1039,52 @@ export async function runMigrations() {
 
   await setSchemaVersion(CURRENT_VERSION);
 
-  logger.info({ from: fromVersion, to: CURRENT_VERSION, applied }, 'Migrations complete');
+  logger.info({ from: fromVersion, to: CURRENT_VERSION, applied }, 'Content migrations complete');
   return { from: fromVersion, to: CURRENT_VERSION, applied };
+}
+
+/**
+ * Run all pending user database migrations
+ */
+async function runUserMigrations() {
+  const fromVersion = await getUserSchemaVersion();
+
+  if (fromVersion >= USER_DB_CURRENT_VERSION) {
+    logger.debug({ version: fromVersion }, 'User DB schema up to date');
+    return { from: fromVersion, to: fromVersion, applied: 0 };
+  }
+
+  logger.info({ from: fromVersion, to: USER_DB_CURRENT_VERSION }, 'Running user DB migrations');
+
+  let applied = 0;
+  for (let v = fromVersion + 1; v <= USER_DB_CURRENT_VERSION; v++) {
+    if (userMigrations[v]) {
+      logger.info({ version: v }, 'Applying user migration');
+      await userMigrations[v]();
+      applied++;
+    }
+  }
+
+  await setUserSchemaVersion(USER_DB_CURRENT_VERSION);
+
+  logger.info({ from: fromVersion, to: USER_DB_CURRENT_VERSION, applied }, 'User migrations complete');
+  return { from: fromVersion, to: USER_DB_CURRENT_VERSION, applied };
+}
+
+/**
+ * Run all pending migrations (both content and user databases)
+ * @returns {Promise<{content: object, user: object}>}
+ */
+export async function runMigrations() {
+  const contentResult = await runContentMigrations();
+  const userResult = await runUserMigrations();
+
+  return {
+    content: contentResult,
+    user: userResult,
+    // Backwards compatibility
+    from: contentResult.from,
+    to: contentResult.to,
+    applied: contentResult.applied + userResult.applied
+  };
 }

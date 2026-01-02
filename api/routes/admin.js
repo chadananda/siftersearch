@@ -34,7 +34,7 @@
  */
 
 import { join } from 'path';
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, userQuery, userQueryOne, userQueryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { requireTier, requireInternal } from '../lib/auth.js';
 import { getStats as getSearchStats, getMeili } from '../lib/search.js';
@@ -55,7 +55,7 @@ export default async function adminRoutes(fastify) {
   // Dashboard statistics
   fastify.get('/stats', { preHandler: requireTier('admin') }, async () => {
     const [userStats, searchStats, analyticsStats] = await Promise.all([
-      queryOne(`
+      userQueryOne(`
         SELECT
           COUNT(*) as total,
           SUM(CASE WHEN tier = 'verified' THEN 1 ELSE 0 END) as verified,
@@ -67,7 +67,7 @@ export default async function adminRoutes(fastify) {
         FROM users
       `),
       getSearchStats().catch(() => ({ documents: { numberOfDocuments: 0 }, paragraphs: { numberOfDocuments: 0 } })),
-      queryOne(`
+      userQueryOne(`
         SELECT
           COUNT(*) as total_events,
           SUM(cost_usd) as total_cost,
@@ -123,7 +123,7 @@ export default async function adminRoutes(fastify) {
     sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const users = await queryAll(sql, params);
+    const users = await userQueryAll(sql, params);
 
     // Get total count
     let countSql = 'SELECT COUNT(*) as count FROM users WHERE 1=1';
@@ -137,7 +137,7 @@ export default async function adminRoutes(fastify) {
       countParams.push(`%${search}%`, `%${search}%`);
     }
 
-    const countResult = await queryOne(countSql, countParams);
+    const countResult = await userQueryOne(countSql, countParams);
 
     return {
       users,
@@ -149,7 +149,7 @@ export default async function adminRoutes(fastify) {
 
   // Get users pending approval
   fastify.get('/pending', { preHandler: requireTier('admin') }, async () => {
-    const users = await queryAll(`
+    const users = await userQueryAll(`
       SELECT id, email, name, created_at, referred_by
       FROM users
       WHERE tier = 'verified' AND approved_at IS NULL
@@ -183,7 +183,7 @@ export default async function adminRoutes(fastify) {
     const { tier, name } = request.body;
 
     // Check user exists
-    const user = await queryOne('SELECT id FROM users WHERE id = ?', [id]);
+    const user = await userQueryOne('SELECT id FROM users WHERE id = ?', [id]);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
@@ -211,9 +211,9 @@ export default async function adminRoutes(fastify) {
     }
 
     values.push(id);
-    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+    await userQuery(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
 
-    const updatedUser = await queryOne(
+    const updatedUser = await userQueryOne(
       'SELECT id, email, name, tier, created_at, approved_at FROM users WHERE id = ?',
       [id]
     );
@@ -225,7 +225,7 @@ export default async function adminRoutes(fastify) {
   fastify.post('/approve/:id', { preHandler: requireTier('admin') }, async (request) => {
     const { id } = request.params;
 
-    const user = await queryOne('SELECT id, tier FROM users WHERE id = ?', [id]);
+    const user = await userQueryOne('SELECT id, tier FROM users WHERE id = ?', [id]);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
@@ -234,12 +234,12 @@ export default async function adminRoutes(fastify) {
       throw ApiError.badRequest('User is not in verified tier');
     }
 
-    await query(
+    await userQuery(
       `UPDATE users SET tier = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [id]
     );
 
-    const updatedUser = await queryOne(
+    const updatedUser = await userQueryOne(
       'SELECT id, email, name, tier, created_at, approved_at FROM users WHERE id = ?',
       [id]
     );
@@ -251,7 +251,7 @@ export default async function adminRoutes(fastify) {
   fastify.post('/ban/:id', { preHandler: requireTier('admin') }, async (request) => {
     const { id } = request.params;
 
-    const user = await queryOne('SELECT id FROM users WHERE id = ?', [id]);
+    const user = await userQueryOne('SELECT id FROM users WHERE id = ?', [id]);
     if (!user) {
       throw ApiError.notFound('User not found');
     }
@@ -261,7 +261,7 @@ export default async function adminRoutes(fastify) {
       throw ApiError.badRequest('Cannot ban yourself');
     }
 
-    await query(`UPDATE users SET tier = 'banned' WHERE id = ?`, [id]);
+    await userQuery(`UPDATE users SET tier = 'banned' WHERE id = ?`, [id]);
 
     return { success: true };
   });
@@ -297,7 +297,7 @@ export default async function adminRoutes(fastify) {
     sql += ' ORDER BY a.created_at DESC LIMIT ?';
     params.push(limit);
 
-    const events = await queryAll(sql, params);
+    const events = await userQueryAll(sql, params);
 
     return { events };
   });
@@ -492,11 +492,11 @@ export default async function adminRoutes(fastify) {
    */
   fastify.get('/server/status', { preHandler: requireInternal }, async () => {
     const [dbStats, embeddingStats, embeddingDimCheck, searchStats] = await Promise.all([
-      // Database stats
+      // Database stats (content + user databases)
       Promise.all([
         queryOne('SELECT COUNT(*) as count FROM docs'),
         queryOne('SELECT COUNT(*) as count FROM content'),
-        queryOne('SELECT COUNT(*) as count FROM users'),
+        userQueryOne('SELECT COUNT(*) as count FROM users'),
         queryOne('SELECT COUNT(*) as count FROM library_nodes')
       ]).then(([docs, content, users, nodes]) => ({
         docs: docs?.count || 0,

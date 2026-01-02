@@ -11,7 +11,7 @@
  * GET /api/auth/me - Get current user
  */
 
-import { query, queryOne } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import {

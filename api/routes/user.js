@@ -7,7 +7,7 @@
  * DELETE /api/user - Delete account
  */
 
-import { query, queryOne } from '../lib/db.js';
+import { userQuery as query, userQueryOne as queryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { authenticate, hashPassword, verifyPassword, revokeAllUserTokens } from '../lib/auth.js';
 

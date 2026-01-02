@@ -11,7 +11,7 @@
  * - Banned: 0 queries
  */
 
-import { query, queryOne } from './db.js';
+import { userQuery as query, userQueryOne as queryOne } from './db.js';
 import { logger } from './logger.js';
 import { config } from './config.js';
 
