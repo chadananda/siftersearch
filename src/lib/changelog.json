@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T05:10:55.960Z",
+  "generated": "2026-01-02T05:13:26.390Z",
   "entries": [
+    {
+      "hash": "21c62f9",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
+      "scope": null
+    },
     {
       "hash": "bc13e8c",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct column name paragraph_index in content table insert",
       "scope": null
-    },
-    {
-      "hash": "d20f4e1",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Auto-populate content table from Meilisearch when queueing translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "21c62f9",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
+        "scope": null
+      },
       {
         "hash": "bc13e8c",
         "date": "2026-01-01",
@@ -697,13 +704,6 @@
         "date": "2025-12-31",
         "type": "Fixed",
         "description": "Use correct column name paragraph_index in content table insert",
-        "scope": null
-      },
-      {
-        "hash": "d20f4e1",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Auto-populate content table from Meilisearch when queueing translation",
         "scope": null
       }
     ]

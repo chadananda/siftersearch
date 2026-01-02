@@ -1294,6 +1294,44 @@ Return ONLY the description text, no quotes or formatting.`;
   });
 
   /**
+   * Clear translations for a document (admin only)
+   * Removes translation and translation_segments so document can be re-translated
+   */
+  fastify.delete('/documents/:id/translations', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Verify document exists
+    const doc = await queryOne('SELECT id FROM docs WHERE id = ?', [id]);
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    // Clear translations
+    const result = await query(`
+      UPDATE content
+      SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+      WHERE doc_id = ?
+    `, [new Date().toISOString(), id]);
+
+    logger.info({ documentId: id, cleared: result.changes }, 'Cleared document translations');
+
+    return {
+      success: true,
+      documentId: id,
+      clearedCount: result.changes || 0
+    };
+  });
+
+  /**
    * Translation endpoint with content-type awareness
    * - scripture/poetry/classical: Shoghi Effendi biblical style
    * - historical: Modern clear English, but citations within use biblical style
