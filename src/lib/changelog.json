@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T21:07:19.038Z",
+  "generated": "2026-01-02T21:09:58.886Z",
   "entries": [
+    {
+      "hash": "fff1f03",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add metadata JSON column and encumbered field for docs",
+      "scope": null
+    },
     {
       "hash": "db40b19",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Require actual answers in summaries, not meta-commentary",
       "scope": null
-    },
-    {
-      "hash": "ee0f091",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Default to research mode for approved users",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "fff1f03",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add metadata JSON column and encumbered field for docs",
+        "scope": null
+      },
       {
         "hash": "db40b19",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Require actual answers in summaries, not meta-commentary",
-        "scope": null
-      },
-      {
-        "hash": "ee0f091",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Default to research mode for approved users",
         "scope": null
       }
     ]
