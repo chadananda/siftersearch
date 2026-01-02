@@ -922,7 +922,7 @@ Return ONLY the description text, no quotes or formatting.`;
     if (includeParagraphs) {
       const [paras, countResult] = await Promise.all([
         queryAll(`
-          SELECT id, paragraph_index, text, heading, blocktype, translation
+          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
           FROM content
           WHERE doc_id = ?
           ORDER BY paragraph_index
@@ -930,7 +930,11 @@ Return ONLY the description text, no quotes or formatting.`;
         `, [id, paragraphLimit, paragraphOffset]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
       ]);
-      paragraphs = paras;
+      // Parse translation_segments from JSON string
+      paragraphs = paras.map(p => ({
+        ...p,
+        segments: p.translation_segments ? JSON.parse(p.translation_segments) : null
+      }));
       paragraphTotal = countResult?.count || 0;
     }
 

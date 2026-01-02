@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T04:48:47.541Z",
+  "generated": "2026-01-02T05:01:06.618Z",
   "entries": [
+    {
+      "hash": "924c923",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Standardize content table on doc_id, remove document_id column",
+      "scope": null
+    },
     {
       "hash": "dcd7408",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "ReferenceError isIndexing not defined in startRefreshPolling",
       "scope": null
-    },
-    {
-      "hash": "362def3",
-      "date": "2025-12-31",
-      "type": "New",
-      "description": "Server-side translation queue with priority",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "924c923",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Standardize content table on doc_id, remove document_id column",
+        "scope": null
+      },
       {
         "hash": "dcd7408",
         "date": "2026-01-01",
@@ -698,13 +705,6 @@
         "type": "Fixed",
         "description": "ReferenceError isIndexing not defined in startRefreshPolling",
         "scope": null
-      },
-      {
-        "hash": "362def3",
-        "date": "2025-12-31",
-        "type": "New",
-        "description": "Server-side translation queue with priority",
-        "scope": "translation"
       }
     ]
   }
