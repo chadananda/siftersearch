@@ -640,7 +640,8 @@
 <style>
   .presentation-container {
     min-height: 100vh;
-    background: var(--surface-0);
+    /* Fixed light background - document reading experience should always be light */
+    background: #f5f3ee;
   }
 
   .loading-state,
@@ -651,29 +652,29 @@
     justify-content: center;
     min-height: 60vh;
     gap: 1rem;
-    color: var(--text-muted);
+    color: #666;
   }
 
   .error-state svg {
     width: 3rem;
     height: 3rem;
-    color: var(--error);
+    color: #dc2626;
   }
 
   .error-state h2 {
     margin: 0;
     font-size: 1.25rem;
-    color: var(--text-primary);
+    color: #1a1a1a;
   }
 
   .error-state p {
     margin: 0;
-    color: var(--text-secondary);
+    color: #444;
   }
 
   .back-link {
     margin-top: 1rem;
-    color: var(--accent-primary);
+    color: #3b82f6;
     text-decoration: none;
   }
 
