@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 16;
+const CURRENT_VERSION = 17;
 
 /**
  * Get current database schema version
@@ -686,6 +686,78 @@ const migrations = {
       logger.info('Added translation_segments column to content table');
     } catch {
       // Column already exists
+    }
+  },
+
+  // Version 17: Fix content table schema - remove document_id, standardize on doc_id
+  // SQLite requires recreating the table to drop columns
+  17: async () => {
+    try {
+      // Check if content table exists
+      const tableExists = await queryOne(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='content'
+      `);
+
+      if (!tableExists) {
+        logger.info('Content table does not exist, skipping schema fix');
+        return;
+      }
+
+      // Check if document_id column exists
+      const tableInfo = await query('PRAGMA table_info(content)');
+      const hasDocumentId = tableInfo.rows?.some(col => col.name === 'document_id');
+
+      if (!hasDocumentId) {
+        logger.info('document_id column does not exist, skipping');
+        return;
+      }
+
+      logger.info('Recreating content table without document_id column');
+
+      // 1. Create new table with correct schema
+      await query(`
+        CREATE TABLE IF NOT EXISTS content_new (
+          id TEXT PRIMARY KEY,
+          doc_id TEXT NOT NULL,
+          paragraph_index INTEGER NOT NULL,
+          text TEXT NOT NULL,
+          content_hash TEXT,
+          heading TEXT,
+          blocktype TEXT DEFAULT 'paragraph',
+          translation TEXT,
+          translation_segments TEXT,
+          context TEXT,
+          embedding BLOB,
+          embedding_model TEXT,
+          synced INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (doc_id) REFERENCES docs(id) ON DELETE CASCADE
+        )
+      `);
+
+      // 2. Copy data from old table, using doc_id if available, otherwise document_id
+      await query(`
+        INSERT INTO content_new (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, translation, translation_segments, context, embedding, embedding_model, synced, created_at, updated_at)
+        SELECT id, COALESCE(doc_id, document_id), paragraph_index, text, content_hash, heading, blocktype, translation, translation_segments, context, embedding, embedding_model, synced, created_at, updated_at
+        FROM content
+      `);
+
+      // 3. Drop old table
+      await query('DROP TABLE content');
+
+      // 4. Rename new table
+      await query('ALTER TABLE content_new RENAME TO content');
+
+      // 5. Recreate indexes
+      try { await query('CREATE INDEX IF NOT EXISTS idx_content_doc ON content(doc_id)'); } catch { /* exists */ }
+      try { await query('CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash)'); } catch { /* exists */ }
+      try { await query('CREATE INDEX IF NOT EXISTS idx_content_synced ON content(synced)'); } catch { /* exists */ }
+
+      logger.info('Content table schema fixed - document_id column removed, standardized on doc_id');
+    } catch (err) {
+      logger.error({ err: err.message }, 'Content table schema fix failed');
+      throw err;  // This is critical, let it fail
     }
   },
 };
