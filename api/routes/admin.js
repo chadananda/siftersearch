@@ -489,7 +489,7 @@ export default async function adminRoutes(fastify) {
    * Get server status - database stats, Meilisearch stats, etc.
    */
   fastify.get('/server/status', { preHandler: requireInternal }, async () => {
-    const [dbStats, searchStats] = await Promise.all([
+    const [dbStats, embeddingStats, searchStats] = await Promise.all([
       // Database stats
       Promise.all([
         queryOne('SELECT COUNT(*) as count FROM docs'),
@@ -502,12 +502,24 @@ export default async function adminRoutes(fastify) {
         users: users?.count || 0,
         libraryNodes: nodes?.count || 0
       })).catch(() => ({ docs: 0, content: 0, users: 0, libraryNodes: 0 })),
+      // Embedding stats
+      Promise.all([
+        queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL'),
+        queryOne('SELECT COUNT(*) as count FROM content WHERE embedding IS NULL')
+      ]).then(([withEmbed, withoutEmbed]) => ({
+        withEmbeddings: withEmbed?.count || 0,
+        withoutEmbeddings: withoutEmbed?.count || 0,
+        coverage: withEmbed?.count && (withEmbed.count + (withoutEmbed?.count || 0)) > 0
+          ? Math.round(withEmbed.count / (withEmbed.count + (withoutEmbed?.count || 0)) * 100)
+          : 0
+      })).catch(() => ({ withEmbeddings: 0, withoutEmbeddings: 0, coverage: 0 })),
       // Meilisearch stats
       getSearchStats().catch(() => ({ totalDocuments: 0, totalPassages: 0 }))
     ]);
 
     return {
       database: dbStats,
+      embeddings: embeddingStats,
       meilisearch: {
         documents: searchStats.totalDocuments || 0,
         paragraphs: searchStats.totalPassages || 0
