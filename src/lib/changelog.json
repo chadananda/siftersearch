@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T21:45:41.745Z",
+  "generated": "2026-01-02T21:51:54.728Z",
   "entries": [
+    {
+      "hash": "bfb7dc9",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add encumbered field support to API and test setup",
+      "scope": null
+    },
     {
       "hash": "31076e1",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
       "scope": null
-    },
-    {
-      "hash": "740c6ee",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Require faithful summaries that accurately represent passage content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "bfb7dc9",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add encumbered field support to API and test setup",
+        "scope": null
+      },
       {
         "hash": "31076e1",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
-        "scope": null
-      },
-      {
-        "hash": "740c6ee",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Require faithful summaries that accurately represent passage content",
         "scope": null
       }
     ]

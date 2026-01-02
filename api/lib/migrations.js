@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 21;
+const CURRENT_VERSION = 22;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -895,6 +895,19 @@ const migrations = {
       // Index creation may fail on older libSQL versions, not critical
       logger.warn('Could not create metadata author index:', err.message);
     }
+  },
+
+  // Version 22: Mark books as encumbered for testing content protection
+  // These are copyrighted books that should show preview only to non-authenticated users
+  22: async () => {
+    // Mark all documents in "Baha'i Books" collection as encumbered
+    // These are secondary works under copyright
+    const result = await query(`
+      UPDATE docs SET encumbered = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE collection = 'Baha''i Books' OR collection = 'Books'
+    `);
+
+    logger.info(`Marked ${result.changes || 0} book documents as encumbered`);
   },
 };
 
