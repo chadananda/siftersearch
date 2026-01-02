@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T15:57:52.712Z",
+  "generated": "2026-01-02T16:32:46.654Z",
   "entries": [
+    {
+      "hash": "f04a970",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Prevent collection filter input from clearing on each keystroke",
+      "scope": null
+    },
     {
       "hash": "2f8f4a6",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add translation progress polling and remove size labels",
       "scope": null
-    },
-    {
-      "hash": "c933bcd",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use request.user.sub instead of request.user.id in queue-translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "f04a970",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Prevent collection filter input from clearing on each keystroke",
+        "scope": null
+      },
       {
         "hash": "2f8f4a6",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add translation progress polling and remove size labels",
-        "scope": null
-      },
-      {
-        "hash": "c933bcd",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use request.user.sub instead of request.user.id in queue-translation",
         "scope": null
       }
     ]

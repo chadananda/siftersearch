@@ -6,8 +6,6 @@
    * Uses AlignedParagraph for phrase-level interactive highlighting when segments available
    */
 
-  import AlignedParagraph from './AlignedParagraph.svelte';
-
   let {
     paragraphs = [],
     isRTL = false,
@@ -16,6 +14,23 @@
     loading = false,
     translatingIds = new Set()  // IDs of paragraphs currently being translated
   } = $props();
+
+  // Track which segment is currently active (hovered or tapped) for phrase highlighting
+  let activeSegmentId = $state(null);
+
+  function setActiveSegment(segmentId) {
+    activeSegmentId = segmentId;
+  }
+
+  function clearActiveSegment(segmentId) {
+    if (activeSegmentId === segmentId) {
+      activeSegmentId = null;
+    }
+  }
+
+  function toggleActiveSegment(segmentId) {
+    activeSegmentId = activeSegmentId === segmentId ? null : segmentId;
+  }
 
   // Check if any translations exist or if translation is in progress
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
@@ -59,17 +74,43 @@
       {#each paragraphs as para}
         {@const isParaTranslating = translatingIds.has(para.id)}
         {#if hasSegments(para)}
-          <!-- Interactive aligned view when segments available -->
-          <div class="aligned-row">
-            <div class="para-num-aligned">
+          <!-- Interactive aligned view when segments available - 3 column layout -->
+          <div class="bilingual-row aligned">
+            <div class="para-cell original" class:rtl={isRTL}>
+              <p class="para-text aligned-text" dir={isRTL ? 'rtl' : 'ltr'}>
+                {#each para.segments as seg (seg.id)}
+                  <span
+                    class="segment"
+                    class:active={activeSegmentId === seg.id}
+                    onmouseenter={() => setActiveSegment(seg.id)}
+                    onmouseleave={() => clearActiveSegment(seg.id)}
+                    onclick={() => toggleActiveSegment(seg.id)}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(seg.id)}
+                  >{seg.original}</span>{' '}
+                {/each}
+              </p>
+            </div>
+            <div class="para-num-cell">
               <span class="para-num">{para.index + 1}</span>
             </div>
-            <AlignedParagraph
-              segments={para.segments}
-              direction={isRTL ? 'rtl' : 'ltr'}
-              originalLabel=""
-              translationLabel=""
-            />
+            <div class="para-cell translation">
+              <p class="para-text aligned-text">
+                {#each para.segments as seg (seg.id)}
+                  <span
+                    class="segment"
+                    class:active={activeSegmentId === seg.id}
+                    onmouseenter={() => setActiveSegment(seg.id)}
+                    onmouseleave={() => clearActiveSegment(seg.id)}
+                    onclick={() => toggleActiveSegment(seg.id)}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(seg.id)}
+                  >{seg.translation}</span>{' '}
+                {/each}
+              </p>
+            </div>
           </div>
         {:else}
           <!-- Standard bilingual row without segments -->
@@ -194,27 +235,6 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  /* Aligned row for interactive phrase highlighting */
-  .aligned-row {
-    display: grid;
-    grid-template-columns: 2rem 1fr;
-    gap: 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 0.875rem 1rem;
-    background: #faf8f3;
-  }
-
-  .aligned-row:hover {
-    background: rgba(0, 0, 0, 0.01);
-  }
-
-  .para-num-aligned {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 1.5rem; /* Align with first line of text below label */
-  }
-
   .para-num-cell {
     display: flex;
     align-items: flex-start;
@@ -326,6 +346,30 @@
     font-family: 'Amiri', 'Traditional Arabic', serif;
     font-size: 1.25rem; /* Larger for Arabic/Farsi readability - English is more compact */
     line-height: 1.85;
+  }
+
+  /* Segment highlighting for aligned bilingual rows */
+  .segment {
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    border-radius: 2px;
+    padding: 0 2px;
+    margin: 0 -2px;
+  }
+
+  .segment:hover {
+    background-color: rgba(139, 115, 85, 0.1);
+  }
+
+  .segment:focus {
+    outline: 2px solid rgba(139, 115, 85, 0.3);
+    outline-offset: 1px;
+  }
+
+  /* Active segment - highlighted */
+  .segment.active {
+    background-color: rgba(139, 115, 85, 0.2);
+    box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.15);
   }
 
   /* Responsive: stack on mobile */

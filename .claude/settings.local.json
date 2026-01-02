@@ -37,7 +37,11 @@
       "Bash(node scripts/update-server.js:*)",
       "Bash(pm2 show:*)",
       "WebFetch(domain:api.siftersearch.com)",
-      "WebFetch(domain:meilisearch.github.io)"
+      "WebFetch(domain:meilisearch.github.io)",
+      "WebFetch(domain:codemirror.net)",
+      "WebFetch(domain:milkdown.dev)",
+      "WebFetch(domain:tiptap.dev)",
+      "WebFetch(domain:bytemd.js.org)"
     ]
   }
 }
