@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T05:01:06.618Z",
+  "generated": "2026-01-02T05:06:57.006Z",
   "entries": [
+    {
+      "hash": "fde5219",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Include translation_segments in document endpoint",
+      "scope": null
+    },
     {
       "hash": "924c923",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add empty JSON body to queue-translation POST request",
       "scope": null
-    },
-    {
-      "hash": "43eee68",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "ReferenceError isIndexing not defined in startRefreshPolling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "fde5219",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Include translation_segments in document endpoint",
+        "scope": null
+      },
       {
         "hash": "924c923",
         "date": "2026-01-01",
@@ -697,13 +704,6 @@
         "date": "2025-12-31",
         "type": "Fixed",
         "description": "Add empty JSON body to queue-translation POST request",
-        "scope": null
-      },
-      {
-        "hash": "43eee68",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "ReferenceError isIndexing not defined in startRefreshPolling",
         "scope": null
       }
     ]

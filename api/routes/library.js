@@ -19,7 +19,7 @@ import { query, queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin } from '../lib/auth.js';
-import { chatCompletion } from '../lib/ai.js';
+import { aiService } from '../lib/ai-services.js';
 
 export default async function libraryRoutes(fastify) {
 
@@ -669,7 +669,7 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     try {
-      const result = await chatCompletion([
+      const result = await aiService('balanced').chat([
         { role: 'user', content: prompt }
       ], {
         temperature: 0.7,
@@ -1408,7 +1408,7 @@ Provide only the translation, no explanations.`;
     }
 
     try {
-      const response = await chatCompletion([
+      const response = await aiService('quality').chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: text }
       ], {
@@ -1581,13 +1581,12 @@ Provide only the translation.`;
         }
 
         try {
-          const response = await chatCompletion(
+          const response = await aiService('quality').chat(
             [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: para.text }
             ],
             {
-              model: 'quality',
               temperature: 0.3,
               maxTokens: Math.max(1000, para.text.length * 4)
             }
