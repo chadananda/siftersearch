@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T23:22:47.491Z",
+  "generated": "2026-01-02T23:44:52.687Z",
   "entries": [
+    {
+      "hash": "a2b760e",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Use fixed light background for document presentation container",
+      "scope": null
+    },
     {
       "hash": "ba234b1",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Correct column names and Meilisearch SDK API usage",
       "scope": null
-    },
-    {
-      "hash": "3d6e34d",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add embedding dimension diagnostics and fix model config",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "a2b760e",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Use fixed light background for document presentation container",
+        "scope": null
+      },
       {
         "hash": "ba234b1",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Correct column names and Meilisearch SDK API usage",
-        "scope": null
-      },
-      {
-        "hash": "3d6e34d",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add embedding dimension diagnostics and fix model config",
         "scope": null
       }
     ]

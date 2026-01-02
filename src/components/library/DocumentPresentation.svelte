@@ -353,73 +353,16 @@
       <a href="/library" class="back-link">Back to Library</a>
     </div>
   {:else if document}
-    <!-- Print-only header with QR code -->
-    <div class="print-header">
-      <div class="print-logo">
-        <span class="logo-text">SifterSearch</span>
-      </div>
-      <div class="print-meta">
-        <div class="print-title">{document.title}</div>
-        {#if document.author}
-          <div class="print-author">by {document.author}</div>
-        {/if}
-        <div class="print-info">
-          {document.religion} · {document.collection}
-          {#if document.language} · {document.language.toUpperCase()}{/if}
-          {#if document.year} · {document.year}{/if}
-        </div>
-      </div>
-      <div class="print-qr">
-        {#if qrCodeUrl}
-          <img src={qrCodeUrl} alt="QR Code" />
-        {/if}
-        <div class="print-url">{typeof window !== 'undefined' ? window.location.href.replace(/^https?:\/\//, '') : ''}</div>
-      </div>
-    </div>
-
-    <!-- Header -->
-    <header class="document-header">
-      <button class="back-button" onclick={goBack} title="Go back">
+    <!-- Floating utility bar -->
+    <div class="utility-bar">
+      <button class="util-btn back-btn" onclick={goBack} title="Back to library">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
-
-      <div class="header-content">
-        <nav class="breadcrumb" aria-label="Breadcrumb">
-          <a href="/library">Library</a>
-          {#if document.religion}
-            <span class="sep">/</span>
-            <a href="/library/{pathReligion}">{document.religion}</a>
-          {/if}
-          {#if document.collection}
-            <span class="sep">/</span>
-            <a href="/library/{pathReligion}/{pathCollection}">{document.collection}</a>
-          {/if}
-        </nav>
-        <h1 class="document-title">{document.title}</h1>
-        {#if document.author}
-          <div class="document-author">by {document.author}</div>
-        {/if}
-
-        <!-- Metadata badges -->
-        <div class="metadata-badges">
-          {#if document.language}
-            <span class="badge">{document.language.toUpperCase()}</span>
-          {/if}
-          {#if document.year}
-            <span class="badge">{document.year}</span>
-          {/if}
-          <span class="badge">{document.paragraphCount} paragraphs</span>
-          {#if document.encumbered}
-            <span class="badge encumbered">Copyrighted</span>
-          {/if}
-        </div>
-      </div>
-
-      <div class="header-actions">
+      <div class="util-actions">
         {#if canEdit}
-          <button class="action-btn edit-btn" onclick={openEditor} title="Edit document">
+          <button class="util-btn edit" onclick={openEditor} title="Edit document">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -427,38 +370,22 @@
           </button>
         {/if}
         {#if hasTranslations && document.language !== 'en'}
-          <button
-            class="action-btn"
-            class:active={showBilingual}
-            onclick={toggleBilingual}
-            title={showBilingual ? 'Hide translation' : 'Show translation'}
-          >
+          <button class="util-btn" class:active={showBilingual} onclick={toggleBilingual} title={showBilingual ? 'Hide translation' : 'Show translation'}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 21V14a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7"/>
-              <path d="M4 10V7a2 2 0 0 1 2-2h4"/>
-              <path d="M14 5h4a2 2 0 0 1 2 2v3"/>
-              <path d="M6 17h.01M10 17h.01M14 17h.01M18 17h.01"/>
+              <path d="M3 5h12M9 3v2m1.048 3.5A3.5 3.5 0 0 1 6 9.5M3 21l3.5-7 3.5 7M4.5 18h5"/>
+              <path d="m21 21-3.5-7-3.5 7m1.5-3h5"/>
             </svg>
           </button>
         {/if}
-        <button class="action-btn" onclick={() => showMetadata = !showMetadata} title="Document info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 16v-4M12 8h.01"/>
-          </svg>
-        </button>
-        <button class="action-btn" onclick={showQRCode} title="QR Code">
+        <button class="util-btn" onclick={showQRCode} title="Share QR Code">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/>
             <rect x="14" y="3" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/>
-            <rect x="14" y="14" width="3" height="3"/>
-            <rect x="18" y="14" width="3" height="3"/>
-            <rect x="14" y="18" width="3" height="3"/>
-            <rect x="18" y="18" width="3" height="3"/>
+            <path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 17v3M17 14h3"/>
           </svg>
         </button>
-        <button class="action-btn" class:copied={linkCopied} onclick={copyShareLink} title={linkCopied ? 'Copied!' : 'Copy link'}>
+        <button class="util-btn" class:copied={linkCopied} onclick={copyShareLink} title={linkCopied ? 'Copied!' : 'Copy link'}>
           {#if linkCopied}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12"/>
@@ -470,7 +397,7 @@
             </svg>
           {/if}
         </button>
-        <button class="action-btn" onclick={openPrintView} title="Print">
+        <button class="util-btn" onclick={openPrintView} title="Print">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 6 2 18 2 18 9"/>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
@@ -478,63 +405,63 @@
           </svg>
         </button>
       </div>
-    </header>
+    </div>
 
-    <!-- Metadata panel -->
-    {#if showMetadata}
-      <div class="metadata-panel">
-        <div class="metadata-grid">
-          {#if document.author}
-            <div class="meta-item">
-              <span class="meta-label">Author</span>
-              <span class="meta-value">{document.author}</span>
-            </div>
-          {/if}
-          {#if document.religion}
-            <div class="meta-item">
-              <span class="meta-label">Religion</span>
-              <span class="meta-value">{document.religion}</span>
-            </div>
-          {/if}
-          {#if document.collection}
-            <div class="meta-item">
-              <span class="meta-label">Collection</span>
-              <span class="meta-value">{document.collection}</span>
-            </div>
-          {/if}
-          {#if document.language}
-            <div class="meta-item">
-              <span class="meta-label">Language</span>
-              <span class="meta-value">{document.language.toUpperCase()}</span>
-            </div>
-          {/if}
-          {#if document.year}
-            <div class="meta-item">
-              <span class="meta-label">Year</span>
-              <span class="meta-value">{document.year}</span>
-            </div>
-          {/if}
-          <div class="meta-item">
-            <span class="meta-label">Paragraphs</span>
-            <span class="meta-value">{document.paragraphCount?.toLocaleString()}</span>
-          </div>
-        </div>
-        {#if document.description}
-          <div class="description">
-            <span class="meta-label">Description</span>
-            <p>{document.description}</p>
-          </div>
-        {/if}
-      </div>
-    {/if}
-
-    <!-- Document content -->
+    <!-- Document content with integrated header -->
     <main
       class="document-content"
       dir={getLanguageDirection(document.language)}
       class:rtl={getLanguageDirection(document.language) === 'rtl'}
       class:bilingual={showBilingual}
     >
+      <!-- Document header - part of the paper -->
+      <header class="doc-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/library">Library</a>
+          {#if document.religion}
+            <span class="sep">›</span>
+            <a href="/library/{pathReligion}">{document.religion}</a>
+          {/if}
+          {#if document.collection}
+            <span class="sep">›</span>
+            <a href="/library/{pathReligion}/{pathCollection}">{document.collection}</a>
+          {/if}
+        </nav>
+
+        <h1 class="doc-title">{document.title}</h1>
+
+        {#if document.author}
+          <p class="doc-author">by {document.author}</p>
+        {/if}
+
+        <div class="doc-meta">
+          {#if document.language}
+            <span class="meta-tag">{document.language.toUpperCase()}</span>
+          {/if}
+          {#if document.year}
+            <span class="meta-tag">{document.year}</span>
+          {/if}
+          <span class="meta-tag">{document.paragraphCount?.toLocaleString()} paragraphs</span>
+          {#if document.encumbered}
+            <span class="meta-tag copyright">© Copyrighted</span>
+          {/if}
+        </div>
+
+        {#if document.description}
+          <p class="doc-abstract">{document.description}</p>
+        {/if}
+
+        <!-- QR code for print -->
+        <div class="print-qr-section">
+          {#if qrCodeUrl}
+            <img src={qrCodeUrl} alt="QR Code" class="print-qr-img" />
+          {/if}
+          <span class="print-url-text">{typeof window !== 'undefined' ? window.location.href.replace(/^https?:\/\//, '') : ''}</span>
+        </div>
+      </header>
+
+      <hr class="doc-divider" />
+
       {#if paragraphs.length === 0}
         <div class="empty-content">
           <p>No content available for this document.</p>
@@ -642,6 +569,7 @@
     min-height: 100vh;
     /* Fixed light background - document reading experience should always be light */
     background: #f5f3ee;
+    padding-top: 1rem;
   }
 
   .loading-state,
@@ -696,201 +624,166 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Header */
-  .document-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  /* Floating utility bar - minimal action buttons */
+  .utility-bar {
+    position: fixed;
+    top: 5rem;
+    right: 1.5rem;
     display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    background: var(--surface-solid);
-    border-bottom: 1px solid var(--border-default);
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 100;
   }
 
-  .back-button {
+  .util-btn {
     width: 2.5rem;
     height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.5rem;
-    flex-shrink: 0;
+    cursor: pointer;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
   }
 
-  .back-button:hover {
-    background: var(--hover-overlay);
-    color: var(--text-primary);
+  .util-btn:hover {
+    background: #f5f5f5;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
-  .back-button svg {
-    width: 1.5rem;
-    height: 1.5rem;
+  .util-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
   }
 
-  .header-content {
-    flex: 1;
-    min-width: 0;
+  .util-btn.copied {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+  }
+
+  .util-btn.edit {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  .util-btn.edit:hover {
+    background: #2563eb;
+  }
+
+  .util-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .util-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .back-btn {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Document header - inside the paper */
+  .doc-header {
+    text-align: center;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .breadcrumb {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    font-family: system-ui, -apple-system, sans-serif;
     font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
+    color: #888;
+    margin-bottom: 1.5rem;
     flex-wrap: wrap;
   }
 
   .breadcrumb a {
-    color: var(--accent-primary);
+    color: #666;
     text-decoration: none;
   }
 
   .breadcrumb a:hover {
+    color: #3b82f6;
     text-decoration: underline;
   }
 
   .breadcrumb .sep {
-    color: var(--text-muted);
+    color: #bbb;
   }
 
-  .document-title {
-    margin: 0;
-    font-size: 1.25rem;
+  .doc-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #1a1a1a;
     line-height: 1.3;
+    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
   }
 
-  .document-author {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-top: 0.25rem;
+  .doc-author {
+    font-size: 1.125rem;
+    color: #555;
+    margin: 0 0 1rem 0;
+    font-style: italic;
   }
 
-  .metadata-badges {
+  .doc-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-  }
-
-  .badge {
-    font-size: 0.625rem;
-    padding: 0.25rem 0.5rem;
-    background: var(--surface-2);
-    color: var(--text-secondary);
-    border-radius: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .badge.encumbered {
-    background: var(--warning-bg, #fef3cd);
-    color: var(--warning-text, #856404);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
-
-  .action-btn {
-    width: 2.25rem;
-    height: 2.25rem;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    background: none;
-    border: 1px solid var(--border-default);
-    cursor: pointer;
-    color: var(--text-secondary);
-    border-radius: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
-  .action-btn:hover {
-    background: var(--hover-overlay);
-    color: var(--text-primary);
-  }
-
-  .action-btn.active {
-    background: var(--accent-primary);
-    color: white;
-    border-color: var(--accent-primary);
-  }
-
-  .action-btn.copied {
-    color: var(--success);
-    border-color: var(--success);
-  }
-
-  .action-btn.edit-btn {
-    background: var(--accent-primary);
-    color: white;
-    border-color: var(--accent-primary);
-  }
-
-  .action-btn.edit-btn:hover {
-    background: var(--accent-hover);
-  }
-
-  .action-btn svg {
-    width: 1.125rem;
-    height: 1.125rem;
-  }
-
-  /* Metadata panel */
-  .metadata-panel {
-    background: var(--surface-1);
-    border-bottom: 1px solid var(--border-default);
-    padding: 1rem 1.5rem;
-  }
-
-  .metadata-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 1rem;
-  }
-
-  .meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .meta-label {
-    font-size: 0.625rem;
-    font-weight: 600;
+  .meta-tag {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.625rem;
+    background: #e8e4dc;
+    color: #666;
+    border-radius: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted);
   }
 
-  .meta-value {
-    font-size: 0.875rem;
-    color: var(--text-primary);
+  .meta-tag.copyright {
+    background: #fef3cd;
+    color: #856404;
   }
 
-  .description {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-subtle);
+  .doc-abstract {
+    font-size: 1rem;
+    color: #444;
+    line-height: 1.6;
+    margin: 1rem auto 0;
+    max-width: 36rem;
+    font-style: italic;
   }
 
-  .description p {
-    margin: 0.5rem 0 0 0;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    line-height: 1.5;
+  .doc-divider {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin: 0 0 1.5rem 0;
+  }
+
+  /* Print QR section - hidden on screen, shown in print */
+  .print-qr-section {
+    display: none;
   }
 
   /* Document content - paper background with explicit light colors */
@@ -930,6 +823,10 @@
     padding: 0.75rem 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     scroll-margin-top: 100px;
+    /* LTR: text first, then anchor on the right */
+    flex-direction: row;
+    /* Align items to top so paragraph number is inline with first line */
+    align-items: flex-start;
   }
 
   .paragraph:last-of-type {
@@ -946,17 +843,30 @@
 
   .paragraph.highlighted {
     background: rgba(59, 130, 246, 0.1);
-    border-left: 3px solid #3b82f6;
-    padding-left: 0.75rem;
-    margin-left: -0.75rem;
+    border-right: 3px solid #3b82f6;
+    padding-right: 0.75rem;
+    margin-right: -0.75rem;
     border-radius: 0.25rem;
   }
 
-  /* RTL: reverse the flex direction */
+  /* RTL: anchor on the left (flex-direction stays same, order changes) */
   .rtl .paragraph {
-    flex-direction: row-reverse;
+    flex-direction: row;
   }
 
+  .rtl .paragraph.highlighted {
+    border-right: none;
+    border-left: 3px solid #3b82f6;
+    padding-left: 0.75rem;
+    margin-left: -0.75rem;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  /* Anchor positioning:
+   * - LTR: anchor on the LEFT of text (order: anchor, text)
+   * - RTL: anchor on the RIGHT of text (order: text, anchor via row-reverse)
+   */
   .para-anchor {
     flex-shrink: 0;
     width: 2rem;
@@ -964,25 +874,32 @@
     font-size: 0.75rem;
     color: #999;
     text-align: right;
-    padding-top: 0.25rem;
+    padding-top: 0;
+    /* Align to top of paragraph, not middle */
+    align-self: flex-start;
+    /* Match line-height of paragraph text */
+    line-height: 1.75;
     background: none;
     border: none;
     cursor: pointer;
     transition: color 0.2s;
+    order: -1; /* Move anchor before text in flex order */
   }
 
+  /* RTL: anchor goes to the right side of text */
   .rtl .para-anchor {
     text-align: left;
     font-family: 'Amiri', 'Traditional Arabic', serif;
+    order: 1; /* Move anchor after text in flex order */
   }
 
   .para-anchor:hover {
-    color: var(--accent-primary);
+    color: #3b82f6;
   }
 
   .para-anchor:active::after {
     content: ' ✓';
-    color: var(--success);
+    color: #10b981;
   }
 
   .paragraph-heading {
@@ -1045,11 +962,12 @@
     align-items: flex-start;
     justify-content: center;
     padding: 0 0.75rem;
-    padding-top: 0.25rem;
     font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     min-width: 2.5rem;
+    /* Match line-height of paragraph text for proper alignment */
+    line-height: 1.75;
   }
 
   .translation-col {
@@ -1205,28 +1123,33 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .document-header {
-      padding: 0.75rem 1rem;
-      flex-wrap: wrap;
+    .utility-bar {
+      top: 4rem;
+      right: 0.5rem;
     }
 
-    .header-actions {
-      order: 3;
-      width: 100%;
-      justify-content: flex-end;
-      margin-top: 0.5rem;
+    .util-btn {
+      width: 2rem;
+      height: 2rem;
     }
 
-    .document-title {
-      font-size: 1.125rem;
+    .util-btn svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .doc-title {
+      font-size: 1.5rem;
     }
 
     .document-content {
-      padding: 1.5rem 1rem 3rem 1.5rem;
+      margin: 1rem 0.5rem;
+      padding: 1.5rem 1rem 3rem 1rem;
     }
 
     .para-anchor {
-      display: none; /* Hide anchors on mobile */
+      width: 1.5rem;
+      font-size: 0.625rem;
     }
 
     .document-content.bilingual {
@@ -1240,17 +1163,18 @@
 
     .original-col {
       border-right: none;
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       padding-right: 0;
       padding-bottom: 1rem;
     }
 
     .translation-col {
       padding-left: 0;
+      border-left: none;
     }
 
-    .metadata-grid {
-      grid-template-columns: repeat(2, 1fr);
+    .para-center {
+      display: none;
     }
   }
 
@@ -1262,13 +1186,13 @@
 
   /* Print styles */
   @media print {
-    /* Hide the entire interactive toolbar - print-header provides content */
-    .document-header {
-      display: none !important;
+    .presentation-container {
+      background: white;
+      padding-top: 0;
     }
 
-    /* Hide metadata panel (info shown in print-header) */
-    .metadata-panel {
+    /* Hide floating utility bar */
+    .utility-bar {
       display: none !important;
     }
 
@@ -1276,7 +1200,7 @@
     .document-content {
       max-width: 100%;
       margin: 0;
-      padding: 0.25rem 0;
+      padding: 0;
       border: none;
       box-shadow: none;
       background: white;
@@ -1284,6 +1208,47 @@
 
     .document-content.bilingual {
       max-width: 100%;
+    }
+
+    /* Show print QR section */
+    .print-qr-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+    }
+
+    .print-qr-img {
+      width: 64px;
+      height: 64px;
+    }
+
+    .print-url-text {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 8pt;
+      color: #666;
+      word-break: break-all;
+    }
+
+    /* Document header styling for print */
+    .doc-header {
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .doc-title {
+      font-size: 16pt;
+    }
+
+    .doc-author {
+      font-size: 11pt;
+    }
+
+    .doc-divider {
+      margin: 0 0 1rem 0;
     }
 
     .paragraph {
@@ -1352,78 +1317,6 @@
 
     body {
       font-size: 11pt;
-    }
-  }
-
-  /* Print-specific class for generating QR in print header */
-  .print-header {
-    display: none;
-  }
-
-  @media print {
-    .print-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 0.75rem 0;
-      border-bottom: 2px solid #333;
-      margin-bottom: 1rem;
-      gap: 1rem;
-    }
-
-    .print-logo {
-      flex-shrink: 0;
-    }
-
-    .logo-text {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 14pt;
-      font-weight: 700;
-      color: #333;
-      letter-spacing: -0.02em;
-    }
-
-    .print-meta {
-      flex: 1;
-      text-align: center;
-    }
-
-    .print-title {
-      font-size: 14pt;
-      font-weight: 600;
-      color: #1a1a1a;
-      margin-bottom: 0.125rem;
-    }
-
-    .print-author {
-      font-size: 10pt;
-      color: #444;
-      margin-bottom: 0.125rem;
-    }
-
-    .print-info {
-      font-size: 8pt;
-      color: #666;
-    }
-
-    .print-qr {
-      width: 72px;
-      flex-shrink: 0;
-      text-align: right;
-    }
-
-    .print-qr img {
-      width: 72px;
-      height: 72px;
-    }
-
-    .print-url {
-      font-size: 7pt;
-      color: #666;
-      text-align: center;
-      margin-top: 0.125rem;
-      word-break: break-all;
-      line-height: 1.2;
     }
   }
 </style>
