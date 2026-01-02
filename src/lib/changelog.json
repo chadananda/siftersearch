@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T16:46:54.157Z",
+  "generated": "2026-01-02T17:03:08.642Z",
   "entries": [
+    {
+      "hash": "780f689",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Segmentation based on concepts, not rules - never split sentences",
+      "scope": null
+    },
     {
       "hash": "a096001",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add /admin/update endpoint for manual server updates",
       "scope": null
-    },
-    {
-      "hash": "1d3338f",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add DEPLOY_SECRET authentication for API calls",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "780f689",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Segmentation based on concepts, not rules - never split sentences",
+        "scope": null
+      },
       {
         "hash": "a096001",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add /admin/update endpoint for manual server updates",
-        "scope": null
-      },
-      {
-        "hash": "1d3338f",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add DEPLOY_SECRET authentication for API calls",
         "scope": null
       }
     ]
