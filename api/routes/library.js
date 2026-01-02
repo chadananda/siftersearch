@@ -20,6 +20,7 @@ import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { requireAuth, requireAdmin } from '../lib/auth.js';
 import { aiService } from '../lib/ai-services.js';
+import { translateTextWithSegments } from '../services/translation.js';
 
 export default async function libraryRoutes(fastify) {
 
@@ -1557,22 +1558,10 @@ Provide only the translation, no explanations.`;
 
     const translationStyle = isScriptural ? 'scriptural' : 'modern';
 
-    // Build translation prompt
-    const langNames = { ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu' };
-    const langName = langNames[sourceLang] || sourceLang;
+    // Determine content type for segment-aware translation
+    const contentType = translationStyle === 'scriptural' ? 'scriptural' : 'auto';
 
-    const systemPrompt = translationStyle === 'scriptural'
-      ? `You are an expert translator of ${langName} sacred texts. Translate to English using Shoghi Effendi's neo-biblical style:
-- Archaic pronouns for Divine: Thou, Thee, Thine, Thy
-- Elevated verbs: perceiveth, hath, art, doth
-- Formal vocabulary: vouchsafe, beseech, sovereignty
-- Preserve exclamations: "O Lord!", "O my God!"
-Provide only the translation.`
-      : `You are an expert translator of ${langName} texts. Translate to clear modern English.
-If the text contains scripture quotes, prayers, or divine speech, use elevated biblical style for those portions.
-Provide only the translation.`;
-
-    // Translate paragraphs in parallel
+    // Translate paragraphs in parallel with segment alignment
     const translations = await Promise.all(
       paragraphs.map(async (para) => {
         // Skip if no text
@@ -1581,29 +1570,28 @@ Provide only the translation.`;
         }
 
         try {
-          const response = await aiService('quality').chat(
-            [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: para.text }
-            ],
-            {
-              temperature: 0.3,
-              maxTokens: Math.max(1000, para.text.length * 4)
-            }
+          // Use segment-aware translation
+          const result = await translateTextWithSegments(
+            para.text,
+            sourceLang,
+            'en',
+            contentType
           );
 
-          const translation = response.content.trim();
+          const translation = result.translation;
+          const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
 
-          // Save to database
+          // Save translation and segments to database
           await query(
-            'UPDATE content SET translation = ? WHERE id = ?',
-            [translation, para.id]
+            'UPDATE content SET translation = ?, translation_segments = ?, synced = 0, updated_at = ? WHERE id = ?',
+            [translation, segmentsJson, new Date().toISOString(), para.id]
           );
 
           return {
             id: para.id,
             paragraphIndex: para.paragraph_index,
             translation,
+            segments: result.segments,
             success: true
           };
         } catch (err) {
