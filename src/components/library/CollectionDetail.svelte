@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { marked } from 'marked';
   import { getAuthState } from '../../lib/auth.svelte.js';
   import CollectionHeader from './CollectionHeader.svelte';
@@ -104,10 +104,11 @@
   }
 
   // Refetch when slugs change
+  // Use untrack to prevent fetchCollection's read of searchQuery from creating a circular dependency
   $effect(() => {
     if (religionSlug && collectionSlug) {
       searchQuery = '';
-      fetchCollection(true);
+      untrack(() => fetchCollection(true));
     }
   });
 
