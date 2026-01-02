@@ -3,7 +3,10 @@
    * BilingualView Component
    * Side-by-side display of original text and English translation
    * Supports RTL languages (Arabic, Farsi, Hebrew, Urdu)
+   * Uses AlignedParagraph for phrase-level interactive highlighting when segments available
    */
+
+  import AlignedParagraph from './AlignedParagraph.svelte';
 
   let {
     paragraphs = [],
@@ -20,6 +23,11 @@
 
   // Should show two columns if we have translations OR translation is in progress
   let showBilingual = $derived(hasTranslations || isTranslating);
+
+  // Check if paragraph has aligned segments for interactive highlighting
+  function hasSegments(para) {
+    return para.segments && Array.isArray(para.segments) && para.segments.length > 0;
+  }
 </script>
 
 <div class="bilingual-container w-full" style="max-height: {maxHeight}">
@@ -50,26 +58,42 @@
       </div>
       {#each paragraphs as para}
         {@const isParaTranslating = translatingIds.has(para.id)}
-        <div class="bilingual-row">
-          <div class="para-cell original" class:rtl={isRTL}>
-            <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
+        {#if hasSegments(para)}
+          <!-- Interactive aligned view when segments available -->
+          <div class="aligned-row">
+            <div class="para-num-aligned">
+              <span class="para-num">{para.index + 1}</span>
+            </div>
+            <AlignedParagraph
+              segments={para.segments}
+              direction={isRTL ? 'rtl' : 'ltr'}
+              originalLabel=""
+              translationLabel=""
+            />
           </div>
-          <div class="para-num-cell">
-            <span class="para-num">{para.index + 1}</span>
+        {:else}
+          <!-- Standard bilingual row without segments -->
+          <div class="bilingual-row">
+            <div class="para-cell original" class:rtl={isRTL}>
+              <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
+            </div>
+            <div class="para-num-cell">
+              <span class="para-num">{para.index + 1}</span>
+            </div>
+            <div class="para-cell translation" class:translating={isParaTranslating}>
+              {#if para.translation}
+                <p class="para-text">{para.translation}</p>
+              {:else if isParaTranslating}
+                <div class="translating-indicator">
+                  <span class="cell-spinner"></span>
+                  <span class="translating-text">Translating...</span>
+                </div>
+              {:else}
+                <p class="para-text text-muted italic">—</p>
+              {/if}
+            </div>
           </div>
-          <div class="para-cell translation" class:translating={isParaTranslating}>
-            {#if para.translation}
-              <p class="para-text">{para.translation}</p>
-            {:else if isParaTranslating}
-              <div class="translating-indicator">
-                <span class="cell-spinner"></span>
-                <span class="translating-text">Translating...</span>
-              </div>
-            {:else}
-              <p class="para-text text-muted italic">—</p>
-            {/if}
-          </div>
-        </div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -168,6 +192,27 @@
     grid-template-columns: 1fr 2rem 1fr;
     gap: 1px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* Aligned row for interactive phrase highlighting */
+  .aligned-row {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 0.875rem 1rem;
+    background: #faf8f3;
+  }
+
+  .aligned-row:hover {
+    background: rgba(0, 0, 0, 0.01);
+  }
+
+  .para-num-aligned {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 1.5rem; /* Align with first line of text below label */
   }
 
   .para-num-cell {

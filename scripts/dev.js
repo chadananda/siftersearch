@@ -284,7 +284,8 @@ ${COLORS.info}══════════════════════
 
   // Start services in order
   await startMeilisearch();
-  await runMigrations();
+  // Note: API runs its own SQLite migrations at startup (api/lib/migrations.js)
+  // The scripts/migrate.js is for Turso cloud DB, not local dev
   startAPI();
 
   // Give API a moment to start before UI

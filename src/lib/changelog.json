@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T00:55:52.771Z",
+  "generated": "2026-01-02T02:54:50.654Z",
   "entries": [
+    {
+      "hash": "577c6d4",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add translation field to Meilisearch for side-by-side results",
+      "scope": null
+    },
     {
       "hash": "3e03a2a",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add auth header to DocumentList translate call",
       "scope": "translation"
-    },
-    {
-      "hash": "dc2d512",
-      "date": "2025-12-30",
-      "type": "Fixed",
-      "description": "Increase limit from 200 to 500 for full document loading",
-      "scope": "bilingual"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "577c6d4",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add translation field to Meilisearch for side-by-side results",
+        "scope": null
+      },
       {
         "hash": "3e03a2a",
         "date": "2026-01-01",
@@ -700,13 +707,6 @@
         "type": "Fixed",
         "description": "Add auth header to DocumentList translate call",
         "scope": "translation"
-      },
-      {
-        "hash": "dc2d512",
-        "date": "2025-12-30",
-        "type": "Fixed",
-        "description": "Increase limit from 200 to 500 for full document loading",
-        "scope": "bilingual"
       }
     ]
   }

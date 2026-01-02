@@ -9,7 +9,7 @@ import { query, queryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 15;
+const CURRENT_VERSION = 16;
 
 /**
  * Get current database schema version
@@ -677,6 +677,16 @@ const migrations = {
     }
 
     logger.info('Jobs and cache tables created');
+  },
+
+  // Version 16: Add translation_segments column for aligned phrase translations
+  16: async () => {
+    try {
+      await query('ALTER TABLE content ADD COLUMN translation_segments TEXT');
+      logger.info('Added translation_segments column to content table');
+    } catch {
+      // Column already exists
+    }
   },
 };
 

@@ -57,7 +57,7 @@ async function getUnsyncedDocuments() {
  */
 async function getUnsyncedParagraphs(docId) {
   return queryAll(`
-    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash, translation
+    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash, translation, translation_segments
     FROM content
     WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index
@@ -166,6 +166,7 @@ async function syncDocument(docId) {
       paragraph_index: p.paragraph_index,
       text: p.text,
       translation: p.translation || null,  // English translation for side-by-side display
+      translation_segments: p.translation_segments || null,  // Aligned phrase pairs for highlighting
       title: doc.title,
       author: doc.author,
       religion: doc.religion,

@@ -22,6 +22,7 @@
   // Editable metadata
   let editableDoc = $state({});
   let hasChanges = $state(false);
+  let showPrintMenu = $state(false);
 
   // Tabs configuration
   let tabs = $derived([
@@ -138,6 +139,30 @@
     dispatch('close');
   }
 
+  function openPrintView(type) {
+    const params = new URLSearchParams({
+      doc: document.id,
+      religion: document.religion || '',
+      collection: document.collection || ''
+    });
+    window.open(`/print/${type}?${params.toString()}`, '_blank');
+    showPrintMenu = false;
+  }
+
+  function handleClickOutside(event) {
+    if (showPrintMenu && !event.target.closest('.print-dropdown')) {
+      showPrintMenu = false;
+    }
+  }
+
+  // Close print menu on outside click
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('click', handleClickOutside);
+      return () => window.removeEventListener('click', handleClickOutside);
+    }
+  });
+
   function handleMetadataChange() {
     hasChanges = JSON.stringify(editableDoc) !== JSON.stringify(document);
   }
@@ -170,6 +195,39 @@
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       {/if}
+      <div class="print-dropdown">
+        <button class="print-button" onclick={() => showPrintMenu = !showPrintMenu} title="Print options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9V2h12v7"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+        </button>
+        {#if showPrintMenu}
+          <div class="print-menu">
+            <button class="print-menu-item" onclick={() => openPrintView('reading')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <div class="print-menu-text">
+                <span class="print-menu-title">Reading Edition</span>
+                <span class="print-menu-desc">Side-by-side paragraphs</span>
+              </div>
+            </button>
+            <button class="print-menu-item" onclick={() => openPrintView('study')}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <div class="print-menu-text">
+                <span class="print-menu-title">Study Edition</span>
+                <span class="print-menu-desc">Phrase-by-phrase alignment</span>
+              </div>
+            </button>
+          </div>
+        {/if}
+      </div>
       <button class="close-button" onclick={close}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12"/>
@@ -482,6 +540,93 @@
   .save-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  /* Print dropdown */
+  .print-dropdown {
+    position: relative;
+  }
+
+  .print-button {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+  }
+
+  .print-button:hover {
+    background: var(--hover-overlay);
+    color: var(--text-primary);
+  }
+
+  .print-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .print-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--surface-solid);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .print-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+
+  .print-menu-item:hover {
+    background: var(--hover-overlay);
+  }
+
+  .print-menu-item:not(:last-child) {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .print-menu-item svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .print-menu-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .print-menu-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .print-menu-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
   }
 
   .detail-tabs {

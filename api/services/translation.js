@@ -299,18 +299,22 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   for (let i = 0; i < paragraphs.length; i += batchSize) {
     const batch = paragraphs.slice(i, i + batchSize);
 
-    // Translate batch in parallel
+    // Translate batch in parallel with aligned segments
     const translations = await Promise.all(
       batch.map(async (para) => {
         try {
-          const translation = await translateText(
+          const result = await translateTextWithSegments(
             para.text,
             sourceLang,
             'en',
-            'high', // Use high quality for in-app translations
             contentType
           );
-          return { id: para.id, translation, success: true };
+          return {
+            id: para.id,
+            translation: result.translation,
+            segments: result.segments,
+            success: true
+          };
         } catch (err) {
           logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate paragraph');
           return { id: para.id, success: false, error: err.message };
@@ -318,15 +322,16 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
       })
     );
 
-    // Save translations to content table
+    // Save translations to content table (including segments for phrase-level alignment)
     const now = new Date().toISOString();
     for (const result of translations) {
       if (result.success && result.translation) {
+        const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
         await query(`
           UPDATE content
-          SET translation = ?, updated_at = ?
+          SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
           WHERE id = ?
-        `, [result.translation, now, result.id]);
+        `, [result.translation, segmentsJson, now, result.id]);
         translatedCount++;
       }
     }
@@ -541,6 +546,104 @@ async function translateText(text, sourceLang, targetLang, quality = 'standard',
 }
 
 /**
+ * Build prompt for aligned segment translation
+ * Returns JSON with original/translation pairs for phrase-level highlighting
+ */
+function buildAlignedTranslationPrompt(sourceLang, contentType = 'auto') {
+  const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
+
+  const styleGuide = contentType === 'scripture'
+    ? `Use Shoghi Effendi's biblical style:
+- Archaic pronouns for the Divine: Thou, Thee, Thine, Thy
+- Elevated diction: perceiveth, confesseth, hath, art, doth, verily
+- Formal divine attributes: sovereignty, dominion, majesty`
+    : `Use clear modern English for narrative, but biblical style for any quoted scripture.`;
+
+  return `You are an expert translator of ${sourceName} religious texts to English.
+
+TASK: Translate the text and return aligned segments for phrase-level study.
+
+OUTPUT FORMAT (JSON only, no markdown):
+{
+  "segments": [
+    {"original": "phrase in original language", "translation": "English translation"},
+    {"original": "next phrase", "translation": "its translation"}
+  ]
+}
+
+SEGMENTATION RULES:
+- Break at natural phrase boundaries (sentences, clauses, or logical units)
+- Keep segments short enough for easy comparison (1-3 sentences max)
+- Ensure each original phrase maps to exactly one translation phrase
+- Preserve the complete text - every word must be in a segment
+
+TRANSLATION STYLE:
+${styleGuide}
+
+Return ONLY valid JSON, no explanations or markdown code blocks.`;
+}
+
+/**
+ * Translate text with aligned segments for phrase-level highlighting
+ * Returns { translation: string, segments: array }
+ */
+async function translateTextWithSegments(text, sourceLang, targetLang, contentType = 'auto') {
+  // Only supports translation to English currently
+  if (targetLang !== 'en') {
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  const systemPrompt = buildAlignedTranslationPrompt(sourceLang, contentType);
+
+  const response = await aiService('quality').chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text }
+  ], {
+    temperature: 0.3,
+    maxTokens: Math.max(text.length * 4, 800) // Allow for JSON overhead
+  });
+
+  // Parse JSON response
+  let result;
+  try {
+    // Clean response - remove markdown code blocks if present
+    let jsonStr = response.content.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    result = JSON.parse(jsonStr);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message, response: response.content.substring(0, 200) },
+      'Failed to parse aligned translation JSON, falling back to plain');
+    // Fallback to plain translation
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  // Validate structure
+  if (!result.segments || !Array.isArray(result.segments)) {
+    logger.warn('Invalid segments structure, falling back to plain translation');
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  // Add IDs to segments and join translations
+  const segments = result.segments.map((seg, idx) => ({
+    id: idx + 1,
+    original: seg.original,
+    translation: seg.translation
+  }));
+
+  const fullTranslation = segments.map(s => s.translation).join(' ');
+
+  return {
+    translation: fullTranslation,
+    segments
+  };
+}
+
+/**
  * Save individual segment translation to file
  */
 async function saveSegmentTranslation(documentId, segmentId, targetLanguage, text) {
@@ -623,12 +726,16 @@ export async function translationExists(documentId, targetLanguage) {
   }
 }
 
+// Export the aligned translation function for scripts
+export { translateTextWithSegments };
+
 export const translation = {
   SUPPORTED_LANGUAGES,
   requestTranslation,
   processTranslationJob,
   getTranslatedDocument,
-  translationExists
+  translationExists,
+  translateTextWithSegments
 };
 
 export default translation;

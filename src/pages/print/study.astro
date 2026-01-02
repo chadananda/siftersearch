@@ -1,0 +1,18 @@
+---
+/**
+ * Print Study View
+ * Phrase-by-phrase aligned translation for detailed study
+ * Client-side rendering with URL params for document selection
+ *
+ * URL: /print/study?doc=DOCUMENT_ID&religion=RELIGION&collection=COLLECTION
+ */
+import PrintLayout from '../../layouts/PrintLayout.astro';
+import PrintStudy from '../../components/print/PrintStudy.svelte';
+---
+
+<PrintLayout
+  title="Print Study View - SifterSearch"
+  description="Phrase-by-phrase aligned translation for detailed study"
+>
+  <PrintStudy client:load />
+</PrintLayout>

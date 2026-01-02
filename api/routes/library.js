@@ -1185,16 +1185,16 @@ Return ONLY the description text, no quotes or formatting.`;
 
     try {
       paragraphs = await queryAll(`
-        SELECT id, paragraph_index, text, translation, blocktype, heading
+        SELECT id, paragraph_index, text, translation, translation_segments, blocktype, heading
         FROM content
-        WHERE document_id = ?
+        WHERE doc_id = ?
         ORDER BY paragraph_index
         LIMIT ? OFFSET ?
       `, [id, limit, offset]);
 
       // Get total count from libsql
       const countResult = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE document_id = ?',
+        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
         [id]
       );
       total = countResult?.count || 0;
@@ -1220,14 +1220,26 @@ Return ONLY the description text, no quotes or formatting.`;
         language: document.language,
         isRTL
       },
-      paragraphs: paragraphs.map(p => ({
-        id: p.id,
-        index: p.paragraph_index,
-        original: p.text,
-        translation: p.translation || null,
-        blocktype: p.blocktype || 'paragraph',
-        heading: p.heading
-      })),
+      paragraphs: paragraphs.map(p => {
+        // Parse segments JSON if available
+        let segments = null;
+        if (p.translation_segments) {
+          try {
+            segments = JSON.parse(p.translation_segments);
+          } catch {
+            // Invalid JSON, ignore segments
+          }
+        }
+        return {
+          id: p.id,
+          index: p.paragraph_index,
+          original: p.text,
+          translation: p.translation || null,
+          segments,  // Aligned phrase pairs for interactive highlighting
+          blocktype: p.blocktype || 'paragraph',
+          heading: p.heading
+        };
+      }),
       total,
       limit,
       offset,

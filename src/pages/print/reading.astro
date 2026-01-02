@@ -1,0 +1,18 @@
+---
+/**
+ * Print Reading View
+ * Side-by-side paragraph translation for comfortable reading
+ * Client-side rendering with URL params for document selection
+ *
+ * URL: /print/reading?doc=DOCUMENT_ID&religion=RELIGION&collection=COLLECTION
+ */
+import PrintLayout from '../../layouts/PrintLayout.astro';
+import PrintReading from '../../components/print/PrintReading.svelte';
+---
+
+<PrintLayout
+  title="Print Reading View - SifterSearch"
+  description="Side-by-side translation for comfortable reading"
+>
+  <PrintReading client:load />
+</PrintLayout>

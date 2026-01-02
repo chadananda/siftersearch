@@ -1,47 +1,21 @@
 #!/usr/bin/env node
 /**
  * Translate a small sample of Arabic paragraphs using OpenAI
- * For testing side-by-side results feature
+ * Uses structured segment output for phrase-level interactive highlighting
  */
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
-import OpenAI from 'openai';
 import { query, queryAll } from '../api/lib/db.js';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const SCRIPTURAL_PROMPT = `You are an expert translator specializing in Bahá'í sacred writings. Translate this Arabic text to English using Shoghi Effendi's distinctive biblical translation style.
-
-Style Guidelines:
-- Use archaic pronouns for the Divine: Thou, Thee, Thine, Thy
-- Employ elevated diction: perceiveth, confesseth, hath, art, doth, verily
-- Render divine attributes formally: sovereignty, dominion, majesty, glory
-- Use inverted word order for emphasis where appropriate
-- Maintain poetic rhythm and cadence
-
-Provide only the translation, no explanations.`;
-
-async function translateText(text) {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: SCRIPTURAL_PROMPT },
-      { role: 'user', content: text }
-    ],
-    temperature: 0.3,
-    max_tokens: Math.max(500, text.length * 3)
-  });
-  return response.choices[0].message.content.trim();
-}
+import { translateTextWithSegments } from '../api/services/translation.js';
 
 async function main() {
-  console.log('=== Translate Sample Arabic Paragraphs ===\n');
+  console.log('=== Translate Sample Arabic Paragraphs (with Aligned Segments) ===\n');
 
   // Get 10 Arabic paragraphs that don't have translations yet
   const paragraphs = await queryAll(`
-    SELECT c.id, c.text, c.paragraph_index, d.title
+    SELECT c.id, c.text, c.paragraph_index, d.title, d.collection
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE d.language = 'ar'
@@ -53,33 +27,113 @@ async function main() {
 
   console.log(`Found ${paragraphs.length} paragraphs to translate\n`);
 
+  if (paragraphs.length === 0) {
+    console.log('No paragraphs need translation. Looking for existing translations to re-translate with segments...\n');
+
+    // Find paragraphs that have translations but no segments
+    const existingTranslations = await queryAll(`
+      SELECT c.id, c.text, c.paragraph_index, c.translation, d.title, d.collection
+      FROM content c
+      JOIN docs d ON d.id = c.doc_id
+      WHERE d.language = 'ar'
+        AND c.translation IS NOT NULL AND c.translation != ''
+        AND (c.translation_segments IS NULL OR c.translation_segments = '')
+        AND LENGTH(c.text) > 50
+        AND LENGTH(c.text) < 500
+      LIMIT 10
+    `);
+
+    if (existingTranslations.length === 0) {
+      console.log('All translations already have segments. Nothing to do.');
+      process.exit(0);
+    }
+
+    console.log(`Found ${existingTranslations.length} translations to update with segments\n`);
+
+    let updated = 0;
+    for (const para of existingTranslations) {
+      console.log(`[${para.paragraph_index}] Re-translating from "${para.title}"...`);
+      console.log(`  Original: ${para.text.substring(0, 60)}...`);
+
+      try {
+        // Detect content type from collection
+        const contentType = detectContentType(para.collection);
+        const result = await translateTextWithSegments(para.text, 'ar', 'en', contentType);
+
+        console.log(`  Translation: ${result.translation.substring(0, 60)}...`);
+        console.log(`  Segments: ${result.segments?.length || 0} aligned phrases`);
+
+        // Save translation and segments
+        const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+        await query(
+          'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
+          [result.translation, segmentsJson, para.id]
+        );
+        updated++;
+        console.log('  Saved\n');
+      } catch (err) {
+        console.error(`  Error: ${err.message}\n`);
+      }
+
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    console.log(`\n=== Summary ===`);
+    console.log(`Updated with segments: ${updated}/${existingTranslations.length}`);
+    console.log('\nParagraphs marked synced=0 - they will sync to Meilisearch');
+    process.exit(0);
+  }
+
   let translated = 0;
   for (const para of paragraphs) {
     console.log(`[${para.paragraph_index}] Translating from "${para.title}"...`);
-    console.log(`  Original: ${para.text.substring(0, 80)}...`);
+    console.log(`  Original: ${para.text.substring(0, 60)}...`);
 
     try {
-      const translation = await translateText(para.text);
-      console.log(`  Translation: ${translation.substring(0, 80)}...`);
+      // Detect content type from collection
+      const contentType = detectContentType(para.collection);
+      const result = await translateTextWithSegments(para.text, 'ar', 'en', contentType);
 
-      // Save translation
+      console.log(`  Translation: ${result.translation.substring(0, 60)}...`);
+      console.log(`  Segments: ${result.segments?.length || 0} aligned phrases`);
+
+      // Save translation and segments
+      const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
       await query(
-        'UPDATE content SET translation = ?, synced = 0 WHERE id = ?',
-        [translation, para.id]
+        'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
+        [result.translation, segmentsJson, para.id]
       );
       translated++;
-      console.log('  ✓ Saved\n');
+      console.log('  Saved\n');
     } catch (err) {
-      console.error(`  ✗ Error: ${err.message}\n`);
+      console.error(`  Error: ${err.message}\n`);
     }
 
     // Rate limiting
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 
   console.log(`\n=== Summary ===`);
   console.log(`Translated: ${translated}/${paragraphs.length}`);
   console.log('\nParagraphs marked synced=0 - they will sync to Meilisearch');
+}
+
+// Detect content type from collection name
+function detectContentType(collection) {
+  if (!collection) return 'auto';
+
+  const collLower = collection.toLowerCase();
+  const scriptureKeywords = ['tablet', 'prayer', 'hidden words', 'kitab', 'core', 'compilations'];
+  const historicalKeywords = ['historical', 'pilgrim', 'news', 'letter', 'memoir'];
+
+  for (const kw of scriptureKeywords) {
+    if (collLower.includes(kw)) return 'scripture';
+  }
+  for (const kw of historicalKeywords) {
+    if (collLower.includes(kw)) return 'historical';
+  }
+  return 'auto';
 }
 
 main().catch(err => {
