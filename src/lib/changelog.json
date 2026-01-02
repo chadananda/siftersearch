@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T21:09:58.886Z",
+  "generated": "2026-01-02T21:13:30.300Z",
   "entries": [
+    {
+      "hash": "a53f7ba",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Include filename in document API responses for dynamic slug generation",
+      "scope": null
+    },
     {
       "hash": "fff1f03",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent AI from copying example summary in analyzer prompt",
       "scope": null
-    },
-    {
-      "hash": "c01c129",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Require actual answers in summaries, not meta-commentary",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "a53f7ba",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Include filename in document API responses for dynamic slug generation",
+        "scope": null
+      },
       {
         "hash": "fff1f03",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Prevent AI from copying example summary in analyzer prompt",
-        "scope": null
-      },
-      {
-        "hash": "c01c129",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Require actual answers in summaries, not meta-commentary",
         "scope": null
       }
     ]
