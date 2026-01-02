@@ -54,10 +54,64 @@
   let qrCodeUrl = $state(null);
   let linkCopied = $state(false);
 
+  // Anchor/range linking state
+  let anchorStart = $state(null);
+  let anchorEnd = $state(null);
+  let highlightedParagraphs = $state(new Set());
+
   // Intersection observer for infinite scroll
   let loadMoreTrigger = $state(null);
 
   const BATCH_SIZE = 50;
+
+  /**
+   * Parse URL hash for paragraph anchors
+   * Supports: #p5, #5, #p5-10, #5-10
+   */
+  function parseAnchor() {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    // Match patterns: #p5, #5, #p5-10, #5-10
+    const match = hash.match(/^#p?(\d+)(?:-(\d+))?$/);
+    if (match) {
+      anchorStart = parseInt(match[1], 10);
+      anchorEnd = match[2] ? parseInt(match[2], 10) : anchorStart;
+
+      // Build set of highlighted paragraphs
+      const highlighted = new Set();
+      for (let i = anchorStart; i <= anchorEnd; i++) {
+        highlighted.add(i);
+      }
+      highlightedParagraphs = highlighted;
+    }
+  }
+
+  /**
+   * Scroll to anchor paragraph after content loads
+   */
+  function scrollToAnchor() {
+    if (!anchorStart) return;
+
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      const el = window.document.getElementById(`p${anchorStart}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }
+
+  /**
+   * Copy paragraph link to clipboard
+   */
+  function copyParagraphLink(index) {
+    if (typeof window === 'undefined') return;
+    const baseUrl = window.location.href.split('#')[0];
+    const link = `${baseUrl}#p${index}`;
+    navigator.clipboard.writeText(link);
+  }
 
   // Helper to update meta tags dynamically
   function updateMetaTag(name, content, attr = 'name') {
@@ -74,11 +128,20 @@
   }
 
   onMount(async () => {
+    // Parse anchor from URL hash
+    parseAnchor();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', parseAnchor);
+
     // Initialize auth
     await initAuth();
 
     // Load initial content
     await loadDocument();
+
+    // Scroll to anchor after content loads
+    scrollToAnchor();
 
     // Setup intersection observer for infinite scroll
     if (typeof IntersectionObserver !== 'undefined') {
@@ -92,8 +155,13 @@
       );
 
       // Observe will be called when loadMoreTrigger is set
-      return () => observer.disconnect();
+      return () => {
+        observer.disconnect();
+        window.removeEventListener('hashchange', parseAnchor);
+      };
     }
+
+    return () => window.removeEventListener('hashchange', parseAnchor);
   });
 
   // Watch for loadMoreTrigger changes
@@ -447,7 +515,19 @@
         </div>
       {:else}
         {#each paragraphs as para, i}
-          <div class="paragraph" data-index={para.paragraph_index}>
+          <div
+            class="paragraph"
+            class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
+            id="p{para.paragraph_index}"
+            data-index={para.paragraph_index}
+          >
+            <button
+              class="para-anchor"
+              onclick={() => copyParagraphLink(para.paragraph_index)}
+              title="Copy link to paragraph {para.paragraph_index}"
+            >
+              {para.paragraph_index}
+            </button>
             {#if para.heading}
               <h2 class="paragraph-heading">{para.heading}</h2>
             {/if}
@@ -782,7 +862,7 @@
   .document-content {
     max-width: 48rem;
     margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
+    padding: 2rem 1.5rem 4rem 3rem; /* Extra left padding for paragraph anchors */
   }
 
   .document-content.bilingual {
@@ -803,6 +883,43 @@
 
   .paragraph {
     margin-bottom: 1.5rem;
+    position: relative;
+    scroll-margin-top: 100px;
+  }
+
+  .paragraph.highlighted {
+    background: var(--accent-bg, rgba(59, 130, 246, 0.1));
+    border-left: 3px solid var(--accent-primary);
+    padding-left: 1rem;
+    margin-left: -1rem;
+    border-radius: 0.25rem;
+  }
+
+  .para-anchor {
+    position: absolute;
+    left: -2.5rem;
+    top: 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .paragraph:hover .para-anchor {
+    opacity: 1;
+  }
+
+  .para-anchor:hover {
+    color: var(--accent-primary);
+  }
+
+  .para-anchor:active::after {
+    content: ' ✓';
+    color: var(--success);
   }
 
   .paragraph-heading {
@@ -1020,7 +1137,11 @@
     }
 
     .document-content {
-      padding: 1.5rem 1rem 3rem;
+      padding: 1.5rem 1rem 3rem 1.5rem;
+    }
+
+    .para-anchor {
+      display: none; /* Hide anchors on mobile */
     }
 
     .document-content.bilingual {
