@@ -25,6 +25,8 @@
  * POST /api/admin/server/reindex - Re-index library (filters: religion, collection, path, documentId)
  * POST /api/admin/server/fix-languages - Fix RTL language detection (filters: limit, religion, dryRun)
  * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
+ * DELETE /api/admin/server/translations - Clear all translations (optional: documentId query param)
+ * POST /api/admin/server/translate-document - Translate specific document with aligned segments
  * GET /api/admin/server/tasks - List all background tasks with status
  * GET /api/admin/server/tasks/:taskId - Get detailed task output
  * POST /api/admin/server/tasks/:taskId/cancel - Cancel a running task
@@ -757,6 +759,123 @@ export default async function adminRoutes(fastify) {
       taskId: 'translations',
       message: 'Translation population started in background',
       status: task.status
+    };
+  });
+
+  /**
+   * Clear all translations from content table
+   * DELETE /api/admin/server/translations
+   */
+  fastify.delete('/server/translations', {
+    preHandler: requireInternal,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          documentId: { type: 'string', description: 'Clear only this document (optional)' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.query || {};
+
+    let result;
+    if (documentId) {
+      result = await query(
+        'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE doc_id = ?',
+        [documentId]
+      );
+      logger.info({ documentId, rowsAffected: result.rowsAffected }, 'Cleared translations for document');
+    } else {
+      result = await query(
+        'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE translation IS NOT NULL'
+      );
+      logger.info({ rowsAffected: result.rowsAffected }, 'Cleared all translations');
+    }
+
+    return {
+      success: true,
+      message: documentId
+        ? `Cleared translations for document: ${documentId}`
+        : 'Cleared all translations',
+      rowsAffected: result.rowsAffected
+    };
+  });
+
+  /**
+   * Translate a specific document with aligned segments
+   * POST /api/admin/server/translate-document
+   */
+  fastify.post('/server/translate-document', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string' },
+          sourceLang: { type: 'string', default: 'ar' },
+          targetLang: { type: 'string', default: 'en' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId, sourceLang = 'ar', targetLang = 'en' } = request.body;
+
+    // Import translation service dynamically to avoid circular deps
+    const { translateTextWithSegments } = await import('../services/translation.js');
+
+    // Get paragraphs for this document
+    const paragraphs = await queryAll(
+      'SELECT id, doc_id, paragraph_index, text FROM content WHERE doc_id = ? ORDER BY paragraph_index',
+      [documentId]
+    );
+
+    if (paragraphs.length === 0) {
+      throw ApiError.notFound(`No content found for document: ${documentId}`);
+    }
+
+    logger.info({ documentId, paragraphCount: paragraphs.length }, 'Starting document translation');
+
+    const results = [];
+    for (const para of paragraphs) {
+      try {
+        const result = await translateTextWithSegments(para.text, sourceLang, targetLang, 'scripture');
+        const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+
+        await query(
+          'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
+          [result.translation, segmentsJson, para.id]
+        );
+
+        results.push({
+          paragraphIndex: para.paragraph_index,
+          segmentCount: result.segments?.length || 0,
+          success: true
+        });
+      } catch (err) {
+        logger.error({ err, paragraphId: para.id }, 'Translation failed for paragraph');
+        results.push({
+          paragraphIndex: para.paragraph_index,
+          error: err.message,
+          success: false
+        });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    logger.info({ documentId, successCount, total: paragraphs.length }, 'Document translation complete');
+
+    return {
+      success: successCount === paragraphs.length,
+      documentId,
+      translated: successCount,
+      total: paragraphs.length,
+      results,
+      viewUrls: {
+        study: `/print/study?doc=${documentId}`,
+        reading: `/print/reading?doc=${documentId}`
+      }
     };
   });
 
