@@ -20,6 +20,7 @@ import { nanoid } from 'nanoid';
 import { getAuthority } from '../lib/authority.js';
 import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } from '../lib/db.js';
 import { detectLanguageFeatures } from './segmenter.js';
+import { config } from '../lib/config.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -30,8 +31,8 @@ const CHUNK_CONFIG = {
   paragraphDelimiters: /\n\n+/
 };
 
-// Current embedding model identifier (update when changing models)
-const EMBEDDING_MODEL = 'text-embedding-3-small';
+// Current embedding model - text-embedding-3-large with 3072 dimensions for maximum semantic quality
+const EMBEDDING_MODEL = config?.ai?.embeddings?.model || 'text-embedding-3-large';
 
 /**
  * Retry a database operation with exponential backoff for SQLITE_BUSY errors

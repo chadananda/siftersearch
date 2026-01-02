@@ -489,7 +489,7 @@ export default async function adminRoutes(fastify) {
    * Get server status - database stats, Meilisearch stats, etc.
    */
   fastify.get('/server/status', { preHandler: requireInternal }, async () => {
-    const [dbStats, embeddingStats, searchStats] = await Promise.all([
+    const [dbStats, embeddingStats, embeddingDimCheck, searchStats] = await Promise.all([
       // Database stats
       Promise.all([
         queryOne('SELECT COUNT(*) as count FROM docs'),
@@ -513,13 +513,25 @@ export default async function adminRoutes(fastify) {
           ? Math.round(withEmbed.count / (withEmbed.count + (withoutEmbed?.count || 0)) * 100)
           : 0
       })).catch(() => ({ withEmbeddings: 0, withoutEmbeddings: 0, coverage: 0 })),
+      // Check embedding dimensions (sample 5 to check size)
+      queryAll(`
+        SELECT id, LENGTH(embedding) as bytes, embedding_model
+        FROM content
+        WHERE embedding IS NOT NULL
+        LIMIT 5
+      `).then(rows => {
+        if (rows.length === 0) return { samples: 0 };
+        // Each float is 4 bytes, so dimensions = bytes / 4
+        const dims = rows.map(r => ({ id: r.id, dimensions: r.bytes / 4, model: r.embedding_model }));
+        return { samples: rows.length, dimensions: dims[0].dimensions, model: dims[0].model };
+      }).catch(() => ({ samples: 0 })),
       // Meilisearch stats
       getSearchStats().catch(() => ({ totalDocuments: 0, totalPassages: 0 }))
     ]);
 
     return {
       database: dbStats,
-      embeddings: embeddingStats,
+      embeddings: { ...embeddingStats, ...embeddingDimCheck },
       meilisearch: {
         documents: searchStats.totalDocuments || 0,
         paragraphs: searchStats.totalPassages || 0

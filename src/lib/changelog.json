@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T00:23:06.419Z",
+  "generated": "2026-01-02T00:29:01.704Z",
   "entries": [
+    {
+      "hash": "41cddd6",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add embedding coverage stats to server status endpoint",
+      "scope": null
+    },
     {
       "hash": "a447dc1",
       "date": "2026-01-01",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Enable SQLite WAL mode for concurrent access",
       "scope": "db"
-    },
-    {
-      "hash": "fd6a1b5",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Gracefully fall back to Meilisearch when libsql is busy",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-01": [
+      {
+        "hash": "41cddd6",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add embedding coverage stats to server status endpoint",
+        "scope": null
+      },
       {
         "hash": "a447dc1",
         "date": "2026-01-01",
@@ -702,13 +709,6 @@
         "type": "Fixed",
         "description": "Enable SQLite WAL mode for concurrent access",
         "scope": "db"
-      },
-      {
-        "hash": "fd6a1b5",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Gracefully fall back to Meilisearch when libsql is busy",
-        "scope": "library"
       }
     ]
   }
