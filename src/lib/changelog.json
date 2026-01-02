@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T16:45:48.096Z",
+  "generated": "2026-01-02T16:46:54.157Z",
   "entries": [
+    {
+      "hash": "a096001",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve segmentation with conceptual description instead of rules",
+      "scope": null
+    },
     {
       "hash": "18c0b5a",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add DEPLOY_SECRET authentication for API calls",
       "scope": null
-    },
-    {
-      "hash": "f0bbe17",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Correct chatCompletion call signature in batch translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "a096001",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve segmentation with conceptual description instead of rules",
+        "scope": null
+      },
       {
         "hash": "18c0b5a",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add DEPLOY_SECRET authentication for API calls",
-        "scope": null
-      },
-      {
-        "hash": "f0bbe17",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Correct chatCompletion call signature in batch translation",
         "scope": null
       }
     ]

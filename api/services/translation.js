@@ -640,18 +640,16 @@ OUTPUT FORMAT (JSON only, no markdown):
 
 ## SEGMENTATION
 
-The purpose of segmentation is **phrase-level study**. Students will see original and translation side-by-side, with each segment highlighted together. Think of it like a scholar carefully dividing a text for annotation.
+Divide the text into segments for side-by-side study, where each segment expresses **one main idea**.
 
-A segment is a **complete unit of meaning** - a phrase or clause that makes sense on its own and corresponds naturally between languages. Each segment should be something a reader could underline as "this part means that part."
+**Core principle:** Identify the concepts, then divide between them.
+- NEVER split a sentence - sentences are the atomic unit
+- A segment is one or more complete sentences that support a single concept
+- Split between sentences when the concept or focus shifts
 
-**What makes a good segment:**
-- Grammatically complete: subject-verb-object, prepositional phrase with its object, construct chains intact
-- Semantically coherent: expresses one idea, invocation, attribute, or command
-- Appropriate for study: short enough to compare word-by-word (typically 5-15 words), but not artificially chopped mid-phrase
+**Think like a reader:** Each segment should answer "what is this about?" with a single, clear answer. If a segment is about two different things, it should be two segments.
 
-**Think like a language teacher:** Where would you draw brackets around text to show a student "this phrase = that phrase"? That's your segment boundary.
-
-Every word in the original must appear in exactly one segment. The concatenation of all segments recreates the complete original text.
+The concatenation of all segments recreates the complete original text with every word preserved.
 
 TRANSLATION STYLE:
 ${styleGuide}
