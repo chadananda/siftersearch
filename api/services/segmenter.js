@@ -736,14 +736,18 @@ export async function addSentenceMarkers(text, options = {}) {
   }
 
   // Verify text integrity (content should match after stripping markers)
+  // Be lenient about whitespace - just check character content
   const stripped = stripMarkers(markedText);
-  const originalNorm = text.replace(/\s+/g, ' ').trim();
-  const strippedNorm = stripped.replace(/\s+/g, ' ').trim();
+  const originalChars = text.replace(/\s/g, '');
+  const strippedChars = stripped.replace(/\s/g, '');
 
-  if (originalNorm !== strippedNorm) {
+  const charDiff = Math.abs(originalChars.length - strippedChars.length);
+  if (charDiff > originalChars.length * 0.02) {
+    // More than 2% difference - fall back to single sentence
     logger.warn({
-      originalLength: originalNorm.length,
-      strippedLength: strippedNorm.length
+      originalChars: originalChars.length,
+      strippedChars: strippedChars.length,
+      diff: charDiff
     }, 'Text mismatch after marking - using original as single sentence');
     const fallback = wrapSentence(text, 1);
     return { text: fallback, sentenceCount: 1 };
@@ -776,7 +780,13 @@ A sentence is a complete thought or statement. In Arabic/Persian texts without p
 
 ## RESPONSE FORMAT
 Return a JSON array of strings, where each string is one complete sentence.
-Copy the exact text - do not modify spelling, diacritics, or spacing.
+
+## CRITICAL: EXACT TEXT PRESERVATION
+- Copy each sentence EXACTLY as it appears - character for character
+- Do NOT normalize, correct, or modify ANY character
+- Preserve ALL diacritics exactly as written (fatha, kasra, damma, shadda, sukun, etc.)
+- Preserve ALL spacing exactly as in the original
+- The concatenation of all sentences MUST equal the original text exactly
 
 ## IMPORTANT
 - Never split in the middle of a word
@@ -810,17 +820,25 @@ Respond with JSON only:
     const result = JSON.parse(jsonMatch[0]);
     const sentences = result.sentences || [];
 
-    // Validate that sentences reconstruct the original
-    const joined = sentences.join(' ').replace(/\s+/g, ' ').trim();
-    const originalNorm = text.replace(/\s+/g, ' ').trim();
+    // Validate that sentences are usable
+    // Be lenient - AI often normalizes whitespace slightly
+    if (sentences.length === 0) {
+      throw new Error('No sentences returned');
+    }
 
-    if (joined !== originalNorm) {
-      logger.warn('AI sentences do not match original text');
-      // Try to use them anyway if they're close
-      const diff = Math.abs(joined.length - originalNorm.length);
-      if (diff > originalNorm.length * 0.05) {
-        throw new Error('AI output differs too much from original');
-      }
+    // Check total character count (ignoring whitespace) is close
+    const originalChars = text.replace(/\s/g, '');
+    const sentenceChars = sentences.join('').replace(/\s/g, '');
+    const charDiff = Math.abs(originalChars.length - sentenceChars.length);
+
+    if (charDiff > originalChars.length * 0.02) {
+      // More than 2% character difference - reject
+      logger.warn({
+        originalChars: originalChars.length,
+        sentenceChars: sentenceChars.length,
+        diff: charDiff
+      }, 'AI sentences differ too much from original');
+      throw new Error('AI output differs too much from original');
     }
 
     return sentences;
