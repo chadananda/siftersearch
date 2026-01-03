@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
 import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
+import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -296,7 +297,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
 
   if (filePath) {
     existingDoc = await queryOne(
-      'SELECT id, file_hash FROM docs WHERE file_path = ?',
+      'SELECT id, file_hash, title, filename, religion, collection, language FROM docs WHERE file_path = ?',
       [filePath]
     );
 
@@ -426,6 +427,35 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     finalMeta.description,
     chunks.length
   ]);
+
+  // Create redirect if URL slug changed (for SEO and link preservation)
+  if (existingDoc) {
+    const oldSlug = generateDocSlug(existingDoc);
+    const oldReligionSlug = slugifyPath(existingDoc.religion || '');
+    const oldCollectionSlug = slugifyPath(existingDoc.collection || '');
+    const oldPath = `/library/${oldReligionSlug}/${oldCollectionSlug}/${oldSlug}`;
+
+    const newDoc = { title: finalMeta.title, filename: existingDoc.filename, language: finalMeta.language };
+    const newSlug = generateDocSlug(newDoc);
+    const newReligionSlug = slugifyPath(finalMeta.religion || '');
+    const newCollectionSlug = slugifyPath(finalMeta.collection || '');
+    const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${newSlug}`;
+
+    if (oldPath !== newPath && oldSlug && newSlug) {
+      try {
+        await query(`
+          INSERT INTO redirects (old_path, new_path, doc_id)
+          VALUES (?, ?, ?)
+          ON CONFLICT(old_path) DO UPDATE SET
+            new_path = excluded.new_path,
+            doc_id = excluded.doc_id
+        `, [oldPath, newPath, finalDocId]);
+        logger.info({ oldPath, newPath, docId: finalDocId }, 'Created URL redirect during ingestion');
+      } catch (err) {
+        logger.warn({ err: err.message, oldPath, newPath }, 'Failed to create redirect during ingestion');
+      }
+    }
+  }
 
   // Smart paragraph diffing: compare new chunks with existing paragraphs
   const newContentHashes = new Set();

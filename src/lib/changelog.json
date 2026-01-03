@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T06:20:57.591Z",
+  "generated": "2026-01-03T14:20:11.724Z",
   "entries": [
+    {
+      "hash": "b56aa6c",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
+      "scope": null
+    },
     {
       "hash": "de3ee70",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use established religious terminology in translations",
       "scope": null
-    },
-    {
-      "hash": "7c1e0d6",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add email_queue table migration to unblock job processor",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "b56aa6c",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
+        "scope": null
+      },
       {
         "hash": "de3ee70",
         "date": "2026-01-02",
@@ -695,13 +702,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Use established religious terminology in translations",
-        "scope": null
-      },
-      {
-        "hash": "7c1e0d6",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add email_queue table migration to unblock job processor",
         "scope": null
       }
     ]

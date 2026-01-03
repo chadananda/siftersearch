@@ -86,6 +86,13 @@ export async function createServer(opts = {}) {
     });
   });
 
+  // Disable caching during alpha - ensures fresh data on every request
+  server.addHook('onSend', async (request, reply) => {
+    reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    reply.header('Pragma', 'no-cache');
+    reply.header('Expires', '0');
+  });
+
   // Response logging hook - log response status
   server.addHook('onResponse', async (request, reply) => {
     const { method, url } = request;
