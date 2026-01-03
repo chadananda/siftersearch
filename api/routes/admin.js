@@ -31,6 +31,12 @@
  * GET /api/admin/server/tasks/:taskId - Get detailed task output
  * POST /api/admin/server/tasks/:taskId/cancel - Cancel a running task
  * DELETE /api/admin/server/tasks - Clear completed tasks from memory
+ *
+ * Job Queue Monitoring:
+ * GET /api/admin/server/job-queue - Comprehensive job queue status (counts, processor health, recent jobs)
+ * POST /api/admin/server/job-queue/process/:jobId - Force process a pending job immediately
+ * POST /api/admin/server/job-queue/reset/:jobId - Reset a failed/stuck job to pending
+ * DELETE /api/admin/server/job-queue/cleanup - Clear old completed/failed jobs
  */
 
 import { join } from 'path';
@@ -2117,6 +2123,201 @@ export default async function adminRoutes(fastify) {
       limit,
       offset,
       filters: { author, collection, religion, language, hasFilePath, hasContent }
+    };
+  });
+
+  // ========================================
+  // Job Queue Monitoring
+  // ========================================
+
+  /**
+   * Get comprehensive job queue status
+   * Shows pending/processing/completed/failed counts, recent activity, and processor health
+   */
+  fastify.get('/server/job-queue', { preHandler: requireInternal }, async () => {
+    // Get job counts by status
+    const [statusCounts, recentJobs, processorHealth] = await Promise.all([
+      // Job counts by status
+      queryAll(`
+        SELECT status, COUNT(*) as count
+        FROM jobs
+        GROUP BY status
+      `).then(rows => {
+        const counts = { pending: 0, processing: 0, completed: 0, failed: 0 };
+        rows.forEach(r => { counts[r.status] = r.count; });
+        return counts;
+      }),
+
+      // Recent jobs (last 20)
+      queryAll(`
+        SELECT id, type, status, document_id, progress, total_items,
+               created_at, started_at, completed_at, error_message
+        FROM jobs
+        ORDER BY created_at DESC
+        LIMIT 20
+      `),
+
+      // Job processor health indicators
+      queryAll(`
+        SELECT
+          MAX(CASE WHEN status = 'processing' THEN started_at END) as last_processing_start,
+          MAX(CASE WHEN status = 'completed' THEN completed_at END) as last_completion,
+          MAX(CASE WHEN status = 'failed' THEN completed_at END) as last_failure,
+          COUNT(CASE WHEN status = 'processing' AND started_at < datetime('now', '-10 minutes') THEN 1 END) as stuck_jobs
+        FROM jobs
+      `).then(rows => rows[0] || {})
+    ]);
+
+    // Determine processor status
+    let processorStatus = 'unknown';
+    if (statusCounts.processing > 0) {
+      processorStatus = 'active';
+    } else if (processorHealth.last_completion) {
+      const lastComplete = new Date(processorHealth.last_completion);
+      const minutesAgo = (Date.now() - lastComplete.getTime()) / 60000;
+      if (minutesAgo < 5) {
+        processorStatus = 'idle'; // Recently active
+      } else if (statusCounts.pending > 0) {
+        processorStatus = 'stalled'; // Has pending but not processing
+      } else {
+        processorStatus = 'idle';
+      }
+    } else if (statusCounts.pending > 0) {
+      processorStatus = 'not_started'; // Jobs waiting but never processed
+    }
+
+    return {
+      counts: statusCounts,
+      processor: {
+        status: processorStatus,
+        lastProcessingStart: processorHealth.last_processing_start,
+        lastCompletion: processorHealth.last_completion,
+        lastFailure: processorHealth.last_failure,
+        stuckJobs: processorHealth.stuck_jobs || 0
+      },
+      recentJobs: recentJobs.map(j => ({
+        id: j.id,
+        type: j.type,
+        status: j.status,
+        documentId: j.document_id,
+        progress: j.progress,
+        total: j.total_items,
+        createdAt: j.created_at,
+        startedAt: j.started_at,
+        completedAt: j.completed_at,
+        error: j.error_message
+      }))
+    };
+  });
+
+  /**
+   * Force process a specific pending job immediately
+   * Useful for testing without waiting for the job processor
+   */
+  fastify.post('/server/job-queue/process/:jobId', { preHandler: requireInternal }, async (request) => {
+    const { jobId } = request.params;
+
+    const job = await queryOne('SELECT * FROM jobs WHERE id = ?', [jobId]);
+    if (!job) {
+      throw ApiError.notFound('Job not found');
+    }
+
+    if (job.status !== 'pending') {
+      throw ApiError.badRequest(`Job is ${job.status}, not pending`);
+    }
+
+    // Parse params
+    job.params = JSON.parse(job.params || '{}');
+
+    // Import and process based on job type
+    const { JOB_TYPES } = await import('../services/jobs.js');
+
+    if (job.type === JOB_TYPES.TRANSLATION) {
+      const { processTranslationJob } = await import('../services/translation.js');
+
+      // Process synchronously (this endpoint is for admin testing)
+      try {
+        const result = await processTranslationJob(job);
+        return { success: true, jobId, result };
+      } catch (err) {
+        return { success: false, jobId, error: err.message };
+      }
+    }
+
+    if (job.type === JOB_TYPES.AUDIO) {
+      const { processAudioJob } = await import('../services/audio.js');
+      try {
+        const result = await processAudioJob(job);
+        return { success: true, jobId, result };
+      } catch (err) {
+        return { success: false, jobId, error: err.message };
+      }
+    }
+
+    throw ApiError.badRequest(`Unknown job type: ${job.type}`);
+  });
+
+  /**
+   * Clear old completed/failed jobs from the database
+   * Keeps only jobs from the last N days
+   */
+  fastify.delete('/server/job-queue/cleanup', {
+    preHandler: requireInternal,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          daysToKeep: { type: 'integer', default: 7 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { daysToKeep = 7 } = request.query || {};
+
+    const result = await query(`
+      DELETE FROM jobs
+      WHERE status IN ('completed', 'failed')
+      AND completed_at < datetime('now', '-' || ? || ' days')
+    `, [daysToKeep]);
+
+    logger.info({ deleted: result.changes, daysToKeep }, 'Job queue cleanup');
+
+    return {
+      success: true,
+      deleted: result.changes,
+      daysToKeep
+    };
+  });
+
+  /**
+   * Reset a failed/stuck job back to pending
+   */
+  fastify.post('/server/job-queue/reset/:jobId', { preHandler: requireInternal }, async (request) => {
+    const { jobId } = request.params;
+
+    const job = await queryOne('SELECT * FROM jobs WHERE id = ?', [jobId]);
+    if (!job) {
+      throw ApiError.notFound('Job not found');
+    }
+
+    if (job.status === 'pending') {
+      return { success: false, message: 'Job is already pending' };
+    }
+
+    await query(`
+      UPDATE jobs
+      SET status = 'pending', started_at = NULL, completed_at = NULL,
+          error_message = NULL, progress = 0
+      WHERE id = ?
+    `, [jobId]);
+
+    logger.info({ jobId, previousStatus: job.status }, 'Job reset to pending');
+
+    return {
+      success: true,
+      jobId,
+      previousStatus: job.status,
+      newStatus: 'pending'
     };
   });
 }

@@ -746,36 +746,35 @@
     >
       <!-- Document header - always LTR for simplicity -->
       <header class="doc-header" dir="ltr">
-        <!-- Large decorative background logo -->
-        <div class="doc-header-bg" aria-hidden="true">
-          <img src="/ocean.svg" alt="" class="doc-bg-logo" />
-        </div>
-
-        <!-- Top bar: branding left, QR right -->
-        <div class="doc-header-top">
-          <a href="/" class="doc-brand">
-            <img src="/ocean.svg" alt="" class="doc-brand-logo" />
-            <span class="doc-brand-name">SifterSearch</span>
+        <!-- URL-style breadcrumb bar -->
+        <nav class="url-breadcrumb" aria-label="Breadcrumb">
+          <a href="/" class="url-home" title="Home">
+            <img src="/ocean.svg" alt="" class="url-icon" />
           </a>
-          {#if qrCodeUrl}
-            <button class="header-qr" onclick={showQRCode} title="Share this document">
-              <img src={qrCodeUrl} alt="QR" class="header-qr-img" />
-            </button>
-          {/if}
-        </div>
-
-        <nav class="breadcrumb" aria-label="Breadcrumb">
-          <a href="/library">Library</a>
+          <a href="/" class="url-domain">
+            <span class="domain-name">SifterSearch</span><span class="domain-tld">.com</span>
+          </a>
+          <span class="url-sep">/</span>
+          <a href="/library" class="url-segment">Library</a>
           {#if document.religion}
-            <span class="sep">›</span>
-            <a href="/library/{pathReligion}">{document.religion}</a>
+            <span class="url-sep">/</span>
+            <a href="/library/{pathReligion}" class="url-segment">{document.religion}</a>
           {/if}
           {#if document.collection}
-            <span class="sep">›</span>
-            <a href="/library/{pathReligion}/{pathCollection}">{document.collection}</a>
+            <span class="url-sep">/</span>
+            <a href="/library/{pathReligion}/{pathCollection}" class="url-segment">{document.collection}</a>
+          {/if}
+          <span class="url-sep">/</span>
+          <span class="url-current">{document.filename || pathSlug}</span>
+
+          {#if qrCodeUrl}
+            <button class="url-qr" onclick={showQRCode} title="Share this document">
+              <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
+            </button>
           {/if}
         </nav>
 
+        <!-- Title and metadata -->
         <h1 class="doc-title">{document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled'}</h1>
 
         {#if document.author}
@@ -1358,110 +1357,105 @@
     overflow: hidden;
   }
 
-  /* Large decorative background logo */
-  .doc-header-bg {
-    position: absolute;
-    top: -40%;
-    right: -15%;
-    width: 45%;
-    max-width: 280px;
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .doc-bg-logo {
-    width: 100%;
-    height: auto;
-    transform: rotate(-12deg);
-  }
-
-  /* Top bar: branding left, QR right */
-  .doc-header-top {
+  /* URL-style breadcrumb bar */
+  .url-breadcrumb {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.25rem;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.8125rem;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     position: relative;
-    z-index: 1;
+    padding-right: 3rem; /* Space for QR */
   }
 
-  /* Site branding */
-  .doc-brand {
+  .url-home {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    margin-right: 0.125rem;
+  }
+
+  .url-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+  }
+
+  .url-home:hover .url-icon {
+    opacity: 1;
+  }
+
+  .url-domain {
     text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+
+  .url-domain:hover {
+    opacity: 0.8;
+  }
+
+  .domain-name {
+    color: #1a1a1a;
+  }
+
+  .domain-tld {
+    color: #14b8a6; /* Teal to match icon */
+  }
+
+  .url-sep {
+    color: #bbb;
+    font-weight: 400;
+    margin: 0 0.125rem;
+  }
+
+  .url-segment {
     color: #666;
+    text-decoration: none;
     transition: color 0.2s;
   }
 
-  .doc-brand:hover {
-    color: #333;
+  .url-segment:hover {
+    color: #14b8a6;
   }
 
-  .doc-brand-logo {
-    width: 1.5rem;
-    height: 1.5rem;
-    opacity: 0.7;
+  .url-current {
+    color: #999;
+    font-weight: 400;
   }
 
-  .doc-brand-name {
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-  }
-
-  /* Header QR code */
-  .header-qr {
+  /* QR code button - positioned to the right */
+  .url-qr {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
     background: white;
     border: 1px solid #ddd;
     border-radius: 0.375rem;
-    padding: 0.25rem;
+    padding: 0.125rem;
     cursor: pointer;
     transition: all 0.2s;
   }
 
-  .header-qr:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  .url-qr:hover {
+    border-color: #14b8a6;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
   }
 
-  .header-qr-img {
-    width: 2.5rem;
-    height: 2.5rem;
+  .url-qr-img {
+    width: 1.75rem;
+    height: 1.75rem;
     display: block;
+    border-radius: 0.25rem;
   }
 
-  .breadcrumb {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 0.75rem;
-    color: #888;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  .breadcrumb a {
-    color: #666;
-    text-decoration: none;
-  }
-
-  .breadcrumb a:hover {
-    color: #3b82f6;
-    text-decoration: underline;
-  }
-
-  .breadcrumb .sep {
-    color: #bbb;
-  }
 
   .doc-title {
     margin: 0 0 0.5rem 0;
@@ -2096,25 +2090,20 @@
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
-    /* Header adjustments for mobile */
-    .doc-header-bg {
-      width: 50%;
-      top: -30%;
-      right: -10%;
+    /* URL breadcrumb adjustments for mobile */
+    .url-breadcrumb {
+      font-size: 0.6875rem;
+      padding-right: 2.5rem;
     }
 
-    .doc-brand-logo {
+    .url-icon {
       width: 1.25rem;
       height: 1.25rem;
     }
 
-    .doc-brand-name {
-      font-size: 0.75rem;
-    }
-
-    .header-qr-img {
-      width: 2rem;
-      height: 2rem;
+    .url-qr-img {
+      width: 1.5rem;
+      height: 1.5rem;
     }
 
     .doc-abstract {
@@ -2210,34 +2199,29 @@
       max-width: 100%;
     }
 
-    /* Keep decorative background in print - subtle watermark */
-    .doc-header-bg {
-      opacity: 0.03;
-    }
-
-    /* Header top bar - same as screen */
-    .doc-header-top {
+    /* URL breadcrumb print styles */
+    .url-breadcrumb {
+      font-size: 9pt;
       margin-bottom: 0.75rem;
     }
 
-    .doc-brand-logo {
-      width: 1.25rem;
-      height: 1.25rem;
+    .url-icon {
+      width: 1rem;
+      height: 1rem;
     }
 
-    .doc-brand-name {
-      font-size: 0.75rem;
-    }
-
-    /* Keep header QR visible in print - matches screen */
-    .header-qr {
+    .url-qr {
       display: flex !important;
       border: 1px solid #ccc;
     }
 
-    .header-qr-img {
-      width: 2rem;
-      height: 2rem;
+    .url-qr-img {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .domain-tld {
+      color: #0d9488; /* Darker teal for print */
     }
 
     /* Show footer in print with QR and metadata */
