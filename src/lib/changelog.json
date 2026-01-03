@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T16:26:00.808Z",
+  "generated": "2026-01-03T16:37:06.599Z",
   "entries": [
+    {
+      "hash": "e2acb5c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Enhanced translation with wave-based processing and context",
+      "scope": null
+    },
     {
       "hash": "604645e",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add segmentation integrity check to prevent text modification",
       "scope": null
-    },
-    {
-      "hash": "1f597eb",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add test-segmentation script for verifying translation quality",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "e2acb5c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Enhanced translation with wave-based processing and context",
+        "scope": null
+      },
       {
         "hash": "604645e",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add segmentation integrity check to prevent text modification",
-        "scope": null
-      },
-      {
-        "hash": "1f597eb",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add test-segmentation script for verifying translation quality",
         "scope": null
       }
     ]

@@ -406,6 +406,39 @@
   // View mode state
   let viewMode = $state('default'); // 'default' | 'sbs' | 'study'
   let showTranslateModal = $state(false);
+
+  // Phrase highlighting state for SBS mode
+  let highlightedSegmentId = $state(null);
+
+  /**
+   * Parse translation_segments from paragraph
+   * Returns array of { id, original, translation } or null
+   */
+  function parseSegments(para) {
+    if (!para.translation_segments) return null;
+    try {
+      const segments = typeof para.translation_segments === 'string'
+        ? JSON.parse(para.translation_segments)
+        : para.translation_segments;
+      return Array.isArray(segments) && segments.length > 0 ? segments : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Highlight a segment on hover/tap
+   */
+  function highlightSegment(segId) {
+    highlightedSegmentId = segId;
+  }
+
+  /**
+   * Clear segment highlight
+   */
+  function clearHighlight() {
+    highlightedSegmentId = null;
+  }
 </script>
 
 <div class="presentation-container">
@@ -631,9 +664,29 @@
 
             <!-- SBS Mode: Side-by-side reading translation -->
             {#if viewMode === 'sbs' && para.translation}
+              {@const segments = parseSegments(para)}
               <div class="bilingual-row">
                 <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                  {#if segments}
+                    <!-- Phrase-level aligned view -->
+                    <div class="paragraph-text segmented">
+                      {#each segments as seg}
+                        <span
+                          class="segment-phrase"
+                          class:highlighted={highlightedSegmentId === seg.id}
+                          data-seg-id={seg.id}
+                          onmouseenter={() => highlightSegment(seg.id)}
+                          onmouseleave={clearHighlight}
+                          onclick={() => highlightSegment(seg.id)}
+                          role="button"
+                          tabindex="0"
+                        >{seg.original}</span>{' '}
+                      {/each}
+                    </div>
+                  {:else}
+                    <!-- Fallback: plain text -->
+                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                  {/if}
                 </div>
                 <div class="para-center">
                   <button
@@ -645,7 +698,26 @@
                   </button>
                 </div>
                 <div class="translation-col">
-                  <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
+                  {#if segments}
+                    <!-- Phrase-level aligned view -->
+                    <div class="paragraph-text translation segmented">
+                      {#each segments as seg}
+                        <span
+                          class="segment-phrase"
+                          class:highlighted={highlightedSegmentId === seg.id}
+                          data-seg-id={seg.id}
+                          onmouseenter={() => highlightSegment(seg.id)}
+                          onmouseleave={clearHighlight}
+                          onclick={() => highlightSegment(seg.id)}
+                          role="button"
+                          tabindex="0"
+                        >{seg.translation}</span>{' '}
+                      {/each}
+                    </div>
+                  {:else}
+                    <!-- Fallback: plain translation text -->
+                    <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
+                  {/if}
                 </div>
               </div>
 
@@ -1471,6 +1543,49 @@
     font-style: normal;
   }
 
+  /* Phrase-level segment highlighting */
+  .paragraph-text.segmented {
+    display: inline;
+  }
+
+  .segment-phrase {
+    cursor: pointer;
+    padding: 0.1em 0.15em;
+    margin: -0.1em -0.05em;
+    border-radius: 0.2em;
+    transition: all 0.15s ease;
+    display: inline;
+  }
+
+  .segment-phrase:hover {
+    background: rgba(59, 130, 246, 0.15);
+  }
+
+  .segment-phrase.highlighted {
+    background: rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+
+  /* RTL segment styling */
+  .original-col[dir="rtl"] .segment-phrase {
+    unicode-bidi: isolate;
+  }
+
+  /* Focus styles for keyboard navigation */
+  .segment-phrase:focus {
+    outline: none;
+    background: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+  }
+
+  /* Touch-friendly tap targets on mobile */
+  @media (pointer: coarse) {
+    .segment-phrase {
+      padding: 0.2em 0.25em;
+      margin: 0 0.05em;
+    }
+  }
+
   /* Study mode layout */
   .study-row {
     display: grid;
@@ -2023,6 +2138,15 @@
     .note-annotation {
       font-size: 7pt;
       color: #555;
+    }
+
+    /* Segment phrases in print - no interactive styling */
+    .segment-phrase {
+      cursor: default;
+      padding: 0;
+      margin: 0;
+      background: none !important;
+      box-shadow: none !important;
     }
 
     /* Hide modals in print */
