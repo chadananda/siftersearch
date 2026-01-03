@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T03:14:56.370Z",
+  "generated": "2026-01-03T03:17:59.787Z",
   "entries": [
+    {
+      "hash": "e855bbc",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve sentence detection accuracy for Arabic text",
+      "scope": null
+    },
     {
       "hash": "bce19c6",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use aiService instead of chatCompletion for proper model resolution",
       "scope": null
-    },
-    {
-      "hash": "fde5219",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Include translation_segments in document endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "e855bbc",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve sentence detection accuracy for Arabic text",
+        "scope": null
+      },
       {
         "hash": "bce19c6",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use aiService instead of chatCompletion for proper model resolution",
-        "scope": null
-      },
-      {
-        "hash": "fde5219",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Include translation_segments in document endpoint",
         "scope": null
       }
     ]

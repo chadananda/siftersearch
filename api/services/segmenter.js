@@ -12,7 +12,7 @@
 
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
-import { wrapSentence, stripMarkers, validateMarkers } from '../lib/markers.js';
+import { wrapSentence, stripMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
 
 /**
  * Configuration for segmentation
@@ -735,20 +735,12 @@ export async function addSentenceMarkers(text, options = {}) {
     return { text: fallback, sentenceCount: 1 };
   }
 
-  // Verify text integrity (content should match after stripping markers)
-  // Be lenient about whitespace - just check character content
-  const stripped = stripMarkers(markedText);
-  const originalChars = text.replace(/\s/g, '');
-  const strippedChars = stripped.replace(/\s/g, '');
-
-  const charDiff = Math.abs(originalChars.length - strippedChars.length);
-  if (charDiff > originalChars.length * 0.02) {
-    // More than 2% difference - fall back to single sentence
+  // STRICT validation - marked text must strip to EXACTLY the original
+  const verification = verifyMarkedText(text, markedText);
+  if (!verification.valid) {
     logger.warn({
-      originalChars: originalChars.length,
-      strippedChars: strippedChars.length,
-      diff: charDiff
-    }, 'Text mismatch after marking - using original as single sentence');
+      error: verification.error
+    }, 'Text changed after marking - using original as single sentence');
     const fallback = wrapSentence(text, 1);
     return { text: fallback, sentenceCount: 1 };
   }

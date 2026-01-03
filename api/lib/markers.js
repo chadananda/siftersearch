@@ -269,6 +269,45 @@ export function validateMarkers(text) {
 }
 
 /**
+ * Verify that marked text preserves original content exactly
+ * STRICT validation - no character differences allowed
+ *
+ * @param {string} original - Original text before marking
+ * @param {string} marked - Text with markers added
+ * @returns {{valid: boolean, error: string|null}}
+ */
+export function verifyMarkedText(original, marked) {
+  if (!original || !marked) {
+    return { valid: false, error: 'Missing original or marked text' };
+  }
+
+  const stripped = stripMarkers(marked);
+
+  // Exact character-by-character comparison
+  if (original !== stripped) {
+    // Find first difference for debugging
+    let diffPos = 0;
+    while (diffPos < original.length && diffPos < stripped.length &&
+           original[diffPos] === stripped[diffPos]) {
+      diffPos++;
+    }
+
+    const context = 20;
+    const originalAround = original.substring(Math.max(0, diffPos - context), diffPos + context);
+    const strippedAround = stripped.substring(Math.max(0, diffPos - context), diffPos + context);
+
+    return {
+      valid: false,
+      error: `Text mismatch at position ${diffPos}. ` +
+             `Original[${original.length}]: "...${originalAround}..." vs ` +
+             `Stripped[${stripped.length}]: "...${strippedAround}..."`
+    };
+  }
+
+  return { valid: true, error: null };
+}
+
+/**
  * Build translation segments object from marked text
  * Used when creating translation_segments field
  *

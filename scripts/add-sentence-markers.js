@@ -15,9 +15,9 @@
  *   --force      Re-process paragraphs that already have markers
  */
 
-import { query, queryAll, queryOne } from '../api/lib/db.js';
+import { query, queryAll } from '../api/lib/db.js';
 import { addSentenceMarkers } from '../api/services/segmenter.js';
-import { hasMarkers } from '../api/lib/markers.js';
+import { hasMarkers, verifyMarkedText, stripMarkers } from '../api/lib/markers.js';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -92,6 +92,9 @@ async function main() {
         return { id: para.id, skipped: true };
       }
 
+      // Store original for verification
+      const originalText = para.text;
+
       try {
         const { text: markedText, sentenceCount } = await addSentenceMarkers(para.text, {
           language: para.language
@@ -99,6 +102,7 @@ async function main() {
 
         return {
           id: para.id,
+          originalText,
           markedText,
           sentenceCount,
           success: true
@@ -125,8 +129,16 @@ async function main() {
         continue;
       }
 
+      // STRICT VALIDATION: Verify marked text strips to exactly original
+      const verification = verifyMarkedText(result.originalText, result.markedText);
+      if (!verification.valid) {
+        console.error(`  VALIDATION FAILED ${result.id}: ${verification.error}`);
+        errors++;
+        continue;
+      }
+
       if (dryRun) {
-        console.log(`  [DRY-RUN] Would update ${result.id}: ${result.sentenceCount} sentences`);
+        console.log(`  [DRY-RUN] Would update ${result.id}: ${result.sentenceCount} sentences (verified)`);
       } else {
         await query(
           `UPDATE content SET text = ?, synced = 0, updated_at = ? WHERE id = ?`,
