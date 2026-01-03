@@ -706,57 +706,58 @@ export async function addSentenceMarkers(text, options = {}) {
     return { text, sentenceCount: (text.match(/⁅s\d+⁆/g) || []).length };
   }
 
-  let sentences;
+  let boundaries; // Array of {start, end} positions in original text
 
   if (features.isRTL) {
     // Use AI for Arabic/Persian - punctuation rules don't apply
-    sentences = await getAISentenceBoundaries(text, language);
+    boundaries = await getAISentenceBoundaries(text, language);
   } else {
     // Use punctuation rules for Latin scripts
-    sentences = getPunctuationSentences(text);
+    boundaries = getPunctuationBoundaries(text);
   }
 
-  if (!sentences || sentences.length === 0) {
+  if (!boundaries || boundaries.length === 0) {
     // No sentences found - treat entire text as one sentence
     const marked = wrapSentence(text, 1);
     return { text: marked, sentenceCount: 1 };
   }
 
-  // Build marked text by wrapping each sentence
-  const markedSentences = sentences.map((s, i) => wrapSentence(s, i + 1));
-  const markedText = markedSentences.join(' ');
-
-  // Validate marker integrity
-  const validation = validateMarkers(markedText);
-  if (!validation.valid) {
-    logger.error({ errors: validation.errors }, 'Marker validation failed');
-    // Fall back to single sentence
-    const fallback = wrapSentence(text, 1);
-    return { text: fallback, sentenceCount: 1 };
+  // Insert markers INTO the original text at boundary positions
+  // Work backwards to preserve positions
+  let markedText = text;
+  for (let i = boundaries.length - 1; i >= 0; i--) {
+    const { start, end } = boundaries[i];
+    const id = i + 1;
+    // Insert closing marker at end
+    markedText = markedText.slice(0, end) + `⁅/s${id}⁆` + markedText.slice(end);
+    // Insert opening marker at start
+    markedText = markedText.slice(0, start) + `⁅s${id}⁆` + markedText.slice(start);
   }
 
   // STRICT validation - marked text must strip to EXACTLY the original
   const verification = verifyMarkedText(text, markedText);
   if (!verification.valid) {
-    logger.warn({
+    logger.error({
       error: verification.error
-    }, 'Text changed after marking - using original as single sentence');
+    }, 'CRITICAL: Marking altered text - this should never happen');
+    // Fall back to single sentence wrapping original
     const fallback = wrapSentence(text, 1);
     return { text: fallback, sentenceCount: 1 };
   }
 
   return {
     text: markedText,
-    sentenceCount: sentences.length
+    sentenceCount: boundaries.length
   };
 }
 
 /**
  * Get sentence boundaries using AI for RTL text
+ * Returns positions in the ORIGINAL text - never modifies content
  *
  * @param {string} text - Input text
  * @param {string} language - Language code (ar, fa)
- * @returns {Promise<string[]>} Array of sentences
+ * @returns {Promise<Array<{start: number, end: number}>>} Boundary positions
  */
 async function getAISentenceBoundaries(text, language) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
@@ -771,27 +772,34 @@ A sentence is a complete thought or statement. In Arabic/Persian texts without p
 - End of an invocation or blessing
 
 ## RESPONSE FORMAT
-Return a JSON array of strings, where each string is one complete sentence.
+Return character positions (0-indexed) where each sentence starts and ends.
+Format: {"boundaries": [[start1, end1], [start2, end2], ...]}
 
-## CRITICAL: EXACT TEXT PRESERVATION
-- Copy each sentence EXACTLY as it appears - character for character
-- Do NOT normalize, correct, or modify ANY character
-- Preserve ALL diacritics exactly as written (fatha, kasra, damma, shadda, sukun, etc.)
-- Preserve ALL spacing exactly as in the original
-- The concatenation of all sentences MUST equal the original text exactly
+The boundaries must:
+- Cover the ENTIRE text from position 0 to the last character
+- Not overlap
+- Be contiguous (end of one = start of next, accounting for whitespace)
 
-## IMPORTANT
-- Never split in the middle of a word
-- Keep divine names and attributes together
-- Preserve blessing formulas as complete units (صلى الله عليه وسلم, etc.)`;
+## CRITICAL RULES
+1. NEVER split in the middle of a word - boundaries must be at word breaks (spaces)
+2. Keep divine names and attributes together (الله, الرحمن الرحيم, etc.)
+3. Preserve blessing formulas as complete units (صلى الله عليه وسلم, etc.)
+4. The boundary positions must align with SPACES between words
+5. A boundary END should be right after a word, before a space
+6. A boundary START should be right after a space, at the start of a word
 
-  const userPrompt = `Identify the sentence boundaries in this ${languageHint} text.
+Example for "بسم الله الرحمن الرحيم" (44 chars):
+- If 1 sentence: [[0, 44]]
+- If 2 sentences split after "الرحيم": [[0, 22], [23, 44]]
+Never: [[0, 20], [21, 44]] - this splits "الرحيم" mid-word!`;
+
+  const userPrompt = `Identify sentence boundaries in this ${languageHint} text (${text.length} characters).
 
 TEXT:
 ${text}
 
-Respond with JSON only:
-{"sentences": ["first sentence...", "second sentence...", ...]}`;
+Return JSON with character positions:
+{"boundaries": [[0, X], [X, Y], ...]}`;
 
   try {
     const response = await aiService('quality', { forceRemote: true }).chat([
@@ -810,30 +818,53 @@ Respond with JSON only:
     }
 
     const result = JSON.parse(jsonMatch[0]);
-    const sentences = result.sentences || [];
+    let rawBoundaries = result.boundaries || [];
 
-    // Validate that sentences are usable
-    // Be lenient - AI often normalizes whitespace slightly
-    if (sentences.length === 0) {
-      throw new Error('No sentences returned');
+    if (rawBoundaries.length === 0) {
+      throw new Error('No boundaries returned');
     }
 
-    // Check total character count (ignoring whitespace) is close
-    const originalChars = text.replace(/\s/g, '');
-    const sentenceChars = sentences.join('').replace(/\s/g, '');
-    const charDiff = Math.abs(originalChars.length - sentenceChars.length);
+    // Convert [[start, end], ...] to [{start, end}, ...]
+    const boundaries = rawBoundaries.map(b => ({
+      start: b[0],
+      end: b[1]
+    }));
 
-    if (charDiff > originalChars.length * 0.02) {
-      // More than 2% character difference - reject
-      logger.warn({
-        originalChars: originalChars.length,
-        sentenceChars: sentenceChars.length,
-        diff: charDiff
-      }, 'AI sentences differ too much from original');
-      throw new Error('AI output differs too much from original');
+    // Validate boundaries are within text and at word breaks
+    for (const b of boundaries) {
+      if (b.start < 0 || b.end > text.length || b.start >= b.end) {
+        throw new Error(`Invalid boundary: [${b.start}, ${b.end}] for text length ${text.length}`);
+      }
+
+      // Check start is at word boundary (start of text, or preceded by space)
+      if (b.start > 0 && !/\s/.test(text[b.start - 1]) && !/\s/.test(text[b.start])) {
+        throw new Error(`Boundary start ${b.start} is not at a word break`);
+      }
+
+      // Check end is at word boundary (end of text, or followed by space, or is space)
+      if (b.end < text.length && !/\s/.test(text[b.end - 1]) && !/\s/.test(text[b.end])) {
+        throw new Error(`Boundary end ${b.end} is not at a word break`);
+      }
     }
 
-    return sentences;
+    // Sort by start position
+    boundaries.sort((a, b) => a.start - b.start);
+
+    // Verify boundaries cover the text (allowing for whitespace gaps)
+    const firstStart = boundaries[0].start;
+    const lastEnd = boundaries[boundaries.length - 1].end;
+
+    // First boundary should start near 0 (allow leading whitespace)
+    if (firstStart > 0 && text.slice(0, firstStart).trim().length > 0) {
+      throw new Error(`First boundary starts at ${firstStart}, missing content before`);
+    }
+
+    // Last boundary should end near text.length (allow trailing whitespace)
+    if (lastEnd < text.length && text.slice(lastEnd).trim().length > 0) {
+      throw new Error(`Last boundary ends at ${lastEnd}, missing content after`);
+    }
+
+    return boundaries;
   } catch (err) {
     logger.error({ err: err.message }, 'AI sentence detection failed');
     // Return null to trigger fallback
@@ -843,16 +874,52 @@ Respond with JSON only:
 
 /**
  * Get sentence boundaries using punctuation for Latin scripts
+ * Returns positions in the ORIGINAL text - never modifies content
  *
  * @param {string} text - Input text
- * @returns {string[]} Array of sentences
+ * @returns {Array<{start: number, end: number}>} Boundary positions
  */
-function getPunctuationSentences(text) {
-  // Split on sentence-ending punctuation followed by space or end
-  const pattern = /(?<=[.!?])\s+/;
-  const parts = text.split(pattern);
+function getPunctuationBoundaries(text) {
+  const boundaries = [];
+  const sentenceEnders = /[.!?]/g;
 
-  return parts
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  let lastEnd = 0;
+  let match;
+
+  while ((match = sentenceEnders.exec(text)) !== null) {
+    const punctPos = match.index;
+
+    // Find the end of this sentence (after punctuation and any trailing space)
+    let end = punctPos + 1;
+    while (end < text.length && /\s/.test(text[end])) {
+      end++;
+    }
+
+    // Only create boundary if there's content
+    if (punctPos >= lastEnd) {
+      boundaries.push({
+        start: lastEnd,
+        end: end
+      });
+      lastEnd = end;
+    }
+  }
+
+  // Handle remaining text after last punctuation
+  if (lastEnd < text.length) {
+    const remaining = text.slice(lastEnd).trim();
+    if (remaining.length > 0) {
+      boundaries.push({
+        start: lastEnd,
+        end: text.length
+      });
+    }
+  }
+
+  // If no boundaries found but text exists, treat as single sentence
+  if (boundaries.length === 0 && text.trim().length > 0) {
+    boundaries.push({ start: 0, end: text.length });
+  }
+
+  return boundaries;
 }

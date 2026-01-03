@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T03:17:59.787Z",
+  "generated": "2026-01-03T03:32:27.706Z",
   "entries": [
+    {
+      "hash": "543616a",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add strict validation for sentence markers",
+      "scope": null
+    },
     {
       "hash": "e855bbc",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
       "scope": null
-    },
-    {
-      "hash": "bc13e8c",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use aiService instead of chatCompletion for proper model resolution",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "543616a",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add strict validation for sentence markers",
+        "scope": null
+      },
       {
         "hash": "e855bbc",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
-        "scope": null
-      },
-      {
-        "hash": "bc13e8c",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use aiService instead of chatCompletion for proper model resolution",
         "scope": null
       }
     ]
