@@ -25,6 +25,7 @@ import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument } from '../services/ingester.js';
+import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { readFile, writeFile, rename, access } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
 import { join, dirname } from 'path';
@@ -1016,7 +1017,7 @@ Return ONLY the description text, no quotes or formatting.`;
         }
       }
     }
-  }, async (request) => {
+  }, async (request, reply) => {
     const { religion, collection, slug } = request.params;
     const { limit = 50, offset = 0 } = request.query;
     const isAuthenticated = !!request.user;
@@ -1057,18 +1058,14 @@ Return ONLY the description text, no quotes or formatting.`;
       `, [requestedPath]);
 
       if (redirect) {
-        // Update hit count
-        await query(`
+        // Update hit count (don't await - fire and forget for performance)
+        query(`
           UPDATE redirects SET hit_count = hit_count + 1, last_hit_at = datetime('now')
           WHERE old_path = ?
-        `, [requestedPath]);
+        `, [requestedPath]).catch(() => {});
 
-        // Return redirect response
-        return {
-          redirect: true,
-          statusCode: 308,
-          location: redirect.new_path
-        };
+        // HTTP 301 Moved Permanently - SEO friendly, browsers cache this
+        return reply.redirect(301, redirect.new_path);
       }
 
       throw ApiError.notFound('Document not found');
@@ -1258,6 +1255,10 @@ Return ONLY the description text, no quotes or formatting.`;
         `, [oldPath, newPath, id]);
 
         logger.info({ oldPath, newPath, docId: id }, 'Created URL redirect for document');
+
+        // Push to Cloudflare edge (async, non-blocking)
+        // Only executes if CLOUDFLARE_REDIRECTS_ENABLED=true
+        pushRedirect(oldPath, newPath).catch(() => {});
       } catch (err) {
         logger.warn({ err: err.message, oldPath, newPath }, 'Failed to create redirect');
       }

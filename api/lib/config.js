@@ -239,6 +239,18 @@ const publicApiConfig = {
   maxResults: getInt('PUBLIC_API_MAX_RESULTS', 50)
 };
 
+// Cloudflare configuration for edge redirects
+// Disabled during alpha - set CLOUDFLARE_REDIRECTS_ENABLED=true when ready
+const cloudflareConfig = {
+  enabled: getBool('CLOUDFLARE_REDIRECTS_ENABLED', false),
+  accountId: get('CLOUDFLARE_ACCOUNT_ID', 'b750d0f7242bbc76f115f72840453083'),
+  apiToken: get('CLOUDFLARE_API_TOKEN', ''),
+  // Bulk redirect list name - will be created if doesn't exist
+  redirectListName: get('CLOUDFLARE_REDIRECT_LIST_NAME', 'siftersearch-redirects'),
+  // Zone ID for the domain (needed for some redirect operations)
+  zoneId: get('CLOUDFLARE_ZONE_ID', '')
+};
+
 export const config = {
   isDevMode,
   isProduction,
@@ -251,6 +263,7 @@ export const config = {
   rateLimit: rateLimitConfig,
   library: libraryConfig,
   publicApi: publicApiConfig,
+  cloudflare: cloudflareConfig,
   get,
   getBool,
   getInt,

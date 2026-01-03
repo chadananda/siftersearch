@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T14:20:11.724Z",
+  "generated": "2026-01-03T14:41:03.707Z",
   "entries": [
+    {
+      "hash": "288cca6",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add redirect support for changed document URLs",
+      "scope": null
+    },
     {
       "hash": "b56aa6c",
       "date": "2026-01-02",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Add Bahá'í transliteration style to translation prompts",
       "scope": null
-    },
-    {
-      "hash": "23f8f13",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Use established religious terminology in translations",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-03": [
+      {
+        "hash": "288cca6",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add redirect support for changed document URLs",
+        "scope": null
+      }
+    ],
     "2026-01-02": [
       {
         "hash": "b56aa6c",
@@ -695,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add Bahá'í transliteration style to translation prompts",
-        "scope": null
-      },
-      {
-        "hash": "23f8f13",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Use established religious terminology in translations",
         "scope": null
       }
     ]

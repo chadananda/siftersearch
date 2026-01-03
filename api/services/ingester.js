@@ -14,6 +14,7 @@ import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
 import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
+import { pushRedirect } from '../lib/cloudflare-redirects.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -451,6 +452,10 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
             doc_id = excluded.doc_id
         `, [oldPath, newPath, finalDocId]);
         logger.info({ oldPath, newPath, docId: finalDocId }, 'Created URL redirect during ingestion');
+
+        // Push to Cloudflare edge (async, non-blocking)
+        // Only executes if CLOUDFLARE_REDIRECTS_ENABLED=true
+        pushRedirect(oldPath, newPath).catch(() => {});
       } catch (err) {
         logger.warn({ err: err.message, oldPath, newPath }, 'Failed to create redirect during ingestion');
       }
