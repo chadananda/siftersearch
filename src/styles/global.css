@@ -249,3 +249,29 @@ mark {
   color: inherit;
   font-weight: 500;
 }
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  /* Hide navbar except site logo/name */
+  nav.navbar .nav-center,
+  nav.navbar .nav-right,
+  nav.navbar .mobile-menu-btn,
+  nav.navbar .mobile-menu,
+  .navbar .nav-center,
+  .navbar .nav-right {
+    display: none !important;
+  }
+
+  /* Simplify navbar for print */
+  nav.navbar,
+  .navbar {
+    position: static !important;
+    background: white !important;
+    border-bottom: 1px solid #ddd !important;
+    box-shadow: none !important;
+    padding: 0.5rem 1rem !important;
+  }
+}

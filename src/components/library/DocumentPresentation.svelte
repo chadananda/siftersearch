@@ -455,8 +455,8 @@
       class:rtl={getLanguageDirection(document.language) === 'rtl'}
       class:bilingual={showBilingual}
     >
-      <!-- Document header - part of the paper -->
-      <header class="doc-header">
+      <!-- Document header - always LTR for simplicity -->
+      <header class="doc-header" dir="ltr">
         <nav class="breadcrumb" aria-label="Breadcrumb">
           <a href="/library">Library</a>
           {#if document.religion}
@@ -1404,9 +1404,11 @@
       padding-right: 0;
     }
 
-    /* Hide auth gate and load more in print */
+    /* Hide auth gate, load more, footer, and inline QR in print */
     .auth-gate,
-    .load-more-section {
+    .load-more-section,
+    .doc-footer,
+    .meta-qr {
       display: none !important;
     }
 

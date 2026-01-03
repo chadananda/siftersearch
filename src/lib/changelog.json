@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T01:18:57.960Z",
+  "generated": "2026-01-03T01:26:33.985Z",
   "entries": [
+    {
+      "hash": "76bf22f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "RTL paragraph numbers now appear on RIGHT side",
+      "scope": null
+    },
     {
       "hash": "1f274e3",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Resolve print view bugs and add translation script",
       "scope": null
-    },
-    {
-      "hash": "9155580",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add print views with phrase-level alignment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "76bf22f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "RTL paragraph numbers now appear on RIGHT side",
+        "scope": null
+      },
       {
         "hash": "1f274e3",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Resolve print view bugs and add translation script",
-        "scope": null
-      },
-      {
-        "hash": "9155580",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add print views with phrase-level alignment",
         "scope": null
       }
     ]
