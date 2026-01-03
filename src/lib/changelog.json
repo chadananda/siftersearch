@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T18:43:34.176Z",
+  "generated": "2026-01-03T18:46:47.174Z",
   "entries": [
+    {
+      "hash": "675a804",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add JWT auth middleware + translation job polling",
+      "scope": null
+    },
     {
       "hash": "f8551d9",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add generate-embeddings API endpoint for missing paragraphs",
       "scope": null
-    },
-    {
-      "hash": "7737f8b",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add /server/query-documents endpoint for flexible metadata queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "675a804",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add JWT auth middleware + translation job polling",
+        "scope": null
+      },
       {
         "hash": "f8551d9",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add generate-embeddings API endpoint for missing paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "7737f8b",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add /server/query-documents endpoint for flexible metadata queries",
         "scope": null
       }
     ]

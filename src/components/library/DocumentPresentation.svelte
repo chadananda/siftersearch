@@ -572,32 +572,51 @@
           </button>
         {/if}
         {#if isAdmin && isNonEnglish}
-          <button
-            class="util-btn translate"
-            class:active={translationJobId}
-            onclick={queueTranslation}
-            disabled={translationQueuing || translationJobId}
-            title={translationJobId ? `Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}` : 'Queue translation'}
-          >
-            {#if translationQueuing || translationJobId}
-              <svg class="spinner" viewBox="0 0 24 24" width="18" height="18">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+          {#if translationQueuing || translationJobId}
+            <!-- Circular progress indicator during translation -->
+            {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
+            {@const circumference = 2 * Math.PI * 15}
+            {@const strokeDashoffset = circumference - (progress / 100) * circumference}
+            <div class="progress-ring-container" title={`Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}`}>
+              <svg class="progress-ring" viewBox="0 0 36 36">
+                <!-- Background circle -->
+                <circle
+                  class="progress-ring-bg"
+                  cx="18" cy="18" r="15"
+                  fill="none"
+                  stroke-width="3"
+                />
+                <!-- Progress arc -->
+                <circle
+                  class="progress-ring-progress"
+                  cx="18" cy="18" r="15"
+                  fill="none"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-dasharray={circumference}
+                  stroke-dashoffset={strokeDashoffset}
+                  transform="rotate(-90 18 18)"
+                />
               </svg>
-              {#if translationProgress?.total > 0}
-                <span class="progress-text">{translationProgress.progress}/{translationProgress.total}</span>
-              {/if}
-            {:else}
+              <span class="progress-ring-text">{Math.round(progress)}%</span>
+            </div>
+          {:else}
+            <button
+              class="util-btn translate"
+              onclick={queueTranslation}
+              title="Queue translation"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
               </svg>
-            {/if}
-          </button>
+            </button>
+          {/if}
         {/if}
       </div>
 
-      <!-- View mode toggle group -->
-      {#if isNonEnglish && hasTranslations}
+      <!-- View mode toggle group - always show for non-English docs -->
+      {#if isNonEnglish}
         <div class="util-divider"></div>
         <div class="view-mode-group">
           <button
@@ -609,17 +628,20 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 6h16M4 12h16M4 18h10"/>
             </svg>
+            <span class="mode-label">Base</span>
           </button>
           <button
             class="mode-btn"
             class:active={viewMode === 'sbs'}
-            onclick={() => viewMode = 'sbs'}
-            title="Side-by-side translation"
+            class:disabled={!hasTranslations}
+            onclick={() => hasTranslations && (viewMode = 'sbs')}
+            title={hasTranslations ? 'Side-by-side translation' : 'No translations available yet'}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="18" rx="1"/>
               <rect x="14" y="3" width="7" height="18" rx="1"/>
             </svg>
+            <span class="mode-label">SBS</span>
           </button>
           <button
             class="mode-btn"
@@ -632,6 +654,7 @@
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>
+            <span class="mode-label">Study</span>
           </button>
         </div>
       {/if}
@@ -1116,10 +1139,41 @@
     cursor: wait;
   }
 
-  .util-btn.translate .progress-text {
-    font-size: 0.6rem;
-    font-weight: 600;
-    line-height: 1;
+  /* Circular progress ring */
+  .progress-ring-container {
+    width: 2.5rem;
+    height: 2.5rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-ring {
+    width: 2rem;
+    height: 2rem;
+    transform: rotate(-90deg);
+  }
+
+  .progress-ring-bg {
+    stroke: #e5e7eb;
+  }
+
+  .progress-ring-progress {
+    stroke: #10b981;
+    transition: stroke-dashoffset 0.3s ease;
+  }
+
+  .progress-ring-text {
+    position: absolute;
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: #10b981;
+    font-family: system-ui, -apple-system, sans-serif;
   }
 
   /* View mode toggle group */
@@ -1135,10 +1189,14 @@
 
   .mode-btn {
     width: 2.5rem;
-    height: 2.25rem;
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.375rem 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.125rem;
     background: white;
     border: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -1162,7 +1220,7 @@
   }
 
   .mode-btn.disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
   }
 
@@ -1172,8 +1230,16 @@
   }
 
   .mode-btn svg {
-    width: 1.125rem;
-    height: 1.125rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .mode-btn .mode-label {
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-family: system-ui, -apple-system, sans-serif;
   }
 
   /* Para anchor button in bilingual/study modes */
@@ -2001,8 +2067,10 @@
     }
 
     .mode-btn {
-      width: 2rem;
-      height: 2rem;
+      width: auto;
+      min-width: 2.25rem;
+      min-height: 2rem;
+      padding: 0.25rem 0.375rem;
       border-bottom: none;
       border-right: 1px solid rgba(0, 0, 0, 0.06);
     }
@@ -2012,8 +2080,27 @@
     }
 
     .mode-btn svg {
-      width: 0.875rem;
-      height: 0.875rem;
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    .mode-btn .mode-label {
+      font-size: 0.4375rem;
+    }
+
+    /* Progress ring mobile */
+    .progress-ring-container {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .progress-ring {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .progress-ring-text {
+      font-size: 0.4rem;
     }
 
     /* Study mode mobile */
