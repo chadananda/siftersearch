@@ -484,9 +484,16 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
         translatedCount++;
 
+        // Update progress after EACH paragraph for responsive UI
+        await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
+          progress: translatedCount,
+          totalItems: totalParagraphs
+        });
+
         logger.debug({
           paraId: para.id,
           paragraphIndex: para.paragraph_index,
+          progress: `${translatedCount}/${totalParagraphs}`,
           reading: needsReading ? 'generated' : 'skipped',
           study: needsStudy ? 'generated' : 'skipped'
         }, 'Paragraph translated');
@@ -499,12 +506,6 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         }, 'Failed to translate paragraph');
       }
     }
-
-    // Update job progress after each wave
-    await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
-      progress: translatedCount,
-      totalItems: totalParagraphs
-    });
 
     logger.info({
       jobId: job.id,

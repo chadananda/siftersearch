@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:19:30.257Z",
+  "generated": "2026-01-03T19:34:07.274Z",
   "entries": [
+    {
+      "hash": "2719520",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add URL-style breadcrumb header and job queue monitoring API",
+      "scope": null
+    },
     {
       "hash": "7216d9c",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
       "scope": null
-    },
-    {
-      "hash": "4894304",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "2719520",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add URL-style breadcrumb header and job queue monitoring API",
+        "scope": null
+      },
       {
         "hash": "7216d9c",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
-        "scope": null
-      },
-      {
-        "hash": "4894304",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
         "scope": null
       }
     ]
