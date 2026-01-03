@@ -1140,7 +1140,8 @@
   .utility-bar {
     position: fixed;
     top: 5rem;
-    right: 1.5rem;
+    /* Center buttons in the 5rem right margin: (5rem - 2.5rem button) / 2 = 1.25rem from edge */
+    right: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:49:01.484Z",
+  "generated": "2026-01-03T19:52:13.709Z",
   "entries": [
+    {
+      "hash": "8146562",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Responsive right margin for utility bar - prevent content overlap",
+      "scope": null
+    },
     {
       "hash": "2c8898f",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add metadata JSON column and encumbered field for docs",
       "scope": null
-    },
-    {
-      "hash": "db40b19",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add semantic URLs for library documents with SEO hierarchy pages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "8146562",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Responsive right margin for utility bar - prevent content overlap",
+        "scope": null
+      },
       {
         "hash": "2c8898f",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add metadata JSON column and encumbered field for docs",
-        "scope": null
-      },
-      {
-        "hash": "db40b19",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add semantic URLs for library documents with SEO hierarchy pages",
         "scope": null
       }
     ]
