@@ -21,6 +21,7 @@ import {
 import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { getSentences, stripMarkers, hasMarkers } from '../lib/markers.js';
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = {
@@ -303,6 +304,23 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     const translations = await Promise.all(
       batch.map(async (para) => {
         try {
+          // Check if text has sentence markers - use them for segment-level translation
+          if (hasMarkers(para.text)) {
+            const result = await translateMarkedText(
+              para.text,
+              sourceLang,
+              'en',
+              contentType
+            );
+            return {
+              id: para.id,
+              translation: result.translation,
+              segments: result.segments,
+              success: true
+            };
+          }
+
+          // No markers - fall back to AI-based segmentation
           const result = await translateTextWithSegments(
             para.text,
             sourceLang,
@@ -744,6 +762,56 @@ async function translateTextWithSegments(text, sourceLang, targetLang, contentTy
   }));
 
   const fullTranslation = segments.map(s => s.translation).join(' ');
+
+  return {
+    translation: fullTranslation,
+    segments
+  };
+}
+
+/**
+ * Translate text that has sentence markers
+ * Uses pre-existing ⁅s1⁆...⁅/s1⁆ markers for segment boundaries
+ *
+ * Returns { translation: string, segments: { s1: {...}, s2: {...} } }
+ */
+async function translateMarkedText(text, sourceLang, targetLang, contentType = 'auto') {
+  // Extract sentences using markers
+  const sentences = getSentences(text);
+
+  if (sentences.length === 0) {
+    // No sentences found - translate as whole
+    const translation = await translateText(stripMarkers(text), sourceLang, targetLang, 'high', contentType);
+    return { translation, segments: null };
+  }
+
+  // Translate each sentence individually
+  const segments = {};
+  const translatedSentences = [];
+
+  for (const sentence of sentences) {
+    const key = `s${sentence.id}`;
+    try {
+      const translation = await translateText(sentence.text, sourceLang, targetLang, 'high', contentType);
+      segments[key] = {
+        original: sentence.text,
+        text: translation
+      };
+      translatedSentences.push(translation);
+    } catch (err) {
+      logger.warn({ sentenceId: sentence.id, err: err.message }, 'Failed to translate sentence');
+      // Keep original on failure
+      segments[key] = {
+        original: sentence.text,
+        text: sentence.text,
+        error: err.message
+      };
+      translatedSentences.push(sentence.text);
+    }
+  }
+
+  // Join translations for full paragraph translation
+  const fullTranslation = translatedSentences.join(' ');
 
   return {
     translation: fullTranslation,

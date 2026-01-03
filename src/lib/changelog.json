@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T02:04:32.969Z",
+  "generated": "2026-01-03T03:09:49.006Z",
   "entries": [
+    {
+      "hash": "4cf01e6",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Remove page-break-after from print header styles",
+      "scope": null
+    },
     {
       "hash": "726db88",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Standardize content table on doc_id, remove document_id column",
       "scope": null
-    },
-    {
-      "hash": "dcd7408",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Standardize on doc_id column, remove document_id references",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "4cf01e6",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Remove page-break-after from print header styles",
+        "scope": null
+      },
       {
         "hash": "726db88",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Standardize content table on doc_id, remove document_id column",
-        "scope": null
-      },
-      {
-        "hash": "dcd7408",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Standardize on doc_id column, remove document_id references",
         "scope": null
       }
     ]

@@ -12,7 +12,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
-import { segmentBlocks, detectLanguageFeatures } from './segmenter.js';
+import { segmentBlocks, detectLanguageFeatures, addSentenceMarkers } from './segmenter.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -310,6 +310,24 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       error: 'No content to index'
     };
   }
+
+  // Add sentence markers to each paragraph for translation segment support
+  // This enables per-sentence translations and URL anchors
+  let totalSentences = 0;
+  for (const chunk of chunks) {
+    try {
+      const { text: markedText, sentenceCount } = await addSentenceMarkers(chunk.text, {
+        language: finalMeta.language
+      });
+      chunk.text = markedText;
+      totalSentences += sentenceCount;
+    } catch (err) {
+      // If marking fails, keep original text (single-sentence fallback handled in addSentenceMarkers)
+      logger.warn({ err: err.message }, 'Failed to add sentence markers, keeping original');
+    }
+  }
+
+  logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers');
 
   // Use existing document ID if updating
   const finalDocId = existingDoc ? existingDoc.id : documentId;

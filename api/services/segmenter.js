@@ -12,6 +12,7 @@
 
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
+import { wrapSentence, stripMarkers, validateMarkers } from '../lib/markers.js';
 
 /**
  * Configuration for segmentation
@@ -679,4 +680,169 @@ export async function segmentBlocks(blocks, options = {}) {
   }
 
   return chunks;
+}
+
+/**
+ * Add sentence markers to text
+ *
+ * Uses AI for Arabic/Persian texts, punctuation rules for Latin scripts.
+ * Returns text with ⁅s1⁆...⁅/s1⁆ markers identifying sentence boundaries.
+ *
+ * @param {string} text - Input paragraph text
+ * @param {object} options - Options
+ * @returns {Promise<{text: string, sentenceCount: number}>}
+ */
+export async function addSentenceMarkers(text, options = {}) {
+  if (!text || typeof text !== 'string') {
+    return { text: '', sentenceCount: 0 };
+  }
+
+  const features = detectLanguageFeatures(text);
+  const language = options.language || features.language;
+
+  // Skip if already has markers
+  if (text.includes('\u2045')) {
+    logger.debug('Text already has markers, skipping');
+    return { text, sentenceCount: (text.match(/⁅s\d+⁆/g) || []).length };
+  }
+
+  let sentences;
+
+  if (features.isRTL) {
+    // Use AI for Arabic/Persian - punctuation rules don't apply
+    sentences = await getAISentenceBoundaries(text, language);
+  } else {
+    // Use punctuation rules for Latin scripts
+    sentences = getPunctuationSentences(text);
+  }
+
+  if (!sentences || sentences.length === 0) {
+    // No sentences found - treat entire text as one sentence
+    const marked = wrapSentence(text, 1);
+    return { text: marked, sentenceCount: 1 };
+  }
+
+  // Build marked text by wrapping each sentence
+  const markedSentences = sentences.map((s, i) => wrapSentence(s, i + 1));
+  const markedText = markedSentences.join(' ');
+
+  // Validate marker integrity
+  const validation = validateMarkers(markedText);
+  if (!validation.valid) {
+    logger.error({ errors: validation.errors }, 'Marker validation failed');
+    // Fall back to single sentence
+    const fallback = wrapSentence(text, 1);
+    return { text: fallback, sentenceCount: 1 };
+  }
+
+  // Verify text integrity (content should match after stripping markers)
+  const stripped = stripMarkers(markedText);
+  const originalNorm = text.replace(/\s+/g, ' ').trim();
+  const strippedNorm = stripped.replace(/\s+/g, ' ').trim();
+
+  if (originalNorm !== strippedNorm) {
+    logger.warn({
+      originalLength: originalNorm.length,
+      strippedLength: strippedNorm.length
+    }, 'Text mismatch after marking - using original as single sentence');
+    const fallback = wrapSentence(text, 1);
+    return { text: fallback, sentenceCount: 1 };
+  }
+
+  return {
+    text: markedText,
+    sentenceCount: sentences.length
+  };
+}
+
+/**
+ * Get sentence boundaries using AI for RTL text
+ *
+ * @param {string} text - Input text
+ * @param {string} language - Language code (ar, fa)
+ * @returns {Promise<string[]>} Array of sentences
+ */
+async function getAISentenceBoundaries(text, language) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  const systemPrompt = `You are an expert in ${languageHint} text analysis. Your task is to identify sentence boundaries in classical/religious texts.
+
+## WHAT IS A SENTENCE
+A sentence is a complete thought or statement. In Arabic/Persian texts without punctuation, look for:
+- Complete grammatical clauses
+- Natural pause points in recitation
+- Shifts in subject or topic within a verse
+- End of an invocation or blessing
+
+## RESPONSE FORMAT
+Return a JSON array of strings, where each string is one complete sentence.
+Copy the exact text - do not modify spelling, diacritics, or spacing.
+
+## IMPORTANT
+- Never split in the middle of a word
+- Keep divine names and attributes together
+- Preserve blessing formulas as complete units (صلى الله عليه وسلم, etc.)`;
+
+  const userPrompt = `Identify the sentence boundaries in this ${languageHint} text.
+
+TEXT:
+${text}
+
+Respond with JSON only:
+{"sentences": ["first sentence...", "second sentence...", ...]}`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], {
+      temperature: 0.1,
+      max_tokens: 2000
+    });
+
+    const content = response.content || response;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error('No JSON in response');
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
+    const sentences = result.sentences || [];
+
+    // Validate that sentences reconstruct the original
+    const joined = sentences.join(' ').replace(/\s+/g, ' ').trim();
+    const originalNorm = text.replace(/\s+/g, ' ').trim();
+
+    if (joined !== originalNorm) {
+      logger.warn('AI sentences do not match original text');
+      // Try to use them anyway if they're close
+      const diff = Math.abs(joined.length - originalNorm.length);
+      if (diff > originalNorm.length * 0.05) {
+        throw new Error('AI output differs too much from original');
+      }
+    }
+
+    return sentences;
+  } catch (err) {
+    logger.error({ err: err.message }, 'AI sentence detection failed');
+    // Return null to trigger fallback
+    return null;
+  }
+}
+
+/**
+ * Get sentence boundaries using punctuation for Latin scripts
+ *
+ * @param {string} text - Input text
+ * @returns {string[]} Array of sentences
+ */
+function getPunctuationSentences(text) {
+  // Split on sentence-ending punctuation followed by space or end
+  const pattern = /(?<=[.!?])\s+/;
+  const parts = text.split(pattern);
+
+  return parts
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 }

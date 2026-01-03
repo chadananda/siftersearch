@@ -64,20 +64,34 @@
 
   const BATCH_SIZE = 50;
 
+  // Sentence anchor state
+  let anchorSentence = $state(null);
+
   /**
-   * Parse URL hash for paragraph anchors
-   * Supports: #p5, #5, #p5-10, #5-10
+   * Parse URL hash for paragraph and sentence anchors
+   * Supports: #p5, #5, #p5-10, #5-10, #p5.s2 (sentence 2 in paragraph 5)
    */
   function parseAnchor() {
     if (typeof window === 'undefined') return;
     const hash = window.location.hash;
     if (!hash) return;
 
+    // Match sentence anchor: #p5.s2
+    const sentenceMatch = hash.match(/^#p?(\d+)\.s(\d+)$/);
+    if (sentenceMatch) {
+      anchorStart = parseInt(sentenceMatch[1], 10);
+      anchorEnd = anchorStart;
+      anchorSentence = parseInt(sentenceMatch[2], 10);
+      highlightedParagraphs = new Set([anchorStart]);
+      return;
+    }
+
     // Match patterns: #p5, #5, #p5-10, #5-10
     const match = hash.match(/^#p?(\d+)(?:-(\d+))?$/);
     if (match) {
       anchorStart = parseInt(match[1], 10);
       anchorEnd = match[2] ? parseInt(match[2], 10) : anchorStart;
+      anchorSentence = null;
 
       // Build set of highlighted paragraphs
       const highlighted = new Set();
@@ -294,9 +308,20 @@
     await loadDocument();
   }
 
+  /**
+   * Strip sentence/phrase markers from text for display
+   * Markers use Unicode brackets: ⁅s1⁆...⁅/s1⁆
+   */
+  function stripMarkers(text) {
+    if (!text) return text;
+    return text.replace(/⁅\/?[sp]\d+⁆/g, '');
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
-    return marked.parse(text);
+    // Strip sentence markers before rendering
+    const clean = stripMarkers(text);
+    return marked.parse(clean);
   }
 
   function getLanguageDirection(lang) {
