@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T15:14:29.947Z",
+  "generated": "2026-01-03T15:16:36.146Z",
   "entries": [
+    {
+      "hash": "19579fa",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Allow internal API key for document updates",
+      "scope": null
+    },
     {
       "hash": "8991268",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Restore middle number column in SBS bilingual view",
       "scope": null
-    },
-    {
-      "hash": "f04a970",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Prevent collection filter input from clearing on each keystroke",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "19579fa",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Allow internal API key for document updates",
+        "scope": null
+      },
       {
         "hash": "8991268",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Restore middle number column in SBS bilingual view",
-        "scope": null
-      },
-      {
-        "hash": "f04a970",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Prevent collection filter input from clearing on each keystroke",
         "scope": null
       }
     ]

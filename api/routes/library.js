@@ -1065,7 +1065,7 @@ Return ONLY the description text, no quotes or formatting.`;
         `, [requestedPath]).catch(() => {});
 
         // HTTP 301 Moved Permanently - SEO friendly, browsers cache this
-        return reply.redirect(301, redirect.new_path);
+        return reply.redirect(redirect.new_path, 301);
       }
 
       throw ApiError.notFound('Document not found');
