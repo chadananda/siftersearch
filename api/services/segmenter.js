@@ -1609,3 +1609,486 @@ export async function batchAddSentenceMarkers(paragraphs, language) {
 
   return results;
 }
+
+/**
+ * Segment an entire document into sentences, then group into paragraphs.
+ *
+ * For UNPUNCTUATED texts (classical Arabic/Farsi), this is the correct order:
+ * 1. First detect ALL sentence boundaries (semantic units)
+ * 2. Then group sentences into paragraphs (by topic)
+ *
+ * Uses a streaming approach for large documents:
+ * - Process in chunks (~10-15k chars)
+ * - Detect sentences in each chunk
+ * - Peel off complete paragraphs (clear topic shifts)
+ * - Carry incomplete final paragraph sentences to next chunk
+ *
+ * @param {string} text - Entire document text
+ * @param {object} options - Options
+ * @returns {Promise<{sentences: string[], paragraphs: Array<{text: string, sentences: string[], sentenceCount: number}>}>}
+ */
+export async function segmentUnpunctuatedDocument(text, options = {}) {
+  const { language = 'ar', chunkSize = 10000 } = options;
+
+  if (!text || !text.trim()) {
+    return { sentences: [], paragraphs: [] };
+  }
+
+  const cleanText = text.replace(/\s+/g, ' ').trim();
+
+  logger.info({ textLength: cleanText.length, language, chunkSize }, 'Segmenting unpunctuated document');
+
+  // For small documents, process in one go
+  if (cleanText.length <= chunkSize) {
+    const sentences = await detectSentencesInChunk(cleanText, language, 3);
+    const paragraphs = await groupSentencesIntoParagraphs(sentences, language);
+    return { sentences, paragraphs };
+  }
+
+  // Stream through large documents
+  const allParagraphs = [];
+  const allSentences = [];
+  let carryoverSentences = []; // Sentences from incomplete paragraph
+  let position = 0;
+
+  while (position < cleanText.length) {
+    // Get next chunk, trying to break at whitespace
+    let chunkEnd = Math.min(position + chunkSize, cleanText.length);
+    if (chunkEnd < cleanText.length) {
+      const lastSpace = cleanText.lastIndexOf(' ', chunkEnd);
+      if (lastSpace > position + chunkSize * 0.7) {
+        chunkEnd = lastSpace;
+      }
+    }
+
+    const chunk = cleanText.slice(position, chunkEnd);
+    const isLastChunk = chunkEnd >= cleanText.length;
+
+    logger.debug({
+      position,
+      chunkEnd,
+      chunkLength: chunk.length,
+      carryover: carryoverSentences.length,
+      isLastChunk
+    }, 'Processing chunk');
+
+    // Detect sentences in this chunk
+    const chunkSentences = await detectSentencesInChunk(chunk, language, 3);
+
+    // Combine with carryover from previous chunk
+    const combinedSentences = [...carryoverSentences, ...chunkSentences];
+
+    if (isLastChunk) {
+      // Last chunk: group all remaining sentences into paragraphs
+      const paragraphs = await groupSentencesIntoParagraphs(combinedSentences, language);
+      allParagraphs.push(...paragraphs);
+      allSentences.push(...combinedSentences);
+    } else {
+      // Not last chunk: find complete paragraphs and carry over the rest
+      const { complete, incomplete } = await splitCompleteParagraphs(combinedSentences, language);
+
+      allParagraphs.push(...complete);
+      for (const p of complete) {
+        allSentences.push(...p.sentences);
+      }
+
+      // Carry over incomplete paragraph's sentences to next iteration
+      carryoverSentences = incomplete;
+    }
+
+    position = chunkEnd;
+  }
+
+  logger.info({
+    totalSentences: allSentences.length,
+    totalParagraphs: allParagraphs.length
+  }, 'Document segmentation complete');
+
+  return { sentences: allSentences, paragraphs: allParagraphs };
+}
+
+/**
+ * Split sentences into complete paragraphs and incomplete remainder
+ */
+async function splitCompleteParagraphs(sentences, language) {
+  if (sentences.length <= 3) {
+    // Not enough to determine paragraph breaks - carry all forward
+    return { complete: [], incomplete: sentences };
+  }
+
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  const systemPrompt = `You are analyzing classical ${languageHint} religious text.
+
+Identify COMPLETE paragraphs - groups of sentences on the same topic that have a clear ending.
+The LAST group of sentences may be INCOMPLETE (topic continues beyond what you can see).
+
+Return which paragraphs are COMPLETE (ended) vs the final INCOMPLETE group.`;
+
+  const userPrompt = `These sentences are from a larger document. Find complete paragraphs.
+
+SENTENCES:
+${sentences.map((s, i) => `[${i}] ${s.slice(0, 80)}${s.length > 80 ? '...' : ''}`).join('\n')}
+
+Return JSON:
+{
+  "complete": [[0,1,2], [3,4,5]],  // Groups that are complete paragraphs
+  "incomplete": [6,7,8]            // Indices of sentences that might continue in next chunk
+}`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], { temperature: 0.1, max_tokens: 2000 });
+
+    const content = response.content || response;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0].replace(/,\s*}/g, '}').replace(/,\s*]/g, ']'));
+
+      const complete = (result.complete || []).map(indices => {
+        const paraSentences = indices.filter(i => i >= 0 && i < sentences.length).map(i => sentences[i]);
+        return {
+          text: paraSentences.join(' '),
+          sentences: paraSentences,
+          sentenceCount: paraSentences.length
+        };
+      }).filter(p => p.sentenceCount > 0);
+
+      const incompleteIndices = result.incomplete || [];
+      const incomplete = incompleteIndices.filter(i => i >= 0 && i < sentences.length).map(i => sentences[i]);
+
+      return { complete, incomplete };
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to split paragraphs, using heuristic');
+  }
+
+  // Fallback: keep last 3 sentences as potentially incomplete
+  const splitPoint = Math.max(0, sentences.length - 3);
+  const completeSentences = sentences.slice(0, splitPoint);
+  const incompleteSentences = sentences.slice(splitPoint);
+
+  // Group complete sentences into paragraphs of ~4
+  const complete = [];
+  for (let i = 0; i < completeSentences.length; i += 4) {
+    const paraSentences = completeSentences.slice(i, i + 4);
+    if (paraSentences.length > 0) {
+      complete.push({
+        text: paraSentences.join(' '),
+        sentences: paraSentences,
+        sentenceCount: paraSentences.length
+      });
+    }
+  }
+
+  return { complete, incomplete: incompleteSentences };
+}
+
+/**
+ * Detect all sentences in a document, processing in chunks if needed
+ */
+async function detectDocumentSentences(text, language, maxCharsPerBatch) {
+  const maxRetries = 3;
+
+  // For manageable texts, process in one call
+  if (text.length <= maxCharsPerBatch) {
+    return await detectSentencesInChunk(text, language, maxRetries);
+  }
+
+  // For large texts, process in overlapping chunks to avoid breaking sentences
+  const chunks = splitIntoChunks(text, maxCharsPerBatch, 200); // 200 char overlap
+  const allSentences = [];
+  let processedEnd = 0;
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const chunkSentences = await detectSentencesInChunk(chunk.text, language, maxRetries);
+
+    // For first chunk, take all sentences
+    // For subsequent chunks, skip sentences that overlap with previous chunk
+    for (const sentence of chunkSentences) {
+      const globalStart = chunk.start + (chunk.text.indexOf(sentence) || 0);
+      if (globalStart >= processedEnd) {
+        allSentences.push(sentence);
+        processedEnd = globalStart + sentence.length;
+      }
+    }
+  }
+
+  return allSentences;
+}
+
+/**
+ * Split text into chunks with overlap to avoid breaking sentences
+ */
+function splitIntoChunks(text, maxSize, overlap) {
+  const chunks = [];
+  let start = 0;
+
+  while (start < text.length) {
+    let end = Math.min(start + maxSize, text.length);
+
+    // Try to find a good break point (whitespace) near the end
+    if (end < text.length) {
+      const lastSpace = text.lastIndexOf(' ', end);
+      if (lastSpace > start + maxSize * 0.8) {
+        end = lastSpace;
+      }
+    }
+
+    chunks.push({
+      text: text.slice(start, end),
+      start: start,
+      end: end
+    });
+
+    // Next chunk starts before the end for overlap
+    start = end - overlap;
+    if (start < 0) start = 0;
+    if (start >= text.length) break;
+  }
+
+  return chunks;
+}
+
+/**
+ * Detect sentences in a single chunk of text using ending words approach
+ * Returns array of sentence texts extracted from the chunk
+ */
+async function detectSentencesInChunk(text, language, maxRetries) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
+
+Find ALL sentence boundaries by MEANING. Return the LAST 3-5 WORDS of each sentence.
+
+Sentence boundaries:
+- Complete invocations (بسم الله الرحمن الرحيم)
+- Divine attributes (هو العزيز الحكيم)
+- Address changes (يا أيها...)
+- Topic/subject shifts
+- Complete commands
+
+Return JSON array of ending phrases.`;
+
+  const userPrompt = `Find ALL sentence endings in this UNPUNCTUATED ${languageHint} text.
+Return the LAST 3-5 WORDS of each sentence exactly as written.
+
+TEXT:
+${text}
+
+Return JSON array:
+["last words of sentence 1", "last words of sentence 2", ...]`;
+
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await aiService('quality', { forceRemote: true }).chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ], {
+        temperature: 0.1 + (attempt - 1) * 0.1,
+        max_tokens: 4000
+      });
+
+      const content = response.content || response;
+
+      // Extract JSON array
+      let jsonStr = null;
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      }
+      if (!jsonStr) {
+        const arrayMatch = content.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+          jsonStr = arrayMatch[0];
+        }
+      }
+
+      if (!jsonStr) {
+        throw new Error('No JSON array in AI response');
+      }
+
+      jsonStr = jsonStr.replace(/,\s*]/g, ']');
+      const endings = JSON.parse(jsonStr);
+
+      if (!Array.isArray(endings) || endings.length === 0) {
+        throw new Error('Invalid endings array');
+      }
+
+      // Convert endings to actual sentences by finding them in the text
+      const sentences = extractSentencesFromEndings(text, endings);
+
+      if (sentences.length > 0) {
+        return sentences;
+      }
+
+      throw new Error('No sentences extracted from endings');
+
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        logger.warn({ err: err.message, attempt }, 'Sentence detection failed, retrying...');
+        await new Promise(r => setTimeout(r, 500 * attempt));
+      }
+    }
+  }
+
+  logger.error({ err: lastError?.message }, 'Sentence detection failed after all retries');
+
+  // Fallback: treat entire chunk as one sentence
+  return [text.trim()];
+}
+
+/**
+ * Extract actual sentences from text using ending phrases
+ */
+function extractSentencesFromEndings(text, endings) {
+  const sentences = [];
+  let searchStart = 0;
+  const normalizedText = normalizeArabic(text);
+
+  for (const ending of endings) {
+    if (!ending || typeof ending !== 'string') continue;
+
+    const normalizedEnding = normalizeArabic(ending.trim());
+    if (!normalizedEnding) continue;
+
+    // Find ending in normalized text
+    let pos = normalizedText.indexOf(normalizedEnding, searchStart);
+    if (pos === -1) {
+      // Try finding with partial match (last 2-3 words)
+      const words = normalizedEnding.split(' ');
+      if (words.length >= 2) {
+        const partialEnding = words.slice(-2).join(' ');
+        pos = normalizedText.indexOf(partialEnding, searchStart);
+      }
+    }
+
+    if (pos !== -1) {
+      // Convert normalized position to original position
+      const origStart = normalizedPosToOriginal(text, searchStart);
+      const origEnd = normalizedPosToOriginal(text, pos + normalizedEnding.length);
+
+      // Extract sentence from original text
+      const sentence = text.slice(origStart, origEnd).trim();
+      if (sentence) {
+        sentences.push(sentence);
+        searchStart = pos + normalizedEnding.length;
+      }
+    }
+  }
+
+  // Handle any remaining text after last ending
+  if (searchStart < normalizedText.length) {
+    const remaining = text.slice(normalizedPosToOriginal(text, searchStart)).trim();
+    if (remaining.length > 20) {
+      sentences.push(remaining);
+    }
+  }
+
+  return sentences;
+}
+
+/**
+ * Group sentences into paragraphs by topic
+ */
+async function groupSentencesIntoParagraphs(sentences, language) {
+  if (sentences.length === 0) {
+    return [];
+  }
+
+  if (sentences.length <= 3) {
+    // Too few sentences for paragraph grouping
+    return [{
+      text: sentences.join(' '),
+      sentences: sentences,
+      sentenceCount: sentences.length
+    }];
+  }
+
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  const systemPrompt = `You are an expert in classical ${languageHint} religious texts.
+
+Group these sentences into paragraphs based on TOPIC. A paragraph is a set of sentences about the same subject or theme.
+
+Start a new paragraph when:
+- The topic or subject changes
+- A new section or prayer begins
+- The addressee changes
+- A new argument or point is introduced
+
+Return the paragraph groupings as indices.`;
+
+  const userPrompt = `Group these ${sentences.length} sentences into paragraphs by topic.
+
+SENTENCES:
+${sentences.map((s, i) => `[${i}] ${s.slice(0, 100)}${s.length > 100 ? '...' : ''}`).join('\n')}
+
+Return JSON array of paragraph groups (each group is array of sentence indices):
+[[0, 1, 2], [3, 4], [5, 6, 7, 8], ...]`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], {
+      temperature: 0.1,
+      max_tokens: 4000
+    });
+
+    const content = response.content || response;
+
+    // Extract JSON
+    let jsonStr = null;
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    }
+    if (!jsonStr) {
+      const arrayMatch = content.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        jsonStr = arrayMatch[0];
+      }
+    }
+
+    if (jsonStr) {
+      jsonStr = jsonStr.replace(/,\s*]/g, ']');
+      const groups = JSON.parse(jsonStr);
+
+      if (Array.isArray(groups) && groups.length > 0) {
+        return groups.map(indices => {
+          const paraSentences = indices
+            .filter(i => i >= 0 && i < sentences.length)
+            .map(i => sentences[i]);
+          return {
+            text: paraSentences.join(' '),
+            sentences: paraSentences,
+            sentenceCount: paraSentences.length
+          };
+        }).filter(p => p.sentenceCount > 0);
+      }
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Paragraph grouping failed, using default grouping');
+  }
+
+  // Fallback: group every 3-5 sentences into a paragraph
+  const paragraphs = [];
+  const groupSize = 4;
+  for (let i = 0; i < sentences.length; i += groupSize) {
+    const paraSentences = sentences.slice(i, i + groupSize);
+    paragraphs.push({
+      text: paraSentences.join(' '),
+      sentences: paraSentences,
+      sentenceCount: paraSentences.length
+    });
+  }
+  return paragraphs;
+}

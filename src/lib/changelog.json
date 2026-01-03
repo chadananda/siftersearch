@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-03T05:14:03.346Z",
+  "generated": "2026-01-03T05:41:21.956Z",
   "entries": [
+    {
+      "hash": "60740e9",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add retry logic and sanity caps for sentence detection",
+      "scope": null
+    },
+    {
+      "hash": "fc0198c",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve Arabic sentence detection for unpunctuated texts",
+      "scope": null
+    },
     {
       "hash": "e3053e8",
       "date": "2026-01-02",
@@ -336,24 +350,24 @@
       "type": "New",
       "description": "Add bulk translation management endpoints",
       "scope": null
-    },
-    {
-      "hash": "bd2dd6c",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Allow internal key auth for test-segment-translation endpoint",
-      "scope": null
-    },
-    {
-      "hash": "0c8455e",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add test-segment-translation endpoint for verifying phrase alignment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "60740e9",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add retry logic and sanity caps for sentence detection",
+        "scope": null
+      },
+      {
+        "hash": "fc0198c",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve Arabic sentence detection for unpunctuated texts",
+        "scope": null
+      },
       {
         "hash": "e3053e8",
         "date": "2026-01-02",
@@ -690,20 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add bulk translation management endpoints",
-        "scope": null
-      },
-      {
-        "hash": "bd2dd6c",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Allow internal key auth for test-segment-translation endpoint",
-        "scope": null
-      },
-      {
-        "hash": "0c8455e",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add test-segment-translation endpoint for verifying phrase alignment",
         "scope": null
       }
     ]
