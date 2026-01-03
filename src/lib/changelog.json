@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T01:40:24.401Z",
+  "generated": "2026-01-03T01:46:12.240Z",
   "entries": [
+    {
+      "hash": "afdceba",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Print view shows logo and site name, hides nav links/version",
+      "scope": null
+    },
     {
       "hash": "86de2ef",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use doc_id column in populate-content endpoint",
       "scope": null
-    },
-    {
-      "hash": "d1bb49b",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add translatable-docs endpoint for debugging",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "afdceba",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Print view shows logo and site name, hides nav links/version",
+        "scope": null
+      },
       {
         "hash": "86de2ef",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use doc_id column in populate-content endpoint",
-        "scope": null
-      },
-      {
-        "hash": "d1bb49b",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add translatable-docs endpoint for debugging",
         "scope": null
       }
     ]

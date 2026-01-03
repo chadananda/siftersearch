@@ -457,6 +457,24 @@
     >
       <!-- Document header - always LTR for simplicity -->
       <header class="doc-header" dir="ltr">
+        <!-- Large decorative background logo -->
+        <div class="doc-header-bg" aria-hidden="true">
+          <img src="/ocean.svg" alt="" class="doc-bg-logo" />
+        </div>
+
+        <!-- Top bar: branding left, QR right -->
+        <div class="doc-header-top">
+          <a href="/" class="doc-brand">
+            <img src="/ocean.svg" alt="" class="doc-brand-logo" />
+            <span class="doc-brand-name">SifterSearch</span>
+          </a>
+          {#if qrCodeUrl}
+            <button class="header-qr" onclick={showQRCode} title="Share this document">
+              <img src={qrCodeUrl} alt="QR" class="header-qr-img" />
+            </button>
+          {/if}
+        </div>
+
         <nav class="breadcrumb" aria-label="Breadcrumb">
           <a href="/library">Library</a>
           {#if document.religion}
@@ -485,24 +503,14 @@
           {#if document.encumbered}
             <span class="meta-tag copyright">© Copyrighted</span>
           {/if}
-          {#if qrCodeUrl}
-            <button class="meta-qr" onclick={showQRCode} title="Share this document">
-              <img src={qrCodeUrl} alt="QR" class="meta-qr-img" />
-            </button>
-          {/if}
         </div>
 
-        {#if document.description}
-          <p class="doc-abstract">{document.description}</p>
+        <!-- Abstract section -->
+        {#if document.abstract || document.description}
+          <div class="doc-abstract">
+            <p>{document.abstract || document.description}</p>
+          </div>
         {/if}
-
-        <!-- QR code for print only -->
-        <div class="print-qr-section">
-          {#if qrCodeUrl}
-            <img src={qrCodeUrl} alt="QR Code" class="print-qr-img" />
-          {/if}
-          <span class="print-url-text">{typeof window !== 'undefined' ? window.location.href.replace(/^https?:\/\//, '') : ''}</span>
-        </div>
       </header>
 
       <hr class="doc-divider" />
@@ -762,6 +770,87 @@
     text-align: center;
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Large decorative background logo */
+  .doc-header-bg {
+    position: absolute;
+    top: -40%;
+    right: -15%;
+    width: 45%;
+    max-width: 280px;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .doc-bg-logo {
+    width: 100%;
+    height: auto;
+    transform: rotate(-12deg);
+  }
+
+  /* Top bar: branding left, QR right */
+  .doc-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Site branding */
+  .doc-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #666;
+    transition: color 0.2s;
+  }
+
+  .doc-brand:hover {
+    color: #333;
+  }
+
+  .doc-brand-logo {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.7;
+  }
+
+  .doc-brand-name {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* Header QR code */
+  .header-qr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .header-qr:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  }
+
+  .header-qr-img {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: block;
   }
 
   .breadcrumb {
@@ -835,37 +924,23 @@
     color: #3730a3;
   }
 
-  /* Inline QR code in metadata */
-  .meta-qr {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 0.375rem;
-    padding: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    vertical-align: middle;
-  }
-
-  .meta-qr:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
-  }
-
-  .meta-qr-img {
-    width: 2rem;
-    height: 2rem;
-    display: block;
-  }
-
+  /* Abstract block */
   .doc-abstract {
-    font-size: 1rem;
-    color: #444;
-    line-height: 1.6;
-    margin: 1rem auto 0;
+    margin: 1.5rem auto 0;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0.02) 100%);
+    border-left: 3px solid rgba(59, 130, 246, 0.3);
+    border-radius: 0 0.5rem 0.5rem 0;
     max-width: 36rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .doc-abstract p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.7;
     font-style: italic;
   }
 
@@ -929,11 +1004,6 @@
     color: #999;
     margin: 0;
     word-break: break-all;
-  }
-
-  /* Print QR section - hidden on screen, shown in print */
-  .print-qr-section {
-    display: none;
   }
 
   /* Document content - paper background with explicit light colors */
@@ -1295,6 +1365,31 @@
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
+    /* Header adjustments for mobile */
+    .doc-header-bg {
+      width: 50%;
+      top: -30%;
+      right: -10%;
+    }
+
+    .doc-brand-logo {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .doc-brand-name {
+      font-size: 0.75rem;
+    }
+
+    .header-qr-img {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .doc-abstract {
+      padding: 1rem;
+    }
+
     .para-anchor {
       width: 1.5rem;
       font-size: 0.625rem;
@@ -1358,9 +1453,34 @@
       max-width: 100%;
     }
 
-    /* Hide header QR section in print - use footer QR instead */
-    .print-qr-section {
-      display: none !important;
+    /* Keep decorative background in print - subtle watermark */
+    .doc-header-bg {
+      opacity: 0.03;
+    }
+
+    /* Header top bar - same as screen */
+    .doc-header-top {
+      margin-bottom: 0.75rem;
+    }
+
+    .doc-brand-logo {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .doc-brand-name {
+      font-size: 0.75rem;
+    }
+
+    /* Keep header QR visible in print - matches screen */
+    .header-qr {
+      display: flex !important;
+      border: 1px solid #ccc;
+    }
+
+    .header-qr-img {
+      width: 2rem;
+      height: 2rem;
     }
 
     /* Show footer in print with QR and metadata */
@@ -1446,11 +1566,17 @@
       padding-right: 0;
     }
 
-    /* Hide auth gate, load more, and inline QR in print */
+    /* Hide auth gate and load more in print */
     .auth-gate,
-    .load-more-section,
-    .meta-qr {
+    .load-more-section {
       display: none !important;
+    }
+
+    /* Abstract styling for print */
+    .doc-abstract {
+      margin: 1rem auto 0;
+      padding: 0.75rem 1rem;
+      border-left-width: 2px;
     }
 
     /* Bilingual layout adjustments */
