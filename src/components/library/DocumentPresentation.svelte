@@ -581,17 +581,21 @@
         {/if}
       {/if}
 
-      <!-- Document footer with sharing info -->
+      <!-- Document footer with metadata and QR code -->
       <footer class="doc-footer">
         <div class="footer-content">
+          <div class="footer-meta">
+            <p class="footer-title">{document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled'}</p>
+            {#if document.author}
+              <p class="footer-author">by {document.author}</p>
+            {/if}
+            <p class="footer-collection">{document.religion}{document.collection ? ` · ${document.collection}` : ''}</p>
+            <p class="footer-url">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+          </div>
           <div class="footer-qr">
             {#if qrCodeUrl}
               <img src={qrCodeUrl} alt="Scan to access this document" class="footer-qr-img" />
             {/if}
-          </div>
-          <div class="footer-info">
-            <p class="footer-url">{typeof window !== 'undefined' ? window.location.href : ''}</p>
-            <p class="footer-source">SifterSearch Interfaith Library</p>
           </div>
         </div>
       </footer>
@@ -881,8 +885,35 @@
   .footer-content {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 1.5rem;
+  }
+
+  .footer-meta {
+    flex: 1;
+  }
+
+  .footer-title {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .footer-author {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #555;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .footer-collection {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.75rem;
+    color: #888;
+    margin: 0 0 0.5rem 0;
   }
 
   .footer-qr-img {
@@ -892,24 +923,12 @@
     border: 1px solid #ddd;
   }
 
-  .footer-info {
-    text-align: left;
-  }
-
   .footer-url {
     font-family: system-ui, -apple-system, sans-serif;
-    font-size: 0.75rem;
-    color: #666;
-    margin: 0 0 0.25rem 0;
-    word-break: break-all;
-  }
-
-  .footer-source {
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #333;
+    font-size: 0.625rem;
+    color: #999;
     margin: 0;
+    word-break: break-all;
   }
 
   /* Print QR section - hidden on screen, shown in print */
@@ -1339,33 +1358,51 @@
       max-width: 100%;
     }
 
-    /* Show print QR section */
+    /* Hide header QR section in print - use footer QR instead */
     .print-qr-section {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
+      display: none !important;
+    }
+
+    /* Show footer in print with QR and metadata */
+    .doc-footer {
+      display: block !important;
+      margin-top: 2rem;
       padding-top: 1rem;
       border-top: 1px solid #ddd;
     }
 
-    .print-qr-img {
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-title {
+      font-size: 11pt;
+    }
+
+    .footer-author {
+      font-size: 10pt;
+    }
+
+    .footer-collection {
+      font-size: 8pt;
+    }
+
+    .footer-url {
+      font-size: 7pt;
+    }
+
+    .footer-qr-img {
       width: 64px;
       height: 64px;
     }
 
-    .print-url-text {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 8pt;
-      color: #666;
-      word-break: break-all;
-    }
-
-    /* Document header styling for print */
+    /* Document header styling for print - no page break after */
     .doc-header {
-      padding-bottom: 1rem;
-      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+      page-break-after: avoid;
     }
 
     .doc-title {
@@ -1404,10 +1441,9 @@
       padding-right: 0;
     }
 
-    /* Hide auth gate, load more, footer, and inline QR in print */
+    /* Hide auth gate, load more, and inline QR in print */
     .auth-gate,
     .load-more-section,
-    .doc-footer,
     .meta-qr {
       display: none !important;
     }

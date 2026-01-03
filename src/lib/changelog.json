@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T01:26:33.985Z",
+  "generated": "2026-01-03T01:30:04.805Z",
   "entries": [
+    {
+      "hash": "1c1a94f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve document presentation header and print styles",
+      "scope": null
+    },
     {
       "hash": "76bf22f",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add API endpoints for translation management",
       "scope": null
-    },
-    {
-      "hash": "71eaa84",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Resolve print view bugs and add translation script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "1c1a94f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve document presentation header and print styles",
+        "scope": null
+      },
       {
         "hash": "76bf22f",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add API endpoints for translation management",
-        "scope": null
-      },
-      {
-        "hash": "71eaa84",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Resolve print view bugs and add translation script",
         "scope": null
       }
     ]
