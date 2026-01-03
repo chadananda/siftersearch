@@ -119,28 +119,47 @@ export function slugifyPath(name) {
 }
 
 /**
- * Generate a document slug from title or filename, with language suffix
- * @param {object} doc - Document object with title, filename, language
- * @returns {string} URL-safe slug with language suffix for non-English
+ * Generate a document slug from author, title/filename, and language
+ * Format: author_title_lang (underscore separates parts, hyphen within parts)
+ *
+ * @param {object} doc - Document object with author, title, filename, language
+ * @returns {string} URL-safe slug
  *
  * @example
- * generateDocSlug({ title: "Hidden Words", language: "en" }) // "hidden-words"
- * generateDocSlug({ title: "Kalimát-i-Maknúnih", language: "fa" }) // "kalimat-i-maknunih_fa"
- * generateDocSlug({ filename: "tablet.md", language: "ar" }) // "tablet_ar"
+ * generateDocSlug({ author: "Bahá'u'lláh", title: "Hidden Words", language: "en" })
+ * // "bahaullah_hidden-words"
+ *
+ * generateDocSlug({ author: "The Báb", title: "Address to believers", language: "ar" })
+ * // "the-bab_address-to-believers_ar"
+ *
+ * generateDocSlug({ title: "Tablet", language: "fa" })
+ * // "tablet_fa" (no author)
  */
 export function generateDocSlug(doc) {
-  // Use title if available, otherwise use filename without extension
-  let base = doc.title;
-  if (!base && doc.filename) {
-    base = doc.filename.replace(/\.[^.]+$/, ''); // Remove extension
-  }
-  if (!base) return '';
+  const parts = [];
 
-  const slug = generateSlug(base);
+  // Add author if available and not "Unknown"
+  if (doc.author && doc.author !== 'Unknown') {
+    parts.push(generateSlug(doc.author));
+  }
+
+  // Use title if available, otherwise use filename without extension
+  let titlePart = doc.title;
+  if (!titlePart && doc.filename) {
+    titlePart = doc.filename.replace(/\.[^.]+$/, ''); // Remove extension
+  }
+  if (titlePart) {
+    parts.push(generateSlug(titlePart));
+  }
+
+  if (parts.length === 0) return '';
+
+  // Join author and title with underscore
+  let slug = parts.join('_');
 
   // Add language suffix for non-English documents
   if (doc.language && doc.language !== 'en') {
-    return `${slug}_${doc.language}`;
+    slug = `${slug}_${doc.language}`;
   }
 
   return slug;
@@ -148,20 +167,29 @@ export function generateDocSlug(doc) {
 
 /**
  * Parse a document slug to extract base slug and language
+ * Handles format: author_title_lang or author_title or title_lang or title
+ *
  * @param {string} slug - The slug to parse
  * @returns {{ baseSlug: string, language: string|null }}
  *
  * @example
- * parseDocSlug("hidden-words") // { baseSlug: "hidden-words", language: null }
- * parseDocSlug("kalimat-i-maknunih_fa") // { baseSlug: "kalimat-i-maknunih", language: "fa" }
+ * parseDocSlug("bahaullah_hidden-words") // { baseSlug: "bahaullah_hidden-words", language: null }
+ * parseDocSlug("the-bab_address-to-believers_ar") // { baseSlug: "the-bab_address-to-believers", language: "ar" }
+ * parseDocSlug("tablet_fa") // { baseSlug: "tablet", language: "fa" }
  */
 export function parseDocSlug(slug) {
   if (!slug) return { baseSlug: '', language: null };
 
-  // Check for language suffix (2-3 letter code after underscore)
+  // Check for language suffix (2-3 letter code after last underscore)
+  // Language codes: ar, fa, en, es, fr, de, etc.
   const match = slug.match(/^(.+)_([a-z]{2,3})$/);
   if (match) {
-    return { baseSlug: match[1], language: match[2] };
+    const possibleLang = match[2];
+    // Common language codes we support
+    const knownLangs = ['ar', 'fa', 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'zh', 'ja', 'ko', 'he', 'tr', 'ur', 'hi'];
+    if (knownLangs.includes(possibleLang)) {
+      return { baseSlug: match[1], language: possibleLang };
+    }
   }
 
   return { baseSlug: slug, language: null };
