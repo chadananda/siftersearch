@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T20:05:50.452Z",
+  "generated": "2026-01-03T20:08:23.835Z",
   "entries": [
+    {
+      "hash": "dc0c683",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Reduce SBS padding and fix highlight text visibility",
+      "scope": null
+    },
     {
       "hash": "008ae07",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Mark Baha'i Books collection as encumbered via migration",
       "scope": null
-    },
-    {
-      "hash": "bfb7dc9",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add encumbered field support to API and test setup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "dc0c683",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Reduce SBS padding and fix highlight text visibility",
+        "scope": null
+      },
       {
         "hash": "008ae07",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Mark Baha'i Books collection as encumbered via migration",
-        "scope": null
-      },
-      {
-        "hash": "bfb7dc9",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add encumbered field support to API and test setup",
         "scope": null
       }
     ]

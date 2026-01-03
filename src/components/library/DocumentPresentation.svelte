@@ -1525,7 +1525,9 @@
     flex-wrap: wrap;
     justify-content: flex-start;
     position: relative;
-    padding-right: 3rem; /* Space for QR */
+    /* Space for corner icons */
+    padding-left: 4rem;
+    padding-right: 4.5rem;
   }
 
   .url-home {
@@ -1535,10 +1537,18 @@
   }
 
   .url-icon {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 4.5rem;
+    height: 4.5rem;
     opacity: 0.85;
     transition: opacity 0.2s;
+  }
+
+  /* Position icon to overlap top-left corner */
+  .url-home {
+    position: absolute;
+    left: -1rem;
+    top: -1rem;
+    z-index: 10;
   }
 
   .url-home:hover .url-icon {
@@ -1584,12 +1594,11 @@
     font-weight: 400;
   }
 
-  /* QR code button - positioned to the right */
+  /* QR code button - positioned to overlap top-right corner */
   .url-qr {
     position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    right: -1rem;
+    top: -1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1599,6 +1608,7 @@
     padding: 0.25rem;
     cursor: pointer;
     transition: all 0.2s;
+    z-index: 10;
   }
 
   .url-qr:hover {
@@ -1607,8 +1617,8 @@
   }
 
   .url-qr-img {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 4rem;
+    height: 4rem;
     display: block;
     border-radius: 0.25rem;
   }
@@ -2288,24 +2298,31 @@
     /* URL breadcrumb adjustments for mobile */
     .url-breadcrumb {
       font-size: 0.6875rem;
-      padding-right: 2.5rem;
-      /* Hanging indent: wrapped lines are indented past the icon */
-      padding-left: 1.75rem;
+      /* Space for smaller corner icons on mobile */
+      padding-left: 2.25rem;
+      padding-right: 2.75rem;
     }
 
     .url-home {
-      /* Pull icon back to left edge (creates hanging indent effect) */
-      margin-left: -1.75rem;
+      /* Smaller overlap on mobile */
+      left: -0.5rem;
+      top: -0.5rem;
     }
 
     .url-icon {
-      width: 1.25rem;
-      height: 1.25rem;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .url-qr {
+      /* Smaller overlap on mobile */
+      right: -0.5rem;
+      top: -0.5rem;
     }
 
     .url-qr-img {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 2rem;
+      height: 2rem;
     }
 
     .doc-abstract {
