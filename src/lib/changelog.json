@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T18:46:47.174Z",
+  "generated": "2026-01-03T19:01:06.357Z",
   "entries": [
+    {
+      "hash": "7216d9c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add labeled view mode buttons with circular progress indicator",
+      "scope": null
+    },
     {
       "hash": "675a804",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
       "scope": null
-    },
-    {
-      "hash": "8dc7d6c",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add generate-embeddings API endpoint for missing paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "7216d9c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add labeled view mode buttons with circular progress indicator",
+        "scope": null
+      },
       {
         "hash": "675a804",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
-        "scope": null
-      },
-      {
-        "hash": "8dc7d6c",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add generate-embeddings API endpoint for missing paragraphs",
         "scope": null
       }
     ]

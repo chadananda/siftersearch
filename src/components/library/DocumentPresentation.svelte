@@ -408,6 +408,7 @@
 
   // View mode state
   let viewMode = $state('default'); // 'default' | 'sbs' | 'study'
+  let showViewMenu = $state(false); // Mobile dropdown
 
   // Translation queue state
   let translationQueuing = $state(false);
@@ -468,11 +469,13 @@
         if (!res.ok) throw new Error('Failed to get status');
 
         const status = await res.json();
+        // API returns totalItems, not total
         translationProgress = {
-          progress: status.progress || 0,
-          total: status.totalItems || 0,
+          progress: status.progress ?? 0,
+          total: status.totalItems ?? 0,
           status: status.status
         };
+        console.log('Translation status:', translationProgress);
 
         // Job completed - reload document and stop polling
         if (status.status === 'completed') {
@@ -559,66 +562,63 @@
         </svg>
       </button>
 
-      <div class="util-divider"></div>
-
-      <!-- Admin buttons -->
-      <div class="util-actions admin-actions">
-        {#if isAdmin}
-          <button class="util-btn edit" onclick={openEditor} title="Edit document">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-        {/if}
-        {#if isAdmin && isNonEnglish}
-          {#if translationQueuing || translationJobId}
-            <!-- Circular progress indicator during translation -->
-            {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
-            {@const circumference = 2 * Math.PI * 15}
-            {@const strokeDashoffset = circumference - (progress / 100) * circumference}
-            <div class="progress-ring-container" title={`Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}`}>
-              <svg class="progress-ring" viewBox="0 0 36 36">
-                <!-- Background circle -->
-                <circle
-                  class="progress-ring-bg"
-                  cx="18" cy="18" r="15"
-                  fill="none"
-                  stroke-width="3"
-                />
-                <!-- Progress arc -->
-                <circle
-                  class="progress-ring-progress"
-                  cx="18" cy="18" r="15"
-                  fill="none"
-                  stroke-width="3"
-                  stroke-linecap="round"
-                  stroke-dasharray={circumference}
-                  stroke-dashoffset={strokeDashoffset}
-                  transform="rotate(-90 18 18)"
-                />
-              </svg>
-              <span class="progress-ring-text">{Math.round(progress)}%</span>
-            </div>
-          {:else}
-            <button
-              class="util-btn translate"
-              onclick={queueTranslation}
-              title="Queue translation"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-            </button>
-          {/if}
-        {/if}
-      </div>
-
-      <!-- View mode toggle group - always show for non-English docs -->
+      <!-- View mode group for non-English docs (visible to everyone) -->
       {#if isNonEnglish}
         <div class="util-divider"></div>
-        <div class="view-mode-group">
+
+        <!-- Mobile hamburger menu -->
+        <div class="view-menu-mobile">
+          <button
+            class="util-btn menu-toggle"
+            onclick={() => showViewMenu = !showViewMenu}
+            title="View modes"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          {#if showViewMenu}
+            <div class="view-menu-dropdown">
+              <button
+                class="menu-item"
+                class:active={viewMode === 'default'}
+                onclick={() => { viewMode = 'default'; showViewMenu = false; }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Base</span>
+              </button>
+              <button
+                class="menu-item"
+                class:active={viewMode === 'sbs'}
+                class:disabled={!hasTranslations}
+                onclick={() => { if (hasTranslations) { viewMode = 'sbs'; showViewMenu = false; } }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="18" rx="1"/>
+                  <rect x="14" y="3" width="7" height="18" rx="1"/>
+                </svg>
+                <span>SBS</span>
+              </button>
+              <button
+                class="menu-item"
+                class:active={viewMode === 'study'}
+                class:disabled={!hasStudyTranslations}
+                onclick={() => { if (hasStudyTranslations) { viewMode = 'study'; showViewMenu = false; } }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+                <span>Study</span>
+              </button>
+            </div>
+          {/if}
+        </div>
+
+        <!-- Desktop view mode buttons -->
+        <div class="view-mode-group desktop-only">
           <button
             class="mode-btn"
             class:active={viewMode === 'default'}
@@ -691,6 +691,49 @@
           </svg>
         </button>
       </div>
+
+      <!-- Admin-only buttons at bottom -->
+      {#if isAdmin}
+        <div class="util-divider"></div>
+        <div class="util-actions admin-actions">
+          <button class="util-btn edit" onclick={openEditor} title="Edit document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          {#if isNonEnglish}
+            {#if translationQueuing || translationJobId}
+              {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
+              {@const circumference = 2 * Math.PI * 10}
+              {@const strokeDashoffset = circumference - (progress / 100) * circumference}
+              <div class="util-btn translate progress" title={`Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}`}>
+                <svg class="progress-ring-btn" viewBox="0 0 24 24">
+                  <circle class="progress-ring-bg" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                  <circle
+                    class="progress-ring-progress"
+                    cx="12" cy="12" r="10"
+                    fill="none"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-dasharray={circumference}
+                    stroke-dashoffset={strokeDashoffset}
+                    transform="rotate(-90 12 12)"
+                  />
+                </svg>
+                <span class="progress-pct">{Math.round(progress)}%</span>
+              </div>
+            {:else}
+              <button class="util-btn translate" onclick={queueTranslation} title="Queue translation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              </button>
+            {/if}
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- Document content with integrated header -->
@@ -1127,36 +1170,19 @@
     background: #7c3aed;
   }
 
-  .util-btn.translate.active {
-    background: #10b981;
+  /* Translate button with progress */
+  .util-btn.translate.progress {
+    background: #f0fdf4;
     border-color: #10b981;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .util-btn.translate:disabled {
-    opacity: 0.7;
-    cursor: wait;
-  }
-
-  /* Circular progress ring */
-  .progress-ring-container {
-    width: 2.5rem;
-    height: 2.5rem;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: default;
+    flex-direction: column;
+    gap: 0;
   }
 
-  .progress-ring {
-    width: 2rem;
-    height: 2rem;
-    transform: rotate(-90deg);
+  .progress-ring-btn {
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .progress-ring-bg {
@@ -1168,16 +1194,80 @@
     transition: stroke-dashoffset 0.3s ease;
   }
 
-  .progress-ring-text {
-    position: absolute;
+  .util-btn.translate .progress-pct {
     font-size: 0.5rem;
     font-weight: 700;
     color: #10b981;
     font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1;
   }
 
-  /* View mode toggle group */
-  .view-mode-group {
+  /* Mobile view menu - hidden on desktop */
+  .view-menu-mobile {
+    display: none;
+    position: relative;
+  }
+
+  .menu-toggle {
+    background: white;
+  }
+
+  .view-menu-dropdown {
+    position: absolute;
+    right: 100%;
+    top: 0;
+    margin-right: 0.5rem;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 100px;
+    overflow: hidden;
+    z-index: 50;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    background: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: #555;
+    transition: all 0.15s;
+  }
+
+  .menu-item:hover {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  .menu-item.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .menu-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .menu-item.disabled:hover {
+    background: white;
+    color: #555;
+  }
+
+  .menu-item svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  /* View mode toggle group - visible on desktop */
+  .view-mode-group.desktop-only {
     display: flex;
     flex-direction: column;
     background: white;
@@ -2061,46 +2151,13 @@
       display: none;
     }
 
-    /* View mode group mobile */
-    .view-mode-group {
-      flex-direction: row;
+    /* Mobile: show hamburger, hide desktop buttons */
+    .view-menu-mobile {
+      display: block;
     }
 
-    .mode-btn {
-      width: auto;
-      min-width: 2.25rem;
-      min-height: 2rem;
-      padding: 0.25rem 0.375rem;
-      border-bottom: none;
-      border-right: 1px solid rgba(0, 0, 0, 0.06);
-    }
-
-    .mode-btn:last-child {
-      border-right: none;
-    }
-
-    .mode-btn svg {
-      width: 0.75rem;
-      height: 0.75rem;
-    }
-
-    .mode-btn .mode-label {
-      font-size: 0.4375rem;
-    }
-
-    /* Progress ring mobile */
-    .progress-ring-container {
-      width: 2rem;
-      height: 2rem;
-    }
-
-    .progress-ring {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
-
-    .progress-ring-text {
-      font-size: 0.4rem;
+    .view-mode-group.desktop-only {
+      display: none;
     }
 
     /* Study mode mobile */
