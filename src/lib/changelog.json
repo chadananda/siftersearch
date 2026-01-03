@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T15:32:57.474Z",
+  "generated": "2026-01-03T15:38:35.312Z",
   "entries": [
+    {
+      "hash": "92f78b1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add unique slug storage to prevent URL collisions",
+      "scope": null
+    },
     {
       "hash": "04df1d1",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve segmentation with conceptual description instead of rules",
       "scope": null
-    },
-    {
-      "hash": "18c0b5a",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Prevent Arabic segmentation from splitting prepositional phrases",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "92f78b1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add unique slug storage to prevent URL collisions",
+        "scope": null
+      },
       {
         "hash": "04df1d1",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve segmentation with conceptual description instead of rules",
-        "scope": null
-      },
-      {
-        "hash": "18c0b5a",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Prevent Arabic segmentation from splitting prepositional phrases",
         "scope": null
       }
     ]
