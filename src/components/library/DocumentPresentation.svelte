@@ -595,23 +595,22 @@
         </svg>
       </button>
 
-      <!-- View mode group for non-English docs (visible to everyone) -->
-      {#if isNonEnglish}
-        <div class="util-divider"></div>
-
-        <!-- Mobile hamburger menu -->
-        <div class="view-menu-mobile">
-          <button
-            class="util-btn menu-toggle"
-            onclick={() => showViewMenu = !showViewMenu}
-            title="View modes"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
-          {#if showViewMenu}
-            <div class="view-menu-dropdown">
+      <!-- Mobile: Single hamburger menu for ALL actions -->
+      <div class="mobile-menu">
+        <button
+          class="util-btn menu-toggle"
+          onclick={() => showViewMenu = !showViewMenu}
+          title="Menu"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        {#if showViewMenu}
+          <div class="mobile-menu-dropdown">
+            <!-- View modes (if non-English) -->
+            {#if isNonEnglish}
+              <div class="menu-section-label">View Mode</div>
               <button
                 class="menu-item"
                 class:active={viewMode === 'default'}
@@ -632,7 +631,7 @@
                   <rect x="3" y="3" width="7" height="18" rx="1"/>
                   <rect x="14" y="3" width="7" height="18" rx="1"/>
                 </svg>
-                <span>SBS</span>
+                <span>Side-by-Side</span>
               </button>
               <button
                 class="menu-item"
@@ -646,127 +645,194 @@
                 </svg>
                 <span>Study</span>
               </button>
-            </div>
-          {/if}
-        </div>
+              <div class="menu-divider"></div>
+            {/if}
 
-        <!-- Desktop view mode buttons -->
-        <div class="view-mode-group desktop-only">
-          <button
-            class="mode-btn"
-            class:active={viewMode === 'default'}
-            onclick={() => viewMode = 'default'}
-            title="Original text only"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 6h16M4 12h16M4 18h10"/>
-            </svg>
-            <span class="mode-label">Base</span>
-          </button>
-          <button
-            class="mode-btn"
-            class:active={viewMode === 'sbs'}
-            class:disabled={!hasTranslations}
-            onclick={() => hasTranslations && (viewMode = 'sbs')}
-            title={hasTranslations ? 'Side-by-side translation' : 'No translations available yet'}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="18" rx="1"/>
-              <rect x="14" y="3" width="7" height="18" rx="1"/>
-            </svg>
-            <span class="mode-label">SBS</span>
-          </button>
-          <button
-            class="mode-btn"
-            class:active={viewMode === 'study'}
-            class:disabled={!hasStudyTranslations}
-            onclick={() => hasStudyTranslations && (viewMode = 'study')}
-            title={hasStudyTranslations ? 'Study mode with notes' : 'Study translations not available'}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
-            <span class="mode-label">Study</span>
-          </button>
-        </div>
-      {/if}
+            <!-- Share actions -->
+            <div class="menu-section-label">Share</div>
+            <button class="menu-item" onclick={() => { showQRCode(); showViewMenu = false; }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <path d="M14 14h3v3h-3zM17 17h3v3h-3z"/>
+              </svg>
+              <span>QR Code</span>
+            </button>
+            <button class="menu-item" onclick={() => { copyShareLink(); showViewMenu = false; }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span>{linkCopied ? 'Copied!' : 'Copy Link'}</span>
+            </button>
+            <button class="menu-item" onclick={() => { openPrintView(); showViewMenu = false; }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              <span>Print</span>
+            </button>
 
-      <div class="util-divider"></div>
-
-      <!-- Sharing & utility buttons -->
-      <div class="util-actions">
-        <button class="util-btn" onclick={showQRCode} title="Share QR Code">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/>
-            <rect x="14" y="3" width="7" height="7"/>
-            <rect x="3" y="14" width="7" height="7"/>
-            <path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 17v3M17 14h3"/>
-          </svg>
-        </button>
-        <button class="util-btn" class:copied={linkCopied} onclick={copyShareLink} title={linkCopied ? 'Copied!' : 'Copy link'}>
-          {#if linkCopied}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          {:else}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-          {/if}
-        </button>
-        <button class="util-btn" onclick={openPrintView} title="Print">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-            <rect x="6" y="14" width="12" height="8"/>
-          </svg>
-        </button>
+            <!-- Admin actions -->
+            {#if isAdmin}
+              <div class="menu-divider"></div>
+              <div class="menu-section-label">Admin</div>
+              <button class="menu-item" onclick={() => { openEditor(); showViewMenu = false; }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                <span>Edit</span>
+              </button>
+              {#if isNonEnglish}
+                {#if translationQueuing || translationJobId}
+                  {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
+                  <div class="menu-item progress-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M2 12h20"/>
+                    </svg>
+                    <span>Translating {Math.round(progress)}%</span>
+                  </div>
+                {:else}
+                  <button class="menu-item" onclick={() => { queueTranslation(); showViewMenu = false; }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    <span>Translate</span>
+                  </button>
+                {/if}
+              {/if}
+            {/if}
+          </div>
+        {/if}
       </div>
 
-      <!-- Admin-only buttons at bottom -->
-      {#if isAdmin}
+      <!-- Desktop: All buttons visible -->
+      <div class="desktop-buttons">
+        <!-- View mode group for non-English docs -->
+        {#if isNonEnglish}
+          <div class="util-divider"></div>
+          <div class="view-mode-group">
+            <button
+              class="mode-btn"
+              class:active={viewMode === 'default'}
+              onclick={() => viewMode = 'default'}
+              title="Original text only"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h16M4 12h16M4 18h10"/>
+              </svg>
+              <span class="mode-label">Base</span>
+            </button>
+            <button
+              class="mode-btn"
+              class:active={viewMode === 'sbs'}
+              class:disabled={!hasTranslations}
+              onclick={() => hasTranslations && (viewMode = 'sbs')}
+              title={hasTranslations ? 'Side-by-side translation' : 'No translations available yet'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="18" rx="1"/>
+                <rect x="14" y="3" width="7" height="18" rx="1"/>
+              </svg>
+              <span class="mode-label">SBS</span>
+            </button>
+            <button
+              class="mode-btn"
+              class:active={viewMode === 'study'}
+              class:disabled={!hasStudyTranslations}
+              onclick={() => hasStudyTranslations && (viewMode = 'study')}
+              title={hasStudyTranslations ? 'Study mode with notes' : 'Study translations not available'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              <span class="mode-label">Study</span>
+            </button>
+          </div>
+        {/if}
+
         <div class="util-divider"></div>
-        <div class="util-actions admin-actions">
-          <button class="util-btn edit" onclick={openEditor} title="Edit document">
+
+        <!-- Sharing & utility buttons -->
+        <div class="util-actions">
+          <button class="util-btn" onclick={showQRCode} title="Share QR Code">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+              <path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 17v3M17 14h3"/>
             </svg>
           </button>
-          {#if isNonEnglish}
-            {#if translationQueuing || translationJobId}
-              {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
-              {@const circumference = 2 * Math.PI * 10}
-              {@const strokeDashoffset = circumference - (progress / 100) * circumference}
-              <div class="util-btn translate progress" title={`Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}`}>
-                <svg class="progress-ring-btn" viewBox="0 0 24 24">
-                  <circle class="progress-ring-bg" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
-                  <circle
-                    class="progress-ring-progress"
-                    cx="12" cy="12" r="10"
-                    fill="none"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-dasharray={circumference}
-                    stroke-dashoffset={strokeDashoffset}
-                    transform="rotate(-90 12 12)"
-                  />
-                </svg>
-                <span class="progress-pct">{Math.round(progress)}%</span>
-              </div>
+          <button class="util-btn" class:copied={linkCopied} onclick={copyShareLink} title={linkCopied ? 'Copied!' : 'Copy link'}>
+            {#if linkCopied}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
             {:else}
-              <button class="util-btn translate" onclick={queueTranslation} title="Queue translation">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-              </button>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
             {/if}
-          {/if}
+          </button>
+          <button class="util-btn" onclick={openPrintView} title="Print">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+          </button>
         </div>
-      {/if}
+
+        <!-- Admin-only buttons at bottom -->
+        {#if isAdmin}
+          <div class="util-divider"></div>
+          <div class="util-actions admin-actions">
+            <button class="util-btn edit" onclick={openEditor} title="Edit document">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            {#if isNonEnglish}
+              {#if translationQueuing || translationJobId}
+                {@const progress = translationProgress?.total > 0 ? (translationProgress.progress / translationProgress.total) * 100 : 0}
+                {@const circumference = 2 * Math.PI * 10}
+                {@const strokeDashoffset = circumference - (progress / 100) * circumference}
+                <div class="util-btn translate progress" title={`Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}`}>
+                  <svg class="progress-ring-btn" viewBox="0 0 24 24">
+                    <circle class="progress-ring-bg" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                    <circle
+                      class="progress-ring-progress"
+                      cx="12" cy="12" r="10"
+                      fill="none"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-dasharray={circumference}
+                      stroke-dashoffset={strokeDashoffset}
+                      transform="rotate(-90 12 12)"
+                    />
+                  </svg>
+                  <span class="progress-pct">{Math.round(progress)}%</span>
+                </div>
+              {:else}
+                <button class="util-btn translate" onclick={queueTranslation} title="Queue translation">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </button>
+              {/if}
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
 
     <!-- Document content with integrated header -->
@@ -1257,8 +1323,8 @@
     line-height: 1;
   }
 
-  /* Mobile view menu - hidden on desktop */
-  .view-menu-mobile {
+  /* Mobile menu - hidden on desktop */
+  .mobile-menu {
     display: none;
     position: relative;
   }
@@ -1267,7 +1333,7 @@
     background: white;
   }
 
-  .view-menu-dropdown {
+  .mobile-menu-dropdown {
     position: absolute;
     right: 100%;
     top: 0;
@@ -1276,9 +1342,24 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 100px;
+    min-width: 140px;
     overflow: hidden;
     z-index: 50;
+  }
+
+  .menu-section-label {
+    padding: 0.5rem 0.75rem 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #999;
+  }
+
+  .menu-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 0.25rem 0;
   }
 
   .menu-item {
@@ -1315,14 +1396,25 @@
     color: #555;
   }
 
+  .menu-item.progress-item {
+    color: #10b981;
+    font-weight: 500;
+    cursor: default;
+  }
+
   .menu-item svg {
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
   }
 
-  /* View mode toggle group - visible on desktop */
-  .view-mode-group.desktop-only {
+  /* Desktop buttons - visible on desktop */
+  .desktop-buttons {
+    display: contents;
+  }
+
+  /* View mode toggle group */
+  .view-mode-group {
     display: flex;
     flex-direction: column;
     background: white;
@@ -2140,6 +2232,15 @@
       right: 0.5rem;
     }
 
+    /* Show mobile hamburger menu, hide desktop buttons */
+    .mobile-menu {
+      display: block;
+    }
+
+    .desktop-buttons {
+      display: none;
+    }
+
     .util-btn {
       width: 2rem;
       height: 2rem;
@@ -2155,8 +2256,8 @@
     }
 
     .document-content {
-      /* Right margin for utility bar: 0.5rem (bar position) + 2rem (button) + 0.5rem (buffer) = 3rem */
-      margin: 1rem 3rem 1rem 0.5rem;
+      /* Minimal right margin - only back + hamburger buttons on mobile */
+      margin: 1rem 0.5rem;
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
@@ -2207,15 +2308,6 @@
     }
 
     .para-center {
-      display: none;
-    }
-
-    /* Mobile: show hamburger, hide desktop buttons */
-    .view-menu-mobile {
-      display: block;
-    }
-
-    .view-mode-group.desktop-only {
       display: none;
     }
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:52:13.709Z",
+  "generated": "2026-01-03T19:55:23.528Z",
   "entries": [
+    {
+      "hash": "e639a3f",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Center utility bar buttons in right margin",
+      "scope": null
+    },
     {
       "hash": "8146562",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Include filename in document API responses for dynamic slug generation",
       "scope": null
-    },
-    {
-      "hash": "fff1f03",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add metadata JSON column and encumbered field for docs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "e639a3f",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Center utility bar buttons in right margin",
+        "scope": null
+      },
       {
         "hash": "8146562",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Include filename in document API responses for dynamic slug generation",
-        "scope": null
-      },
-      {
-        "hash": "fff1f03",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add metadata JSON column and encumbered field for docs",
         "scope": null
       }
     ]
