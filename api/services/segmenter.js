@@ -1065,7 +1065,7 @@ function getPunctuationBoundaries(text) {
  * @returns {Promise<Map<string, string[]>>} Map of paragraph ID → sentence ending phrases
  */
 export async function detectAllSentenceBoundaries(paragraphs, language, options = {}) {
-  const { batchSize = 50, maxTokens = 8000 } = options;
+  const { maxCharsPerBatch = 15000 } = options;
 
   if (!paragraphs || paragraphs.length === 0) {
     return new Map();
@@ -1079,12 +1079,29 @@ export async function detectAllSentenceBoundaries(paragraphs, language, options 
     return detectPunctuationBoundariesBatch(paragraphs);
   }
 
-  // Batch paragraphs to stay within token limits
+  // Batch paragraphs by character count to stay within token limits
   const results = new Map();
   const batches = [];
+  let currentBatch = [];
+  let currentChars = 0;
 
-  for (let i = 0; i < paragraphs.length; i += batchSize) {
-    batches.push(paragraphs.slice(i, i + batchSize));
+  for (const para of paragraphs) {
+    const paraChars = para.text?.length || 0;
+
+    // If adding this paragraph exceeds limit, start new batch
+    if (currentBatch.length > 0 && currentChars + paraChars > maxCharsPerBatch) {
+      batches.push(currentBatch);
+      currentBatch = [];
+      currentChars = 0;
+    }
+
+    currentBatch.push(para);
+    currentChars += paraChars;
+  }
+
+  // Don't forget the last batch
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
   }
 
   logger.info({
@@ -1124,40 +1141,24 @@ async function detectSentenceEndingsForBatch(paragraphs, language) {
     `PARA_${p.id}:\n${p.text}`
   ).join('\n\n---\n\n');
 
-  const systemPrompt = `You are an expert in ${languageHint} text analysis. Your task is to identify sentence boundaries in classical/religious texts.
+  const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
 
-## TASK
-For EACH paragraph below, identify where sentences end by returning the LAST 3-5 WORDS of each sentence.
+Find ALL sentences by MEANING. Return the LAST 3-4 WORDS of each sentence exactly as written.
 
-## WHAT IS A SENTENCE
-A sentence is a complete thought or statement. In Arabic/Persian texts without punctuation, look for:
-- Complete grammatical clauses
-- Natural pause points in recitation
-- Shifts in subject or topic
-- End of an invocation or blessing
+Sentence boundaries in these texts:
+- Complete invocations (بسم الله الرحمن الرحيم)
+- Divine attributes (هو العزيز الحكيم)
+- Address changes (يا أيها...)
+- Topic/subject shifts
+- Complete commands
 
-## WHAT TO KEEP AS SINGLE SENTENCES
-- Divine names and attributes (الله, الرحمن الرحيم)
-- Blessing formulas (صلى الله عليه وسلم)
-- Short invocations (بسم الله الرحمن الرحيم)
+Return JSON only.`;
 
-## RESPONSE FORMAT
-Return JSON mapping each paragraph ID to an array of sentence endings:
-{
-  "PARA_0": ["الكلمات الأخيرة للجملة الأولى", "الكلمات الأخيرة للجملة الثانية"],
-  "PARA_1": ["ending of first sentence", "ending of second sentence"],
-  ...
-}
-
-Each ending should be the EXACT last 3-5 words of that sentence, copied precisely from the text.
-If a paragraph is a single sentence, return just one ending (the last words of the paragraph).`;
-
-  const userPrompt = `Identify sentence endings in these ${languageHint} paragraphs.
-For each sentence, return ONLY its last 3-5 words.
+  const userPrompt = `Find ALL sentence endings in these UNPUNCTUATED ${languageHint} paragraphs.
 
 ${paraTexts}
 
-Return JSON:
+Return JSON with the EXACT last 3-4 words of each sentence:
 {
   ${paragraphs.map(p => `"PARA_${p.id}": ["ending1", "ending2", ...]`).join(',\n  ')}
 }`;
@@ -1172,19 +1173,52 @@ Return JSON:
     });
 
     const content = response.content || response;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
 
-    if (!jsonMatch) {
+    // Try to extract JSON from response - handle code blocks and various formats
+    let jsonStr = null;
+
+    // Try code block first
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    }
+
+    // Try bare JSON object
+    if (!jsonStr) {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      }
+    }
+
+    if (!jsonStr) {
       throw new Error('No JSON in AI response');
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+    // Try to fix common JSON issues
+    jsonStr = jsonStr
+      .replace(/,\s*}/g, '}')  // Trailing commas
+      .replace(/,\s*]/g, ']'); // Trailing commas in arrays
+
+    const result = JSON.parse(jsonStr);
     const results = new Map();
 
     for (const para of paragraphs) {
       const key = `PARA_${para.id}`;
-      const endings = result[key] || [];
-      results.set(para.id, Array.isArray(endings) ? endings : []);
+      let endings = result[key] || [];
+
+      // Normalize endings - AI might return arrays of words instead of joined strings
+      if (Array.isArray(endings)) {
+        endings = endings.map(e => {
+          if (Array.isArray(e)) {
+            // Join word arrays into phrase
+            return e.join(' ');
+          }
+          return String(e);
+        }).filter(e => e && e.trim());
+      }
+
+      results.set(para.id, endings);
     }
 
     return results;
@@ -1238,6 +1272,175 @@ function detectPunctuationBoundariesBatch(paragraphs) {
 }
 
 /**
+ * Normalize Arabic text for flexible matching
+ * Removes diacritics (tashkeel), normalizes whitespace and some letter forms
+ */
+function normalizeArabic(text) {
+  return text
+    // Remove Arabic diacritical marks (tashkeel)
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    // Remove combining hamza/madda marks
+    .replace(/[\u0653\u0654\u0655]/g, '')
+    // Normalize alef variations to basic alef
+    .replace(/[\u0622\u0623\u0625\u0627]/g, '\u0627')
+    // Normalize teh marbuta to heh
+    .replace(/\u0629/g, '\u0647')
+    // Normalize Arabic yeh variations
+    .replace(/\u064A/g, '\u06CC')  // Arabic yeh → Farsi yeh (common in these texts)
+    // Normalize whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Find ending phrase in text with flexible matching
+ * Handles AI variations in spacing, diacritics, and minor word differences
+ *
+ * @param {string} text - Text to search in
+ * @param {string} ending - Ending phrase to find
+ * @param {number} searchStart - Position to start searching from
+ * @returns {{pos: number, len: number}|null} Position and length of match, or null
+ */
+function findFlexibleMatch(text, ending, searchStart) {
+  // Try exact match first
+  let pos = text.indexOf(ending, searchStart);
+  if (pos !== -1) return { pos, len: ending.length };
+
+  // Try with normalized whitespace
+  const normalizedEnding = ending.replace(/\s+/g, ' ').trim();
+  const textSlice = text.slice(searchStart);
+
+  pos = textSlice.indexOf(normalizedEnding);
+  if (pos !== -1) return { pos: searchStart + pos, len: normalizedEnding.length };
+
+  // Try Arabic normalization (remove diacritics, normalize whitespace)
+  const normText = normalizeArabic(textSlice);
+  const normEnding = normalizeArabic(normalizedEnding);
+
+  pos = normText.indexOf(normEnding);
+  if (pos !== -1) {
+    // Convert normalized position back to original text position
+    const origStart = normalizedPosToOriginal(textSlice, pos);
+    const origEnd = normalizedPosToOriginal(textSlice, pos + normEnding.length);
+    return { pos: searchStart + origStart, len: origEnd - origStart };
+  }
+
+  // Try matching just the last 2-3 words (AI might return slightly different phrase)
+  const words = normalizedEnding.split(' ');
+  if (words.length >= 2) {
+    // Try last 3 words, then last 2
+    for (let wordCount = Math.min(3, words.length); wordCount >= 2; wordCount--) {
+      const partialEnding = words.slice(-wordCount).join(' ');
+      const normPartial = normalizeArabic(partialEnding);
+
+      pos = normText.indexOf(normPartial);
+      if (pos !== -1) {
+        const origStart = normalizedPosToOriginal(textSlice, pos);
+        const origEnd = normalizedPosToOriginal(textSlice, pos + normPartial.length);
+        return { pos: searchStart + origStart, len: origEnd - origStart };
+      }
+    }
+  }
+
+  // Try finding individual key words (at least 4 chars) near each other
+  const keyWords = words.filter(w => w.length >= 4).slice(-3);
+  if (keyWords.length >= 2) {
+    const firstWord = normalizeArabic(keyWords[0]);
+    let wordPos = normText.indexOf(firstWord);
+
+    if (wordPos !== -1) {
+      // Check if other words appear within 50 chars
+      const searchWindow = normText.slice(wordPos, wordPos + 50);
+      const foundAll = keyWords.slice(1).every(w =>
+        searchWindow.includes(normalizeArabic(w))
+      );
+
+      if (foundAll) {
+        // Find the last key word position for the end
+        const lastWord = normalizeArabic(keyWords[keyWords.length - 1]);
+        const lastWordPos = searchWindow.indexOf(lastWord);
+        const normEndPos = wordPos + lastWordPos + lastWord.length;
+        const origStart = normalizedPosToOriginal(textSlice, wordPos);
+        const origEnd = normalizedPosToOriginal(textSlice, normEndPos);
+        return { pos: searchStart + origStart, len: origEnd - origStart };
+      }
+    }
+  }
+
+  // Final fallback: find just the last 2 significant words
+  const significantWords = words.filter(w => w.length >= 3);
+  if (significantWords.length >= 2) {
+    const lastTwo = significantWords.slice(-2);
+    const searchPattern = lastTwo.map(w => normalizeArabic(w));
+
+    // Find first word
+    const firstWordPos = normText.indexOf(searchPattern[0]);
+    if (firstWordPos !== -1) {
+      // Check if second word is nearby (within 30 chars)
+      const window = normText.slice(firstWordPos, firstWordPos + 30);
+      if (window.includes(searchPattern[1])) {
+        const secondPos = window.indexOf(searchPattern[1]);
+        const normEndPos = firstWordPos + secondPos + searchPattern[1].length;
+        const origStart = normalizedPosToOriginal(textSlice, firstWordPos);
+        const origEnd = normalizedPosToOriginal(textSlice, normEndPos);
+        return { pos: searchStart + origStart, len: origEnd - origStart };
+      }
+    }
+  }
+
+  // Ultimate fallback: try just the very last word if it's distinctive (5+ chars)
+  const lastWord = words[words.length - 1];
+  if (lastWord && lastWord.length >= 5) {
+    const normLastWord = normalizeArabic(lastWord);
+    pos = normText.indexOf(normLastWord);
+    if (pos !== -1) {
+      const origStart = normalizedPosToOriginal(textSlice, pos);
+      const origEnd = normalizedPosToOriginal(textSlice, pos + normLastWord.length);
+      return { pos: searchStart + origStart, len: origEnd - origStart };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convert a position in normalized text back to original text position
+ * Accounts for removed diacritics and collapsed whitespace
+ */
+function normalizedPosToOriginal(originalText, normPos) {
+  let origPos = 0;
+  let normCount = 0;
+  let prevWasSpace = false;
+
+  while (origPos < originalText.length && normCount < normPos) {
+    const char = originalText[origPos];
+
+    // Diacritics are removed in normalization - don't count them
+    if (/[\u064B-\u065F\u0670]/.test(char)) {
+      origPos++;
+      continue;
+    }
+
+    // Whitespace is collapsed in normalization
+    const isSpace = /\s/.test(char);
+    if (isSpace) {
+      if (!prevWasSpace) {
+        // First space in a sequence counts as one
+        normCount++;
+      }
+      prevWasSpace = true;
+    } else {
+      normCount++;
+      prevWasSpace = false;
+    }
+
+    origPos++;
+  }
+
+  return origPos;
+}
+
+/**
  * Insert sentence markers into text using sentence ending phrases
  *
  * Finds each ending phrase in the text and inserts markers around the sentence.
@@ -1260,27 +1463,16 @@ export function insertSentenceMarkersFromEndings(text, endings) {
   for (const ending of endings) {
     if (!ending || !ending.trim()) continue;
 
-    // Find this ending in the text
-    let pos = text.indexOf(ending, searchStart);
+    // Find this ending in the text using flexible matching
+    const match = findFlexibleMatch(text, ending, searchStart);
 
-    if (pos === -1) {
-      // Try with normalized whitespace
-      const normalizedEnding = ending.replace(/\s+/g, ' ').trim();
-      const normalizedText = text.slice(searchStart).replace(/\s+/g, ' ');
-      const normalizedPos = normalizedText.indexOf(normalizedEnding);
-
-      if (normalizedPos !== -1) {
-        // Approximate position in original text
-        pos = searchStart + normalizedPos;
-      }
-    }
-
-    if (pos === -1) {
+    if (!match) {
       logger.debug({ ending: ending.slice(0, 30), searchStart }, 'Ending not found in text');
       continue;
     }
 
-    const endPos = pos + ending.length;
+    const { pos, len } = match;
+    const endPos = pos + len;
 
     // Sentence starts after previous boundary (or at text start)
     const startPos = boundaries.length > 0 ? boundaries[boundaries.length - 1].end : 0;

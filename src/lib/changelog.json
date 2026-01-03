@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T04:22:43.505Z",
+  "generated": "2026-01-03T05:14:03.346Z",
   "entries": [
+    {
+      "hash": "e3053e8",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Batch sentence detection reduces AI calls by 95%",
+      "scope": null
+    },
     {
       "hash": "0fd159b",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add test-segment-translation endpoint for verifying phrase alignment",
       "scope": null
-    },
-    {
-      "hash": "2ee69ee",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add DELETE endpoint to clear document translations for re-translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "e3053e8",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Batch sentence detection reduces AI calls by 95%",
+        "scope": null
+      },
       {
         "hash": "0fd159b",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add test-segment-translation endpoint for verifying phrase alignment",
-        "scope": null
-      },
-      {
-        "hash": "2ee69ee",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add DELETE endpoint to clear document translations for re-translation",
         "scope": null
       }
     ]
