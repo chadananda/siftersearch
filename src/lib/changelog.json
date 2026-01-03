@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T03:32:27.706Z",
+  "generated": "2026-01-03T04:22:43.505Z",
   "entries": [
+    {
+      "hash": "0fd159b",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Boundary-based segmentation with strict text integrity",
+      "scope": null
+    },
     {
       "hash": "543616a",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add DELETE endpoint to clear document translations for re-translation",
       "scope": null
-    },
-    {
-      "hash": "21c62f9",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "0fd159b",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Boundary-based segmentation with strict text integrity",
+        "scope": null
+      },
       {
         "hash": "543616a",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add DELETE endpoint to clear document translations for re-translation",
-        "scope": null
-      },
-      {
-        "hash": "21c62f9",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
         "scope": null
       }
     ]

@@ -5,6 +5,9 @@
  * Adds sentence markers (⁅s1⁆...⁅/s1⁆) to existing paragraphs.
  * This enables per-sentence translations and URL anchors.
  *
+ * Uses BATCH processing - 1-2 AI calls per language instead of 1 per paragraph.
+ * This reduces ~100 API calls to ~2 for typical documents.
+ *
  * Usage:
  *   node scripts/add-sentence-markers.js [--dry-run] [--limit=N] [--doc-id=ID]
  *
@@ -16,7 +19,7 @@
  */
 
 import { query, queryAll } from '../api/lib/db.js';
-import { addSentenceMarkers } from '../api/services/segmenter.js';
+import { batchAddSentenceMarkers } from '../api/services/segmenter.js';
 import { hasMarkers, verifyMarkedText, stripMarkers } from '../api/lib/markers.js';
 
 // Parse CLI arguments
@@ -30,7 +33,7 @@ const docId = docIdArg ? docIdArg.split('=')[1] : null;
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('Sentence Marker Backfill Script');
+  console.log('Sentence Marker Backfill Script (BATCH MODE)');
   console.log('='.repeat(60));
   console.log(`Options: dry-run=${dryRun}, force=${force}, limit=${limit || 'all'}, doc-id=${docId || 'all'}`);
   console.log();
@@ -73,86 +76,98 @@ async function main() {
     return;
   }
 
-  // Process each paragraph
-  let processed = 0;
-  let skipped = 0;
-  let errors = 0;
-  let totalSentences = 0;
-
-  const batchSize = 10;
-  const now = new Date().toISOString();
-
-  for (let i = 0; i < paragraphs.length; i += batchSize) {
-    const batch = paragraphs.slice(i, i + batchSize);
-
-    // Process batch in parallel
-    const results = await Promise.all(batch.map(async (para) => {
-      // Skip if already has markers (unless force)
-      if (!force && hasMarkers(para.text)) {
-        return { id: para.id, skipped: true };
-      }
-
-      // Store original for verification
-      const originalText = para.text;
-
-      try {
-        const { text: markedText, sentenceCount } = await addSentenceMarkers(para.text, {
-          language: para.language
-        });
-
-        return {
-          id: para.id,
-          originalText,
-          markedText,
-          sentenceCount,
-          success: true
-        };
-      } catch (err) {
-        return {
-          id: para.id,
-          error: err.message,
-          success: false
-        };
-      }
-    }));
-
-    // Update database (unless dry-run)
-    for (const result of results) {
-      if (result.skipped) {
-        skipped++;
-        continue;
-      }
-
-      if (!result.success) {
-        console.error(`  Error processing ${result.id}: ${result.error}`);
-        errors++;
-        continue;
-      }
-
-      // STRICT VALIDATION: Verify marked text strips to exactly original
-      const verification = verifyMarkedText(result.originalText, result.markedText);
-      if (!verification.valid) {
-        console.error(`  VALIDATION FAILED ${result.id}: ${verification.error}`);
-        errors++;
-        continue;
-      }
-
-      if (dryRun) {
-        console.log(`  [DRY-RUN] Would update ${result.id}: ${result.sentenceCount} sentences (verified)`);
-      } else {
-        await query(
-          `UPDATE content SET text = ?, synced = 0, updated_at = ? WHERE id = ?`,
-          [result.markedText, now, result.id]
-        );
-      }
-
-      processed++;
-      totalSentences += result.sentenceCount;
+  // Group paragraphs by language for batch processing
+  const byLanguage = new Map();
+  for (const para of paragraphs) {
+    // Skip if already has markers (unless force)
+    if (!force && hasMarkers(para.text)) {
+      continue;
     }
 
-    // Progress update every batch
-    const progress = Math.min(i + batchSize, paragraphs.length);
-    console.log(`Progress: ${progress}/${paragraphs.length} (${processed} updated, ${skipped} skipped, ${errors} errors)`);
+    const lang = para.language || 'en';
+    if (!byLanguage.has(lang)) {
+      byLanguage.set(lang, []);
+    }
+
+    // When forcing, strip existing markers first
+    const cleanText = force ? stripMarkers(para.text) : para.text;
+
+    byLanguage.get(lang).push({
+      id: para.id,
+      text: cleanText,
+      originalText: cleanText, // For verification
+      doc_id: para.doc_id,
+      paragraph_index: para.paragraph_index
+    });
+  }
+
+  console.log(`Grouped into ${byLanguage.size} language(s): ${[...byLanguage.keys()].join(', ')}`);
+
+  let processed = 0;
+  let skipped = paragraphs.length - [...byLanguage.values()].reduce((sum, arr) => sum + arr.length, 0);
+  let errors = 0;
+  let totalSentences = 0;
+  let aiCalls = 0;
+
+  const now = new Date().toISOString();
+
+  // Process each language group in batch
+  for (const [language, langParagraphs] of byLanguage) {
+    console.log();
+    console.log(`Processing ${langParagraphs.length} paragraphs in ${language}...`);
+
+    // Prepare paragraphs for batch API
+    const batchInput = langParagraphs.map(p => ({
+      id: p.id,
+      text: p.text
+    }));
+
+    try {
+      // Single batch call for all paragraphs of this language (1-2 AI calls)
+      aiCalls++;
+      const results = await batchAddSentenceMarkers(batchInput, language);
+
+      // Create a map for quick lookup
+      const resultMap = new Map(results.map(r => [r.id, r]));
+
+      // Process results and update database
+      for (const para of langParagraphs) {
+        const result = resultMap.get(para.id);
+
+        if (!result) {
+          console.error(`  Missing result for ${para.id}`);
+          errors++;
+          continue;
+        }
+
+        // STRICT VALIDATION: Verify marked text strips to exactly original
+        const verification = verifyMarkedText(para.originalText, result.text);
+        if (!verification.valid) {
+          console.error(`  VALIDATION FAILED ${para.id}: ${verification.error}`);
+          errors++;
+          continue;
+        }
+
+        if (dryRun) {
+          console.log(`  [DRY-RUN] Would update ${para.id}: ${result.sentenceCount} sentences (verified)`);
+        } else {
+          await query(
+            `UPDATE content SET text = ?, synced = 0, updated_at = ? WHERE id = ?`,
+            [result.text, now, para.id]
+          );
+        }
+
+        processed++;
+        totalSentences += result.sentenceCount;
+      }
+
+      console.log(`  Completed ${language}: ${processed} paragraphs updated`);
+
+    } catch (err) {
+      console.error(`  Batch processing failed for ${language}: ${err.message}`);
+      // Count all paragraphs in this language as errors
+      errors += langParagraphs.length;
+    }
   }
 
   console.log();
@@ -162,6 +177,7 @@ async function main() {
   console.log(`  Skipped:   ${skipped}`);
   console.log(`  Errors:    ${errors}`);
   console.log(`  Total sentences added: ${totalSentences}`);
+  console.log(`  AI API calls: ${aiCalls} (was ${paragraphs.length} in old approach)`);
   console.log('='.repeat(60));
 
   if (!dryRun && processed > 0) {

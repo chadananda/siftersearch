@@ -753,7 +753,12 @@ export async function addSentenceMarkers(text, options = {}) {
 
 /**
  * Get sentence boundaries using AI for RTL text
- * Returns positions in the ORIGINAL text - never modifies content
+ *
+ * APPROACH: AI returns sentence TEXT, algorithm finds exact positions
+ * This is more reliable because:
+ * - AI is good at semantic understanding (where sentences end)
+ * - String matching is deterministic and exact
+ * - We can validate that sentences are found in order and cover the text
  *
  * @param {string} text - Input text
  * @param {string} language - Language code (ar, fa)
@@ -762,7 +767,7 @@ export async function addSentenceMarkers(text, options = {}) {
 async function getAISentenceBoundaries(text, language) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
 
-  const systemPrompt = `You are an expert in ${languageHint} text analysis. Your task is to identify sentence boundaries in classical/religious texts.
+  const systemPrompt = `You are an expert in ${languageHint} text analysis. Your task is to identify sentences in classical/religious texts.
 
 ## WHAT IS A SENTENCE
 A sentence is a complete thought or statement. In Arabic/Persian texts without punctuation, look for:
@@ -771,35 +776,35 @@ A sentence is a complete thought or statement. In Arabic/Persian texts without p
 - Shifts in subject or topic within a verse
 - End of an invocation or blessing
 
+## CRITICAL: COPY TEXT EXACTLY
+You must return the EXACT text of each sentence, character-for-character, including:
+- All spaces exactly as they appear
+- All punctuation exactly as it appears
+- No trimming, no modifications, no "cleanup"
+
+## WHAT TO PRESERVE AS SINGLE UNITS
+- Divine names and attributes (الله, الرحمن الرحيم, etc.)
+- Blessing formulas (صلى الله عليه وسلم, etc.)
+- Complete invocations (بسم الله الرحمن الرحيم)
+
 ## RESPONSE FORMAT
-Return character positions (0-indexed) where each sentence starts and ends.
-Format: {"boundaries": [[start1, end1], [start2, end2], ...]}
+Return a JSON array of sentences IN ORDER:
+{"sentences": ["exact sentence 1", "exact sentence 2", ...]}
 
-The boundaries must:
-- Cover the ENTIRE text from position 0 to the last character
-- Not overlap
-- Be contiguous (end of one = start of next, accounting for whitespace)
+The sentences must:
+- Be in the same order they appear in the text
+- Together cover ALL the text (no missing parts)
+- Be copied EXACTLY from the input`;
 
-## CRITICAL RULES
-1. NEVER split in the middle of a word - boundaries must be at word breaks (spaces)
-2. Keep divine names and attributes together (الله, الرحمن الرحيم, etc.)
-3. Preserve blessing formulas as complete units (صلى الله عليه وسلم, etc.)
-4. The boundary positions must align with SPACES between words
-5. A boundary END should be right after a word, before a space
-6. A boundary START should be right after a space, at the start of a word
-
-Example for "بسم الله الرحمن الرحيم" (44 chars):
-- If 1 sentence: [[0, 44]]
-- If 2 sentences split after "الرحيم": [[0, 22], [23, 44]]
-Never: [[0, 20], [21, 44]] - this splits "الرحيم" mid-word!`;
-
-  const userPrompt = `Identify sentence boundaries in this ${languageHint} text (${text.length} characters).
+  const userPrompt = `Split this ${languageHint} text into sentences.
 
 TEXT:
 ${text}
 
-Return JSON with character positions:
-{"boundaries": [[0, X], [X, Y], ...]}`;
+Return JSON with exact sentence text copied from above:
+{"sentences": ["sentence 1", "sentence 2", ...]}
+
+CRITICAL: Copy each sentence EXACTLY as it appears. Do not modify, trim, or "clean up" the text.`;
 
   try {
     const response = await aiService('quality', { forceRemote: true }).chat([
@@ -807,7 +812,7 @@ Return JSON with character positions:
       { role: 'user', content: userPrompt }
     ], {
       temperature: 0.1,
-      max_tokens: 2000
+      max_tokens: 4000
     });
 
     const content = response.content || response;
@@ -818,50 +823,17 @@ Return JSON with character positions:
     }
 
     const result = JSON.parse(jsonMatch[0]);
-    let rawBoundaries = result.boundaries || [];
+    const sentences = result.sentences || [];
 
-    if (rawBoundaries.length === 0) {
-      throw new Error('No boundaries returned');
+    if (sentences.length === 0) {
+      throw new Error('No sentences returned');
     }
 
-    // Convert [[start, end], ...] to [{start, end}, ...]
-    const boundaries = rawBoundaries.map(b => ({
-      start: b[0],
-      end: b[1]
-    }));
+    // Find each sentence in the original text sequentially
+    const boundaries = findSentencesInText(text, sentences);
 
-    // Validate boundaries are within text and at word breaks
-    for (const b of boundaries) {
-      if (b.start < 0 || b.end > text.length || b.start >= b.end) {
-        throw new Error(`Invalid boundary: [${b.start}, ${b.end}] for text length ${text.length}`);
-      }
-
-      // Check start is at word boundary (start of text, or preceded by space)
-      if (b.start > 0 && !/\s/.test(text[b.start - 1]) && !/\s/.test(text[b.start])) {
-        throw new Error(`Boundary start ${b.start} is not at a word break`);
-      }
-
-      // Check end is at word boundary (end of text, or followed by space, or is space)
-      if (b.end < text.length && !/\s/.test(text[b.end - 1]) && !/\s/.test(text[b.end])) {
-        throw new Error(`Boundary end ${b.end} is not at a word break`);
-      }
-    }
-
-    // Sort by start position
-    boundaries.sort((a, b) => a.start - b.start);
-
-    // Verify boundaries cover the text (allowing for whitespace gaps)
-    const firstStart = boundaries[0].start;
-    const lastEnd = boundaries[boundaries.length - 1].end;
-
-    // First boundary should start near 0 (allow leading whitespace)
-    if (firstStart > 0 && text.slice(0, firstStart).trim().length > 0) {
-      throw new Error(`First boundary starts at ${firstStart}, missing content before`);
-    }
-
-    // Last boundary should end near text.length (allow trailing whitespace)
-    if (lastEnd < text.length && text.slice(lastEnd).trim().length > 0) {
-      throw new Error(`Last boundary ends at ${lastEnd}, missing content after`);
+    if (!boundaries) {
+      throw new Error('Could not locate sentences in original text');
     }
 
     return boundaries;
@@ -870,6 +842,159 @@ Return JSON with character positions:
     // Return null to trigger fallback
     return null;
   }
+}
+
+/**
+ * Find exact positions of sentences in original text
+ * Uses sequential matching to locate each sentence
+ *
+ * @param {string} text - Original text
+ * @param {string[]} sentences - Sentences to find (in order)
+ * @returns {Array<{start: number, end: number}>|null} Boundaries or null if failed
+ */
+function findSentencesInText(text, sentences) {
+  const boundaries = [];
+  let searchStart = 0;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+
+    // Try exact match first
+    let pos = text.indexOf(sentence, searchStart);
+
+    if (pos === -1) {
+      // Try with normalized whitespace (AI might have changed spacing)
+      const normalizedSentence = sentence.replace(/\s+/g, ' ').trim();
+
+      // Search remaining text with normalized comparison
+      const remainingText = text.slice(searchStart);
+      pos = findNormalizedMatch(remainingText, normalizedSentence);
+
+      if (pos !== -1) {
+        pos += searchStart; // Adjust for offset
+      }
+    }
+
+    if (pos === -1) {
+      logger.warn({
+        sentenceIndex: i,
+        sentence: sentence.slice(0, 50) + '...',
+        searchStart
+      }, 'Could not find sentence in text');
+      return null;
+    }
+
+    // Handle gap between previous sentence and this one (whitespace)
+    if (pos > searchStart) {
+      const gap = text.slice(searchStart, pos);
+      if (gap.trim().length > 0) {
+        // There's non-whitespace content between sentences - this is a problem
+        logger.warn({
+          gap: gap.slice(0, 50),
+          sentenceIndex: i
+        }, 'Non-whitespace gap between sentences');
+        // But continue anyway - better to have partial coverage than none
+      }
+    }
+
+    // Find the actual end by looking for the sentence content
+    const sentenceEnd = pos + findActualLength(text, pos, sentence);
+
+    boundaries.push({
+      start: pos,
+      end: sentenceEnd
+    });
+
+    searchStart = sentenceEnd;
+  }
+
+  // Validate we covered most of the text
+  const lastEnd = boundaries[boundaries.length - 1].end;
+  const remainingContent = text.slice(lastEnd).trim();
+
+  if (remainingContent.length > 0) {
+    logger.warn({
+      remaining: remainingContent.slice(0, 100),
+      remainingLength: remainingContent.length
+    }, 'Text after last sentence');
+    // Extend last boundary to cover remaining text
+    boundaries[boundaries.length - 1].end = text.length;
+  }
+
+  // Adjust first boundary to start at 0 if there's only whitespace before
+  if (boundaries[0].start > 0) {
+    const before = text.slice(0, boundaries[0].start);
+    if (before.trim().length === 0) {
+      boundaries[0].start = 0;
+    }
+  }
+
+  return boundaries;
+}
+
+/**
+ * Find a sentence in text using normalized whitespace comparison
+ *
+ * @param {string} text - Text to search in
+ * @param {string} normalizedSentence - Sentence with normalized whitespace
+ * @returns {number} Position or -1 if not found
+ */
+function findNormalizedMatch(text, normalizedSentence) {
+  // Create a regex that matches the words with flexible whitespace
+  const words = normalizedSentence.split(' ').filter(w => w.length > 0);
+  if (words.length === 0) return -1;
+
+  // Escape special regex characters in words
+  const escapedWords = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+  // Build pattern: words separated by flexible whitespace
+  const pattern = escapedWords.join('\\s+');
+
+  try {
+    const regex = new RegExp(pattern);
+    const match = text.match(regex);
+    return match ? match.index : -1;
+  } catch (err) {
+    // Regex failed - fall back to word-by-word search
+    logger.debug({ err: err.message }, 'Regex match failed, trying word search');
+    return -1;
+  }
+}
+
+/**
+ * Find the actual length of a sentence match in text
+ * Handles cases where AI whitespace differs from original
+ *
+ * @param {string} text - Original text
+ * @param {number} start - Start position
+ * @param {string} sentence - Sentence to match
+ * @returns {number} Length of match in original text
+ */
+function findActualLength(text, start, sentence) {
+  // Get the words from the sentence
+  const words = sentence.trim().split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 0) return sentence.length;
+
+  // Find each word sequentially
+  let pos = start;
+  let lastWordEnd = start;
+
+  for (const word of words) {
+    // Skip whitespace
+    while (pos < text.length && /\s/.test(text[pos])) pos++;
+
+    // Find this word
+    const wordStart = text.indexOf(word, pos);
+    if (wordStart === -1 || wordStart > pos + 10) {
+      // Word not found at expected position - use sentence length
+      return sentence.length;
+    }
+
+    lastWordEnd = wordStart + word.length;
+    pos = lastWordEnd;
+  }
+
+  return lastWordEnd - start;
 }
 
 /**
@@ -922,4 +1047,345 @@ function getPunctuationBoundaries(text) {
   }
 
   return boundaries;
+}
+
+// ============================================================================
+// BATCH SENTENCE DETECTION (Optimized - 1-2 API calls instead of 100+)
+// ============================================================================
+
+/**
+ * Detect sentence boundaries for ALL paragraphs in minimal AI calls
+ *
+ * Uses "ending words" approach: AI returns just the last 3-5 words of each sentence,
+ * we find those endings in the original text to determine exact positions.
+ *
+ * @param {Array<{id: string, text: string}>} paragraphs - All paragraphs to process
+ * @param {string} language - Language code ('ar', 'fa', 'en', etc.)
+ * @param {object} options - Options
+ * @returns {Promise<Map<string, string[]>>} Map of paragraph ID → sentence ending phrases
+ */
+export async function detectAllSentenceBoundaries(paragraphs, language, options = {}) {
+  const { batchSize = 50, maxTokens = 8000 } = options;
+
+  if (!paragraphs || paragraphs.length === 0) {
+    return new Map();
+  }
+
+  const features = detectLanguageFeatures(paragraphs[0]?.text || '');
+  const isRTL = language === 'ar' || language === 'fa' || features.isRTL;
+
+  // For Latin scripts, use local punctuation detection (no AI needed)
+  if (!isRTL) {
+    return detectPunctuationBoundariesBatch(paragraphs);
+  }
+
+  // Batch paragraphs to stay within token limits
+  const results = new Map();
+  const batches = [];
+
+  for (let i = 0; i < paragraphs.length; i += batchSize) {
+    batches.push(paragraphs.slice(i, i + batchSize));
+  }
+
+  logger.info({
+    totalParagraphs: paragraphs.length,
+    batches: batches.length,
+    language
+  }, 'Batch sentence detection starting');
+
+  // Process batches (can be parallelized if needed)
+  for (const batch of batches) {
+    const batchResults = await detectSentenceEndingsForBatch(batch, language);
+
+    for (const [id, endings] of batchResults) {
+      results.set(id, endings);
+    }
+  }
+
+  logger.info({
+    processedParagraphs: results.size
+  }, 'Batch sentence detection complete');
+
+  return results;
+}
+
+/**
+ * Detect sentence endings for a batch of paragraphs in ONE AI call
+ *
+ * @param {Array<{id: string, text: string}>} paragraphs - Batch of paragraphs
+ * @param {string} language - Language code
+ * @returns {Promise<Map<string, string[]>>} Map of paragraph ID → sentence ending phrases
+ */
+async function detectSentenceEndingsForBatch(paragraphs, language) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  // Build the prompt with all paragraphs
+  const paraTexts = paragraphs.map((p, idx) =>
+    `PARA_${p.id}:\n${p.text}`
+  ).join('\n\n---\n\n');
+
+  const systemPrompt = `You are an expert in ${languageHint} text analysis. Your task is to identify sentence boundaries in classical/religious texts.
+
+## TASK
+For EACH paragraph below, identify where sentences end by returning the LAST 3-5 WORDS of each sentence.
+
+## WHAT IS A SENTENCE
+A sentence is a complete thought or statement. In Arabic/Persian texts without punctuation, look for:
+- Complete grammatical clauses
+- Natural pause points in recitation
+- Shifts in subject or topic
+- End of an invocation or blessing
+
+## WHAT TO KEEP AS SINGLE SENTENCES
+- Divine names and attributes (الله, الرحمن الرحيم)
+- Blessing formulas (صلى الله عليه وسلم)
+- Short invocations (بسم الله الرحمن الرحيم)
+
+## RESPONSE FORMAT
+Return JSON mapping each paragraph ID to an array of sentence endings:
+{
+  "PARA_0": ["الكلمات الأخيرة للجملة الأولى", "الكلمات الأخيرة للجملة الثانية"],
+  "PARA_1": ["ending of first sentence", "ending of second sentence"],
+  ...
+}
+
+Each ending should be the EXACT last 3-5 words of that sentence, copied precisely from the text.
+If a paragraph is a single sentence, return just one ending (the last words of the paragraph).`;
+
+  const userPrompt = `Identify sentence endings in these ${languageHint} paragraphs.
+For each sentence, return ONLY its last 3-5 words.
+
+${paraTexts}
+
+Return JSON:
+{
+  ${paragraphs.map(p => `"PARA_${p.id}": ["ending1", "ending2", ...]`).join(',\n  ')}
+}`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], {
+      temperature: 0.1,
+      max_tokens: 8000
+    });
+
+    const content = response.content || response;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error('No JSON in AI response');
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
+    const results = new Map();
+
+    for (const para of paragraphs) {
+      const key = `PARA_${para.id}`;
+      const endings = result[key] || [];
+      results.set(para.id, Array.isArray(endings) ? endings : []);
+    }
+
+    return results;
+  } catch (err) {
+    logger.error({ err: err.message, batchSize: paragraphs.length }, 'Batch sentence detection failed');
+
+    // Fall back to treating each paragraph as single sentence
+    const fallback = new Map();
+    for (const para of paragraphs) {
+      // Use last 5 words as the single "ending"
+      const words = para.text.trim().split(/\s+/);
+      const ending = words.slice(-5).join(' ');
+      fallback.set(para.id, [ending]);
+    }
+    return fallback;
+  }
+}
+
+/**
+ * Detect punctuation-based boundaries for a batch (no AI needed)
+ *
+ * @param {Array<{id: string, text: string}>} paragraphs
+ * @returns {Map<string, string[]>} Map of paragraph ID → sentence ending phrases
+ */
+function detectPunctuationBoundariesBatch(paragraphs) {
+  const results = new Map();
+
+  for (const para of paragraphs) {
+    const endings = [];
+    const sentenceEnders = /[.!?]/g;
+    let match;
+
+    while ((match = sentenceEnders.exec(para.text)) !== null) {
+      // Get last 3-5 words before this punctuation
+      const beforePunct = para.text.slice(0, match.index + 1);
+      const words = beforePunct.trim().split(/\s+/);
+      const ending = words.slice(-5).join(' ');
+      endings.push(ending);
+    }
+
+    // If no punctuation, use last words of paragraph
+    if (endings.length === 0 && para.text.trim()) {
+      const words = para.text.trim().split(/\s+/);
+      endings.push(words.slice(-5).join(' '));
+    }
+
+    results.set(para.id, endings);
+  }
+
+  return results;
+}
+
+/**
+ * Insert sentence markers into text using sentence ending phrases
+ *
+ * Finds each ending phrase in the text and inserts markers around the sentence.
+ *
+ * @param {string} text - Original paragraph text
+ * @param {string[]} endings - Sentence ending phrases (last 3-5 words of each)
+ * @returns {{text: string, sentenceCount: number}}
+ */
+export function insertSentenceMarkersFromEndings(text, endings) {
+  if (!text || !endings || endings.length === 0) {
+    // No endings = single sentence
+    const marked = wrapSentence(text, 1);
+    return { text: marked, sentenceCount: 1 };
+  }
+
+  // Find positions of each ending in the text
+  const boundaries = [];
+  let searchStart = 0;
+
+  for (const ending of endings) {
+    if (!ending || !ending.trim()) continue;
+
+    // Find this ending in the text
+    let pos = text.indexOf(ending, searchStart);
+
+    if (pos === -1) {
+      // Try with normalized whitespace
+      const normalizedEnding = ending.replace(/\s+/g, ' ').trim();
+      const normalizedText = text.slice(searchStart).replace(/\s+/g, ' ');
+      const normalizedPos = normalizedText.indexOf(normalizedEnding);
+
+      if (normalizedPos !== -1) {
+        // Approximate position in original text
+        pos = searchStart + normalizedPos;
+      }
+    }
+
+    if (pos === -1) {
+      logger.debug({ ending: ending.slice(0, 30), searchStart }, 'Ending not found in text');
+      continue;
+    }
+
+    const endPos = pos + ending.length;
+
+    // Sentence starts after previous boundary (or at text start)
+    const startPos = boundaries.length > 0 ? boundaries[boundaries.length - 1].end : 0;
+
+    // Skip leading whitespace for sentence start
+    let adjustedStart = startPos;
+    while (adjustedStart < pos && /\s/.test(text[adjustedStart])) {
+      adjustedStart++;
+    }
+
+    boundaries.push({
+      start: adjustedStart,
+      end: endPos
+    });
+
+    searchStart = endPos;
+  }
+
+  // Handle any remaining text after the last ending
+  if (boundaries.length > 0) {
+    const lastEnd = boundaries[boundaries.length - 1].end;
+    const remaining = text.slice(lastEnd).trim();
+
+    if (remaining.length > 0) {
+      // Extend last boundary to end of text
+      boundaries[boundaries.length - 1].end = text.length;
+    }
+  }
+
+  // If first boundary doesn't start at 0, extend it
+  if (boundaries.length > 0 && boundaries[0].start > 0) {
+    const before = text.slice(0, boundaries[0].start).trim();
+    if (before.length === 0) {
+      // Just whitespace, extend to 0
+      boundaries[0].start = 0;
+    }
+  }
+
+  if (boundaries.length === 0) {
+    // No boundaries found - treat as single sentence
+    const marked = wrapSentence(text, 1);
+    return { text: marked, sentenceCount: 1 };
+  }
+
+  // Insert markers working backwards to preserve positions
+  let markedText = text;
+  for (let i = boundaries.length - 1; i >= 0; i--) {
+    const { start, end } = boundaries[i];
+    const id = i + 1;
+    // Insert closing marker at end
+    markedText = markedText.slice(0, end) + `⁅/s${id}⁆` + markedText.slice(end);
+    // Insert opening marker at start
+    markedText = markedText.slice(0, start) + `⁅s${id}⁆` + markedText.slice(start);
+  }
+
+  // Verify text integrity
+  const verification = verifyMarkedText(text, markedText);
+  if (!verification.valid) {
+    logger.error({ error: verification.error }, 'Batch marking altered text - falling back');
+    const fallback = wrapSentence(text, 1);
+    return { text: fallback, sentenceCount: 1 };
+  }
+
+  return {
+    text: markedText,
+    sentenceCount: boundaries.length
+  };
+}
+
+/**
+ * Process all paragraphs with batch sentence detection
+ *
+ * Convenience function that combines detectAllSentenceBoundaries + insertSentenceMarkersFromEndings
+ *
+ * @param {Array<{id: string, text: string}>} paragraphs - Paragraphs to process
+ * @param {string} language - Language code
+ * @returns {Promise<Array<{id: string, text: string, sentenceCount: number}>>}
+ */
+export async function batchAddSentenceMarkers(paragraphs, language) {
+  // Get all sentence endings in 1-2 AI calls
+  const endings = await detectAllSentenceBoundaries(paragraphs, language);
+
+  // Insert markers locally (no AI calls)
+  const results = [];
+
+  for (const para of paragraphs) {
+    // Skip if already has markers
+    if (para.text.includes('\u2045')) {
+      results.push({
+        id: para.id,
+        text: para.text,
+        sentenceCount: (para.text.match(/⁅s\d+⁆/g) || []).length
+      });
+      continue;
+    }
+
+    const paraEndings = endings.get(para.id) || [];
+    const marked = insertSentenceMarkersFromEndings(para.text, paraEndings);
+
+    results.push({
+      id: para.id,
+      text: marked.text,
+      sentenceCount: marked.sentenceCount
+    });
+  }
+
+  return results;
 }

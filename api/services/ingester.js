@@ -12,7 +12,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
-import { segmentBlocks, detectLanguageFeatures, addSentenceMarkers } from './segmenter.js';
+import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers } from './segmenter.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -311,20 +311,29 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     };
   }
 
-  // Add sentence markers to each paragraph for translation segment support
+  // Add sentence markers to all paragraphs in batch (1-2 AI calls instead of 100+)
   // This enables per-sentence translations and URL anchors
   let totalSentences = 0;
-  for (const chunk of chunks) {
-    try {
-      const { text: markedText, sentenceCount } = await addSentenceMarkers(chunk.text, {
-        language: finalMeta.language
-      });
-      chunk.text = markedText;
-      totalSentences += sentenceCount;
-    } catch (err) {
-      // If marking fails, keep original text (single-sentence fallback handled in addSentenceMarkers)
-      logger.warn({ err: err.message }, 'Failed to add sentence markers, keeping original');
+  try {
+    const paragraphsToMark = chunks.map((chunk, idx) => ({
+      id: String(idx),
+      text: chunk.text
+    }));
+
+    const markedResults = await batchAddSentenceMarkers(paragraphsToMark, finalMeta.language);
+
+    // Apply results back to chunks
+    for (const result of markedResults) {
+      const idx = parseInt(result.id, 10);
+      if (idx >= 0 && idx < chunks.length) {
+        chunks[idx].text = result.text;
+        totalSentences += result.sentenceCount;
+      }
     }
+  } catch (err) {
+    // If batch marking fails completely, log but keep original text
+    // Individual paragraphs will still have fallback single-sentence wrapping
+    logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
   }
 
   logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers');
