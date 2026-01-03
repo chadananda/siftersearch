@@ -17,6 +17,7 @@
   import { marked } from 'marked';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
+  import { getAccessToken } from '../../lib/api.js';
   import AuthModal from '../AuthModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -417,9 +418,15 @@
 
     translationQueuing = true;
     try {
+      const token = getAccessToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${API_BASE}/api/services/translate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
           documentId: document.id,
