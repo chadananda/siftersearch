@@ -10,6 +10,7 @@
    */
 
   import { onMount } from 'svelte';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -48,7 +49,7 @@
     error = null;
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/by-slug/${religionSlug}`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/by-slug/${religionSlug}`);
 
       if (!res.ok) {
         if (res.status === 404) {

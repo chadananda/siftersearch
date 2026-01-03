@@ -4,7 +4,7 @@
    * Inline modal overlay for editing religion/collection metadata
    */
 
-  import { getUserId } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   let {
     node = null,
@@ -14,15 +14,6 @@
   } = $props();
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
-
-  // Build auth headers for API requests
-  function getHeaders(json = false) {
-    const headers = {};
-    if (json) headers['Content-Type'] = 'application/json';
-    const uid = getUserId();
-    if (uid) headers['X-User-ID'] = uid;
-    return headers;
-  }
 
   // Form state
   let symbol = $state('');
@@ -62,10 +53,8 @@
     error = '';
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/nodes/${node.id}/generate-description`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: getHeaders()
+      const res = await authenticatedFetch(`${API_BASE}/api/library/nodes/${node.id}/generate-description`, {
+        method: 'POST'
       });
 
       if (!res.ok) {
@@ -102,10 +91,9 @@
         updates.cover_image_url = coverImageUrl;
       }
 
-      const res = await fetch(`${API_BASE}/api/library/nodes/${node.id}`, {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/nodes/${node.id}`, {
         method: 'PUT',
-        credentials: 'include',
-        headers: getHeaders(true),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
 

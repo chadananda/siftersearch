@@ -1,7 +1,7 @@
 <script>
   import { tick } from 'svelte';
   import { getAuthState } from '../../lib/auth.svelte.js';
-  import { getAccessToken } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
   import BilingualView from '../library/BilingualView.svelte';
 
   let {
@@ -142,14 +142,9 @@
       translatingIds = new Set([...translatingIds, ...batchIds]);
 
       try {
-        const token = getAccessToken();
-        const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/translate-batch`, {
+        const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${document.id}/translate-batch`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` })
-          },
-          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ paragraphIds: batchIds })
         });
 

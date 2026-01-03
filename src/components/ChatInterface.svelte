@@ -1,7 +1,7 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked';
-  import { search, session, documents, triggerServerUpdate } from '../lib/api.js';
+  import { search, session, documents, triggerServerUpdate, authenticatedFetch } from '../lib/api.js';
 
   // Client version - baked in at build time
   const CLIENT_VERSION = __APP_VERSION__;
@@ -854,7 +854,7 @@
 
     try {
       // Fetch document details
-      const docRes = await fetch(`${API_BASE}/api/library/documents/${documentId}?paragraphs=true`);
+      const docRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${documentId}?paragraphs=true`);
       if (!docRes.ok) throw new Error('Document not found');
       const docData = await docRes.json();
 

@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import BilingualView from './BilingualView.svelte';
-  import { getAccessToken } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
 
@@ -110,7 +110,7 @@
       const isNonEnglish = doc.language && doc.language !== 'en';
 
       if (isNonEnglish) {
-        const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=100`);
+        const bilingualRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=100`);
         if (bilingualRes.ok) {
           const data = await bilingualRes.json();
           // Only use bilingual if it has paragraphs, otherwise fall back
@@ -123,7 +123,7 @@
       }
 
       // Fallback to standard content
-      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
       if (!res.ok) throw new Error('Failed to load content');
       expandedContent = await res.json();
     } catch (err) {
@@ -153,13 +153,13 @@
     }
     loadingStats = new Set([...loadingStats, doc.id]);
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=1`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=1`);
       if (res.ok) {
         const data = await res.json();
         const total = data.total || 0;
         const translated = data.paragraphs?.filter(p => p.translation)?.length || 0;
         // Get full stats by fetching all paragraphs counts
-        const statsRes = await fetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
+        const statsRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
         if (statsRes.ok) {
           const stats = await statsRes.json();
           docTranslationStats = new Map(docTranslationStats).set(doc.id, stats);
@@ -197,15 +197,10 @@
   async function requestTranslation(docId) {
     translating = docId;
     try {
-      const token = getAccessToken();
-      const res = await fetch(`${API_BASE}/api/library/documents/${docId}/queue-translation`, {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${docId}/queue-translation`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify({}),
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
       });
 
       if (!res.ok) {
@@ -252,7 +247,7 @@
       // Check status for each active job
       for (const [docId, _jobId] of activeJobs) {
         try {
-          const res = await fetch(`${API_BASE}/api/library/documents/${docId}/translation-status`);
+          const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${docId}/translation-status`);
           if (res.ok) {
             const status = await res.json();
 

@@ -92,6 +92,42 @@ export function getAccessToken() {
 const CLIENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
 
 /**
+ * Authenticated fetch wrapper - adds JWT headers to any fetch request
+ * Use this instead of raw fetch() for any authenticated API calls
+ *
+ * @param {string} url - The URL to fetch
+ * @param {RequestInit} options - Standard fetch options
+ * @returns {Promise<Response>} - The fetch response
+ */
+export async function authenticatedFetch(url, options = {}) {
+  const headers = {
+    ...options.headers
+  };
+
+  // Add user ID for anonymous tracking
+  const uid = getUserId();
+  if (uid) {
+    headers['X-User-ID'] = uid;
+  }
+
+  // Add client version for auto-update detection
+  if (CLIENT_VERSION) {
+    headers['X-Client-Version'] = CLIENT_VERSION;
+  }
+
+  // Add JWT auth header if logged in
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include' // For refresh token cookie
+  });
+}
+
+/**
  * Make an API request
  */
 async function request(path, options = {}) {

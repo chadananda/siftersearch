@@ -3,7 +3,7 @@
    * CollectionHeader Component
    * Hero header for collection pages - matches ReligionHeader style
    */
-  import { getUserId } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   let { node = null, documentCount = 0, isAdmin = false, onEdit = null } = $props();
 
@@ -25,14 +25,8 @@
     generationError = '';
 
     try {
-      const headers = { 'Content-Type': 'application/json' };
-      const uid = getUserId();
-      if (uid) headers['X-User-ID'] = uid;
-
-      const res = await fetch(`${API_BASE}/api/library/nodes/${node.id}/generate-description`, {
-        method: 'POST',
-        credentials: 'include',
-        headers
+      const res = await authenticatedFetch(`${API_BASE}/api/library/nodes/${node.id}/generate-description`, {
+        method: 'POST'
       });
 
       if (!res.ok) {
@@ -44,10 +38,9 @@
       generatedDescription = data.description;
 
       // Also save it to the database
-      await fetch(`${API_BASE}/api/library/nodes/${node.id}`, {
+      await authenticatedFetch(`${API_BASE}/api/library/nodes/${node.id}`, {
         method: 'PUT',
-        credentials: 'include',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: data.description })
       });
     } catch (err) {

@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { getAuthState } from '../../lib/auth.svelte.js';
+  import { authenticatedFetch } from '../../lib/api.js';
   import TreeView from './TreeView.svelte';
   import DocumentList from './DocumentList.svelte';
   import FilterPanel from './FilterPanel.svelte';
@@ -63,7 +64,7 @@
 
   async function fetchTree() {
     try {
-      let res = await fetch(`${API_BASE}/api/library/nodes`);
+      let res = await authenticatedFetch(`${API_BASE}/api/library/nodes`);
       if (res.ok) {
         const data = await res.json();
         treeData = (data.nodes || []).map(religion => ({
@@ -88,7 +89,7 @@
         return;
       }
       // Fallback to legacy tree endpoint
-      res = await fetch(`${API_BASE}/api/library/tree`);
+      res = await authenticatedFetch(`${API_BASE}/api/library/tree`);
       if (!res.ok) throw new Error('Failed to load library tree');
       const data = await res.json();
       treeData = (data.religions || []).map(religion => ({
@@ -119,7 +120,7 @@
       if (filters.yearTo) params.set('yearTo', filters.yearTo);
       if (filters.status !== 'all') params.set('status', filters.status);
 
-      const res = await fetch(`${API_BASE}/api/library/documents?${params}`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents?${params}`);
       if (!res.ok) throw new Error('Failed to load documents');
       const data = await res.json();
       documents = reset ? data.documents || [] : [...documents, ...(data.documents || [])];
@@ -133,7 +134,7 @@
 
   async function fetchStats() {
     try {
-      const res = await fetch(`${API_BASE}/api/library/stats`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/stats`);
       if (res.ok) stats = await res.json();
     } catch {}
   }

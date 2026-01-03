@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { marked } from 'marked';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -31,7 +32,7 @@
     error = null;
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${documentId}?includeParagraphs=true&paragraphLimit=1000`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${documentId}?includeParagraphs=true&paragraphLimit=1000`);
 
       if (!res.ok) {
         if (res.status === 404) {

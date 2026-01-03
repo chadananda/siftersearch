@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { marked } from 'marked';
-  import { getAccessToken } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   let { document = null, isAdmin = false } = $props();
 
@@ -48,7 +48,7 @@
     error = null;
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${document.id}?includeParagraphs=true&paragraphLimit=500`);
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${document.id}?includeParagraphs=true&paragraphLimit=500`);
       if (!res.ok) throw new Error('Failed to load document details');
       const data = await res.json();
       paragraphs = data.paragraphs || [];
@@ -65,10 +65,7 @@
 
     loading = true;
     try {
-      const token = getAccessToken();
-      const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/content`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${document.id}/content`);
       if (!res.ok) throw new Error('Failed to load content comparison');
       contentData = await res.json();
     } catch (err) {
@@ -83,13 +80,9 @@
     error = null;
 
     try {
-      const token = getAccessToken();
-      const res = await fetch(`${API_BASE}/api/library/documents/${document.id}`, {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${document.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: editableDoc.title,
           author: editableDoc.author,
@@ -119,10 +112,8 @@
 
     saving = true;
     try {
-      const token = getAccessToken();
-      const res = await fetch(`${API_BASE}/api/library/documents/${document.id}/reindex`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${document.id}/reindex`, {
+        method: 'POST'
       });
 
       if (!res.ok) throw new Error('Failed to queue re-index');

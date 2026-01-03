@@ -6,6 +6,7 @@
    */
   import { onMount } from 'svelte';
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
@@ -47,7 +48,7 @@
 
     try {
       // Fetch document metadata
-      const docRes = await fetch(`${API_BASE}/api/library/documents/${params.doc}`);
+      const docRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${params.doc}`);
       if (docRes.ok) {
         document = await docRes.json();
       } else {
@@ -55,7 +56,7 @@
       }
 
       // Fetch bilingual content
-      const bilingualRes = await fetch(`${API_BASE}/api/library/documents/${params.doc}/bilingual?limit=500`);
+      const bilingualRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${params.doc}/bilingual?limit=500`);
       if (bilingualRes.ok) {
         const data = await bilingualRes.json();
         paragraphs = data.paragraphs || [];

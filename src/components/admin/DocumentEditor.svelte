@@ -6,6 +6,7 @@
    */
   import { onMount, onDestroy } from 'svelte';
   import { getAuthState } from '../../lib/auth.svelte.js';
+  import { authenticatedFetch } from '../../lib/api.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const auth = getAuthState();
@@ -39,11 +40,7 @@
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${documentId}/raw`, {
-        headers: {
-          'Authorization': `Bearer ${auth.token}`
-        }
-      });
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${documentId}/raw`);
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -153,12 +150,9 @@
     saveSuccess = false;
 
     try {
-      const res = await fetch(`${API_BASE}/api/library/documents/${documentId}/raw`, {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${documentId}/raw`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
       });
 

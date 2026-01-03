@@ -13,11 +13,11 @@
    * - RTL language support
    */
 
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { marked } from 'marked';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
-  import { getAccessToken } from '../../lib/api.js';
+  import { authenticatedFetch } from '../../lib/api.js';
   import AuthModal from '../AuthModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -198,6 +198,11 @@
     }
   });
 
+  // Cleanup polling on component destroy
+  onDestroy(() => {
+    stopTranslationPolling();
+  });
+
   async function loadDocument() {
     if (!pathReligion || !pathCollection || !pathSlug) {
       error = 'Invalid document path';
@@ -209,9 +214,8 @@
     error = null;
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=0`,
-        { credentials: 'include' }
+      const res = await authenticatedFetch(
+        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=0`
       );
 
       if (!res.ok) {
@@ -273,9 +277,8 @@
     loadingMore = true;
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=${offset}`,
-        { credentials: 'include' }
+      const res = await authenticatedFetch(
+        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=${offset}`
       );
 
       if (!res.ok) {
@@ -408,26 +411,21 @@
 
   // Translation queue state
   let translationQueuing = $state(false);
-  let translationQueued = $state(false);
+  let translationJobId = $state(null);
+  let translationProgress = $state(null); // { progress, total, status }
+  let translationPolling = $state(null);
 
   /**
    * Queue translation directly without modal
    */
   async function queueTranslation() {
-    if (!document?.id || translationQueuing) return;
+    if (!document?.id || translationQueuing || translationJobId) return;
 
     translationQueuing = true;
     try {
-      const token = getAccessToken();
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(`${API_BASE}/api/services/translate`, {
+      const res = await authenticatedFetch(`${API_BASE}/api/services/translate`, {
         method: 'POST',
-        headers,
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           documentId: document.id,
           targetLanguage: 'en',
@@ -440,13 +438,63 @@
         throw new Error(data.error || 'Failed to queue');
       }
 
-      translationQueued = true;
-      // Reset after 3 seconds
-      setTimeout(() => { translationQueued = false; }, 3000);
+      const data = await res.json();
+      translationJobId = data.jobId;
+      translationProgress = { progress: 0, total: 0, status: 'queued' };
+
+      // Start polling for job status
+      startTranslationPolling();
     } catch (err) {
       console.error('Translation queue failed:', err);
     } finally {
       translationQueuing = false;
+    }
+  }
+
+  /**
+   * Poll for translation job status
+   */
+  function startTranslationPolling() {
+    if (translationPolling) return;
+
+    translationPolling = setInterval(async () => {
+      if (!translationJobId) {
+        stopTranslationPolling();
+        return;
+      }
+
+      try {
+        const res = await authenticatedFetch(`${API_BASE}/api/services/translate/status/${translationJobId}`);
+        if (!res.ok) throw new Error('Failed to get status');
+
+        const status = await res.json();
+        translationProgress = {
+          progress: status.progress || 0,
+          total: status.totalItems || 0,
+          status: status.status
+        };
+
+        // Job completed - reload document and stop polling
+        if (status.status === 'completed') {
+          stopTranslationPolling();
+          translationJobId = null;
+          // Reload document to get updated translations
+          await loadDocument();
+        } else if (status.status === 'failed') {
+          stopTranslationPolling();
+          translationJobId = null;
+          translationProgress = { ...translationProgress, status: 'failed', error: status.error };
+        }
+      } catch (err) {
+        console.error('Status poll failed:', err);
+      }
+    }, 3000); // Poll every 3 seconds
+  }
+
+  function stopTranslationPolling() {
+    if (translationPolling) {
+      clearInterval(translationPolling);
+      translationPolling = null;
     }
   }
 
@@ -526,19 +574,18 @@
         {#if isAdmin && isNonEnglish}
           <button
             class="util-btn translate"
-            class:queued={translationQueued}
+            class:active={translationJobId}
             onclick={queueTranslation}
-            disabled={translationQueuing}
-            title={translationQueued ? 'Translation queued!' : 'Queue translation'}
+            disabled={translationQueuing || translationJobId}
+            title={translationJobId ? `Translating: ${translationProgress?.progress || 0}/${translationProgress?.total || '?'}` : 'Queue translation'}
           >
-            {#if translationQueuing}
+            {#if translationQueuing || translationJobId}
               <svg class="spinner" viewBox="0 0 24 24" width="18" height="18">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
               </svg>
-            {:else if translationQueued}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
+              {#if translationProgress?.total > 0}
+                <span class="progress-text">{translationProgress.progress}/{translationProgress.total}</span>
+              {/if}
             {:else}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -977,7 +1024,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    z-index: 100;
+    z-index: 40; /* Below navbar dropdowns (200+) */
   }
 
   .util-btn {
@@ -1057,14 +1104,22 @@
     background: #7c3aed;
   }
 
-  .util-btn.translate.queued {
+  .util-btn.translate.active {
     background: #10b981;
     border-color: #10b981;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .util-btn.translate:disabled {
     opacity: 0.7;
     cursor: wait;
+  }
+
+  .util-btn.translate .progress-text {
+    font-size: 0.6rem;
+    font-weight: 600;
+    line-height: 1;
   }
 
   /* View mode toggle group */
