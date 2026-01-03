@@ -31,6 +31,59 @@ import { constants as fsConstants } from 'fs';
 import { join, dirname } from 'path';
 import matter from 'gray-matter';
 
+/**
+ * Parse translation field from paragraph
+ * Handles both legacy (plain string) and new (JSON object) formats
+ *
+ * New JSON format:
+ * {
+ *   "reading": "Literary fluent translation...",
+ *   "study": "Literal word-by-word translation...",
+ *   "segments": [{ "id": 1, "original": "...", "translation": "..." }],
+ *   "notes": [{ "original": "...", "literal": "...", "notes": "..." }]
+ * }
+ */
+function parseTranslationField(paragraph) {
+  const p = { ...paragraph };
+
+  if (!p.translation) {
+    return {
+      ...p,
+      translation: null,
+      study_translation: null,
+      translation_segments: p.translation_segments || null,
+      study_notes: null
+    };
+  }
+
+  // Try to parse as JSON (new format)
+  try {
+    const parsed = JSON.parse(p.translation);
+    if (typeof parsed === 'object' && parsed !== null && (parsed.reading || parsed.study)) {
+      // New JSON format - use translation_segments for component compatibility
+      return {
+        ...p,
+        translation: parsed.reading || null,
+        study_translation: parsed.study || null,
+        translation_segments: parsed.segments || p.translation_segments || null,
+        study_notes: parsed.notes || null
+      };
+    }
+  } catch {
+    // Not JSON, treat as legacy plain string
+  }
+
+  // Legacy format: plain string translation
+  // translation_segments already in paragraph from DB query
+  return {
+    ...p,
+    translation: p.translation,
+    study_translation: null,
+    translation_segments: p.translation_segments || null,
+    study_notes: null
+  };
+}
+
 export default async function libraryRoutes(fastify) {
 
   // ============================================
@@ -943,7 +996,7 @@ Return ONLY the description text, no quotes or formatting.`;
     if (includeParagraphs) {
       const [paras, countResult] = await Promise.all([
         queryAll(`
-          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments, study_translation, study_notes
+          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
           FROM content
           WHERE doc_id = ?
           ORDER BY paragraph_index
@@ -951,12 +1004,8 @@ Return ONLY the description text, no quotes or formatting.`;
         `, [id, paragraphLimit, paragraphOffset]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
       ]);
-      // Parse translation_segments and study_notes from JSON strings
-      paragraphs = paras.map(p => ({
-        ...p,
-        segments: p.translation_segments ? JSON.parse(p.translation_segments) : null,
-        study_notes: p.study_notes || null
-      }));
+      // Parse translation field - can be plain string (legacy) or JSON object (new)
+      paragraphs = paras.map(p => parseTranslationField(p));
       paragraphTotal = countResult?.count || 0;
     }
 
@@ -1131,7 +1180,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Fetch paragraphs
     const [paragraphs, countResult] = await Promise.all([
       effectiveLimit > 0 ? queryAll(`
-        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments, study_translation, study_notes
+        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
         FROM content
         WHERE doc_id = ?
         ORDER BY paragraph_index
@@ -1140,12 +1189,8 @@ Return ONLY the description text, no quotes or formatting.`;
       queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [document.id])
     ]);
 
-    // Parse translation segments and study notes
-    const formattedParagraphs = paragraphs.map(p => ({
-      ...p,
-      segments: p.translation_segments ? JSON.parse(p.translation_segments) : null,
-      study_notes: p.study_notes || null
-    }));
+    // Parse translation field (handles both legacy string and new JSON format)
+    const formattedParagraphs = paragraphs.map(p => parseTranslationField(p));
 
     const total = countResult?.count || 0;
 
@@ -1472,7 +1517,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     try {
       paragraphs = await queryAll(`
-        SELECT id, paragraph_index, text, translation, translation_segments, study_translation, study_notes, blocktype, heading
+        SELECT id, paragraph_index, text, translation, translation_segments, blocktype, heading
         FROM content
         WHERE doc_id = ?
         ORDER BY paragraph_index
@@ -1499,6 +1544,22 @@ Return ONLY the description text, no quotes or formatting.`;
     // Determine if document needs RTL display
     const isRTL = ['ar', 'fa', 'he', 'ur'].includes(document.language);
 
+    // Parse translation fields (handles both legacy string and new JSON format)
+    const parsedParagraphs = paragraphs.map(p => {
+      const parsed = parseTranslationField(p);
+      return {
+        id: p.id,
+        index: p.paragraph_index,
+        original: p.text,
+        translation: parsed.translation,
+        study_translation: parsed.study_translation,
+        study_notes: parsed.study_notes,
+        translation_segments: parsed.translation_segments,
+        blocktype: p.blocktype || 'paragraph',
+        heading: p.heading
+      };
+    });
+
     return {
       document: {
         id: document.id,
@@ -1507,33 +1568,12 @@ Return ONLY the description text, no quotes or formatting.`;
         language: document.language,
         isRTL
       },
-      paragraphs: paragraphs.map(p => {
-        // Parse segments JSON if available
-        let segments = null;
-        if (p.translation_segments) {
-          try {
-            segments = JSON.parse(p.translation_segments);
-          } catch {
-            // Invalid JSON, ignore segments
-          }
-        }
-        return {
-          id: p.id,
-          index: p.paragraph_index,
-          original: p.text,
-          translation: p.translation || null,
-          study_translation: p.study_translation || null,
-          study_notes: p.study_notes || null,
-          segments,  // Aligned phrase pairs for interactive highlighting
-          blocktype: p.blocktype || 'paragraph',
-          heading: p.heading
-        };
-      }),
+      paragraphs: parsedParagraphs,
       total,
       limit,
       offset,
-      hasTranslations: paragraphs.some(p => p.translation),
-      hasStudyTranslations: paragraphs.some(p => p.study_translation)
+      hasTranslations: parsedParagraphs.some(p => p.translation),
+      hasStudyTranslations: parsedParagraphs.some(p => p.study_translation)
     };
   });
 

@@ -311,9 +311,29 @@ function organizeIntoWaves(paragraphs, stride = 10) {
 }
 
 /**
+ * Parse existing translation field (handles both legacy string and new JSON format)
+ * Returns: { reading, study, segments, notes } or null
+ */
+function parseExistingTranslation(translationField) {
+  if (!translationField) return null;
+
+  try {
+    const parsed = JSON.parse(translationField);
+    if (typeof parsed === 'object' && parsed !== null && (parsed.reading || parsed.study)) {
+      return parsed;
+    }
+  } catch {
+    // Not JSON - legacy string format (treat as reading translation)
+    return { reading: translationField, study: null, segments: null, notes: null };
+  }
+
+  return null;
+}
+
+/**
  * Process in-app translation (Arabic/Persian -> English)
  * Generates BOTH reading and study translations simultaneously
- * Saves to content.translation and content.study_translation columns
+ * Saves to content.translation as JSON: { reading, study, segments, notes }
  *
  * Enhanced with:
  * - Document metadata context (title, author, abstract)
@@ -340,17 +360,22 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   // Build document context for prompts
   const documentContext = buildDocumentContext(document);
 
-  // Get paragraphs that need any translation (missing either reading OR study)
+  // Get paragraphs that need any translation
+  // We'll check existing JSON to see what's missing
   const paragraphs = await queryAll(`
-    SELECT id, paragraph_index, text, translation, study_translation
+    SELECT id, paragraph_index, text, translation
     FROM content
     WHERE doc_id = ?
-      AND ((translation IS NULL OR translation = '')
-           OR (study_translation IS NULL OR study_translation = ''))
     ORDER BY paragraph_index
   `, [documentId]);
 
-  const totalParagraphs = paragraphs.length;
+  // Filter to paragraphs that need translation (missing reading OR study)
+  const paragraphsNeedingTranslation = paragraphs.filter(p => {
+    const existing = parseExistingTranslation(p.translation);
+    return !existing || !existing.reading || !existing.study;
+  });
+
+  const totalParagraphs = paragraphsNeedingTranslation.length;
 
   if (totalParagraphs === 0) {
     logger.info({ jobId: job.id, documentId }, 'No paragraphs need translation');
@@ -364,17 +389,17 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalParagraphs });
 
   // Build a map for looking up previous paragraphs (including already-translated ones)
-  const allParagraphs = await queryAll(`
-    SELECT paragraph_index, text, translation, study_translation
-    FROM content
-    WHERE doc_id = ?
-    ORDER BY paragraph_index
-  `, [documentId]);
-
-  const paragraphMap = new Map(allParagraphs.map(p => [p.paragraph_index, p]));
+  // Parse existing translations to get reading text for context
+  const paragraphMap = new Map(paragraphs.map(p => {
+    const existing = parseExistingTranslation(p.translation);
+    return [p.paragraph_index, {
+      ...p,
+      readingTranslation: existing?.reading || null
+    }];
+  }));
 
   // Organize into staggered waves (1,11,21... then 2,12,22...)
-  const waves = organizeIntoWaves(paragraphs, 10);
+  const waves = organizeIntoWaves(paragraphsNeedingTranslation, 10);
 
   logger.info({
     jobId: job.id,
@@ -395,22 +420,23 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         const prevPara = paragraphMap.get(para.paragraph_index - 1);
         const prevContext = prevPara ? {
           original: prevPara.text,
-          translation: prevPara.translation || null
+          translation: prevPara.readingTranslation || null
         } : null;
 
         const now = new Date().toISOString();
         const textHasMarkers = hasMarkers(para.text);
 
-        // Check what translations are needed
-        const needsReading = !para.translation;
-        const needsStudy = !para.study_translation;
+        // Parse existing translation to see what's needed
+        const existing = parseExistingTranslation(para.translation);
+        const needsReading = !existing?.reading;
+        const needsStudy = !existing?.study;
 
-        let readingResult = null;
-        let studyResult = null;
+        // Start with existing data or empty object
+        const translationData = existing || { reading: null, study: null, segments: null, notes: null };
 
         // Generate reading translation if needed
         if (needsReading) {
-          readingResult = await translateWithContext({
+          const readingResult = await translateWithContext({
             text: para.text,
             sourceLang,
             targetLang: 'en',
@@ -421,24 +447,19 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             hasMarkers: textHasMarkers
           });
 
-          // Save reading translation
-          const segmentsJson = readingResult.segments ? JSON.stringify(readingResult.segments) : null;
-          await query(`
-            UPDATE content
-            SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
-            WHERE id = ?
-          `, [readingResult.translation, segmentsJson, now, para.id]);
+          translationData.reading = readingResult.translation;
+          translationData.segments = readingResult.segments || null;
 
           // Update map for future paragraphs
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
-            mapEntry.translation = readingResult.translation;
+            mapEntry.readingTranslation = readingResult.translation;
           }
         }
 
         // Generate study translation if needed
         if (needsStudy) {
-          studyResult = await translateWithContext({
+          const studyResult = await translateWithContext({
             text: para.text,
             sourceLang,
             targetLang: 'en',
@@ -449,20 +470,17 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             hasMarkers: textHasMarkers
           });
 
-          // Save study translation
-          const studyNotesJson = studyResult.studyNotes ? JSON.stringify(studyResult.studyNotes) : null;
-          await query(`
-            UPDATE content
-            SET study_translation = ?, study_notes = ?, synced = 0, updated_at = ?
-            WHERE id = ?
-          `, [studyResult.translation, studyNotesJson, now, para.id]);
-
-          // Update map for future paragraphs
-          const mapEntry = paragraphMap.get(para.paragraph_index);
-          if (mapEntry) {
-            mapEntry.study_translation = studyResult.translation;
-          }
+          translationData.study = studyResult.translation;
+          translationData.notes = studyResult.studyNotes?.segments || null;
         }
+
+        // Save as single JSON object in translation field
+        const translationJson = JSON.stringify(translationData);
+        await query(`
+          UPDATE content
+          SET translation = ?, synced = 0, updated_at = ?
+          WHERE id = ?
+        `, [translationJson, now, para.id]);
 
         translatedCount++;
 
