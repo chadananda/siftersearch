@@ -539,7 +539,11 @@
     // First check if segments are in the JSON translation
     const trans = parseTranslation(para);
     if (trans?.segments && Array.isArray(trans.segments) && trans.segments.length > 0) {
-      return trans.segments;
+      // Ensure each segment has an id for highlighting
+      return trans.segments.map((seg, idx) => ({
+        ...seg,
+        id: seg.id ?? idx
+      }));
     }
     // Fallback to translation_segments field
     if (!para.translation_segments) return null;
@@ -547,7 +551,12 @@
       const segments = typeof para.translation_segments === 'string'
         ? JSON.parse(para.translation_segments)
         : para.translation_segments;
-      return Array.isArray(segments) && segments.length > 0 ? segments : null;
+      if (!Array.isArray(segments) || segments.length === 0) return null;
+      // Ensure each segment has an id for highlighting
+      return segments.map((seg, idx) => ({
+        ...seg,
+        id: seg.id ?? idx
+      }));
     } catch {
       return null;
     }
@@ -1943,8 +1952,9 @@
 
   .original-col[dir="rtl"] {
     font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1.125rem;
-    line-height: 1.9;
+    /* Arabic text 1.25x larger than base for readability */
+    font-size: 1.25rem;
+    line-height: 2;
     text-align: right;
   }
 
@@ -1964,11 +1974,15 @@
   .translation-col {
     padding-left: 1.25rem;
     border-left: 1px solid rgba(0, 0, 0, 0.08);
+    /* English translation - left-aligned with tighter line spacing */
+    text-align: left;
   }
 
   .translation-col .paragraph-text {
-    color: #444;
+    color: #333;
     font-style: normal;
+    /* Tighter line spacing for English to match base mode */
+    line-height: 1.75;
   }
 
   /* Phrase-level segment highlighting */

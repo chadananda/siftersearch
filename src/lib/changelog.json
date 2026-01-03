@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:55:23.528Z",
+  "generated": "2026-01-03T19:57:49.524Z",
   "entries": [
+    {
+      "hash": "455e1c5",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Collapse all utility buttons to hamburger menu on mobile",
+      "scope": null
+    },
     {
       "hash": "e639a3f",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove non-existent slug column from docs table queries",
       "scope": null
-    },
-    {
-      "hash": "a53f7ba",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Include filename in document API responses for dynamic slug generation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "455e1c5",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Collapse all utility buttons to hamburger menu on mobile",
+        "scope": null
+      },
       {
         "hash": "e639a3f",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Remove non-existent slug column from docs table queries",
-        "scope": null
-      },
-      {
-        "hash": "a53f7ba",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Include filename in document API responses for dynamic slug generation",
         "scope": null
       }
     ]
