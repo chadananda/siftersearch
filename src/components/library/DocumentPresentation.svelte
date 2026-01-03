@@ -1804,6 +1804,8 @@
 
   .document-content.bilingual {
     max-width: 80rem;
+    /* Tighter padding for bilingual to maximize reading area */
+    padding: 1.5rem 1.5rem 3rem 1.5rem;
   }
 
   .document-content.rtl {
@@ -1946,7 +1948,7 @@
   }
 
   .original-col {
-    padding-right: 1.25rem;
+    padding-right: 0.75rem;
     border-right: 1px solid rgba(0, 0, 0, 0.08);
   }
 
@@ -1972,7 +1974,7 @@
   }
 
   .translation-col {
-    padding-left: 1.25rem;
+    padding-left: 0.75rem;
     border-left: 1px solid rgba(0, 0, 0, 0.08);
     /* English translation - left-aligned with tighter line spacing */
     text-align: left;
@@ -2004,8 +2006,10 @@
   }
 
   .segment-phrase.highlighted {
-    background: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.15);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    /* Ensure text is readable against highlight background */
+    color: #1a1a1a;
   }
 
   /* RTL segment styling */

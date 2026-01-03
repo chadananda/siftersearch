@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T20:03:30.858Z",
+  "generated": "2026-01-03T20:05:50.452Z",
   "entries": [
+    {
+      "hash": "008ae07",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add hanging indent and visible left margin on mobile",
+      "scope": null
+    },
     {
       "hash": "a03dd41",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add encumbered field support to API and test setup",
       "scope": null
-    },
-    {
-      "hash": "31076e1",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add paragraph anchor linking for document pages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "008ae07",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add hanging indent and visible left margin on mobile",
+        "scope": null
+      },
       {
         "hash": "a03dd41",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add encumbered field support to API and test setup",
-        "scope": null
-      },
-      {
-        "hash": "31076e1",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add paragraph anchor linking for document pages",
         "scope": null
       }
     ]
