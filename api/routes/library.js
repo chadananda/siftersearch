@@ -1050,6 +1050,27 @@ Return ONLY the description text, no quotes or formatting.`;
     });
 
     if (!document) {
+      // Check for redirect before returning 404
+      const requestedPath = `/library/${religion}/${collection}/${slug}`;
+      const redirect = await queryOne(`
+        SELECT new_path FROM redirects WHERE old_path = ?
+      `, [requestedPath]);
+
+      if (redirect) {
+        // Update hit count
+        await query(`
+          UPDATE redirects SET hit_count = hit_count + 1, last_hit_at = datetime('now')
+          WHERE old_path = ?
+        `, [requestedPath]);
+
+        // Return redirect response
+        return {
+          redirect: true,
+          statusCode: 308,
+          location: redirect.new_path
+        };
+      }
+
       throw ApiError.notFound('Document not found');
     }
 
@@ -1180,13 +1201,20 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Verify document exists in libsql (source of truth)
     const document = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description, paragraph_count
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename
       FROM docs WHERE id = ?
     `, [id]);
 
     if (!document) {
       throw ApiError.notFound('Document not found');
     }
+
+    // Track URL path changes for redirects
+    // Generate old path before any updates
+    const oldDocSlug = generateDocSlug(document);
+    const oldReligionSlug = slugifyPath(document.religion || '');
+    const oldCollectionSlug = slugifyPath(document.collection || '');
+    const oldPath = `/library/${oldReligionSlug}/${oldCollectionSlug}/${oldDocSlug}`;
 
     // Update docs table (source of truth)
     const setClauses = [];
@@ -1208,6 +1236,30 @@ Return ONLY the description text, no quotes or formatting.`;
       // This ensures sync-worker will update Meilisearch even if direct push below fails
       if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
         await query('UPDATE content SET synced = 0, updated_at = CURRENT_TIMESTAMP WHERE doc_id = ?', [id]);
+      }
+    }
+
+    // Check if URL path changed and create redirect
+    const newDoc = { ...document, ...updates };
+    const newDocSlug = generateDocSlug(newDoc);
+    const newReligionSlug = slugifyPath(newDoc.religion || '');
+    const newCollectionSlug = slugifyPath(newDoc.collection || '');
+    const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${newDocSlug}`;
+
+    if (oldPath !== newPath && oldDocSlug && newDocSlug) {
+      try {
+        // Insert redirect record (old path -> new path)
+        await query(`
+          INSERT INTO redirects (old_path, new_path, doc_id)
+          VALUES (?, ?, ?)
+          ON CONFLICT(old_path) DO UPDATE SET
+            new_path = excluded.new_path,
+            doc_id = excluded.doc_id
+        `, [oldPath, newPath, id]);
+
+        logger.info({ oldPath, newPath, docId: id }, 'Created URL redirect for document');
+      } catch (err) {
+        logger.warn({ err: err.message, oldPath, newPath }, 'Failed to create redirect');
       }
     }
 

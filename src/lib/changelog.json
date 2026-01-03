@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-02T23:44:52.687Z",
+  "generated": "2026-01-03T00:32:22.903Z",
   "entries": [
+    {
+      "hash": "55296fa",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Redesign document presentation with integrated metadata",
+      "scope": null
+    },
     {
       "hash": "a2b760e",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add translation field to Meilisearch for side-by-side results",
       "scope": null
-    },
-    {
-      "hash": "3e03a2a",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Correct column names and Meilisearch SDK API usage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "55296fa",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Redesign document presentation with integrated metadata",
+        "scope": null
+      },
       {
         "hash": "a2b760e",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add translation field to Meilisearch for side-by-side results",
-        "scope": null
-      },
-      {
-        "hash": "3e03a2a",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Correct column names and Meilisearch SDK API usage",
         "scope": null
       }
     ]

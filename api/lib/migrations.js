@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 22;
+const CURRENT_VERSION = 23;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -908,6 +908,28 @@ const migrations = {
     `);
 
     logger.info(`Marked ${result.changes || 0} book documents as encumbered`);
+  },
+
+  // Version 23: Add redirects table for tracking URL path changes
+  // When document titles change, the slug changes, and we need to redirect old URLs
+  23: async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS redirects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        old_path TEXT NOT NULL UNIQUE,
+        new_path TEXT NOT NULL,
+        doc_id TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        hit_count INTEGER DEFAULT 0,
+        last_hit_at TEXT,
+        FOREIGN KEY (doc_id) REFERENCES docs(id) ON DELETE SET NULL
+      )
+    `);
+
+    await query(`CREATE INDEX IF NOT EXISTS idx_redirects_old_path ON redirects(old_path)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_redirects_doc_id ON redirects(doc_id)`);
+
+    logger.info('Created redirects table for URL path tracking');
   },
 };
 

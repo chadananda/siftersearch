@@ -208,6 +208,13 @@
       }
 
       const data = await res.json();
+
+      // Handle redirect response
+      if (data.redirect && data.location) {
+        window.location.replace(data.location);
+        return;
+      }
+
       document = data.document;
       paragraphs = data.paragraphs || [];
       total = data.total || 0;
@@ -218,24 +225,25 @@
       previewLimit = data.previewLimit;
 
       // Update page metadata dynamically for SEO
-      if (document?.title) {
-        const title = `${document.title}${document.author ? ' by ' + document.author : ''} - SifterSearch`;
-        window.document.title = title;
+      if (document) {
+        const displayTitle = document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Document';
+        const pageTitle = `${displayTitle}${document.author ? ' by ' + document.author : ''} - SifterSearch`;
+        window.document.title = pageTitle;
 
         // Update meta description
         const description = document.description
-          || `Read "${document.title}" from the ${document.collection} collection in the ${document.religion} tradition.`;
+          || `Read "${displayTitle}" from the ${document.collection} collection in the ${document.religion} tradition.`;
         updateMetaTag('description', description);
         updateMetaTag('og:description', description, 'property');
         updateMetaTag('twitter:description', description);
 
         // Update other meta tags
-        updateMetaTag('og:title', title, 'property');
-        updateMetaTag('twitter:title', title);
+        updateMetaTag('og:title', pageTitle, 'property');
+        updateMetaTag('twitter:title', pageTitle);
         updateMetaTag('og:type', 'article', 'property');
 
         // Keywords
-        const keywords = [document.title, document.author, document.religion, document.collection, 'sacred text', 'interfaith library'].filter(Boolean).join(', ');
+        const keywords = [displayTitle, document.author, document.religion, document.collection, 'sacred text', 'interfaith library'].filter(Boolean).join(', ');
         updateMetaTag('keywords', keywords);
       }
     } catch (err) {
@@ -328,6 +336,39 @@
 
   function toggleBilingual() {
     showBilingual = !showBilingual;
+  }
+
+  // Language code to full name mapping
+  const LANGUAGE_NAMES = {
+    en: 'English',
+    ar: 'Arabic',
+    fa: 'Persian',
+    he: 'Hebrew',
+    ur: 'Urdu',
+    fr: 'French',
+    de: 'German',
+    es: 'Spanish',
+    pt: 'Portuguese',
+    it: 'Italian',
+    ru: 'Russian',
+    zh: 'Chinese',
+    ja: 'Japanese',
+    ko: 'Korean',
+    tr: 'Turkish',
+    hi: 'Hindi',
+    bn: 'Bengali',
+    id: 'Indonesian',
+    ms: 'Malay',
+    sw: 'Swahili',
+    nl: 'Dutch',
+    pl: 'Polish',
+    vi: 'Vietnamese',
+    th: 'Thai'
+  };
+
+  function getLanguageName(code) {
+    if (!code) return null;
+    return LANGUAGE_NAMES[code.toLowerCase()] || code.toUpperCase();
   }
 
   // Check if document has translations
@@ -428,7 +469,7 @@
           {/if}
         </nav>
 
-        <h1 class="doc-title">{document.title}</h1>
+        <h1 class="doc-title">{document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled'}</h1>
 
         {#if document.author}
           <p class="doc-author">by {document.author}</p>
@@ -436,14 +477,18 @@
 
         <div class="doc-meta">
           {#if document.language}
-            <span class="meta-tag">{document.language.toUpperCase()}</span>
+            <span class="meta-tag language">{getLanguageName(document.language)}</span>
           {/if}
           {#if document.year}
             <span class="meta-tag">{document.year}</span>
           {/if}
-          <span class="meta-tag">{document.paragraphCount?.toLocaleString()} paragraphs</span>
           {#if document.encumbered}
             <span class="meta-tag copyright">© Copyrighted</span>
+          {/if}
+          {#if qrCodeUrl}
+            <button class="meta-qr" onclick={showQRCode} title="Share this document">
+              <img src={qrCodeUrl} alt="QR" class="meta-qr-img" />
+            </button>
           {/if}
         </div>
 
@@ -451,7 +496,7 @@
           <p class="doc-abstract">{document.description}</p>
         {/if}
 
-        <!-- QR code for print -->
+        <!-- QR code for print only -->
         <div class="print-qr-section">
           {#if qrCodeUrl}
             <img src={qrCodeUrl} alt="QR Code" class="print-qr-img" />
@@ -478,10 +523,10 @@
             {#if !(showBilingual && para.translation)}
               <button
                 class="para-anchor"
-                onclick={() => copyParagraphLink(para.paragraph_index)}
-                title="Copy link to paragraph {para.paragraph_index}"
+                onclick={() => copyParagraphLink(para.paragraph_index || i + 1)}
+                title="Copy link to paragraph {para.paragraph_index || i + 1}"
               >
-                {para.paragraph_index}
+                {para.paragraph_index || i + 1}
               </button>
             {/if}
             {#if para.heading}
@@ -493,7 +538,7 @@
                   <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                 </div>
                 <div class="para-center">
-                  {para.paragraph_index}
+                  {para.paragraph_index || i + 1}
                 </div>
                 <div class="translation-col">
                   <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
@@ -535,6 +580,21 @@
           </div>
         {/if}
       {/if}
+
+      <!-- Document footer with sharing info -->
+      <footer class="doc-footer">
+        <div class="footer-content">
+          <div class="footer-qr">
+            {#if qrCodeUrl}
+              <img src={qrCodeUrl} alt="Scan to access this document" class="footer-qr-img" />
+            {/if}
+          </div>
+          <div class="footer-info">
+            <p class="footer-url">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+            <p class="footer-source">SifterSearch Interfaith Library</p>
+          </div>
+        </div>
+      </footer>
     </main>
   {/if}
 </div>
@@ -766,6 +826,36 @@
     color: #856404;
   }
 
+  .meta-tag.language {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  /* Inline QR code in metadata */
+  .meta-qr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    vertical-align: middle;
+  }
+
+  .meta-qr:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  }
+
+  .meta-qr-img {
+    width: 2rem;
+    height: 2rem;
+    display: block;
+  }
+
   .doc-abstract {
     font-size: 1rem;
     color: #444;
@@ -779,6 +869,47 @@
     border: none;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin: 0 0 1.5rem 0;
+  }
+
+  /* Document footer */
+  .doc-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .footer-qr-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 0.375rem;
+    border: 1px solid #ddd;
+  }
+
+  .footer-info {
+    text-align: left;
+  }
+
+  .footer-url {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.75rem;
+    color: #666;
+    margin: 0 0 0.25rem 0;
+    word-break: break-all;
+  }
+
+  .footer-source {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #333;
+    margin: 0;
   }
 
   /* Print QR section - hidden on screen, shown in print */
@@ -823,9 +954,7 @@
     padding: 0.75rem 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     scroll-margin-top: 100px;
-    /* LTR: text first, then anchor on the right */
     flex-direction: row;
-    /* Align items to top so paragraph number is inline with first line */
     align-items: flex-start;
   }
 
@@ -843,54 +972,51 @@
 
   .paragraph.highlighted {
     background: rgba(59, 130, 246, 0.1);
-    border-right: 3px solid #3b82f6;
-    padding-right: 0.75rem;
-    margin-right: -0.75rem;
-    border-radius: 0.25rem;
-  }
-
-  /* RTL: anchor on the left (flex-direction stays same, order changes) */
-  .rtl .paragraph {
-    flex-direction: row;
-  }
-
-  .rtl .paragraph.highlighted {
-    border-right: none;
     border-left: 3px solid #3b82f6;
     padding-left: 0.75rem;
     margin-left: -0.75rem;
-    padding-right: 0;
-    margin-right: 0;
+    border-radius: 0.25rem;
   }
 
-  /* Anchor positioning:
-   * - LTR: anchor on the LEFT of text (order: anchor, text)
-   * - RTL: anchor on the RIGHT of text (order: text, anchor via row-reverse)
+  /* RTL documents: reverse paragraph layout */
+  .rtl .paragraph {
+    flex-direction: row-reverse;
+  }
+
+  .rtl .paragraph.highlighted {
+    border-left: none;
+    border-right: 3px solid #3b82f6;
+    padding-right: 0.75rem;
+    margin-right: -0.75rem;
+    padding-left: 0;
+    margin-left: 0;
+  }
+
+  /* Paragraph number anchor
+   * - LTR: appears on LEFT (flex start)
+   * - RTL: appears on RIGHT (flex start due to row-reverse)
    */
   .para-anchor {
     flex-shrink: 0;
-    width: 2rem;
+    width: 2.5rem;
     font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 0.75rem;
     color: #999;
     text-align: right;
-    padding-top: 0;
-    /* Align to top of paragraph, not middle */
+    padding-right: 0.5rem;
     align-self: flex-start;
-    /* Match line-height of paragraph text */
     line-height: 1.75;
     background: none;
     border: none;
     cursor: pointer;
     transition: color 0.2s;
-    order: -1; /* Move anchor before text in flex order */
   }
 
-  /* RTL: anchor goes to the right side of text */
   .rtl .para-anchor {
     text-align: left;
+    padding-right: 0;
+    padding-left: 0.5rem;
     font-family: 'Amiri', 'Traditional Arabic', serif;
-    order: 1; /* Move anchor after text in flex order */
   }
 
   .para-anchor:hover {
