@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T01:46:12.240Z",
+  "generated": "2026-01-03T02:04:32.969Z",
   "entries": [
+    {
+      "hash": "726db88",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add fancy document header with decorative logo and integrated branding",
+      "scope": null
+    },
     {
       "hash": "afdceba",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Standardize on doc_id column, remove document_id references",
       "scope": null
-    },
-    {
-      "hash": "62205b5",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use doc_id column in populate-content endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "726db88",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add fancy document header with decorative logo and integrated branding",
+        "scope": null
+      },
       {
         "hash": "afdceba",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Standardize on doc_id column, remove document_id references",
-        "scope": null
-      },
-      {
-        "hash": "62205b5",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use doc_id column in populate-content endpoint",
         "scope": null
       }
     ]

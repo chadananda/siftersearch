@@ -1523,11 +1523,11 @@
       height: 64px !important;
     }
 
-    /* Document header styling for print - no page break after */
+    /* Document header styling for print */
     .doc-header {
       padding-bottom: 0.5rem;
       margin-bottom: 0.5rem;
-      page-break-after: avoid;
+      overflow: visible;
     }
 
     .doc-title {
