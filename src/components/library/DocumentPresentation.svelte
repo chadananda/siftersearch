@@ -18,7 +18,6 @@
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
   import AuthModal from '../AuthModal.svelte';
-  import TranslationQueueModal from './TranslationQueueModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -405,7 +404,44 @@
 
   // View mode state
   let viewMode = $state('default'); // 'default' | 'sbs' | 'study'
-  let showTranslateModal = $state(false);
+
+  // Translation queue state
+  let translationQueuing = $state(false);
+  let translationQueued = $state(false);
+
+  /**
+   * Queue translation directly without modal
+   */
+  async function queueTranslation() {
+    if (!document?.id || translationQueuing) return;
+
+    translationQueuing = true;
+    try {
+      const res = await fetch(`${API_BASE}/api/services/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: document.id,
+          targetLanguage: 'en',
+          quality: 'high'
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to queue');
+      }
+
+      translationQueued = true;
+      // Reset after 3 seconds
+      setTimeout(() => { translationQueued = false; }, 3000);
+    } catch (err) {
+      console.error('Translation queue failed:', err);
+    } finally {
+      translationQueuing = false;
+    }
+  }
 
   // Phrase highlighting state for SBS mode
   let highlightedSegmentId = $state(null);
@@ -481,11 +517,27 @@
           </button>
         {/if}
         {#if isAdmin && isNonEnglish}
-          <button class="util-btn translate" onclick={() => showTranslateModal = true} title="Queue translation">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
+          <button
+            class="util-btn translate"
+            class:queued={translationQueued}
+            onclick={queueTranslation}
+            disabled={translationQueuing}
+            title={translationQueued ? 'Translation queued!' : 'Queue translation'}
+          >
+            {#if translationQueuing}
+              <svg class="spinner" viewBox="0 0 24 24" width="18" height="18">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+              </svg>
+            {:else if translationQueued}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            {:else}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            {/if}
           </button>
         {/if}
       </div>
@@ -849,13 +901,6 @@
   onClose={handleAuthSuccess}
 />
 
-<!-- Translation Queue Modal -->
-<TranslationQueueModal
-  bind:isOpen={showTranslateModal}
-  documentId={document?.id}
-  documentTitle={document?.title || 'Untitled'}
-  documentLanguage={document?.language || 'ar'}
-/>
 
 <style>
   .presentation-container {
@@ -1003,6 +1048,16 @@
 
   .util-btn.translate:hover {
     background: #7c3aed;
+  }
+
+  .util-btn.translate.queued {
+    background: #10b981;
+    border-color: #10b981;
+  }
+
+  .util-btn.translate:disabled {
+    opacity: 0.7;
+    cursor: wait;
   }
 
   /* View mode toggle group */
