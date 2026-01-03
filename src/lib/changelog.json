@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T20:17:49.316Z",
+  "generated": "2026-01-03T20:21:42.837Z",
   "entries": [
+    {
+      "hash": "047902d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Position icons at actual corners of document box",
+      "scope": null
+    },
     {
       "hash": "f4ec0c6",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Correct dark mode styling in document presentation page",
       "scope": null
-    },
-    {
-      "hash": "a95e207",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve document presentation with paper styling, SBS columns, and print support",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "047902d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Position icons at actual corners of document box",
+        "scope": null
+      },
       {
         "hash": "f4ec0c6",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Correct dark mode styling in document presentation page",
-        "scope": null
-      },
-      {
-        "hash": "a95e207",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve document presentation with paper styling, SBS columns, and print support",
         "scope": null
       }
     ]

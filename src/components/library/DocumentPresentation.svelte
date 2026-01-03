@@ -854,32 +854,45 @@
     >
       <!-- Document header - always LTR for simplicity -->
       <header class="doc-header" dir="ltr">
-        <!-- URL-style breadcrumb bar -->
-        <nav class="url-breadcrumb" aria-label="Breadcrumb">
-          <a href="/" class="url-home" title="Home">
-            <img src="/ocean.svg" alt="" class="url-icon" />
-          </a>
-          <a href="/" class="url-domain">
-            <span class="domain-name">SifterSearch</span><span class="domain-tld">.com</span>
-          </a>
-          <span class="url-sep">/</span>
-          <a href="/library" class="url-segment">Library</a>
-          {#if document.religion}
-            <span class="url-sep">/</span>
-            <a href="/library/{pathReligion}" class="url-segment">{document.religion}</a>
-          {/if}
-          {#if document.collection}
-            <span class="url-sep">/</span>
-            <a href="/library/{pathReligion}/{pathCollection}" class="url-segment">{document.collection}</a>
-          {/if}
-          <span class="url-sep">/</span>
-          <span class="url-current">{document.filename || pathSlug}</span>
+        <!-- Corner icon - top left -->
+        <a href="/" class="corner-icon corner-left" title="Home">
+          <img src="/ocean.svg" alt="" class="url-icon" />
+        </a>
 
-          {#if qrCodeUrl}
-            <button class="url-qr" onclick={showQRCode} title="Share this document">
-              <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
-            </button>
-          {/if}
+        <!-- Corner QR - top right -->
+        {#if qrCodeUrl}
+          <button class="corner-icon corner-right" onclick={showQRCode} title="Share this document">
+            <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
+          </button>
+        {/if}
+
+        <!-- URL-style breadcrumb bar - three centered lines -->
+        <nav class="url-breadcrumb" aria-label="Breadcrumb">
+          <!-- Line 1: Domain -->
+          <div class="url-line url-line-domain">
+            <a href="/" class="url-domain">
+              <span class="domain-name">SifterSearch</span><span class="domain-tld">.com</span>
+            </a>
+          </div>
+
+          <!-- Line 2: Path -->
+          <div class="url-line url-line-path">
+            <a href="/library" class="url-segment">Library</a>
+            {#if document.religion}
+              <span class="url-sep">/</span>
+              <a href="/library/{pathReligion}" class="url-segment">{document.religion}</a>
+            {/if}
+            {#if document.collection}
+              <span class="url-sep">/</span>
+              <a href="/library/{pathReligion}/{pathCollection}" class="url-segment">{document.collection}</a>
+            {/if}
+            <span class="url-sep">/</span>
+          </div>
+
+          <!-- Line 3: Current document -->
+          <div class="url-line url-line-current">
+            <span class="url-current">{document.filename || pathSlug}</span>
+          </div>
         </nav>
 
         <!-- Title and metadata -->
@@ -1515,26 +1528,57 @@
     overflow: visible;
   }
 
-  /* URL-style breadcrumb bar */
+  /* URL-style breadcrumb bar - three centered lines */
   .url-breadcrumb {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.125rem;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 0.8125rem;
     margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    justify-content: flex-start;
     position: relative;
-    /* Space for corner icons */
-    padding-left: 4rem;
-    padding-right: 4.5rem;
+    text-align: center;
   }
 
-  .url-home {
+  .url-line {
     display: flex;
     align-items: center;
-    margin-right: 0.125rem;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  /* Corner icons - positioned at document box corners with 5px overlap */
+  .corner-icon {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .corner-left {
+    /* Position at top-left corner with 5px overlap */
+    left: calc(-2rem - 5px);
+    top: calc(-2rem - 5px);
+  }
+
+  .corner-right {
+    /* Position at top-right corner with 5px overlap */
+    right: calc(-2.5rem - 5px);
+    top: calc(-2rem - 5px);
+  }
+
+  .corner-icon:hover {
+    border-color: #14b8a6;
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
   }
 
   .url-icon {
@@ -1542,18 +1586,10 @@
     height: 4.5rem;
     opacity: 0.85;
     transition: opacity 0.2s;
+    border-radius: 0.25rem;
   }
 
-  /* Position icon to overlap top-left corner of document box */
-  .url-home {
-    position: absolute;
-    /* Position at corner of .document-content (account for padding) */
-    left: -2.5rem;
-    top: -2rem;
-    z-index: 10;
-  }
-
-  .url-home:hover .url-icon {
+  .corner-icon:hover .url-icon {
     opacity: 1;
   }
 
@@ -1594,29 +1630,6 @@
   .url-current {
     color: #999;
     font-weight: 400;
-  }
-
-  /* QR code button - positioned to overlap top-right corner of document box */
-  .url-qr {
-    position: absolute;
-    /* Position at corner of .document-content (account for padding) */
-    right: -2.5rem;
-    top: -2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    padding: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    z-index: 10;
-  }
-
-  .url-qr:hover {
-    border-color: #14b8a6;
-    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
   }
 
   .url-qr-img {
@@ -2303,26 +2316,22 @@
     /* URL breadcrumb adjustments for mobile */
     .url-breadcrumb {
       font-size: 0.6875rem;
-      /* Space for smaller corner icons on mobile */
-      padding-left: 2.25rem;
-      padding-right: 2.75rem;
     }
 
-    .url-home {
-      /* Position at corner of document box on mobile */
-      left: -1.5rem;
-      top: -1.5rem;
+    /* Corner icons on mobile - smaller with less overlap */
+    .corner-left {
+      left: calc(-1rem - 5px);
+      top: calc(-1.5rem - 5px);
+    }
+
+    .corner-right {
+      right: calc(-1rem - 5px);
+      top: calc(-1.5rem - 5px);
     }
 
     .url-icon {
       width: 2.5rem;
       height: 2.5rem;
-    }
-
-    .url-qr {
-      /* Position at corner of document box on mobile */
-      right: -1.5rem;
-      top: -1.5rem;
     }
 
     .url-qr-img {
