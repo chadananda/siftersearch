@@ -18,12 +18,16 @@ const path = require('path');
  * Note: Meilisearch is managed by the API (starts on demand), not by PM2.
  */
 
+// Get the directory where this config file lives
+const PROJECT_ROOT = __dirname;
+
 module.exports = {
   apps: [
     // SifterSearch API Server
     {
       name: 'siftersearch-api',
       script: 'api/index.js',
+      cwd: PROJECT_ROOT,
       instances: 1,
       exec_mode: 'fork',
       watch: false,
@@ -51,6 +55,7 @@ module.exports = {
     {
       name: 'siftersearch-watchdog',
       script: 'scripts/watchdog.js',
+      cwd: PROJECT_ROOT,
       instances: 1,
       autorestart: true,
       exp_backoff_restart_delay: 1000,
@@ -66,6 +71,7 @@ module.exports = {
     {
       name: 'siftersearch-library-watcher',
       script: 'scripts/index-library.js',
+      cwd: PROJECT_ROOT,
       args: '--watch',
       instances: 1,
       autorestart: true,
@@ -88,6 +94,7 @@ module.exports = {
     {
       name: 'siftersearch-jobs',
       script: 'api/workers/job-processor.js',
+      cwd: PROJECT_ROOT,
       instances: 1,
       autorestart: true,
       watch: false,
@@ -110,6 +117,7 @@ module.exports = {
     {
       name: 'siftersearch-updater',
       script: 'scripts/update-server.js',
+      cwd: PROJECT_ROOT,
       args: '--daemon',
       instances: 1,
       autorestart: true,

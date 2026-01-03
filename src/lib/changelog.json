@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T06:03:05.870Z",
+  "generated": "2026-01-03T06:20:57.591Z",
   "entries": [
+    {
+      "hash": "de3ee70",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve paragraph grouping with discourse markers",
+      "scope": null
+    },
     {
       "hash": "7fc0879",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add email_queue table migration to unblock job processor",
       "scope": null
-    },
-    {
-      "hash": "6aff8b7",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Separate user database from content database",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "de3ee70",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve paragraph grouping with discourse markers",
+        "scope": null
+      },
       {
         "hash": "7fc0879",
         "date": "2026-01-02",
@@ -695,15 +702,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add email_queue table migration to unblock job processor",
-        "scope": null
-      }
-    ],
-    "2026-01-01": [
-      {
-        "hash": "6aff8b7",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Separate user database from content database",
         "scope": null
       }
     ]
