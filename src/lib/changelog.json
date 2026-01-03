@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T05:47:40.939Z",
+  "generated": "2026-01-03T06:03:05.870Z",
   "entries": [
+    {
+      "hash": "7fc0879",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Integrate sentence-first segmentation into ingester pipeline",
+      "scope": null
+    },
     {
       "hash": "0fbdaf6",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Separate user database from content database",
       "scope": null
-    },
-    {
-      "hash": "dcfeffa",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Remove duplicate route registrations causing server crash",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "7fc0879",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Integrate sentence-first segmentation into ingester pipeline",
+        "scope": null
+      },
       {
         "hash": "0fbdaf6",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Separate user database from content database",
-        "scope": null
-      },
-      {
-        "hash": "dcfeffa",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Remove duplicate route registrations causing server crash",
         "scope": null
       }
     ]

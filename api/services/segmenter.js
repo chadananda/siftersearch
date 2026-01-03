@@ -1709,82 +1709,30 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
 
 /**
  * Split sentences into complete paragraphs and incomplete remainder
+ * Uses discourse markers to find natural paragraph breaks, then keeps
+ * the last partial paragraph as "incomplete" for carry-over to next chunk.
  */
 async function splitCompleteParagraphs(sentences, language) {
-  if (sentences.length <= 3) {
+  if (sentences.length <= 5) {
     // Not enough to determine paragraph breaks - carry all forward
     return { complete: [], incomplete: sentences };
   }
 
-  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+  // Use marker-based grouping (deterministic, fast)
+  const allParagraphs = groupSentencesByMarkers(sentences, 5);
 
-  const systemPrompt = `You are analyzing classical ${languageHint} religious text.
-
-Identify COMPLETE paragraphs - groups of sentences on the same topic that have a clear ending.
-The LAST group of sentences may be INCOMPLETE (topic continues beyond what you can see).
-
-Return which paragraphs are COMPLETE (ended) vs the final INCOMPLETE group.`;
-
-  const userPrompt = `These sentences are from a larger document. Find complete paragraphs.
-
-SENTENCES:
-${sentences.map((s, i) => `[${i}] ${s.slice(0, 80)}${s.length > 80 ? '...' : ''}`).join('\n')}
-
-Return JSON:
-{
-  "complete": [[0,1,2], [3,4,5]],  // Groups that are complete paragraphs
-  "incomplete": [6,7,8]            // Indices of sentences that might continue in next chunk
-}`;
-
-  try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ], { temperature: 0.1, max_tokens: 2000 });
-
-    const content = response.content || response;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0].replace(/,\s*}/g, '}').replace(/,\s*]/g, ']'));
-
-      const complete = (result.complete || []).map(indices => {
-        const paraSentences = indices.filter(i => i >= 0 && i < sentences.length).map(i => sentences[i]);
-        return {
-          text: paraSentences.map((s, idx) => wrapSentence(s, idx + 1)).join(' '),
-          sentences: paraSentences,
-          sentenceCount: paraSentences.length
-        };
-      }).filter(p => p.sentenceCount > 0);
-
-      const incompleteIndices = result.incomplete || [];
-      const incomplete = incompleteIndices.filter(i => i >= 0 && i < sentences.length).map(i => sentences[i]);
-
-      return { complete, incomplete };
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to split paragraphs, using heuristic');
+  if (allParagraphs.length <= 1) {
+    // If we got a single paragraph or none, carry everything forward
+    return { complete: [], incomplete: sentences };
   }
 
-  // Fallback: keep last 3 sentences as potentially incomplete
-  const splitPoint = Math.max(0, sentences.length - 3);
-  const completeSentences = sentences.slice(0, splitPoint);
-  const incompleteSentences = sentences.slice(splitPoint);
+  // Keep all but the last paragraph as complete
+  // The last paragraph might continue in the next chunk
+  const complete = allParagraphs.slice(0, -1);
+  const lastPara = allParagraphs[allParagraphs.length - 1];
+  const incomplete = lastPara.sentences;
 
-  // Group complete sentences into paragraphs of ~4
-  const complete = [];
-  for (let i = 0; i < completeSentences.length; i += 4) {
-    const paraSentences = completeSentences.slice(i, i + 4);
-    if (paraSentences.length > 0) {
-      complete.push({
-        text: paraSentences.map((s, idx) => wrapSentence(s, idx + 1)).join(' '),
-        sentences: paraSentences,
-        sentenceCount: paraSentences.length
-      });
-    }
-  }
-
-  return { complete, incomplete: incompleteSentences };
+  return { complete, incomplete };
 }
 
 /**
@@ -2006,88 +1954,94 @@ function buildMarkedParagraphText(sentences) {
   return sentences.map((s, i) => wrapSentence(s, i + 1)).join(' ');
 }
 
+/**
+ * Arabic/Farsi discourse markers that indicate paragraph breaks
+ * These patterns often start new sections in classical religious texts
+ */
+const PARAGRAPH_BREAK_PATTERNS = [
+  /^بسم\s+الله/,           // "In the name of God"
+  /^الحمد\s+لله/,           // "Praise be to God"
+  /^اللهم/,                 // "O God" (invocation)
+  /^يا\s+ايها/,             // "O you" (address)
+  /^قل\s/,                  // "Say" (command)
+  /^ان\s+اعلموا/,           // "Know that"
+  /^الباب\s/,               // "The chapter/gate"
+  /^واما\s/,                // "As for"
+  /^فاما\s/,                // "As for"
+  /^ثم\s+ان/,               // "Then indeed"
+];
+
+/**
+ * Check if a sentence starts a new paragraph based on discourse markers
+ */
+function startsNewParagraph(sentence) {
+  const normalized = sentence.trim();
+  return PARAGRAPH_BREAK_PATTERNS.some(pattern => pattern.test(normalized));
+}
+
+/**
+ * Group sentences into paragraphs using discourse markers and length limits
+ * This is a fast, deterministic approach that works well for classical texts
+ */
+function groupSentencesByMarkers(sentences, maxSentences = 5) {
+  const paragraphs = [];
+  let currentPara = [];
+
+  for (const sentence of sentences) {
+    // Start new paragraph if this sentence has a break marker
+    // and we already have some content in current paragraph
+    if (currentPara.length > 0 && startsNewParagraph(sentence)) {
+      paragraphs.push({
+        text: buildMarkedParagraphText(currentPara),
+        sentences: currentPara,
+        sentenceCount: currentPara.length
+      });
+      currentPara = [];
+    }
+
+    currentPara.push(sentence);
+
+    // Also break if we've reached max sentences
+    if (currentPara.length >= maxSentences) {
+      paragraphs.push({
+        text: buildMarkedParagraphText(currentPara),
+        sentences: currentPara,
+        sentenceCount: currentPara.length
+      });
+      currentPara = [];
+    }
+  }
+
+  // Don't forget the last paragraph
+  if (currentPara.length > 0) {
+    paragraphs.push({
+      text: buildMarkedParagraphText(currentPara),
+      sentences: currentPara,
+      sentenceCount: currentPara.length
+    });
+  }
+
+  return paragraphs;
+}
+
 async function groupSentencesIntoParagraphs(sentences, language) {
   if (sentences.length === 0) {
     return [];
   }
 
-  if (sentences.length <= 3) {
-    // Too few sentences for paragraph grouping
-    return [{
-      text: buildMarkedParagraphText(sentences),
-      sentences: sentences,
-      sentenceCount: sentences.length
-    }];
+  // Use marker-based grouping for Arabic/Farsi
+  // This is fast, deterministic, and respects natural discourse structure
+  if (language === 'ar' || language === 'fa') {
+    const paragraphs = groupSentencesByMarkers(sentences, 5);
+    logger.debug({
+      sentences: sentences.length,
+      paragraphs: paragraphs.length,
+      avgPerPara: (sentences.length / paragraphs.length).toFixed(1)
+    }, 'Grouped sentences using discourse markers');
+    return paragraphs;
   }
 
-  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
-
-  const systemPrompt = `You are an expert in classical ${languageHint} religious texts.
-
-Group these sentences into paragraphs based on TOPIC. A paragraph is a set of sentences about the same subject or theme.
-
-Start a new paragraph when:
-- The topic or subject changes
-- A new section or prayer begins
-- The addressee changes
-- A new argument or point is introduced
-
-Return the paragraph groupings as indices.`;
-
-  const userPrompt = `Group these ${sentences.length} sentences into paragraphs by topic.
-
-SENTENCES:
-${sentences.map((s, i) => `[${i}] ${s.slice(0, 100)}${s.length > 100 ? '...' : ''}`).join('\n')}
-
-Return JSON array of paragraph groups (each group is array of sentence indices):
-[[0, 1, 2], [3, 4], [5, 6, 7, 8], ...]`;
-
-  try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ], {
-      temperature: 0.1,
-      max_tokens: 4000
-    });
-
-    const content = response.content || response;
-
-    // Extract JSON
-    let jsonStr = null;
-    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-    if (!jsonStr) {
-      const arrayMatch = content.match(/\[[\s\S]*\]/);
-      if (arrayMatch) {
-        jsonStr = arrayMatch[0];
-      }
-    }
-
-    if (jsonStr) {
-      jsonStr = jsonStr.replace(/,\s*]/g, ']');
-      const groups = JSON.parse(jsonStr);
-
-      if (Array.isArray(groups) && groups.length > 0) {
-        return groups.map(indices => {
-          const paraSentences = indices
-            .filter(i => i >= 0 && i < sentences.length)
-            .map(i => sentences[i]);
-          return {
-            text: buildMarkedParagraphText(paraSentences),
-            sentences: paraSentences,
-            sentenceCount: paraSentences.length
-          };
-        }).filter(p => p.sentenceCount > 0);
-      }
-    }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Paragraph grouping failed, using default grouping');
-  }
-
-  // Fallback: group every 3-5 sentences into a paragraph
+  // For other languages, use simple fixed-size grouping
   const paragraphs = [];
   const groupSize = 4;
   for (let i = 0; i < sentences.length; i += groupSize) {
