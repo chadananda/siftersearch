@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T16:37:06.599Z",
+  "generated": "2026-01-03T17:58:24.763Z",
   "entries": [
+    {
+      "hash": "1250a2f",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add phrase-level hover/tap highlighting in SBS mode",
+      "scope": null
+    },
     {
       "hash": "e2acb5c",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Concept-based paragraph segmentation",
       "scope": null
-    },
-    {
-      "hash": "c3b86f0",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add segmentation integrity check to prevent text modification",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "1250a2f",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add phrase-level hover/tap highlighting in SBS mode",
+        "scope": null
+      },
       {
         "hash": "e2acb5c",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Concept-based paragraph segmentation",
-        "scope": null
-      },
-      {
-        "hash": "c3b86f0",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add segmentation integrity check to prevent text modification",
         "scope": null
       }
     ]

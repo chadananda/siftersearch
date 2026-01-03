@@ -50,6 +50,8 @@ const TRANSLATIONS_DIR = process.env.TRANSLATIONS_DIR || './data/translations';
  * Request a document translation
  * Returns job ID for tracking
  *
+ * Generates BOTH reading and study translations simultaneously.
+ *
  * @param contentType - 'scripture' | 'historical' | 'auto' (default)
  *   - scripture: Shoghi Effendi biblical style throughout
  *   - historical: Modern English with biblical citations
@@ -62,8 +64,7 @@ export async function requestTranslation({
   sourceLanguage = null,
   notifyEmail,
   quality = 'standard', // standard, high
-  contentType = null, // scripture, historical, auto (null = auto-detect from collection)
-  translationType = 'reading' // reading (literary) or study (literal with notes)
+  contentType = null // scripture, historical, auto (null = auto-detect from collection)
 }) {
   if (!SUPPORTED_LANGUAGES[targetLanguage]) {
     throw new Error(`Unsupported target language: ${targetLanguage}`);
@@ -78,8 +79,7 @@ export async function requestTranslation({
       targetLanguage,
       sourceLanguage,
       quality,
-      contentType,
-      translationType
+      contentType
     },
     notifyEmail
   });
@@ -312,16 +312,17 @@ function organizeIntoWaves(paragraphs, stride = 10) {
 
 /**
  * Process in-app translation (Arabic/Persian -> English)
- * Saves translations directly to content.translation column
+ * Generates BOTH reading and study translations simultaneously
+ * Saves to content.translation and content.study_translation columns
  *
  * Enhanced with:
  * - Document metadata context (title, author, abstract)
  * - Wave-based staggered translation for context propagation
  * - Previous paragraph context (original + translation when available)
+ * - Dual translation: reading (literary) + study (literal with notes)
  */
 async function processInAppTranslation(job, document, sourceLang, contentType) {
   const documentId = job.document_id;
-  const { translationType = 'reading' } = job.params || {};
 
   // Debug: log job structure to trace undefined values
   logger.info({
@@ -329,9 +330,8 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     jobKeys: Object.keys(job),
     documentId,
     documentIdType: typeof documentId,
-    hasDocumentId: documentId !== undefined,
-    translationType
-  }, 'processInAppTranslation starting');
+    hasDocumentId: documentId !== undefined
+  }, 'processInAppTranslation starting (dual translation mode)');
 
   if (!documentId) {
     throw new Error(`document_id is ${documentId} (type: ${typeof documentId})`);
@@ -340,21 +340,20 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   // Build document context for prompts
   const documentContext = buildDocumentContext(document);
 
-  // Determine which column to check based on translation type
-  const translationColumn = translationType === 'study' ? 'study_translation' : 'translation';
-
-  // Get untranslated paragraphs from content table
+  // Get paragraphs that need any translation (missing either reading OR study)
   const paragraphs = await queryAll(`
     SELECT id, paragraph_index, text, translation, study_translation
     FROM content
-    WHERE doc_id = ? AND (${translationColumn} IS NULL OR ${translationColumn} = '')
+    WHERE doc_id = ?
+      AND ((translation IS NULL OR translation = '')
+           OR (study_translation IS NULL OR study_translation = ''))
     ORDER BY paragraph_index
   `, [documentId]);
 
   const totalParagraphs = paragraphs.length;
 
   if (totalParagraphs === 0) {
-    logger.info({ jobId: job.id, documentId, translationType }, 'No paragraphs need translation');
+    logger.info({ jobId: job.id, documentId }, 'No paragraphs need translation');
     await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
       progress: 0,
       totalItems: 0
@@ -380,9 +379,8 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   logger.info({
     jobId: job.id,
     totalParagraphs,
-    waveCount: waves.length,
-    translationType
-  }, 'Organized paragraphs into waves');
+    waveCount: waves.length
+  }, 'Organized paragraphs into waves (dual translation)');
 
   let translatedCount = 0;
   let waveNumber = 0;
@@ -397,55 +395,83 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         const prevPara = paragraphMap.get(para.paragraph_index - 1);
         const prevContext = prevPara ? {
           original: prevPara.text,
-          translation: prevPara.translation || prevPara.study_translation || null
+          translation: prevPara.translation || null
         } : null;
 
-        // Translate with context
-        const result = await translateWithContext({
-          text: para.text,
-          sourceLang,
-          targetLang: 'en',
-          contentType,
-          documentContext,
-          previousParagraph: prevContext,
-          translationType,
-          hasMarkers: hasMarkers(para.text)
-        });
-
-        // Save to appropriate column
         const now = new Date().toISOString();
+        const textHasMarkers = hasMarkers(para.text);
 
-        if (translationType === 'study') {
-          // Study mode: save to study_translation and study_notes
-          const studyNotesJson = result.studyNotes ? JSON.stringify(result.studyNotes) : null;
-          await query(`
-            UPDATE content
-            SET study_translation = ?, study_notes = ?, synced = 0, updated_at = ?
-            WHERE id = ?
-          `, [result.translation, studyNotesJson, now, para.id]);
+        // Check what translations are needed
+        const needsReading = !para.translation;
+        const needsStudy = !para.study_translation;
 
-          // Update map for future paragraphs in same document
-          const mapEntry = paragraphMap.get(para.paragraph_index);
-          if (mapEntry) {
-            mapEntry.study_translation = result.translation;
-          }
-        } else {
-          // Reading mode: save to translation and translation_segments
-          const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+        let readingResult = null;
+        let studyResult = null;
+
+        // Generate reading translation if needed
+        if (needsReading) {
+          readingResult = await translateWithContext({
+            text: para.text,
+            sourceLang,
+            targetLang: 'en',
+            contentType,
+            documentContext,
+            previousParagraph: prevContext,
+            translationType: 'reading',
+            hasMarkers: textHasMarkers
+          });
+
+          // Save reading translation
+          const segmentsJson = readingResult.segments ? JSON.stringify(readingResult.segments) : null;
           await query(`
             UPDATE content
             SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
             WHERE id = ?
-          `, [result.translation, segmentsJson, now, para.id]);
+          `, [readingResult.translation, segmentsJson, now, para.id]);
 
-          // Update map for future paragraphs in same document
+          // Update map for future paragraphs
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
-            mapEntry.translation = result.translation;
+            mapEntry.translation = readingResult.translation;
+          }
+        }
+
+        // Generate study translation if needed
+        if (needsStudy) {
+          studyResult = await translateWithContext({
+            text: para.text,
+            sourceLang,
+            targetLang: 'en',
+            contentType,
+            documentContext,
+            previousParagraph: prevContext,
+            translationType: 'study',
+            hasMarkers: textHasMarkers
+          });
+
+          // Save study translation
+          const studyNotesJson = studyResult.studyNotes ? JSON.stringify(studyResult.studyNotes) : null;
+          await query(`
+            UPDATE content
+            SET study_translation = ?, study_notes = ?, synced = 0, updated_at = ?
+            WHERE id = ?
+          `, [studyResult.translation, studyNotesJson, now, para.id]);
+
+          // Update map for future paragraphs
+          const mapEntry = paragraphMap.get(para.paragraph_index);
+          if (mapEntry) {
+            mapEntry.study_translation = studyResult.translation;
           }
         }
 
         translatedCount++;
+
+        logger.debug({
+          paraId: para.id,
+          paragraphIndex: para.paragraph_index,
+          reading: needsReading ? 'generated' : 'skipped',
+          study: needsStudy ? 'generated' : 'skipped'
+        }, 'Paragraph translated');
 
       } catch (err) {
         logger.warn({
@@ -479,9 +505,8 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     jobId: job.id,
     documentId,
     translated: translatedCount,
-    total: totalParagraphs,
-    translationType
-  }, 'In-app translation completed');
+    total: totalParagraphs
+  }, 'Dual translation completed');
 
   return {
     success: true,

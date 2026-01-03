@@ -62,6 +62,7 @@ export default async function servicesRoutes(fastify) {
   });
 
   // Request document translation (patron+ only)
+  // Generates BOTH reading and study translations simultaneously
   fastify.post('/translate', {
     preHandler: requireTier(...PATRON_TIERS),
     schema: {
@@ -72,7 +73,6 @@ export default async function servicesRoutes(fastify) {
           documentId: { type: 'string' },
           targetLanguage: { type: 'string', default: 'en' },
           sourceLanguage: { type: 'string' },
-          translationType: { type: 'string', enum: ['reading', 'study'], default: 'reading' },
           quality: { type: 'string', enum: ['standard', 'high'], default: 'standard' },
           notifyEmail: { type: 'string', format: 'email' }
         }
@@ -83,7 +83,6 @@ export default async function servicesRoutes(fastify) {
       documentId,
       targetLanguage = 'en',
       sourceLanguage,
-      translationType = 'reading',
       quality,
       notifyEmail
     } = request.body;
@@ -94,20 +93,6 @@ export default async function servicesRoutes(fastify) {
       throw ApiError.badRequest(`Unsupported language: ${targetLanguage}`);
     }
 
-    // Check if translation already exists (for the specific translation type)
-    // Note: For study translations, we should check study_translation column instead
-    // For now, only check reading translations for backwards compatibility
-    if (translationType === 'reading') {
-      const existing = await translationExists(documentId, targetLanguage);
-      if (existing.exists) {
-        return {
-          status: 'already_exists',
-          message: 'Translation already exists for this document',
-          cachedSegments: existing.cachedSegments
-        };
-      }
-    }
-
     // Get user email for notification if not provided
     let email = notifyEmail;
     if (!email) {
@@ -115,22 +100,20 @@ export default async function servicesRoutes(fastify) {
       email = user?.email;
     }
 
-    // Create translation job
+    // Create translation job (generates both reading + study translations)
     const job = await requestTranslation({
       userId,
       documentId,
       targetLanguage,
       sourceLanguage,
-      translationType,
       quality,
       notifyEmail: email
     });
 
-    const typeLabel = translationType === 'study' ? 'Study translation' : 'Translation';
     return {
       status: 'queued',
       jobId: job.id,
-      message: `${typeLabel} to ${SUPPORTED_LANGUAGES[targetLanguage]} queued. You will receive an email when complete.`
+      message: `Both reading and study translations to ${SUPPORTED_LANGUAGES[targetLanguage]} queued. You will receive an email when complete.`
     };
   });
 

@@ -3,7 +3,7 @@
    * TranslationQueueModal Component
    *
    * Allows admins to queue translation jobs for documents.
-   * Supports both reading (literary) and study (literal + notes) translations.
+   * Generates both reading (literary) and study (literal + notes) translations together.
    */
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -17,7 +17,6 @@
   } = $props();
 
   // Form state
-  let translationType = $state('reading'); // 'reading' | 'study'
   let targetLanguage = $state('en');
   let quality = $state('standard'); // 'standard' | 'high'
   let loading = $state(false);
@@ -39,7 +38,6 @@
         credentials: 'include',
         body: JSON.stringify({
           documentId,
-          translationType,
           targetLanguage,
           quality
         })
@@ -96,7 +94,7 @@
           </svg>
           <h4>Translation Queued</h4>
           <p>Job ID: <code>{jobId}</code></p>
-          <p class="hint">Translation will be processed in the background. Check back soon.</p>
+          <p class="hint">Both reading and study translations will be generated. Check back soon.</p>
           <button class="primary-btn" onclick={handleClose}>Done</button>
         </div>
       {:else}
@@ -106,24 +104,12 @@
             <span class="doc-lang">{documentLanguage.toUpperCase()} → {targetLanguage.toUpperCase()}</span>
           </div>
 
-          <div class="form-group">
-            <label>Translation Type</label>
-            <div class="radio-group">
-              <label class="radio-option" class:selected={translationType === 'reading'}>
-                <input type="radio" bind:group={translationType} value="reading" />
-                <div class="radio-content">
-                  <span class="radio-title">Reading Translation</span>
-                  <span class="radio-desc">Literary, fluent translation for casual reading</span>
-                </div>
-              </label>
-              <label class="radio-option" class:selected={translationType === 'study'}>
-                <input type="radio" bind:group={translationType} value="study" />
-                <div class="radio-content">
-                  <span class="radio-title">Study Translation</span>
-                  <span class="radio-desc">Literal translation with linguistic notes</span>
-                </div>
-              </label>
-            </div>
+          <div class="translation-info">
+            <p>This will generate both translation types:</p>
+            <ul>
+              <li><strong>Reading Translation</strong> — Literary, fluent English for casual reading</li>
+              <li><strong>Study Translation</strong> — Literal translation with linguistic notes</li>
+            </ul>
           </div>
 
           <div class="form-group">
@@ -266,52 +252,37 @@
     margin-bottom: 0.5rem;
   }
 
-  .radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .radio-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--border-default, #e5e5e5);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .radio-option:hover {
-    border-color: var(--accent-primary, #3b82f6);
-    background: rgba(59, 130, 246, 0.02);
-  }
-
-  .radio-option.selected {
-    border-color: var(--accent-primary, #3b82f6);
+  .translation-info {
+    padding: 1rem;
     background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 0.5rem;
+    margin-bottom: 1.25rem;
   }
 
-  .radio-option input {
-    margin-top: 0.25rem;
-  }
-
-  .radio-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  .radio-title {
-    font-weight: 500;
-    color: var(--text-primary, #1a1a1a);
+  .translation-info p {
+    margin: 0 0 0.5rem 0;
     font-size: 0.875rem;
+    color: var(--text-secondary, #444);
   }
 
-  .radio-desc {
-    font-size: 0.75rem;
-    color: var(--text-muted, #666);
+  .translation-info ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .translation-info li {
+    font-size: 0.8125rem;
+    color: var(--text-secondary, #444);
+    margin-bottom: 0.25rem;
+  }
+
+  .translation-info li:last-child {
+    margin-bottom: 0;
+  }
+
+  .translation-info strong {
+    color: var(--text-primary, #1a1a1a);
   }
 
   select {
