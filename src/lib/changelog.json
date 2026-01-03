@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T20:21:42.837Z",
+  "generated": "2026-01-03T21:51:17.689Z",
   "entries": [
+    {
+      "hash": "208ed9e",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Three-line centered breadcrumb with corner icons",
+      "scope": null
+    },
     {
       "hash": "047902d",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use fixed light background for document presentation container",
       "scope": null
-    },
-    {
-      "hash": "ba234b1",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Correct dark mode styling in document presentation page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "208ed9e",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Three-line centered breadcrumb with corner icons",
+        "scope": null
+      },
       {
         "hash": "047902d",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Use fixed light background for document presentation container",
-        "scope": null
-      },
-      {
-        "hash": "ba234b1",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Correct dark mode styling in document presentation page",
         "scope": null
       }
     ]

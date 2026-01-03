@@ -1565,15 +1565,15 @@
   }
 
   .corner-left {
-    /* Position at top-left corner with 5px overlap */
-    left: calc(-2rem - 5px);
-    top: calc(-2rem - 5px);
+    /* Position at top-left corner with 5px visual overlap (account for padding+border) */
+    left: calc(-2.5rem - 10px);
+    top: calc(-2rem - 10px);
   }
 
   .corner-right {
-    /* Position at top-right corner with 5px overlap */
-    right: calc(-2.5rem - 5px);
-    top: calc(-2rem - 5px);
+    /* Position at top-right corner with 5px visual overlap (account for padding+border) */
+    right: calc(-2.5rem - 10px);
+    top: calc(-2rem - 10px);
   }
 
   .corner-icon:hover {
