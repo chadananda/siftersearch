@@ -1025,30 +1025,44 @@ Return ONLY the description text, no quotes or formatting.`;
     const canEdit = isAuthenticated && ['admin', 'editor'].includes(userRole);
 
     // Parse the slug to extract language suffix if present
-    const { baseSlug, language: slugLang } = parseDocSlug(slug);
+    const { baseSlug: _baseSlug, language: _slugLang } = parseDocSlug(slug);
 
-    // Get all documents in the matching religion/collection
-    // We'll filter by generated slug since slugs are dynamic
-    const candidates = await queryAll(`
+    // Try direct lookup by stored slug first (efficient)
+    let document = await queryOne(`
       SELECT id, title, author, religion, collection, language, year, description,
-             paragraph_count, encumbered, file_path, filename, created_at, updated_at
+             paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
       FROM docs
-      WHERE religion IS NOT NULL AND collection IS NOT NULL
-    `);
+      WHERE slug = ?
+    `, [slug]);
 
-    // Find document by matching:
-    // 1. Religion slug matches
-    // 2. Collection slug matches
-    // 3. Generated document slug matches
-    const document = candidates.find(doc => {
-      const docReligionSlug = slugifyPath(doc.religion || '');
-      const docCollectionSlug = slugifyPath(doc.collection || '');
-      const docSlug = generateDocSlug(doc);
+    // If found, verify religion/collection match (in case of slug collisions across collections)
+    if (document) {
+      const docReligionSlug = slugifyPath(document.religion || '');
+      const docCollectionSlug = slugifyPath(document.collection || '');
+      if (docReligionSlug !== religion || docCollectionSlug !== collection) {
+        document = null; // Wrong collection, continue searching
+      }
+    }
 
-      return docReligionSlug === religion &&
-             docCollectionSlug === collection &&
-             docSlug === slug;
-    });
+    // Fall back to dynamic slug matching for legacy docs without stored slugs
+    if (!document) {
+      const candidates = await queryAll(`
+        SELECT id, title, author, religion, collection, language, year, description,
+               paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
+        FROM docs
+        WHERE religion IS NOT NULL AND collection IS NOT NULL AND (slug IS NULL OR slug = '')
+      `);
+
+      document = candidates.find(doc => {
+        const docReligionSlug = slugifyPath(doc.religion || '');
+        const docCollectionSlug = slugifyPath(doc.collection || '');
+        const docSlug = generateDocSlug(doc);
+
+        return docReligionSlug === religion &&
+               docCollectionSlug === collection &&
+               docSlug === slug;
+      });
+    }
 
     if (!document) {
       // Check for redirect before returning 404
@@ -1092,7 +1106,7 @@ Return ONLY the description text, no quotes or formatting.`;
           description: document.description,
           paragraphCount: document.paragraph_count,
           encumbered: true,
-          slug: generateDocSlug(document)
+          slug: document.slug || generateDocSlug(document)
         },
         paragraphs: [],
         total: document.paragraph_count || 0,
@@ -1148,7 +1162,7 @@ Return ONLY the description text, no quotes or formatting.`;
         description: document.description,
         paragraphCount: total,
         encumbered: isEncumbered,
-        slug: generateDocSlug(document),
+        slug: document.slug || generateDocSlug(document),
         isRTL
       },
       paragraphs: formattedParagraphs,
@@ -1199,7 +1213,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Verify document exists in libsql (source of truth)
     const document = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename, slug
       FROM docs WHERE id = ?
     `, [id]);
 
@@ -1208,8 +1222,8 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Track URL path changes for redirects
-    // Generate old path before any updates
-    const oldDocSlug = generateDocSlug(document);
+    // Use stored slug if available, otherwise generate
+    const oldDocSlug = document.slug || generateDocSlug(document);
     const oldReligionSlug = slugifyPath(document.religion || '');
     const oldCollectionSlug = slugifyPath(document.collection || '');
     const oldPath = `/library/${oldReligionSlug}/${oldCollectionSlug}/${oldDocSlug}`;
@@ -1239,9 +1253,36 @@ Return ONLY the description text, no quotes or formatting.`;
 
     // Check if URL path changed and create redirect
     const newDoc = { ...document, ...updates };
-    const newDocSlug = generateDocSlug(newDoc);
-    const newReligionSlug = slugifyPath(newDoc.religion || '');
-    const newCollectionSlug = slugifyPath(newDoc.collection || '');
+    const baseSlug = generateDocSlug(newDoc);
+
+    // Check for slug conflicts (excluding this document)
+    const newReligion = newDoc.religion || '';
+    const newCollection = newDoc.collection || '';
+    const existingSlugs = await queryAll(`
+      SELECT slug FROM docs
+      WHERE religion = ? AND collection = ? AND slug LIKE ? AND id != ?
+    `, [newReligion, newCollection, `${baseSlug}%`, id]);
+
+    let newDocSlug = baseSlug;
+    if (existingSlugs.length > 0) {
+      const usedSlugs = new Set(existingSlugs.map(r => r.slug));
+      if (usedSlugs.has(baseSlug)) {
+        let counter = 2;
+        while (usedSlugs.has(`${baseSlug}-${counter}`)) {
+          counter++;
+        }
+        newDocSlug = `${baseSlug}-${counter}`;
+        logger.info({ baseSlug, newDocSlug, docId: id }, 'Slug conflict resolved with numeric suffix');
+      }
+    }
+
+    // Update slug in database if it changed
+    if (newDocSlug !== oldDocSlug) {
+      await query('UPDATE docs SET slug = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newDocSlug, id]);
+    }
+
+    const newReligionSlug = slugifyPath(newReligion);
+    const newCollectionSlug = slugifyPath(newCollection);
     const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${newDocSlug}`;
 
     if (oldPath !== newPath && oldDocSlug && newDocSlug) {

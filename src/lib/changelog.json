@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T15:25:12.166Z",
+  "generated": "2026-01-03T15:32:57.474Z",
   "entries": [
+    {
+      "hash": "04df1d1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add server-side redirect detection and redirect management API",
+      "scope": null
+    },
     {
       "hash": "f7c6eaf",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent Arabic segmentation from splitting prepositional phrases",
       "scope": null
-    },
-    {
-      "hash": "b25daa1",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add admin document editor with CodeMirror 6",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "04df1d1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add server-side redirect detection and redirect management API",
+        "scope": null
+      },
       {
         "hash": "f7c6eaf",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Prevent Arabic segmentation from splitting prepositional phrases",
-        "scope": null
-      },
-      {
-        "hash": "b25daa1",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add admin document editor with CodeMirror 6",
         "scope": null
       }
     ]

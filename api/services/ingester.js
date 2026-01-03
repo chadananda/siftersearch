@@ -410,11 +410,43 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   // Use existing document ID if updating
   const finalDocId = existingDoc ? existingDoc.id : documentId;
 
-  // Insert/update document record
+  // Extract filename from path for slug generation
+  const fileName = filePath ? filePath.split('/').pop() : existingDoc?.filename || null;
+
+  // Generate unique slug for this document
+  // Format: author_title_lang (e.g., the-bab_address-to-believers_ar)
+  const baseSlug = generateDocSlug({
+    title: finalMeta.title,
+    author: finalMeta.author,
+    filename: fileName,
+    language: finalMeta.language
+  });
+
+  // Check for slug conflicts within same religion/collection (excluding this document)
+  let finalSlug = baseSlug;
+  const existingSlugs = await queryAll(`
+    SELECT slug FROM docs
+    WHERE religion = ? AND collection = ? AND slug LIKE ? AND id != ?
+  `, [finalMeta.religion, finalMeta.collection, `${baseSlug}%`, finalDocId]);
+
+  if (existingSlugs.length > 0) {
+    // Find next available number suffix
+    const usedSlugs = new Set(existingSlugs.map(r => r.slug));
+    if (usedSlugs.has(baseSlug)) {
+      let counter = 2;
+      while (usedSlugs.has(`${baseSlug}-${counter}`)) {
+        counter++;
+      }
+      finalSlug = `${baseSlug}-${counter}`;
+      logger.info({ baseSlug, finalSlug, docId: finalDocId }, 'Slug conflict resolved with numeric suffix');
+    }
+  }
+
+  // Insert/update document record with slug
   await query(`
     INSERT OR REPLACE INTO docs
-    (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `, [
     finalDocId,
     filePath,
@@ -426,23 +458,24 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     finalMeta.language,
     safeParseYear(finalMeta.year),
     finalMeta.description,
-    chunks.length
+    chunks.length,
+    finalSlug
   ]);
 
   // Create redirect if URL slug changed (for SEO and link preservation)
   if (existingDoc) {
-    const oldSlug = generateDocSlug(existingDoc);
+    // Use stored slug if available, otherwise generate from old metadata
+    const oldSlug = existingDoc.slug || generateDocSlug(existingDoc);
     const oldReligionSlug = slugifyPath(existingDoc.religion || '');
     const oldCollectionSlug = slugifyPath(existingDoc.collection || '');
     const oldPath = `/library/${oldReligionSlug}/${oldCollectionSlug}/${oldSlug}`;
 
-    const newDoc = { title: finalMeta.title, filename: existingDoc.filename, language: finalMeta.language };
-    const newSlug = generateDocSlug(newDoc);
+    // Use the finalSlug we just generated (handles conflicts)
     const newReligionSlug = slugifyPath(finalMeta.religion || '');
     const newCollectionSlug = slugifyPath(finalMeta.collection || '');
-    const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${newSlug}`;
+    const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${finalSlug}`;
 
-    if (oldPath !== newPath && oldSlug && newSlug) {
+    if (oldPath !== newPath && oldSlug && finalSlug) {
       try {
         await query(`
           INSERT INTO redirects (old_path, new_path, doc_id)
