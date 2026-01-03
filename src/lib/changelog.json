@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:34:07.274Z",
+  "generated": "2026-01-03T19:45:29.129Z",
   "entries": [
+    {
+      "hash": "70999b3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Update translation progress after each paragraph instead of each wave",
+      "scope": null
+    },
     {
       "hash": "2719520",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add document view page at /library/view",
       "scope": null
-    },
-    {
-      "hash": "2b6d15f",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "70999b3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Update translation progress after each paragraph instead of each wave",
+        "scope": null
+      },
       {
         "hash": "2719520",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add document view page at /library/view",
-        "scope": null
-      },
-      {
-        "hash": "2b6d15f",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
         "scope": null
       }
     ]

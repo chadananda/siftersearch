@@ -505,10 +505,43 @@
   let highlightedSegmentId = $state(null);
 
   /**
+   * Parse translation field (handles both string and JSON formats)
+   * New format: { reading: "...", study: "...", segments: [...], notes: [...] }
+   * Legacy format: plain string
+   */
+  function parseTranslation(para) {
+    if (!para.translation) return null;
+    try {
+      // Try parsing as JSON
+      const parsed = typeof para.translation === 'string'
+        ? JSON.parse(para.translation)
+        : para.translation;
+      if (parsed && typeof parsed === 'object') {
+        return {
+          reading: parsed.reading || null,
+          study: parsed.study || null,
+          segments: parsed.segments || null,
+          notes: parsed.notes || null
+        };
+      }
+    } catch {
+      // Not JSON - legacy plain string format
+      return { reading: para.translation, study: null, segments: null, notes: null };
+    }
+    return null;
+  }
+
+  /**
    * Parse translation_segments from paragraph
    * Returns array of { id, original, translation } or null
    */
   function parseSegments(para) {
+    // First check if segments are in the JSON translation
+    const trans = parseTranslation(para);
+    if (trans?.segments && Array.isArray(trans.segments) && trans.segments.length > 0) {
+      return trans.segments;
+    }
+    // Fallback to translation_segments field
     if (!para.translation_segments) return null;
     try {
       const segments = typeof para.translation_segments === 'string'
@@ -785,6 +818,11 @@
           {#if document.language}
             <span class="meta-tag language">{getLanguageName(document.language)}</span>
           {/if}
+          {#if viewMode === 'sbs'}
+            <span class="meta-tag translation-mode">Literary Translation</span>
+          {:else if viewMode === 'study'}
+            <span class="meta-tag translation-mode study">Literal Study</span>
+          {/if}
           {#if document.year}
             <span class="meta-tag">{document.year}</span>
           {/if}
@@ -803,19 +841,6 @@
 
       <hr class="doc-divider" />
 
-      <!-- Translation mode header -->
-      {#if viewMode === 'sbs'}
-        <div class="translation-mode-header">
-          <span class="mode-label">Literary Translation</span>
-          <span class="mode-desc">Fluent English for reading</span>
-        </div>
-      {:else if viewMode === 'study'}
-        <div class="translation-mode-header study">
-          <span class="mode-label">Literal Study Translation</span>
-          <span class="mode-desc">Word-by-word with linguistic notes</span>
-        </div>
-      {/if}
-
       {#if paragraphs.length === 0}
         <div class="empty-content">
           <p>No content available for this document.</p>
@@ -825,7 +850,7 @@
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
-            class:bilingual-paragraph={(viewMode === 'sbs' && para.translation) || (viewMode === 'study' && para.study_translation)}
+            class:bilingual-paragraph={(viewMode === 'sbs' && parseTranslation(para)?.reading) || (viewMode === 'study' && parseTranslation(para)?.study)}
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
@@ -833,41 +858,12 @@
               <h2 class="paragraph-heading">{para.heading}</h2>
             {/if}
 
-            <!-- SBS Mode: Side-by-side reading translation -->
-            {#if viewMode === 'sbs' && para.translation}
+            <!-- SBS Mode: Side-by-side reading translation (English on LEFT) -->
+            {#if viewMode === 'sbs' && parseTranslation(para)?.reading}
+              {@const trans = parseTranslation(para)}
               {@const segments = parseSegments(para)}
               <div class="bilingual-row">
-                <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  {#if segments}
-                    <!-- Phrase-level aligned view -->
-                    <div class="paragraph-text segmented">
-                      {#each segments as seg}
-                        <span
-                          class="segment-phrase"
-                          class:highlighted={highlightedSegmentId === seg.id}
-                          data-seg-id={seg.id}
-                          onmouseenter={() => highlightSegment(seg.id)}
-                          onmouseleave={clearHighlight}
-                          onclick={() => highlightSegment(seg.id)}
-                          role="button"
-                          tabindex="0"
-                        >{seg.original}</span>{' '}
-                      {/each}
-                    </div>
-                  {:else}
-                    <!-- Fallback: plain text -->
-                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
-                  {/if}
-                </div>
-                <div class="para-center">
-                  <button
-                    class="para-anchor-btn"
-                    onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
-                    title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
-                  >
-                    {(para.paragraph_index ?? i) + 1}
-                  </button>
-                </div>
+                <!-- Translation (English) on LEFT -->
                 <div class="translation-col">
                   {#if segments}
                     <!-- Phrase-level aligned view -->
@@ -887,16 +883,8 @@
                     </div>
                   {:else}
                     <!-- Fallback: plain translation text -->
-                    <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
+                    <div class="paragraph-text translation">{@html renderMarkdown(trans.reading)}</div>
                   {/if}
-                </div>
-              </div>
-
-            <!-- Study Mode: Literal translation with linguistic notes -->
-            {:else if viewMode === 'study' && (para.study_translation || para.translation)}
-              <div class="study-row">
-                <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                 </div>
                 <div class="para-center">
                   <button
@@ -907,23 +895,90 @@
                     {(para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
-                <div class="study-col">
-                  <div class="study-translation">{@html renderMarkdown(para.study_translation || para.translation)}</div>
-                  {#if para.study_notes}
-                    {@const notes = typeof para.study_notes === 'string' ? JSON.parse(para.study_notes) : para.study_notes}
-                    {#if notes.segments?.length}
-                      <div class="study-notes">
-                        {#each notes.segments as seg}
-                          <div class="note-segment">
-                            <span class="note-original">{seg.original}</span>
-                            <span class="note-literal">{seg.literal}</span>
-                            {#if seg.notes}
-                              <span class="note-annotation">{seg.notes}</span>
-                            {/if}
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
+                <!-- Original on RIGHT -->
+                <div class="original-col" dir={getLanguageDirection(document.language)}>
+                  {#if segments}
+                    <!-- Phrase-level aligned view -->
+                    <div class="paragraph-text segmented">
+                      {#each segments as seg}
+                        <span
+                          class="segment-phrase"
+                          class:highlighted={highlightedSegmentId === seg.id}
+                          data-seg-id={seg.id}
+                          onmouseenter={() => highlightSegment(seg.id)}
+                          onmouseleave={clearHighlight}
+                          onclick={() => highlightSegment(seg.id)}
+                          role="button"
+                          tabindex="0"
+                        >{seg.original}</span>{' '}
+                      {/each}
+                    </div>
+                  {:else}
+                    <!-- Fallback: plain original text -->
+                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                  {/if}
+                </div>
+              </div>
+
+            <!-- Study Mode: Phrase-by-phrase literal translation (English on LEFT) -->
+            {:else if viewMode === 'study' && parseTranslation(para)?.study}
+              {@const trans = parseTranslation(para)}
+              {@const notes = trans.notes}
+              <div class="bilingual-row study-row">
+                <!-- Study translation (English) on LEFT -->
+                <div class="translation-col">
+                  {#if notes && Array.isArray(notes) && notes.length > 0}
+                    <!-- Phrase-by-phrase with linguistic notes -->
+                    <div class="paragraph-text study-text segmented">
+                      {#each notes as seg, idx}
+                        <span
+                          class="segment-phrase study-phrase"
+                          class:highlighted={highlightedSegmentId === idx}
+                          data-seg-id={idx}
+                          onmouseenter={() => highlightSegment(idx)}
+                          onmouseleave={clearHighlight}
+                          onclick={() => highlightSegment(idx)}
+                          role="button"
+                          tabindex="0"
+                          title={seg.notes || ''}
+                        >{seg.literal}</span>{' '}
+                      {/each}
+                    </div>
+                  {:else}
+                    <!-- Fallback: plain study translation -->
+                    <div class="paragraph-text study-text">{@html renderMarkdown(trans.study)}</div>
+                  {/if}
+                </div>
+                <div class="para-center">
+                  <button
+                    class="para-anchor-btn"
+                    onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
+                    title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
+                  >
+                    {(para.paragraph_index ?? i) + 1}
+                  </button>
+                </div>
+                <!-- Original on RIGHT -->
+                <div class="original-col" dir={getLanguageDirection(document.language)}>
+                  {#if notes && Array.isArray(notes) && notes.length > 0}
+                    <!-- Phrase-by-phrase original -->
+                    <div class="paragraph-text segmented">
+                      {#each notes as seg, idx}
+                        <span
+                          class="segment-phrase"
+                          class:highlighted={highlightedSegmentId === idx}
+                          data-seg-id={idx}
+                          onmouseenter={() => highlightSegment(idx)}
+                          onmouseleave={clearHighlight}
+                          onclick={() => highlightSegment(idx)}
+                          role="button"
+                          tabindex="0"
+                        >{seg.original}</span>{' '}
+                      {/each}
+                    </div>
+                  {:else}
+                    <!-- Fallback: plain original text -->
+                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                   {/if}
                 </div>
               </div>
@@ -1378,8 +1433,8 @@
   }
 
   .url-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
     opacity: 0.85;
     transition: opacity 0.2s;
   }
@@ -1438,8 +1493,8 @@
     justify-content: center;
     background: white;
     border: 1px solid #ddd;
-    border-radius: 0.375rem;
-    padding: 0.125rem;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
     cursor: pointer;
     transition: all 0.2s;
   }
@@ -1450,8 +1505,8 @@
   }
 
   .url-qr-img {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
     display: block;
     border-radius: 0.25rem;
   }
@@ -1500,6 +1555,17 @@
   .meta-tag.language {
     background: #e0e7ff;
     color: #3730a3;
+  }
+
+  .meta-tag.translation-mode {
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-style: italic;
+  }
+
+  .meta-tag.translation-mode.study {
+    background: #ede9fe;
+    color: #6d28d9;
   }
 
   /* Abstract block */
@@ -1622,6 +1688,7 @@
   .document-content {
     max-width: 48rem;
     margin: 2rem auto;
+    margin-right: 5rem; /* Space for utility bar */
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
     border: 1px solid rgba(0, 0, 0, 0.08);
