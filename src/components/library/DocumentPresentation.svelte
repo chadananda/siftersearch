@@ -18,6 +18,7 @@
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
   import AuthModal from '../AuthModal.svelte';
+  import TranslationQueueModal from './TranslationQueueModal.svelte';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -50,7 +51,6 @@
   let showMetadata = $state(false);
   let showQRModal = $state(false);
   let showLoginModal = $state(false);
-  let showBilingual = $state(false);
   let qrCodeUrl = $state(null);
   let linkCopied = $state(false);
 
@@ -359,10 +359,6 @@
     }
   }
 
-  function toggleBilingual() {
-    showBilingual = !showBilingual;
-  }
-
   // Language code to full name mapping
   const LANGUAGE_NAMES = {
     en: 'English',
@@ -398,6 +394,18 @@
 
   // Check if document has translations
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
+
+  // Check if document has study translations
+  let hasStudyTranslations = $derived(paragraphs.some(p => p.study_translation));
+
+  // Auth-based visibility
+  let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin' || auth.user?.tier === 'editor');
+  let isLoggedIn = $derived(auth.isAuthenticated);
+  let isNonEnglish = $derived(document?.language && document.language !== 'en');
+
+  // View mode state
+  let viewMode = $state('default'); // 'default' | 'sbs' | 'study'
+  let showTranslateModal = $state(false);
 </script>
 
 <div class="presentation-container">
@@ -426,8 +434,12 @@
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
-      <div class="util-actions">
-        {#if canEdit}
+
+      <div class="util-divider"></div>
+
+      <!-- Admin buttons -->
+      <div class="util-actions admin-actions">
+        {#if isAdmin}
           <button class="util-btn edit" onclick={openEditor} title="Edit document">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -435,14 +447,60 @@
             </svg>
           </button>
         {/if}
-        {#if hasTranslations && document.language !== 'en'}
-          <button class="util-btn" class:active={showBilingual} onclick={toggleBilingual} title={showBilingual ? 'Hide translation' : 'Show translation'}>
+        {#if isAdmin && isNonEnglish}
+          <button class="util-btn translate" onclick={() => showTranslateModal = true} title="Queue translation">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 5h12M9 3v2m1.048 3.5A3.5 3.5 0 0 1 6 9.5M3 21l3.5-7 3.5 7M4.5 18h5"/>
-              <path d="m21 21-3.5-7-3.5 7m1.5-3h5"/>
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
           </button>
         {/if}
+      </div>
+
+      <!-- View mode toggle group -->
+      {#if isNonEnglish && hasTranslations}
+        <div class="util-divider"></div>
+        <div class="view-mode-group">
+          <button
+            class="mode-btn"
+            class:active={viewMode === 'default'}
+            onclick={() => viewMode = 'default'}
+            title="Original text only"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h10"/>
+            </svg>
+          </button>
+          <button
+            class="mode-btn"
+            class:active={viewMode === 'sbs'}
+            onclick={() => viewMode = 'sbs'}
+            title="Side-by-side translation"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="18" rx="1"/>
+              <rect x="14" y="3" width="7" height="18" rx="1"/>
+            </svg>
+          </button>
+          <button
+            class="mode-btn"
+            class:active={viewMode === 'study'}
+            class:disabled={!hasStudyTranslations}
+            onclick={() => hasStudyTranslations && (viewMode = 'study')}
+            title={hasStudyTranslations ? 'Study mode with notes' : 'Study translations not available'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          </button>
+        </div>
+      {/if}
+
+      <div class="util-divider"></div>
+
+      <!-- Sharing & utility buttons -->
+      <div class="util-actions">
         <button class="util-btn" onclick={showQRCode} title="Share QR Code">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/>
@@ -478,7 +536,8 @@
       class="document-content"
       dir={getLanguageDirection(document.language)}
       class:rtl={getLanguageDirection(document.language) === 'rtl'}
-      class:bilingual={showBilingual}
+      class:bilingual={viewMode === 'sbs' || viewMode === 'study'}
+      class:study-mode={viewMode === 'study'}
     >
       <!-- Document header - always LTR for simplicity -->
       <header class="doc-header" dir="ltr">
@@ -540,6 +599,19 @@
 
       <hr class="doc-divider" />
 
+      <!-- Translation mode header -->
+      {#if viewMode === 'sbs'}
+        <div class="translation-mode-header">
+          <span class="mode-label">Literary Translation</span>
+          <span class="mode-desc">Fluent English for reading</span>
+        </div>
+      {:else if viewMode === 'study'}
+        <div class="translation-mode-header study">
+          <span class="mode-label">Literal Study Translation</span>
+          <span class="mode-desc">Word-by-word with linguistic notes</span>
+        </div>
+      {/if}
+
       {#if paragraphs.length === 0}
         <div class="empty-content">
           <p>No content available for this document.</p>
@@ -549,11 +621,72 @@
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
-            class:bilingual-paragraph={showBilingual && para.translation}
+            class:bilingual-paragraph={(viewMode === 'sbs' && para.translation) || (viewMode === 'study' && para.study_translation)}
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
-            {#if !(showBilingual && para.translation)}
+            {#if para.heading}
+              <h2 class="paragraph-heading">{para.heading}</h2>
+            {/if}
+
+            <!-- SBS Mode: Side-by-side reading translation -->
+            {#if viewMode === 'sbs' && para.translation}
+              <div class="bilingual-row">
+                <div class="original-col" dir={getLanguageDirection(document.language)}>
+                  <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                </div>
+                <div class="para-center">
+                  <button
+                    class="para-anchor-btn"
+                    onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
+                    title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
+                  >
+                    {(para.paragraph_index ?? i) + 1}
+                  </button>
+                </div>
+                <div class="translation-col">
+                  <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
+                </div>
+              </div>
+
+            <!-- Study Mode: Literal translation with linguistic notes -->
+            {:else if viewMode === 'study' && (para.study_translation || para.translation)}
+              <div class="study-row">
+                <div class="original-col" dir={getLanguageDirection(document.language)}>
+                  <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                </div>
+                <div class="para-center">
+                  <button
+                    class="para-anchor-btn"
+                    onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
+                    title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
+                  >
+                    {(para.paragraph_index ?? i) + 1}
+                  </button>
+                </div>
+                <div class="study-col">
+                  <div class="study-translation">{@html renderMarkdown(para.study_translation || para.translation)}</div>
+                  {#if para.study_notes}
+                    {@const notes = typeof para.study_notes === 'string' ? JSON.parse(para.study_notes) : para.study_notes}
+                    {#if notes.segments?.length}
+                      <div class="study-notes">
+                        {#each notes.segments as seg}
+                          <div class="note-segment">
+                            <span class="note-original">{seg.original}</span>
+                            <span class="note-literal">{seg.literal}</span>
+                            {#if seg.notes}
+                              <span class="note-annotation">{seg.notes}</span>
+                            {/if}
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  {/if}
+                </div>
+              </div>
+
+            <!-- Default Mode: Original text only -->
+            {:else}
               <button
                 class="para-anchor"
                 onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
@@ -561,23 +694,6 @@
               >
                 {(para.paragraph_index ?? i) + 1}
               </button>
-            {/if}
-            {#if para.heading}
-              <h2 class="paragraph-heading">{para.heading}</h2>
-            {/if}
-            {#if showBilingual && para.translation}
-              <div class="bilingual-row">
-                <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
-                </div>
-                <div class="para-center">
-                  {(para.paragraph_index ?? i) + 1}
-                </div>
-                <div class="translation-col">
-                  <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
-                </div>
-              </div>
-            {:else}
               <div class="para-text-wrapper">
                 <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
               </div>
@@ -659,6 +775,14 @@
 <AuthModal
   bind:isOpen={showLoginModal}
   onClose={handleAuthSuccess}
+/>
+
+<!-- Translation Queue Modal -->
+<TranslationQueueModal
+  bind:isOpen={showTranslateModal}
+  documentId={document?.id}
+  documentTitle={document?.title || 'Untitled'}
+  documentLanguage={document?.language || 'ar'}
 />
 
 <style>
@@ -788,6 +912,96 @@
 
   .back-btn {
     margin-bottom: 0.5rem;
+  }
+
+  /* Divider between button groups */
+  .util-divider {
+    width: 1.5rem;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 0.25rem 0.5rem;
+  }
+
+  /* Translate button */
+  .util-btn.translate {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+  }
+
+  .util-btn.translate:hover {
+    background: #7c3aed;
+  }
+
+  /* View mode toggle group */
+  .view-mode-group {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .mode-btn {
+    width: 2.5rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    color: #888;
+    transition: all 0.2s;
+  }
+
+  .mode-btn:last-child {
+    border-bottom: none;
+  }
+
+  .mode-btn:hover {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  .mode-btn.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .mode-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .mode-btn.disabled:hover {
+    background: white;
+    color: #888;
+  }
+
+  .mode-btn svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  /* Para anchor button in bilingual/study modes */
+  .para-anchor-btn {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.75rem;
+    color: #999;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1.75;
+    transition: color 0.2s;
+  }
+
+  .para-anchor-btn:hover {
+    color: #3b82f6;
   }
 
   /* Document header - inside the paper */
@@ -973,6 +1187,40 @@
     border: none;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin: 0 0 1.5rem 0;
+  }
+
+  /* Translation mode header */
+  .translation-mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 0.5rem;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .translation-mode-header.study {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%);
+    border-color: rgba(139, 92, 246, 0.15);
+  }
+
+  .mode-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .translation-mode-header.study .mode-label {
+    color: #7c3aed;
+  }
+
+  .mode-desc {
+    font-size: 0.75rem;
+    color: #666;
   }
 
   /* Document footer */
@@ -1223,6 +1471,76 @@
     font-style: normal;
   }
 
+  /* Study mode layout */
+  .study-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .study-col {
+    padding-left: 1.25rem;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .study-translation {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #333;
+    font-family: 'Libre Caslon Text', Georgia, serif;
+  }
+
+  .study-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f5f3ee;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .note-segment {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .note-original {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1rem;
+    color: #1a1a1a;
+    font-weight: 500;
+    direction: rtl;
+  }
+
+  .note-literal {
+    color: #555;
+    font-style: italic;
+  }
+
+  .note-annotation {
+    color: #777;
+    font-size: 0.75rem;
+    flex-basis: 100%;
+    padding-left: 1rem;
+    border-left: 2px solid #ddd;
+    margin-top: 0.25rem;
+  }
+
+  /* Study mode document styling */
+  .document-content.study-mode {
+    max-width: 80rem;
+  }
+
   /* Load more section */
   .load-more-section {
     padding: 2rem;
@@ -1444,6 +1762,44 @@
     .para-center {
       display: none;
     }
+
+    /* View mode group mobile */
+    .view-mode-group {
+      flex-direction: row;
+    }
+
+    .mode-btn {
+      width: 2rem;
+      height: 2rem;
+      border-bottom: none;
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .mode-btn:last-child {
+      border-right: none;
+    }
+
+    .mode-btn svg {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    /* Study mode mobile */
+    .study-row {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .study-col {
+      padding-left: 0;
+      border-left: none;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      padding-top: 1rem;
+    }
+
+    .document-content.study-mode {
+      max-width: 100%;
+    }
   }
 
   /* Para text wrapper for flex layout */
@@ -1624,6 +1980,49 @@
       color: #666;
       padding: 0 0.25rem;
       min-width: 1.5rem;
+    }
+
+    .para-anchor-btn {
+      color: #666;
+    }
+
+    /* Study mode print styles */
+    .document-content.study-mode {
+      max-width: 100%;
+    }
+
+    .study-row {
+      page-break-inside: avoid;
+      gap: 0;
+    }
+
+    .study-col {
+      border-color: #ccc;
+      padding-left: 0.5rem;
+    }
+
+    .study-translation {
+      font-size: 10pt;
+    }
+
+    .study-notes {
+      background: #f5f5f5;
+      border-color: #ddd;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .note-segment {
+      font-size: 8pt;
+    }
+
+    .note-original {
+      font-size: 9pt;
+    }
+
+    .note-annotation {
+      font-size: 7pt;
+      color: #555;
     }
 
     /* Hide modals in print */

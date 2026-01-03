@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T15:52:57.875Z",
+  "generated": "2026-01-03T16:15:28.111Z",
   "entries": [
+    {
+      "hash": "26e3dd1",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Paragraph numbering treats index 0 as falsy",
+      "scope": null
+    },
     {
       "hash": "92f78b1",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Segmentation based on concepts, not rules - never split sentences",
       "scope": null
-    },
-    {
-      "hash": "a096001",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Improve segmentation with conceptual description instead of rules",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "26e3dd1",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Paragraph numbering treats index 0 as falsy",
+        "scope": null
+      },
       {
         "hash": "92f78b1",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Segmentation based on concepts, not rules - never split sentences",
-        "scope": null
-      },
-      {
-        "hash": "a096001",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Improve segmentation with conceptual description instead of rules",
         "scope": null
       }
     ]

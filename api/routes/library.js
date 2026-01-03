@@ -943,7 +943,7 @@ Return ONLY the description text, no quotes or formatting.`;
     if (includeParagraphs) {
       const [paras, countResult] = await Promise.all([
         queryAll(`
-          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
+          SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments, study_translation, study_notes
           FROM content
           WHERE doc_id = ?
           ORDER BY paragraph_index
@@ -951,10 +951,11 @@ Return ONLY the description text, no quotes or formatting.`;
         `, [id, paragraphLimit, paragraphOffset]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [id])
       ]);
-      // Parse translation_segments from JSON string
+      // Parse translation_segments and study_notes from JSON strings
       paragraphs = paras.map(p => ({
         ...p,
-        segments: p.translation_segments ? JSON.parse(p.translation_segments) : null
+        segments: p.translation_segments ? JSON.parse(p.translation_segments) : null,
+        study_notes: p.study_notes || null
       }));
       paragraphTotal = countResult?.count || 0;
     }
@@ -1130,7 +1131,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Fetch paragraphs
     const [paragraphs, countResult] = await Promise.all([
       effectiveLimit > 0 ? queryAll(`
-        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments
+        SELECT id, paragraph_index, text, heading, blocktype, translation, translation_segments, study_translation, study_notes
         FROM content
         WHERE doc_id = ?
         ORDER BY paragraph_index
@@ -1139,10 +1140,11 @@ Return ONLY the description text, no quotes or formatting.`;
       queryOne(`SELECT COUNT(*) as count FROM content WHERE doc_id = ?`, [document.id])
     ]);
 
-    // Parse translation segments
+    // Parse translation segments and study notes
     const formattedParagraphs = paragraphs.map(p => ({
       ...p,
-      segments: p.translation_segments ? JSON.parse(p.translation_segments) : null
+      segments: p.translation_segments ? JSON.parse(p.translation_segments) : null,
+      study_notes: p.study_notes || null
     }));
 
     const total = countResult?.count || 0;
@@ -1470,7 +1472,7 @@ Return ONLY the description text, no quotes or formatting.`;
 
     try {
       paragraphs = await queryAll(`
-        SELECT id, paragraph_index, text, translation, translation_segments, blocktype, heading
+        SELECT id, paragraph_index, text, translation, translation_segments, study_translation, study_notes, blocktype, heading
         FROM content
         WHERE doc_id = ?
         ORDER BY paragraph_index
@@ -1520,6 +1522,8 @@ Return ONLY the description text, no quotes or formatting.`;
           index: p.paragraph_index,
           original: p.text,
           translation: p.translation || null,
+          study_translation: p.study_translation || null,
+          study_notes: p.study_notes || null,
           segments,  // Aligned phrase pairs for interactive highlighting
           blocktype: p.blocktype || 'paragraph',
           heading: p.heading
@@ -1528,7 +1532,8 @@ Return ONLY the description text, no quotes or formatting.`;
       total,
       limit,
       offset,
-      hasTranslations: paragraphs.some(p => p.translation)
+      hasTranslations: paragraphs.some(p => p.translation),
+      hasStudyTranslations: paragraphs.some(p => p.study_translation)
     };
   });
 
