@@ -2276,7 +2276,8 @@
 
     .document-content {
       /* Minimal right margin - only back + hamburger buttons on mobile */
-      margin: 1rem 0.5rem;
+      /* Keep tiny left margin visible for visual separation from edge */
+      margin: 1rem 0.5rem 1rem 0.75rem;
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
@@ -2284,6 +2285,13 @@
     .url-breadcrumb {
       font-size: 0.6875rem;
       padding-right: 2.5rem;
+      /* Hanging indent: wrapped lines are indented past the icon */
+      padding-left: 1.75rem;
+    }
+
+    .url-home {
+      /* Pull icon back to left edge (creates hanging indent effect) */
+      margin-left: -1.75rem;
     }
 
     .url-icon {
