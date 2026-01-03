@@ -556,10 +556,10 @@
             {#if !(showBilingual && para.translation)}
               <button
                 class="para-anchor"
-                onclick={() => copyParagraphLink(para.paragraph_index || i + 1)}
-                title="Copy link to paragraph {para.paragraph_index || i + 1}"
+                onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
+                title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
               >
-                {para.paragraph_index || i + 1}
+                {(para.paragraph_index ?? i) + 1}
               </button>
             {/if}
             {#if para.heading}
@@ -571,7 +571,7 @@
                   <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                 </div>
                 <div class="para-center">
-                  {para.paragraph_index || i + 1}
+                  {(para.paragraph_index ?? i) + 1}
                 </div>
                 <div class="translation-col">
                   <div class="paragraph-text translation">{@html renderMarkdown(para.translation)}</div>
