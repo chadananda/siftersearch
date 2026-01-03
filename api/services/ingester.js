@@ -12,7 +12,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
-import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers } from './segmenter.js';
+import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -106,10 +106,29 @@ export function parseDocument(text, options = {}) {
 }
 
 /**
+ * Check if text is unpunctuated (classical Arabic/Farsi without sentence-ending punctuation)
+ */
+function isUnpunctuatedText(text) {
+  if (!text || text.length < 100) return false;
+
+  // Count punctuation marks that would indicate sentence breaks
+  const punctuationMarks = (text.match(/[.!?؟:]/g) || []).length;
+  const wordsEstimate = text.split(/\s+/).length;
+
+  // If fewer than 1 punctuation per 50 words, consider it unpunctuated
+  return punctuationMarks < wordsEstimate / 50;
+}
+
+/**
  * Parse document with blocktype awareness and AI segmentation
  *
  * Returns array of { text, blocktype } objects for storage
  * Uses AI segmentation for ANY block exceeding maxChunkSize (universal approach)
+ *
+ * For unpunctuated RTL texts (classical Arabic/Farsi), uses sentence-first approach:
+ * - Detect all sentences in the document
+ * - Group sentences into paragraphs by topic
+ * - Return paragraphs with sentence markers already applied
  *
  * @param {string} text - Raw markdown text
  * @param {object} options - Options including language hint
@@ -136,6 +155,39 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     isRTL: features.isRTL
   }, 'Parsing document with block awareness');
 
+  // For unpunctuated RTL texts, use sentence-first approach
+  // This is the correct order: sentences first, then group into paragraphs
+  if (features.isRTL && isUnpunctuatedText(text)) {
+    logger.info({ language: detectedLanguage }, 'Using sentence-first segmentation for unpunctuated RTL text');
+
+    try {
+      // Normalize line breaks to spaces (classical texts often have arbitrary line breaks)
+      const normalizedText = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+
+      const result = await segmentUnpunctuatedDocument(normalizedText, {
+        language: detectedLanguage
+      });
+
+      // Convert paragraphs to chunks format
+      // Note: sentence markers are already applied by segmentUnpunctuatedDocument
+      const chunks = result.paragraphs.map(para => ({
+        text: para.text,
+        blocktype: BLOCK_TYPES.PARAGRAPH
+      }));
+
+      logger.info({
+        sentences: result.sentences.length,
+        paragraphs: result.paragraphs.length
+      }, 'Sentence-first segmentation complete');
+
+      return chunks;
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Sentence-first segmentation failed, falling back to standard approach');
+      // Fall through to standard approach
+    }
+  }
+
+  // Standard approach for punctuated texts
   // Parse markdown into typed blocks
   const blocks = parseMarkdownBlocks(text);
 
@@ -311,32 +363,47 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     };
   }
 
-  // Add sentence markers to all paragraphs in batch (1-2 AI calls instead of 100+)
+  // Add sentence markers to paragraphs that don't already have them
+  // (sentence-first approach for RTL texts already has markers applied)
   // This enables per-sentence translations and URL anchors
   let totalSentences = 0;
-  try {
-    const paragraphsToMark = chunks.map((chunk, idx) => ({
-      id: String(idx),
-      text: chunk.text
-    }));
 
-    const markedResults = await batchAddSentenceMarkers(paragraphsToMark, finalMeta.language);
+  // Check if chunks already have sentence markers (from sentence-first segmentation)
+  const hasExistingMarkers = chunks.some(c => c.text && c.text.includes('\u2045'));
 
-    // Apply results back to chunks
-    for (const result of markedResults) {
-      const idx = parseInt(result.id, 10);
-      if (idx >= 0 && idx < chunks.length) {
-        chunks[idx].text = result.text;
-        totalSentences += result.sentenceCount;
-      }
+  if (hasExistingMarkers) {
+    // Count existing sentences
+    for (const chunk of chunks) {
+      const matches = chunk.text?.match(/⁅s\d+⁆/g);
+      totalSentences += matches ? matches.length : 0;
     }
-  } catch (err) {
-    // If batch marking fails completely, log but keep original text
-    // Individual paragraphs will still have fallback single-sentence wrapping
-    logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
-  }
+    logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Using pre-existing sentence markers');
+  } else {
+    // Add sentence markers in batch (1-2 AI calls instead of 100+)
+    try {
+      const paragraphsToMark = chunks.map((chunk, idx) => ({
+        id: String(idx),
+        text: chunk.text
+      }));
 
-  logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers');
+      const markedResults = await batchAddSentenceMarkers(paragraphsToMark, finalMeta.language);
+
+      // Apply results back to chunks
+      for (const result of markedResults) {
+        const idx = parseInt(result.id, 10);
+        if (idx >= 0 && idx < chunks.length) {
+          chunks[idx].text = result.text;
+          totalSentences += result.sentenceCount;
+        }
+      }
+    } catch (err) {
+      // If batch marking fails completely, log but keep original text
+      // Individual paragraphs will still have fallback single-sentence wrapping
+      logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
+    }
+
+    logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers');
+  }
 
   // Use existing document ID if updating
   const finalDocId = existingDoc ? existingDoc.id : documentId;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T05:41:21.956Z",
+  "generated": "2026-01-03T05:47:40.939Z",
   "entries": [
+    {
+      "hash": "0fbdaf6",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add sentence-first streaming segmentation for unpunctuated texts",
+      "scope": null
+    },
     {
       "hash": "60740e9",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove duplicate route registrations causing server crash",
       "scope": null
-    },
-    {
-      "hash": "18e5ed5",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add bulk translation management endpoints",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "0fbdaf6",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add sentence-first streaming segmentation for unpunctuated texts",
+        "scope": null
+      },
       {
         "hash": "60740e9",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Remove duplicate route registrations causing server crash",
-        "scope": null
-      },
-      {
-        "hash": "18e5ed5",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add bulk translation management endpoints",
         "scope": null
       }
     ]

@@ -1751,7 +1751,7 @@ Return JSON:
       const complete = (result.complete || []).map(indices => {
         const paraSentences = indices.filter(i => i >= 0 && i < sentences.length).map(i => sentences[i]);
         return {
-          text: paraSentences.join(' '),
+          text: paraSentences.map((s, idx) => wrapSentence(s, idx + 1)).join(' '),
           sentences: paraSentences,
           sentenceCount: paraSentences.length
         };
@@ -1777,7 +1777,7 @@ Return JSON:
     const paraSentences = completeSentences.slice(i, i + 4);
     if (paraSentences.length > 0) {
       complete.push({
-        text: paraSentences.join(' '),
+        text: paraSentences.map((s, idx) => wrapSentence(s, idx + 1)).join(' '),
         sentences: paraSentences,
         sentenceCount: paraSentences.length
       });
@@ -1998,6 +1998,14 @@ function extractSentencesFromEndings(text, endings) {
 /**
  * Group sentences into paragraphs by topic
  */
+/**
+ * Build paragraph text with sentence markers
+ * Each sentence is wrapped with ⁅s1⁆...⁅/s1⁆ etc.
+ */
+function buildMarkedParagraphText(sentences) {
+  return sentences.map((s, i) => wrapSentence(s, i + 1)).join(' ');
+}
+
 async function groupSentencesIntoParagraphs(sentences, language) {
   if (sentences.length === 0) {
     return [];
@@ -2006,7 +2014,7 @@ async function groupSentencesIntoParagraphs(sentences, language) {
   if (sentences.length <= 3) {
     // Too few sentences for paragraph grouping
     return [{
-      text: sentences.join(' '),
+      text: buildMarkedParagraphText(sentences),
       sentences: sentences,
       sentenceCount: sentences.length
     }];
@@ -2068,7 +2076,7 @@ Return JSON array of paragraph groups (each group is array of sentence indices):
             .filter(i => i >= 0 && i < sentences.length)
             .map(i => sentences[i]);
           return {
-            text: paraSentences.join(' '),
+            text: buildMarkedParagraphText(paraSentences),
             sentences: paraSentences,
             sentenceCount: paraSentences.length
           };
@@ -2085,7 +2093,7 @@ Return JSON array of paragraph groups (each group is array of sentence indices):
   for (let i = 0; i < sentences.length; i += groupSize) {
     const paraSentences = sentences.slice(i, i + groupSize);
     paragraphs.push({
-      text: paraSentences.join(' '),
+      text: buildMarkedParagraphText(paraSentences),
       sentences: paraSentences,
       sentenceCount: paraSentences.length
     });
