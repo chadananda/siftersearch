@@ -1688,7 +1688,8 @@
   .document-content {
     max-width: 48rem;
     margin: 2rem auto;
-    margin-right: 5rem; /* Space for utility bar */
+    /* Right margin for utility bar: 1.5rem (bar position) + 2.5rem (buttons) + 1rem (buffer) = 5rem */
+    margin-right: 5rem;
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
     border: 1px solid rgba(0, 0, 0, 0.08);
@@ -2153,7 +2154,8 @@
     }
 
     .document-content {
-      margin: 1rem 0.5rem;
+      /* Right margin for utility bar: 0.5rem (bar position) + 2rem (button) + 0.5rem (buffer) = 3rem */
+      margin: 1rem 3rem 1rem 0.5rem;
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
