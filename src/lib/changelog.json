@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T19:57:49.524Z",
+  "generated": "2026-01-03T19:59:36.096Z",
   "entries": [
+    {
+      "hash": "eaa94f3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
+      "scope": null
+    },
     {
       "hash": "455e1c5",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Disable PWA navigation fallback that broke SSR routes",
       "scope": null
-    },
-    {
-      "hash": "47f6e95",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Remove non-existent slug column from docs table queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "eaa94f3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
+        "scope": null
+      },
       {
         "hash": "455e1c5",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Disable PWA navigation fallback that broke SSR routes",
-        "scope": null
-      },
-      {
-        "hash": "47f6e95",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Remove non-existent slug column from docs table queries",
         "scope": null
       }
     ]

@@ -2246,6 +2246,11 @@
       right: 0.5rem;
     }
 
+    /* Hide back button on mobile - no room for it */
+    .back-btn {
+      display: none;
+    }
+
     /* Show mobile hamburger menu, hide desktop buttons */
     .mobile-menu {
       display: block;
