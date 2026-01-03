@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T16:15:28.111Z",
+  "generated": "2026-01-03T16:26:00.808Z",
   "entries": [
+    {
+      "hash": "604645e",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add SBS and Study translation modes with admin buttons",
+      "scope": null
+    },
     {
       "hash": "26e3dd1",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add test-segmentation script for verifying translation quality",
       "scope": null
-    },
-    {
-      "hash": "780f689",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Segmentation based on concepts, not rules - never split sentences",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "604645e",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add SBS and Study translation modes with admin buttons",
+        "scope": null
+      },
       {
         "hash": "26e3dd1",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add test-segmentation script for verifying translation quality",
-        "scope": null
-      },
-      {
-        "hash": "780f689",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Segmentation based on concepts, not rules - never split sentences",
         "scope": null
       }
     ]

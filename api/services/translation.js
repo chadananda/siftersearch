@@ -62,7 +62,8 @@ export async function requestTranslation({
   sourceLanguage = null,
   notifyEmail,
   quality = 'standard', // standard, high
-  contentType = null // scripture, historical, auto (null = auto-detect from collection)
+  contentType = null, // scripture, historical, auto (null = auto-detect from collection)
+  translationType = 'reading' // reading (literary) or study (literal with notes)
 }) {
   if (!SUPPORTED_LANGUAGES[targetLanguage]) {
     throw new Error(`Unsupported target language: ${targetLanguage}`);
@@ -77,7 +78,8 @@ export async function requestTranslation({
       targetLanguage,
       sourceLanguage,
       quality,
-      contentType
+      contentType,
+      translationType
     },
     notifyEmail
   });
@@ -254,11 +256,72 @@ export async function processTranslationJob(job) {
 }
 
 /**
+ * Build document context for translation prompts
+ * Includes title, author, abstract, and collection info
+ */
+function buildDocumentContext(document) {
+  const parts = [];
+
+  if (document.title) {
+    parts.push(`Title: ${document.title}`);
+  }
+  if (document.author) {
+    parts.push(`Author: ${document.author}`);
+  }
+  if (document.collection) {
+    parts.push(`Collection: ${document.collection}`);
+  }
+  if (document.abstract || document.description) {
+    parts.push(`Abstract: ${document.abstract || document.description}`);
+  }
+
+  return parts.length > 0
+    ? `## Document Context\n${parts.join('\n')}\n`
+    : '';
+}
+
+/**
+ * Organize paragraphs into staggered waves for context-rich translation
+ * Wave pattern: 1, 11, 21... then 2, 12, 22... etc.
+ * This allows previous paragraphs to be translated before their successors
+ */
+function organizeIntoWaves(paragraphs, stride = 10) {
+  const waves = [];
+  const totalParagraphs = paragraphs.length;
+
+  // Create index map for quick lookup by paragraph_index
+  const indexMap = new Map(paragraphs.map(p => [p.paragraph_index, p]));
+
+  // Generate wave order
+  for (let offset = 0; offset < stride; offset++) {
+    const wave = [];
+    for (let i = offset; i < totalParagraphs; i += stride) {
+      // Find paragraph at this position
+      const para = paragraphs.find(p => p.paragraph_index === i + 1);
+      if (para) {
+        wave.push(para);
+      }
+    }
+    if (wave.length > 0) {
+      waves.push(wave);
+    }
+  }
+
+  return waves;
+}
+
+/**
  * Process in-app translation (Arabic/Persian -> English)
  * Saves translations directly to content.translation column
+ *
+ * Enhanced with:
+ * - Document metadata context (title, author, abstract)
+ * - Wave-based staggered translation for context propagation
+ * - Previous paragraph context (original + translation when available)
  */
 async function processInAppTranslation(job, document, sourceLang, contentType) {
   const documentId = job.document_id;
+  const { translationType = 'reading' } = job.params || {};
 
   // Debug: log job structure to trace undefined values
   logger.info({
@@ -266,25 +329,32 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     jobKeys: Object.keys(job),
     documentId,
     documentIdType: typeof documentId,
-    hasDocumentId: documentId !== undefined
+    hasDocumentId: documentId !== undefined,
+    translationType
   }, 'processInAppTranslation starting');
 
   if (!documentId) {
     throw new Error(`document_id is ${documentId} (type: ${typeof documentId})`);
   }
 
+  // Build document context for prompts
+  const documentContext = buildDocumentContext(document);
+
+  // Determine which column to check based on translation type
+  const translationColumn = translationType === 'study' ? 'study_translation' : 'translation';
+
   // Get untranslated paragraphs from content table
   const paragraphs = await queryAll(`
-    SELECT id, paragraph_index, text
+    SELECT id, paragraph_index, text, translation, study_translation
     FROM content
-    WHERE doc_id = ? AND (translation IS NULL OR translation = '')
+    WHERE doc_id = ? AND (${translationColumn} IS NULL OR ${translationColumn} = '')
     ORDER BY paragraph_index
   `, [documentId]);
 
   const totalParagraphs = paragraphs.length;
 
   if (totalParagraphs === 0) {
-    logger.info({ jobId: job.id, documentId }, 'No paragraphs need translation');
+    logger.info({ jobId: job.id, documentId, translationType }, 'No paragraphs need translation');
     await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
       progress: 0,
       totalItems: 0
@@ -294,77 +364,110 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
   await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalParagraphs });
 
+  // Build a map for looking up previous paragraphs (including already-translated ones)
+  const allParagraphs = await queryAll(`
+    SELECT paragraph_index, text, translation, study_translation
+    FROM content
+    WHERE doc_id = ?
+    ORDER BY paragraph_index
+  `, [documentId]);
+
+  const paragraphMap = new Map(allParagraphs.map(p => [p.paragraph_index, p]));
+
+  // Organize into staggered waves (1,11,21... then 2,12,22...)
+  const waves = organizeIntoWaves(paragraphs, 10);
+
+  logger.info({
+    jobId: job.id,
+    totalParagraphs,
+    waveCount: waves.length,
+    translationType
+  }, 'Organized paragraphs into waves');
+
   let translatedCount = 0;
-  const batchSize = 5; // Translate in batches of 5
+  let waveNumber = 0;
 
-  for (let i = 0; i < paragraphs.length; i += batchSize) {
-    const batch = paragraphs.slice(i, i + batchSize);
+  for (const wave of waves) {
+    waveNumber++;
 
-    // Translate batch in parallel with aligned segments
-    const translations = await Promise.all(
-      batch.map(async (para) => {
-        try {
-          // Check if text has sentence markers - use them for segment-level translation
-          if (hasMarkers(para.text)) {
-            const result = await translateMarkedText(
-              para.text,
-              sourceLang,
-              'en',
-              contentType
-            );
-            return {
-              id: para.id,
-              translation: result.translation,
-              segments: result.segments,
-              success: true
-            };
+    // Process wave sequentially to ensure context propagates
+    for (const para of wave) {
+      try {
+        // Get previous paragraph context
+        const prevPara = paragraphMap.get(para.paragraph_index - 1);
+        const prevContext = prevPara ? {
+          original: prevPara.text,
+          translation: prevPara.translation || prevPara.study_translation || null
+        } : null;
+
+        // Translate with context
+        const result = await translateWithContext({
+          text: para.text,
+          sourceLang,
+          targetLang: 'en',
+          contentType,
+          documentContext,
+          previousParagraph: prevContext,
+          translationType,
+          hasMarkers: hasMarkers(para.text)
+        });
+
+        // Save to appropriate column
+        const now = new Date().toISOString();
+
+        if (translationType === 'study') {
+          // Study mode: save to study_translation and study_notes
+          const studyNotesJson = result.studyNotes ? JSON.stringify(result.studyNotes) : null;
+          await query(`
+            UPDATE content
+            SET study_translation = ?, study_notes = ?, synced = 0, updated_at = ?
+            WHERE id = ?
+          `, [result.translation, studyNotesJson, now, para.id]);
+
+          // Update map for future paragraphs in same document
+          const mapEntry = paragraphMap.get(para.paragraph_index);
+          if (mapEntry) {
+            mapEntry.study_translation = result.translation;
           }
+        } else {
+          // Reading mode: save to translation and translation_segments
+          const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+          await query(`
+            UPDATE content
+            SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+            WHERE id = ?
+          `, [result.translation, segmentsJson, now, para.id]);
 
-          // No markers - fall back to AI-based segmentation
-          const result = await translateTextWithSegments(
-            para.text,
-            sourceLang,
-            'en',
-            contentType
-          );
-          return {
-            id: para.id,
-            translation: result.translation,
-            segments: result.segments,
-            success: true
-          };
-        } catch (err) {
-          logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate paragraph');
-          return { id: para.id, success: false, error: err.message };
+          // Update map for future paragraphs in same document
+          const mapEntry = paragraphMap.get(para.paragraph_index);
+          if (mapEntry) {
+            mapEntry.translation = result.translation;
+          }
         }
-      })
-    );
 
-    // Save translations to content table (including segments for phrase-level alignment)
-    const now = new Date().toISOString();
-    for (const result of translations) {
-      if (result.success && result.translation) {
-        const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
-        await query(`
-          UPDATE content
-          SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
-          WHERE id = ?
-        `, [result.translation, segmentsJson, now, result.id]);
         translatedCount++;
+
+      } catch (err) {
+        logger.warn({
+          paraId: para.id,
+          paragraphIndex: para.paragraph_index,
+          err: err.message
+        }, 'Failed to translate paragraph');
       }
     }
 
-    // Update job progress
+    // Update job progress after each wave
     await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
-      progress: i + batch.length,
+      progress: translatedCount,
       totalItems: totalParagraphs
     });
 
     logger.info({
       jobId: job.id,
-      progress: i + batch.length,
-      total: totalParagraphs
-    }, 'Translation batch completed');
+      wave: waveNumber,
+      waveSize: wave.length,
+      totalProgress: translatedCount
+    }, 'Wave completed');
   }
 
   await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
@@ -376,13 +479,60 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     jobId: job.id,
     documentId,
     translated: translatedCount,
-    total: totalParagraphs
+    total: totalParagraphs,
+    translationType
   }, 'In-app translation completed');
 
   return {
     success: true,
     translated: translatedCount,
     total: totalParagraphs
+  };
+}
+
+/**
+ * Translate a paragraph with full context
+ * Includes document metadata and previous paragraph for continuity
+ */
+async function translateWithContext({
+  text,
+  sourceLang,
+  targetLang,
+  contentType,
+  documentContext,
+  previousParagraph,
+  translationType,
+  hasMarkers: textHasMarkers
+}) {
+  // Build context section for the prompt
+  let contextSection = documentContext;
+
+  if (previousParagraph) {
+    contextSection += `\n## Previous Paragraph (for context)\n`;
+    contextSection += `Original: ${previousParagraph.original.substring(0, 500)}${previousParagraph.original.length > 500 ? '...' : ''}\n`;
+    if (previousParagraph.translation) {
+      contextSection += `Translation: ${previousParagraph.translation.substring(0, 500)}${previousParagraph.translation.length > 500 ? '...' : ''}\n`;
+    }
+  }
+
+  if (translationType === 'study') {
+    // Study mode: literal translation with linguistic notes
+    return await translateForStudy(text, sourceLang, targetLang, contentType, contextSection);
+  }
+
+  // Reading mode: use existing segment-based translation
+  if (textHasMarkers) {
+    const result = await translateMarkedTextWithContext(text, sourceLang, targetLang, contentType, contextSection);
+    return {
+      translation: result.translation,
+      segments: result.segments
+    };
+  }
+
+  const result = await translateTextWithSegmentsAndContext(text, sourceLang, targetLang, contentType, contextSection);
+  return {
+    translation: result.translation,
+    segments: result.segments
   };
 }
 
@@ -900,6 +1050,240 @@ export async function translationExists(documentId, targetLanguage) {
   } catch {
     return { exists: false, cachedSegments: 0, totalSegments: 0 };
   }
+}
+
+/**
+ * Build prompt for study (literal) translation
+ * Produces word-by-word translation with linguistic annotations
+ */
+function buildStudyTranslationPrompt(sourceLang, contentType, contextSection = '') {
+  const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
+
+  return `You are an expert linguistic translator specializing in ${sourceName} religious texts. Create a LITERAL study translation with linguistic annotations.
+
+${contextSection}
+
+## TASK: Literal Translation for Language Study
+
+Create a word-by-word literal translation that helps students understand the original structure and meaning. This is NOT for reading fluency - it's for studying the original language.
+
+## OUTPUT FORMAT (JSON only, no markdown):
+{
+  "literal_translation": "The complete literal translation as a single string",
+  "segments": [
+    {
+      "original": "original phrase/clause",
+      "literal": "word-by-word literal translation",
+      "notes": "grammatical notes, root words, linguistic observations"
+    }
+  ]
+}
+
+## TRANSLATION STYLE:
+- Preserve word order where possible (even if awkward in English)
+- Use parentheses for implied words: "the-book (of) God"
+- Show verb forms: "he-wrote" (past active masculine singular)
+- Preserve particles and prepositions literally
+- Indicate grammatical constructs: (construct state), (definite), (emphatic)
+
+## SEGMENTATION:
+- Divide into meaningful grammatical units (clauses, phrases)
+- Each segment should express one grammatical unit
+- Segments should be small enough for detailed annotation (2-10 words typically)
+
+## NOTES SHOULD INCLUDE:
+- Root words in Arabic/Persian with transliteration: جمل (j-m-l, "beauty")
+- Grammatical forms: verb pattern (Form II), noun pattern (maf'ūl)
+- Particle meanings: ب (bi-, "in/by/with")
+- Notable constructions: idāfa (genitive construct), إضافة
+- Cross-references to similar usage in other texts if relevant
+
+## Bahá'í Transliteration (REQUIRED):
+- Long vowels: á, í, ú (NOT ā, ī, ū)
+- Emphatics: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ with dot-under
+- Examples: Bahá'u'lláh, 'Abdu'l-Bahá, Qá'im
+
+Return ONLY valid JSON, no explanations or markdown code blocks.`;
+}
+
+/**
+ * Translate text for study mode with literal translation and linguistic notes
+ */
+async function translateForStudy(text, sourceLang, targetLang, contentType, contextSection = '') {
+  // Only supports translation to English currently
+  if (targetLang !== 'en') {
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, studyNotes: null };
+  }
+
+  const systemPrompt = buildStudyTranslationPrompt(sourceLang, contentType, contextSection);
+
+  const response = await aiService('quality').chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text }
+  ], {
+    temperature: 0.2, // Lower temperature for more consistent literal translations
+    maxTokens: Math.max(text.length * 5, 1000) // More tokens for detailed annotations
+  });
+
+  // Parse JSON response
+  let result;
+  try {
+    let jsonStr = response.content.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    result = JSON.parse(jsonStr);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message, response: response.content.substring(0, 200) },
+      'Failed to parse study translation JSON, falling back to plain');
+    // Fallback to plain translation
+    const plainTranslation = await translateText(text, sourceLang, targetLang, 'high', contentType);
+    return { translation: plainTranslation, studyNotes: null };
+  }
+
+  return {
+    translation: result.literal_translation || result.translation || '',
+    studyNotes: result.segments ? { segments: result.segments } : null
+  };
+}
+
+/**
+ * Translate marked text with document/paragraph context
+ */
+async function translateMarkedTextWithContext(text, sourceLang, targetLang, contentType, contextSection = '') {
+  // Extract sentences using markers
+  const sentences = getSentences(text);
+
+  if (sentences.length === 0) {
+    // No sentences found - translate as whole
+    const translation = await translateTextWithContext(stripMarkers(text), sourceLang, targetLang, contentType, contextSection);
+    return { translation, segments: null };
+  }
+
+  // Translate each sentence individually (with context only for first sentence)
+  const segments = {};
+  const translatedSentences = [];
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+    const key = `s${sentence.id}`;
+    try {
+      // Only include full context for first sentence to save tokens
+      const ctx = i === 0 ? contextSection : '';
+      const translation = await translateTextWithContext(sentence.text, sourceLang, targetLang, contentType, ctx);
+      segments[key] = {
+        original: sentence.text,
+        text: translation
+      };
+      translatedSentences.push(translation);
+    } catch (err) {
+      logger.warn({ sentenceId: sentence.id, err: err.message }, 'Failed to translate sentence');
+      segments[key] = {
+        original: sentence.text,
+        text: sentence.text,
+        error: err.message
+      };
+      translatedSentences.push(sentence.text);
+    }
+  }
+
+  const fullTranslation = translatedSentences.join(' ');
+  return { translation: fullTranslation, segments };
+}
+
+/**
+ * Translate a single text with context (for marked text sentences)
+ */
+async function translateTextWithContext(text, sourceLang, targetLang, contentType, contextSection = '') {
+  const basePrompt = buildTranslationPrompt(sourceLang, targetLang, 'high', contentType);
+  const systemPrompt = contextSection
+    ? `${contextSection}\n\n${basePrompt}`
+    : basePrompt;
+
+  const response = await aiService('quality').chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text }
+  ], {
+    temperature: 0.3,
+    maxTokens: Math.max(text.length * 3, 500)
+  });
+
+  return response.content.trim();
+}
+
+/**
+ * Translate text with segments and context
+ * Enhanced version of translateTextWithSegments that includes context
+ */
+async function translateTextWithSegmentsAndContext(text, sourceLang, targetLang, contentType, contextSection = '') {
+  // Only supports translation to English currently
+  if (targetLang !== 'en') {
+    const plainTranslation = await translateTextWithContext(text, sourceLang, targetLang, contentType, contextSection);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  const basePrompt = buildAlignedTranslationPrompt(sourceLang, contentType);
+  const systemPrompt = contextSection
+    ? `${contextSection}\n\n${basePrompt}`
+    : basePrompt;
+
+  const response = await aiService('quality').chat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text }
+  ], {
+    temperature: 0.3,
+    maxTokens: Math.max(text.length * 4, 800)
+  });
+
+  // Parse JSON response
+  let result;
+  try {
+    let jsonStr = response.content.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+    result = JSON.parse(jsonStr);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message, response: response.content.substring(0, 200) },
+      'Failed to parse aligned translation JSON with context, falling back to plain');
+    const plainTranslation = await translateTextWithContext(text, sourceLang, targetLang, contentType, contextSection);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  // Validate structure
+  if (!result.segments || !Array.isArray(result.segments)) {
+    logger.warn('Invalid segments structure, falling back to plain translation');
+    const plainTranslation = await translateTextWithContext(text, sourceLang, targetLang, contentType, contextSection);
+    return { translation: plainTranslation, segments: null };
+  }
+
+  // Integrity check (same as translateTextWithSegments)
+  const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
+  const originalNormalized = normalizeText(text);
+  const segmentsJoined = normalizeText(result.segments.map(s => s.original).join(' '));
+
+  if (originalNormalized !== segmentsJoined) {
+    logger.error({
+      originalLength: originalNormalized.length,
+      segmentsLength: segmentsJoined.length,
+      segmentCount: result.segments.length
+    }, 'SEGMENTATION INTEGRITY ERROR with context: falling back to plain');
+
+    const plainTranslation = await translateTextWithContext(text, sourceLang, targetLang, contentType, contextSection);
+    return { translation: plainTranslation, segments: null, integrityError: true };
+  }
+
+  // Add IDs to segments and join translations
+  const segments = result.segments.map((seg, idx) => ({
+    id: idx + 1,
+    original: seg.original,
+    translation: seg.translation
+  }));
+
+  const fullTranslation = segments.map(s => s.translation).join(' ');
+
+  return { translation: fullTranslation, segments };
 }
 
 // Export the aligned translation function for scripts

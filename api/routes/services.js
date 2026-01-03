@@ -67,18 +67,26 @@ export default async function servicesRoutes(fastify) {
     schema: {
       body: {
         type: 'object',
-        required: ['documentId', 'targetLanguage'],
+        required: ['documentId'],
         properties: {
           documentId: { type: 'string' },
-          targetLanguage: { type: 'string' },
+          targetLanguage: { type: 'string', default: 'en' },
           sourceLanguage: { type: 'string' },
+          translationType: { type: 'string', enum: ['reading', 'study'], default: 'reading' },
           quality: { type: 'string', enum: ['standard', 'high'], default: 'standard' },
           notifyEmail: { type: 'string', format: 'email' }
         }
       }
     }
   }, async (request) => {
-    const { documentId, targetLanguage, sourceLanguage, quality, notifyEmail } = request.body;
+    const {
+      documentId,
+      targetLanguage = 'en',
+      sourceLanguage,
+      translationType = 'reading',
+      quality,
+      notifyEmail
+    } = request.body;
     const userId = request.user.sub;
 
     // Validate target language
@@ -86,14 +94,18 @@ export default async function servicesRoutes(fastify) {
       throw ApiError.badRequest(`Unsupported language: ${targetLanguage}`);
     }
 
-    // Check if translation already exists
-    const existing = await translationExists(documentId, targetLanguage);
-    if (existing.exists) {
-      return {
-        status: 'already_exists',
-        message: 'Translation already exists for this document',
-        cachedSegments: existing.cachedSegments
-      };
+    // Check if translation already exists (for the specific translation type)
+    // Note: For study translations, we should check study_translation column instead
+    // For now, only check reading translations for backwards compatibility
+    if (translationType === 'reading') {
+      const existing = await translationExists(documentId, targetLanguage);
+      if (existing.exists) {
+        return {
+          status: 'already_exists',
+          message: 'Translation already exists for this document',
+          cachedSegments: existing.cachedSegments
+        };
+      }
     }
 
     // Get user email for notification if not provided
@@ -109,14 +121,16 @@ export default async function servicesRoutes(fastify) {
       documentId,
       targetLanguage,
       sourceLanguage,
+      translationType,
       quality,
       notifyEmail: email
     });
 
+    const typeLabel = translationType === 'study' ? 'Study translation' : 'Translation';
     return {
       status: 'queued',
       jobId: job.id,
-      message: `Translation to ${SUPPORTED_LANGUAGES[targetLanguage]} queued. You will receive an email when complete.`
+      message: `${typeLabel} to ${SUPPORTED_LANGUAGES[targetLanguage]} queued. You will receive an email when complete.`
     };
   });
 
