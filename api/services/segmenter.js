@@ -1163,78 +1163,106 @@ Return JSON with the EXACT last 3-4 words of each sentence:
   ${paragraphs.map(p => `"PARA_${p.id}": ["ending1", "ending2", ...]`).join(',\n  ')}
 }`;
 
-  try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ], {
-      temperature: 0.1,
-      max_tokens: 8000
-    });
+  const maxRetries = 3;
+  let lastError = null;
 
-    const content = response.content || response;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await aiService('quality', { forceRemote: true }).chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ], {
+        temperature: 0.1 + (attempt - 1) * 0.1,  // Slightly increase temp on retries
+        max_tokens: 8000
+      });
 
-    // Try to extract JSON from response - handle code blocks and various formats
-    let jsonStr = null;
+      const content = response.content || response;
 
-    // Try code block first
-    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
+      // Try to extract JSON from response - handle code blocks and various formats
+      let jsonStr = null;
 
-    // Try bare JSON object
-    if (!jsonStr) {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[0];
-      }
-    }
-
-    if (!jsonStr) {
-      throw new Error('No JSON in AI response');
-    }
-
-    // Try to fix common JSON issues
-    jsonStr = jsonStr
-      .replace(/,\s*}/g, '}')  // Trailing commas
-      .replace(/,\s*]/g, ']'); // Trailing commas in arrays
-
-    const result = JSON.parse(jsonStr);
-    const results = new Map();
-
-    for (const para of paragraphs) {
-      const key = `PARA_${para.id}`;
-      let endings = result[key] || [];
-
-      // Normalize endings - AI might return arrays of words instead of joined strings
-      if (Array.isArray(endings)) {
-        endings = endings.map(e => {
-          if (Array.isArray(e)) {
-            // Join word arrays into phrase
-            return e.join(' ');
-          }
-          return String(e);
-        }).filter(e => e && e.trim());
+      // Try code block first
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
       }
 
-      results.set(para.id, endings);
-    }
+      // Try bare JSON object
+      if (!jsonStr) {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[0];
+        }
+      }
 
-    return results;
-  } catch (err) {
-    logger.error({ err: err.message, batchSize: paragraphs.length }, 'Batch sentence detection failed');
+      if (!jsonStr) {
+        throw new Error('No JSON in AI response');
+      }
 
-    // Fall back to treating each paragraph as single sentence
-    const fallback = new Map();
-    for (const para of paragraphs) {
-      // Use last 5 words as the single "ending"
-      const words = para.text.trim().split(/\s+/);
-      const ending = words.slice(-5).join(' ');
-      fallback.set(para.id, [ending]);
+      // Try to fix common JSON issues
+      jsonStr = jsonStr
+        .replace(/,\s*}/g, '}')  // Trailing commas
+        .replace(/,\s*]/g, ']'); // Trailing commas in arrays
+
+      const result = JSON.parse(jsonStr);
+      const results = new Map();
+
+      for (const para of paragraphs) {
+        const key = `PARA_${para.id}`;
+        let endings = result[key] || [];
+
+        // Normalize endings - AI might return arrays of words instead of joined strings
+        if (Array.isArray(endings)) {
+          endings = endings.map(e => {
+            if (Array.isArray(e)) {
+              // Join word arrays into phrase
+              return e.join(' ');
+            }
+            return String(e);
+          }).filter(e => e && e.trim());
+        }
+
+        // Sanity check: cap endings at reasonable max based on paragraph length
+        // ~1 sentence per 150 chars for classical Arabic (sentences are longer than modern text)
+        const maxEndings = Math.max(3, Math.ceil(para.text.length / 150));
+        if (endings.length > maxEndings) {
+          logger.debug({
+            paraId: para.id,
+            returned: endings.length,
+            capped: maxEndings
+          }, 'Capping excessive endings');
+          endings = endings.slice(0, maxEndings);
+        }
+
+        results.set(para.id, endings);
+      }
+
+      if (attempt > 1) {
+        logger.info({ attempt, batchSize: paragraphs.length }, 'Batch sentence detection succeeded on retry');
+      }
+
+      return results;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        logger.warn({ err: err.message, attempt, maxRetries, batchSize: paragraphs.length }, 'Batch sentence detection failed, retrying...');
+        // Brief delay before retry
+        await new Promise(r => setTimeout(r, 500 * attempt));
+      }
     }
-    return fallback;
   }
+
+  // All retries exhausted - fall back to single sentence
+  logger.error({ err: lastError?.message, batchSize: paragraphs.length }, 'Batch sentence detection failed after all retries');
+
+  const fallback = new Map();
+  for (const para of paragraphs) {
+    // Use last 5 words as the single "ending"
+    const words = para.text.trim().split(/\s+/);
+    const ending = words.slice(-5).join(' ');
+    fallback.set(para.id, [ending]);
+  }
+  return fallback;
 }
 
 /**
