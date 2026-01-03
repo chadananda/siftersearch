@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T00:32:22.903Z",
+  "generated": "2026-01-03T01:18:57.960Z",
   "entries": [
+    {
+      "hash": "1f274e3",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add URL redirect tracking and improve document presentation",
+      "scope": null
+    },
     {
       "hash": "55296fa",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add print views with phrase-level alignment",
       "scope": null
-    },
-    {
-      "hash": "577c6d4",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add translation field to Meilisearch for side-by-side results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "1f274e3",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add URL redirect tracking and improve document presentation",
+        "scope": null
+      },
       {
         "hash": "55296fa",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add print views with phrase-level alignment",
-        "scope": null
-      },
-      {
-        "hash": "577c6d4",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add translation field to Meilisearch for side-by-side results",
         "scope": null
       }
     ]

@@ -978,9 +978,12 @@
     border-radius: 0.25rem;
   }
 
-  /* RTL documents: reverse paragraph layout */
+  /* RTL documents: keep flex-direction: row
+   * The dir="rtl" attribute on parent naturally reverses flex layout
+   * so we DON'T need row-reverse here - it would undo the RTL effect
+   */
   .rtl .paragraph {
-    flex-direction: row-reverse;
+    flex-direction: row;
   }
 
   .rtl .paragraph.highlighted {
