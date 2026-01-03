@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T15:16:36.146Z",
+  "generated": "2026-01-03T15:25:12.166Z",
   "entries": [
+    {
+      "hash": "f7c6eaf",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Correct Fastify 5 redirect argument order",
+      "scope": null
+    },
     {
       "hash": "19579fa",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add admin document editor with CodeMirror 6",
       "scope": null
-    },
-    {
-      "hash": "0785af5",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Restore middle number column in SBS bilingual view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "f7c6eaf",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Correct Fastify 5 redirect argument order",
+        "scope": null
+      },
       {
         "hash": "19579fa",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add admin document editor with CodeMirror 6",
-        "scope": null
-      },
-      {
-        "hash": "0785af5",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Restore middle number column in SBS bilingual view",
         "scope": null
       }
     ]

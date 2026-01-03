@@ -2400,4 +2400,134 @@ Provide only the translation, no explanations.`;
       message: 'Document saved and re-indexed successfully'
     };
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Redirect Management Endpoints
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a redirect manually (admin or internal key)
+   * Used for legacy URLs that need to redirect to new slug format
+   */
+  fastify.post('/redirects', {
+    preHandler: [requireInternal],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['old_path', 'new_path'],
+        properties: {
+          old_path: { type: 'string', description: 'The old URL path (e.g., /library/bahai/core-tablets/old-slug)' },
+          new_path: { type: 'string', description: 'The new URL path (e.g., /library/bahai/core-tablets/new-slug)' },
+          doc_id: { type: 'string', description: 'Optional document ID to associate with this redirect' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { old_path, new_path, doc_id } = request.body;
+
+    // Validate paths
+    if (!old_path.startsWith('/library/')) {
+      throw ApiError.badRequest('old_path must start with /library/');
+    }
+    if (!new_path.startsWith('/library/')) {
+      throw ApiError.badRequest('new_path must start with /library/');
+    }
+    if (old_path === new_path) {
+      throw ApiError.badRequest('old_path and new_path cannot be the same');
+    }
+
+    // Check if redirect already exists
+    const existing = await queryOne(
+      'SELECT id FROM redirects WHERE old_path = ?',
+      [old_path]
+    );
+
+    if (existing) {
+      // Update existing redirect
+      await query(
+        `UPDATE redirects SET new_path = ?, doc_id = ?, updated_at = ? WHERE old_path = ?`,
+        [new_path, doc_id || null, new Date().toISOString(), old_path]
+      );
+      logger.info({ old_path, new_path, doc_id }, 'Redirect updated');
+      return { success: true, action: 'updated', old_path, new_path };
+    }
+
+    // Create new redirect
+    await query(
+      `INSERT INTO redirects (old_path, new_path, doc_id, created_at)
+       VALUES (?, ?, ?, ?)`,
+      [old_path, new_path, doc_id || null, new Date().toISOString()]
+    );
+
+    logger.info({ old_path, new_path, doc_id }, 'Redirect created');
+    return { success: true, action: 'created', old_path, new_path };
+  });
+
+  /**
+   * List all redirects (admin only)
+   */
+  fastify.get('/redirects', {
+    preHandler: [requireInternal],
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 100 },
+          offset: { type: 'integer', default: 0 },
+          search: { type: 'string' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { limit, offset, search } = request.query;
+
+    let sql = 'SELECT * FROM redirects';
+    const params = [];
+
+    if (search) {
+      sql += ' WHERE old_path LIKE ? OR new_path LIKE ?';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const redirects = await queryAll(sql, params);
+    const countResult = await queryOne(
+      `SELECT COUNT(*) as total FROM redirects ${search ? 'WHERE old_path LIKE ? OR new_path LIKE ?' : ''}`,
+      search ? [`%${search}%`, `%${search}%`] : []
+    );
+
+    return {
+      redirects,
+      total: countResult?.total || 0,
+      limit,
+      offset
+    };
+  });
+
+  /**
+   * Delete a redirect (admin only)
+   */
+  fastify.delete('/redirects/:id', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    const result = await query('DELETE FROM redirects WHERE id = ?', [id]);
+
+    if (!result.changes) {
+      throw ApiError.notFound('Redirect not found');
+    }
+
+    logger.info({ redirectId: id }, 'Redirect deleted');
+    return { success: true, deleted: id };
+  });
 }

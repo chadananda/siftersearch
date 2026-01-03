@@ -22,6 +22,34 @@ const { path } = Astro.params;
 const segments = path?.split('/').filter(Boolean) || [];
 const [religion, collection, slug] = segments;
 
+// For document pages, check for redirects server-side
+// This ensures proper SEO with HTTP 301 redirects
+if (segments.length === 3) {
+  const API_BASE = import.meta.env.PUBLIC_API_URL || '';
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/library/by-path/${religion}/${collection}/${slug}?limit=1`,
+      { redirect: 'manual' }  // Don't follow redirects automatically
+    );
+
+    // If API returns a redirect, forward it to the browser
+    if (res.status === 301 || res.status === 302 || res.status === 308) {
+      const location = res.headers.get('location');
+      if (location) {
+        // Convert API path to frontend path
+        // API returns: /library/religion/collection/slug
+        // We need: /library/religion/collection/slug (same, but on frontend domain)
+        const frontendPath = location.replace(/^\/api\/library\/by-path/, '/library');
+        return Astro.redirect(frontendPath, 301);
+      }
+    }
+  } catch (e) {
+    // If redirect check fails, continue with normal rendering
+    // The client-side component will handle errors
+    console.error('Redirect check failed:', e);
+  }
+}
+
 // Determine page type based on segment count
 const pageType = segments.length === 1 ? 'religion'
               : segments.length === 2 ? 'collection'
