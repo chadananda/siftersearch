@@ -1544,11 +1544,12 @@
     transition: opacity 0.2s;
   }
 
-  /* Position icon to overlap top-left corner */
+  /* Position icon to overlap top-left corner of document box */
   .url-home {
     position: absolute;
-    left: -1rem;
-    top: -1rem;
+    /* Position at corner of .document-content (account for padding) */
+    left: -2.5rem;
+    top: -2rem;
     z-index: 10;
   }
 
@@ -1595,11 +1596,12 @@
     font-weight: 400;
   }
 
-  /* QR code button - positioned to overlap top-right corner */
+  /* QR code button - positioned to overlap top-right corner of document box */
   .url-qr {
     position: absolute;
-    right: -1rem;
-    top: -1rem;
+    /* Position at corner of .document-content (account for padding) */
+    right: -2.5rem;
+    top: -2rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2307,9 +2309,9 @@
     }
 
     .url-home {
-      /* Smaller overlap on mobile */
-      left: -0.5rem;
-      top: -0.5rem;
+      /* Position at corner of document box on mobile */
+      left: -1.5rem;
+      top: -1.5rem;
     }
 
     .url-icon {
@@ -2318,9 +2320,9 @@
     }
 
     .url-qr {
-      /* Smaller overlap on mobile */
-      right: -0.5rem;
-      top: -0.5rem;
+      /* Position at corner of document box on mobile */
+      right: -1.5rem;
+      top: -1.5rem;
     }
 
     .url-qr-img {
