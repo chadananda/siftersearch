@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T14:57:02.845Z",
+  "generated": "2026-01-03T15:14:29.947Z",
   "entries": [
+    {
+      "hash": "8991268",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Include author in document URL slugs",
+      "scope": null
+    },
     {
       "hash": "43d6357",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent collection filter input from clearing on each keystroke",
       "scope": null
-    },
-    {
-      "hash": "2f8f4a6",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Show translation status indicator for all users in library list",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "8991268",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Include author in document URL slugs",
+        "scope": null
+      },
       {
         "hash": "43d6357",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Prevent collection filter input from clearing on each keystroke",
-        "scope": null
-      },
-      {
-        "hash": "2f8f4a6",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Show translation status indicator for all users in library list",
         "scope": null
       }
     ]

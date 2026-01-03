@@ -1169,9 +1169,10 @@ Return ONLY the description text, no quotes or formatting.`;
 
   /**
    * Update document metadata
+   * Accepts admin JWT or internal API key (X-Internal-Key header)
    */
   fastify.put('/documents/:id', {
-    preHandler: [requireAuth, requireAdmin],
+    preHandler: [requireInternal],
     schema: {
       params: {
         type: 'object',
