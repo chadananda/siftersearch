@@ -1393,9 +1393,14 @@
       font-size: 7pt;
     }
 
+    .footer-qr {
+      display: block !important;
+    }
+
     .footer-qr-img {
-      width: 64px;
-      height: 64px;
+      display: block !important;
+      width: 64px !important;
+      height: 64px !important;
     }
 
     /* Document header styling for print - no page break after */

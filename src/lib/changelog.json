@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T01:30:04.805Z",
+  "generated": "2026-01-03T01:40:24.401Z",
   "entries": [
+    {
+      "hash": "86de2ef",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve print view - footer with metadata and QR, hide navbar",
+      "scope": null
+    },
     {
       "hash": "1c1a94f",
       "date": "2026-01-02",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add translatable-docs endpoint for debugging",
       "scope": null
-    },
-    {
-      "hash": "7c6b9c9",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add API endpoints for translation management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-02": [
+      {
+        "hash": "86de2ef",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve print view - footer with metadata and QR, hide navbar",
+        "scope": null
+      },
       {
         "hash": "1c1a94f",
         "date": "2026-01-02",
@@ -697,13 +704,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add translatable-docs endpoint for debugging",
-        "scope": null
-      },
-      {
-        "hash": "7c6b9c9",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add API endpoints for translation management",
         "scope": null
       }
     ]
