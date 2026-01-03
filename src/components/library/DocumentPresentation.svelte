@@ -1511,7 +1511,8 @@
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
     position: relative;
-    overflow: hidden;
+    /* Allow corner icons to overflow */
+    overflow: visible;
   }
 
   /* URL-style breadcrumb bar */
@@ -1810,6 +1811,8 @@
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     /* Explicit light colors - not affected by dark mode */
     color: #1a1a1a;
+    /* Allow corner icons to overflow */
+    overflow: visible;
   }
 
   .document-content.bilingual {

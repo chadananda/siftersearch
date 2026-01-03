@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T20:08:23.835Z",
+  "generated": "2026-01-03T20:10:48.750Z",
   "entries": [
+    {
+      "hash": "89d8e3f",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Position logo/QR in corners with overlap, make twice as big",
+      "scope": null
+    },
     {
       "hash": "dc0c683",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Correct admin edit button URL path and query param",
       "scope": null
-    },
-    {
-      "hash": "2c7080a",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Mark Baha'i Books collection as encumbered via migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "89d8e3f",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Position logo/QR in corners with overlap, make twice as big",
+        "scope": null
+      },
       {
         "hash": "dc0c683",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Correct admin edit button URL path and query param",
-        "scope": null
-      },
-      {
-        "hash": "2c7080a",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Mark Baha'i Books collection as encumbered via migration",
         "scope": null
       }
     ]
