@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T03:33:27.490Z",
+  "generated": "2026-01-04T03:46:00.525Z",
   "entries": [
+    {
+      "hash": "295aa6d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Explicitly set English font-size to 1rem in translation column",
+      "scope": null
+    },
     {
       "hash": "1e94e52",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add fancy document header with decorative logo and integrated branding",
       "scope": null
-    },
-    {
-      "hash": "afdceba",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Print view shows logo and site name, hides nav links/version",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "295aa6d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Explicitly set English font-size to 1rem in translation column",
+        "scope": null
+      },
       {
         "hash": "1e94e52",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add fancy document header with decorative logo and integrated branding",
-        "scope": null
-      },
-      {
-        "hash": "afdceba",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Print view shows logo and site name, hides nav links/version",
         "scope": null
       }
     ]
