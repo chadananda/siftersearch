@@ -1667,6 +1667,10 @@
     color: white;
   }
 
+  .mode-btn.active .mode-label {
+    color: white;
+  }
+
   .mode-btn.active::selection,
   .mode-btn.active *::selection {
     background: rgba(0, 0, 0, 0.3);
