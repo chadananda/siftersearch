@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T19:49:46.143Z",
+  "generated": "2026-01-04T21:11:37.288Z",
   "entries": [
+    {
+      "hash": "ee6e494",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Enforce max paragraph size with force-split fallback for translation",
+      "scope": null
+    },
     {
       "hash": "31c1289",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Collapse all utility buttons to hamburger menu on mobile",
       "scope": null
-    },
-    {
-      "hash": "e639a3f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Center utility bar buttons in right margin",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "ee6e494",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Enforce max paragraph size with force-split fallback for translation",
+        "scope": null
+      },
       {
         "hash": "31c1289",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Collapse all utility buttons to hamburger menu on mobile",
-        "scope": null
-      },
-      {
-        "hash": "e639a3f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Center utility bar buttons in right margin",
         "scope": null
       }
     ]

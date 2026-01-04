@@ -1899,25 +1899,49 @@ Example output format:
       const sentences = extractSentencesFromEndings(text, endings);
 
       if (sentences.length > 0) {
-        // Check for oversized sentences (> 500 chars suggests missed boundaries)
+        // Two-tier sentence length validation:
+        // - SUSPICIOUS: Classical Arabic sentences are typically 50-150 chars
+        //   Sentences > 200 chars likely have missed boundaries - verify with AI
+        // - MAX: Absolute limit, force split if exceeded
+        const SUSPICIOUS_SENTENCE_CHARS = 200;
         const MAX_SENTENCE_CHARS = 500;
-        const oversized = sentences.filter(s => s.length > MAX_SENTENCE_CHARS);
 
-        if (oversized.length > 0 && attempt < maxRetries) {
-          logger.warn({
-            oversizedCount: oversized.length,
-            maxLen: Math.max(...oversized.map(s => s.length)),
-            attempt
-          }, 'Detected oversized sentences, retrying with more aggressive detection');
-          throw new Error(`Found ${oversized.length} oversized sentences, retrying`);
-        }
+        // Check for suspicious sentences that might have missed boundaries
+        const suspicious = sentences.filter(s => s.length > SUSPICIOUS_SENTENCE_CHARS);
 
-        // Log any remaining oversized sentences (final attempt)
-        if (oversized.length > 0) {
-          logger.warn({
-            count: oversized.length,
-            sizes: oversized.map(s => s.length)
-          }, 'Some sentences exceed max length after all attempts');
+        if (suspicious.length > 0) {
+          logger.info({
+            suspiciousCount: suspicious.length,
+            sizes: suspicious.map(s => s.length)
+          }, 'Found suspicious-length sentences, verifying with AI');
+
+          // Re-check each suspicious sentence with targeted AI verification
+          const verifiedSentences = await verifySuspiciousSentences(
+            sentences,
+            SUSPICIOUS_SENTENCE_CHARS,
+            languageHint
+          );
+
+          // Check if any still exceed max after verification
+          const stillOversized = verifiedSentences.filter(s => s.length > MAX_SENTENCE_CHARS);
+          if (stillOversized.length > 0 && attempt < maxRetries) {
+            logger.warn({
+              oversizedCount: stillOversized.length,
+              maxLen: Math.max(...stillOversized.map(s => s.length)),
+              attempt
+            }, 'Still have oversized sentences after AI verification, retrying full detection');
+            throw new Error(`Found ${stillOversized.length} oversized sentences after verification, retrying`);
+          }
+
+          // Log any remaining oversized sentences (final attempt)
+          if (stillOversized.length > 0) {
+            logger.warn({
+              count: stillOversized.length,
+              sizes: stillOversized.map(s => s.length)
+            }, 'Some sentences exceed max length after all verification');
+          }
+
+          return verifiedSentences;
         }
 
         return sentences;
@@ -1991,8 +2015,122 @@ function extractSentencesFromEndings(text, endings) {
 }
 
 /**
- * Group sentences into paragraphs by topic
+ * Verify suspicious-length sentences by asking AI to re-check for missed boundaries
+ * This is a targeted verification - only checks sentences that exceed the suspicious threshold
+ *
+ * @param {string[]} sentences - All sentences
+ * @param {number} suspiciousThreshold - Sentences longer than this get verified
+ * @param {string} languageHint - Language hint for AI
+ * @returns {Promise<string[]>} - Sentences with suspicious ones potentially split
  */
+async function verifySuspiciousSentences(sentences, suspiciousThreshold, languageHint = 'Arabic') {
+  const result = [];
+
+  for (const sentence of sentences) {
+    if (sentence.length <= suspiciousThreshold) {
+      result.push(sentence);
+      continue;
+    }
+
+    // This sentence is suspiciously long - ask AI to verify
+    logger.debug({
+      sentenceLength: sentence.length,
+      preview: sentence.substring(0, 60)
+    }, 'Verifying suspicious sentence for missed boundaries');
+
+    try {
+      const subSentences = await checkSentenceForMissedBoundaries(sentence, languageHint);
+
+      if (subSentences.length > 1) {
+        logger.info({
+          originalLength: sentence.length,
+          splitInto: subSentences.length,
+          newSizes: subSentences.map(s => s.length)
+        }, 'AI found missed boundaries in suspicious sentence');
+        result.push(...subSentences);
+      } else {
+        // AI confirmed it's actually one sentence
+        result.push(sentence);
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Failed to verify suspicious sentence, keeping as-is');
+      result.push(sentence);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Ask AI to check if a single long sentence has missed boundaries
+ * Returns array of sub-sentences if boundaries found, otherwise original
+ */
+async function checkSentenceForMissedBoundaries(sentence, languageHint = 'Arabic') {
+  const prompt = `You are analyzing a classical ${languageHint} religious text sentence that seems unusually long.
+Classical ${languageHint} sentences are typically 50-150 characters. This one is ${sentence.length} characters.
+
+TEXT TO ANALYZE:
+${sentence}
+
+TASK: Does this text contain MULTIPLE complete sentences that should be separated?
+Look for:
+- Topic or subject changes
+- Verb completions followed by new clauses
+- Natural rhetorical pauses
+- Lists with distinct items
+
+RESPONSE FORMAT (TOON - one item per line):
+If this is ONE sentence: Reply with just the word "SINGLE"
+If you find MULTIPLE sentences: Output each sentence ending (last 3-5 words) on its own line
+
+CRITICAL: Only split if you're confident. Classical religious texts sometimes have legitimately long sentences.`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], {
+    temperature: 0.1,
+    max_tokens: 2000
+  });
+
+  // Handle response
+  let content = response;
+  if (response && typeof response === 'object') {
+    content = response.content || response.message?.content || response.text || '';
+  }
+  content = String(content).trim();
+
+  // Check if AI says it's a single sentence
+  if (content.toUpperCase().includes('SINGLE') || content.length < 20) {
+    return [sentence];
+  }
+
+  // Parse endings from response
+  const endings = content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => {
+      if (line.length < 5 || line.length > 100) return false;
+      if (line.toUpperCase().includes('SINGLE')) return false;
+      // Check for Arabic characters
+      const arabicChars = (line.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF]/g) || []).length;
+      return arabicChars > line.length * 0.3;
+    });
+
+  if (endings.length < 2) {
+    return [sentence];
+  }
+
+  // Extract sub-sentences using the endings
+  const subSentences = extractSentencesFromEndings(sentence, endings);
+
+  // Validate we got reasonable splits
+  if (subSentences.length > 1 && subSentences.every(s => s.length > 10)) {
+    return subSentences;
+  }
+
+  return [sentence];
+}
+
 /**
  * Build paragraph text with sentence markers
  * Each sentence is wrapped with ⁅s1⁆...⁅/s1⁆ etc.
