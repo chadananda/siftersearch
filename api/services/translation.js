@@ -1485,7 +1485,7 @@ Return ONLY TOON format for ALL ${paragraphs.length} paragraphs.`;
     ], {
       temperature: 0.3,
       // More tokens for batch output
-      maxTokens: Math.max(paragraphs.reduce((sum, p) => sum + p.text.length, 0) * 5, 3000)
+      maxTokens: Math.min(Math.max(paragraphs.reduce((sum, p) => sum + p.text.length, 0) * 5, 3000), 16000)
     }),
     API_TIMEOUT_MS * 2, // Double timeout for batch
     'translateBatchCombined'
