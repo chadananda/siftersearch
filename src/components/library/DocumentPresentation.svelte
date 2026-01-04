@@ -154,6 +154,9 @@
     // Load initial content
     await loadDocument();
 
+    // Check for any active translation jobs for this document
+    await checkForActiveTranslation();
+
     // Pre-generate QR code for print view
     const url = window.location.href;
     qrCodeUrl = await generateQRCodeUrl(url, { width: 120 });
@@ -354,13 +357,6 @@
     }
   }
 
-  function goBack() {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = '/library';
-    }
-  }
 
   // Language code to full name mapping
   const LANGUAGE_NAMES = {
@@ -401,6 +397,23 @@
   // Check if document has study translations
   let hasStudyTranslations = $derived(paragraphs.some(p => p.study_translation));
 
+  // Check if all paragraphs are translated (100% complete)
+  let isFullyTranslated = $derived(
+    paragraphs.length > 0 && paragraphs.every(p => p.translation)
+  );
+
+  // Calculate translation percentage for partial translations
+  let translationPercentage = $derived(() => {
+    if (paragraphs.length === 0) return 0;
+    const translated = paragraphs.filter(p => p.translation).length;
+    return Math.round((translated / paragraphs.length) * 100);
+  });
+
+  // Check if partially translated (some but not all)
+  let isPartiallyTranslated = $derived(
+    hasTranslations && !isFullyTranslated
+  );
+
   // Auth-based visibility
   let isAdmin = $derived(auth.user?.tier === 'admin' || auth.user?.tier === 'superadmin' || auth.user?.tier === 'editor');
   let isLoggedIn = $derived(auth.isAuthenticated);
@@ -415,6 +428,66 @@
   let translationJobId = $state(null);
   let translationProgress = $state(null); // { progress, total, status }
   let translationPolling = $state(null);
+
+  // localStorage key for persisting translation jobs
+  const TRANSLATION_JOBS_KEY = 'sifter_translation_jobs';
+
+  /**
+   * Get stored translation jobs from localStorage
+   */
+  function getStoredTranslationJobs() {
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(TRANSLATION_JOBS_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * Save translation job to localStorage
+   */
+  function saveTranslationJob(docId, jobId) {
+    if (typeof window === 'undefined') return;
+    const jobs = getStoredTranslationJobs();
+    jobs[docId] = { jobId, startedAt: Date.now() };
+    localStorage.setItem(TRANSLATION_JOBS_KEY, JSON.stringify(jobs));
+  }
+
+  /**
+   * Remove translation job from localStorage
+   */
+  function removeTranslationJob(docId) {
+    if (typeof window === 'undefined') return;
+    const jobs = getStoredTranslationJobs();
+    delete jobs[docId];
+    localStorage.setItem(TRANSLATION_JOBS_KEY, JSON.stringify(jobs));
+  }
+
+  /**
+   * Check for and restore any active translation job for this document
+   */
+  async function checkForActiveTranslation() {
+    if (!document?.id) return;
+
+    const jobs = getStoredTranslationJobs();
+    const job = jobs[document.id];
+
+    if (job?.jobId) {
+      // Check if job is still active (less than 1 hour old)
+      const hourAgo = Date.now() - (60 * 60 * 1000);
+      if (job.startedAt && job.startedAt < hourAgo) {
+        // Job is stale, remove it
+        removeTranslationJob(document.id);
+        return;
+      }
+
+      // Restore job and start polling
+      translationJobId = job.jobId;
+      translationProgress = { progress: 0, total: 0, status: 'checking' };
+      startTranslationPolling();
+    }
+  }
 
   /**
    * Queue translation directly without modal
@@ -442,6 +515,9 @@
       const data = await res.json();
       translationJobId = data.jobId;
       translationProgress = { progress: 0, total: 0, status: 'queued' };
+
+      // Persist job to localStorage
+      saveTranslationJob(document.id, data.jobId);
 
       // Start polling for job status
       startTranslationPolling();
@@ -480,11 +556,13 @@
         // Job completed - reload document and stop polling
         if (status.status === 'completed') {
           stopTranslationPolling();
+          removeTranslationJob(document.id);
           translationJobId = null;
           // Reload document to get updated translations
           await loadDocument();
         } else if (status.status === 'failed') {
           stopTranslationPolling();
+          removeTranslationJob(document.id);
           translationJobId = null;
           translationProgress = { ...translationProgress, status: 'failed', error: status.error };
         }
@@ -598,12 +676,6 @@
   {:else if document}
     <!-- Floating utility bar -->
     <div class="utility-bar">
-      <button class="util-btn back-btn" onclick={goBack} title="Back to library">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-
       <!-- Mobile: Single hamburger menu for ALL actions -->
       <div class="mobile-menu">
         <button
@@ -705,6 +777,22 @@
                     </svg>
                     <span>Translating {Math.round(progress)}%</span>
                   </div>
+                {:else if isFullyTranslated}
+                  <div class="menu-item progress-item complete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    <span>Translated 100%</span>
+                  </div>
+                {:else if isPartiallyTranslated}
+                  <button class="menu-item progress-item partial" onclick={() => { queueTranslation(); showViewMenu = false; }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M2 12h20"/>
+                    </svg>
+                    <span>Translated {translationPercentage()}% — Continue</span>
+                  </button>
                 {:else}
                   <button class="menu-item" onclick={() => { queueTranslation(); showViewMenu = false; }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -830,6 +918,46 @@
                   </svg>
                   <span class="progress-pct">{Math.round(progress)}%</span>
                 </div>
+              {:else if isFullyTranslated}
+                <!-- Translation complete - show 100% indicator -->
+                {@const circumference = 2 * Math.PI * 10}
+                <div class="util-btn translate complete" title="Translation complete (100%)">
+                  <svg class="progress-ring-btn" viewBox="0 0 24 24">
+                    <circle class="progress-ring-bg" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                    <circle
+                      class="progress-ring-progress complete"
+                      cx="12" cy="12" r="10"
+                      fill="none"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-dasharray={circumference}
+                      stroke-dashoffset="0"
+                      transform="rotate(-90 12 12)"
+                    />
+                  </svg>
+                  <span class="progress-pct">100%</span>
+                </div>
+              {:else if isPartiallyTranslated}
+                <!-- Partially translated - show current percentage, click to continue -->
+                {@const pct = translationPercentage()}
+                {@const circumference = 2 * Math.PI * 10}
+                {@const strokeDashoffset = circumference - (pct / 100) * circumference}
+                <button class="util-btn translate partial" onclick={queueTranslation} title={`Translated ${pct}% — Click to continue`}>
+                  <svg class="progress-ring-btn" viewBox="0 0 24 24">
+                    <circle class="progress-ring-bg" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                    <circle
+                      class="progress-ring-progress partial"
+                      cx="12" cy="12" r="10"
+                      fill="none"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-dasharray={circumference}
+                      stroke-dashoffset={strokeDashoffset}
+                      transform="rotate(-90 12 12)"
+                    />
+                  </svg>
+                  <span class="progress-pct">{pct}%</span>
+                </button>
               {:else}
                 <button class="util-btn translate" onclick={queueTranslation} title="Queue translation">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -852,44 +980,44 @@
       class:bilingual={viewMode === 'sbs' || viewMode === 'study'}
       class:study-mode={viewMode === 'study'}
     >
+      <!-- Corner icons positioned relative to document-content box -->
+      <a href="/" class="corner-icon corner-left" title="Home">
+        <img src="/ocean.svg" alt="" class="url-icon" />
+      </a>
+
+      {#if qrCodeUrl}
+        <button class="corner-icon corner-right" onclick={showQRCode} title="Share this document">
+          <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
+        </button>
+      {/if}
+
       <!-- Document header - always LTR for simplicity -->
       <header class="doc-header" dir="ltr">
-        <!-- Corner icon - top left -->
-        <a href="/" class="corner-icon corner-left" title="Home">
-          <img src="/ocean.svg" alt="" class="url-icon" />
-        </a>
-
-        <!-- Corner QR - top right -->
-        {#if qrCodeUrl}
-          <button class="corner-icon corner-right" onclick={showQRCode} title="Share this document">
-            <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
-          </button>
-        {/if}
-
-        <!-- URL-style breadcrumb bar - three centered lines -->
+        <!-- URL-style breadcrumb bar -->
         <nav class="url-breadcrumb" aria-label="Breadcrumb">
-          <!-- Line 1: Domain -->
-          <div class="url-line url-line-domain">
-            <a href="/" class="url-domain">
-              <span class="domain-name">SifterSearch</span><span class="domain-tld">.com</span>
-            </a>
+          <!-- Line 1: Domain + Path (combined on desktop, split on mobile) -->
+          <div class="url-line url-line-top">
+            <span class="url-domain-wrap">
+              <a href="/" class="url-domain">
+                <span class="domain-name">SifterSearch</span><span class="domain-tld">.com</span>
+              </a>
+              <span class="url-sep domain-sep">/</span>
+            </span>
+            <span class="url-path-wrap">
+              <a href="/library" class="url-segment">Library</a>
+              {#if document.religion}
+                <span class="url-sep">/</span>
+                <a href="/library/{pathReligion}" class="url-segment">{document.religion}</a>
+              {/if}
+              {#if document.collection}
+                <span class="url-sep">/</span>
+                <a href="/library/{pathReligion}/{pathCollection}" class="url-segment">{document.collection}</a>
+              {/if}
+              <span class="url-sep">/</span>
+            </span>
           </div>
 
-          <!-- Line 2: Path -->
-          <div class="url-line url-line-path">
-            <a href="/library" class="url-segment">Library</a>
-            {#if document.religion}
-              <span class="url-sep">/</span>
-              <a href="/library/{pathReligion}" class="url-segment">{document.religion}</a>
-            {/if}
-            {#if document.collection}
-              <span class="url-sep">/</span>
-              <a href="/library/{pathReligion}/{pathCollection}" class="url-segment">{document.collection}</a>
-            {/if}
-            <span class="url-sep">/</span>
-          </div>
-
-          <!-- Line 3: Current document -->
+          <!-- Line 2: Current document filename -->
           <div class="url-line url-line-current">
             <span class="url-current">{document.filename || pathSlug}</span>
           </div>
@@ -911,18 +1039,21 @@
           {:else if viewMode === 'study'}
             <span class="meta-tag translation-mode study">Literal Study</span>
           {/if}
-          {#if document.year}
-            <span class="meta-tag">{document.year}</span>
-          {/if}
-          {#if document.encumbered}
-            <span class="meta-tag copyright">© Copyrighted</span>
+          <!-- Only show year/encumbered if abstract exists, to reduce clutter -->
+          {#if document.abstract || document.description}
+            {#if document.year}
+              <span class="meta-tag">{document.year}</span>
+            {/if}
+            {#if document.encumbered}
+              <span class="meta-tag copyright">© Copyrighted</span>
+            {/if}
           {/if}
         </div>
 
-        <!-- Abstract section -->
-        {#if document.abstract || document.description}
+        <!-- Abstract section - only show if there's an actual abstract (not just path description) -->
+        {#if document.abstract}
           <div class="doc-abstract">
-            <p>{document.abstract || document.description}</p>
+            <p>{document.abstract}</p>
           </div>
         {/if}
       </header>
@@ -1227,7 +1358,7 @@
   /* Floating utility bar - minimal action buttons */
   .utility-bar {
     position: fixed;
-    top: 5rem;
+    top: 10rem; /* Below QR code corner */
     /* Center buttons in the 5rem right margin: (5rem - 2.5rem button) / 2 = 1.25rem from edge */
     right: 1.25rem;
     display: flex;
@@ -1263,6 +1394,19 @@
     border-color: #3b82f6;
   }
 
+  /* Selection text must be visible on active/colored buttons */
+  .util-btn.active::selection,
+  .util-btn.active *::selection,
+  .util-btn.edit::selection,
+  .util-btn.edit *::selection,
+  .util-btn.translate::selection,
+  .util-btn.translate *::selection,
+  .util-btn.copied::selection,
+  .util-btn.copied *::selection {
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+  }
+
   .util-btn.copied {
     background: #10b981;
     color: white;
@@ -1288,10 +1432,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-  }
-
-  .back-btn {
-    margin-bottom: 0.5rem;
   }
 
   /* Divider between button groups */
@@ -1343,6 +1483,34 @@
     color: #10b981;
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1;
+  }
+
+  /* Translation complete state */
+  .util-btn.translate.complete {
+    background: #f0fdf4;
+    border-color: #10b981;
+    cursor: default;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .progress-ring-progress.complete {
+    stroke: #10b981;
+  }
+
+  .progress-ring-progress.partial {
+    stroke: #f59e0b;
+  }
+
+  .util-btn.translate.partial {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+    cursor: pointer;
+  }
+
+  .util-btn.translate.partial:hover {
+    background: #fde68a;
   }
 
   /* Mobile menu - hidden on desktop */
@@ -1408,6 +1576,12 @@
     color: white;
   }
 
+  .menu-item.active::selection,
+  .menu-item.active *::selection {
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+  }
+
   .menu-item.disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -1422,6 +1596,21 @@
     color: #10b981;
     font-weight: 500;
     cursor: default;
+  }
+
+  .menu-item.progress-item.complete {
+    color: #10b981;
+    background: #f0fdf4;
+  }
+
+  .menu-item.progress-item.partial {
+    color: #92400e;
+    background: #fef3c7;
+    cursor: pointer;
+  }
+
+  .menu-item.progress-item.partial:hover {
+    background: #fde68a;
   }
 
   .menu-item svg {
@@ -1478,6 +1667,12 @@
     color: white;
   }
 
+  .mode-btn.active::selection,
+  .mode-btn.active *::selection {
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+  }
+
   .mode-btn.disabled {
     opacity: 0.35;
     cursor: not-allowed;
@@ -1523,12 +1718,9 @@
     text-align: center;
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
-    position: relative;
-    /* Allow corner icons to overflow */
-    overflow: visible;
   }
 
-  /* URL-style breadcrumb bar - three centered lines */
+  /* URL-style breadcrumb bar - 2 lines on desktop, 3 on mobile */
   .url-breadcrumb {
     display: flex;
     flex-direction: column;
@@ -1536,7 +1728,7 @@
     gap: 0.125rem;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 0.8125rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     position: relative;
     text-align: center;
   }
@@ -1547,6 +1739,27 @@
     justify-content: center;
     gap: 0.25rem;
     flex-wrap: wrap;
+  }
+
+  /* Top line: domain + path together on desktop */
+  .url-line-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .url-domain-wrap,
+  .url-path-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  /* Current document filename on its own line */
+  .url-line-current {
+    display: flex;
   }
 
   /* Corner icons - positioned at document box corners with 5px overlap */
@@ -1565,15 +1778,15 @@
   }
 
   .corner-left {
-    /* Position at top-left corner with 5px visual overlap (account for padding+border) */
-    left: calc(-2.5rem - 10px);
-    top: calc(-2rem - 10px);
+    /* Position at top-left corner with 10% overlap (~0.5rem of 5rem icon) */
+    left: -0.5rem;
+    top: -0.5rem;
   }
 
   .corner-right {
-    /* Position at top-right corner with 5px visual overlap (account for padding+border) */
-    right: calc(-2.5rem - 10px);
-    top: calc(-2rem - 10px);
+    /* Position at top-right corner with 10% overlap (~0.5rem of 5rem icon) */
+    right: -0.5rem;
+    top: -0.5rem;
   }
 
   .corner-icon:hover {
@@ -1603,6 +1816,10 @@
     opacity: 0.8;
   }
 
+  .url-domain {
+    font-size: 1.25rem;
+  }
+
   .domain-name {
     color: #1a1a1a;
   }
@@ -1615,6 +1832,12 @@
     color: #bbb;
     font-weight: 400;
     margin: 0 0.125rem;
+  }
+
+  /* Extra spacing after domain before Library */
+  .url-sep.domain-sep {
+    margin-left: 0.5rem;
+    margin-right: 0.375rem;
   }
 
   .url-segment {
@@ -1813,11 +2036,11 @@
   }
 
   /* Document content - paper background with explicit light colors */
+  /* Same width for all modes (BASE, SBS, Study) - centered */
   .document-content {
-    max-width: 48rem;
+    position: relative; /* For corner icon positioning */
+    max-width: 72rem;
     margin: 2rem auto;
-    /* Right margin for utility bar: 1.5rem (bar position) + 2.5rem (buttons) + 1rem (buffer) = 5rem */
-    margin-right: 5rem;
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
     border: 1px solid rgba(0, 0, 0, 0.08);
@@ -1831,9 +2054,17 @@
   }
 
   .document-content.bilingual {
-    max-width: 80rem;
-    /* Tighter padding for bilingual to maximize reading area */
-    padding: 1.5rem 1.5rem 3rem 1.5rem;
+    /* Same width as base - tighter padding to maximize reading area */
+    padding: 1.5rem 1rem 3rem 1rem;
+  }
+
+  /* On narrow screens, allow content to use available space */
+  @media (max-width: 80rem) {
+    .document-content {
+      max-width: calc(100% - 2rem);
+      margin-left: 1rem;
+      margin-right: 1rem;
+    }
   }
 
   .document-content.rtl {
@@ -2127,7 +2358,7 @@
 
   /* Study mode document styling */
   .document-content.study-mode {
-    max-width: 80rem;
+    /* Same width as other modes - uses base max-width */
   }
 
   /* Load more section */
@@ -2274,13 +2505,8 @@
   /* Responsive */
   @media (max-width: 768px) {
     .utility-bar {
-      top: 4rem;
+      top: 10rem; /* Move down to avoid QR code in corner */
       right: 0.5rem;
-    }
-
-    /* Hide back button on mobile - no room for it */
-    .back-btn {
-      display: none;
     }
 
     /* Show mobile hamburger menu, hide desktop buttons */
@@ -2313,30 +2539,46 @@
       padding: 1.5rem 1rem 3rem 1rem;
     }
 
-    /* URL breadcrumb adjustments for mobile */
+    /* URL breadcrumb adjustments for mobile - 3 stacked lines */
     .url-breadcrumb {
       font-size: 0.6875rem;
+      gap: 0.125rem;
+    }
+
+    /* Split domain and path onto separate lines on mobile */
+    .url-line-top {
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .url-domain-wrap,
+    .url-path-wrap {
+      justify-content: center;
+    }
+
+    .url-domain {
+      font-size: 1rem;
     }
 
     /* Corner icons on mobile - smaller with less overlap */
     .corner-left {
-      left: calc(-1rem - 5px);
-      top: calc(-1.5rem - 5px);
+      left: calc(-0.5rem - 5px);
+      top: calc(-1rem - 5px);
     }
 
     .corner-right {
-      right: calc(-1rem - 5px);
-      top: calc(-1.5rem - 5px);
+      right: calc(-0.5rem - 5px);
+      top: calc(-1rem - 5px);
     }
 
     .url-icon {
-      width: 2.5rem;
-      height: 2.5rem;
+      width: 2rem;
+      height: 2rem;
     }
 
     .url-qr-img {
-      width: 2rem;
-      height: 2rem;
+      width: 2.5rem;
+      height: 2.5rem;
     }
 
     .doc-abstract {
@@ -2346,10 +2588,6 @@
     .para-anchor {
       width: 1.5rem;
       font-size: 0.625rem;
-    }
-
-    .document-content.bilingual {
-      max-width: 100%;
     }
 
     .bilingual-row {
@@ -2384,10 +2622,6 @@
       border-left: none;
       border-top: 1px solid rgba(0, 0, 0, 0.08);
       padding-top: 1rem;
-    }
-
-    .document-content.study-mode {
-      max-width: 100%;
     }
   }
 
@@ -2429,19 +2663,30 @@
       margin-bottom: 0.75rem;
     }
 
-    .url-icon {
-      width: 1rem;
-      height: 1rem;
+    /* Corner icons in print - position at corners, keep large */
+    .corner-icon {
+      position: absolute;
+      padding: 0;
     }
 
-    .url-qr {
-      display: flex !important;
-      border: 1px solid #ccc;
+    .corner-left {
+      left: 0;
+      top: 0;
+    }
+
+    .corner-right {
+      right: 0;
+      top: 0;
+    }
+
+    .url-icon {
+      width: 4rem;
+      height: 4rem;
     }
 
     .url-qr-img {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 4rem;
+      height: 4rem;
     }
 
     .domain-tld {

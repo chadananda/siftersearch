@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-03T21:51:17.689Z",
+  "generated": "2026-01-04T02:47:19.058Z",
   "entries": [
+    {
+      "hash": "e88776f",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust corner icon positioning for 5px visual overlap",
+      "scope": null
+    },
     {
       "hash": "208ed9e",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Redesign document presentation with integrated metadata",
       "scope": null
-    },
-    {
-      "hash": "a2b760e",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Use fixed light background for document presentation container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "e88776f",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust corner icon positioning for 5px visual overlap",
+        "scope": null
+      },
       {
         "hash": "208ed9e",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Redesign document presentation with integrated metadata",
-        "scope": null
-      },
-      {
-        "hash": "a2b760e",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Use fixed light background for document presentation container",
         "scope": null
       }
     ]

@@ -91,17 +91,20 @@ module.exports = {
     },
 
     // Job Processor (handles translation, audio generation, etc.)
+    // 2 instances for redundancy - if one crashes, the other continues
+    // Stuck job recovery ensures jobs resume from checkpoint
     {
       name: 'siftersearch-jobs',
       script: 'api/workers/job-processor.js',
       cwd: PROJECT_ROOT,
-      instances: 1,
+      instances: 2,
+      exec_mode: 'fork',  // Each instance runs independently
       autorestart: true,
       watch: false,
       env: {
         NODE_ENV: 'production',
         JOB_POLL_INTERVAL: '5000',  // 5 seconds
-        MAX_CONCURRENT_JOBS: '2'
+        MAX_CONCURRENT_JOBS: '1'    // 1 job per instance (2 total with 2 instances)
       },
       // Restart policies
       exp_backoff_restart_delay: 5000,

@@ -5,7 +5,7 @@
  * Run with: node api/workers/job-processor.js
  */
 
-import { getNextPendingJob, JOB_TYPES, cleanupExpiredJobs } from '../services/jobs.js';
+import { getNextPendingJob, JOB_TYPES, cleanupExpiredJobs, updateJobHeartbeat, recoverStuckJobs, markJobForRetry } from '../services/jobs.js';
 import { processTranslationJob } from '../services/translation.js';
 import { processAudioJob } from '../services/audio.js';
 import { notifyJobComplete, processEmailQueue } from '../services/email.js';
@@ -16,9 +16,42 @@ import 'dotenv/config';
 const POLL_INTERVAL_MS = parseInt(process.env.JOB_POLL_INTERVAL || '5000', 10);
 const CLEANUP_INTERVAL_MS = parseInt(process.env.JOB_CLEANUP_INTERVAL || '3600000', 10); // 1 hour
 const MAX_CONCURRENT_JOBS = parseInt(process.env.MAX_CONCURRENT_JOBS || '2', 10);
+const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
 
 let isRunning = true;
 let activeJobs = 0;
+const activeHeartbeats = new Map(); // jobId -> intervalId
+
+/**
+ * Start heartbeat for a job
+ */
+function startHeartbeat(jobId) {
+  const intervalId = setInterval(async () => {
+    try {
+      await updateJobHeartbeat(jobId);
+    } catch (err) {
+      logger.error({ jobId, error: err.message }, 'Failed to update heartbeat');
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  activeHeartbeats.set(jobId, intervalId);
+
+  // Also send initial heartbeat
+  updateJobHeartbeat(jobId).catch(err => {
+    logger.error({ jobId, error: err.message }, 'Failed to send initial heartbeat');
+  });
+}
+
+/**
+ * Stop heartbeat for a job
+ */
+function stopHeartbeat(jobId) {
+  const intervalId = activeHeartbeats.get(jobId);
+  if (intervalId) {
+    clearInterval(intervalId);
+    activeHeartbeats.delete(jobId);
+  }
+}
 
 /**
  * Process a single job
@@ -26,6 +59,9 @@ let activeJobs = 0;
 async function processJob(job) {
   activeJobs++;
   logger.info({ jobId: job.id, type: job.type }, 'Processing job');
+
+  // Start heartbeat to indicate job is alive
+  startHeartbeat(job.id);
 
   try {
     let result;
@@ -52,13 +88,20 @@ async function processJob(job) {
   } catch (err) {
     logger.error({ jobId: job.id, error: err.message }, 'Job failed');
 
-    // Still try to notify on failure
-    try {
-      await notifyJobComplete(job.id);
-    } catch (notifyErr) {
-      logger.error({ jobId: job.id, error: notifyErr.message }, 'Failed to send failure notification');
+    // Try to schedule retry (will mark as failed if max retries exceeded)
+    const willRetry = await markJobForRetry(job.id, err.message);
+
+    if (!willRetry) {
+      // Max retries exceeded - notify about permanent failure
+      try {
+        await notifyJobComplete(job.id);
+      } catch (notifyErr) {
+        logger.error({ jobId: job.id, error: notifyErr.message }, 'Failed to send failure notification');
+      }
     }
   } finally {
+    // Stop heartbeat when job completes or fails
+    stopHeartbeat(job.id);
     activeJobs--;
   }
 }
@@ -68,6 +111,16 @@ async function processJob(job) {
  */
 async function workerLoop() {
   logger.info({ pollInterval: POLL_INTERVAL_MS, maxConcurrent: MAX_CONCURRENT_JOBS }, 'Job processor starting');
+
+  // Recover any jobs stuck in processing state from previous crash
+  try {
+    const recovered = await recoverStuckJobs();
+    if (recovered.length > 0) {
+      logger.info({ count: recovered.length, jobIds: recovered.map(j => j.id) }, 'Recovered stuck jobs on startup');
+    }
+  } catch (err) {
+    logger.error({ error: err.message }, 'Failed to recover stuck jobs');
+  }
 
   while (isRunning) {
     try {

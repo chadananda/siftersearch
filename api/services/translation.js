@@ -6,7 +6,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
-import { query, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll } from '../lib/db.js';
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -16,8 +16,16 @@ import {
   updateJobStatus,
   generateContentHash,
   checkCache,
-  storeInCache
+  storeInCache,
+  updateJobCheckpoint
 } from './jobs.js';
+
+// API call timeout (60 seconds)
+const API_TIMEOUT_MS = parseInt(process.env.TRANSLATION_TIMEOUT_MS || '60000', 10);
+
+// Batching configuration
+const MAX_BATCH_TOKENS = parseInt(process.env.MAX_BATCH_TOKENS || '4000', 10);
+const CHARS_PER_TOKEN = 4; // Rough estimate for Arabic/Persian
 import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -45,6 +53,60 @@ export const SUPPORTED_LANGUAGES = {
 
 // Output directory for translations
 const TRANSLATIONS_DIR = process.env.TRANSLATIONS_DIR || './data/translations';
+
+/**
+ * Wrap an AI call with a timeout
+ * Uses AbortController to cancel long-running requests
+ */
+async function withTimeout(promise, timeoutMs = API_TIMEOUT_MS, context = 'API call') {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${context} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutId);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+/**
+ * Create dynamic batches based on token count
+ * Groups paragraphs until MAX_BATCH_TOKENS is reached
+ */
+function createTokenBatches(paragraphs) {
+  const batches = [];
+  let currentBatch = [];
+  let currentTokens = 0;
+
+  for (const para of paragraphs) {
+    const paraTokens = Math.ceil(para.text.length / CHARS_PER_TOKEN);
+
+    // If adding this paragraph would exceed limit and we have items, start new batch
+    if (currentTokens + paraTokens > MAX_BATCH_TOKENS && currentBatch.length > 0) {
+      batches.push(currentBatch);
+      currentBatch = [para];
+      currentTokens = paraTokens;
+    } else {
+      currentBatch.push(para);
+      currentTokens += paraTokens;
+    }
+  }
+
+  // Don't forget the last batch
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
+  }
+
+  return batches;
+}
 
 /**
  * Request a document translation
@@ -369,24 +431,43 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     ORDER BY paragraph_index
   `, [documentId]);
 
+  // Check if we're resuming from a checkpoint
+  const resumeFromCheckpoint = job.last_checkpoint || 0;
+  if (resumeFromCheckpoint > 0) {
+    logger.info({
+      jobId: job.id,
+      documentId,
+      resumeFromCheckpoint
+    }, 'Resuming translation from checkpoint');
+  }
+
   // Filter to paragraphs that need translation (missing reading OR study)
+  // and haven't been processed in previous runs (paragraph_index > checkpoint)
   const paragraphsNeedingTranslation = paragraphs.filter(p => {
+    // Skip paragraphs before the checkpoint (already processed)
+    if (p.paragraph_index <= resumeFromCheckpoint) {
+      return false;
+    }
     const existing = parseExistingTranslation(p.translation);
     return !existing || !existing.reading || !existing.study;
   });
 
   const totalParagraphs = paragraphsNeedingTranslation.length;
+  const totalWithPrevious = resumeFromCheckpoint + totalParagraphs;
 
   if (totalParagraphs === 0) {
-    logger.info({ jobId: job.id, documentId }, 'No paragraphs need translation');
+    logger.info({ jobId: job.id, documentId, resumeFromCheckpoint }, 'No paragraphs need translation');
     await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
-      progress: 0,
-      totalItems: 0
+      progress: resumeFromCheckpoint,
+      totalItems: resumeFromCheckpoint
     });
-    return { success: true, translated: 0 };
+    return { success: true, translated: 0, resumed: resumeFromCheckpoint };
   }
 
-  await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalParagraphs });
+  await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
+    totalItems: totalWithPrevious,
+    progress: resumeFromCheckpoint  // Start from where we left off
+  });
 
   // Build a map for looking up previous paragraphs (including already-translated ones)
   // Parse existing translations to get reading text for context
@@ -484,11 +565,13 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
         translatedCount++;
 
-        // Update progress after EACH paragraph for responsive UI
-        await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
-          progress: translatedCount,
-          totalItems: totalParagraphs
-        });
+        // Save checkpoint after EACH paragraph for resume capability
+        // This also updates heartbeat and progress
+        await updateJobCheckpoint(
+          job.id,
+          para.paragraph_index,  // checkpoint = last successfully translated paragraph
+          resumeFromCheckpoint + translatedCount  // total progress including resumed work
+        );
 
         logger.debug({
           paraId: para.id,
@@ -516,21 +599,23 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   }
 
   await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
-    progress: totalParagraphs,
-    totalItems: totalParagraphs
+    progress: totalWithPrevious,
+    totalItems: totalWithPrevious
   });
 
   logger.info({
     jobId: job.id,
     documentId,
     translated: translatedCount,
-    total: totalParagraphs
+    resumed: resumeFromCheckpoint,
+    total: totalWithPrevious
   }, 'Dual translation completed');
 
   return {
     success: true,
     translated: translatedCount,
-    total: totalParagraphs
+    resumed: resumeFromCheckpoint,
+    total: totalWithPrevious
   };
 }
 
@@ -794,13 +879,18 @@ async function translateText(text, sourceLang, targetLang, quality = 'standard',
   const systemPrompt = buildTranslationPrompt(sourceLang, targetLang, quality, contentType);
 
   // Use 'quality' service for translation - needs good reasoning
-  const response = await aiService('quality').chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: text }
-  ], {
-    temperature: 0.3,
-    maxTokens: Math.max(text.length * 3, 500) // Allow for expansion in translation
-  });
+  // Wrap with timeout to prevent hanging on slow API calls
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 3, 500) // Allow for expansion in translation
+    }),
+    API_TIMEOUT_MS,
+    'translateText'
+  );
 
   return response.content.trim();
 }
@@ -882,13 +972,17 @@ async function translateTextWithSegments(text, sourceLang, targetLang, contentTy
 
   const systemPrompt = buildAlignedTranslationPrompt(sourceLang, contentType);
 
-  const response = await aiService('quality').chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: text }
-  ], {
-    temperature: 0.3,
-    maxTokens: Math.max(text.length * 4, 800) // Allow for JSON overhead
-  });
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 4, 800) // Allow for JSON overhead
+    }),
+    API_TIMEOUT_MS,
+    'translateTextWithSegments'
+  );
 
   // Parse JSON response
   let result;
@@ -1162,13 +1256,17 @@ async function translateForStudy(text, sourceLang, targetLang, contentType, cont
 
   const systemPrompt = buildStudyTranslationPrompt(sourceLang, contentType, contextSection);
 
-  const response = await aiService('quality').chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: text }
-  ], {
-    temperature: 0.2, // Lower temperature for more consistent literal translations
-    maxTokens: Math.max(text.length * 5, 1000) // More tokens for detailed annotations
-  });
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.2, // Lower temperature for more consistent literal translations
+      maxTokens: Math.max(text.length * 5, 1000) // More tokens for detailed annotations
+    }),
+    API_TIMEOUT_MS,
+    'translateForStudy'
+  );
 
   // Parse JSON response
   let result;
@@ -1245,13 +1343,17 @@ async function translateTextWithContext(text, sourceLang, targetLang, contentTyp
     ? `${contextSection}\n\n${basePrompt}`
     : basePrompt;
 
-  const response = await aiService('quality').chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: text }
-  ], {
-    temperature: 0.3,
-    maxTokens: Math.max(text.length * 3, 500)
-  });
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 3, 500)
+    }),
+    API_TIMEOUT_MS,
+    'translateTextWithContext'
+  );
 
   return response.content.trim();
 }
@@ -1272,13 +1374,17 @@ async function translateTextWithSegmentsAndContext(text, sourceLang, targetLang,
     ? `${contextSection}\n\n${basePrompt}`
     : basePrompt;
 
-  const response = await aiService('quality').chat([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: text }
-  ], {
-    temperature: 0.3,
-    maxTokens: Math.max(text.length * 4, 800)
-  });
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 4, 800)
+    }),
+    API_TIMEOUT_MS,
+    'translateTextWithSegmentsAndContext'
+  );
 
   // Parse JSON response
   let result;
@@ -1333,13 +1439,84 @@ async function translateTextWithSegmentsAndContext(text, sourceLang, targetLang,
 // Export the aligned translation function for scripts
 export { translateTextWithSegments };
 
+/**
+ * Find documents with incomplete translations (missing paragraphs)
+ * Returns documents that have some but not all paragraphs translated
+ */
+export async function findIncompleteTranslations(limit = 50) {
+  const results = await queryAll(`
+    SELECT
+      doc_id,
+      COUNT(*) as total_paragraphs,
+      SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated_paragraphs
+    FROM content
+    WHERE doc_id IN (
+      SELECT DISTINCT doc_id FROM content
+      WHERE translation IS NOT NULL AND translation != ''
+    )
+    GROUP BY doc_id
+    HAVING translated_paragraphs < total_paragraphs AND translated_paragraphs > 0
+    LIMIT ?
+  `, [limit]);
+
+  return results.map(r => ({
+    documentId: r.doc_id,
+    totalParagraphs: r.total_paragraphs,
+    translatedParagraphs: r.translated_paragraphs,
+    missingParagraphs: r.total_paragraphs - r.translated_paragraphs,
+    completionPercent: Math.round((r.translated_paragraphs / r.total_paragraphs) * 100)
+  }));
+}
+
+/**
+ * Re-queue translation for a document (to complete missing paragraphs)
+ * Will only translate paragraphs that don't have both reading and study translations
+ */
+export async function requeueIncompleteTranslation({
+  userId,
+  documentId,
+  notifyEmail,
+  priority = 0
+}) {
+  // Check if there's already a pending/processing job for this document
+  const existingJob = await queryOne(`
+    SELECT id, status FROM jobs
+    WHERE document_id = ? AND type = 'translation' AND status IN ('pending', 'processing')
+  `, [documentId]);
+
+  if (existingJob) {
+    logger.info({ documentId, existingJobId: existingJob.id }, 'Translation job already in progress');
+    return { id: existingJob.id, status: existingJob.status, existing: true };
+  }
+
+  // Create new job - processInAppTranslation will only translate missing paragraphs
+  const job = await createJob({
+    type: JOB_TYPES.TRANSLATION,
+    userId,
+    documentId,
+    params: {
+      targetLanguage: 'en',
+      sourceLanguage: null, // Auto-detect
+      quality: 'high',
+      contentType: null // Auto-detect
+    },
+    notifyEmail,
+    priority
+  });
+
+  logger.info({ documentId, jobId: job.id }, 'Re-queued incomplete translation');
+  return { ...job, existing: false };
+}
+
 export const translation = {
   SUPPORTED_LANGUAGES,
   requestTranslation,
   processTranslationJob,
   getTranslatedDocument,
   translationExists,
-  translateTextWithSegments
+  translateTextWithSegments,
+  findIncompleteTranslations,
+  requeueIncompleteTranslation
 };
 
 export default translation;
