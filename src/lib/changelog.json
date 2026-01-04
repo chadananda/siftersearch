@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T16:42:29.213Z",
+  "generated": "2026-01-04T16:44:12.411Z",
   "entries": [
+    {
+      "hash": "5265338",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add AI usage tracking and cost dashboard",
+      "scope": null
+    },
     {
       "hash": "4975c08",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add JWT auth middleware + translation job polling",
       "scope": null
-    },
-    {
-      "hash": "f8551d9",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Use JWT Authorization header for translation API call",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "5265338",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add AI usage tracking and cost dashboard",
+        "scope": null
+      },
       {
         "hash": "4975c08",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add JWT auth middleware + translation job polling",
-        "scope": null
-      },
-      {
-        "hash": "f8551d9",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Use JWT Authorization header for translation API call",
         "scope": null
       }
     ]
