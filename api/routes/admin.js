@@ -27,6 +27,7 @@
  * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
  * DELETE /api/admin/server/translations - Clear all translations (optional: documentId query param)
  * POST /api/admin/server/translate-document - Translate specific document with aligned segments
+ * POST /api/admin/server/test-translation - Test translation API (text or paragraphId, dry-run by default)
  * POST /api/admin/server/resegment-document - Re-ingest document from source file with AI segmentation
  * POST /api/admin/server/ingest-file - Ingest document from file path (creates new or updates existing)
  * POST /api/admin/server/fix-file-hashes - Fix NULL file_hash values for docs with file_paths
@@ -1365,6 +1366,157 @@ Collection: ${doc.collection || 'Unknown'}
         reading: `/print/reading?doc=${documentId}`
       }
     };
+  });
+
+  /**
+   * Test translation API - translate text directly without job queue
+   * POST /api/admin/server/test-translation
+   *
+   * Useful for testing translation prompts and segment generation.
+   * Does NOT save to database by default (dry-run mode).
+   *
+   * Body:
+   * - text: The text to translate (required if no paragraphId)
+   * - paragraphId: ID of existing paragraph to translate (optional)
+   * - sourceLang: Source language code (default: 'ar')
+   * - targetLang: Target language code (default: 'en')
+   * - contentType: Type of content (default: 'scripture')
+   * - save: Whether to save result to database (default: false)
+   */
+  fastify.post('/server/test-translation', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: 'Text to translate' },
+          paragraphId: { type: 'string', description: 'Paragraph ID to translate from database' },
+          sourceLang: { type: 'string', default: 'ar' },
+          targetLang: { type: 'string', default: 'en' },
+          contentType: { type: 'string', default: 'scripture' },
+          save: { type: 'boolean', default: false }
+        }
+      }
+    }
+  }, async (request) => {
+    const { text, paragraphId, sourceLang = 'ar', targetLang = 'en', contentType = 'scripture', save = false } = request.body;
+
+    // Import translation function
+    const { translateCombined } = await import('../services/translation.js');
+
+    let inputText = text;
+    let docContext = '';
+    let paragraph = null;
+
+    // If paragraphId provided, fetch from database
+    if (paragraphId) {
+      paragraph = await queryOne(
+        'SELECT c.id, c.doc_id, c.paragraph_index, c.text, d.title, d.author, d.collection FROM content c LEFT JOIN docs d ON c.doc_id = d.id WHERE c.id = ?',
+        [paragraphId]
+      );
+      if (!paragraph) {
+        throw ApiError.notFound(`Paragraph not found: ${paragraphId}`);
+      }
+      inputText = paragraph.text;
+      docContext = paragraph.title ? `
+## Document Context
+Title: ${paragraph.title || 'Unknown'}
+Author: ${paragraph.author || 'Unknown'}
+Collection: ${paragraph.collection || 'Unknown'}
+` : '';
+    }
+
+    if (!inputText) {
+      throw ApiError.badRequest('Either text or paragraphId is required');
+    }
+
+    logger.info({
+      inputLength: inputText.length,
+      sourceLang,
+      targetLang,
+      hasContext: !!docContext,
+      paragraphId: paragraphId || null
+    }, 'Test translation request');
+
+    const startTime = Date.now();
+
+    try {
+      // Call translation service directly
+      const result = await translateCombined({
+        text: inputText,
+        sourceLang,
+        targetLang,
+        contentType,
+        documentContext: docContext,
+        previousParagraph: null,
+        hasMarkers: false
+      });
+
+      const duration = Date.now() - startTime;
+
+      // Validate segments
+      const segmentsValid = result.segments && Array.isArray(result.segments) && result.segments.length > 0;
+      let segmentIntegrity = false;
+
+      if (segmentsValid) {
+        const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
+        const originalNormalized = normalizeText(inputText);
+        const segmentsJoined = normalizeText(result.segments.map(s => s.original).join(' '));
+        segmentIntegrity = originalNormalized === segmentsJoined;
+      }
+
+      // Save to database if requested
+      if (save && paragraph) {
+        const translationJson = JSON.stringify({
+          reading: result.reading,
+          study: result.study,
+          segments: result.segments || [],
+          notes: result.notes || []
+        });
+
+        await query(
+          'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
+          [translationJson, JSON.stringify(result.segments || []), paragraph.id]
+        );
+        logger.info({ paragraphId }, 'Test translation saved to database');
+      }
+
+      return {
+        success: true,
+        duration: `${duration}ms`,
+        input: {
+          text: inputText,
+          length: inputText.length,
+          sourceLang,
+          targetLang
+        },
+        translation: {
+          reading: result.reading,
+          study: result.study,
+          notes: result.notes || null
+        },
+        segments: {
+          count: result.segments?.length || 0,
+          valid: segmentsValid,
+          integrityCheck: segmentIntegrity,
+          data: result.segments || []
+        },
+        saved: save && !!paragraph
+      };
+    } catch (err) {
+      logger.error({ err, inputLength: inputText.length }, 'Test translation failed');
+      return {
+        success: false,
+        duration: `${Date.now() - startTime}ms`,
+        error: err.message,
+        input: {
+          text: inputText.substring(0, 100) + (inputText.length > 100 ? '...' : ''),
+          length: inputText.length,
+          sourceLang,
+          targetLang
+        }
+      };
+    }
   });
 
   /**
