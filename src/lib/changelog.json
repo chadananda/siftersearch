@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T03:27:40.476Z",
+  "generated": "2026-01-04T03:32:07.445Z",
   "entries": [
+    {
+      "hash": "4dda2fe",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
+      "scope": null
+    },
     {
       "hash": "4bb30e8",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve print view - footer with metadata and QR, hide navbar",
       "scope": null
-    },
-    {
-      "hash": "1c1a94f",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Improve document presentation header and print styles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "4dda2fe",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
+        "scope": null
+      },
       {
         "hash": "4bb30e8",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve print view - footer with metadata and QR, hide navbar",
-        "scope": null
-      },
-      {
-        "hash": "1c1a94f",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Improve document presentation header and print styles",
         "scope": null
       }
     ]

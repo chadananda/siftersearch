@@ -2184,7 +2184,7 @@
 
   .paragraph-text {
     font-size: 1rem;
-    line-height: 1.75;
+    line-height: 1;
     color: #1a1a1a;
   }
 
@@ -2314,7 +2314,7 @@
 
   .study-translation {
     font-size: 1rem;
-    line-height: 1.75;
+    line-height: 1;
     color: #333;
     font-family: 'Libre Caslon Text', Georgia, serif;
   }
