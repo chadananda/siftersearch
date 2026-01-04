@@ -2261,6 +2261,7 @@
   .translation-col {
     padding-left: 0.75rem;
     border-left: 1px solid rgba(0, 0, 0, 0.08);
+    line-height: 1.15 !important;
     /* English translation - left-aligned with tighter line spacing */
     text-align: left;
   }

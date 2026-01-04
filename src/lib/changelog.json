@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T04:48:40.455Z",
+  "generated": "2026-01-04T04:54:52.489Z",
   "entries": [
+    {
+      "hash": "fc3ba6b",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Force single line-height on SBS translation text via JS action",
+      "scope": null
+    },
     {
       "hash": "c8875c3",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Boundary-based segmentation with strict text integrity",
       "scope": null
-    },
-    {
-      "hash": "543616a",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add strict validation for sentence markers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "fc3ba6b",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Force single line-height on SBS translation text via JS action",
+        "scope": null
+      },
       {
         "hash": "c8875c3",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Boundary-based segmentation with strict text integrity",
-        "scope": null
-      },
-      {
-        "hash": "543616a",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add strict validation for sentence markers",
         "scope": null
       }
     ]
