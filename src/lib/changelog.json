@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:24:07.667Z",
+  "generated": "2026-01-04T15:26:54.692Z",
   "entries": [
+    {
+      "hash": "3b7f8be",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Improve study translation prompt - readable literal, theological notes",
+      "scope": null
+    },
     {
       "hash": "b229fe5",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Paragraph numbering treats index 0 as falsy",
       "scope": null
-    },
-    {
-      "hash": "92f78b1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add unique slug storage to prevent URL collisions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "3b7f8be",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Improve study translation prompt - readable literal, theological notes",
+        "scope": null
+      },
       {
         "hash": "b229fe5",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Paragraph numbering treats index 0 as falsy",
-        "scope": null
-      },
-      {
-        "hash": "92f78b1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add unique slug storage to prevent URL collisions",
         "scope": null
       }
     ]

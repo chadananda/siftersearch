@@ -112,27 +112,120 @@ function parseTOON(text) {
 }
 
 /**
+ * Extract TOON content from text that may contain explanatory prose
+ * LLMs often add explanations despite instructions - this extracts just the structured content
+ */
+function extractTOONContent(text) {
+  // Remove markdown code blocks
+  let cleaned = text.trim();
+  if (cleaned.includes('```')) {
+    // Extract content between code fences
+    const codeBlockMatch = cleaned.match(/```(?:toml|toon|json)?\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch) {
+      cleaned = codeBlockMatch[1];
+    } else {
+      // Just strip the markers
+      cleaned = cleaned.replace(/```(?:toml|toon|json)?/g, '');
+    }
+  }
+
+  // Find the first TOON key-value pattern (reading = ", study = ", etc.)
+  // This marks the start of actual TOON content
+  const toonStartPatterns = [
+    /^reading\s*=/m,
+    /^study\s*=/m,
+    /^\[\[/m,           // Array start
+    /^\[[a-zA-Z]/m      // Section start
+  ];
+
+  let startIndex = cleaned.length;
+  for (const pattern of toonStartPatterns) {
+    const match = cleaned.match(pattern);
+    if (match && match.index < startIndex) {
+      startIndex = match.index;
+    }
+  }
+
+  // If we found a start point, extract from there
+  if (startIndex < cleaned.length) {
+    cleaned = cleaned.substring(startIndex);
+  }
+
+  // Remove any trailing explanatory text after the TOON content
+  // Look for patterns that indicate prose started (after the last TOON element)
+  const lines = cleaned.split('\n');
+  const toonLines = [];
+  let inToon = false;
+  let lastToonLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Valid TOON patterns
+    const isToonLine = (
+      line.startsWith('[[') ||                           // Array item
+      line.startsWith('[') && line.endsWith(']') ||      // Section
+      line.match(/^[a-zA-Z_]\w*\s*=/) ||                 // Key = value
+      line === '' ||                                      // Blank lines OK
+      line.startsWith('#')                                // Comments OK
+    );
+
+    if (isToonLine) {
+      inToon = true;
+      lastToonLine = i;
+      toonLines.push(lines[i]);
+    } else if (inToon) {
+      // Check if this looks like prose (sentences, explanations)
+      const looksLikeProse = (
+        line.length > 80 ||                              // Long lines likely prose
+        line.match(/^(Note|This|The|Here|I |In |To )/) || // Common prose starts
+        line.match(/[.!?]$/) && !line.match(/^[a-zA-Z_].*=/) // Sentences
+      );
+
+      if (looksLikeProse) {
+        // Stop here, we've hit explanatory text
+        break;
+      }
+      // Otherwise, might be a continued value or something, include it
+      toonLines.push(lines[i]);
+      lastToonLine = i;
+    }
+  }
+
+  return toonLines.join('\n').trim();
+}
+
+/**
  * Try to parse as TOON, fall back to JSON if it fails
+ * Robust against LLM adding explanatory text before/after the structured content
  */
 function parseAIResponse(text) {
-  // Clean up markdown code blocks if present
-  let cleaned = text.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:toml|toon|json)?\n?/, '').replace(/\n?```$/, '');
-  }
+  // First, try to extract clean TOON content
+  const cleaned = extractTOONContent(text);
 
   // Try TOON first (simpler syntax, less error-prone for AI)
   try {
     const result = parseTOON(cleaned);
-    // Validate we got something useful
-    if (Object.keys(result).length > 0) {
+    // Validate we got something useful (at minimum: reading or study)
+    if (result.reading || result.study || Object.keys(result).length > 0) {
       return result;
     }
   } catch {
     // Fall through to JSON
   }
 
-  // Fall back to JSON
+  // Try JSON as fallback (also extract from explanatory text)
+  try {
+    // Look for JSON object in the text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    // JSON parse failed
+  }
+
+  // Last resort: try the whole cleaned text as JSON
   return JSON.parse(cleaned);
 }
 
