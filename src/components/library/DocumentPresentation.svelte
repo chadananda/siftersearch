@@ -2297,6 +2297,7 @@
     border-radius: 0.15em;
     transition: background 0.15s ease;
     display: inline;
+    line-height: 1.15;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
@@ -2307,7 +2308,6 @@
 
   .segment-phrase.highlighted {
     background: rgba(59, 130, 246, 0.15);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
     /* Ensure text is readable against highlight background */
     color: #1a1a1a;
   }
@@ -2320,15 +2320,14 @@
   /* Focus styles for keyboard navigation */
   .segment-phrase:focus {
     outline: none;
-    background: rgba(59, 130, 246, 0.2);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.25);
   }
 
   /* Touch-friendly tap targets on mobile */
   @media (pointer: coarse) {
     .segment-phrase {
-      padding: 0.2em 0.25em;
-      margin: 0 0.05em;
+      padding: 0 0.15em;
+      margin: 0;
     }
   }
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T05:14:41.596Z",
+  "generated": "2026-01-04T05:17:21.325Z",
   "entries": [
+    {
+      "hash": "452625a",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Remove padding/margin from segment-phrase for tighter highlights",
+      "scope": null
+    },
     {
       "hash": "50c6ad9",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add sentence-first streaming segmentation for unpunctuated texts",
       "scope": null
-    },
-    {
-      "hash": "60740e9",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add retry logic and sanity caps for sentence detection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "452625a",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Remove padding/margin from segment-phrase for tighter highlights",
+        "scope": null
+      },
       {
         "hash": "50c6ad9",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add sentence-first streaming segmentation for unpunctuated texts",
-        "scope": null
-      },
-      {
-        "hash": "60740e9",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add retry logic and sanity caps for sentence detection",
         "scope": null
       }
     ]
