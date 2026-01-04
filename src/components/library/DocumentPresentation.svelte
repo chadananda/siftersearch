@@ -2251,9 +2251,17 @@
     line-height: 1 !important;
   }
 
-  .translation-col .paragraph-text,
-  .translation-col .paragraph-text * {
+  .translation-col .paragraph-text :global(*) {
     line-height: 1 !important;
+  }
+
+  .translation-col .paragraph-text :global(p) {
+    margin: 0 0 0.5rem 0;
+    line-height: 1 !important;
+  }
+
+  .translation-col .paragraph-text :global(p:last-child) {
+    margin-bottom: 0;
   }
 
   /* Phrase-level segment highlighting */

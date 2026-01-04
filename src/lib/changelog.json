@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T03:53:02.981Z",
+  "generated": "2026-01-04T04:00:07.582Z",
   "entries": [
+    {
+      "hash": "fa25d10",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Force line-height 1 on English translation with !important",
+      "scope": null
+    },
     {
       "hash": "fe2a086",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add hierarchical sentence markers for translations",
       "scope": null
-    },
-    {
-      "hash": "4cf01e6",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Remove page-break-after from print header styles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "fa25d10",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Force line-height 1 on English translation with !important",
+        "scope": null
+      },
       {
         "hash": "fe2a086",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add hierarchical sentence markers for translations",
-        "scope": null
-      },
-      {
-        "hash": "4cf01e6",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Remove page-break-after from print header styles",
         "scope": null
       }
     ]
