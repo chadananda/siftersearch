@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T14:47:00.267Z",
+  "generated": "2026-01-04T15:05:49.993Z",
   "entries": [
+    {
+      "hash": "4eea663",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Optimize translation for 6-10x speedup with TOON format",
+      "scope": null
+    },
     {
       "hash": "bcfa25a",
       "date": "2026-01-03",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Correct Fastify 5 redirect argument order",
       "scope": null
-    },
-    {
-      "hash": "19579fa",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Allow internal API key for document updates",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-04": [
+      {
+        "hash": "4eea663",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Optimize translation for 6-10x speedup with TOON format",
+        "scope": null
+      }
+    ],
     "2026-01-03": [
       {
         "hash": "bcfa25a",
@@ -695,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Correct Fastify 5 redirect argument order",
-        "scope": null
-      },
-      {
-        "hash": "19579fa",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Allow internal API key for document updates",
         "scope": null
       }
     ]

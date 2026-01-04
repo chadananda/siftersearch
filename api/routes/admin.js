@@ -1196,8 +1196,14 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
-   * Clear all translations from content table
+   * Clear translations from content table
    * DELETE /api/admin/server/translations
+   *
+   * Query params:
+   * - documentId: Clear translations for a specific document
+   * - pattern: Clear translations for all documents matching pattern (SQL LIKE)
+   *   Example: pattern=the_b_b clears all Báb documents
+   * - If neither provided, clears ALL translations (dangerous!)
    */
   fastify.delete('/server/translations', {
     preHandler: requireInternal,
@@ -1205,12 +1211,13 @@ export default async function adminRoutes(fastify) {
       querystring: {
         type: 'object',
         properties: {
-          documentId: { type: 'string', description: 'Clear only this document (optional)' }
+          documentId: { type: 'string', description: 'Clear only this document (optional)' },
+          pattern: { type: 'string', description: 'Clear documents with doc_id LIKE %pattern% (optional)' }
         }
       }
     }
   }, async (request) => {
-    const { documentId } = request.query || {};
+    const { documentId, pattern } = request.query || {};
 
     let result;
     if (documentId) {
@@ -1219,6 +1226,14 @@ export default async function adminRoutes(fastify) {
         [documentId]
       );
       logger.info({ documentId, rowsAffected: result.rowsAffected }, 'Cleared translations for document');
+    } else if (pattern) {
+      // Clear translations for documents matching pattern
+      const likePattern = `%${pattern}%`;
+      result = await query(
+        'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE doc_id LIKE ? AND translation IS NOT NULL',
+        [likePattern]
+      );
+      logger.info({ pattern, rowsAffected: result.rowsAffected }, 'Cleared translations matching pattern');
     } else {
       result = await query(
         'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE translation IS NOT NULL'
@@ -1230,7 +1245,9 @@ export default async function adminRoutes(fastify) {
       success: true,
       message: documentId
         ? `Cleared translations for document: ${documentId}`
-        : 'Cleared all translations',
+        : pattern
+          ? `Cleared translations matching pattern: ${pattern}`
+          : 'Cleared all translations',
       rowsAffected: result.rowsAffected
     };
   });
