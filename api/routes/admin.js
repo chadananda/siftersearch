@@ -28,6 +28,7 @@
  * DELETE /api/admin/server/translations - Clear all translations (optional: documentId query param)
  * POST /api/admin/server/translate-document - Translate specific document with aligned segments
  * POST /api/admin/server/resegment-document - Re-ingest document from source file with AI segmentation
+ * POST /api/admin/server/ingest-file - Ingest document from file path (creates new or updates existing)
  * POST /api/admin/server/fix-file-hashes - Fix NULL file_hash values for docs with file_paths
  * DELETE /api/admin/server/document/:documentId - Delete document completely (DB + Meilisearch)
  * GET /api/admin/server/document/:documentId - Get document info with segmentation stats
@@ -770,6 +771,61 @@ export default async function adminRoutes(fastify) {
       documentId,
       filePath: doc.file_path,
       status: task.status
+    };
+  });
+
+  /**
+   * Ingest a document from a file path (creates new or updates existing)
+   * POST /api/admin/server/ingest-file
+   */
+  fastify.post('/server/ingest-file', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['filePath'],
+        properties: {
+          filePath: { type: 'string', description: 'Absolute path to the markdown file' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { filePath } = request.body;
+    const { readFile, stat } = await import('fs/promises');
+    const { ingestDocument, generateDocumentId } = await import('../services/ingester.js');
+
+    // Check file exists
+    try {
+      await stat(filePath);
+    } catch {
+      throw ApiError.notFound(`File not found: ${filePath}`);
+    }
+
+    // Read file content
+    const content = await readFile(filePath, 'utf-8');
+
+    // Generate document ID from path
+    const docId = generateDocumentId(filePath);
+
+    // Check if document already exists
+    const existing = await queryOne('SELECT id FROM docs WHERE id = ?', [docId]);
+    if (existing) {
+      // Delete existing content to force re-ingestion
+      await query('DELETE FROM content WHERE doc_id = ?', [docId]);
+      await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [docId]);
+    }
+
+    // Ingest the document
+    logger.info({ filePath, docId, existing: !!existing }, 'Ingesting document from file');
+
+    const result = await ingestDocument(content, { id: docId }, filePath);
+
+    return {
+      success: true,
+      documentId: docId,
+      status: result.status,
+      paragraphCount: result.paragraphCount,
+      isNew: !existing
     };
   });
 
