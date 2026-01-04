@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T05:03:49.286Z",
+  "generated": "2026-01-04T05:09:30.693Z",
   "entries": [
+    {
+      "hash": "202938d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust segment highlight height to match line-height",
+      "scope": null
+    },
     {
       "hash": "bea207c",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve Arabic sentence detection for unpunctuated texts",
       "scope": null
-    },
-    {
-      "hash": "e3053e8",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Batch sentence detection reduces AI calls by 95%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "202938d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust segment highlight height to match line-height",
+        "scope": null
+      },
       {
         "hash": "bea207c",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Improve Arabic sentence detection for unpunctuated texts",
-        "scope": null
-      },
-      {
-        "hash": "e3053e8",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Batch sentence detection reduces AI calls by 95%",
         "scope": null
       }
     ]

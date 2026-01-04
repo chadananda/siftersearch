@@ -2299,7 +2299,9 @@
     border-radius: 0.15em;
     transition: all 0.15s ease;
     display: inline;
-    line-height: 1.15;
+    line-height: 1.4;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
 
   .segment-phrase:hover {
