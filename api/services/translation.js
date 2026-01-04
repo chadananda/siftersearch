@@ -967,34 +967,58 @@ Long vowels: á, í, ú (NOT ā, ī, ū). Emphatics with dot-under: Ḥ, Ṭ, �
 ${styleGuide}
 Literary English that flows naturally for devotional reading.
 
-## STUDY Translation
-Word-by-word literal translation that preserves original structure (even if awkward).
-- Use parentheses for implied words: "the-book (of) God"
-- Show grammatical forms where helpful
+## STUDY Translation (Literal but Readable)
+Create a word-for-word translation that:
+1. MIRRORS Arabic word order and structure as closely as possible
+2. READS WELL in English - avoid excessive hyphenation
+3. PRESERVES every word - never skip particles or prepositions
+4. Uses natural English constructions that parallel Arabic grammar
+
+KEY PATTERNS (follow these exactly):
+- إنّ (inna) → "Truly" or "Verily" (emphasis particle - NEVER skip)
+- من عند الله → "from the presence of God" or "from the side of God" (preserve "عند")
+- في سبيل الله → "in the path of God"
+- يا أيها الناس → "O you the people" (preserve vocative structure)
+- الحمد لله → "Praise (be) to God"
+- بسم الله → "In the Name of God"
+- Use parentheses sparingly for implied words: "(be)", "(is)", "(of)"
+- Separate words with spaces, NOT hyphens (except compound particles like "to-God" when needed for clarity)
+
+GOAL: A scholar can see the Arabic structure while reading natural English.
 
 ## OUTPUT FORMAT (TOON - simpler than JSON):
 
 reading = "The complete literary translation for reading..."
-study = "The-literal word-by-word translation for-study..."
+study = "The literal translation that mirrors Arabic structure..."
 
 [[segments]]
 original = "first phrase in original"
-translation = "English translation of first phrase"
+translation = "English translation mirroring Arabic structure"
 
 [[segments]]
 original = "second phrase in original"
-translation = "English translation of second phrase"
+translation = "English translation mirroring Arabic structure"
 
 [[notes]]
-phrase = "Arabic/Persian word or phrase"
-literal = "word-by-word meaning"
-note = "grammatical or linguistic observation"
+phrase = "Arabic/Persian term"
+literal = "root meaning"
+note = "Historical, theological, or philosophical significance"
+
+## NOTES GUIDELINES:
+Focus on terminology with SIGNIFICANCE:
+- Theological concepts (tawhíd, shirk, tawba, etc.)
+- Philosophical terms (wujúd, mahiyya, dhát, etc.)
+- Jurisprudence terms (ḥalál, ḥarám, wájib, etc.)
+- Qur'ánic allusions and their context
+- Terms with Shí'ih/Bábí/Bahá'í doctrinal import
+- Historical references (people, places, events)
+Do NOT include basic grammar observations like "this is vocative" or "passive voice"
 
 ## RULES:
-- READING: Flows naturally, suitable for devotional reading
-- STUDY: Literal, preserves word order, shows grammar
-- SEGMENTS: Divide into meaningful units (1-3 sentences each) for side-by-side study
-- NOTES: Include 2-5 important linguistic observations (root words, grammar, etc.)
+- READING: Flows naturally for devotional reading
+- STUDY: Mirrors Arabic structure, readable English, preserves all words
+- SEGMENTS: 1-3 sentences each, segment translations use STUDY style
+- NOTES: 2-5 terms with theological/historical/philosophical significance
 - Concatenated segment originals MUST exactly match input text
 
 Return ONLY the TOON format, no explanations.`;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:13:37.387Z",
+  "generated": "2026-01-04T15:24:07.667Z",
   "entries": [
+    {
+      "hash": "b229fe5",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
+      "scope": null
+    },
     {
       "hash": "1b2d3af",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add unique slug storage to prevent URL collisions",
       "scope": null
-    },
-    {
-      "hash": "04df1d1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add server-side redirect detection and redirect management API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "b229fe5",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
+        "scope": null
+      },
       {
         "hash": "1b2d3af",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add unique slug storage to prevent URL collisions",
-        "scope": null
-      },
-      {
-        "hash": "04df1d1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add server-side redirect detection and redirect management API",
         "scope": null
       }
     ]
