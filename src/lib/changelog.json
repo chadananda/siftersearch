@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T05:09:30.693Z",
+  "generated": "2026-01-04T05:14:41.596Z",
   "entries": [
+    {
+      "hash": "50c6ad9",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Prevent highlight overlap with box-decoration-break",
+      "scope": null
+    },
     {
       "hash": "202938d",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add retry logic and sanity caps for sentence detection",
       "scope": null
-    },
-    {
-      "hash": "fc0198c",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve Arabic sentence detection for unpunctuated texts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "50c6ad9",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Prevent highlight overlap with box-decoration-break",
+        "scope": null
+      },
       {
         "hash": "202938d",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add retry logic and sanity caps for sentence detection",
-        "scope": null
-      },
-      {
-        "hash": "fc0198c",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve Arabic sentence detection for unpunctuated texts",
         "scope": null
       }
     ]

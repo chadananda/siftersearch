@@ -2294,12 +2294,9 @@
 
   .segment-phrase {
     cursor: pointer;
-    padding: 0 0.1em;
-    margin: 0;
     border-radius: 0.15em;
-    transition: all 0.15s ease;
+    transition: background 0.15s ease;
     display: inline;
-    line-height: 1.4;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
