@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T05:26:25.716Z",
+  "generated": "2026-01-04T06:15:23.781Z",
   "entries": [
+    {
+      "hash": "539b7f8",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Use gradient highlight to prevent line overlap",
+      "scope": null
+    },
     {
       "hash": "893d0a2",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve paragraph grouping with discourse markers",
       "scope": null
-    },
-    {
-      "hash": "7fc0879",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Integrate sentence-first segmentation into ingester pipeline",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "539b7f8",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Use gradient highlight to prevent line overlap",
+        "scope": null
+      },
       {
         "hash": "893d0a2",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Improve paragraph grouping with discourse markers",
-        "scope": null
-      },
-      {
-        "hash": "7fc0879",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Integrate sentence-first segmentation into ingester pipeline",
         "scope": null
       }
     ]

@@ -27,6 +27,11 @@
  * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
  * DELETE /api/admin/server/translations - Clear all translations (optional: documentId query param)
  * POST /api/admin/server/translate-document - Translate specific document with aligned segments
+ * POST /api/admin/server/resegment-document - Re-segment document with AI-based concept breaks
+ * POST /api/admin/server/fix-file-hashes - Fix NULL file_hash values for docs with file_paths
+ * DELETE /api/admin/server/document/:documentId - Delete document completely (DB + Meilisearch)
+ * GET /api/admin/server/document/:documentId - Get document info with segmentation stats
+ * GET /api/admin/server/documents-needing-resegment - List documents needing resegmentation
  * GET /api/admin/server/tasks - List all background tasks with status
  * GET /api/admin/server/tasks/:taskId - Get detailed task output
  * POST /api/admin/server/tasks/:taskId/cancel - Cancel a running task
@@ -716,6 +721,328 @@ export default async function adminRoutes(fastify) {
       message: `Re-ingestion started for document: ${documentId}`,
       documentId,
       status: task.status
+    };
+  });
+
+  /**
+   * Re-segment a document using AI-based concept segmentation
+   * POST /api/admin/server/resegment-document
+   */
+  fastify.post('/server/resegment-document', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to re-segment' },
+          force: { type: 'boolean', default: false, description: 'Force re-segmentation even if already good' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId, force = false } = request.body;
+
+    // Check if already running
+    const existing = backgroundTasks.get('resegment');
+    if (existing && existing.status === 'running') {
+      throw ApiError.conflict('Re-segmentation is already in progress');
+    }
+
+    const args = [documentId];
+    if (force) args.push('--force');
+
+    const task = runBackgroundTask('resegment', 'scripts/resegment-document.js', args);
+
+    logger.info({ documentId, force }, 'Document re-segmentation started via API');
+
+    return {
+      success: true,
+      taskId: 'resegment',
+      message: `Re-segmentation started for document: ${documentId}`,
+      documentId,
+      force,
+      status: task.status
+    };
+  });
+
+  /**
+   * Fix NULL file_hash values for documents with file_paths
+   * POST /api/admin/server/fix-file-hashes
+   */
+  fastify.post('/server/fix-file-hashes', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          dryRun: { type: 'boolean', default: false, description: 'Preview without updating' },
+          limit: { type: 'integer', minimum: 1, description: 'Limit number of documents to process' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { dryRun = false, limit } = request.body || {};
+    const { createHash } = await import('crypto');
+    const { readFile, stat } = await import('fs/promises');
+
+    // Find documents with file_path but no file_hash
+    let sql = `
+      SELECT id, title, file_path
+      FROM docs
+      WHERE file_path IS NOT NULL AND (file_hash IS NULL OR file_hash = '')
+    `;
+    const params = [];
+    if (limit) {
+      sql += ' LIMIT ?';
+      params.push(limit);
+    }
+
+    const docs = await queryAll(sql, params);
+
+    if (docs.length === 0) {
+      return {
+        success: true,
+        message: 'All documents with file_path already have file_hash',
+        fixed: 0
+      };
+    }
+
+    if (dryRun) {
+      return {
+        success: true,
+        dryRun: true,
+        message: `Would fix ${docs.length} documents`,
+        documents: docs.map(d => ({ id: d.id, title: d.title, path: d.file_path }))
+      };
+    }
+
+    // Fix each document
+    let fixed = 0;
+    const errors = [];
+
+    for (const doc of docs) {
+      try {
+        // Check if file exists
+        await stat(doc.file_path);
+
+        // Read file and compute hash
+        const content = await readFile(doc.file_path, 'utf-8');
+        const hash = createHash('md5').update(content).digest('hex');
+
+        // Update database
+        await query('UPDATE docs SET file_hash = ? WHERE id = ?', [hash, doc.id]);
+        fixed++;
+
+        logger.info({ docId: doc.id, hash: hash.substring(0, 8) }, 'Fixed file_hash');
+      } catch (err) {
+        errors.push({ id: doc.id, error: err.message });
+      }
+    }
+
+    logger.info({ fixed, errors: errors.length }, 'File hash fix completed');
+
+    return {
+      success: true,
+      message: `Fixed file_hash for ${fixed} documents`,
+      fixed,
+      total: docs.length,
+      errors: errors.length > 0 ? errors : undefined
+    };
+  });
+
+  /**
+   * Delete a document completely (docs table + content table + Meilisearch)
+   * DELETE /api/admin/server/document/:documentId
+   */
+  fastify.delete('/server/document/:documentId', {
+    preHandler: requireInternal,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to delete' }
+        }
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          keepMeili: { type: 'boolean', default: false, description: 'Keep Meilisearch entries' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.params;
+    const { keepMeili = false } = request.query || {};
+
+    // Check document exists
+    const doc = await queryOne('SELECT id, title FROM docs WHERE id = ?', [documentId]);
+    if (!doc) {
+      throw ApiError.notFound(`Document not found: ${documentId}`);
+    }
+
+    // Delete from content table
+    const contentResult = await query('DELETE FROM content WHERE doc_id = ?', [documentId]);
+    logger.info({ documentId, contentDeleted: contentResult.changes }, 'Deleted content rows');
+
+    // Delete from docs table
+    const docResult = await query('DELETE FROM docs WHERE id = ?', [documentId]);
+    logger.info({ documentId, docDeleted: docResult.changes }, 'Deleted doc row');
+
+    // Delete from Meilisearch (unless keepMeili)
+    let meiliDeleted = false;
+    if (!keepMeili) {
+      try {
+        const meili = getMeili();
+
+        // Delete document from documents index
+        await meili.index('documents').deleteDocument(documentId);
+
+        // Delete paragraphs from paragraphs index
+        await meili.index('paragraphs').deleteDocuments({
+          filter: `document_id = "${documentId}"`
+        });
+
+        meiliDeleted = true;
+        logger.info({ documentId }, 'Deleted from Meilisearch');
+      } catch (err) {
+        logger.warn({ documentId, error: err.message }, 'Failed to delete from Meilisearch');
+      }
+    }
+
+    return {
+      success: true,
+      documentId,
+      title: doc.title,
+      deleted: {
+        contentRows: contentResult.changes,
+        docRow: docResult.changes,
+        meilisearch: meiliDeleted
+      }
+    };
+  });
+
+  /**
+   * Get document info including content paragraph counts and segmentation stats
+   * GET /api/admin/server/document/:documentId
+   */
+  fastify.get('/server/document/:documentId', {
+    preHandler: requireInternal,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['documentId'],
+        properties: {
+          documentId: { type: 'string', description: 'Document ID to inspect' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { documentId } = request.params;
+
+    // Get document metadata
+    const doc = await queryOne('SELECT * FROM docs WHERE id = ?', [documentId]);
+    if (!doc) {
+      throw ApiError.notFound(`Document not found: ${documentId}`);
+    }
+
+    // Get content stats
+    const contentStats = await queryOne(`
+      SELECT
+        COUNT(*) as paragraph_count,
+        SUM(CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END) as translated_count,
+        SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as embedded_count,
+        SUM(LENGTH(text)) as total_chars,
+        AVG(LENGTH(text)) as avg_paragraph_chars,
+        MAX(LENGTH(text)) as max_paragraph_chars,
+        SUM(CASE WHEN LENGTH(text) > 1500 THEN 1 ELSE 0 END) as oversized_count,
+        SUM(CASE WHEN LENGTH(text) >= 1480 AND LENGTH(text) <= 1520 THEN 1 ELSE 0 END) as hard_cut_count
+      FROM content
+      WHERE doc_id = ?
+    `, [documentId]);
+
+    // Get sample paragraphs
+    const sampleParagraphs = await queryAll(`
+      SELECT paragraph_index, LENGTH(text) as chars,
+             SUBSTR(text, 1, 100) as preview,
+             CASE WHEN translation IS NOT NULL THEN 1 ELSE 0 END as has_translation
+      FROM content
+      WHERE doc_id = ?
+      ORDER BY paragraph_index
+      LIMIT 10
+    `, [documentId]);
+
+    return {
+      document: doc,
+      content: {
+        paragraphCount: contentStats.paragraph_count || 0,
+        translatedCount: contentStats.translated_count || 0,
+        embeddedCount: contentStats.embedded_count || 0,
+        totalChars: contentStats.total_chars || 0,
+        avgParagraphChars: Math.round(contentStats.avg_paragraph_chars || 0),
+        maxParagraphChars: contentStats.max_paragraph_chars || 0,
+        oversizedCount: contentStats.oversized_count || 0,
+        hardCutCount: contentStats.hard_cut_count || 0
+      },
+      segmentationHealth: {
+        hasHardCuts: (contentStats.hard_cut_count || 0) > 0,
+        hasOversized: (contentStats.oversized_count || 0) > 0,
+        needsResegment: (contentStats.hard_cut_count || 0) > 0 || (contentStats.oversized_count || 0) > 0
+      },
+      sampleParagraphs
+    };
+  });
+
+  /**
+   * List documents that need resegmentation (have hard cuts or oversized paragraphs)
+   * GET /api/admin/server/documents-needing-resegment
+   */
+  fastify.get('/server/documents-needing-resegment', {
+    preHandler: requireInternal,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 50 },
+          language: { type: 'string', description: 'Filter by language' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { limit = 50, language } = request.query || {};
+
+    let sql = `
+      SELECT
+        d.id, d.title, d.language, d.author,
+        COUNT(c.id) as paragraph_count,
+        SUM(CASE WHEN LENGTH(c.text) >= 1480 AND LENGTH(c.text) <= 1520 THEN 1 ELSE 0 END) as hard_cut_count,
+        SUM(CASE WHEN LENGTH(c.text) > 1500 THEN 1 ELSE 0 END) as oversized_count
+      FROM docs d
+      INNER JOIN content c ON c.doc_id = d.id
+    `;
+
+    const params = [];
+    if (language) {
+      sql += ' WHERE d.language = ?';
+      params.push(language);
+    }
+
+    sql += `
+      GROUP BY d.id
+      HAVING hard_cut_count > 0 OR oversized_count > 0
+      ORDER BY hard_cut_count DESC, oversized_count DESC
+      LIMIT ?
+    `;
+    params.push(limit);
+
+    const docs = await queryAll(sql, params);
+
+    return {
+      documents: docs,
+      count: docs.length,
+      totalHardCuts: docs.reduce((sum, d) => sum + d.hard_cut_count, 0),
+      totalOversized: docs.reduce((sum, d) => sum + d.oversized_count, 0)
     };
   });
 
