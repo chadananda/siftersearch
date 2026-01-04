@@ -1116,33 +1116,38 @@ original = "second phrase in original"
 translation = "English translation mirroring Arabic structure"
 
 [[notes]]
-phrase = "Arabic/Persian term"
-literal = "root meaning"
-note = "Historical, theological, or philosophical significance"
+note = "Complete self-contained sentence explaining a term or concept."
 
 ## NOTES GUIDELINES:
-Notes are OPTIONAL - only include them for RICH terminology with deeper meaning.
-Include notes ONLY when a term has:
-- Theological depth (tawḥíd, shirk, wiláyat, etc.)
-- Philosophical complexity (wujúd, mahíyya, dhát, etc.)
-- Jurisprudential significance (ḥalál, ḥarám, wájib, etc.)
-- Qur'ánic allusions requiring context
-- Shí'ih/Bábí/Bahá'í doctrinal import
-- Historical references (people, places, events)
+Notes appear as FOOTNOTES at the end of each paragraph.
+Each note MUST be a complete, self-contained sentence that:
+- Names the term being explained (with transliteration if helpful)
+- Provides theological, historical, or philosophical context
+- Can be read independently without referring back to the text
+
+EXAMPLES of good footnotes:
+- "The term 'Qá'im' (He Who Shall Arise) refers to the Twelfth Imám in Shí'ih eschatology, whose return the Báb claimed to fulfill."
+- "Tawḥíd (Divine Unity) is the central doctrine of Islam asserting God's absolute oneness and transcendence."
+- "The 'Sadratu'l-Muntahá' (Lote-Tree of the Extremity) is a Qur'ánic symbol marking the boundary of creation beyond which lies the Divine Presence."
+
+Include notes ONLY for:
+- Theological concepts requiring doctrinal context
+- Philosophical terms with technical meanings
+- Historical/Qur'ánic allusions the reader may not recognize
+- Terms with Shí'ih/Bábí/Bahá'í doctrinal significance
 
 DO NOT include notes for:
-- Basic grammar or syntax observations
-- Common religious vocabulary (God, Lord, servant, etc.)
-- Terms already explained inline with transliteration
-- Phrases without deeper theological/historical meaning
+- Grammar or syntax observations
+- Common vocabulary (God, Lord, servant, book, etc.)
+- Terms already clear from context or inline transliteration
 
-Most paragraphs will have 0-2 notes. Some may have none. Only add notes when genuinely helpful for understanding antecedent terminology or doctrinal context.
+Most paragraphs will have 0-2 notes. Many will have none.
 
 ## RULES:
 - READING: Flows naturally for devotional reading
 - STUDY: Mirrors Arabic structure, readable English, inline terminology for significant terms only
 - SEGMENTS: 1-3 sentences each, segment translations use STUDY style
-- NOTES: 0-2 terms ONLY when rich theological/historical/philosophical explanation needed
+- NOTES: 0-2 self-contained footnote sentences for rich terminology (most paragraphs have none)
 - Concatenated segment originals MUST exactly match input text
 
 Return ONLY the TOON format, no explanations.`;

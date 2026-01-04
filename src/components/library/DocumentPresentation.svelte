@@ -1221,28 +1221,23 @@
                         </div>
                       {/each}
                     </div>
-                    <!-- Notes section - only for rich terminology annotations -->
-                    {#if notes && Array.isArray(notes) && notes.length > 0}
-                      <div class="study-notes-section">
-                        {#each notes as note}
-                          <div class="study-note-item">
-                            <span class="note-term">{note.phrase || note.original}</span>
-                            {#if note.literal}
-                              <span class="note-literal">({note.literal})</span>
-                            {/if}
-                            {#if note.note || note.notes}
-                              <span class="note-explanation">{note.note || note.notes}</span>
-                            {/if}
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
                   {:else}
                     <!-- Fallback: plain study translation -->
                     <div class="paragraph-text study-text" use:singleSpaced>{@html renderMarkdown(trans.study)}</div>
                   {/if}
                 </div>
               </div>
+              <!-- Footnotes section - terminology notes at end of paragraph -->
+              {#if notes && Array.isArray(notes) && notes.length > 0}
+                <div class="paragraph-footnotes">
+                  {#each notes as note, idx}
+                    <p class="footnote-item">
+                      <span class="footnote-number">{idx + 1}.</span>
+                      <span class="footnote-text">{note.note || note.notes}</span>
+                    </p>
+                  {/each}
+                </div>
+              {/if}
 
             <!-- Default Mode: Original text only -->
             {:else}
@@ -2472,42 +2467,34 @@
     border-left: 2px solid #ddd;
   }
 
-  /* Notes section - rich terminology annotations below segments */
-  .study-notes-section {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  /* Paragraph footnotes - terminology notes at end of paragraph */
+  .paragraph-footnotes {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8f6f1;
+    border-radius: 0.375rem;
+    border-left: 3px solid #c9b99a;
   }
 
-  .study-note-item {
+  .footnote-item {
+    margin: 0 0 0.5rem 0;
     font-size: 0.8125rem;
-    line-height: 1.5;
+    line-height: 1.6;
     color: #555;
-    padding-left: 0.5rem;
-    border-left: 2px solid #ddd;
   }
 
-  .note-term {
-    font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1rem;
-    color: #333;
-    font-weight: 500;
+  .footnote-item:last-child {
+    margin-bottom: 0;
   }
 
-  .note-literal {
-    color: #666;
-    font-style: italic;
-    margin-left: 0.25rem;
+  .footnote-number {
+    font-weight: 600;
+    color: #8b7355;
+    margin-right: 0.375rem;
   }
 
-  .note-explanation {
-    display: block;
-    margin-top: 0.125rem;
-    color: #666;
-    font-size: 0.75rem;
+  .footnote-text {
+    color: #555;
   }
 
   /* Load more section */
