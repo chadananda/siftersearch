@@ -1105,7 +1105,7 @@
               {@const segments = parseSegments(para)}
               <div class="bilingual-row">
                 <!-- Translation (English) on LEFT -->
-                <div class="translation-col">
+                <div class="translation-col" dir="ltr">
                   {#if segments}
                     <!-- Phrase-level aligned view -->
                     <div class="paragraph-text translation segmented" use:singleSpaced>
@@ -1202,7 +1202,7 @@
                   </button>
                 </div>
                 <!-- Study translation (English) on RIGHT -->
-                <div class="translation-col">
+                <div class="translation-col" dir="ltr">
                   {#if segments && segments.length > 0}
                     <!-- Phrase-by-phrase translations - each phrase on its own line -->
                     <div class="paragraph-text study-text study-phrase-list">
@@ -2276,26 +2276,30 @@
   .translation-col {
     padding-left: 0.75rem;
     border-left: 1px solid rgba(0, 0, 0, 0.08);
-    line-height: 1.15 !important;
-    /* English translation - left-aligned with tighter line spacing */
+    line-height: 1.25 !important;
+    /* English translation - explicit LTR with left alignment */
+    direction: ltr;
     text-align: left;
   }
 
   .translation-col .paragraph-text {
     color: #333;
     font-style: normal;
-    /* English: 1rem font, single-spaced (Arabic is 1.25rem) */
-    font-size: 1rem !important;
-    line-height: 1 !important;
+    /* English: 1.1rem font with comfortable line spacing */
+    font-size: 1.1rem !important;
+    line-height: 1.25 !important;
+    direction: ltr;
+    unicode-bidi: normal;
   }
 
   .translation-col .paragraph-text :global(*) {
-    line-height: 1 !important;
+    line-height: 1.25 !important;
+    direction: ltr;
   }
 
   .translation-col .paragraph-text :global(p) {
     margin: 0 0 0.5rem 0;
-    line-height: 1 !important;
+    line-height: 1.25 !important;
   }
 
   .translation-col .paragraph-text :global(p:last-child) {
@@ -2331,6 +2335,12 @@
     unicode-bidi: isolate;
   }
 
+  /* Ensure LTR direction for translation segments */
+  .translation-col .segment-phrase {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
   /* Focus styles for keyboard navigation */
   .segment-phrase:focus {
     outline: none;
@@ -2363,10 +2373,12 @@
   }
 
   .study-translation {
-    font-size: 1rem;
-    line-height: 1;
+    font-size: 1.1rem;
+    line-height: 1.25;
     color: #333;
     font-family: 'Libre Caslon Text', Georgia, serif;
+    direction: ltr;
+    text-align: left;
   }
 
   .study-notes {
@@ -2445,9 +2457,12 @@
   .study-phrase-text {
     display: block;
     font-family: 'Libre Caslon Text', Georgia, serif;
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    font-size: 1.1rem;
+    line-height: 1.25;
     color: #1a1a1a;
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
   }
 
   .study-phrase-block.original-phrase .study-phrase-text {

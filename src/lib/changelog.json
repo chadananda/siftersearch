@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T16:44:12.411Z",
+  "generated": "2026-01-04T16:48:39.856Z",
   "entries": [
+    {
+      "hash": "a563a00",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Move ai_usage migration to correct directory",
+      "scope": null
+    },
     {
       "hash": "5265338",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add labeled view mode buttons with circular progress indicator",
       "scope": null
-    },
-    {
-      "hash": "675a804",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add JWT auth middleware + translation job polling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "a563a00",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Move ai_usage migration to correct directory",
+        "scope": null
+      },
       {
         "hash": "5265338",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add labeled view mode buttons with circular progress indicator",
-        "scope": null
-      },
-      {
-        "hash": "675a804",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add JWT auth middleware + translation job polling",
         "scope": null
       }
     ]
