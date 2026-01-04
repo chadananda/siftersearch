@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T21:24:51.265Z",
+  "generated": "2026-01-04T23:42:12.057Z",
   "entries": [
+    {
+      "hash": "6934e10",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
+      "scope": null
+    },
     {
       "hash": "34f35ff",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Hide back button on mobile view",
       "scope": null
-    },
-    {
-      "hash": "eaa94f3",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "6934e10",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
+        "scope": null
+      },
       {
         "hash": "34f35ff",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Hide back button on mobile view",
-        "scope": null
-      },
-      {
-        "hash": "eaa94f3",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
         "scope": null
       }
     ]

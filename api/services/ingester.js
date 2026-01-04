@@ -234,20 +234,52 @@ function forceSplitByCharLimit(text, maxChars, blocktype) {
   let remaining = text;
 
   while (remaining.length > maxChars) {
-    let breakPoint = maxChars;
+    let breakPoint = -1;
 
-    // Priority 1: Try to break at sentence marker
+    // Priority 1: Try to break at sentence marker in preferred range (60%-100%)
     const searchStart = Math.floor(maxChars * 0.6);
     const markerMatch = remaining.slice(searchStart, maxChars).match(/⁅\/s\d+⁆/);
     if (markerMatch) {
       breakPoint = searchStart + markerMatch.index + markerMatch[0].length;
-    } else {
-      // Priority 2: Try to break at space
+    }
+
+    // Priority 2: Try to break at space in preferred range (60%-100%)
+    if (breakPoint < 0) {
       const spaceIdx = remaining.slice(searchStart, maxChars).lastIndexOf(' ');
       if (spaceIdx > 0) {
         breakPoint = searchStart + spaceIdx;
       }
-      // Otherwise use maxChars as hard cutoff
+    }
+
+    // Priority 3: Find ANY space before maxChars
+    if (breakPoint < 0) {
+      const lastSpaceBeforeMax = remaining.lastIndexOf(' ', maxChars);
+      if (lastSpaceBeforeMax > 0) {
+        breakPoint = lastSpaceBeforeMax;
+      }
+    }
+
+    // Priority 4: Find first space AFTER maxChars (allow slight overshoot to 120%)
+    if (breakPoint < 0) {
+      const firstSpaceAfterMax = remaining.indexOf(' ', maxChars);
+      if (firstSpaceAfterMax > 0 && firstSpaceAfterMax < maxChars * 1.2) {
+        breakPoint = firstSpaceAfterMax;
+      }
+    }
+
+    // Priority 5: Last resort - find ANY space, even if way past maxChars
+    if (breakPoint < 0) {
+      const anySpace = remaining.indexOf(' ');
+      if (anySpace > 0) {
+        breakPoint = anySpace;
+        logger.warn({ textLen: remaining.length, breakPoint }, 'Force split: using first available space');
+      } else {
+        // No spaces at all - keep the entire text as one chunk rather than cut words
+        logger.warn({ textLen: remaining.length }, 'Force split: no spaces found, keeping as single chunk');
+        result.push({ text: remaining.trim(), blocktype });
+        remaining = '';
+        break;
+      }
     }
 
     result.push({ text: remaining.slice(0, breakPoint).trim(), blocktype });
