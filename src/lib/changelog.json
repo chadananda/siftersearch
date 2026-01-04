@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T17:15:22.167Z",
+  "generated": "2026-01-04T17:41:21.733Z",
   "entries": [
+    {
+      "hash": "41fffd9",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Correct checkpoint boundary bug in translation resume logic",
+      "scope": null
+    },
     {
       "hash": "43d06e3",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Update translation progress after each paragraph instead of each wave",
       "scope": null
-    },
-    {
-      "hash": "2719520",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add URL-style breadcrumb header and job queue monitoring API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "41fffd9",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Correct checkpoint boundary bug in translation resume logic",
+        "scope": null
+      },
       {
         "hash": "43d06e3",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Update translation progress after each paragraph instead of each wave",
-        "scope": null
-      },
-      {
-        "hash": "2719520",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add URL-style breadcrumb header and job queue monitoring API",
         "scope": null
       }
     ]

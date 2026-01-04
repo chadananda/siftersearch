@@ -720,246 +720,242 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     }];
   }));
 
-  // Organize into staggered waves (1,11,21... then 2,12,22...)
-  const waves = organizeIntoWaves(paragraphsNeedingTranslation, 10);
+  // Separate paragraphs into full translations vs partial resumes
+  const fullTranslationParas = [];
+  const partialParas = [];
+
+  for (const para of paragraphsNeedingTranslation) {
+    const existing = parseExistingTranslation(para.translation);
+    const needsReading = !existing?.reading;
+    const needsStudy = !existing?.study;
+
+    if (needsReading && needsStudy) {
+      fullTranslationParas.push({ ...para, existing: null });
+    } else if (needsReading || needsStudy) {
+      partialParas.push({ ...para, existing, needsReading, needsStudy });
+    }
+  }
+
+  // Organize full translations into staggered order for better context distribution
+  // With BATCH_CONCURRENCY workers, start from positions 0, N, 2N, 3N... where N = total/concurrency
+  const staggeredParas = organizeIntoWaves(fullTranslationParas, BATCH_CONCURRENCY).flat();
+
+  // Create token-based batches from staggered paragraphs
+  const allBatches = createTokenBatches(staggeredParas);
 
   logger.info({
     jobId: job.id,
     totalParagraphs,
-    waveCount: waves.length
-  }, 'Organized paragraphs into waves (dual translation)');
+    fullTranslationCount: fullTranslationParas.length,
+    partialCount: partialParas.length,
+    batchCount: allBatches.length,
+    concurrency: BATCH_CONCURRENCY
+  }, 'Starting concurrent translation with rolling queue');
 
   let translatedCount = 0;
-  let waveNumber = 0;
+  let batchIndex = 0;
 
-  for (const wave of waves) {
-    waveNumber++;
+  // Process a single batch - shared by all concurrent workers
+  async function processBatch(batch) {
+    try {
+      const firstPara = batch[0];
+      const prevPara = paragraphMap.get(firstPara.paragraph_index - 1);
+      const prevContext = prevPara ? {
+        original: prevPara.text,
+        translation: prevPara.readingTranslation || null
+      } : null;
 
-    // Separate paragraphs needing full translation from partial resumes
-    const fullTranslationParas = [];
-    const partialParas = [];
+      const batchResults = await translateBatchCombined({
+        paragraphs: batch,
+        sourceLang,
+        targetLang: 'en',
+        contentType,
+        documentContext,
+        previousParagraph: prevContext
+      });
 
-    for (const para of wave) {
-      const existing = parseExistingTranslation(para.translation);
-      const needsReading = !existing?.reading;
-      const needsStudy = !existing?.study;
+      const now = new Date().toISOString();
+      for (let i = 0; i < batch.length; i++) {
+        const para = batch[i];
+        const result = batchResults[i];
 
-      if (needsReading && needsStudy) {
-        fullTranslationParas.push({ ...para, existing: null });
-      } else if (needsReading || needsStudy) {
-        partialParas.push({ ...para, existing, needsReading, needsStudy });
+        if (result && result.reading && result.study && result.segments) {
+          const translationData = {
+            reading: result.reading,
+            study: result.study,
+            segments: result.segments,
+            notes: result.notes
+          };
+
+          await query(`
+            UPDATE content
+            SET translation = ?, synced = 0, updated_at = ?
+            WHERE id = ?
+          `, [JSON.stringify(translationData), now, para.id]);
+
+          const mapEntry = paragraphMap.get(para.paragraph_index);
+          if (mapEntry) {
+            mapEntry.readingTranslation = result.reading;
+          }
+
+          translatedCount++;
+        } else {
+          logger.warn({
+            paraId: para.id,
+            hasReading: !!result?.reading,
+            hasStudy: !!result?.study,
+            hasSegments: !!result?.segments
+          }, 'Incomplete translation result');
+        }
       }
-      // Skip paragraphs that are already complete
-    }
 
-    // BATCH PROCESSING: Group full-translation paragraphs into token-based batches
-    if (fullTranslationParas.length > 0) {
-      const batches = createTokenBatches(fullTranslationParas);
+      await updateJobCheckpoint(job.id, batch[batch.length - 1].paragraph_index, startingProgress + translatedCount);
+      return true;
+    } catch (err) {
+      logger.warn({ batchSize: batch.length, err: err.message }, 'Batch failed, processing individually');
 
-      logger.info({
-        waveNumber,
-        fullTranslationCount: fullTranslationParas.length,
-        batchCount: batches.length
-      }, 'Processing wave with batching');
-
-      for (const batch of batches) {
+      // Fallback: translate each paragraph individually
+      for (const para of batch) {
         try {
-          // Get context from paragraph before first in batch
-          const firstPara = batch[0];
-          const prevPara = paragraphMap.get(firstPara.paragraph_index - 1);
+          const prevPara = paragraphMap.get(para.paragraph_index - 1);
           const prevContext = prevPara ? {
             original: prevPara.text,
             translation: prevPara.readingTranslation || null
           } : null;
 
-          // Translate entire batch in one API call
-          const batchResults = await translateBatchCombined({
-            paragraphs: batch,
-            sourceLang,
-            targetLang: 'en',
-            contentType,
-            documentContext,
-            previousParagraph: prevContext
-          });
-
-          // Save results for each paragraph in batch
-          const now = new Date().toISOString();
-          for (let i = 0; i < batch.length; i++) {
-            const para = batch[i];
-            const result = batchResults[i];
-
-            if (result && (result.reading || result.study)) {
-              const translationData = {
-                reading: result.reading,
-                study: result.study,
-                segments: result.segments,
-                notes: result.notes
-              };
-
-              const translationJson = JSON.stringify(translationData);
-              await query(`
-                UPDATE content
-                SET translation = ?, synced = 0, updated_at = ?
-                WHERE id = ?
-              `, [translationJson, now, para.id]);
-
-              // Update map for future context
-              const mapEntry = paragraphMap.get(para.paragraph_index);
-              if (mapEntry) {
-                mapEntry.readingTranslation = result.reading;
-              }
-
-              translatedCount++;
-            }
-
-            logger.debug({
-              paraId: para.id,
-              paragraphIndex: para.paragraph_index,
-              progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
-              mode: 'batch',
-              batchSize: batch.length
-            }, 'Paragraph translated (batch)');
-          }
-
-          // Checkpoint after each batch (not each paragraph)
-          const lastPara = batch[batch.length - 1];
-          await updateJobCheckpoint(
-            job.id,
-            lastPara.paragraph_index,
-            startingProgress + translatedCount
-          );
-
-        } catch (err) {
-          logger.warn({
-            batchSize: batch.length,
-            err: err.message
-          }, 'Batch translation failed, falling back to individual');
-
-          // Fall back to individual translation for this batch
-          for (const para of batch) {
-            try {
-              const prevPara = paragraphMap.get(para.paragraph_index - 1);
-              const prevContext = prevPara ? {
-                original: prevPara.text,
-                translation: prevPara.readingTranslation || null
-              } : null;
-
-              const result = await translateCombined({
-                text: para.text,
-                sourceLang,
-                targetLang: 'en',
-                contentType,
-                documentContext,
-                previousParagraph: prevContext,
-                hasMarkers: hasMarkers(para.text)
-              });
-
-              const now = new Date().toISOString();
-              const translationData = {
-                reading: result.reading,
-                study: result.study,
-                segments: result.segments,
-                notes: result.notes
-              };
-
-              await query(`
-                UPDATE content
-                SET translation = ?, synced = 0, updated_at = ?
-                WHERE id = ?
-              `, [JSON.stringify(translationData), now, para.id]);
-
-              const mapEntry = paragraphMap.get(para.paragraph_index);
-              if (mapEntry) {
-                mapEntry.readingTranslation = result.reading;
-              }
-
-              translatedCount++;
-              await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
-
-            } catch (fallbackErr) {
-              logger.warn({ paraId: para.id, err: fallbackErr.message }, 'Individual fallback failed');
-            }
-          }
-        }
-      }
-    }
-
-    // Handle partial resumes (only reading OR only study needed)
-    for (const para of partialParas) {
-      try {
-        const prevPara = paragraphMap.get(para.paragraph_index - 1);
-        const prevContext = prevPara ? {
-          original: prevPara.text,
-          translation: prevPara.readingTranslation || null
-        } : null;
-
-        const now = new Date().toISOString();
-        let translationData = para.existing || { reading: null, study: null, segments: null, notes: null };
-
-        if (para.needsReading) {
-          const readingResult = await translateWithContext({
+          const result = await translateCombined({
             text: para.text,
             sourceLang,
             targetLang: 'en',
             contentType,
             documentContext,
             previousParagraph: prevContext,
-            translationType: 'reading',
             hasMarkers: hasMarkers(para.text)
           });
 
-          translationData.reading = readingResult.translation;
-          translationData.segments = readingResult.segments || null;
+          if (result.reading && result.study && result.segments) {
+            const now = new Date().toISOString();
+            await query(`
+              UPDATE content
+              SET translation = ?, synced = 0, updated_at = ?
+              WHERE id = ?
+            `, [JSON.stringify(result), now, para.id]);
 
-          const mapEntry = paragraphMap.get(para.paragraph_index);
-          if (mapEntry) {
-            mapEntry.readingTranslation = readingResult.translation;
+            const mapEntry = paragraphMap.get(para.paragraph_index);
+            if (mapEntry) {
+              mapEntry.readingTranslation = result.reading;
+            }
+
+            translatedCount++;
+            await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
+          } else {
+            logger.error({ paraId: para.id }, 'Individual translation missing required fields');
           }
-        } else if (para.needsStudy) {
-          const studyResult = await translateWithContext({
-            text: para.text,
-            sourceLang,
-            targetLang: 'en',
-            contentType,
-            documentContext,
-            previousParagraph: prevContext,
-            translationType: 'study',
-            hasMarkers: hasMarkers(para.text)
-          });
-
-          translationData.study = studyResult.translation;
-          translationData.notes = studyResult.studyNotes?.segments || null;
+        } catch (fallbackErr) {
+          logger.warn({ paraId: para.id, err: fallbackErr.message }, 'Individual fallback failed');
         }
-
-        await query(`
-          UPDATE content
-          SET translation = ?, synced = 0, updated_at = ?
-          WHERE id = ?
-        `, [JSON.stringify(translationData), now, para.id]);
-
-        translatedCount++;
-        await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
-
-        logger.debug({
-          paraId: para.id,
-          paragraphIndex: para.paragraph_index,
-          progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
-          mode: 'partial'
-        }, 'Paragraph translated (partial)');
-
-      } catch (err) {
-        logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate partial paragraph');
       }
+      return false;
     }
+  }
 
-    logger.info({
-      jobId: job.id,
-      wave: waveNumber,
-      waveSize: wave.length,
-      batchedCount: fullTranslationParas.length,
-      partialCount: partialParas.length,
-      totalProgress: translatedCount
-    }, 'Wave completed');
+  // Concurrent worker that pulls batches from the queue
+  async function worker(workerId) {
+    while (true) {
+      const idx = batchIndex++;
+      if (idx >= allBatches.length) break;
+
+      const batch = allBatches[idx];
+      logger.debug({
+        workerId,
+        batchIdx: idx,
+        batchSize: batch.length,
+        progress: `${startingProgress + translatedCount}/${totalParagraphs}`
+      }, 'Worker processing batch');
+
+      await processBatch(batch);
+    }
+  }
+
+  // Launch concurrent workers
+  const workers = [];
+  for (let i = 0; i < Math.min(BATCH_CONCURRENCY, allBatches.length); i++) {
+    workers.push(worker(i));
+  }
+  await Promise.all(workers);
+
+  logger.info({
+    jobId: job.id,
+    translatedCount,
+    batchesProcessed: allBatches.length
+  }, 'Concurrent batch processing complete');
+
+  // Handle partial resumes (only reading OR only study needed) - these are sequential
+  for (const para of partialParas) {
+    try {
+      const prevPara = paragraphMap.get(para.paragraph_index - 1);
+      const prevContext = prevPara ? {
+        original: prevPara.text,
+        translation: prevPara.readingTranslation || null
+      } : null;
+
+      const now = new Date().toISOString();
+      let translationData = para.existing || { reading: null, study: null, segments: null, notes: null };
+
+      if (para.needsReading) {
+        const readingResult = await translateWithContext({
+          text: para.text,
+          sourceLang,
+          targetLang: 'en',
+          contentType,
+          documentContext,
+          previousParagraph: prevContext,
+          translationType: 'reading',
+          hasMarkers: hasMarkers(para.text)
+        });
+
+        translationData.reading = readingResult.translation;
+        translationData.segments = readingResult.segments || null;
+
+        const mapEntry = paragraphMap.get(para.paragraph_index);
+        if (mapEntry) {
+          mapEntry.readingTranslation = readingResult.translation;
+        }
+      } else if (para.needsStudy) {
+        const studyResult = await translateWithContext({
+          text: para.text,
+          sourceLang,
+          targetLang: 'en',
+          contentType,
+          documentContext,
+          previousParagraph: prevContext,
+          translationType: 'study',
+          hasMarkers: hasMarkers(para.text)
+        });
+
+        translationData.study = studyResult.translation;
+        translationData.notes = studyResult.studyNotes?.segments || null;
+      }
+
+      await query(`
+        UPDATE content
+        SET translation = ?, synced = 0, updated_at = ?
+        WHERE id = ?
+      `, [JSON.stringify(translationData), now, para.id]);
+
+      translatedCount++;
+      await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
+
+      logger.debug({
+        paraId: para.id,
+        paragraphIndex: para.paragraph_index,
+        progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
+        mode: 'partial'
+      }, 'Paragraph translated (partial)');
+
+    } catch (err) {
+      logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate partial paragraph');
+    }
   }
 
   await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
@@ -1167,9 +1163,12 @@ Most paragraphs will have 0-2 notes. Many will have none.
 ## RULES:
 - READING: Flows naturally for devotional reading
 - STUDY: Mirrors Arabic structure, readable English, inline terminology for significant terms only
-- SEGMENTS: 1-3 sentences each, segment translations use STUDY style
+- SEGMENTS: MANDATORY - 2-5 phrases each, segment translations use STUDY style
 - NOTES: 0-2 self-contained footnote sentences for rich terminology (most paragraphs have none)
-- Concatenated segment originals MUST exactly match input text
+- Concatenated segment originals MUST EXACTLY match input text (character for character)
+
+## CRITICAL: SEGMENTS ARE REQUIRED
+Every response MUST include [[segments]] blocks. Do NOT omit them.
 
 Return ONLY the TOON format, no explanations.`;
 }
@@ -1472,11 +1471,17 @@ translation = "its translation"
 ## STYLE:
 - READING: Shoghi Effendi biblical style (Thou, Thee, hath, verily) for scripture
 - STUDY: Literal, preserves word order, uses parentheses for implied words
-- SEGMENTS: Divide each paragraph into meaningful units (1-3 sentences each)
+- SEGMENTS: MANDATORY - divide each paragraph into 2-5 meaningful phrases/sentences
+
+## CRITICAL RULES:
+1. SEGMENTS ARE REQUIRED for every paragraph - do NOT skip them
+2. Each [[pN.segments]] block must have 2-5 segments
+3. Concatenated segment "original" values must EXACTLY match the input text (including punctuation)
+4. Each segment "translation" uses STUDY style (literal translation)
 
 ## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
 
-Return ONLY TOON format for ALL ${paragraphs.length} paragraphs.`;
+Return ONLY TOON format for ALL ${paragraphs.length} paragraphs. Every paragraph MUST include segments.`;
 
   const response = await withTimeout(
     aiService('quality').chat([
@@ -1510,31 +1515,68 @@ Return ONLY TOON format for ALL ${paragraphs.length} paragraphs.`;
     const para = paragraphs[i];
 
     if (paraResult && paraResult.reading && paraResult.study) {
-      // Validate segments if present
+      // Validate segments - REQUIRED
       let segments = paraResult.segments || null;
-      if (segments && Array.isArray(segments)) {
+      let segmentsValid = false;
+
+      if (segments && Array.isArray(segments) && segments.length >= 1) {
         const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
         const originalNormalized = normalizeText(para.text);
         const segmentsJoined = normalizeText(segments.map(s => s.original).join(' '));
 
-        if (originalNormalized !== segmentsJoined) {
-          // Integrity failed, discard segments
-          segments = null;
-        } else {
+        if (originalNormalized === segmentsJoined) {
           segments = segments.map((seg, idx) => ({
             id: idx + 1,
             original: seg.original,
             translation: seg.translation
           }));
+          segmentsValid = true;
+        } else {
+          logger.warn({
+            paragraphIndex: i,
+            originalLen: originalNormalized.length,
+            segmentsLen: segmentsJoined.length
+          }, 'Segment integrity failed');
         }
+      } else {
+        logger.warn({ paragraphIndex: i }, 'Segments missing from batch result');
       }
 
-      results.push({
-        reading: paraResult.reading,
-        study: paraResult.study,
-        segments,
-        notes: paraResult.notes || null
-      });
+      if (segmentsValid) {
+        results.push({
+          reading: paraResult.reading,
+          study: paraResult.study,
+          segments,
+          notes: paraResult.notes || null
+        });
+      } else {
+        // Segments invalid/missing - retry individual translation
+        logger.warn({ paragraphIndex: i }, 'Retrying paragraph individually due to missing/invalid segments');
+        try {
+          const individual = await translateCombined({
+            text: para.text,
+            sourceLang,
+            targetLang,
+            contentType,
+            documentContext,
+            previousParagraph: i === 0 ? previousParagraph : {
+              original: paragraphs[i - 1].text,
+              translation: results[i - 1]?.reading || null
+            },
+            hasMarkers: hasMarkers(para.text)
+          });
+          // Validate individual result segments too
+          if (individual.segments && Array.isArray(individual.segments) && individual.segments.length >= 1) {
+            results.push(individual);
+          } else {
+            logger.error({ paragraphIndex: i }, 'Individual retry also missing segments');
+            results.push({ reading: null, study: null, segments: null, notes: null });
+          }
+        } catch (err) {
+          logger.warn({ paragraphIndex: i, err: err.message }, 'Individual retry failed');
+          results.push({ reading: null, study: null, segments: null, notes: null });
+        }
+      }
     } else {
       // Missing result for this paragraph - translate individually
       logger.warn({ paragraphIndex: i }, 'Missing paragraph in batch, translating individually');
