@@ -441,6 +441,13 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     }, 'Resuming translation from checkpoint');
   }
 
+  // Count paragraphs that already have complete translations (both reading AND study)
+  // These should be reflected in progress to avoid "98% -> 0%" jumps
+  const alreadyTranslatedCount = paragraphs.filter(p => {
+    const existing = parseExistingTranslation(p.translation);
+    return existing && existing.reading && existing.study;
+  }).length;
+
   // Filter to paragraphs that need translation (missing reading OR study)
   // and haven't been processed in previous runs (paragraph_index > checkpoint)
   const paragraphsNeedingTranslation = paragraphs.filter(p => {
@@ -452,22 +459,34 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
     return !existing || !existing.reading || !existing.study;
   });
 
-  const totalParagraphs = paragraphsNeedingTranslation.length;
-  const totalWithPrevious = resumeFromCheckpoint + totalParagraphs;
+  const totalParagraphs = paragraphs.length;  // Total paragraphs in document
+  const needingTranslation = paragraphsNeedingTranslation.length;
 
-  if (totalParagraphs === 0) {
-    logger.info({ jobId: job.id, documentId, resumeFromCheckpoint }, 'No paragraphs need translation');
+  // Start progress at already-translated count (or checkpoint if resuming)
+  const startingProgress = Math.max(resumeFromCheckpoint, alreadyTranslatedCount);
+
+  if (needingTranslation === 0) {
+    logger.info({ jobId: job.id, documentId, alreadyTranslatedCount }, 'No paragraphs need translation');
     await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
-      progress: resumeFromCheckpoint,
-      totalItems: resumeFromCheckpoint
+      progress: totalParagraphs,
+      totalItems: totalParagraphs
     });
-    return { success: true, translated: 0, resumed: resumeFromCheckpoint };
+    return { success: true, translated: 0, alreadyComplete: alreadyTranslatedCount };
   }
 
   await updateJobStatus(job.id, JOB_STATUS.PROCESSING, {
-    totalItems: totalWithPrevious,
-    progress: resumeFromCheckpoint  // Start from where we left off
+    totalItems: totalParagraphs,
+    progress: startingProgress  // Start from already-translated count
   });
+
+  logger.info({
+    jobId: job.id,
+    documentId,
+    totalParagraphs,
+    alreadyTranslatedCount,
+    needingTranslation,
+    startingProgress
+  }, 'Translation job starting with existing progress');
 
   // Build a map for looking up previous paragraphs (including already-translated ones)
   // Parse existing translations to get reading text for context
@@ -570,13 +589,13 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         await updateJobCheckpoint(
           job.id,
           para.paragraph_index,  // checkpoint = last successfully translated paragraph
-          resumeFromCheckpoint + translatedCount  // total progress including resumed work
+          startingProgress + translatedCount  // total progress including already-translated
         );
 
         logger.debug({
           paraId: para.id,
           paragraphIndex: para.paragraph_index,
-          progress: `${translatedCount}/${totalParagraphs}`,
+          progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
           reading: needsReading ? 'generated' : 'skipped',
           study: needsStudy ? 'generated' : 'skipped'
         }, 'Paragraph translated');
@@ -599,23 +618,23 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   }
 
   await updateJobStatus(job.id, JOB_STATUS.COMPLETED, {
-    progress: totalWithPrevious,
-    totalItems: totalWithPrevious
+    progress: totalParagraphs,
+    totalItems: totalParagraphs
   });
 
   logger.info({
     jobId: job.id,
     documentId,
     translated: translatedCount,
-    resumed: resumeFromCheckpoint,
-    total: totalWithPrevious
+    alreadyComplete: alreadyTranslatedCount,
+    total: totalParagraphs
   }, 'Dual translation completed');
 
   return {
     success: true,
     translated: translatedCount,
-    resumed: resumeFromCheckpoint,
-    total: totalWithPrevious
+    alreadyComplete: alreadyTranslatedCount,
+    total: totalParagraphs
   };
 }
 

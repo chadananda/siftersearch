@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T02:47:19.058Z",
+  "generated": "2026-01-04T02:52:36.924Z",
   "entries": [
+    {
+      "hash": "6e1b7cf",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Translation queue reliability + UI fixes",
+      "scope": null
+    },
     {
       "hash": "e88776f",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add URL redirect tracking and improve document presentation",
       "scope": null
-    },
-    {
-      "hash": "55296fa",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Redesign document presentation with integrated metadata",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "6e1b7cf",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Translation queue reliability + UI fixes",
+        "scope": null
+      },
       {
         "hash": "e88776f",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add URL redirect tracking and improve document presentation",
-        "scope": null
-      },
-      {
-        "hash": "55296fa",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Redesign document presentation with integrated metadata",
         "scope": null
       }
     ]
