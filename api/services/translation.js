@@ -26,10 +26,115 @@ const API_TIMEOUT_MS = parseInt(process.env.TRANSLATION_TIMEOUT_MS || '60000', 1
 // Batching configuration
 const MAX_BATCH_TOKENS = parseInt(process.env.MAX_BATCH_TOKENS || '4000', 10);
 const CHARS_PER_TOKEN = 4; // Rough estimate for Arabic/Persian
+const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY || '2', 10); // Parallel batch processing
 import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { getSentences, stripMarkers, hasMarkers } from '../lib/markers.js';
+
+/**
+ * Parse TOON (TOML-like Object Notation) format
+ * Handles: key = "value", [[array]], [section]
+ * More compact than JSON, easier for AI to generate correctly
+ */
+function parseTOON(text) {
+  const result = {};
+  let currentArray = null;
+  let currentSection = null;
+  let currentItem = null;
+
+  const lines = text.split('\n');
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    // Array item: [[array_name]] or [[section.array_name]]
+    const arrayMatch = line.match(/^\[\[([^\]]+)\]\]$/);
+    if (arrayMatch) {
+      const name = arrayMatch[1];
+      const parts = name.split('.');
+      if (parts.length === 2) {
+        // Nested array like [[p1.segments]]
+        const [section, arr] = parts;
+        if (!result[section]) result[section] = {};
+        if (!result[section][arr]) result[section][arr] = [];
+        currentArray = result[section][arr];
+      } else {
+        // Top-level array like [[segments]]
+        if (!result[name]) result[name] = [];
+        currentArray = result[name];
+      }
+      currentItem = {};
+      currentArray.push(currentItem);
+      currentSection = null;
+      continue;
+    }
+
+    // Section: [section_name]
+    const sectionMatch = line.match(/^\[([^\]]+)\]$/);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1];
+      if (!result[currentSection]) result[currentSection] = {};
+      currentArray = null;
+      currentItem = null;
+      continue;
+    }
+
+    // Key-value: key = "value" or key = 'value'
+    const kvMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
+    if (kvMatch) {
+      const [, key, rawValue] = kvMatch;
+      let value = rawValue.trim();
+
+      // Handle quoted strings (with escape sequences)
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1)
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .replace(/\\'/g, "'")
+          .replace(/\\\\/g, '\\');
+      }
+
+      // Determine where to store
+      if (currentItem) {
+        currentItem[key] = value;
+      } else if (currentSection) {
+        result[currentSection][key] = value;
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Try to parse as TOON, fall back to JSON if it fails
+ */
+function parseAIResponse(text) {
+  // Clean up markdown code blocks if present
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:toml|toon|json)?\n?/, '').replace(/\n?```$/, '');
+  }
+
+  // Try TOON first (simpler syntax, less error-prone for AI)
+  try {
+    const result = parseTOON(cleaned);
+    // Validate we got something useful
+    if (Object.keys(result).length > 0) {
+      return result;
+    }
+  } catch {
+    // Fall through to JSON
+  }
+
+  // Fall back to JSON
+  return JSON.parse(cleaned);
+}
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = {
@@ -75,6 +180,30 @@ async function withTimeout(promise, timeoutMs = API_TIMEOUT_MS, context = 'API c
     clearTimeout(timeoutId);
     throw err;
   }
+}
+
+/**
+ * Process items in parallel with concurrency limit
+ * Like p-map but simpler, no external dependency
+ */
+async function parallelMap(items, fn, concurrency = 2) {
+  const results = new Array(items.length);
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const i = index++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+
+  // Start concurrent workers
+  const workers = Array(Math.min(concurrency, items.length))
+    .fill(null)
+    .map(() => worker());
+
+  await Promise.all(workers);
+  return results;
 }
 
 /**
@@ -513,10 +642,158 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   for (const wave of waves) {
     waveNumber++;
 
-    // Process wave sequentially to ensure context propagates
+    // Separate paragraphs needing full translation from partial resumes
+    const fullTranslationParas = [];
+    const partialParas = [];
+
     for (const para of wave) {
+      const existing = parseExistingTranslation(para.translation);
+      const needsReading = !existing?.reading;
+      const needsStudy = !existing?.study;
+
+      if (needsReading && needsStudy) {
+        fullTranslationParas.push({ ...para, existing: null });
+      } else if (needsReading || needsStudy) {
+        partialParas.push({ ...para, existing, needsReading, needsStudy });
+      }
+      // Skip paragraphs that are already complete
+    }
+
+    // BATCH PROCESSING: Group full-translation paragraphs into token-based batches
+    if (fullTranslationParas.length > 0) {
+      const batches = createTokenBatches(fullTranslationParas);
+
+      logger.info({
+        waveNumber,
+        fullTranslationCount: fullTranslationParas.length,
+        batchCount: batches.length
+      }, 'Processing wave with batching');
+
+      for (const batch of batches) {
+        try {
+          // Get context from paragraph before first in batch
+          const firstPara = batch[0];
+          const prevPara = paragraphMap.get(firstPara.paragraph_index - 1);
+          const prevContext = prevPara ? {
+            original: prevPara.text,
+            translation: prevPara.readingTranslation || null
+          } : null;
+
+          // Translate entire batch in one API call
+          const batchResults = await translateBatchCombined({
+            paragraphs: batch,
+            sourceLang,
+            targetLang: 'en',
+            contentType,
+            documentContext,
+            previousParagraph: prevContext
+          });
+
+          // Save results for each paragraph in batch
+          const now = new Date().toISOString();
+          for (let i = 0; i < batch.length; i++) {
+            const para = batch[i];
+            const result = batchResults[i];
+
+            if (result && (result.reading || result.study)) {
+              const translationData = {
+                reading: result.reading,
+                study: result.study,
+                segments: result.segments,
+                notes: result.notes
+              };
+
+              const translationJson = JSON.stringify(translationData);
+              await query(`
+                UPDATE content
+                SET translation = ?, synced = 0, updated_at = ?
+                WHERE id = ?
+              `, [translationJson, now, para.id]);
+
+              // Update map for future context
+              const mapEntry = paragraphMap.get(para.paragraph_index);
+              if (mapEntry) {
+                mapEntry.readingTranslation = result.reading;
+              }
+
+              translatedCount++;
+            }
+
+            logger.debug({
+              paraId: para.id,
+              paragraphIndex: para.paragraph_index,
+              progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
+              mode: 'batch',
+              batchSize: batch.length
+            }, 'Paragraph translated (batch)');
+          }
+
+          // Checkpoint after each batch (not each paragraph)
+          const lastPara = batch[batch.length - 1];
+          await updateJobCheckpoint(
+            job.id,
+            lastPara.paragraph_index,
+            startingProgress + translatedCount
+          );
+
+        } catch (err) {
+          logger.warn({
+            batchSize: batch.length,
+            err: err.message
+          }, 'Batch translation failed, falling back to individual');
+
+          // Fall back to individual translation for this batch
+          for (const para of batch) {
+            try {
+              const prevPara = paragraphMap.get(para.paragraph_index - 1);
+              const prevContext = prevPara ? {
+                original: prevPara.text,
+                translation: prevPara.readingTranslation || null
+              } : null;
+
+              const result = await translateCombined({
+                text: para.text,
+                sourceLang,
+                targetLang: 'en',
+                contentType,
+                documentContext,
+                previousParagraph: prevContext,
+                hasMarkers: hasMarkers(para.text)
+              });
+
+              const now = new Date().toISOString();
+              const translationData = {
+                reading: result.reading,
+                study: result.study,
+                segments: result.segments,
+                notes: result.notes
+              };
+
+              await query(`
+                UPDATE content
+                SET translation = ?, synced = 0, updated_at = ?
+                WHERE id = ?
+              `, [JSON.stringify(translationData), now, para.id]);
+
+              const mapEntry = paragraphMap.get(para.paragraph_index);
+              if (mapEntry) {
+                mapEntry.readingTranslation = result.reading;
+              }
+
+              translatedCount++;
+              await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
+
+            } catch (fallbackErr) {
+              logger.warn({ paraId: para.id, err: fallbackErr.message }, 'Individual fallback failed');
+            }
+          }
+        }
+      }
+    }
+
+    // Handle partial resumes (only reading OR only study needed)
+    for (const para of partialParas) {
       try {
-        // Get previous paragraph context
         const prevPara = paragraphMap.get(para.paragraph_index - 1);
         const prevContext = prevPara ? {
           original: prevPara.text,
@@ -524,18 +801,9 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         } : null;
 
         const now = new Date().toISOString();
-        const textHasMarkers = hasMarkers(para.text);
+        let translationData = para.existing || { reading: null, study: null, segments: null, notes: null };
 
-        // Parse existing translation to see what's needed
-        const existing = parseExistingTranslation(para.translation);
-        const needsReading = !existing?.reading;
-        const needsStudy = !existing?.study;
-
-        // Start with existing data or empty object
-        const translationData = existing || { reading: null, study: null, segments: null, notes: null };
-
-        // Generate reading translation if needed
-        if (needsReading) {
+        if (para.needsReading) {
           const readingResult = await translateWithContext({
             text: para.text,
             sourceLang,
@@ -544,21 +812,17 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             documentContext,
             previousParagraph: prevContext,
             translationType: 'reading',
-            hasMarkers: textHasMarkers
+            hasMarkers: hasMarkers(para.text)
           });
 
           translationData.reading = readingResult.translation;
           translationData.segments = readingResult.segments || null;
 
-          // Update map for future paragraphs
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
             mapEntry.readingTranslation = readingResult.translation;
           }
-        }
-
-        // Generate study translation if needed
-        if (needsStudy) {
+        } else if (para.needsStudy) {
           const studyResult = await translateWithContext({
             text: para.text,
             sourceLang,
@@ -567,45 +831,31 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             documentContext,
             previousParagraph: prevContext,
             translationType: 'study',
-            hasMarkers: textHasMarkers
+            hasMarkers: hasMarkers(para.text)
           });
 
           translationData.study = studyResult.translation;
           translationData.notes = studyResult.studyNotes?.segments || null;
         }
 
-        // Save as single JSON object in translation field
-        const translationJson = JSON.stringify(translationData);
         await query(`
           UPDATE content
           SET translation = ?, synced = 0, updated_at = ?
           WHERE id = ?
-        `, [translationJson, now, para.id]);
+        `, [JSON.stringify(translationData), now, para.id]);
 
         translatedCount++;
-
-        // Save checkpoint after EACH paragraph for resume capability
-        // This also updates heartbeat and progress
-        await updateJobCheckpoint(
-          job.id,
-          para.paragraph_index,  // checkpoint = last successfully translated paragraph
-          startingProgress + translatedCount  // total progress including already-translated
-        );
+        await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
 
         logger.debug({
           paraId: para.id,
           paragraphIndex: para.paragraph_index,
           progress: `${startingProgress + translatedCount}/${totalParagraphs}`,
-          reading: needsReading ? 'generated' : 'skipped',
-          study: needsStudy ? 'generated' : 'skipped'
-        }, 'Paragraph translated');
+          mode: 'partial'
+        }, 'Paragraph translated (partial)');
 
       } catch (err) {
-        logger.warn({
-          paraId: para.id,
-          paragraphIndex: para.paragraph_index,
-          err: err.message
-        }, 'Failed to translate paragraph');
+        logger.warn({ paraId: para.id, err: err.message }, 'Failed to translate partial paragraph');
       }
     }
 
@@ -613,6 +863,8 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
       jobId: job.id,
       wave: waveNumber,
       waveSize: wave.length,
+      batchedCount: fullTranslationParas.length,
+      partialCount: partialParas.length,
       totalProgress: translatedCount
     }, 'Wave completed');
   }
@@ -682,6 +934,490 @@ async function translateWithContext({
     translation: result.translation,
     segments: result.segments
   };
+}
+
+/**
+ * Build prompt for combined reading + study translation (TOON format)
+ * Returns BOTH translations in a single API call for 2x speedup
+ */
+function buildCombinedTranslationPrompt(sourceLang, contentType, contextSection = '') {
+  const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
+
+  const styleGuide = contentType === 'scripture'
+    ? `For READING: Use Shoghi Effendi's biblical style with archaic pronouns (Thou, Thee, Thine), elevated diction (perceiveth, hath, doth, verily).`
+    : `For READING: Use clear modern English for narrative, but biblical style for any quoted scripture.`;
+
+  return `You are an expert translator of ${sourceName} religious texts to English. Create BOTH a reading translation AND a study translation.
+
+${contextSection}
+
+## CRITICAL: Religious Terminology
+Use ESTABLISHED translations for religious terms (NOT literal):
+- "بقية الله" → "Remnant of God (Baqiyyatu'lláh)"
+- "القائم" → "He Who Shall Arise (Qá'im)"
+- "المهدي" → "the Mahdí"
+- "الحجة" → "the Proof of God (Ḥujjat)"
+- "مظهر أمر الله" → "Manifestation of God"
+- "أمر الله" → "the Cause of God"
+
+## Bahá'í Transliteration (REQUIRED):
+Long vowels: á, í, ú (NOT ā, ī, ū). Emphatics with dot-under: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ
+
+## READING Translation
+${styleGuide}
+Literary English that flows naturally for devotional reading.
+
+## STUDY Translation
+Word-by-word literal translation that preserves original structure (even if awkward).
+- Use parentheses for implied words: "the-book (of) God"
+- Show grammatical forms where helpful
+
+## OUTPUT FORMAT (TOON - simpler than JSON):
+
+reading = "The complete literary translation for reading..."
+study = "The-literal word-by-word translation for-study..."
+
+[[segments]]
+original = "first phrase in original"
+translation = "English translation of first phrase"
+
+[[segments]]
+original = "second phrase in original"
+translation = "English translation of second phrase"
+
+[[notes]]
+phrase = "Arabic/Persian word or phrase"
+literal = "word-by-word meaning"
+note = "grammatical or linguistic observation"
+
+## RULES:
+- READING: Flows naturally, suitable for devotional reading
+- STUDY: Literal, preserves word order, shows grammar
+- SEGMENTS: Divide into meaningful units (1-3 sentences each) for side-by-side study
+- NOTES: Include 2-5 important linguistic observations (root words, grammar, etc.)
+- Concatenated segment originals MUST exactly match input text
+
+Return ONLY the TOON format, no explanations.`;
+}
+
+/**
+ * Translate paragraph with BOTH reading and study translations in ONE API call
+ * 2x speedup vs separate calls. Returns { reading, study, segments, notes }
+ */
+async function translateCombined({
+  text,
+  sourceLang,
+  targetLang,
+  contentType,
+  documentContext,
+  previousParagraph,
+  hasMarkers: textHasMarkers
+}) {
+  // Build context section
+  let contextSection = documentContext || '';
+
+  if (previousParagraph) {
+    contextSection += `\n## Previous Paragraph (for context)\n`;
+    contextSection += `Original: ${previousParagraph.original.substring(0, 300)}${previousParagraph.original.length > 300 ? '...' : ''}\n`;
+    if (previousParagraph.translation) {
+      contextSection += `Translation: ${previousParagraph.translation.substring(0, 300)}${previousParagraph.translation.length > 300 ? '...' : ''}\n`;
+    }
+  }
+
+  // For marked text, use sentence batching (Phase 3 will optimize this further)
+  if (textHasMarkers) {
+    return await translateCombinedMarked(text, sourceLang, targetLang, contentType, contextSection);
+  }
+
+  const systemPrompt = buildCombinedTranslationPrompt(sourceLang, contentType, contextSection);
+
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: text }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 6, 1500) // More tokens for combined output
+    }),
+    API_TIMEOUT_MS,
+    'translateCombined'
+  );
+
+  // Parse TOON/JSON response
+  let result;
+  try {
+    result = parseAIResponse(response.content);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message, response: response.content.substring(0, 200) },
+      'Failed to parse combined translation, falling back to separate calls');
+    // Fall back to separate translation calls
+    return await translateCombinedFallback(text, sourceLang, targetLang, contentType, contextSection);
+  }
+
+  // Validate required fields
+  if (!result.reading || !result.study) {
+    logger.warn({ result }, 'Combined translation missing reading or study, falling back');
+    return await translateCombinedFallback(text, sourceLang, targetLang, contentType, contextSection);
+  }
+
+  // Validate segments integrity if present
+  if (result.segments && Array.isArray(result.segments)) {
+    const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
+    const originalNormalized = normalizeText(text);
+    const segmentsJoined = normalizeText(result.segments.map(s => s.original).join(' '));
+
+    if (originalNormalized !== segmentsJoined) {
+      logger.warn({
+        originalLength: originalNormalized.length,
+        segmentsLength: segmentsJoined.length
+      }, 'Segment integrity failed in combined translation, segments discarded');
+      result.segments = null;
+    } else {
+      // Add IDs to segments
+      result.segments = result.segments.map((seg, idx) => ({
+        id: idx + 1,
+        original: seg.original,
+        translation: seg.translation
+      }));
+    }
+  }
+
+  return {
+    reading: result.reading,
+    study: result.study,
+    segments: result.segments || null,
+    notes: result.notes || null
+  };
+}
+
+/**
+ * Handle combined translation for text with sentence markers
+ * Batches all sentences into single API call
+ */
+async function translateCombinedMarked(text, sourceLang, targetLang, contentType, contextSection) {
+  const sentences = getSentences(text);
+
+  if (sentences.length === 0) {
+    // No markers found, translate as whole
+    const strippedText = stripMarkers(text);
+    return await translateCombined({
+      text: strippedText,
+      sourceLang,
+      targetLang,
+      contentType,
+      documentContext: contextSection,
+      previousParagraph: null,
+      hasMarkers: false
+    });
+  }
+
+  // Build batch prompt for all sentences
+  const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
+  const sentenceList = sentences.map(s => `[s${s.id}] ${s.text}`).join('\n');
+
+  const systemPrompt = `You are an expert translator of ${sourceName} religious texts to English.
+
+${contextSection}
+
+## TASK: Translate ALL sentences below, providing BOTH reading and study versions.
+
+## OUTPUT FORMAT (TOON):
+For each sentence, provide reading and study translations:
+
+[s1]
+reading = "Literary translation of sentence 1..."
+study = "Literal word-by-word translation of sentence 1..."
+
+[s2]
+reading = "Literary translation of sentence 2..."
+study = "Literal word-by-word translation of sentence 2..."
+
+## STYLE:
+- READING: Shoghi Effendi biblical style for scripture (Thou, Thee, hath, verily)
+- STUDY: Literal, preserves word order, uses parentheses for implied words
+
+## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
+
+Return ONLY TOON format, no explanations.`;
+
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: sentenceList }
+    ], {
+      temperature: 0.3,
+      maxTokens: Math.max(text.length * 4, 1500)
+    }),
+    API_TIMEOUT_MS,
+    'translateCombinedMarked'
+  );
+
+  // Parse response
+  let result;
+  try {
+    result = parseAIResponse(response.content);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message }, 'Failed to parse marked text batch, falling back');
+    return await translateCombinedFallback(text, sourceLang, targetLang, contentType, contextSection);
+  }
+
+  // Build segments from sentence results
+  const segments = {};
+  const readingParts = [];
+  const studyParts = [];
+
+  for (const sentence of sentences) {
+    const key = `s${sentence.id}`;
+    const sentenceResult = result[key];
+
+    if (sentenceResult && sentenceResult.reading && sentenceResult.study) {
+      segments[key] = {
+        original: sentence.text,
+        text: sentenceResult.reading
+      };
+      readingParts.push(sentenceResult.reading);
+      studyParts.push(sentenceResult.study);
+    } else {
+      // Missing translation for this sentence
+      logger.warn({ sentenceId: sentence.id }, 'Missing translation in batch result');
+      segments[key] = {
+        original: sentence.text,
+        text: sentence.text,
+        error: 'Missing in batch'
+      };
+      readingParts.push(sentence.text);
+      studyParts.push(sentence.text);
+    }
+  }
+
+  return {
+    reading: readingParts.join(' '),
+    study: studyParts.join(' '),
+    segments,
+    notes: null
+  };
+}
+
+/**
+ * Fallback: use separate API calls for reading and study
+ * Used when combined parsing fails
+ */
+async function translateCombinedFallback(text, sourceLang, targetLang, contentType, contextSection) {
+  logger.info('Using fallback separate translation calls');
+
+  // Get reading translation
+  const readingResult = await translateTextWithSegmentsAndContext(text, sourceLang, targetLang, contentType, contextSection);
+
+  // Get study translation
+  const studyResult = await translateForStudy(text, sourceLang, targetLang, contentType, contextSection);
+
+  return {
+    reading: readingResult.translation,
+    study: studyResult.translation,
+    segments: readingResult.segments,
+    notes: studyResult.studyNotes?.segments || null
+  };
+}
+
+/**
+ * Translate a BATCH of paragraphs in a single API call
+ * 3-5x speedup vs individual paragraph calls
+ * Returns array of { reading, study, segments, notes } for each paragraph
+ */
+async function translateBatchCombined({
+  paragraphs,  // Array of { id, text, paragraph_index }
+  sourceLang,
+  targetLang,
+  contentType,
+  documentContext,
+  previousParagraph  // Context from paragraph before this batch
+}) {
+  if (paragraphs.length === 0) return [];
+  if (paragraphs.length === 1) {
+    // Single paragraph - use regular combined translation
+    const result = await translateCombined({
+      text: paragraphs[0].text,
+      sourceLang,
+      targetLang,
+      contentType,
+      documentContext,
+      previousParagraph,
+      hasMarkers: hasMarkers(paragraphs[0].text)
+    });
+    return [result];
+  }
+
+  const sourceName = SUPPORTED_LANGUAGES[sourceLang] || sourceLang;
+
+  // Build paragraph list for the prompt
+  const paragraphList = paragraphs.map((p, idx) =>
+    `[p${idx + 1}] ${p.text}`
+  ).join('\n\n');
+
+  // Build context section
+  let contextSection = documentContext || '';
+  if (previousParagraph) {
+    contextSection += `\n## Previous Paragraph (for context)\n`;
+    contextSection += `Original: ${previousParagraph.original.substring(0, 200)}...\n`;
+    if (previousParagraph.translation) {
+      contextSection += `Translation: ${previousParagraph.translation.substring(0, 200)}...\n`;
+    }
+  }
+
+  const systemPrompt = `You are an expert translator of ${sourceName} religious texts to English.
+
+${contextSection}
+
+## TASK: Translate ${paragraphs.length} paragraphs below. For EACH paragraph, provide BOTH reading and study translations.
+
+## CRITICAL: Religious Terminology
+Use ESTABLISHED translations: "القائم" → "Qá'im", "بقية الله" → "Remnant of God", "مظهر أمر الله" → "Manifestation of God"
+
+## OUTPUT FORMAT (TOON):
+
+[p1]
+reading = "Literary translation of paragraph 1..."
+study = "Literal word-by-word translation of paragraph 1..."
+
+[[p1.segments]]
+original = "first phrase"
+translation = "its translation"
+
+[[p1.segments]]
+original = "second phrase"
+translation = "its translation"
+
+[p2]
+reading = "Literary translation of paragraph 2..."
+study = "Literal word-by-word translation of paragraph 2..."
+
+[[p2.segments]]
+original = "first phrase"
+translation = "its translation"
+
+## STYLE:
+- READING: Shoghi Effendi biblical style (Thou, Thee, hath, verily) for scripture
+- STUDY: Literal, preserves word order, uses parentheses for implied words
+- SEGMENTS: Divide each paragraph into meaningful units (1-3 sentences each)
+
+## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
+
+Return ONLY TOON format for ALL ${paragraphs.length} paragraphs.`;
+
+  const response = await withTimeout(
+    aiService('quality').chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: paragraphList }
+    ], {
+      temperature: 0.3,
+      // More tokens for batch output
+      maxTokens: Math.max(paragraphs.reduce((sum, p) => sum + p.text.length, 0) * 5, 3000)
+    }),
+    API_TIMEOUT_MS * 2, // Double timeout for batch
+    'translateBatchCombined'
+  );
+
+  // Parse response
+  let result;
+  try {
+    result = parseAIResponse(response.content);
+  } catch (parseErr) {
+    logger.warn({ err: parseErr.message, paragraphCount: paragraphs.length },
+      'Failed to parse batch translation, falling back to individual');
+    // Fall back to individual translations
+    return await translateBatchFallback(paragraphs, sourceLang, targetLang, contentType, documentContext, previousParagraph);
+  }
+
+  // Extract results for each paragraph
+  const results = [];
+  for (let i = 0; i < paragraphs.length; i++) {
+    const key = `p${i + 1}`;
+    const paraResult = result[key];
+    const para = paragraphs[i];
+
+    if (paraResult && paraResult.reading && paraResult.study) {
+      // Validate segments if present
+      let segments = paraResult.segments || null;
+      if (segments && Array.isArray(segments)) {
+        const normalizeText = (t) => t.replace(/\s+/g, ' ').trim();
+        const originalNormalized = normalizeText(para.text);
+        const segmentsJoined = normalizeText(segments.map(s => s.original).join(' '));
+
+        if (originalNormalized !== segmentsJoined) {
+          // Integrity failed, discard segments
+          segments = null;
+        } else {
+          segments = segments.map((seg, idx) => ({
+            id: idx + 1,
+            original: seg.original,
+            translation: seg.translation
+          }));
+        }
+      }
+
+      results.push({
+        reading: paraResult.reading,
+        study: paraResult.study,
+        segments,
+        notes: paraResult.notes || null
+      });
+    } else {
+      // Missing result for this paragraph - translate individually
+      logger.warn({ paragraphIndex: i }, 'Missing paragraph in batch, translating individually');
+      try {
+        const individual = await translateCombined({
+          text: para.text,
+          sourceLang,
+          targetLang,
+          contentType,
+          documentContext,
+          previousParagraph: i === 0 ? previousParagraph : {
+            original: paragraphs[i - 1].text,
+            translation: results[i - 1]?.reading || null
+          },
+          hasMarkers: hasMarkers(para.text)
+        });
+        results.push(individual);
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Failed to translate missing paragraph');
+        results.push({ reading: null, study: null, segments: null, notes: null });
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Fallback: translate batch one paragraph at a time
+ */
+async function translateBatchFallback(paragraphs, sourceLang, targetLang, contentType, documentContext, previousParagraph) {
+  const results = [];
+  let prevContext = previousParagraph;
+
+  for (const para of paragraphs) {
+    try {
+      const result = await translateCombined({
+        text: para.text,
+        sourceLang,
+        targetLang,
+        contentType,
+        documentContext,
+        previousParagraph: prevContext,
+        hasMarkers: hasMarkers(para.text)
+      });
+      results.push(result);
+      prevContext = {
+        original: para.text,
+        translation: result.reading
+      };
+    } catch (err) {
+      logger.warn({ paraId: para.id, err: err.message }, 'Failed in batch fallback');
+      results.push({ reading: null, study: null, segments: null, notes: null });
+    }
+  }
+
+  return results;
 }
 
 // Collections that contain scripture, prayers, poetry (use biblical style)

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T06:41:15.890Z",
+  "generated": "2026-01-04T14:47:00.267Z",
   "entries": [
+    {
+      "hash": "bcfa25a",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
+      "scope": null
+    },
     {
       "hash": "041746c",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Allow internal API key for document updates",
       "scope": null
-    },
-    {
-      "hash": "8991268",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Include author in document URL slugs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "bcfa25a",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
+        "scope": null
+      },
       {
         "hash": "041746c",
         "date": "2026-01-03",
@@ -695,13 +702,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Allow internal API key for document updates",
-        "scope": null
-      },
-      {
-        "hash": "8991268",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Include author in document URL slugs",
         "scope": null
       }
     ]
