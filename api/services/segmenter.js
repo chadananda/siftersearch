@@ -1820,16 +1820,28 @@ Sentence boundaries:
 - Topic/subject shifts
 - Complete commands
 
-Return JSON array of ending phrases.`;
+CRITICAL: Use TOON format - ONE ending per line, no JSON, no numbering, no extra text.`;
 
-  const userPrompt = `Find ALL sentence endings in this UNPUNCTUATED ${languageHint} text.
-Return the LAST 3-5 WORDS of each sentence exactly as written.
+  // Build user prompt - on retries, be more aggressive about finding short sentences
+  const makeUserPrompt = (attemptNum) => {
+    const aggressive = attemptNum > 1 ? `
+IMPORTANT: Previous attempt found sentences that were too long.
+Find MORE sentence boundaries - classical ${languageHint} sentences are typically 50-150 characters.
+Look for EVERY clause ending, topic change, or natural pause.` : '';
 
+    return `Find ALL sentence endings in this UNPUNCTUATED ${languageHint} text.
+${aggressive}
 TEXT:
 ${text}
 
-Return JSON array:
-["last words of sentence 1", "last words of sentence 2", ...]`;
+Output ONLY the last 3-5 words of each sentence, one per line.
+No JSON. No numbers. No explanation. Just the ending phrases, one per line.
+
+Example output format:
+الرحمن الرحيم
+العزيز الحكيم
+من الصالحين`;
+  };
 
   let lastError = null;
 
@@ -1837,42 +1849,77 @@ Return JSON array:
     try {
       const response = await aiService('quality', { forceRemote: true }).chat([
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: makeUserPrompt(attempt) }
       ], {
         temperature: 0.1 + (attempt - 1) * 0.1,
-        max_tokens: 4000
+        max_tokens: 16000  // Increased for long documents with many sentences
       });
 
-      const content = response.content || response;
-
-      // Extract JSON array
-      let jsonStr = null;
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (codeBlockMatch) {
-        jsonStr = codeBlockMatch[1].trim();
+      // Handle various AI response formats
+      let content = response;
+      if (response && typeof response === 'object') {
+        content = response.content || response.message?.content || response.text || JSON.stringify(response);
       }
-      if (!jsonStr) {
-        const arrayMatch = content.match(/\[[\s\S]*\]/);
-        if (arrayMatch) {
-          jsonStr = arrayMatch[0];
-        }
+      if (typeof content !== 'string') {
+        content = String(content);
       }
 
-      if (!jsonStr) {
-        throw new Error('No JSON array in AI response');
-      }
+      // Parse line-based TOON format - one ending per line
+      // Remove any code blocks, numbered lists, explanatory text
+      let cleanContent = content
+        .replace(/```[\s\S]*?```/g, '')  // Remove code blocks
+        .replace(/^\d+[.):]\s*/gm, '')    // Remove numbering like "1. " or "1) "
+        .replace(/^[-*]\s*/gm, '')        // Remove bullet points
+        .trim();
 
-      jsonStr = jsonStr.replace(/,\s*]/g, ']');
-      const endings = JSON.parse(jsonStr);
+      // Extract endings - one per line, filter out empty or too-short lines
+      const endings = cleanContent
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => {
+          // Valid ending: 10+ chars, mostly Arabic/Persian characters, no explanation markers
+          if (line.length < 10) return false;
+          if (line.includes(':') || line.includes('Note') || line.includes('Example')) return false;
+          // Check for Arabic/Persian characters (U+0600-U+06FF, U+0750-U+077F, U+FB50-U+FDFF)
+          const arabicChars = (line.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF]/g) || []).length;
+          return arabicChars > line.length * 0.5;  // At least 50% Arabic/Persian
+        });
 
-      if (!Array.isArray(endings) || endings.length === 0) {
-        throw new Error('Invalid endings array');
+      logger.debug({
+        responseLength: content?.length,
+        endingsFound: endings.length,
+        sampleEndings: endings.slice(0, 5)
+      }, 'Parsed TOON sentence endings');
+
+      if (endings.length === 0) {
+        throw new Error('No valid sentence endings found in response');
       }
 
       // Convert endings to actual sentences by finding them in the text
       const sentences = extractSentencesFromEndings(text, endings);
 
       if (sentences.length > 0) {
+        // Check for oversized sentences (> 500 chars suggests missed boundaries)
+        const MAX_SENTENCE_CHARS = 500;
+        const oversized = sentences.filter(s => s.length > MAX_SENTENCE_CHARS);
+
+        if (oversized.length > 0 && attempt < maxRetries) {
+          logger.warn({
+            oversizedCount: oversized.length,
+            maxLen: Math.max(...oversized.map(s => s.length)),
+            attempt
+          }, 'Detected oversized sentences, retrying with more aggressive detection');
+          throw new Error(`Found ${oversized.length} oversized sentences, retrying`);
+        }
+
+        // Log any remaining oversized sentences (final attempt)
+        if (oversized.length > 0) {
+          logger.warn({
+            count: oversized.length,
+            sizes: oversized.map(s => s.length)
+          }, 'Some sentences exceed max length after all attempts');
+        }
+
         return sentences;
       }
 

@@ -142,6 +142,13 @@ function splitOversizedParagraphs(chunks, maxChars = 1500) {
     const text = chunk.text;
     const blocktype = chunk.blocktype;
 
+    logger.debug({
+      chars: text.length,
+      wordCount: text.split(/\s+/).length,
+      markerCount: (text.match(/⁅\/s\d+⁆/g) || []).length,
+      preview: text.substring(0, 60)
+    }, 'Splitting oversized paragraph');
+
     // Try to split at sentence markers first (⁅/sN⁆)
     const sentenceEndPattern = /⁅\/s\d+⁆/g;
     const sentenceMarkers = [...text.matchAll(sentenceEndPattern)];
@@ -155,7 +162,16 @@ function splitOversizedParagraphs(chunks, maxChars = 1500) {
         const markerEnd = match.index + match[0].length;
         const sentence = text.slice(lastEnd, markerEnd);
 
-        if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
+        // If this single sentence is already too long, split IT at word boundaries
+        if (sentence.length > maxChars) {
+          // First save any accumulated chunk
+          if (currentChunk.trim()) {
+            result.push(...splitAtWordBoundary(currentChunk, maxChars, blocktype));
+          }
+          // Then split the long sentence itself
+          result.push(...splitAtWordBoundary(sentence, maxChars, blocktype));
+          currentChunk = '';
+        } else if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
           // Save current chunk and start new one
           result.push({ text: currentChunk.trim(), blocktype });
           currentChunk = sentence;
@@ -181,20 +197,127 @@ function splitOversizedParagraphs(chunks, maxChars = 1500) {
         }
       }
     } else {
-      // No sentence markers - split at word boundaries
-      result.push(...splitAtWordBoundary(text, maxChars, blocktype));
+      // 0-1 sentence markers - split at word boundaries
+      const splits = splitAtWordBoundary(text, maxChars, blocktype);
+      logger.debug({
+        originalChars: text.length,
+        splitCount: splits.length,
+        splitSizes: splits.map(s => s.text.length)
+      }, 'Word boundary split result');
+      result.push(...splits);
     }
   }
+
+  // Final validation pass - force split any remaining oversized chunks
+  const finalResult = [];
+  for (const chunk of result) {
+    if (chunk.text.length > maxChars) {
+      logger.debug({
+        chars: chunk.text.length,
+        maxAllowed: maxChars
+      }, 'Final validation catching oversized chunk');
+      finalResult.push(...forceSplitByCharLimit(chunk.text, maxChars, chunk.blocktype));
+    } else {
+      finalResult.push(chunk);
+    }
+  }
+
+  return finalResult;
+}
+
+/**
+ * Force split text by character limit - guaranteed to produce chunks <= maxChars
+ * Uses sentence markers, spaces, or raw character split as fallback
+ */
+function forceSplitByCharLimit(text, maxChars, blocktype) {
+  const result = [];
+  let remaining = text;
+
+  while (remaining.length > maxChars) {
+    let breakPoint = maxChars;
+
+    // Priority 1: Try to break at sentence marker
+    const searchStart = Math.floor(maxChars * 0.6);
+    const markerMatch = remaining.slice(searchStart, maxChars).match(/⁅\/s\d+⁆/);
+    if (markerMatch) {
+      breakPoint = searchStart + markerMatch.index + markerMatch[0].length;
+    } else {
+      // Priority 2: Try to break at space
+      const spaceIdx = remaining.slice(searchStart, maxChars).lastIndexOf(' ');
+      if (spaceIdx > 0) {
+        breakPoint = searchStart + spaceIdx;
+      }
+      // Otherwise use maxChars as hard cutoff
+    }
+
+    result.push({ text: remaining.slice(0, breakPoint).trim(), blocktype });
+    remaining = remaining.slice(breakPoint).trim();
+  }
+
+  if (remaining.trim()) {
+    result.push({ text: remaining.trim(), blocktype });
+  }
+
+  logger.debug({
+    originalLen: text.length,
+    chunks: result.length,
+    sizes: result.map(r => r.text.length)
+  }, 'Force split applied');
 
   return result;
 }
 
 /**
  * Split text at word boundaries to fit within maxChars
+ * Falls back to character-based splitting for text without word boundaries
+ * or for individual "words" that exceed maxChars
  */
 function splitAtWordBoundary(text, maxChars, blocktype) {
   const result = [];
   const words = text.split(/\s+/);
+
+  // Check if we have any very long "words" (common in classical Arabic without spaces)
+  const hasOversizedWords = words.some(w => w.length > maxChars);
+
+  // If very few word boundaries OR has oversized words, use character-based splitting
+  if ((words.length <= 2 && text.length > maxChars) || hasOversizedWords) {
+    // Split by character count, trying to find good break points
+    let remaining = text;
+    while (remaining.length > maxChars) {
+      // Look for a good break point near maxChars
+      let breakPoint = maxChars;
+
+      // Try to find a sentence marker within the last 20% of the chunk
+      const searchStart = Math.floor(maxChars * 0.8);
+      const markerMatch = remaining.slice(searchStart, maxChars + 50).match(/⁅\/s\d+⁆/);
+      if (markerMatch) {
+        breakPoint = searchStart + markerMatch.index + markerMatch[0].length;
+      } else {
+        // Try to find a space near maxChars as secondary break point
+        const spaceMatch = remaining.slice(searchStart, maxChars).lastIndexOf(' ');
+        if (spaceMatch > 0) {
+          breakPoint = searchStart + spaceMatch;
+        }
+      }
+
+      result.push({ text: remaining.slice(0, breakPoint).trim(), blocktype });
+      remaining = remaining.slice(breakPoint).trim();
+    }
+
+    if (remaining.trim()) {
+      result.push({ text: remaining.trim(), blocktype });
+    }
+
+    logger.debug({
+      originalLen: text.length,
+      splitCount: result.length,
+      sizes: result.map(r => r.text.length)
+    }, 'Character-based split applied');
+
+    return result;
+  }
+
+  // Normal word-boundary splitting
   let currentPart = '';
 
   for (const word of words) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T18:53:38.417Z",
+  "generated": "2026-01-04T19:49:46.143Z",
   "entries": [
+    {
+      "hash": "31c1289",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
+      "scope": null
+    },
     {
       "hash": "2bbefa2",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Center utility bar buttons in right margin",
       "scope": null
-    },
-    {
-      "hash": "8146562",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Responsive right margin for utility bar - prevent content overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "31c1289",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
+        "scope": null
+      },
       {
         "hash": "2bbefa2",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Center utility bar buttons in right margin",
-        "scope": null
-      },
-      {
-        "hash": "8146562",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Responsive right margin for utility bar - prevent content overlap",
         "scope": null
       }
     ]
