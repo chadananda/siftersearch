@@ -122,6 +122,98 @@ function isUnpunctuatedText(text) {
 }
 
 /**
+ * Split oversized paragraphs at sentence markers or word boundaries
+ * Ensures no paragraph exceeds maxChars for translation compatibility
+ *
+ * @param {Array<{text: string, blocktype: string}>} chunks - Paragraphs to check
+ * @param {number} maxChars - Maximum characters per paragraph (default 1500)
+ * @returns {Array<{text: string, blocktype: string}>} - Split paragraphs
+ */
+function splitOversizedParagraphs(chunks, maxChars = 1500) {
+  const result = [];
+
+  for (const chunk of chunks) {
+    if (!chunk.text || chunk.text.length <= maxChars) {
+      result.push(chunk);
+      continue;
+    }
+
+    // Text exceeds max - need to split it
+    const text = chunk.text;
+    const blocktype = chunk.blocktype;
+
+    // Try to split at sentence markers first (⁅/sN⁆)
+    const sentenceEndPattern = /⁅\/s\d+⁆/g;
+    const sentenceMarkers = [...text.matchAll(sentenceEndPattern)];
+
+    if (sentenceMarkers.length > 1) {
+      // Split at sentence boundaries
+      let lastEnd = 0;
+      let currentChunk = '';
+
+      for (const match of sentenceMarkers) {
+        const markerEnd = match.index + match[0].length;
+        const sentence = text.slice(lastEnd, markerEnd);
+
+        if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
+          // Save current chunk and start new one
+          result.push({ text: currentChunk.trim(), blocktype });
+          currentChunk = sentence;
+        } else {
+          currentChunk += sentence;
+        }
+
+        lastEnd = markerEnd;
+      }
+
+      // Handle remaining text after last marker
+      const remaining = text.slice(lastEnd);
+      if (remaining.trim()) {
+        currentChunk += remaining;
+      }
+
+      if (currentChunk.trim()) {
+        // If still too long, split at word boundaries
+        if (currentChunk.length > maxChars) {
+          result.push(...splitAtWordBoundary(currentChunk, maxChars, blocktype));
+        } else {
+          result.push({ text: currentChunk.trim(), blocktype });
+        }
+      }
+    } else {
+      // No sentence markers - split at word boundaries
+      result.push(...splitAtWordBoundary(text, maxChars, blocktype));
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Split text at word boundaries to fit within maxChars
+ */
+function splitAtWordBoundary(text, maxChars, blocktype) {
+  const result = [];
+  const words = text.split(/\s+/);
+  let currentPart = '';
+
+  for (const word of words) {
+    if ((currentPart + ' ' + word).length > maxChars && currentPart.length > 0) {
+      result.push({ text: currentPart.trim(), blocktype });
+      currentPart = word;
+    } else {
+      currentPart = currentPart ? currentPart + ' ' + word : word;
+    }
+  }
+
+  if (currentPart.trim()) {
+    result.push({ text: currentPart.trim(), blocktype });
+  }
+
+  return result;
+}
+
+/**
  * Parse document with blocktype awareness and AI segmentation
  *
  * Returns array of { text, blocktype } objects for storage
@@ -182,7 +274,19 @@ export async function parseDocumentWithBlocks(text, options = {}) {
         paragraphs: result.paragraphs.length
       }, 'Sentence-first segmentation complete');
 
-      return chunks;
+      // Split any oversized paragraphs (max 1500 chars for translation compatibility)
+      const maxParagraphChars = 1500;
+      const finalChunks = splitOversizedParagraphs(chunks, maxParagraphChars);
+
+      if (finalChunks.length !== chunks.length) {
+        logger.info({
+          before: chunks.length,
+          after: finalChunks.length,
+          split: finalChunks.length - chunks.length
+        }, 'Split oversized paragraphs');
+      }
+
+      return finalChunks;
     } catch (err) {
       logger.warn({ err: err.message }, 'Sentence-first segmentation failed, falling back to standard approach');
       // Fall through to standard approach
@@ -211,7 +315,19 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     language: detectedLanguage
   }, 'Document segmented');
 
-  return chunks;
+  // Split any oversized paragraphs (max 1500 chars for translation compatibility)
+  const maxParagraphChars = 1500;
+  const finalChunks = splitOversizedParagraphs(chunks, maxParagraphChars);
+
+  if (finalChunks.length !== chunks.length) {
+    logger.info({
+      before: chunks.length,
+      after: finalChunks.length,
+      split: finalChunks.length - chunks.length
+    }, 'Split oversized paragraphs (standard path)');
+  }
+
+  return finalChunks;
 }
 
 /**

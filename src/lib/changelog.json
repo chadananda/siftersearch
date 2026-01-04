@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T17:45:21.808Z",
+  "generated": "2026-01-04T18:53:38.417Z",
   "entries": [
+    {
+      "hash": "2bbefa2",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add test translation API endpoint",
+      "scope": null
+    },
     {
       "hash": "4e1a79a",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Responsive right margin for utility bar - prevent content overlap",
       "scope": null
-    },
-    {
-      "hash": "2c8898f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "2bbefa2",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add test translation API endpoint",
+        "scope": null
+      },
       {
         "hash": "4e1a79a",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Responsive right margin for utility bar - prevent content overlap",
-        "scope": null
-      },
-      {
-        "hash": "2c8898f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
         "scope": null
       }
     ]
