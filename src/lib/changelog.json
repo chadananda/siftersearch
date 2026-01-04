@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:05:49.993Z",
+  "generated": "2026-01-04T15:13:37.387Z",
   "entries": [
+    {
+      "hash": "1b2d3af",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add pattern-based translation clearing for batch operations",
+      "scope": null
+    },
     {
       "hash": "4eea663",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add server-side redirect detection and redirect management API",
       "scope": null
-    },
-    {
-      "hash": "f7c6eaf",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Correct Fastify 5 redirect argument order",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "1b2d3af",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add pattern-based translation clearing for batch operations",
+        "scope": null
+      },
       {
         "hash": "4eea663",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add server-side redirect detection and redirect management API",
-        "scope": null
-      },
-      {
-        "hash": "f7c6eaf",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Correct Fastify 5 redirect argument order",
         "scope": null
       }
     ]

@@ -1255,6 +1255,8 @@ export default async function adminRoutes(fastify) {
   /**
    * Translate a specific document with aligned segments
    * POST /api/admin/server/translate-document
+   *
+   * Uses optimized combined translation (reading + study in single API call)
    */
   fastify.post('/server/translate-document', {
     preHandler: requireInternal,
@@ -1272,8 +1274,11 @@ export default async function adminRoutes(fastify) {
   }, async (request) => {
     const { documentId, sourceLang = 'ar', targetLang = 'en' } = request.body;
 
-    // Import translation service dynamically to avoid circular deps
-    const { translateTextWithSegments } = await import('../services/translation.js');
+    // Import optimized combined translation function
+    const { translateCombined } = await import('../services/translation.js');
+
+    // Get document info for context
+    const doc = await queryOne('SELECT title, author, collection, religion FROM docs WHERE id = ?', [documentId]);
 
     // Get paragraphs for this document
     const paragraphs = await queryAll(
@@ -1285,22 +1290,55 @@ export default async function adminRoutes(fastify) {
       throw ApiError.notFound(`No content found for document: ${documentId}`);
     }
 
-    logger.info({ documentId, paragraphCount: paragraphs.length }, 'Starting document translation');
+    // Build document context
+    const documentContext = doc ? `
+## Document Context
+Title: ${doc.title || 'Unknown'}
+Author: ${doc.author || 'Unknown'}
+Collection: ${doc.collection || 'Unknown'}
+` : '';
+
+    logger.info({ documentId, paragraphCount: paragraphs.length }, 'Starting optimized document translation');
 
     const results = [];
+    let prevPara = null;
+
     for (const para of paragraphs) {
       try {
-        const result = await translateTextWithSegments(para.text, sourceLang, targetLang, 'scripture');
-        const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+        // Use combined translation (reading + study in one call)
+        const result = await translateCombined({
+          text: para.text,
+          sourceLang,
+          targetLang,
+          contentType: 'scripture',
+          documentContext,
+          previousParagraph: prevPara,
+          hasMarkers: false
+        });
+
+        // Store as JSON with both reading and study translations
+        const translationJson = JSON.stringify({
+          reading: result.reading,
+          study: result.study,
+          segments: result.segments || [],
+          notes: result.notes || []
+        });
 
         await query(
           'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
-          [result.translation, segmentsJson, para.id]
+          [translationJson, JSON.stringify(result.segments || []), para.id]
         );
+
+        // Update context for next paragraph
+        prevPara = {
+          original: para.text,
+          translation: result.reading
+        };
 
         results.push({
           paragraphIndex: para.paragraph_index,
           segmentCount: result.segments?.length || 0,
+          hasStudy: !!result.study,
           success: true
         });
       } catch (err) {

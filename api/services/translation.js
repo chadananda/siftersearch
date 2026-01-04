@@ -2187,7 +2187,7 @@ async function translateTextWithSegmentsAndContext(text, sourceLang, targetLang,
 }
 
 // Export the aligned translation function for scripts
-export { translateTextWithSegments };
+export { translateTextWithSegments, translateCombined };
 
 /**
  * Find documents with incomplete translations (missing paragraphs)
