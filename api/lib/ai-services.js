@@ -17,6 +17,76 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
+import { query } from './db.js';
+
+// =============================================================================
+// MODEL PRICING (per 1K tokens, Jan 2025)
+// =============================================================================
+
+const MODEL_PRICING = {
+  // OpenAI
+  'gpt-4o': { input: 0.0025, output: 0.01 },
+  'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+  'gpt-4-turbo': { input: 0.01, output: 0.03 },
+  'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
+  'text-embedding-3-large': { input: 0.00013, output: 0 },
+  'text-embedding-3-small': { input: 0.00002, output: 0 },
+
+  // Anthropic
+  'claude-3-opus-20240229': { input: 0.015, output: 0.075 },
+  'claude-3-sonnet-20240229': { input: 0.003, output: 0.015 },
+  'claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 },
+
+  // Ollama (local, free)
+  'qwen2.5:32b': { input: 0, output: 0 },
+  'qwen2.5:14b': { input: 0, output: 0 },
+  'qwen2.5:7b': { input: 0, output: 0 },
+  'nomic-embed-text': { input: 0, output: 0 },
+};
+
+// =============================================================================
+// USAGE LOGGING
+// =============================================================================
+
+/**
+ * Log AI usage to database for cost tracking
+ * Silently fails to avoid breaking AI calls
+ */
+async function logAIUsage({
+  provider,
+  model,
+  serviceType,
+  promptTokens = 0,
+  completionTokens = 0,
+  totalTokens = 0,
+  caller = null,
+  success = true,
+  errorMessage = null,
+  userId = null,
+  jobId = null,
+  documentId = null
+}) {
+  try {
+    const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
+    const cost = (promptTokens * pricing.input + completionTokens * pricing.output) / 1000;
+
+    await query(
+      `INSERT INTO ai_usage (
+        provider, model, service_type,
+        prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,
+        caller, success, error_message, user_id, job_id, document_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        provider, model, serviceType,
+        promptTokens, completionTokens, totalTokens, cost,
+        caller, success ? 1 : 0, errorMessage, userId, jobId, documentId
+      ]
+    );
+  } catch (err) {
+    // Log but don't throw - usage tracking should never break AI calls
+    logger.warn({ err: err.message, model, serviceType }, 'Failed to log AI usage');
+  }
+}
 
 // =============================================================================
 // SERVICE DEFINITIONS
@@ -351,10 +421,17 @@ export function aiService(serviceType, options = {}) {
 
     /**
      * Chat completion
+     * @param {Array} messages - Chat messages
+     * @param {Object} overrides - Override options
+     * @param {string} overrides.caller - Identifier for usage tracking (e.g., 'translation', 'search')
+     * @param {string} overrides.userId - User ID for usage tracking
+     * @param {string} overrides.jobId - Job ID for usage tracking
+     * @param {string} overrides.documentId - Document ID for usage tracking
      */
     async chat(messages, overrides = {}) {
       const opts = { ...svcConfig, ...overrides };
       const startTime = Date.now();
+      const { caller, userId, jobId, documentId } = overrides;
 
       logger.debug({
         service: serviceName,
@@ -364,61 +441,128 @@ export function aiService(serviceType, options = {}) {
       }, 'AI chat request');
 
       let response;
-      switch (opts.provider) {
-        case 'openai':
-          response = await chatOpenAI(messages, opts);
-          break;
-        case 'anthropic':
-          response = await chatAnthropic(messages, opts);
-          break;
-        case 'ollama':
-          response = await chatOllama(messages, opts);
-          break;
-        default:
-          throw new Error(`Unknown provider: ${opts.provider}`);
+      try {
+        switch (opts.provider) {
+          case 'openai':
+            response = await chatOpenAI(messages, opts);
+            break;
+          case 'anthropic':
+            response = await chatAnthropic(messages, opts);
+            break;
+          case 'ollama':
+            response = await chatOllama(messages, opts);
+            break;
+          default:
+            throw new Error(`Unknown provider: ${opts.provider}`);
+        }
+
+        const duration = Date.now() - startTime;
+        logger.debug({
+          service: serviceName,
+          duration,
+          tokens: response.usage?.totalTokens
+        }, 'AI chat complete');
+
+        // Log successful usage
+        logAIUsage({
+          provider: opts.provider,
+          model: opts.model,
+          serviceType: 'chat',
+          promptTokens: response.usage?.promptTokens || 0,
+          completionTokens: response.usage?.completionTokens || 0,
+          totalTokens: response.usage?.totalTokens || 0,
+          caller: caller || serviceType,
+          success: true,
+          userId,
+          jobId,
+          documentId
+        });
+
+        return response;
+      } catch (err) {
+        // Log failed usage
+        logAIUsage({
+          provider: opts.provider,
+          model: opts.model,
+          serviceType: 'chat',
+          caller: caller || serviceType,
+          success: false,
+          errorMessage: err.message?.substring(0, 500),
+          userId,
+          jobId,
+          documentId
+        });
+        throw err;
       }
-
-      const duration = Date.now() - startTime;
-      logger.debug({
-        service: serviceName,
-        duration,
-        tokens: response.usage?.totalTokens
-      }, 'AI chat complete');
-
-      return response;
     },
 
     /**
      * Generate embeddings (only for embedding service)
+     * @param {string|Array} text - Text(s) to embed
+     * @param {Object} options - Options for usage tracking
+     * @param {string} options.caller - Identifier for usage tracking
+     * @param {string} options.userId - User ID for usage tracking
+     * @param {string} options.jobId - Job ID for usage tracking
+     * @param {string} options.documentId - Document ID for usage tracking
      */
-    async embed(text) {
+    async embed(text, options = {}) {
       if (serviceType !== 'embedding') {
         throw new Error(`embed() only available on 'embedding' service, not '${serviceType}'`);
       }
 
       const startTime = Date.now();
+      const { caller, userId, jobId, documentId } = options;
       let result;
 
-      switch (svcConfig.provider) {
-        case 'openai':
-          result = await embedOpenAI(text, svcConfig);
-          break;
-        case 'ollama':
-          result = await embedOllama(text, svcConfig);
-          break;
-        default:
-          throw new Error(`Embedding not supported for provider: ${svcConfig.provider}`);
-      }
+      try {
+        switch (svcConfig.provider) {
+          case 'openai':
+            result = await embedOpenAI(text, svcConfig);
+            break;
+          case 'ollama':
+            result = await embedOllama(text, svcConfig);
+            break;
+          default:
+            throw new Error(`Embedding not supported for provider: ${svcConfig.provider}`);
+        }
 
-      const duration = Date.now() - startTime;
-      const count = Array.isArray(text) ? text.length : 1;
-      logger.debug({ service: serviceName, duration, count }, 'Embedding complete');
+        const duration = Date.now() - startTime;
+        const count = Array.isArray(text) ? text.length : 1;
+        logger.debug({ service: serviceName, duration, count }, 'Embedding complete');
 
-      // Return single embedding if single input
-      if (!Array.isArray(text)) {
-        return result.embeddings[0];
+        // Log successful usage
+        logAIUsage({
+          provider: svcConfig.provider,
+          model: svcConfig.model,
+          serviceType: 'embedding',
+          totalTokens: result.usage?.totalTokens || 0,
+          caller: caller || 'embedding',
+          success: true,
+          userId,
+          jobId,
+          documentId
+        });
+
+        // Return single embedding if single input
+        if (!Array.isArray(text)) {
+          return result.embeddings[0];
+        }
+        return result.embeddings;
+      } catch (err) {
+        // Log failed usage
+        logAIUsage({
+          provider: svcConfig.provider,
+          model: svcConfig.model,
+          serviceType: 'embedding',
+          caller: caller || 'embedding',
+          success: false,
+          errorMessage: err.message?.substring(0, 500),
+          userId,
+          jobId,
+          documentId
+        });
+        throw err;
       }
-      return result.embeddings;
     }
   };
 }

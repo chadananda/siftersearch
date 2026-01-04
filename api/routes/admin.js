@@ -2765,4 +2765,207 @@ Collection: ${doc.collection || 'Unknown'}
       newStatus: 'pending'
     };
   });
+
+  // ==========================================================================
+  // AI Usage Tracking
+  // ==========================================================================
+
+  // Get AI usage summary (today, week, month, by model, by caller)
+  fastify.get('/ai-usage/summary', { preHandler: requireTier('admin') }, async () => {
+    const now = new Date().toISOString();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    const monthStart = new Date();
+    monthStart.setDate(monthStart.getDate() - 30);
+
+    const [today, week, month, byModel, byProvider, byCaller, failures] = await Promise.all([
+      // Today's stats
+      queryOne(`
+        SELECT
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+      `, [todayStart.toISOString()]),
+
+      // Week's stats
+      queryOne(`
+        SELECT
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+      `, [weekStart.toISOString()]),
+
+      // Month's stats
+      queryOne(`
+        SELECT
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+      `, [monthStart.toISOString()]),
+
+      // By model (last 30 days)
+      queryAll(`
+        SELECT
+          model,
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+        GROUP BY model
+        ORDER BY cost DESC
+      `, [monthStart.toISOString()]),
+
+      // By provider (last 30 days)
+      queryAll(`
+        SELECT
+          provider,
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+        GROUP BY provider
+        ORDER BY cost DESC
+      `, [monthStart.toISOString()]),
+
+      // By caller (last 30 days)
+      queryAll(`
+        SELECT
+          COALESCE(caller, 'unknown') as caller,
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+        GROUP BY caller
+        ORDER BY cost DESC
+      `, [monthStart.toISOString()]),
+
+      // Failed calls (last 7 days)
+      queryOne(`
+        SELECT COUNT(*) as count
+        FROM ai_usage
+        WHERE success = 0 AND timestamp >= ?
+      `, [weekStart.toISOString()])
+    ]);
+
+    return {
+      today: { calls: today?.calls || 0, tokens: today?.tokens || 0, cost: today?.cost || 0 },
+      week: { calls: week?.calls || 0, tokens: week?.tokens || 0, cost: week?.cost || 0 },
+      month: { calls: month?.calls || 0, tokens: month?.tokens || 0, cost: month?.cost || 0 },
+      failedCalls: failures?.count || 0,
+      byModel: byModel || [],
+      byProvider: byProvider || [],
+      byCaller: byCaller || []
+    };
+  });
+
+  // Get recent AI usage calls
+  fastify.get('/ai-usage/recent', { preHandler: requireTier('admin') }, async (request) => {
+    const limit = Math.min(parseInt(request.query.limit) || 100, 500);
+    const offset = parseInt(request.query.offset) || 0;
+    const model = request.query.model || null;
+    const caller = request.query.caller || null;
+    const success = request.query.success !== undefined ? parseInt(request.query.success) : null;
+
+    let sql = `
+      SELECT
+        id, timestamp, provider, model, service_type,
+        prompt_tokens, completion_tokens, total_tokens,
+        estimated_cost_usd, caller, success, error_message,
+        user_id, job_id, document_id
+      FROM ai_usage
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (model) {
+      sql += ' AND model = ?';
+      params.push(model);
+    }
+    if (caller) {
+      sql += ' AND caller = ?';
+      params.push(caller);
+    }
+    if (success !== null) {
+      sql += ' AND success = ?';
+      params.push(success);
+    }
+
+    sql += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const rows = await queryAll(sql, params);
+
+    // Get total count for pagination
+    let countSql = 'SELECT COUNT(*) as total FROM ai_usage WHERE 1=1';
+    const countParams = [];
+    if (model) {
+      countSql += ' AND model = ?';
+      countParams.push(model);
+    }
+    if (caller) {
+      countSql += ' AND caller = ?';
+      countParams.push(caller);
+    }
+    if (success !== null) {
+      countSql += ' AND success = ?';
+      countParams.push(success);
+    }
+    const countResult = await queryOne(countSql, countParams);
+
+    return {
+      calls: rows,
+      total: countResult?.total || 0,
+      limit,
+      offset
+    };
+  });
+
+  // Get AI usage time series (for charts)
+  fastify.get('/ai-usage/stats', { preHandler: requireTier('admin') }, async (request) => {
+    const days = Math.min(parseInt(request.query.days) || 30, 90);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const rows = await queryAll(`
+      SELECT
+        date(timestamp) as date,
+        COUNT(*) as calls,
+        COALESCE(SUM(total_tokens), 0) as tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as cost,
+        SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failures
+      FROM ai_usage
+      WHERE timestamp >= ?
+      GROUP BY date(timestamp)
+      ORDER BY date ASC
+    `, [startDate.toISOString()]);
+
+    return {
+      days,
+      data: rows || []
+    };
+  });
+
+  // Get distinct models and callers for filter dropdowns
+  fastify.get('/ai-usage/filters', { preHandler: requireTier('admin') }, async () => {
+    const [models, callers] = await Promise.all([
+      queryAll('SELECT DISTINCT model FROM ai_usage ORDER BY model'),
+      queryAll('SELECT DISTINCT caller FROM ai_usage WHERE caller IS NOT NULL ORDER BY caller')
+    ]);
+
+    return {
+      models: models?.map(r => r.model) || [],
+      callers: callers?.map(r => r.caller) || []
+    };
+  });
 }

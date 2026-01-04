@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AIUsageDashboard from '../../components/admin/AIUsageDashboard.svelte';
+---
+
+<AdminLayout title="AI Usage & Costs">
+  <AIUsageDashboard client:only="svelte" />
+</AdminLayout>

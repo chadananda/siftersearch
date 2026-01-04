@@ -584,6 +584,42 @@ export const admin = {
     if (options.limit) params.set('limit', options.limit);
     if (options.eventType) params.set('eventType', options.eventType);
     return request(`/api/admin/analytics?${params.toString()}`);
+  },
+
+  /**
+   * Get AI usage summary (today, week, month, by model, by caller)
+   */
+  async getAIUsageSummary() {
+    return request('/api/admin/ai-usage/summary');
+  },
+
+  /**
+   * Get recent AI usage calls
+   */
+  async getAIUsageRecent(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.model) params.set('model', options.model);
+    if (options.caller) params.set('caller', options.caller);
+    if (options.success !== undefined) params.set('success', options.success);
+    return request(`/api/admin/ai-usage/recent?${params.toString()}`);
+  },
+
+  /**
+   * Get AI usage time series stats
+   */
+  async getAIUsageStats(options = {}) {
+    const params = new URLSearchParams();
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/ai-usage/stats?${params.toString()}`);
+  },
+
+  /**
+   * Get filter options for AI usage (models, callers)
+   */
+  async getAIUsageFilters() {
+    return request('/api/admin/ai-usage/filters');
   }
 };
 

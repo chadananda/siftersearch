@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-04T15:53:53.980Z",
+  "generated": "2026-01-04T16:42:29.213Z",
   "entries": [
+    {
+      "hash": "4975c08",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Cap batch translation max_tokens at 16000",
+      "scope": null
+    },
+    {
+      "hash": "7aa93fd",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Prefer Shoghi Effendi translations for terminology",
+      "scope": null
+    },
     {
       "hash": "27bfd11",
       "date": "2026-01-04",
@@ -336,24 +350,24 @@
       "type": "Fixed",
       "description": "Use JWT Authorization header for translation API call",
       "scope": null
-    },
-    {
-      "hash": "8e37130",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Remove translation confirmation popup, queue directly",
-      "scope": null
-    },
-    {
-      "hash": "0f67cc2",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Generate both reading and study translations simultaneously",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "4975c08",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Cap batch translation max_tokens at 16000",
+        "scope": null
+      },
+      {
+        "hash": "7aa93fd",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Prefer Shoghi Effendi translations for terminology",
+        "scope": null
+      },
       {
         "hash": "27bfd11",
         "date": "2026-01-04",
@@ -690,20 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Use JWT Authorization header for translation API call",
-        "scope": null
-      },
-      {
-        "hash": "8e37130",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Remove translation confirmation popup, queue directly",
-        "scope": null
-      },
-      {
-        "hash": "0f67cc2",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Generate both reading and study translations simultaneously",
         "scope": null
       }
     ]
