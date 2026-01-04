@@ -1044,14 +1044,33 @@ function buildCombinedTranslationPrompt(sourceLang, contentType, contextSection 
 
 ${contextSection}
 
-## CRITICAL: Religious Terminology
-Use ESTABLISHED translations for religious terms (NOT literal):
+## CRITICAL: Religious Terminology (Shoghi Effendi's Translations)
+PREFER Shoghi Effendi's established translations - he was the most accomplished translator of Arabic religious terminology into English. Use his renderings:
+
+TITLES & STATIONS:
 - "بقية الله" → "Remnant of God (Baqiyyatu'lláh)"
 - "القائم" → "He Who Shall Arise (Qá'im)"
 - "المهدي" → "the Mahdí"
 - "الحجة" → "the Proof of God (Ḥujjat)"
 - "مظهر أمر الله" → "Manifestation of God"
 - "أمر الله" → "the Cause of God"
+- "نقطة أولی" → "Primal Point (Nuqṭiy-i-Úlá)"
+- "حضرة أعلی" → "His Holiness the Most Exalted One"
+
+COSMOLOGICAL TERMS:
+- "سدرة المنتهی" → "the Sadratu'l-Muntahá (Tree beyond which there is no passing)"
+- "جبروت" → "the Realm of Divine Command (Jabarút)"
+- "ملكوت" → "the Kingdom (Malakút)"
+- "لاهوت" → "the Realm of the Divine (Láhút)"
+- "ناسوت" → "the Realm of Humanity (Násút)"
+- "هيكل" → "Temple" or "Tabernacle (Haykal)"
+
+CONCEPTS:
+- "امر" → "Cause" (not "command" or "matter")
+- "ظهور" → "Manifestation" or "Revelation"
+- "مشيئة" → "the Will" or "Divine Will (Mashíyyat)"
+- "قيوم" → "the Self-Subsisting (Qayyúm)"
+- "بيان" → "the Bayán" (the Báb's Revelation)
 
 ## Bahá'í Transliteration (REQUIRED):
 Long vowels: á, í, ú (NOT ā, ī, ū). Emphatics with dot-under: Ḥ, Ṭ, Ẓ, Ṣ, Ḍ
@@ -1125,10 +1144,12 @@ Each note MUST be a complete, self-contained sentence that:
 - Provides theological, historical, or philosophical context
 - Can be read independently without referring back to the text
 
-EXAMPLES of good footnotes:
-- "The term 'Qá'im' (He Who Shall Arise) refers to the Twelfth Imám in Shí'ih eschatology, whose return the Báb claimed to fulfill."
+EXAMPLES of good footnotes (use Shoghi Effendi's terminology):
+- "The Qá'im (He Who Shall Arise) is the Twelfth Imám in Shí'ih eschatology, whose return the Báb claimed to fulfill."
 - "Tawḥíd (Divine Unity) is the central doctrine of Islam asserting God's absolute oneness and transcendence."
-- "The 'Sadratu'l-Muntahá' (Lote-Tree of the Extremity) is a Qur'ánic symbol marking the boundary of creation beyond which lies the Divine Presence."
+- "The Sadratu'l-Muntahá (Tree beyond which there is no passing) is a Qur'ánic symbol marking the boundary of creation beyond which lies the Divine Presence."
+- "The Bayán refers to both the Báb's Revelation and His principal doctrinal work, superseding the Qur'án as the 'Mother Book' of the Bábí Dispensation."
+- "Jabarút (the Realm of Divine Command) is the intermediate realm between Láhút (the Divine) and Malakút (the Kingdom), in Islamic cosmology."
 
 Include notes ONLY for:
 - Theological concepts requiring doctrinal context

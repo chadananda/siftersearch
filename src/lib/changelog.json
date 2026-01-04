@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:50:50.192Z",
+  "generated": "2026-01-04T15:53:53.980Z",
   "entries": [
+    {
+      "hash": "27bfd11",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Move translation notes to paragraph footnotes",
+      "scope": null
+    },
     {
       "hash": "bbb1b5e",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Generate both reading and study translations simultaneously",
       "scope": null
-    },
-    {
-      "hash": "1250a2f",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add phrase-level hover/tap highlighting in SBS mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "27bfd11",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Move translation notes to paragraph footnotes",
+        "scope": null
+      },
       {
         "hash": "bbb1b5e",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Generate both reading and study translations simultaneously",
-        "scope": null
-      },
-      {
-        "hash": "1250a2f",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add phrase-level hover/tap highlighting in SBS mode",
         "scope": null
       }
     ]
