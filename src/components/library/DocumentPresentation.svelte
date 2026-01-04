@@ -1161,19 +1161,20 @@
                 </div>
               </div>
 
-            <!-- Study Mode: Phrase-by-phrase literal translation (English on LEFT) -->
+            <!-- Study Mode: Phrase-by-phrase literal translation (Original LEFT, English RIGHT) -->
             {:else if viewMode === 'study' && parseTranslation(para)?.study}
               {@const trans = parseTranslation(para)}
+              {@const segments = parseSegments(para)}
               {@const notes = trans.notes}
               <div class="bilingual-row study-row">
-                <!-- Study translation (English) on LEFT -->
-                <div class="translation-col">
-                  {#if notes && Array.isArray(notes) && notes.length > 0}
-                    <!-- Phrase-by-phrase with linguistic notes -->
-                    <div class="paragraph-text study-text segmented" use:singleSpaced>
-                      {#each notes as seg, idx}
-                        <span
-                          class="segment-phrase study-phrase"
+                <!-- Original (Arabic/RTL) on LEFT -->
+                <div class="original-col" dir={getLanguageDirection(document.language)}>
+                  {#if segments && segments.length > 0}
+                    <!-- Phrase-by-phrase original - each phrase on its own line -->
+                    <div class="paragraph-text study-phrase-list">
+                      {#each segments as seg, idx}
+                        <div
+                          class="study-phrase-block original-phrase"
                           class:highlighted={highlightedSegmentId === idx}
                           data-seg-id={idx}
                           onmouseenter={() => highlightSegment(idx)}
@@ -1181,13 +1182,14 @@
                           onclick={() => highlightSegment(idx)}
                           role="button"
                           tabindex="0"
-                          title={seg.notes || ''}
-                        >{seg.literal}</span>{' '}
+                        >
+                          <span class="study-phrase-text">{seg.original}</span>
+                        </div>
                       {/each}
                     </div>
                   {:else}
-                    <!-- Fallback: plain study translation -->
-                    <div class="paragraph-text study-text" use:singleSpaced>{@html renderMarkdown(trans.study)}</div>
+                    <!-- Fallback: plain original text -->
+                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
                   {/if}
                 </div>
                 <div class="para-center">
@@ -1199,14 +1201,14 @@
                     {(para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
-                <!-- Original on RIGHT -->
-                <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  {#if notes && Array.isArray(notes) && notes.length > 0}
-                    <!-- Phrase-by-phrase original -->
-                    <div class="paragraph-text segmented">
-                      {#each notes as seg, idx}
-                        <span
-                          class="segment-phrase"
+                <!-- Study translation (English) on RIGHT -->
+                <div class="translation-col">
+                  {#if segments && segments.length > 0}
+                    <!-- Phrase-by-phrase translations - each phrase on its own line -->
+                    <div class="paragraph-text study-text study-phrase-list">
+                      {#each segments as seg, idx}
+                        <div
+                          class="study-phrase-block"
                           class:highlighted={highlightedSegmentId === idx}
                           data-seg-id={idx}
                           onmouseenter={() => highlightSegment(idx)}
@@ -1214,12 +1216,30 @@
                           onclick={() => highlightSegment(idx)}
                           role="button"
                           tabindex="0"
-                        >{seg.original}</span>{' '}
+                        >
+                          <span class="study-phrase-text">{seg.translation}</span>
+                        </div>
                       {/each}
                     </div>
+                    <!-- Notes section - only for rich terminology annotations -->
+                    {#if notes && Array.isArray(notes) && notes.length > 0}
+                      <div class="study-notes-section">
+                        {#each notes as note}
+                          <div class="study-note-item">
+                            <span class="note-term">{note.phrase || note.original}</span>
+                            {#if note.literal}
+                              <span class="note-literal">({note.literal})</span>
+                            {/if}
+                            {#if note.note || note.notes}
+                              <span class="note-explanation">{note.note || note.notes}</span>
+                            {/if}
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
                   {:else}
-                    <!-- Fallback: plain original text -->
-                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                    <!-- Fallback: plain study translation -->
+                    <div class="paragraph-text study-text" use:singleSpaced>{@html renderMarkdown(trans.study)}</div>
                   {/if}
                 </div>
               </div>
@@ -2400,6 +2420,96 @@
     /* Same width as other modes - uses base max-width */
   }
 
+  /* Study phrase-by-phrase layout - each phrase on its own line */
+  .study-phrase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .study-phrase-block {
+    display: block;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-left: 2px solid transparent;
+  }
+
+  .study-phrase-block:hover,
+  .study-phrase-block.highlighted {
+    background: rgba(139, 115, 85, 0.08);
+    border-left-color: #8b7355;
+  }
+
+  .study-phrase-block:focus {
+    outline: 2px solid rgba(139, 115, 85, 0.3);
+    outline-offset: 1px;
+  }
+
+  .study-phrase-text {
+    display: block;
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: #1a1a1a;
+  }
+
+  .study-phrase-block.original-phrase .study-phrase-text {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.125rem;
+    line-height: 1.8;
+  }
+
+  .study-phrase-note {
+    display: block;
+    margin-top: 0.25rem;
+    padding-left: 1rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #666;
+    font-style: italic;
+    border-left: 2px solid #ddd;
+  }
+
+  /* Notes section - rich terminology annotations below segments */
+  .study-notes-section {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .study-note-item {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #555;
+    padding-left: 0.5rem;
+    border-left: 2px solid #ddd;
+  }
+
+  .note-term {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .note-literal {
+    color: #666;
+    font-style: italic;
+    margin-left: 0.25rem;
+  }
+
+  .note-explanation {
+    display: block;
+    margin-top: 0.125rem;
+    color: #666;
+    font-size: 0.75rem;
+  }
+
   /* Load more section */
   .load-more-section {
     padding: 2rem;
@@ -2666,6 +2776,15 @@
       border-top: 1px solid rgba(0, 0, 0, 0.08);
       padding-top: 1rem;
     }
+
+    /* Study phrase blocks mobile */
+    .study-phrase-block {
+      padding: 0.5rem;
+    }
+
+    .study-phrase-note {
+      font-size: 0.7rem;
+    }
   }
 
   /* Para text wrapper for flex layout */
@@ -2895,6 +3014,32 @@
     .note-annotation {
       font-size: 7pt;
       color: #555;
+    }
+
+    /* Study phrase blocks in print */
+    .study-phrase-block {
+      padding: 0.25rem 0;
+      border-left: none;
+    }
+
+    .study-phrase-block:hover,
+    .study-phrase-block.highlighted {
+      background: transparent;
+      border-left: none;
+    }
+
+    .study-phrase-text {
+      font-size: 10pt;
+    }
+
+    .study-phrase-block.original-phrase .study-phrase-text {
+      font-size: 11pt;
+    }
+
+    .study-phrase-note {
+      font-size: 8pt;
+      color: #555;
+      border-left-color: #ccc;
     }
 
     /* Segment phrases in print - no interactive styling */

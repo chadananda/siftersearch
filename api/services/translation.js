@@ -1066,7 +1066,7 @@ Create a word-for-word translation that:
 2. READS WELL in English - avoid excessive hyphenation
 3. PRESERVES every word - never skip particles or prepositions
 4. Uses natural English constructions that parallel Arabic grammar
-5. INCLUDES Arabic terms in parentheses for difficult theological/philosophical words
+5. INCLUDES Arabic terms INLINE in parentheses for theological/philosophical words
 
 KEY PATTERNS (follow these exactly):
 - إنّ (inna) → "Truly" or "Verily" (emphasis particle - NEVER skip)
@@ -1076,17 +1076,31 @@ KEY PATTERNS (follow these exactly):
 - الحمد لله → "Praise (be) to God"
 - بسم الله → "In the Name of God"
 - Use parentheses sparingly for implied words: "(be)", "(is)", "(of)"
-- Separate words with spaces, NOT hyphens (except compound particles like "to-God" when needed for clarity)
+- Separate words with spaces, NOT hyphens
 
-FOR DIFFICULT TERMS: Include Arabic in parentheses to help Arabic learners:
+INLINE TERMINOLOGY - ONLY for SIGNIFICANT theological/philosophical terms:
 - "the Essence (dhát)" for ذات
 - "the Manifestation (maẓhar)" for مظهر
 - "the Will (mashíyyat)" for مشيئة
 - "contingent beings (mumkináat)" for ممكنات
 - "the Unseen (ghayb)" for غيب
 - "the station of servitude ('ubúdiyyat)" for عبودية
+- "Divine Unity (tawḥíd)" for توحيد
+- "the Primal Will (al-mashíyyat al-awwalíyya)" for المشيئة الأولية
 
-GOAL: A scholar learning Arabic can see both structure AND key terminology.
+DO NOT add Arabic transliteration for:
+- Common words: book, praise, God, Lord, people, earth, heaven
+- Parts of speech: particles, prepositions, conjunctions
+- Simple verbs: said, descended, revealed, created
+- Basic nouns: servant, path, day, night
+
+ONLY add (transliteration) for terms with theological, philosophical, or doctrinal significance.
+
+Example:
+✓ "from the Essence (dhát) of the Unseen (ghayb)" - dhát and ghayb are philosophical terms
+✗ "this is a Book (kitáb)" - kitáb is just "book", no special significance
+
+GOAL: A scholar sees key terminology inline, not every word transliterated.
 
 ## OUTPUT FORMAT (TOON - simpler than JSON):
 
@@ -1107,20 +1121,28 @@ literal = "root meaning"
 note = "Historical, theological, or philosophical significance"
 
 ## NOTES GUIDELINES:
-Focus on terminology with SIGNIFICANCE:
-- Theological concepts (tawhíd, shirk, tawba, etc.)
-- Philosophical terms (wujúd, mahiyya, dhát, etc.)
-- Jurisprudence terms (ḥalál, ḥarám, wájib, etc.)
-- Qur'ánic allusions and their context
-- Terms with Shí'ih/Bábí/Bahá'í doctrinal import
+Notes are OPTIONAL - only include them for RICH terminology with deeper meaning.
+Include notes ONLY when a term has:
+- Theological depth (tawḥíd, shirk, wiláyat, etc.)
+- Philosophical complexity (wujúd, mahíyya, dhát, etc.)
+- Jurisprudential significance (ḥalál, ḥarám, wájib, etc.)
+- Qur'ánic allusions requiring context
+- Shí'ih/Bábí/Bahá'í doctrinal import
 - Historical references (people, places, events)
-Do NOT include basic grammar observations like "this is vocative" or "passive voice"
+
+DO NOT include notes for:
+- Basic grammar or syntax observations
+- Common religious vocabulary (God, Lord, servant, etc.)
+- Terms already explained inline with transliteration
+- Phrases without deeper theological/historical meaning
+
+Most paragraphs will have 0-2 notes. Some may have none. Only add notes when genuinely helpful for understanding antecedent terminology or doctrinal context.
 
 ## RULES:
 - READING: Flows naturally for devotional reading
-- STUDY: Mirrors Arabic structure, readable English, preserves all words
+- STUDY: Mirrors Arabic structure, readable English, inline terminology for significant terms only
 - SEGMENTS: 1-3 sentences each, segment translations use STUDY style
-- NOTES: 2-5 terms with theological/historical/philosophical significance
+- NOTES: 0-2 terms ONLY when rich theological/historical/philosophical explanation needed
 - Concatenated segment originals MUST exactly match input text
 
 Return ONLY the TOON format, no explanations.`;

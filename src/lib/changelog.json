@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:29:10.715Z",
+  "generated": "2026-01-04T15:47:09.091Z",
   "entries": [
+    {
+      "hash": "644b813",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Include Arabic terms in study translation for difficult words",
+      "scope": null
+    },
     {
       "hash": "996891f",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Enhanced translation with wave-based processing and context",
       "scope": null
-    },
-    {
-      "hash": "604645e",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add SBS and Study translation modes with admin buttons",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "644b813",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Include Arabic terms in study translation for difficult words",
+        "scope": null
+      },
       {
         "hash": "996891f",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Enhanced translation with wave-based processing and context",
-        "scope": null
-      },
-      {
-        "hash": "604645e",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add SBS and Study translation modes with admin buttons",
         "scope": null
       }
     ]
