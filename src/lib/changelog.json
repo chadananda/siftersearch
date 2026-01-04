@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T03:46:00.525Z",
+  "generated": "2026-01-04T03:53:02.981Z",
   "entries": [
+    {
+      "hash": "fe2a086",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add missing PWA icons (192x192 and 512x512)",
+      "scope": null
+    },
     {
       "hash": "295aa6d",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove page-break-after from print header styles",
       "scope": null
-    },
-    {
-      "hash": "726db88",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add fancy document header with decorative logo and integrated branding",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "fe2a086",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add missing PWA icons (192x192 and 512x512)",
+        "scope": null
+      },
       {
         "hash": "295aa6d",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Remove page-break-after from print header styles",
-        "scope": null
-      },
-      {
-        "hash": "726db88",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add fancy document header with decorative logo and integrated branding",
         "scope": null
       }
     ]

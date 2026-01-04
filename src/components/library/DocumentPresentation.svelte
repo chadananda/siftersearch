@@ -2247,8 +2247,13 @@
     color: #333;
     font-style: normal;
     /* English: 1rem font, single-spaced (Arabic is 1.25rem) */
-    font-size: 1rem;
-    line-height: 1;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+  }
+
+  .translation-col .paragraph-text,
+  .translation-col .paragraph-text * {
+    line-height: 1 !important;
   }
 
   /* Phrase-level segment highlighting */
