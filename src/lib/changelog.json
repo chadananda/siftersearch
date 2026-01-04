@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T06:15:23.781Z",
+  "generated": "2026-01-04T06:25:24.443Z",
   "entries": [
+    {
+      "hash": "699c5f1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add admin API endpoints for document management",
+      "scope": null
+    },
     {
       "hash": "539b7f8",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
       "scope": null
-    },
-    {
-      "hash": "de3ee70",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve paragraph grouping with discourse markers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "699c5f1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add admin API endpoints for document management",
+        "scope": null
+      },
       {
         "hash": "539b7f8",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
-        "scope": null
-      },
-      {
-        "hash": "de3ee70",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve paragraph grouping with discourse markers",
         "scope": null
       }
     ]

@@ -27,7 +27,7 @@
  * POST /api/admin/server/populate-translations - Generate translations (filters: limit, language, documentId)
  * DELETE /api/admin/server/translations - Clear all translations (optional: documentId query param)
  * POST /api/admin/server/translate-document - Translate specific document with aligned segments
- * POST /api/admin/server/resegment-document - Re-segment document with AI-based concept breaks
+ * POST /api/admin/server/resegment-document - Re-ingest document from source file with AI segmentation
  * POST /api/admin/server/fix-file-hashes - Fix NULL file_hash values for docs with file_paths
  * DELETE /api/admin/server/document/:documentId - Delete document completely (DB + Meilisearch)
  * GET /api/admin/server/document/:documentId - Get document info with segmentation stats
@@ -725,7 +725,8 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
-   * Re-segment a document using AI-based concept segmentation
+   * Re-ingest a document from its source file with AI-based segmentation
+   * Reads from the original markdown file, not from database paragraphs
    * POST /api/admin/server/resegment-document
    */
   fastify.post('/server/resegment-document', {
@@ -735,13 +736,21 @@ export default async function adminRoutes(fastify) {
         type: 'object',
         required: ['documentId'],
         properties: {
-          documentId: { type: 'string', description: 'Document ID to re-segment' },
-          force: { type: 'boolean', default: false, description: 'Force re-segmentation even if already good' }
+          documentId: { type: 'string', description: 'Document ID to re-ingest from source file' }
         }
       }
     }
   }, async (request) => {
-    const { documentId, force = false } = request.body;
+    const { documentId } = request.body;
+
+    // Check document has a file_path
+    const doc = await queryOne('SELECT id, file_path FROM docs WHERE id = ?', [documentId]);
+    if (!doc) {
+      throw ApiError.notFound(`Document not found: ${documentId}`);
+    }
+    if (!doc.file_path) {
+      throw ApiError.badRequest(`Document has no source file path: ${documentId}`);
+    }
 
     // Check if already running
     const existing = backgroundTasks.get('resegment');
@@ -749,19 +758,17 @@ export default async function adminRoutes(fastify) {
       throw ApiError.conflict('Re-segmentation is already in progress');
     }
 
-    const args = [documentId];
-    if (force) args.push('--force');
+    // Use reingest-document.js which reads from source file
+    const task = runBackgroundTask('resegment', 'scripts/reingest-document.js', [documentId]);
 
-    const task = runBackgroundTask('resegment', 'scripts/resegment-document.js', args);
-
-    logger.info({ documentId, force }, 'Document re-segmentation started via API');
+    logger.info({ documentId }, 'Document re-ingestion from source started via API');
 
     return {
       success: true,
       taskId: 'resegment',
-      message: `Re-segmentation started for document: ${documentId}`,
+      message: `Re-ingestion from source file started for document: ${documentId}`,
       documentId,
-      force,
+      filePath: doc.file_path,
       status: task.status
     };
   });
