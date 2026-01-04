@@ -674,7 +674,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
   // and haven't been processed in previous runs (paragraph_index > checkpoint)
   const paragraphsNeedingTranslation = paragraphs.filter(p => {
     // Skip paragraphs before the checkpoint (already processed)
-    if (p.paragraph_index <= resumeFromCheckpoint) {
+    if (p.paragraph_index < resumeFromCheckpoint) {
       return false;
     }
     const existing = parseExistingTranslation(p.translation);

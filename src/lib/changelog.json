@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T16:48:39.856Z",
+  "generated": "2026-01-04T17:15:22.167Z",
   "entries": [
+    {
+      "hash": "43d06e3",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS English text styling - larger font, proper LTR direction",
+      "scope": null
+    },
     {
       "hash": "a563a00",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add URL-style breadcrumb header and job queue monitoring API",
       "scope": null
-    },
-    {
-      "hash": "7216d9c",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add labeled view mode buttons with circular progress indicator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "43d06e3",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS English text styling - larger font, proper LTR direction",
+        "scope": null
+      },
       {
         "hash": "a563a00",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add URL-style breadcrumb header and job queue monitoring API",
-        "scope": null
-      },
-      {
-        "hash": "7216d9c",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add labeled view mode buttons with circular progress indicator",
         "scope": null
       }
     ]
