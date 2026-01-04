@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T06:35:46.486Z",
+  "generated": "2026-01-04T06:41:15.890Z",
   "entries": [
+    {
+      "hash": "041746c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add ingest-file endpoint for ingesting from file path",
+      "scope": null
+    },
     {
       "hash": "23e9ca5",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Include author in document URL slugs",
       "scope": null
-    },
-    {
-      "hash": "43d6357",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "041746c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add ingest-file endpoint for ingesting from file path",
+        "scope": null
+      },
       {
         "hash": "23e9ca5",
         "date": "2026-01-03",
@@ -695,13 +702,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Include author in document URL slugs",
-        "scope": null
-      },
-      {
-        "hash": "43d6357",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
         "scope": null
       }
     ]

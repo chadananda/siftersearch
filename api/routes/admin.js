@@ -785,14 +785,15 @@ export default async function adminRoutes(fastify) {
         type: 'object',
         required: ['filePath'],
         properties: {
-          filePath: { type: 'string', description: 'Absolute path to the markdown file' }
+          filePath: { type: 'string', description: 'Absolute path to the markdown file' },
+          forceReindex: { type: 'boolean', default: false, description: 'Force re-ingestion even if unchanged' }
         }
       }
     }
   }, async (request) => {
-    const { filePath } = request.body;
+    const { filePath, forceReindex = false } = request.body;
     const { readFile, stat } = await import('fs/promises');
-    const { ingestDocument, generateDocumentId } = await import('../services/ingester.js');
+    const { ingestDocument, getDocumentByPath } = await import('../services/ingester.js');
 
     // Check file exists
     try {
@@ -804,25 +805,24 @@ export default async function adminRoutes(fastify) {
     // Read file content
     const content = await readFile(filePath, 'utf-8');
 
-    // Generate document ID from path
-    const docId = generateDocumentId(filePath);
+    // Check if document already exists by file_path
+    const existing = await getDocumentByPath(filePath);
 
-    // Check if document already exists
-    const existing = await queryOne('SELECT id FROM docs WHERE id = ?', [docId]);
-    if (existing) {
-      // Delete existing content to force re-ingestion
-      await query('DELETE FROM content WHERE doc_id = ?', [docId]);
-      await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [docId]);
+    // If forceReindex and document exists, clear content to force re-ingestion
+    if (forceReindex && existing) {
+      await query('DELETE FROM content WHERE doc_id = ?', [existing.id]);
+      await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [existing.id]);
+      logger.info({ filePath, docId: existing.id }, 'Force re-index: cleared existing content');
     }
 
-    // Ingest the document
-    logger.info({ filePath, docId, existing: !!existing }, 'Ingesting document from file');
+    // Ingest the document (ingester handles ID generation/lookup internally)
+    logger.info({ filePath, existing: !!existing }, 'Ingesting document from file');
 
-    const result = await ingestDocument(content, { id: docId }, filePath);
+    const result = await ingestDocument(content, {}, filePath);
 
     return {
       success: true,
-      documentId: docId,
+      documentId: result.documentId,
       status: result.status,
       paragraphCount: result.paragraphCount,
       isNew: !existing
