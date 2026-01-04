@@ -2246,7 +2246,8 @@
   .translation-col .paragraph-text {
     color: #333;
     font-style: normal;
-    /* Single-spaced English to match Arabic visual density */
+    /* English: 1rem font, single-spaced (Arabic is 1.25rem) */
+    font-size: 1rem;
     line-height: 1;
   }
 
