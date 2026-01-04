@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T06:25:24.443Z",
+  "generated": "2026-01-04T06:33:43.537Z",
   "entries": [
+    {
+      "hash": "fb1308b",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Resegment endpoint now uses reingest from source file",
+      "scope": null
+    },
     {
       "hash": "699c5f1",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add redirect support for changed document URLs",
       "scope": null
-    },
-    {
-      "hash": "b56aa6c",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "fb1308b",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Resegment endpoint now uses reingest from source file",
+        "scope": null
+      },
       {
         "hash": "699c5f1",
         "date": "2026-01-03",
@@ -695,15 +702,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add redirect support for changed document URLs",
-        "scope": null
-      }
-    ],
-    "2026-01-02": [
-      {
-        "hash": "b56aa6c",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
         "scope": null
       }
     ]

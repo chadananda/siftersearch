@@ -5,7 +5,7 @@
  * Uses AI providers for translation with quality options.
  */
 
-import { getMeili, INDEXES } from '../lib/search.js';
+// Removed: getMeili, INDEXES - translation uses LibSQL as source of truth
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
@@ -175,10 +175,11 @@ export async function processTranslationJob(job) {
   await updateJobStatus(job.id, JOB_STATUS.PROCESSING);
 
   try {
-    const meili = getMeili();
-
-    // Get document metadata
-    const document = await meili.index(INDEXES.DOCUMENTS).getDocument(documentId);
+    // Get document metadata from LibSQL (source of truth)
+    const document = await queryOne('SELECT * FROM docs WHERE id = ?', [documentId]);
+    if (!document) {
+      throw new Error(`Document not found: ${documentId}`);
+    }
     const detectedSourceLang = sourceLanguage || document.language || 'en';
 
     // Detect content type from collection if not explicitly specified
@@ -198,14 +199,13 @@ export async function processTranslationJob(job) {
     }
 
     // File-based translation mode (original behavior for export)
-    // Get all segments from Meilisearch
-    const segmentsResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${documentId}"`,
-      limit: 10000,
-      sort: ['paragraph_index:asc']
-    });
-
-    const segments = segmentsResult.hits;
+    // Get all segments from LibSQL (source of truth)
+    const segments = await queryAll(`
+      SELECT id, paragraph_index, text, blocktype
+      FROM content
+      WHERE doc_id = ?
+      ORDER BY paragraph_index
+    `, [documentId]);
     const totalSegments = segments.length;
 
     await updateJobStatus(job.id, JOB_STATUS.PROCESSING, { totalItems: totalSegments });
@@ -1179,20 +1179,15 @@ export async function getTranslatedDocument(jobId) {
  * Check if translation already exists
  */
 export async function translationExists(documentId, targetLanguage) {
-  // Check if we have all segments cached
-  const meili = getMeili();
-
   try {
-    // Get segment count
-    const result = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${documentId}"`,
-      limit: 0
-    });
-
-    const totalSegments = result.estimatedTotalHits;
+    // Get segment count from LibSQL (source of truth)
+    const totalResult = await queryOne(
+      'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+      [documentId]
+    );
+    const totalSegments = totalResult?.count || 0;
 
     // Check cache
-    const { queryOne } = await import('../lib/db.js');
     const cachedCount = await queryOne(
       `SELECT COUNT(*) as count FROM processed_cache
        WHERE document_id = ? AND process_type = 'translation' AND target_language = ?`,
