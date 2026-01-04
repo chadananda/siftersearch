@@ -2043,7 +2043,7 @@
   /* Same width for all modes (BASE, SBS, Study) - centered */
   .document-content {
     position: relative; /* For corner icon positioning */
-    max-width: 72rem;
+    max-width: 775px;
     margin: 2rem auto;
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
@@ -2063,7 +2063,7 @@
   }
 
   /* On narrow screens, allow content to use available space */
-  @media (max-width: 80rem) {
+  @media (max-width: 850px) {
     .document-content {
       max-width: calc(100% - 2rem);
       margin-left: 1rem;
@@ -2233,7 +2233,7 @@
     color: #999;
     min-width: 2.5rem;
     /* Match line-height of paragraph text for proper alignment */
-    line-height: 1.75;
+    line-height: 1;
   }
 
   .translation-col {
@@ -2246,8 +2246,8 @@
   .translation-col .paragraph-text {
     color: #333;
     font-style: normal;
-    /* Tighter line spacing for English to match base mode */
-    line-height: 1.75;
+    /* Single-spaced English to match Arabic visual density */
+    line-height: 1;
   }
 
   /* Phrase-level segment highlighting */
@@ -2506,8 +2506,9 @@
     background: var(--hover-overlay);
   }
 
-  /* Responsive */
-  @media (max-width: 768px) {
+  /* Responsive - collapse buttons to hamburger menu when viewport < 900px */
+  /* This prevents overlap with 775px content area + utility bar */
+  @media (max-width: 900px) {
     .utility-bar {
       top: 10rem; /* Move down to avoid QR code in corner */
       right: 0.5rem;
@@ -2535,7 +2536,10 @@
     .doc-title {
       font-size: 1.5rem;
     }
+  }
 
+  /* Narrower screens - adjust content margins */
+  @media (max-width: 768px) {
     .document-content {
       /* Minimal right margin - only back + hamburger buttons on mobile */
       /* Keep tiny left margin visible for visual separation from edge */

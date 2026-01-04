@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-04T02:52:36.924Z",
+  "generated": "2026-01-04T03:27:40.476Z",
   "entries": [
+    {
+      "hash": "4bb30e8",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Make mode button label white when active",
+      "scope": null
+    },
+    {
+      "hash": "8d0c5e2",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Show existing translation progress when queueing new job",
+      "scope": null
+    },
     {
       "hash": "6e1b7cf",
       "date": "2026-01-03",
@@ -336,24 +350,24 @@
       "type": "Fixed",
       "description": "Improve document presentation header and print styles",
       "scope": null
-    },
-    {
-      "hash": "76bf22f",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "RTL paragraph numbers now appear on RIGHT side",
-      "scope": null
-    },
-    {
-      "hash": "1f274e3",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add URL redirect tracking and improve document presentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "4bb30e8",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Make mode button label white when active",
+        "scope": null
+      },
+      {
+        "hash": "8d0c5e2",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Show existing translation progress when queueing new job",
+        "scope": null
+      },
       {
         "hash": "6e1b7cf",
         "date": "2026-01-03",
@@ -690,20 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve document presentation header and print styles",
-        "scope": null
-      },
-      {
-        "hash": "76bf22f",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "RTL paragraph numbers now appear on RIGHT side",
-        "scope": null
-      },
-      {
-        "hash": "1f274e3",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add URL redirect tracking and improve document presentation",
         "scope": null
       }
     ]
