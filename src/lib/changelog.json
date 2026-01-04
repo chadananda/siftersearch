@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T15:26:54.692Z",
+  "generated": "2026-01-04T15:29:10.715Z",
   "entries": [
+    {
+      "hash": "996891f",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Robust TOON parser that strips LLM explanatory text",
+      "scope": null
+    },
     {
       "hash": "3b7f8be",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add SBS and Study translation modes with admin buttons",
       "scope": null
-    },
-    {
-      "hash": "26e3dd1",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Paragraph numbering treats index 0 as falsy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "996891f",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Robust TOON parser that strips LLM explanatory text",
+        "scope": null
+      },
       {
         "hash": "3b7f8be",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add SBS and Study translation modes with admin buttons",
-        "scope": null
-      },
-      {
-        "hash": "26e3dd1",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Paragraph numbering treats index 0 as falsy",
         "scope": null
       }
     ]

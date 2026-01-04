@@ -1066,6 +1066,7 @@ Create a word-for-word translation that:
 2. READS WELL in English - avoid excessive hyphenation
 3. PRESERVES every word - never skip particles or prepositions
 4. Uses natural English constructions that parallel Arabic grammar
+5. INCLUDES Arabic terms in parentheses for difficult theological/philosophical words
 
 KEY PATTERNS (follow these exactly):
 - إنّ (inna) → "Truly" or "Verily" (emphasis particle - NEVER skip)
@@ -1077,7 +1078,15 @@ KEY PATTERNS (follow these exactly):
 - Use parentheses sparingly for implied words: "(be)", "(is)", "(of)"
 - Separate words with spaces, NOT hyphens (except compound particles like "to-God" when needed for clarity)
 
-GOAL: A scholar can see the Arabic structure while reading natural English.
+FOR DIFFICULT TERMS: Include Arabic in parentheses to help Arabic learners:
+- "the Essence (dhát)" for ذات
+- "the Manifestation (maẓhar)" for مظهر
+- "the Will (mashíyyat)" for مشيئة
+- "contingent beings (mumkináat)" for ممكنات
+- "the Unseen (ghayb)" for غيب
+- "the station of servitude ('ubúdiyyat)" for عبودية
+
+GOAL: A scholar learning Arabic can see both structure AND key terminology.
 
 ## OUTPUT FORMAT (TOON - simpler than JSON):
 
