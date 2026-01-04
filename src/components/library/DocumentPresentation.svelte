@@ -22,6 +22,28 @@
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
+  /**
+   * Svelte action to force single line-height on all child elements
+   * This bypasses CSS specificity issues with dynamic content
+   */
+  function singleSpaced(node) {
+    const applyLineHeight = () => {
+      node.style.lineHeight = '1.15';
+      node.querySelectorAll('*').forEach(el => {
+        el.style.lineHeight = '1.15';
+      });
+    };
+    // Apply immediately and observe for changes
+    applyLineHeight();
+    const observer = new MutationObserver(applyLineHeight);
+    observer.observe(node, { childList: true, subtree: true });
+    return {
+      destroy() {
+        observer.disconnect();
+      }
+    };
+  }
+
   // Props - path segments from URL
   let {
     pathReligion = '',
@@ -1086,7 +1108,7 @@
                 <div class="translation-col">
                   {#if segments}
                     <!-- Phrase-level aligned view -->
-                    <div class="paragraph-text translation segmented">
+                    <div class="paragraph-text translation segmented" use:singleSpaced>
                       {#each segments as seg}
                         <span
                           class="segment-phrase"
@@ -1102,7 +1124,7 @@
                     </div>
                   {:else}
                     <!-- Fallback: plain translation text -->
-                    <div class="paragraph-text translation">{@html renderMarkdown(trans.reading)}</div>
+                    <div class="paragraph-text translation" use:singleSpaced>{@html renderMarkdown(trans.reading)}</div>
                   {/if}
                 </div>
                 <div class="para-center">
@@ -1148,7 +1170,7 @@
                 <div class="translation-col">
                   {#if notes && Array.isArray(notes) && notes.length > 0}
                     <!-- Phrase-by-phrase with linguistic notes -->
-                    <div class="paragraph-text study-text segmented">
+                    <div class="paragraph-text study-text segmented" use:singleSpaced>
                       {#each notes as seg, idx}
                         <span
                           class="segment-phrase study-phrase"
@@ -1165,7 +1187,7 @@
                     </div>
                   {:else}
                     <!-- Fallback: plain study translation -->
-                    <div class="paragraph-text study-text">{@html renderMarkdown(trans.study)}</div>
+                    <div class="paragraph-text study-text" use:singleSpaced>{@html renderMarkdown(trans.study)}</div>
                   {/if}
                 </div>
                 <div class="para-center">

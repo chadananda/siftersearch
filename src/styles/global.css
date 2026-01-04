@@ -253,12 +253,15 @@ mark {
 /* ============================================
    SBS Translation Column Line-Height Fix
    Force English translation to single-spaced
+   Wrapped in @layer base to prevent Tailwind purge
    ============================================ */
 
-.translation-col .paragraph-text,
-.translation-col .paragraph-text p,
-.translation-col .paragraph-text * {
-  line-height: 1.15 !important;
+@layer base {
+  .translation-col .paragraph-text,
+  .translation-col .paragraph-text p,
+  .translation-col .paragraph-text * {
+    line-height: 1.15 !important;
+  }
 }
 
 /* ============================================

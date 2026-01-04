@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T04:15:25.846Z",
+  "generated": "2026-01-04T04:48:40.455Z",
   "entries": [
+    {
+      "hash": "c8875c3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add global CSS override for English translation line-height",
+      "scope": null
+    },
     {
       "hash": "00e78c3",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add strict validation for sentence markers",
       "scope": null
-    },
-    {
-      "hash": "e855bbc",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Improve sentence detection accuracy for Arabic text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "c8875c3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add global CSS override for English translation line-height",
+        "scope": null
+      },
       {
         "hash": "00e78c3",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add strict validation for sentence markers",
-        "scope": null
-      },
-      {
-        "hash": "e855bbc",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Improve sentence detection accuracy for Arabic text",
         "scope": null
       }
     ]
