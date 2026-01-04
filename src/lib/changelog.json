@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T04:00:07.582Z",
+  "generated": "2026-01-04T04:15:25.846Z",
   "entries": [
+    {
+      "hash": "00e78c3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Use :global() for English translation line-height in SBS mode",
+      "scope": null
+    },
     {
       "hash": "fa25d10",
       "date": "2026-01-03",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve sentence detection accuracy for Arabic text",
       "scope": null
-    },
-    {
-      "hash": "bce19c6",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add hierarchical sentence markers for translations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-03": [
+      {
+        "hash": "00e78c3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Use :global() for English translation line-height in SBS mode",
+        "scope": null
+      },
       {
         "hash": "fa25d10",
         "date": "2026-01-03",
@@ -697,13 +704,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve sentence detection accuracy for Arabic text",
-        "scope": null
-      },
-      {
-        "hash": "bce19c6",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add hierarchical sentence markers for translations",
         "scope": null
       }
     ]

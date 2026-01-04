@@ -251,6 +251,17 @@ mark {
 }
 
 /* ============================================
+   SBS Translation Column Line-Height Fix
+   Force English translation to single-spaced
+   ============================================ */
+
+.translation-col .paragraph-text,
+.translation-col .paragraph-text p,
+.translation-col .paragraph-text * {
+  line-height: 1.15 !important;
+}
+
+/* ============================================
    Print Styles
    ============================================ */
 
