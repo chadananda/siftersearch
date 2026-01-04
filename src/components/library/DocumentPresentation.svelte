@@ -2294,21 +2294,20 @@
 
   .segment-phrase {
     cursor: pointer;
-    border-radius: 0.15em;
     transition: background 0.15s ease;
     display: inline;
-    line-height: 1.15;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
 
   .segment-phrase:hover {
-    background: rgba(59, 130, 246, 0.15);
+    /* Highlighter pen effect - only covers middle 70% to prevent line overlap */
+    background: linear-gradient(to bottom, transparent 20%, rgba(59, 130, 246, 0.2) 20%, rgba(59, 130, 246, 0.2) 80%, transparent 80%);
   }
 
   .segment-phrase.highlighted {
-    background: rgba(59, 130, 246, 0.15);
-    /* Ensure text is readable against highlight background */
+    /* Highlighter pen effect - only covers middle 70% to prevent line overlap */
+    background: linear-gradient(to bottom, transparent 20%, rgba(59, 130, 246, 0.2) 20%, rgba(59, 130, 246, 0.2) 80%, transparent 80%);
     color: #1a1a1a;
   }
 
@@ -2320,7 +2319,7 @@
   /* Focus styles for keyboard navigation */
   .segment-phrase:focus {
     outline: none;
-    background: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(to bottom, transparent 20%, rgba(59, 130, 246, 0.3) 20%, rgba(59, 130, 246, 0.3) 80%, transparent 80%);
   }
 
   /* Touch-friendly tap targets on mobile */
