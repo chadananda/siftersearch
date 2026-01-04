@@ -2294,11 +2294,12 @@
 
   .segment-phrase {
     cursor: pointer;
-    padding: 0.1em 0.15em;
-    margin: -0.1em -0.05em;
-    border-radius: 0.2em;
+    padding: 0 0.1em;
+    margin: 0;
+    border-radius: 0.15em;
     transition: all 0.15s ease;
     display: inline;
+    line-height: 1.15;
   }
 
   .segment-phrase:hover {
