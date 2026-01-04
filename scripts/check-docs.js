@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import '../api/lib/config.js';
-import { queryAll, query } from '../api/lib/db.js';
+import { queryAll } from '../api/lib/db.js';
 
 // Check paragraph sizes for doc_KZVISu80WOVG
 const paragraphs = await queryAll(`
-  SELECT paragraph_index, LENGTH(text) as chars
+  SELECT paragraph_index, LENGTH(text) as chars,
+         SUBSTR(text, 1, 100) as preview,
+         (LENGTH(text) - LENGTH(REPLACE(text, '⁅s', ''))) / 2 as marker_count
   FROM content
   WHERE doc_id = 'doc_KZVISu80WOVG'
   ORDER BY paragraph_index
@@ -29,16 +31,14 @@ paragraphs.forEach(p => {
 });
 console.log("\nDistribution:", buckets);
 
-// Show paragraphs > 1500 chars
+// Show paragraphs > 1500 chars with details
 const oversized = paragraphs.filter(p => p.chars > 1500);
 if (oversized.length > 0) {
-  console.log("\n⚠️ Oversized paragraphs (>1500 chars):", oversized);
+  console.log("\n⚠️ Oversized paragraphs (>1500 chars):");
+  for (const p of oversized) {
+    console.log(`  [${p.paragraph_index}] ${p.chars} chars, ~${p.marker_count} markers`);
+    console.log(`    Preview: ${p.preview.substring(0, 60)}...`);
+  }
 } else {
   console.log("\n✅ No oversized paragraphs");
 }
-
-// Delete the wrong document
-console.log("\n=== Deleting wrong document doc_MRwA0k7vo6No ===");
-await query('DELETE FROM content WHERE doc_id = ?', ['doc_MRwA0k7vo6No']);
-await query('DELETE FROM docs WHERE id = ?', ['doc_MRwA0k7vo6No']);
-console.log("✅ Deleted");

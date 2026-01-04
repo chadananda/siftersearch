@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T21:11:37.288Z",
+  "generated": "2026-01-04T21:24:51.265Z",
   "entries": [
+    {
+      "hash": "34f35ff",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
+      "scope": null
+    },
     {
       "hash": "ee6e494",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
       "scope": null
-    },
-    {
-      "hash": "455e1c5",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Collapse all utility buttons to hamburger menu on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "34f35ff",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
+        "scope": null
+      },
       {
         "hash": "ee6e494",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
-        "scope": null
-      },
-      {
-        "hash": "455e1c5",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Collapse all utility buttons to hamburger menu on mobile",
         "scope": null
       }
     ]

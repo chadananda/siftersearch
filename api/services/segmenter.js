@@ -1916,29 +1916,22 @@ Example output format:
           }, 'Found suspicious-length sentences, verifying with AI');
 
           // Re-check each suspicious sentence with targeted AI verification
+          // Pass MAX_SENTENCE_CHARS so oversized sentences get split at phrase boundaries
           const verifiedSentences = await verifySuspiciousSentences(
             sentences,
             SUSPICIOUS_SENTENCE_CHARS,
-            languageHint
+            languageHint,
+            MAX_SENTENCE_CHARS
           );
 
-          // Check if any still exceed max after verification
+          // After phrase-boundary splitting, sentences should all be under max
+          // But verify and log if any still exceed (shouldn't happen)
           const stillOversized = verifiedSentences.filter(s => s.length > MAX_SENTENCE_CHARS);
-          if (stillOversized.length > 0 && attempt < maxRetries) {
-            logger.warn({
-              oversizedCount: stillOversized.length,
-              maxLen: Math.max(...stillOversized.map(s => s.length)),
-              attempt
-            }, 'Still have oversized sentences after AI verification, retrying full detection');
-            throw new Error(`Found ${stillOversized.length} oversized sentences after verification, retrying`);
-          }
-
-          // Log any remaining oversized sentences (final attempt)
           if (stillOversized.length > 0) {
             logger.warn({
               count: stillOversized.length,
               sizes: stillOversized.map(s => s.length)
-            }, 'Some sentences exceed max length after all verification');
+            }, 'Sentences still exceed max after phrase-boundary splitting (edge case)');
           }
 
           return verifiedSentences;
@@ -2015,15 +2008,123 @@ function extractSentencesFromEndings(text, endings) {
 }
 
 /**
+ * Split a sentence at phrase boundaries (not at arbitrary character limits)
+ * Uses Arabic/Persian phrase markers: conjunctions, prepositions, and natural pause points
+ *
+ * @param {string} sentence - Sentence that needs splitting
+ * @param {number} maxChars - Maximum characters per segment
+ * @returns {string[]} - Array of sub-sentences split at phrase boundaries
+ */
+function splitAtPhraseBoundary(sentence, maxChars) {
+  if (sentence.length <= maxChars) {
+    return [sentence];
+  }
+
+  // Arabic/Persian phrase boundary patterns - places where we can naturally split
+  // Priority order: stronger boundaries first
+  const phraseBoundaries = [
+    // Strong boundaries - conjunctions that start new clauses
+    /\s+(و\s+ان|و\s+لکن|و\s+اما|فان|ثم\s+ان)\s+/g,  // "and that", "but", "as for", "then that"
+    // Medium boundaries - common conjunctions
+    /\s+(و|ف|ثم|أو|او|بل)\s+/g,  // "and", "so", "then", "or", "rather"
+    // Weaker boundaries - prepositions that often start phrases
+    /\s+(في|من|الى|على|عن|ب|ل|ک)\s+/g,  // "in", "from", "to", "on", "about", "with", "for", "like"
+  ];
+
+  const result = [];
+  let remaining = sentence;
+
+  while (remaining.length > maxChars) {
+    let bestSplit = -1;
+    let bestSplitAfterMatch = 0;
+
+    // Find the best phrase boundary within the acceptable range
+    // Look in the last 40% of the maxChars range (between 60% and 100%)
+    const searchStart = Math.floor(maxChars * 0.4);
+    const searchEnd = maxChars;
+    const searchWindow = remaining.slice(searchStart, searchEnd);
+
+    // Try each boundary pattern in priority order
+    for (const pattern of phraseBoundaries) {
+      pattern.lastIndex = 0;  // Reset regex
+      let match;
+      let lastMatchInWindow = null;
+
+      // Find the last match within the search window
+      while ((match = pattern.exec(searchWindow)) !== null) {
+        lastMatchInWindow = {
+          index: searchStart + match.index,
+          fullMatch: match[0],
+          conjunctionLength: match[1] ? match[1].length : 0
+        };
+      }
+
+      if (lastMatchInWindow && lastMatchInWindow.index > bestSplit) {
+        // Split BEFORE the conjunction (keep it with the next part)
+        bestSplit = lastMatchInWindow.index;
+        bestSplitAfterMatch = 0;  // Don't skip the conjunction
+        break;  // Use first (highest priority) boundary type found
+      }
+    }
+
+    // If no phrase boundary found, fall back to word boundary
+    if (bestSplit <= 0) {
+      // Find last space before maxChars
+      const lastSpace = remaining.lastIndexOf(' ', maxChars);
+      if (lastSpace > maxChars * 0.3) {
+        bestSplit = lastSpace;
+        bestSplitAfterMatch = 1;  // Skip the space
+      } else {
+        // No good split point - find first space after maxChars
+        const nextSpace = remaining.indexOf(' ', maxChars);
+        if (nextSpace > 0 && nextSpace < maxChars * 1.3) {
+          bestSplit = nextSpace;
+          bestSplitAfterMatch = 1;
+        } else {
+          // Absolutely no spaces - take the whole thing (shouldn't happen with Arabic text)
+          logger.warn({ length: remaining.length }, 'No phrase or word boundary found for splitting');
+          result.push(remaining.trim());
+          remaining = '';
+          break;
+        }
+      }
+    }
+
+    // Extract the segment
+    const segment = remaining.slice(0, bestSplit).trim();
+    if (segment) {
+      result.push(segment);
+    }
+
+    remaining = remaining.slice(bestSplit + bestSplitAfterMatch).trim();
+  }
+
+  // Don't forget the last segment
+  if (remaining.trim()) {
+    result.push(remaining.trim());
+  }
+
+  logger.debug({
+    originalLength: sentence.length,
+    segments: result.length,
+    segmentSizes: result.map(s => s.length)
+  }, 'Split sentence at phrase boundaries');
+
+  return result;
+}
+
+/**
  * Verify suspicious-length sentences by asking AI to re-check for missed boundaries
  * This is a targeted verification - only checks sentences that exceed the suspicious threshold
+ * If sentences still exceed MAX after AI verification, force-split at phrase boundaries
  *
  * @param {string[]} sentences - All sentences
  * @param {number} suspiciousThreshold - Sentences longer than this get verified
  * @param {string} languageHint - Language hint for AI
+ * @param {number} maxChars - Maximum allowed sentence length (default 500)
  * @returns {Promise<string[]>} - Sentences with suspicious ones potentially split
  */
-async function verifySuspiciousSentences(sentences, suspiciousThreshold, languageHint = 'Arabic') {
+async function verifySuspiciousSentences(sentences, suspiciousThreshold, languageHint = 'Arabic', maxChars = 500) {
   const result = [];
 
   for (const sentence of sentences) {
@@ -2047,14 +2148,38 @@ async function verifySuspiciousSentences(sentences, suspiciousThreshold, languag
           splitInto: subSentences.length,
           newSizes: subSentences.map(s => s.length)
         }, 'AI found missed boundaries in suspicious sentence');
-        result.push(...subSentences);
+
+        // Check if any sub-sentences still exceed max - if so, split at phrase boundaries
+        for (const subSentence of subSentences) {
+          if (subSentence.length > maxChars) {
+            const phraseSplit = splitAtPhraseBoundary(subSentence, maxChars);
+            result.push(...phraseSplit);
+          } else {
+            result.push(subSentence);
+          }
+        }
       } else {
-        // AI confirmed it's actually one sentence
-        result.push(sentence);
+        // AI confirmed it's actually one sentence - but if still over max, force split
+        if (sentence.length > maxChars) {
+          logger.info({
+            length: sentence.length,
+            maxChars
+          }, 'AI confirmed single sentence but exceeds max - splitting at phrase boundaries');
+          const phraseSplit = splitAtPhraseBoundary(sentence, maxChars);
+          result.push(...phraseSplit);
+        } else {
+          result.push(sentence);
+        }
       }
     } catch (err) {
-      logger.warn({ err: err.message }, 'Failed to verify suspicious sentence, keeping as-is');
-      result.push(sentence);
+      logger.warn({ err: err.message }, 'Failed to verify suspicious sentence');
+      // If verification failed and sentence exceeds max, still split at phrase boundaries
+      if (sentence.length > maxChars) {
+        const phraseSplit = splitAtPhraseBoundary(sentence, maxChars);
+        result.push(...phraseSplit);
+      } else {
+        result.push(sentence);
+      }
     }
   }
 
