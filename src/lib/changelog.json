@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T13:10:27.804Z",
+  "generated": "2026-01-05T13:18:48.258Z",
   "entries": [
+    {
+      "hash": "9991825",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Study view now uses API pre-parsed translation fields",
+      "scope": null
+    },
     {
       "hash": "ad5bdd5",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Force single line-height on SBS translation text via JS action",
       "scope": null
-    },
-    {
-      "hash": "c8875c3",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Add global CSS override for English translation line-height",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "9991825",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Study view now uses API pre-parsed translation fields",
+        "scope": null
+      },
       {
         "hash": "ad5bdd5",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Force single line-height on SBS translation text via JS action",
-        "scope": null
-      },
-      {
-        "hash": "c8875c3",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Add global CSS override for English translation line-height",
         "scope": null
       }
     ]

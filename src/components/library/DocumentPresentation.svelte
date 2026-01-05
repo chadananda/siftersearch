@@ -1182,83 +1182,75 @@
                 </div>
               </div>
 
-            <!-- Study Mode: Phrase-by-phrase literal translation (Original LEFT, English RIGHT) -->
+            <!-- Study Mode: Phrase-by-phrase literal translation (Arabic LEFT, English RIGHT, aligned rows) -->
             {:else if viewMode === 'study' && parseTranslation(para)?.study}
               {@const trans = parseTranslation(para)}
               {@const segments = parseSegments(para)}
               {@const notes = trans.notes}
-              <div class="bilingual-row study-row">
-                <!-- Original (Arabic/RTL) on LEFT -->
-                <div class="original-col" dir={getLanguageDirection(document.language)}>
-                  {#if segments && segments.length > 0}
-                    <!-- Phrase-by-phrase original - each phrase on its own line -->
-                    <div class="paragraph-text study-phrase-list">
-                      {#each segments as seg, idx}
-                        <div
-                          class="study-phrase-block original-phrase"
-                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
-                          data-seg-id={idx}
-                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
-                          onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                          role="button"
-                          tabindex="0"
-                        >
-                          <span class="study-phrase-text">{seg.original}</span>
-                        </div>
-                      {/each}
-                    </div>
-                  {:else}
-                    <!-- Fallback: plain original text -->
-                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
-                  {/if}
-                </div>
-                <div class="para-center">
+              <div class="study-paragraph-container">
+                <!-- Paragraph number -->
+                <div class="study-para-header">
                   <button
                     class="para-anchor-btn"
                     onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                     title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
                   >
-                    {(para.paragraph_index ?? i) + 1}
+                    ¶ {(para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
-                <!-- Study translation (English) on RIGHT -->
-                <div class="translation-col" dir="ltr">
-                  {#if segments && segments.length > 0}
-                    <!-- Phrase-by-phrase translations - each phrase on its own line -->
-                    <div class="paragraph-text study-text study-phrase-list">
-                      {#each segments as seg, idx}
-                        <div
-                          class="study-phrase-block"
-                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
-                          data-seg-id={idx}
-                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
-                          onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                          role="button"
-                          tabindex="0"
-                        >
-                          <span class="study-phrase-text">{seg.translation}</span>
+
+                <!-- Phrase rows: Arabic LEFT, English RIGHT, aligned -->
+                {#if segments && segments.length > 0}
+                  <div class="study-phrase-grid">
+                    {#each segments as seg, idx}
+                      {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
+                      {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
+                      <div
+                        class="study-phrase-row"
+                        class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
+                        class:continuation={isContinuation}
+                        onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
+                        onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
+                        onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
+                        role="button"
+                        tabindex="0"
+                      >
+                        <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
+                          {seg.original}
                         </div>
-                      {/each}
+                        <div class="study-phrase-translation" dir="ltr">
+                          {seg.translation}
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <!-- Fallback: plain text side by side -->
+                  <div class="study-fallback-row">
+                    <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
+                      {@html renderMarkdown(para.text)}
                     </div>
-                  {:else}
-                    <!-- Fallback: plain study translation -->
-                    <div class="paragraph-text study-text" use:singleSpaced>{@html renderMarkdown(trans.study)}</div>
-                  {/if}
-                </div>
+                    <div class="study-phrase-translation" dir="ltr">
+                      {@html renderMarkdown(trans.study)}
+                    </div>
+                  </div>
+                {/if}
+
+                <!-- Notes section - full width below paragraph -->
+                {#if notes && Array.isArray(notes) && notes.length > 0}
+                  <div class="study-notes-section">
+                    <div class="study-notes-label">Notes:</div>
+                    <ul class="study-notes-list">
+                      {#each notes as note, idx}
+                        <li class="study-note-item">
+                          {#if note.term}<strong class="note-term">{note.term}</strong> — {/if}
+                          {note.note || note.notes || note.explanation}
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/if}
               </div>
-              <!-- Footnotes section - terminology notes at end of paragraph -->
-              {#if notes && Array.isArray(notes) && notes.length > 0}
-                <div class="paragraph-footnotes">
-                  {#each notes as note, idx}
-                    <p class="footnote-item">
-                      <span class="footnote-number">{idx + 1}.</span>
-                      <span class="footnote-text">{note.note || note.notes}</span>
-                    </p>
-                  {/each}
-                </div>
-              {/if}
 
             <!-- Default Mode: Original text only -->
             {:else}
@@ -2374,71 +2366,127 @@
     }
   }
 
-  /* Study mode layout */
-  .study-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .study-col {
-    padding-left: 1.25rem;
-    border-left: 1px solid rgba(0, 0, 0, 0.08);
+  /* Study mode layout - new aligned row structure */
+  .study-paragraph-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
-  .study-translation {
-    font-size: 1.1rem;
-    line-height: 1.25;
-    color: #333;
+  .study-para-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .study-para-header .para-anchor-btn {
+    font-size: 0.75rem;
+    color: #888;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .study-para-header .para-anchor-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #666;
+  }
+
+  .study-phrase-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .study-phrase-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .study-phrase-row:hover,
+  .study-phrase-row.highlighted {
+    background: rgba(139, 115, 85, 0.08);
+  }
+
+  .study-phrase-row:focus {
+    outline: 2px solid rgba(139, 115, 85, 0.3);
+    outline-offset: 1px;
+  }
+
+  /* Indent continuation phrases (not first in sentence) */
+  .study-phrase-row.continuation {
+    padding-left: 1.5rem;
+  }
+
+  .study-phrase-original {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.5rem;
+    line-height: 1.6;
+    color: #1a1a1a;
+    text-align: right;
+  }
+
+  .study-phrase-translation {
     font-family: 'Libre Caslon Text', Georgia, serif;
-    direction: ltr;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #333;
     text-align: left;
   }
 
-  .study-notes {
+  .study-fallback-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 0.5rem;
+  }
+
+  /* Study notes section - full width below paragraph */
+  .study-notes-section {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8f6f1;
+    border-radius: 0.375rem;
+    border-left: 3px solid #c9b99a;
+  }
+
+  .study-notes-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+
+  .study-notes-list {
+    margin: 0;
+    padding-left: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: #f5f3ee;
-    border-radius: 0.375rem;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    gap: 0.375rem;
   }
 
-  .note-segment {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.8125rem;
+  .study-note-item {
+    font-size: 0.875rem;
     line-height: 1.5;
+    color: #555;
   }
 
-  .note-original {
+  .study-note-item .note-term {
+    color: #333;
     font-family: 'Amiri', 'Traditional Arabic', serif;
     font-size: 1rem;
-    color: #1a1a1a;
-    font-weight: 500;
-    direction: rtl;
-  }
-
-  .note-literal {
-    color: #555;
-    font-style: italic;
-  }
-
-  .note-annotation {
-    color: #777;
-    font-size: 0.75rem;
-    flex-basis: 100%;
-    padding-left: 1rem;
-    border-left: 2px solid #ddd;
-    margin-top: 0.25rem;
   }
 
   /* Study mode document styling */
@@ -2446,7 +2494,7 @@
     /* Same width as other modes - uses base max-width */
   }
 
-  /* Study phrase-by-phrase layout - each phrase on its own line */
+  /* Legacy study phrase styles (for compatibility) */
   .study-phrase-list {
     display: flex;
     flex-direction: column;
