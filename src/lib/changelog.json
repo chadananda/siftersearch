@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T13:18:48.258Z",
+  "generated": "2026-01-05T13:26:45.159Z",
   "entries": [
+    {
+      "hash": "6dc2d44",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Redesign Study view with aligned phrase rows",
+      "scope": null
+    },
     {
       "hash": "9991825",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Set line-height on translation-col parent container",
       "scope": null
-    },
-    {
-      "hash": "fc3ba6b",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Force single line-height on SBS translation text via JS action",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "6dc2d44",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Redesign Study view with aligned phrase rows",
+        "scope": null
+      },
       {
         "hash": "9991825",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Set line-height on translation-col parent container",
-        "scope": null
-      },
-      {
-        "hash": "fc3ba6b",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Force single line-height on SBS translation text via JS action",
         "scope": null
       }
     ]

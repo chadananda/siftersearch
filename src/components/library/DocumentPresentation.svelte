@@ -1182,75 +1182,69 @@
                 </div>
               </div>
 
-            <!-- Study Mode: Phrase-by-phrase literal translation (Arabic LEFT, English RIGHT, aligned rows) -->
+            <!-- Study Mode: Phrase-by-phrase literal translation (Arabic LEFT, Number MIDDLE, English RIGHT) -->
             {:else if viewMode === 'study' && parseTranslation(para)?.study}
               {@const trans = parseTranslation(para)}
               {@const segments = parseSegments(para)}
               {@const notes = trans.notes}
-              <div class="study-paragraph-container">
-                <!-- Paragraph number -->
-                <div class="study-para-header">
+              <div class="bilingual-row study-row">
+                <!-- Arabic Original on LEFT -->
+                <div class="original-col study-col" dir={getLanguageDirection(document.language)}>
+                  {#if segments && segments.length > 0}
+                    <div class="study-phrase-list">
+                      {#each segments as seg, idx}
+                        {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
+                        {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
+                        <div class="study-phrase-item" class:continuation={isContinuation}>
+                          {seg.original}
+                        </div>
+                      {/each}
+                    </div>
+                  {:else}
+                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                  {/if}
+                </div>
+                <!-- Paragraph Number in MIDDLE -->
+                <div class="para-center">
                   <button
                     class="para-anchor-btn"
                     onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                     title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
                   >
-                    ¶ {(para.paragraph_index ?? i) + 1}
+                    {(para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
-
-                <!-- Phrase rows: Arabic LEFT, English RIGHT, aligned -->
-                {#if segments && segments.length > 0}
-                  <div class="study-phrase-grid">
-                    {#each segments as seg, idx}
-                      {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
-                      {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
-                      <div
-                        class="study-phrase-row"
-                        class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
-                        class:continuation={isContinuation}
-                        onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                        onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
-                        onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
-                        role="button"
-                        tabindex="0"
-                      >
-                        <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
-                          {seg.original}
-                        </div>
-                        <div class="study-phrase-translation" dir="ltr">
+                <!-- English Translation on RIGHT -->
+                <div class="translation-col study-col" dir="ltr">
+                  {#if segments && segments.length > 0}
+                    <div class="study-phrase-list">
+                      {#each segments as seg, idx}
+                        {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
+                        {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
+                        <div class="study-phrase-item translation" class:continuation={isContinuation}>
                           {seg.translation}
                         </div>
-                      </div>
-                    {/each}
-                  </div>
-                {:else}
-                  <!-- Fallback: plain text side by side -->
-                  <div class="study-fallback-row">
-                    <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
-                      {@html renderMarkdown(para.text)}
-                    </div>
-                    <div class="study-phrase-translation" dir="ltr">
-                      {@html renderMarkdown(trans.study)}
-                    </div>
-                  </div>
-                {/if}
-
-                <!-- Notes section - full width below paragraph -->
-                {#if notes && Array.isArray(notes) && notes.length > 0}
-                  <div class="study-notes-section">
-                    <div class="study-notes-label">Notes:</div>
-                    <ul class="study-notes-list">
-                      {#each notes as note, idx}
-                        <li class="study-note-item">
-                          {#if note.term}<strong class="note-term">{note.term}</strong> — {/if}
-                          {note.note || note.notes || note.explanation}
-                        </li>
                       {/each}
-                    </ul>
-                  </div>
-                {/if}
+                    </div>
+                  {:else}
+                    <div class="paragraph-text">{@html renderMarkdown(trans.study)}</div>
+                  {/if}
+                </div>
               </div>
+              <!-- Notes section - full width below the 3-column row -->
+              {#if notes && Array.isArray(notes) && notes.length > 0}
+                <div class="study-notes-section">
+                  <div class="study-notes-label">Notes:</div>
+                  <ul class="study-notes-list">
+                    {#each notes as note, idx}
+                      <li class="study-note-item">
+                        {#if note.term}<strong class="note-term">{note.term}</strong> — {/if}
+                        {note.note || note.notes || note.explanation}
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
 
             <!-- Default Mode: Original text only -->
             {:else}
@@ -2397,58 +2391,55 @@
     color: #666;
   }
 
-  .study-phrase-grid {
+  /* Study row uses bilingual-row 3-column layout */
+  .study-row {
+    /* Inherits from .bilingual-row */
+  }
+
+  .study-col {
+    padding: 0;
+  }
+
+  .study-col.original-col {
+    text-align: right;
+  }
+
+  .study-col.translation-col {
+    text-align: left;
+  }
+
+  /* Study phrase list - vertical stack of phrases */
+  .study-phrase-list {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.125rem;
   }
 
-  .study-phrase-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    padding: 0.375rem 0.5rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
-
-  .study-phrase-row:hover,
-  .study-phrase-row.highlighted {
-    background: rgba(139, 115, 85, 0.08);
-  }
-
-  .study-phrase-row:focus {
-    outline: 2px solid rgba(139, 115, 85, 0.3);
-    outline-offset: 1px;
-  }
-
-  /* Indent continuation phrases (not first in sentence) */
-  .study-phrase-row.continuation {
-    padding-left: 1.5rem;
-  }
-
-  .study-phrase-original {
+  /* Individual phrase item */
+  .study-phrase-item {
     font-family: 'Amiri', 'Traditional Arabic', serif;
     font-size: 1.5rem;
     line-height: 1.6;
     color: #1a1a1a;
-    text-align: right;
+    padding: 0.25rem 0;
   }
 
-  .study-phrase-translation {
+  .study-phrase-item.translation {
     font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 1.1rem;
     line-height: 1.5;
     color: #333;
-    text-align: left;
   }
 
-  .study-fallback-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    padding: 0.5rem;
+  /* Indent continuation phrases (not first in sentence) */
+  .study-phrase-item.continuation {
+    padding-left: 1.5rem;
+  }
+
+  /* For RTL continuation, indent from right */
+  .original-col .study-phrase-item.continuation {
+    padding-left: 0;
+    padding-right: 1.5rem;
   }
 
   /* Study notes section - full width below paragraph */
