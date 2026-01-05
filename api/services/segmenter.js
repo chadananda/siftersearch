@@ -2074,6 +2074,7 @@ Example output format:
  * Extract actual sentences from text using ending phrases
  * CRITICAL: All positions must snap to word boundaries to avoid breaking words
  * CRITICAL: Track actual original position to prevent overlapping extractions
+ * CRITICAL: Each sentence starts where the previous one ended - no gaps allowed
  */
 function extractSentencesFromEndings(text, endings) {
   const sentences = [];
@@ -2099,26 +2100,18 @@ function extractSentencesFromEndings(text, endings) {
     }
 
     if (pos !== -1) {
-      // Convert normalized position to original position
-      let origStart = normalizedPosToOriginal(text, searchStart);
-      let origEnd = normalizedPosToOriginal(text, pos + normalizedEnding.length);
+      // The sentence STARTS where the previous one ENDED (or at text start)
+      // This ensures no gaps between sentences
+      let origStart = lastOrigEnd;
 
-      // CRITICAL: Snap to word boundaries to avoid breaking words
-      // For start: find the beginning of the word (go back to previous space or start)
-      origStart = snapToWordStart(text, origStart);
-      // For end: find the end of the word (go forward to next space or end)
-      origEnd = snapToWordEnd(text, origEnd);
-
-      // CRITICAL: Ensure we don't overlap with previous sentence
-      // The word boundary snapping might have caused origEnd to extend past where
-      // the normalized searchStart would indicate for the next iteration
-      if (origStart < lastOrigEnd) {
-        origStart = lastOrigEnd;
-        // Skip any whitespace
-        while (origStart < text.length && /\s/.test(text[origStart])) {
-          origStart++;
-        }
+      // Skip any leading whitespace
+      while (origStart < text.length && /\s/.test(text[origStart])) {
+        origStart++;
       }
+
+      // Convert the ending position to original space and snap to word boundary
+      let origEnd = normalizedPosToOriginal(text, pos + normalizedEnding.length);
+      origEnd = snapToWordEnd(text, origEnd);
 
       // Only extract if we have a valid non-empty range
       if (origStart < origEnd) {
@@ -2129,11 +2122,8 @@ function extractSentencesFromEndings(text, endings) {
           // Track the actual original position we've processed
           lastOrigEnd = origEnd;
           // Update searchStart in normalized space for finding next ending
+          // Use the END position in normalized space to ensure we don't re-find the same ending
           searchStart = pos + normalizedEnding.length;
-          // Also ensure we skip any partial word in normalized text
-          while (searchStart < normalizedText.length && !/\s/.test(normalizedText[searchStart])) {
-            searchStart++;
-          }
         }
       }
     }
@@ -2148,7 +2138,8 @@ function extractSentencesFromEndings(text, endings) {
       remainingStart++;
     }
     const remaining = text.slice(remainingStart).trim();
-    if (remaining.length > 20) {
+    // Capture ANY remaining content, even short segments (could contain important words)
+    if (remaining.length > 0) {
       sentences.push(remaining);
     }
   }
