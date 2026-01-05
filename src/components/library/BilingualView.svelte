@@ -16,20 +16,30 @@
   } = $props();
 
   // Track which segment is currently active (hovered or tapped) for phrase highlighting
-  let activeSegmentId = $state(null);
+  // Use composite key (paraId + segId) to ensure uniqueness across paragraphs
+  let activeSegmentKey = $state(null);
 
-  function setActiveSegment(segmentId) {
-    activeSegmentId = segmentId;
+  function getSegmentKey(paraId, segId) {
+    return `${paraId}:${segId}`;
   }
 
-  function clearActiveSegment(segmentId) {
-    if (activeSegmentId === segmentId) {
-      activeSegmentId = null;
+  function setActiveSegment(paraId, segId) {
+    activeSegmentKey = getSegmentKey(paraId, segId);
+  }
+
+  function clearActiveSegment(paraId, segId) {
+    if (activeSegmentKey === getSegmentKey(paraId, segId)) {
+      activeSegmentKey = null;
     }
   }
 
-  function toggleActiveSegment(segmentId) {
-    activeSegmentId = activeSegmentId === segmentId ? null : segmentId;
+  function toggleActiveSegment(paraId, segId) {
+    const key = getSegmentKey(paraId, segId);
+    activeSegmentKey = activeSegmentKey === key ? null : key;
+  }
+
+  function isSegmentActive(paraId, segId) {
+    return activeSegmentKey === getSegmentKey(paraId, segId);
   }
 
   // Check if any translations exist or if translation is in progress
@@ -81,13 +91,13 @@
                 {#each para.segments as seg (seg.id)}
                   <span
                     class="segment"
-                    class:active={activeSegmentId === seg.id}
-                    onmouseenter={() => setActiveSegment(seg.id)}
-                    onmouseleave={() => clearActiveSegment(seg.id)}
-                    onclick={() => toggleActiveSegment(seg.id)}
+                    class:active={isSegmentActive(para.id, seg.id)}
+                    onmouseenter={() => setActiveSegment(para.id, seg.id)}
+                    onmouseleave={() => clearActiveSegment(para.id, seg.id)}
+                    onclick={() => toggleActiveSegment(para.id, seg.id)}
                     role="button"
                     tabindex="0"
-                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(seg.id)}
+                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(para.id, seg.id)}
                   >{seg.original}</span>{' '}
                 {/each}
               </p>
@@ -100,13 +110,13 @@
                 {#each para.segments as seg (seg.id)}
                   <span
                     class="segment"
-                    class:active={activeSegmentId === seg.id}
-                    onmouseenter={() => setActiveSegment(seg.id)}
-                    onmouseleave={() => clearActiveSegment(seg.id)}
-                    onclick={() => toggleActiveSegment(seg.id)}
+                    class:active={isSegmentActive(para.id, seg.id)}
+                    onmouseenter={() => setActiveSegment(para.id, seg.id)}
+                    onmouseleave={() => clearActiveSegment(para.id, seg.id)}
+                    onclick={() => toggleActiveSegment(para.id, seg.id)}
                     role="button"
                     tabindex="0"
-                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(seg.id)}
+                    onkeydown={(e) => e.key === 'Enter' && toggleActiveSegment(para.id, seg.id)}
                   >{seg.translation}</span>{' '}
                 {/each}
               </p>

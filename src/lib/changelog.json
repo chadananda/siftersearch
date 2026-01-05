@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T05:09:01.202Z",
+  "generated": "2026-01-05T05:26:16.712Z",
   "entries": [
+    {
+      "hash": "b08b58b",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
+      "scope": null
+    },
     {
       "hash": "e80af5c",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Explicitly set English font-size to 1rem in translation column",
       "scope": null
-    },
-    {
-      "hash": "1e94e52",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Set English line-height to 1 in all paragraph text rules",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "b08b58b",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
+        "scope": null
+      },
       {
         "hash": "e80af5c",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Explicitly set English font-size to 1rem in translation column",
-        "scope": null
-      },
-      {
-        "hash": "1e94e52",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Set English line-height to 1 in all paragraph text rules",
         "scope": null
       }
     ]
