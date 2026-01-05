@@ -2391,9 +2391,23 @@
     color: #666;
   }
 
-  /* Study row uses bilingual-row 3-column layout */
+  /* Study row uses bilingual-row 3-column layout but with columns swapped */
+  /* Arabic LEFT, Number MIDDLE, English RIGHT (opposite of SBS) */
+  /* Note: In RTL context, higher order = LEFT, lower order = RIGHT */
   .study-row {
     /* Inherits from .bilingual-row */
+  }
+
+  .study-row .original-col {
+    order: 3; /* Arabic on LEFT (highest order in RTL) */
+  }
+
+  .study-row .para-center {
+    order: 2; /* Number in MIDDLE */
+  }
+
+  .study-row .translation-col {
+    order: 1; /* English on RIGHT (lowest order in RTL) */
   }
 
   .study-col {

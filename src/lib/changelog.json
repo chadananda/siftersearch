@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T13:26:45.159Z",
+  "generated": "2026-01-05T13:34:20.320Z",
   "entries": [
+    {
+      "hash": "a1bf8d7",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add numbered middle column to Study view (like SBS)",
+      "scope": null
+    },
     {
       "hash": "6dc2d44",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Adjust segment highlight height to match line-height",
       "scope": null
-    },
-    {
-      "hash": "bea207c",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Set line-height on translation-col parent container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "a1bf8d7",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add numbered middle column to Study view (like SBS)",
+        "scope": null
+      },
       {
         "hash": "6dc2d44",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust segment highlight height to match line-height",
-        "scope": null
-      },
-      {
-        "hash": "bea207c",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Set line-height on translation-col parent container",
         "scope": null
       }
     ]
