@@ -2747,15 +2747,15 @@
       font-size: 1rem;
     }
 
-    /* Corner icons on mobile - smaller with less overlap */
+    /* Corner icons on mobile - smaller with slight overlap */
     .corner-left {
-      left: calc(-0.5rem - 5px);
-      top: calc(-1rem - 5px);
+      left: -0.25rem;
+      top: -0.25rem;
     }
 
     .corner-right {
-      right: calc(-0.5rem - 5px);
-      top: calc(-1rem - 5px);
+      right: -0.25rem;
+      top: -0.25rem;
     }
 
     .url-icon {
