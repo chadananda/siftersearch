@@ -1429,7 +1429,7 @@
   /* Floating utility bar - minimal action buttons */
   .utility-bar {
     position: fixed;
-    top: 10rem; /* Below QR code corner */
+    top: 12rem; /* Below QR code corner */
     /* Center buttons in the 5rem right margin: (5rem - 2.5rem button) / 2 = 1.25rem from edge */
     right: 1.25rem;
     display: flex;
@@ -2689,7 +2689,7 @@
   /* This prevents overlap with 775px content area + utility bar */
   @media (max-width: 900px) {
     .utility-bar {
-      top: 10rem; /* Move down to avoid QR code in corner */
+      top: 12rem; /* Move down to avoid QR code in corner */
       right: 0.5rem;
     }
 
