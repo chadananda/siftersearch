@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T04:36:45.802Z",
+  "generated": "2026-01-05T04:43:35.587Z",
   "entries": [
+    {
+      "hash": "534d209",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Allow saving translations even if segments are null",
+      "scope": null
+    },
     {
       "hash": "f6bb5ca",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
       "scope": null
-    },
-    {
-      "hash": "4bb30e8",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Make mode button label white when active",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "534d209",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Allow saving translations even if segments are null",
+        "scope": null
+      },
       {
         "hash": "f6bb5ca",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
-        "scope": null
-      },
-      {
-        "hash": "4bb30e8",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Make mode button label white when active",
         "scope": null
       }
     ]

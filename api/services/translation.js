@@ -834,13 +834,20 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             hasMarkers: hasMarkers(para.text)
           });
 
-          if (result.reading && result.study) {
+          logger.info({ paraId: para.id, hasReading: !!result?.reading, hasStudy: !!result?.study, hasResult: !!result }, 'Individual translation result');
+
+          if (result && result.reading && result.study) {
             const now = new Date().toISOString();
-            await query(`
-              UPDATE content
-              SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
-              WHERE id = ?
-            `, [JSON.stringify(result), JSON.stringify(result.segments || null), now, para.id]);
+            try {
+              await query(`
+                UPDATE content
+                SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+                WHERE id = ?
+              `, [JSON.stringify(result), JSON.stringify(result.segments || null), now, para.id]);
+              logger.info({ paraId: para.id }, 'Translation saved successfully');
+            } catch (saveErr) {
+              logger.error({ paraId: para.id, err: saveErr.message }, 'Failed to save translation');
+            }
 
             const mapEntry = paragraphMap.get(para.paragraph_index);
             if (mapEntry) {
@@ -850,7 +857,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             translatedCount++;
             await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
           } else {
-            logger.error({ paraId: para.id, hasReading: !!result.reading, hasStudy: !!result.study }, 'Individual translation missing required fields');
+            logger.error({ paraId: para.id, hasReading: !!result?.reading, hasStudy: !!result?.study, result: JSON.stringify(result)?.substring(0, 200) }, 'Individual translation missing required fields');
           }
         } catch (fallbackErr) {
           logger.warn({ paraId: para.id, err: fallbackErr.message }, 'Individual fallback failed');
