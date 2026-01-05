@@ -30,6 +30,15 @@
   // Derived
   let dirty = $derived(content !== originalContent);
   let isRTL = $derived(document?.language && ['ar', 'fa', 'he', 'ur'].includes(document.language));
+  let editorInitialized = $state(false);
+
+  // Initialize editor when container becomes available and content is loaded
+  $effect(() => {
+    if (editorContainer && content && !editorInitialized && !loading && !error) {
+      editorInitialized = true;
+      initEditor();
+    }
+  });
 
   // Load document
   async function loadDocument() {
@@ -66,9 +75,7 @@
       originalContent = data.content;
       document = data.document;
       filePath = data.filePath;
-
-      // Initialize editor after content loads
-      await initEditor();
+      // Editor will be initialized by $effect when container is ready
     } catch (err) {
       error = err.message;
     } finally {
