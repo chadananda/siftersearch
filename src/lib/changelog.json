@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T04:13:06.800Z",
+  "generated": "2026-01-05T04:20:57.942Z",
   "entries": [
+    {
+      "hash": "92e2ec5",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Generate phrase-level segments for marked text translation",
+      "scope": null
+    },
     {
       "hash": "a63e548",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Translation queue reliability + UI fixes",
       "scope": null
-    },
-    {
-      "hash": "e88776f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Adjust corner icon positioning for 5px visual overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "92e2ec5",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Generate phrase-level segments for marked text translation",
+        "scope": null
+      },
       {
         "hash": "a63e548",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Translation queue reliability + UI fixes",
-        "scope": null
-      },
-      {
-        "hash": "e88776f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Adjust corner icon positioning for 5px visual overlap",
         "scope": null
       }
     ]

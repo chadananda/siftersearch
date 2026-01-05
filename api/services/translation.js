@@ -1295,44 +1295,57 @@ async function translateCombinedMarked(text, sourceLang, targetLang, contentType
 
 ${contextSection}
 
-## TASK: Translate ALL sentences below, providing BOTH reading and study versions, PLUS phrase-level segments.
+## TASK: Translate ALL sentences below, providing reading + study translations AND short phrase segments.
+
+## CRITICAL TERMINOLOGY:
+- "الله" → "God" (NOT "Allah" - this is a common noun meaning God, not a personal name)
+- "القائم" → "Qá'im" (He Who Shall Arise)
+- "بقية الله" → "Remnant of God"
+- "مظهر أمر الله" → "Manifestation of God"
 
 ## OUTPUT FORMAT (TOON):
-For each sentence, provide reading, study, and 2-5 PHRASE segments:
+For EACH sentence, provide reading, study, and MANY short phrase segments (3-7 words each):
 
 [s1]
-reading = "Literary translation of sentence 1..."
-study = "Literal word-by-word translation of sentence 1..."
+reading = "Literary translation with proper punctuation. Flows naturally for devotional reading."
+study = "Literal translation with punctuation. Preserves word order. Uses (parentheses) for implied words."
 
 [[s1.segments]]
-original = "first phrase of sentence 1"
-translation = "literal translation of first phrase"
+original = "بسم الله الرحمن الرحيم"
+translation = "In the name of God, the Merciful, the Compassionate"
 
 [[s1.segments]]
-original = "second phrase of sentence 1"
-translation = "literal translation of second phrase"
+original = "ان هذا كتاب"
+translation = "Verily, this is a Book"
 
-[s2]
-reading = "Literary translation of sentence 2..."
-study = "Literal word-by-word translation of sentence 2..."
-
-[[s2.segments]]
-original = "first phrase"
-translation = "its translation"
+[[s1.segments]]
+original = "قد نزل على الارض المقدسة"
+translation = "that hath been sent down upon the holy land"
 
 ## CRITICAL RULES:
-1. SEGMENTS ARE REQUIRED - divide each sentence into 2-5 meaningful phrases (not single words)
-2. Concatenated segment "original" values MUST EXACTLY match the input sentence text
-3. Each segment "translation" uses literal STUDY style
+1. SEGMENTS MUST BE SHORT: Each segment should be 3-7 Arabic words (one logical phrase), NOT entire sentences
+2. Long sentences MUST have 5-15 segments, breaking at natural phrase boundaries
+3. ALL translations MUST include proper punctuation (commas, periods, semicolons)
+4. Concatenated segment "original" values MUST EXACTLY match the input sentence text
+5. "الله" = "God" (never "Allah")
 
 ## STYLE:
-- READING: Shoghi Effendi biblical style for scripture (Thou, Thee, hath, verily)
-- STUDY: Literal, preserves word order, uses parentheses for implied words
-- SEGMENTS: 2-5 phrases per sentence, each 2-7 words, literal translation style
+- READING: Shoghi Effendi biblical style (Thou, Thee, hath, verily). Proper punctuation. Flows for devotional reading.
+- STUDY: Literal word order with punctuation. (Implied words) in parentheses. Readable English.
+- SEGMENTS: Short 3-7 word phrases. Each translates literally with punctuation as needed.
 
 ## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
 
-Return ONLY TOON format. Every sentence MUST include [[sN.segments]] blocks.`;
+Example of breaking a long sentence into SHORT phrases:
+Original: "ان اسمعوا حكم بقية الله واسئلوا من سبل الحق من ذكر اسم ربكم"
+BAD: One segment with all text
+GOOD:
+  [[s.segments]] original = "ان اسمعوا" / translation = "Verily, hearken"
+  [[s.segments]] original = "حكم بقية الله" / translation = "unto the decree of the Remnant of God,"
+  [[s.segments]] original = "واسئلوا من سبل الحق" / translation = "and inquire from the paths of truth"
+  [[s.segments]] original = "من ذكر اسم ربكم" / translation = "from him who hath mentioned the name of your Lord."
+
+Return ONLY TOON format. Every sentence MUST include MANY [[sN.segments]] blocks with SHORT phrases.`;
 
   const response = await withTimeout(
     aiService('quality').chat([
@@ -1340,7 +1353,7 @@ Return ONLY TOON format. Every sentence MUST include [[sN.segments]] blocks.`;
       { role: 'user', content: sentenceList }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 6, 2000)  // More tokens for segments
+      maxTokens: Math.max(text.length * 12, 6000)  // Many more tokens for short phrase segments
     }),
     API_TIMEOUT_MS,
     'translateCombinedMarked'
