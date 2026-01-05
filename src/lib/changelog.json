@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T13:34:20.320Z",
+  "generated": "2026-01-05T13:50:50.236Z",
   "entries": [
+    {
+      "hash": "74980a0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Correct Study view column order for RTL documents",
+      "scope": null
+    },
     {
       "hash": "a1bf8d7",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent highlight overlap with box-decoration-break",
       "scope": null
-    },
-    {
-      "hash": "202938d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Adjust segment highlight height to match line-height",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "74980a0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Correct Study view column order for RTL documents",
+        "scope": null
+      },
       {
         "hash": "a1bf8d7",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Prevent highlight overlap with box-decoration-break",
-        "scope": null
-      },
-      {
-        "hash": "202938d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Adjust segment highlight height to match line-height",
         "scope": null
       }
     ]

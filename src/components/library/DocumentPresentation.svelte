@@ -1182,69 +1182,64 @@
                 </div>
               </div>
 
-            <!-- Study Mode: Phrase-by-phrase literal translation (Arabic LEFT, Number MIDDLE, English RIGHT) -->
+            <!-- Study Mode: Phrase-by-phrase literal translation with aligned rows -->
             {:else if viewMode === 'study' && parseTranslation(para)?.study}
               {@const trans = parseTranslation(para)}
               {@const segments = parseSegments(para)}
               {@const notes = trans.notes}
-              <div class="bilingual-row study-row">
-                <!-- Arabic Original on LEFT -->
-                <div class="original-col study-col" dir={getLanguageDirection(document.language)}>
-                  {#if segments && segments.length > 0}
-                    <div class="study-phrase-list">
-                      {#each segments as seg, idx}
-                        {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
-                        {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
-                        <div class="study-phrase-item" class:continuation={isContinuation}>
-                          {seg.original}
-                        </div>
-                      {/each}
-                    </div>
-                  {:else}
-                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
-                  {/if}
-                </div>
-                <!-- Paragraph Number in MIDDLE -->
-                <div class="para-center">
+              <div class="study-container">
+                <!-- Paragraph number centered above -->
+                <div class="study-para-number">
                   <button
                     class="para-anchor-btn"
                     onclick={() => copyParagraphLink((para.paragraph_index ?? i) + 1)}
                     title="Copy link to paragraph {(para.paragraph_index ?? i) + 1}"
                   >
-                    {(para.paragraph_index ?? i) + 1}
+                    ¶ {(para.paragraph_index ?? i) + 1}
                   </button>
                 </div>
-                <!-- English Translation on RIGHT -->
-                <div class="translation-col study-col" dir="ltr">
-                  {#if segments && segments.length > 0}
-                    <div class="study-phrase-list">
-                      {#each segments as seg, idx}
-                        {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
-                        {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
-                        <div class="study-phrase-item translation" class:continuation={isContinuation}>
+                <!-- Phrase rows: each row has Arabic LEFT, English RIGHT -->
+                {#if segments && segments.length > 0}
+                  <div class="study-phrase-grid">
+                    {#each segments as seg, idx}
+                      {@const prevSeg = idx > 0 ? segments[idx - 1] : null}
+                      {@const isContinuation = prevSeg && !/[.!?؟。]$/.test(prevSeg.translation?.trim() || '')}
+                      <div class="study-phrase-row" class:continuation={isContinuation}>
+                        <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
+                          {seg.original}
+                        </div>
+                        <div class="study-phrase-translation" dir="ltr">
                           {seg.translation}
                         </div>
-                      {/each}
-                    </div>
-                  {:else}
-                    <div class="paragraph-text">{@html renderMarkdown(trans.study)}</div>
-                  {/if}
-                </div>
-              </div>
-              <!-- Notes section - full width below the 3-column row -->
-              {#if notes && Array.isArray(notes) && notes.length > 0}
-                <div class="study-notes-section">
-                  <div class="study-notes-label">Notes:</div>
-                  <ul class="study-notes-list">
-                    {#each notes as note, idx}
-                      <li class="study-note-item">
-                        {#if note.term}<strong class="note-term">{note.term}</strong> — {/if}
-                        {note.note || note.notes || note.explanation}
-                      </li>
+                      </div>
                     {/each}
-                  </ul>
-                </div>
-              {/if}
+                  </div>
+                {:else}
+                  <!-- Fallback: plain text side by side -->
+                  <div class="study-phrase-row">
+                    <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
+                      {@html renderMarkdown(para.text)}
+                    </div>
+                    <div class="study-phrase-translation" dir="ltr">
+                      {@html renderMarkdown(trans.study)}
+                    </div>
+                  </div>
+                {/if}
+                <!-- Notes section - full width below phrases -->
+                {#if notes && Array.isArray(notes) && notes.length > 0}
+                  <div class="study-notes-section">
+                    <div class="study-notes-label">Notes:</div>
+                    <ul class="study-notes-list">
+                      {#each notes as note, idx}
+                        <li class="study-note-item">
+                          {#if note.term}<strong class="note-term">{note.term}</strong> — {/if}
+                          {note.note || note.notes || note.explanation}
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/if}
+              </div>
 
             <!-- Default Mode: Original text only -->
             {:else}
@@ -2391,69 +2386,74 @@
     color: #666;
   }
 
-  /* Study row uses bilingual-row 3-column layout but with columns swapped */
-  /* Arabic LEFT, Number MIDDLE, English RIGHT (opposite of SBS) */
-  /* Note: In RTL context, higher order = LEFT, lower order = RIGHT */
-  .study-row {
-    /* Inherits from .bilingual-row */
+  /* Study container - full width for paragraph */
+  .study-container {
+    flex: 1;
+    min-width: 0;
   }
 
-  .study-row .original-col {
-    order: 3; /* Arabic on LEFT (highest order in RTL) */
+  /* Paragraph number centered above phrases */
+  .study-para-number {
+    text-align: center;
+    padding: 0.5rem 0;
+    margin-bottom: 0.25rem;
   }
 
-  .study-row .para-center {
-    order: 2; /* Number in MIDDLE */
+  .study-para-number .para-anchor-btn {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 0.75rem;
+    color: #999;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
   }
 
-  .study-row .translation-col {
-    order: 1; /* English on RIGHT (lowest order in RTL) */
+  .study-para-number .para-anchor-btn:hover {
+    color: #666;
   }
 
-  .study-col {
-    padding: 0;
+  /* Phrase grid - container for aligned rows */
+  .study-phrase-grid {
+    display: flex;
+    flex-direction: column;
   }
 
-  .study-col.original-col {
+  /* Each phrase row: 2-column grid with Arabic LEFT, English RIGHT */
+  .study-phrase-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    direction: ltr; /* Force LTR grid layout */
+  }
+
+  .study-phrase-row:last-child {
+    border-bottom: none;
+  }
+
+  /* Continuation phrases - indent both columns */
+  .study-phrase-row.continuation {
+    padding-left: 2rem;
+  }
+
+  /* Arabic original - LEFT column, right-aligned text */
+  .study-phrase-original {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.4rem;
+    line-height: 1.7;
+    color: #1a1a1a;
     text-align: right;
   }
 
-  .study-col.translation-col {
-    text-align: left;
-  }
-
-  /* Study phrase list - vertical stack of phrases */
-  .study-phrase-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  /* Individual phrase item */
-  .study-phrase-item {
-    font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1.5rem;
-    line-height: 1.6;
-    color: #1a1a1a;
-    padding: 0.25rem 0;
-  }
-
-  .study-phrase-item.translation {
+  /* English translation - RIGHT column, left-aligned text */
+  .study-phrase-translation {
     font-family: 'Libre Caslon Text', Georgia, serif;
-    font-size: 1.1rem;
-    line-height: 1.5;
+    font-size: 1.05rem;
+    line-height: 1.6;
     color: #333;
-  }
-
-  /* Indent continuation phrases (not first in sentence) */
-  .study-phrase-item.continuation {
-    padding-left: 1.5rem;
-  }
-
-  /* For RTL continuation, indent from right */
-  .original-col .study-phrase-item.continuation {
-    padding-left: 0;
-    padding-right: 1.5rem;
+    text-align: left;
   }
 
   /* Study notes section - full width below paragraph */
