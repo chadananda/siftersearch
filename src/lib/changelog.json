@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T04:03:30.595Z",
+  "generated": "2026-01-05T04:13:06.800Z",
   "entries": [
+    {
+      "hash": "a63e548",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Paragraph 0 translation + segment format normalization",
+      "scope": null
+    },
     {
       "hash": "efa656b",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Adjust corner icon positioning for 5px visual overlap",
       "scope": null
-    },
-    {
-      "hash": "208ed9e",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Three-line centered breadcrumb with corner icons",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "a63e548",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Paragraph 0 translation + segment format normalization",
+        "scope": null
+      },
       {
         "hash": "efa656b",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust corner icon positioning for 5px visual overlap",
-        "scope": null
-      },
-      {
-        "hash": "208ed9e",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Three-line centered breadcrumb with corner icons",
         "scope": null
       }
     ]

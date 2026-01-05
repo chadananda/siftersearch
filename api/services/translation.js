@@ -1268,6 +1268,7 @@ async function translateCombined({
 /**
  * Handle combined translation for text with sentence markers
  * Batches all sentences into single API call
+ * Returns phrase-level segments for proper highlighting
  */
 async function translateCombinedMarked(text, sourceLang, targetLang, contentType, contextSection) {
   const sentences = getSentences(text);
@@ -1294,26 +1295,44 @@ async function translateCombinedMarked(text, sourceLang, targetLang, contentType
 
 ${contextSection}
 
-## TASK: Translate ALL sentences below, providing BOTH reading and study versions.
+## TASK: Translate ALL sentences below, providing BOTH reading and study versions, PLUS phrase-level segments.
 
 ## OUTPUT FORMAT (TOON):
-For each sentence, provide reading and study translations:
+For each sentence, provide reading, study, and 2-5 PHRASE segments:
 
 [s1]
 reading = "Literary translation of sentence 1..."
 study = "Literal word-by-word translation of sentence 1..."
 
+[[s1.segments]]
+original = "first phrase of sentence 1"
+translation = "literal translation of first phrase"
+
+[[s1.segments]]
+original = "second phrase of sentence 1"
+translation = "literal translation of second phrase"
+
 [s2]
 reading = "Literary translation of sentence 2..."
 study = "Literal word-by-word translation of sentence 2..."
 
+[[s2.segments]]
+original = "first phrase"
+translation = "its translation"
+
+## CRITICAL RULES:
+1. SEGMENTS ARE REQUIRED - divide each sentence into 2-5 meaningful phrases (not single words)
+2. Concatenated segment "original" values MUST EXACTLY match the input sentence text
+3. Each segment "translation" uses literal STUDY style
+
 ## STYLE:
 - READING: Shoghi Effendi biblical style for scripture (Thou, Thee, hath, verily)
 - STUDY: Literal, preserves word order, uses parentheses for implied words
+- SEGMENTS: 2-5 phrases per sentence, each 2-7 words, literal translation style
 
 ## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
 
-Return ONLY TOON format, no explanations.`;
+Return ONLY TOON format. Every sentence MUST include [[sN.segments]] blocks.`;
 
   const response = await withTimeout(
     aiService('quality').chat([
@@ -1321,7 +1340,7 @@ Return ONLY TOON format, no explanations.`;
       { role: 'user', content: sentenceList }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 4, 1500)
+      maxTokens: Math.max(text.length * 6, 2000)  // More tokens for segments
     }),
     API_TIMEOUT_MS,
     'translateCombinedMarked'
@@ -1336,39 +1355,55 @@ Return ONLY TOON format, no explanations.`;
     return await translateCombinedFallback(text, sourceLang, targetLang, contentType, contextSection);
   }
 
-  // Build segments from sentence results
-  const segments = {};
+  // Build phrase-level segments array from all sentences
+  const allSegments = [];
   const readingParts = [];
   const studyParts = [];
+  let segmentId = 1;
 
   for (const sentence of sentences) {
     const key = `s${sentence.id}`;
     const sentenceResult = result[key];
 
     if (sentenceResult && sentenceResult.reading && sentenceResult.study) {
-      segments[key] = {
-        original: sentence.text,
-        text: sentenceResult.reading
-      };
       readingParts.push(sentenceResult.reading);
       studyParts.push(sentenceResult.study);
+
+      // Extract phrase-level segments
+      if (sentenceResult.segments && Array.isArray(sentenceResult.segments) && sentenceResult.segments.length > 0) {
+        for (const seg of sentenceResult.segments) {
+          allSegments.push({
+            id: segmentId++,
+            original: seg.original,
+            translation: seg.translation
+          });
+        }
+      } else {
+        // Fallback: use whole sentence as one segment
+        allSegments.push({
+          id: segmentId++,
+          original: sentence.text,
+          translation: sentenceResult.study
+        });
+      }
     } else {
       // Missing translation for this sentence
       logger.warn({ sentenceId: sentence.id }, 'Missing translation in batch result');
-      segments[key] = {
-        original: sentence.text,
-        text: sentence.text,
-        error: 'Missing in batch'
-      };
       readingParts.push(sentence.text);
       studyParts.push(sentence.text);
+      allSegments.push({
+        id: segmentId++,
+        original: sentence.text,
+        translation: sentence.text,
+        error: 'Missing in batch'
+      });
     }
   }
 
   return {
     reading: readingParts.join(' '),
     study: studyParts.join(' '),
-    segments,
+    segments: allSegments,  // Now an array of phrase-level segments
     notes: null
   };
 }
