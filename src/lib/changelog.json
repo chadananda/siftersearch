@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T12:59:35.516Z",
+  "generated": "2026-01-05T13:06:34.134Z",
   "entries": [
+    {
+      "hash": "3c2d6c0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Reduce corner icon overlap on mobile to slight overlap",
+      "scope": null
+    },
     {
       "hash": "80421ca",
       "date": "2026-01-04",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Use :global() for English translation line-height in SBS mode",
       "scope": null
-    },
-    {
-      "hash": "fa25d10",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Force line-height 1 on English translation with !important",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-05": [
+      {
+        "hash": "3c2d6c0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Reduce corner icon overlap on mobile to slight overlap",
+        "scope": null
+      }
+    ],
     "2026-01-04": [
       {
         "hash": "80421ca",
@@ -697,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Use :global() for English translation line-height in SBS mode",
-        "scope": null
-      },
-      {
-        "hash": "fa25d10",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Force line-height 1 on English translation with !important",
         "scope": null
       }
     ]

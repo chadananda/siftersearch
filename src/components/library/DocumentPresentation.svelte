@@ -416,8 +416,16 @@
   // Check if document has translations
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
 
-  // Check if document has study translations
-  let hasStudyTranslations = $derived(paragraphs.some(p => p.study_translation));
+  // Check if document has study translations (parsed from translation JSON)
+  let hasStudyTranslations = $derived(paragraphs.some(p => {
+    if (!p.translation) return false;
+    try {
+      const parsed = typeof p.translation === 'string' ? JSON.parse(p.translation) : p.translation;
+      return parsed?.study;
+    } catch {
+      return false;
+    }
+  }));
 
   // Check if all paragraphs are translated (100% complete)
   let isFullyTranslated = $derived(
