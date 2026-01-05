@@ -1510,6 +1510,9 @@ translation = "its translation"
 original = "second phrase"
 translation = "its translation"
 
+[[p1.notes]]
+note = "Self-contained footnote sentence explaining a theological term or concept."
+
 [p2]
 reading = "Literary translation of paragraph 2..."
 study = "Literal word-by-word translation of paragraph 2..."
@@ -1518,16 +1521,27 @@ study = "Literal word-by-word translation of paragraph 2..."
 original = "first phrase"
 translation = "its translation"
 
+[[p2.notes]]
+note = "Footnote explaining significant terminology if needed."
+
 ## STYLE:
 - READING: Shoghi Effendi biblical style (Thou, Thee, hath, verily) for scripture
 - STUDY: Literal, preserves word order, uses parentheses for implied words
 - SEGMENTS: MANDATORY - divide each paragraph into 2-5 meaningful phrases/sentences
+- NOTES: 0-2 self-contained footnote sentences for rich terminology (most paragraphs have none)
+
+## NOTES GUIDELINES:
+Notes are for theological concepts, philosophical terms, or historical allusions.
+Each note MUST be a complete, self-contained sentence that names the term and provides context.
+Examples: "The Qá'im (He Who Shall Arise) is the Twelfth Imám whose return the Báb claimed to fulfill."
+DO NOT include notes for common vocabulary or grammar observations. Most paragraphs have 0-1 notes.
 
 ## CRITICAL RULES:
 1. SEGMENTS ARE REQUIRED for every paragraph - do NOT skip them
 2. Each [[pN.segments]] block must have 2-5 segments
 3. Concatenated segment "original" values must EXACTLY match the input text (including punctuation)
 4. Each segment "translation" uses STUDY style (literal translation)
+5. NOTES are optional - only include for significant theological/philosophical terminology
 
 ## Bahá'í Transliteration: á, í, ú (not macrons), Ḥ, Ṭ, Ẓ with dot-under
 

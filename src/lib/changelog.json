@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T13:52:09.227Z",
+  "generated": "2026-01-05T14:11:08.622Z",
   "entries": [
+    {
+      "hash": "659d5b3",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Remove paragraph hover background",
+      "scope": null
+    },
     {
       "hash": "228c37a",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove box-shadow from segment highlights to prevent line overlap",
       "scope": null
-    },
-    {
-      "hash": "452625a",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Remove padding/margin from segment-phrase for tighter highlights",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "659d5b3",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Remove paragraph hover background",
+        "scope": null
+      },
       {
         "hash": "228c37a",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Remove box-shadow from segment highlights to prevent line overlap",
-        "scope": null
-      },
-      {
-        "hash": "452625a",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Remove padding/margin from segment-phrase for tighter highlights",
         "scope": null
       }
     ]

@@ -2421,15 +2421,21 @@
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     direction: ltr; /* Force LTR grid layout */
+    align-items: baseline; /* Align first line baselines */
   }
 
   .study-phrase-row:last-child {
     border-bottom: none;
   }
 
-  /* Continuation phrases - indent both columns */
-  .study-phrase-row.continuation {
-    padding-left: 2rem;
+  /* Continuation phrases - indent English column from left */
+  .study-phrase-row.continuation .study-phrase-translation {
+    margin-left: 1.5rem;
+  }
+
+  /* Arabic column in continuation rows - indent from right side (margin-inline-end respects RTL) */
+  .study-phrase-row.continuation .study-phrase-original {
+    margin-inline-end: 1.5rem;
   }
 
   /* Arabic original - LEFT column, right-aligned text */
@@ -3133,6 +3139,25 @@
 
     body {
       font-size: 11pt;
+    }
+
+    /* Study view print styles */
+    .study-container {
+      page-break-inside: avoid;
+    }
+
+    .study-phrase-row {
+      page-break-inside: avoid;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .study-phrase-grid {
+      page-break-before: auto; /* Don't force page break before phrases */
+    }
+
+    .study-para-number {
+      padding: 0.25rem 0;
+      margin-bottom: 0;
     }
   }
 </style>
