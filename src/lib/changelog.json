@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T14:44:33.180Z",
+  "generated": "2026-01-05T15:10:56.684Z",
   "entries": [
+    {
+      "hash": "559e7d9",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use $effect to initialize editor when container is ready",
+      "scope": null
+    },
     {
       "hash": "f721eb4",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add ingest-file endpoint for ingesting from file path",
       "scope": null
-    },
-    {
-      "hash": "23e9ca5",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Translation service now reads from LibSQL, not Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "559e7d9",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use $effect to initialize editor when container is ready",
+        "scope": null
+      },
       {
         "hash": "f721eb4",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add ingest-file endpoint for ingesting from file path",
-        "scope": null
-      },
-      {
-        "hash": "23e9ca5",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Translation service now reads from LibSQL, not Meilisearch",
         "scope": null
       }
     ]
