@@ -2433,9 +2433,9 @@
     margin-left: 1.5rem;
   }
 
-  /* Arabic column in continuation rows - indent from right side (margin-inline-end respects RTL) */
+  /* Arabic column in continuation rows - indent from right side */
   .study-phrase-row.continuation .study-phrase-original {
-    margin-inline-end: 1.5rem;
+    padding-right: 1.5rem;
   }
 
   /* Arabic original - LEFT column, right-aligned text */
