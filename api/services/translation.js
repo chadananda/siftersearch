@@ -577,11 +577,13 @@ function organizeIntoWaves(paragraphs, stride = 10) {
   const indexMap = new Map(paragraphs.map(p => [p.paragraph_index, p]));
 
   // Generate wave order
+  // Wave pattern: 0, 10, 20... then 1, 11, 21... etc.
+  // This ensures paragraph 0 is included in wave 0
   for (let offset = 0; offset < stride; offset++) {
     const wave = [];
     for (let i = offset; i < totalParagraphs; i += stride) {
-      // Find paragraph at this position
-      const para = paragraphs.find(p => p.paragraph_index === i + 1);
+      // Use the indexMap for O(1) lookup instead of O(n) find
+      const para = indexMap.get(i);
       if (para) {
         wave.push(para);
       }

@@ -634,16 +634,14 @@
   /**
    * Parse translation_segments from paragraph
    * Returns array of { id, original, translation } or null
+   * Handles both array format and object format ({s1: {...}, s2: {...}})
    */
   function parseSegments(para) {
     // First check if segments are in the JSON translation
     const trans = parseTranslation(para);
-    if (trans?.segments && Array.isArray(trans.segments) && trans.segments.length > 0) {
-      // Ensure each segment has an id for highlighting
-      return trans.segments.map((seg, idx) => ({
-        ...seg,
-        id: seg.id ?? idx
-      }));
+    if (trans?.segments) {
+      const normalized = normalizeSegments(trans.segments);
+      if (normalized) return normalized;
     }
     // Fallback to translation_segments field
     if (!para.translation_segments) return null;
@@ -651,15 +649,45 @@
       const segments = typeof para.translation_segments === 'string'
         ? JSON.parse(para.translation_segments)
         : para.translation_segments;
-      if (!Array.isArray(segments) || segments.length === 0) return null;
-      // Ensure each segment has an id for highlighting
-      return segments.map((seg, idx) => ({
-        ...seg,
-        id: seg.id ?? idx
-      }));
+      return normalizeSegments(segments);
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Normalize segments to array format
+   * Handles both array [{original, translation}] and object {s1: {original, text}} formats
+   */
+  function normalizeSegments(segments) {
+    if (!segments) return null;
+
+    // Already an array
+    if (Array.isArray(segments)) {
+      if (segments.length === 0) return null;
+      return segments.map((seg, idx) => ({
+        id: seg.id ?? idx,
+        original: seg.original || '',
+        translation: seg.translation || seg.text || ''
+      }));
+    }
+
+    // Object format: {s1: {original, text}, s2: {...}, ...}
+    if (typeof segments === 'object') {
+      const keys = Object.keys(segments).filter(k => k.startsWith('s')).sort((a, b) => {
+        const numA = parseInt(a.slice(1), 10);
+        const numB = parseInt(b.slice(1), 10);
+        return numA - numB;
+      });
+      if (keys.length === 0) return null;
+      return keys.map((key, idx) => ({
+        id: key,
+        original: segments[key].original || '',
+        translation: segments[key].translation || segments[key].text || ''
+      }));
+    }
+
+    return null;
   }
 
   /**

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T03:39:16.686Z",
+  "generated": "2026-01-05T04:03:30.595Z",
   "entries": [
+    {
+      "hash": "efa656b",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
+      "scope": null
+    },
     {
       "hash": "2da673a",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Three-line centered breadcrumb with corner icons",
       "scope": null
-    },
-    {
-      "hash": "047902d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Position icons at actual corners of document box",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "efa656b",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
+        "scope": null
+      },
       {
         "hash": "2da673a",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Three-line centered breadcrumb with corner icons",
-        "scope": null
-      },
-      {
-        "hash": "047902d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Position icons at actual corners of document box",
         "scope": null
       }
     ]
