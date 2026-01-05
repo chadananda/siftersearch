@@ -416,16 +416,8 @@
   // Check if document has translations
   let hasTranslations = $derived(paragraphs.some(p => p.translation));
 
-  // Check if document has study translations (parsed from translation JSON)
-  let hasStudyTranslations = $derived(paragraphs.some(p => {
-    if (!p.translation) return false;
-    try {
-      const parsed = typeof p.translation === 'string' ? JSON.parse(p.translation) : p.translation;
-      return parsed?.study;
-    } catch {
-      return false;
-    }
-  }));
+  // Check if document has study translations (API returns study_translation field)
+  let hasStudyTranslations = $derived(paragraphs.some(p => p.study_translation));
 
   // Check if all paragraphs are translated (100% complete)
   let isFullyTranslated = $derived(
@@ -637,25 +629,18 @@
    * Legacy format: plain string
    */
   function parseTranslation(para) {
-    if (!para.translation) return null;
-    try {
-      // Try parsing as JSON
-      const parsed = typeof para.translation === 'string'
-        ? JSON.parse(para.translation)
-        : para.translation;
-      if (parsed && typeof parsed === 'object') {
-        return {
-          reading: parsed.reading || null,
-          study: parsed.study || null,
-          segments: parsed.segments || null,
-          notes: parsed.notes || null
-        };
-      }
-    } catch {
-      // Not JSON - legacy plain string format
-      return { reading: para.translation, study: null, segments: null, notes: null };
-    }
-    return null;
+    // API pre-parses translation JSON into separate fields:
+    // - para.translation: reading text (string)
+    // - para.study_translation: study text (string)
+    // - para.translation_segments: segments array
+    // - para.study_notes: notes array
+    if (!para.translation && !para.study_translation) return null;
+    return {
+      reading: para.translation || null,
+      study: para.study_translation || null,
+      segments: para.translation_segments || null,
+      notes: para.study_notes || null
+    };
   }
 
   /**
@@ -664,13 +649,7 @@
    * Handles both array format and object format ({s1: {...}, s2: {...}})
    */
   function parseSegments(para) {
-    // First check if segments are in the JSON translation
-    const trans = parseTranslation(para);
-    if (trans?.segments) {
-      const normalized = normalizeSegments(trans.segments);
-      if (normalized) return normalized;
-    }
-    // Fallback to translation_segments field
+    // API provides translation_segments as pre-parsed array
     if (!para.translation_segments) return null;
     try {
       const segments = typeof para.translation_segments === 'string'
