@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T00:16:17.310Z",
+  "generated": "2026-01-05T01:59:09.013Z",
   "entries": [
+    {
+      "hash": "528a0ee",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Snap sentence marker insertion to word boundaries",
+      "scope": null
+    },
     {
       "hash": "bdd00f0",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Reduce SBS padding and fix highlight text visibility",
       "scope": null
-    },
-    {
-      "hash": "008ae07",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Add hanging indent and visible left margin on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "528a0ee",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Snap sentence marker insertion to word boundaries",
+        "scope": null
+      },
       {
         "hash": "bdd00f0",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Reduce SBS padding and fix highlight text visibility",
-        "scope": null
-      },
-      {
-        "hash": "008ae07",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Add hanging indent and visible left margin on mobile",
         "scope": null
       }
     ]

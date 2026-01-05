@@ -1668,6 +1668,15 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
   if (cleanText.length <= chunkSize) {
     const sentences = await detectSentencesInChunk(cleanText, language, 3);
     const paragraphs = await groupSentencesIntoParagraphs(sentences, language);
+
+    // STRICT VALIDATION for small documents too
+    const strictValidation = validateSegmentationStrict(cleanText, paragraphs);
+    if (!strictValidation.valid) {
+      logger.error({ errors: strictValidation.errors }, 'CRITICAL SEGMENTATION ERROR (small doc)');
+      throw new Error(`Segmentation validation failed: ${strictValidation.errors.join('; ')}`);
+    }
+
+    logger.info('✅ Segmentation validation passed (small document)');
     return { sentences, paragraphs };
   }
 
@@ -1730,14 +1739,30 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
     totalParagraphs: allParagraphs.length
   }, 'Document segmentation complete');
 
-  // Validate that no words were broken during segmentation
-  const validation = validateSegmentationIntegrity(cleanText, allSentences);
-  if (!validation.valid) {
+  // STRICT VALIDATION: Ensure no words were duplicated, deleted, or reordered
+  const strictValidation = validateSegmentationStrict(cleanText, allParagraphs);
+  if (!strictValidation.valid) {
     logger.error({
-      brokenWords: validation.brokenWords.slice(0, 10),
-      totalBroken: validation.brokenWords.length
-    }, 'SEGMENTATION ERROR: Words were broken during sentence detection');
+      errors: strictValidation.errors
+    }, 'CRITICAL SEGMENTATION ERROR: Output does not match original');
+
+    // Fail hard - we cannot accept corrupted output
+    throw new Error(`Segmentation validation failed: ${strictValidation.errors.join('; ')}`);
   }
+
+  // Also check for broken words (fragments)
+  const integrityValidation = validateSegmentationIntegrity(cleanText, allSentences);
+  if (!integrityValidation.valid) {
+    logger.error({
+      brokenWords: integrityValidation.brokenWords.slice(0, 10),
+      totalBroken: integrityValidation.brokenWords.length
+    }, 'SEGMENTATION ERROR: Words were broken during sentence detection');
+
+    // This is also a critical error
+    throw new Error(`Segmentation broke words: ${integrityValidation.brokenWords.slice(0, 5).map(b => b.fragment).join(', ')}`);
+  }
+
+  logger.info('✅ Segmentation validation passed - output matches original exactly');
 
   return { sentences: allSentences, paragraphs: allParagraphs };
 }
@@ -2517,4 +2542,96 @@ async function groupSentencesIntoParagraphs(sentences, language) {
     });
   }
   return paragraphs;
+}
+
+/**
+ * STRICT validation: Ensure segmented output matches original text EXACTLY
+ *
+ * Validates that:
+ * 1. All words from original appear in output (no deletions)
+ * 2. No words appear more than once (no duplications)
+ * 3. Word order is preserved
+ *
+ * @param {string} originalText - The original unsegmented text
+ * @param {Array<{text: string}>} paragraphs - Segmented paragraphs with markers
+ * @returns {{valid: boolean, errors: string[]}}
+ */
+export function validateSegmentationStrict(originalText, paragraphs) {
+  const errors = [];
+
+  // Normalize original text: collapse whitespace, trim
+  const normalizedOriginal = originalText.replace(/\s+/g, ' ').trim();
+  const originalWords = normalizedOriginal.split(' ').filter(w => w.length > 0);
+
+  // Extract all words from segmented paragraphs (strip markers first)
+  const segmentedWords = [];
+  for (const para of paragraphs) {
+    // Strip sentence markers: ⁅sN⁆ and ⁅/sN⁆
+    const strippedText = para.text.replace(/⁅\/?s\d+⁆/g, '').replace(/\s+/g, ' ').trim();
+    const words = strippedText.split(' ').filter(w => w.length > 0);
+    segmentedWords.push(...words);
+  }
+
+  // Check 1: Word count must match
+  if (originalWords.length !== segmentedWords.length) {
+    errors.push(`Word count mismatch: original has ${originalWords.length} words, segmented has ${segmentedWords.length} words`);
+
+    // Find which words are duplicated or missing
+    const originalCounts = new Map();
+    for (const w of originalWords) {
+      originalCounts.set(w, (originalCounts.get(w) || 0) + 1);
+    }
+
+    const segmentedCounts = new Map();
+    for (const w of segmentedWords) {
+      segmentedCounts.set(w, (segmentedCounts.get(w) || 0) + 1);
+    }
+
+    // Find duplications (words appearing more in segmented than original)
+    const duplications = [];
+    for (const [word, count] of segmentedCounts) {
+      const originalCount = originalCounts.get(word) || 0;
+      if (count > originalCount) {
+        duplications.push({ word, extra: count - originalCount });
+      }
+    }
+    if (duplications.length > 0) {
+      const examples = duplications.slice(0, 5).map(d => `"${d.word}" (+${d.extra})`).join(', ');
+      errors.push(`Duplicated words: ${examples}${duplications.length > 5 ? ` and ${duplications.length - 5} more` : ''}`);
+    }
+
+    // Find deletions (words appearing less in segmented than original)
+    const deletions = [];
+    for (const [word, count] of originalCounts) {
+      const segmentedCount = segmentedCounts.get(word) || 0;
+      if (segmentedCount < count) {
+        deletions.push({ word, missing: count - segmentedCount });
+      }
+    }
+    if (deletions.length > 0) {
+      const examples = deletions.slice(0, 5).map(d => `"${d.word}" (-${d.missing})`).join(', ');
+      errors.push(`Missing words: ${examples}${deletions.length > 5 ? ` and ${deletions.length - 5} more` : ''}`);
+    }
+  }
+
+  // Check 2: Words must be in the same order
+  if (errors.length === 0) {
+    // Only check order if counts match
+    for (let i = 0; i < originalWords.length; i++) {
+      if (originalWords[i] !== segmentedWords[i]) {
+        errors.push(`Word order mismatch at position ${i}: expected "${originalWords[i]}", got "${segmentedWords[i]}"`);
+        // Show context
+        const start = Math.max(0, i - 2);
+        const end = Math.min(originalWords.length, i + 3);
+        errors.push(`  Original context: ...${originalWords.slice(start, end).join(' ')}...`);
+        errors.push(`  Segmented context: ...${segmentedWords.slice(start, end).join(' ')}...`);
+        break; // Only report first mismatch
+      }
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
 }
