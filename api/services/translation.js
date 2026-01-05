@@ -573,20 +573,14 @@ function organizeIntoWaves(paragraphs, stride = 10) {
   const waves = [];
   const totalParagraphs = paragraphs.length;
 
-  // Create index map for quick lookup by paragraph_index
-  const indexMap = new Map(paragraphs.map(p => [p.paragraph_index, p]));
-
-  // Generate wave order
-  // Wave pattern: 0, 10, 20... then 1, 11, 21... etc.
-  // This ensures paragraph 0 is included in wave 0
-  for (let offset = 0; offset < stride; offset++) {
+  // Generate wave order by interleaving based on array position, not paragraph_index
+  // Wave pattern: positions 0, stride, 2*stride... then 1, stride+1, 2*stride+1... etc.
+  // This works correctly even when paragraph_index values are non-consecutive (e.g., 97, 99, 101...)
+  for (let offset = 0; offset < stride && offset < totalParagraphs; offset++) {
     const wave = [];
     for (let i = offset; i < totalParagraphs; i += stride) {
-      // Use the indexMap for O(1) lookup instead of O(n) find
-      const para = indexMap.get(i);
-      if (para) {
-        wave.push(para);
-      }
+      // Access by array position, not paragraph_index
+      wave.push(paragraphs[i]);
     }
     if (wave.length > 0) {
       waves.push(wave);
