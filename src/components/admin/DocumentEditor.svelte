@@ -5,7 +5,7 @@
    * Supports markdown with YAML frontmatter, RTL languages
    */
   import { onMount, onDestroy } from 'svelte';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import { authenticatedFetch } from '../../lib/api.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
@@ -35,6 +35,20 @@
   async function loadDocument() {
     if (!documentId) {
       error = 'No document ID provided. Use ?id=DOCUMENT_ID in the URL.';
+      loading = false;
+      return;
+    }
+
+    // Check if user is authenticated and has admin access
+    if (!auth.isAuthenticated) {
+      error = 'You must be logged in to edit documents.';
+      loading = false;
+      return;
+    }
+
+    const isAdmin = ['admin', 'superadmin', 'editor'].includes(auth.user?.tier);
+    if (!isAdmin) {
+      error = 'You do not have permission to edit documents.';
       loading = false;
       return;
     }
@@ -182,10 +196,13 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     // Parse document ID from URL query parameter
     const params = new URLSearchParams(window.location.search);
     documentId = params.get('id') || '';
+
+    // Initialize auth before loading document (sets access token)
+    await initAuth();
 
     loadDocument();
     window.addEventListener('beforeunload', handleBeforeUnload);

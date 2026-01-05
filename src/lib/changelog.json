@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T14:13:45.940Z",
+  "generated": "2026-01-05T14:24:45.617Z",
   "entries": [
+    {
+      "hash": "009aa5b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use padding-right for Arabic continuation indent",
+      "scope": null
+    },
     {
       "hash": "fe6bc12",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add admin API endpoints for document management",
       "scope": null
-    },
-    {
-      "hash": "539b7f8",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Use gradient highlight to prevent line overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "009aa5b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use padding-right for Arabic continuation indent",
+        "scope": null
+      },
       {
         "hash": "fe6bc12",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add admin API endpoints for document management",
-        "scope": null
-      },
-      {
-        "hash": "539b7f8",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Use gradient highlight to prevent line overlap",
         "scope": null
       }
     ]
