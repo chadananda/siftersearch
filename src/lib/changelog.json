@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T05:37:01.513Z",
+  "generated": "2026-01-05T12:54:07.729Z",
   "entries": [
+    {
+      "hash": "80421ca",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS phrase highlighting uses composite keys + styling improvements",
+      "scope": null
+    },
     {
       "hash": "885d664",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Force line-height 1 on English translation with !important",
       "scope": null
-    },
-    {
-      "hash": "fe2a086",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Add missing PWA icons (192x192 and 512x512)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "80421ca",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS phrase highlighting uses composite keys + styling improvements",
+        "scope": null
+      },
       {
         "hash": "885d664",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Force line-height 1 on English translation with !important",
-        "scope": null
-      },
-      {
-        "hash": "fe2a086",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Add missing PWA icons (192x192 and 512x512)",
         "scope": null
       }
     ]

@@ -2114,7 +2114,7 @@
   /* Same width for all modes (BASE, SBS, Study) - centered */
   .document-content {
     position: relative; /* For corner icon positioning */
-    max-width: 800px;
+    max-width: 900px;
     margin: 2rem auto;
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
