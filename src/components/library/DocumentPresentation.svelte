@@ -2137,13 +2137,7 @@
     border-bottom: none;
   }
 
-  .paragraph:hover {
-    background: rgba(0, 0, 0, 0.02);
-    margin: 0 -0.75rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    border-radius: 0.25rem;
-  }
+  /* Removed paragraph hover background - not helpful */
 
   .paragraph.highlighted {
     background: rgba(59, 130, 246, 0.1);
