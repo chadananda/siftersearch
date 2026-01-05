@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T05:26:16.712Z",
+  "generated": "2026-01-05T05:37:01.513Z",
   "entries": [
+    {
+      "hash": "885d664",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS phrase highlighting now uses composite keys (para+seg)",
+      "scope": null
+    },
     {
       "hash": "b08b58b",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add missing PWA icons (192x192 and 512x512)",
       "scope": null
-    },
-    {
-      "hash": "295aa6d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Explicitly set English font-size to 1rem in translation column",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "885d664",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS phrase highlighting now uses composite keys (para+seg)",
+        "scope": null
+      },
       {
         "hash": "b08b58b",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Add missing PWA icons (192x192 and 512x512)",
-        "scope": null
-      },
-      {
-        "hash": "295aa6d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Explicitly set English font-size to 1rem in translation column",
         "scope": null
       }
     ]

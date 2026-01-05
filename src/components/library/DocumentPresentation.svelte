@@ -602,7 +602,26 @@
   }
 
   // Phrase highlighting state for SBS mode
-  let highlightedSegmentId = $state(null);
+  // Uses composite key (paraIndex:segId) to ensure uniqueness across paragraphs
+  let highlightedSegmentKey = $state(null);
+
+  function getSegmentKey(paraIndex, segId) {
+    return `${paraIndex}:${segId}`;
+  }
+
+  function highlightSegment(paraIndex, segId) {
+    highlightedSegmentKey = getSegmentKey(paraIndex, segId);
+  }
+
+  function clearHighlight(paraIndex, segId) {
+    if (highlightedSegmentKey === getSegmentKey(paraIndex, segId)) {
+      highlightedSegmentKey = null;
+    }
+  }
+
+  function isSegmentHighlighted(paraIndex, segId) {
+    return highlightedSegmentKey === getSegmentKey(paraIndex, segId);
+  }
 
   /**
    * Parse translation field (handles both string and JSON formats)
@@ -690,19 +709,6 @@
     return null;
   }
 
-  /**
-   * Highlight a segment on hover/tap
-   */
-  function highlightSegment(segId) {
-    highlightedSegmentId = segId;
-  }
-
-  /**
-   * Clear segment highlight
-   */
-  function clearHighlight() {
-    highlightedSegmentId = null;
-  }
 </script>
 
 <div class="presentation-container">
@@ -1140,11 +1146,11 @@
                       {#each segments as seg}
                         <span
                           class="segment-phrase"
-                          class:highlighted={highlightedSegmentId === seg.id}
+                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, seg.id)}
                           data-seg-id={seg.id}
-                          onmouseenter={() => highlightSegment(seg.id)}
-                          onmouseleave={clearHighlight}
-                          onclick={() => highlightSegment(seg.id)}
+                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, seg.id)}
+                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, seg.id)}
+                          onclick={() => highlightSegment(para.paragraph_index ?? i, seg.id)}
                           role="button"
                           tabindex="0"
                         >{seg.translation}</span>{' '}
@@ -1172,11 +1178,11 @@
                       {#each segments as seg}
                         <span
                           class="segment-phrase"
-                          class:highlighted={highlightedSegmentId === seg.id}
+                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, seg.id)}
                           data-seg-id={seg.id}
-                          onmouseenter={() => highlightSegment(seg.id)}
-                          onmouseleave={clearHighlight}
-                          onclick={() => highlightSegment(seg.id)}
+                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, seg.id)}
+                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, seg.id)}
+                          onclick={() => highlightSegment(para.paragraph_index ?? i, seg.id)}
                           role="button"
                           tabindex="0"
                         >{seg.original}</span>{' '}
@@ -1203,11 +1209,11 @@
                       {#each segments as seg, idx}
                         <div
                           class="study-phrase-block original-phrase"
-                          class:highlighted={highlightedSegmentId === idx}
+                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
                           data-seg-id={idx}
-                          onmouseenter={() => highlightSegment(idx)}
-                          onmouseleave={clearHighlight}
-                          onclick={() => highlightSegment(idx)}
+                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
+                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
+                          onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
                           role="button"
                           tabindex="0"
                         >
@@ -1237,11 +1243,11 @@
                       {#each segments as seg, idx}
                         <div
                           class="study-phrase-block"
-                          class:highlighted={highlightedSegmentId === idx}
+                          class:highlighted={isSegmentHighlighted(para.paragraph_index ?? i, idx)}
                           data-seg-id={idx}
-                          onmouseenter={() => highlightSegment(idx)}
-                          onmouseleave={clearHighlight}
-                          onclick={() => highlightSegment(idx)}
+                          onmouseenter={() => highlightSegment(para.paragraph_index ?? i, idx)}
+                          onmouseleave={() => clearHighlight(para.paragraph_index ?? i, idx)}
+                          onclick={() => highlightSegment(para.paragraph_index ?? i, idx)}
                           role="button"
                           tabindex="0"
                         >
@@ -2108,7 +2114,7 @@
   /* Same width for all modes (BASE, SBS, Study) - centered */
   .document-content {
     position: relative; /* For corner icon positioning */
-    max-width: 775px;
+    max-width: 800px;
     margin: 2rem auto;
     padding: 2rem 2.5rem 4rem 2.5rem;
     background: #faf8f3;
@@ -2123,8 +2129,8 @@
   }
 
   .document-content.bilingual {
-    /* Same width as base - tighter padding to maximize reading area */
-    padding: 1.5rem 1rem 3rem 1rem;
+    /* Same width as base - minimal padding to maximize reading area */
+    padding: 1.5rem 0.5rem 3rem 0.5rem;
   }
 
   /* On narrow screens, allow content to use available space */
@@ -2276,8 +2282,7 @@
   }
 
   .original-col {
-    padding-right: 0.75rem;
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    padding-right: 0;
   }
 
   .original-col[dir="rtl"] {
@@ -2302,8 +2307,7 @@
   }
 
   .translation-col {
-    padding-left: 0.75rem;
-    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    padding-left: 0;
     line-height: 1.25 !important;
     /* English translation - explicit LTR with left alignment */
     direction: ltr;
