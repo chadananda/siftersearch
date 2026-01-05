@@ -5,7 +5,7 @@
    */
   import { onMount } from 'svelte';
   import { librarian } from '../../lib/api.js';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
   import MetadataEditor from '../MetadataEditor.svelte';
 
   const auth = getAuthState();
@@ -13,6 +13,7 @@
   let items = $state([]);
   let stats = $state(null);
   let loading = $state(true);
+  let authReady = $state(false);
   let error = $state(null);
   let actionLoading = $state(null);
 
@@ -38,7 +39,16 @@
   ];
 
   onMount(async () => {
-    await Promise.all([loadItems(), loadStats()]);
+    // Initialize auth before loading data (sets access token)
+    await initAuth();
+    authReady = true;
+
+    // Only load data if authenticated admin
+    if (auth.isAuthenticated && ['admin', 'superadmin', 'editor'].includes(auth.user?.tier)) {
+      await Promise.all([loadItems(), loadStats()]);
+    } else {
+      loading = false;
+    }
   });
 
   async function loadItems() {
@@ -187,7 +197,12 @@
 </script>
 
 <div class="document-queue">
-  {#if !auth.isAuthenticated || auth.user?.tier !== 'admin'}
+  {#if !authReady}
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Checking authentication...</p>
+    </div>
+  {:else if !auth.isAuthenticated || !['admin', 'superadmin', 'editor'].includes(auth.user?.tier)}
     <div class="access-denied">
       <h2>Access Denied</h2>
       <p>You need admin access to view this page.</p>

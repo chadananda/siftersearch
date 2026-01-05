@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T14:24:45.617Z",
+  "generated": "2026-01-05T14:36:16.204Z",
   "entries": [
+    {
+      "hash": "c9e8893",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Wait for auth before loading document in editor",
+      "scope": null
+    },
     {
       "hash": "009aa5b",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Resegment endpoint now uses reingest from source file",
       "scope": null
-    },
-    {
-      "hash": "699c5f1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add admin API endpoints for document management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "c9e8893",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Wait for auth before loading document in editor",
+        "scope": null
+      },
       {
         "hash": "009aa5b",
         "date": "2026-01-05",
@@ -699,13 +706,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Resegment endpoint now uses reingest from source file",
-        "scope": null
-      },
-      {
-        "hash": "699c5f1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add admin API endpoints for document management",
         "scope": null
       }
     ]
