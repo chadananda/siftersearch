@@ -1212,7 +1212,7 @@ async function translateCombined({
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 6, 1500) // More tokens for combined output
+      maxTokens: Math.min(Math.max(text.length * 6, 1500), 16000) // Cap at model limit
     }),
     API_TIMEOUT_MS,
     'translateCombined'
@@ -1353,7 +1353,7 @@ Return ONLY TOON format. Every sentence MUST include MANY [[sN.segments]] blocks
       { role: 'user', content: sentenceList }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 12, 6000)  // Many more tokens for short phrase segments
+      maxTokens: Math.min(Math.max(text.length * 8, 4000), 16000)  // Cap at 16000 for model limit
     }),
     API_TIMEOUT_MS,
     'translateCombinedMarked'
@@ -2278,7 +2278,7 @@ async function translateForStudy(text, sourceLang, targetLang, contentType, cont
       { role: 'user', content: text }
     ], {
       temperature: 0.2, // Lower temperature for more consistent literal translations
-      maxTokens: Math.max(text.length * 5, 1000) // More tokens for detailed annotations
+      maxTokens: Math.min(Math.max(text.length * 5, 1000), 16000) // Cap at model limit
     }),
     API_TIMEOUT_MS,
     'translateForStudy'
