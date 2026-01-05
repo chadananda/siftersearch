@@ -2073,10 +2073,12 @@ Example output format:
 /**
  * Extract actual sentences from text using ending phrases
  * CRITICAL: All positions must snap to word boundaries to avoid breaking words
+ * CRITICAL: Track actual original position to prevent overlapping extractions
  */
 function extractSentencesFromEndings(text, endings) {
   const sentences = [];
-  let searchStart = 0;
+  let searchStart = 0;           // Position in NORMALIZED text for finding endings
+  let lastOrigEnd = 0;           // Actual position in ORIGINAL text we've processed (prevents overlap)
   const normalizedText = normalizeArabic(text);
 
   for (const ending of endings) {
@@ -2107,24 +2109,44 @@ function extractSentencesFromEndings(text, endings) {
       // For end: find the end of the word (go forward to next space or end)
       origEnd = snapToWordEnd(text, origEnd);
 
-      // Extract sentence from original text
-      const sentence = text.slice(origStart, origEnd).trim();
-      if (sentence) {
-        sentences.push(sentence);
-        // Update searchStart in normalized space - snap to after the word we just ended on
-        searchStart = pos + normalizedEnding.length;
-        // Also ensure we skip any partial word in normalized text
-        while (searchStart < normalizedText.length && !/\s/.test(normalizedText[searchStart])) {
-          searchStart++;
+      // CRITICAL: Ensure we don't overlap with previous sentence
+      // The word boundary snapping might have caused origEnd to extend past where
+      // the normalized searchStart would indicate for the next iteration
+      if (origStart < lastOrigEnd) {
+        origStart = lastOrigEnd;
+        // Skip any whitespace
+        while (origStart < text.length && /\s/.test(text[origStart])) {
+          origStart++;
+        }
+      }
+
+      // Only extract if we have a valid non-empty range
+      if (origStart < origEnd) {
+        // Extract sentence from original text
+        const sentence = text.slice(origStart, origEnd).trim();
+        if (sentence) {
+          sentences.push(sentence);
+          // Track the actual original position we've processed
+          lastOrigEnd = origEnd;
+          // Update searchStart in normalized space for finding next ending
+          searchStart = pos + normalizedEnding.length;
+          // Also ensure we skip any partial word in normalized text
+          while (searchStart < normalizedText.length && !/\s/.test(normalizedText[searchStart])) {
+            searchStart++;
+          }
         }
       }
     }
   }
 
   // Handle any remaining text after last ending
-  if (searchStart < normalizedText.length) {
-    let remainingStart = normalizedPosToOriginal(text, searchStart);
-    remainingStart = snapToWordStart(text, remainingStart);
+  // Use lastOrigEnd to ensure no overlap with extracted sentences
+  if (lastOrigEnd < text.length) {
+    let remainingStart = lastOrigEnd;
+    // Skip any whitespace
+    while (remainingStart < text.length && /\s/.test(text[remainingStart])) {
+      remainingStart++;
+    }
     const remaining = text.slice(remainingStart).trim();
     if (remaining.length > 20) {
       sentences.push(remaining);

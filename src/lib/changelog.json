@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T01:59:09.013Z",
+  "generated": "2026-01-05T02:28:49.671Z",
   "entries": [
+    {
+      "hash": "1c26fe2",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add strict word-for-word validation for segmentation",
+      "scope": null
+    },
     {
       "hash": "528a0ee",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Position logo/QR in corners with overlap, make twice as big",
       "scope": null
-    },
-    {
-      "hash": "dc0c683",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Reduce SBS padding and fix highlight text visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "1c26fe2",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add strict word-for-word validation for segmentation",
+        "scope": null
+      },
       {
         "hash": "528a0ee",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Position logo/QR in corners with overlap, make twice as big",
-        "scope": null
-      },
-      {
-        "hash": "dc0c683",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Reduce SBS padding and fix highlight text visibility",
         "scope": null
       }
     ]
