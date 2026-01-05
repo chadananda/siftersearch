@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-04T23:42:12.057Z",
+  "generated": "2026-01-05T00:16:17.310Z",
   "entries": [
+    {
+      "hash": "bdd00f0",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Never cut text at arbitrary char limit - always find word boundary",
+      "scope": null
+    },
     {
       "hash": "6934e10",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add hanging indent and visible left margin on mobile",
       "scope": null
-    },
-    {
-      "hash": "a03dd41",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Hide back button on mobile view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "bdd00f0",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Never cut text at arbitrary char limit - always find word boundary",
+        "scope": null
+      },
       {
         "hash": "6934e10",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Add hanging indent and visible left margin on mobile",
-        "scope": null
-      },
-      {
-        "hash": "a03dd41",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Hide back button on mobile view",
         "scope": null
       }
     ]

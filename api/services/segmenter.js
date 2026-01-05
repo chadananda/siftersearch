@@ -723,10 +723,22 @@ export async function addSentenceMarkers(text, options = {}) {
   }
 
   // Insert markers INTO the original text at boundary positions
+  // CRITICAL: Snap all positions to word boundaries first
   // Work backwards to preserve positions
   let markedText = text;
   for (let i = boundaries.length - 1; i >= 0; i--) {
-    const { start, end } = boundaries[i];
+    let { start, end } = boundaries[i];
+
+    // Snap end to word boundary - go forward to end of current word
+    while (end < text.length && !/\s/.test(text[end])) {
+      end++;
+    }
+
+    // Snap start to word boundary - skip leading whitespace
+    while (start < end && /\s/.test(text[start])) {
+      start++;
+    }
+
     const id = i + 1;
     // Insert closing marker at end
     markedText = markedText.slice(0, end) + `⁅/s${id}⁆` + markedText.slice(end);
@@ -1472,6 +1484,7 @@ function normalizedPosToOriginal(originalText, normPos) {
  * Insert sentence markers into text using sentence ending phrases
  *
  * Finds each ending phrase in the text and inserts markers around the sentence.
+ * CRITICAL: Markers are ONLY inserted at word boundaries (spaces) - never mid-word.
  *
  * @param {string} text - Original paragraph text
  * @param {string[]} endings - Sentence ending phrases (last 3-5 words of each)
@@ -1500,19 +1513,32 @@ export function insertSentenceMarkersFromEndings(text, endings) {
     }
 
     const { pos, len } = match;
-    const endPos = pos + len;
+    let endPos = pos + len;
+
+    // CRITICAL: Snap endPos to word boundary - go forward to end of current word
+    // This ensures we never insert markers in the middle of a word
+    while (endPos < text.length && !/\s/.test(text[endPos])) {
+      endPos++;
+    }
 
     // Sentence starts after previous boundary (or at text start)
-    const startPos = boundaries.length > 0 ? boundaries[boundaries.length - 1].end : 0;
+    let startPos = boundaries.length > 0 ? boundaries[boundaries.length - 1].end : 0;
 
-    // Skip leading whitespace for sentence start
-    let adjustedStart = startPos;
-    while (adjustedStart < pos && /\s/.test(text[adjustedStart])) {
-      adjustedStart++;
+    // Skip leading whitespace for sentence start, but also ensure we're at word start
+    while (startPos < endPos && /\s/.test(text[startPos])) {
+      startPos++;
+    }
+
+    // Double-check: if startPos is mid-word, go back to word start
+    if (startPos > 0 && !/\s/.test(text[startPos - 1]) && startPos < text.length && !/\s/.test(text[startPos])) {
+      // We might be mid-word - this shouldn't happen but let's be safe
+      while (startPos > 0 && !/\s/.test(text[startPos - 1])) {
+        startPos--;
+      }
     }
 
     boundaries.push({
-      start: adjustedStart,
+      start: startPos,
       end: endPos
     });
 
@@ -1704,7 +1730,69 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
     totalParagraphs: allParagraphs.length
   }, 'Document segmentation complete');
 
+  // Validate that no words were broken during segmentation
+  const validation = validateSegmentationIntegrity(cleanText, allSentences);
+  if (!validation.valid) {
+    logger.error({
+      brokenWords: validation.brokenWords.slice(0, 10),
+      totalBroken: validation.brokenWords.length
+    }, 'SEGMENTATION ERROR: Words were broken during sentence detection');
+  }
+
   return { sentences: allSentences, paragraphs: allParagraphs };
+}
+
+/**
+ * Validate that segmentation didn't break any words
+ * Compares words in the segmented output to words in the original text
+ * @param {string} originalText - Original source text
+ * @param {string[]} sentences - Segmented sentences
+ * @returns {{ valid: boolean, brokenWords: string[] }}
+ */
+function validateSegmentationIntegrity(originalText, sentences) {
+  // Get all words from original text (normalize and split by whitespace)
+  const originalWords = new Set(
+    originalText.replace(/\s+/g, ' ').trim().split(' ')
+      .map(w => normalizeArabic(w))
+      .filter(w => w.length > 0)
+  );
+
+  // Get all words from segmented sentences (strip markers first)
+  const brokenWords = [];
+  for (const sentence of sentences) {
+    // Strip sentence markers like ⁅s1⁆ and ⁅/s1⁆
+    const cleanSentence = sentence.replace(/⁅\/?s\d+⁆/g, '').trim();
+    const sentenceWords = cleanSentence.split(/\s+/).filter(w => w.length > 0);
+
+    for (const word of sentenceWords) {
+      const normalizedWord = normalizeArabic(word);
+      // Skip if word is in original (it's valid)
+      if (originalWords.has(normalizedWord)) continue;
+
+      // Word not found in original - might be broken
+      // Check if it's a fragment (part of a longer word in original)
+      let isFragment = false;
+      for (const origWord of originalWords) {
+        if (origWord.includes(normalizedWord) && origWord !== normalizedWord) {
+          isFragment = true;
+          brokenWords.push({
+            fragment: word,
+            likelyFrom: origWord,
+            sentence: sentence.substring(0, 60) + '...'
+          });
+          break;
+        }
+      }
+
+      // If not a fragment of any word, might be a legitimate new word or variant
+      // (don't flag these as they could be false positives from normalization differences)
+    }
+  }
+
+  return {
+    valid: brokenWords.length === 0,
+    brokenWords
+  };
 }
 
 /**
@@ -1959,6 +2047,7 @@ Example output format:
 
 /**
  * Extract actual sentences from text using ending phrases
+ * CRITICAL: All positions must snap to word boundaries to avoid breaking words
  */
 function extractSentencesFromEndings(text, endings) {
   const sentences = [];
@@ -1984,27 +2073,92 @@ function extractSentencesFromEndings(text, endings) {
 
     if (pos !== -1) {
       // Convert normalized position to original position
-      const origStart = normalizedPosToOriginal(text, searchStart);
-      const origEnd = normalizedPosToOriginal(text, pos + normalizedEnding.length);
+      let origStart = normalizedPosToOriginal(text, searchStart);
+      let origEnd = normalizedPosToOriginal(text, pos + normalizedEnding.length);
+
+      // CRITICAL: Snap to word boundaries to avoid breaking words
+      // For start: find the beginning of the word (go back to previous space or start)
+      origStart = snapToWordStart(text, origStart);
+      // For end: find the end of the word (go forward to next space or end)
+      origEnd = snapToWordEnd(text, origEnd);
 
       // Extract sentence from original text
       const sentence = text.slice(origStart, origEnd).trim();
       if (sentence) {
         sentences.push(sentence);
+        // Update searchStart in normalized space - snap to after the word we just ended on
         searchStart = pos + normalizedEnding.length;
+        // Also ensure we skip any partial word in normalized text
+        while (searchStart < normalizedText.length && !/\s/.test(normalizedText[searchStart])) {
+          searchStart++;
+        }
       }
     }
   }
 
   // Handle any remaining text after last ending
   if (searchStart < normalizedText.length) {
-    const remaining = text.slice(normalizedPosToOriginal(text, searchStart)).trim();
+    let remainingStart = normalizedPosToOriginal(text, searchStart);
+    remainingStart = snapToWordStart(text, remainingStart);
+    const remaining = text.slice(remainingStart).trim();
     if (remaining.length > 20) {
       sentences.push(remaining);
     }
   }
 
   return sentences;
+}
+
+/**
+ * Snap a position to the start of the current word
+ * Moves backwards to find the previous space or text start
+ * @param {string} text - Original text
+ * @param {number} pos - Position that might be mid-word
+ * @returns {number} - Position at word start
+ */
+function snapToWordStart(text, pos) {
+  if (pos <= 0) return 0;
+  if (pos >= text.length) return text.length;
+
+  // If we're already at a space or just after one, we're at a word start
+  if (/\s/.test(text[pos]) || (pos > 0 && /\s/.test(text[pos - 1]))) {
+    // Skip any leading whitespace
+    while (pos < text.length && /\s/.test(text[pos])) {
+      pos++;
+    }
+    return pos;
+  }
+
+  // We're mid-word - go back to find the word start
+  let wordStart = pos;
+  while (wordStart > 0 && !/\s/.test(text[wordStart - 1])) {
+    wordStart--;
+  }
+  return wordStart;
+}
+
+/**
+ * Snap a position to the end of the current word
+ * Moves forward to find the next space or text end
+ * @param {string} text - Original text
+ * @param {number} pos - Position that might be mid-word
+ * @returns {number} - Position at word end (after the last character of the word)
+ */
+function snapToWordEnd(text, pos) {
+  if (pos <= 0) return 0;
+  if (pos >= text.length) return text.length;
+
+  // If we're at a space, we're already at word end - don't include the space
+  if (/\s/.test(text[pos])) {
+    return pos;
+  }
+
+  // We might be mid-word - go forward to find the word end
+  let wordEnd = pos;
+  while (wordEnd < text.length && !/\s/.test(text[wordEnd])) {
+    wordEnd++;
+  }
+  return wordEnd;
 }
 
 /**
