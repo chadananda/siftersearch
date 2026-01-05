@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T04:29:40.404Z",
+  "generated": "2026-01-05T04:36:45.802Z",
   "entries": [
+    {
+      "hash": "f6bb5ca",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Cap maxTokens at 16000 to prevent model limit errors",
+      "scope": null
+    },
     {
       "hash": "81cdebf",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make mode button label white when active",
       "scope": null
-    },
-    {
-      "hash": "8d0c5e2",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Show existing translation progress when queueing new job",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "f6bb5ca",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Cap maxTokens at 16000 to prevent model limit errors",
+        "scope": null
+      },
       {
         "hash": "81cdebf",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Make mode button label white when active",
-        "scope": null
-      },
-      {
-        "hash": "8d0c5e2",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Show existing translation progress when queueing new job",
         "scope": null
       }
     ]

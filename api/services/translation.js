@@ -781,19 +781,19 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         const para = batch[i];
         const result = batchResults[i];
 
-        if (result && result.reading && result.study && result.segments) {
+        if (result && result.reading && result.study) {
           const translationData = {
             reading: result.reading,
             study: result.study,
-            segments: result.segments,
-            notes: result.notes
+            segments: result.segments || null,
+            notes: result.notes || null
           };
 
           await query(`
             UPDATE content
             SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
             WHERE id = ?
-          `, [JSON.stringify(translationData), JSON.stringify(result.segments), now, para.id]);
+          `, [JSON.stringify(translationData), JSON.stringify(result.segments || null), now, para.id]);
 
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
@@ -805,9 +805,8 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
           logger.warn({
             paraId: para.id,
             hasReading: !!result?.reading,
-            hasStudy: !!result?.study,
-            hasSegments: !!result?.segments
-          }, 'Incomplete translation result');
+            hasStudy: !!result?.study
+          }, 'Incomplete translation result - missing reading or study');
         }
       }
 
@@ -835,13 +834,13 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             hasMarkers: hasMarkers(para.text)
           });
 
-          if (result.reading && result.study && result.segments) {
+          if (result.reading && result.study) {
             const now = new Date().toISOString();
             await query(`
               UPDATE content
               SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
               WHERE id = ?
-            `, [JSON.stringify(result), JSON.stringify(result.segments), now, para.id]);
+            `, [JSON.stringify(result), JSON.stringify(result.segments || null), now, para.id]);
 
             const mapEntry = paragraphMap.get(para.paragraph_index);
             if (mapEntry) {
@@ -851,7 +850,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             translatedCount++;
             await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
           } else {
-            logger.error({ paraId: para.id }, 'Individual translation missing required fields');
+            logger.error({ paraId: para.id, hasReading: !!result.reading, hasStudy: !!result.study }, 'Individual translation missing required fields');
           }
         } catch (fallbackErr) {
           logger.warn({ paraId: para.id, err: fallbackErr.message }, 'Individual fallback failed');
