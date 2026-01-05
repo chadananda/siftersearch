@@ -789,9 +789,9 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
           await query(`
             UPDATE content
-            SET translation = ?, synced = 0, updated_at = ?
+            SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
             WHERE id = ?
-          `, [JSON.stringify(translationData), now, para.id]);
+          `, [JSON.stringify(translationData), JSON.stringify(result.segments), now, para.id]);
 
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
@@ -837,9 +837,9 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             const now = new Date().toISOString();
             await query(`
               UPDATE content
-              SET translation = ?, synced = 0, updated_at = ?
+              SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
               WHERE id = ?
-            `, [JSON.stringify(result), now, para.id]);
+            `, [JSON.stringify(result), JSON.stringify(result.segments), now, para.id]);
 
             const mapEntry = paragraphMap.get(para.paragraph_index);
             if (mapEntry) {
@@ -939,9 +939,9 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
       await query(`
         UPDATE content
-        SET translation = ?, synced = 0, updated_at = ?
+        SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
         WHERE id = ?
-      `, [JSON.stringify(translationData), now, para.id]);
+      `, [JSON.stringify(translationData), JSON.stringify(translationData.segments), now, para.id]);
 
       translatedCount++;
       await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);

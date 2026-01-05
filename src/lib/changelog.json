@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-05T02:49:06.335Z",
+  "generated": "2026-01-05T03:39:16.686Z",
   "entries": [
+    {
+      "hash": "2da673a",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
+      "scope": null
+    },
     {
       "hash": "18e9939",
       "date": "2026-01-04",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Position icons at actual corners of document box",
       "scope": null
-    },
-    {
-      "hash": "f4ec0c6",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Allow corner icons to overflow document container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-04": [
+      {
+        "hash": "2da673a",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
+        "scope": null
+      },
       {
         "hash": "18e9939",
         "date": "2026-01-04",
@@ -697,13 +704,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Position icons at actual corners of document box",
-        "scope": null
-      },
-      {
-        "hash": "f4ec0c6",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Allow corner icons to overflow document container",
         "scope": null
       }
     ]
