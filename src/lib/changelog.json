@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T02:39:06.756Z",
+  "generated": "2026-01-06T02:41:06.798Z",
   "entries": [
+    {
+      "hash": "bd977f6",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Wait for auth before checking admin permissions in dashboard",
+      "scope": null
+    },
     {
       "hash": "fa09a0c",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
       "scope": null
-    },
-    {
-      "hash": "1b2d3af",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add pattern-based translation clearing for batch operations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "bd977f6",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Wait for auth before checking admin permissions in dashboard",
+        "scope": null
+      },
       {
         "hash": "fa09a0c",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
-        "scope": null
-      },
-      {
-        "hash": "1b2d3af",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add pattern-based translation clearing for batch operations",
         "scope": null
       }
     ]

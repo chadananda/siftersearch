@@ -392,6 +392,23 @@
               {/if}
             {/if}
           {/if}
+          <!-- Edit button - admin only, visible on hover or when expanded -->
+          {#if isAdmin}
+            <a
+              class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
+                     {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+              href="/admin/documents/{doc.id}"
+              target="_blank"
+              rel="noopener"
+              onclick={(e) => e.stopPropagation()}
+              title="Edit document"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </a>
+          {/if}
           <!-- Open in new tab button - visible on hover or when expanded -->
           <a
             class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
