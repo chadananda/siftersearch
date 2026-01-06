@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T01:59:59.695Z",
+  "generated": "2026-01-06T02:39:06.756Z",
   "entries": [
+    {
+      "hash": "fa09a0c",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add auto_segmented flag to track AI-segmented documents",
+      "scope": null
+    },
     {
       "hash": "ddc9c14",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add pattern-based translation clearing for batch operations",
       "scope": null
-    },
-    {
-      "hash": "4eea663",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Optimize translation for 6-10x speedup with TOON format",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "fa09a0c",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add auto_segmented flag to track AI-segmented documents",
+        "scope": null
+      },
       {
         "hash": "ddc9c14",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add pattern-based translation clearing for batch operations",
-        "scope": null
-      },
-      {
-        "hash": "4eea663",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Optimize translation for 6-10x speedup with TOON format",
         "scope": null
       }
     ]

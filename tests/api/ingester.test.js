@@ -565,11 +565,13 @@ describe('Migration 24: auto_segmented column', () => {
     expect(defaultValue).toBe(0);
 
     // When autoSegmented is true, it should be stored as 1
-    const autoSegmentedTrue = true ? 1 : 0;
+    const flagTrue = true;
+    const autoSegmentedTrue = flagTrue ? 1 : 0;
     expect(autoSegmentedTrue).toBe(1);
 
     // When autoSegmented is false, it should be stored as 0
-    const autoSegmentedFalse = false ? 1 : 0;
+    const flagFalse = false;
+    const autoSegmentedFalse = flagFalse ? 1 : 0;
     expect(autoSegmentedFalse).toBe(0);
   });
 });

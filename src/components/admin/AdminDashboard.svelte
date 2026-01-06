@@ -5,16 +5,24 @@
    */
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
   const auth = getAuthState();
 
   let stats = $state(null);
   let loading = $state(true);
+  let authReady = $state(false);
   let error = $state(null);
 
   onMount(async () => {
-    await loadStats();
+    // Wait for auth to initialize before checking permissions or loading data
+    await initAuth();
+    authReady = true;
+
+    // Only load stats if user is authenticated admin
+    if (auth.isAuthenticated && auth.user?.tier === 'admin') {
+      await loadStats();
+    }
   });
 
   async function loadStats() {
@@ -39,7 +47,7 @@
 </script>
 
 <div class="dashboard">
-  {#if loading}
+  {#if !authReady || loading}
     <div class="loading">
       <div class="spinner"></div>
       <p>Loading dashboard...</p>
