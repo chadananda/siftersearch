@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T14:12:48.637Z",
+  "generated": "2026-01-06T18:25:09.377Z",
   "entries": [
+    {
+      "hash": "317dd5f",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Store translations as JSON only, remove translation_segments column usage",
+      "scope": null
+    },
     {
       "hash": "1b183cd",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Snap sentence marker insertion to word boundaries",
       "scope": null
-    },
-    {
-      "hash": "bdd00f0",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Never cut text at arbitrary char limit - always find word boundary",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "317dd5f",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Store translations as JSON only, remove translation_segments column usage",
+        "scope": null
+      },
       {
         "hash": "1b183cd",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Snap sentence marker insertion to word boundaries",
-        "scope": null
-      },
-      {
-        "hash": "bdd00f0",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Never cut text at arbitrary char limit - always find word boundary",
         "scope": null
       }
     ]
