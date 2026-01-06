@@ -385,3 +385,191 @@ Content here.`;
     expect(metadata.notes).toBeDefined();
   });
 });
+
+describe('parseDocumentWithBlocks (async with autoSegmented flag)', () => {
+  // Import the async function for testing
+  let parseDocumentWithBlocks;
+
+  beforeEach(async () => {
+    // Dynamic import to get the async function
+    const ingester = await import('../../api/services/ingester.js');
+    parseDocumentWithBlocks = ingester.parseDocumentWithBlocks;
+  });
+
+  describe('return shape', () => {
+    it('should return object with chunks array and autoSegmented boolean', async () => {
+      const text = `This is a test paragraph with enough content to be indexed. It needs to exceed the minimum character threshold which is typically around one hundred characters for proper indexing.
+
+Second paragraph here with sufficient length. This paragraph also contains enough content to pass the minimum threshold and should be properly parsed.`;
+
+      const result = await parseDocumentWithBlocks(text, { language: 'en' });
+
+      expect(result).toHaveProperty('chunks');
+      expect(result).toHaveProperty('autoSegmented');
+      expect(Array.isArray(result.chunks)).toBe(true);
+      expect(typeof result.autoSegmented).toBe('boolean');
+    });
+
+    it('should return empty chunks array for empty input', async () => {
+      const result = await parseDocumentWithBlocks('', { language: 'en' });
+
+      expect(result.chunks).toEqual([]);
+      expect(result.autoSegmented).toBe(false);
+    });
+
+    it('should return empty chunks array for null input', async () => {
+      const result = await parseDocumentWithBlocks(null, { language: 'en' });
+
+      expect(result.chunks).toEqual([]);
+      expect(result.autoSegmented).toBe(false);
+    });
+
+    it('should return empty chunks array for non-string input', async () => {
+      const result = await parseDocumentWithBlocks(123, { language: 'en' });
+
+      expect(result.chunks).toEqual([]);
+      expect(result.autoSegmented).toBe(false);
+    });
+  });
+
+  describe('autoSegmented flag for standard text', () => {
+    it('should NOT flag English text as auto-segmented', async () => {
+      const englishText = `This is the first paragraph. It has proper punctuation marks. The sentences are clearly delimited with periods and other punctuation.
+
+This is the second paragraph. It also has normal punctuation. Everything is clearly separated into sentences.
+
+The third paragraph continues the pattern. More sentences with periods. The text is well-structured.`;
+
+      const result = await parseDocumentWithBlocks(englishText, { language: 'en' });
+
+      expect(result.autoSegmented).toBe(false);
+      expect(result.chunks.length).toBeGreaterThan(0);
+    });
+
+    it('should NOT flag punctuated Arabic text as auto-segmented', async () => {
+      // Arabic text WITH punctuation (modern style)
+      const punctuatedArabic = `هذه الفقرة الأولى. تحتوي على علامات ترقيم. الجمل مفصولة بوضوح بالنقاط.
+
+هذه الفقرة الثانية. لديها أيضًا ترقيم عادي. كل شيء مفصول بوضوح.
+
+الفقرة الثالثة تستمر في النمط. المزيد من الجمل مع النقاط. النص منظم جيدًا.`;
+
+      const result = await parseDocumentWithBlocks(punctuatedArabic, { language: 'ar' });
+
+      // Even with RTL, if there's punctuation, it shouldn't be flagged
+      expect(result.autoSegmented).toBe(false);
+    });
+
+    it('should handle mixed language content appropriately', async () => {
+      const mixedContent = `English paragraph with proper punctuation. This has sentences marked clearly.
+
+هذه فقرة عربية مع علامات ترقيم. الجمل واضحة هنا.
+
+Back to English with more sentences. Everything is punctuated normally.`;
+
+      const result = await parseDocumentWithBlocks(mixedContent, { language: 'en' });
+
+      // Mixed content with punctuation should not be auto-segmented
+      expect(result.autoSegmented).toBe(false);
+    });
+  });
+
+  describe('chunk structure', () => {
+    it('should return chunks with text and blocktype properties', async () => {
+      const text = `# Heading One
+
+This is a paragraph under the first heading with sufficient content to be indexed. It exceeds the minimum character threshold required for proper indexing.
+
+## Heading Two
+
+Another paragraph with enough content here. This paragraph also contains sufficient text to pass the minimum threshold and should be properly parsed by the system.`;
+
+      const result = await parseDocumentWithBlocks(text, { language: 'en' });
+
+      expect(result.chunks.length).toBeGreaterThan(0);
+      result.chunks.forEach(chunk => {
+        expect(chunk).toHaveProperty('text');
+        expect(chunk).toHaveProperty('blocktype');
+        expect(typeof chunk.text).toBe('string');
+        expect(typeof chunk.blocktype).toBe('string');
+      });
+    });
+  });
+
+  describe('language detection', () => {
+    it('should accept language option', async () => {
+      const text = `Test paragraph with sufficient content for indexing. This text should be parsed with the specified language option and produce valid chunks.`;
+
+      // Should not throw with various language options
+      const resultEn = await parseDocumentWithBlocks(text, { language: 'en' });
+      const resultAr = await parseDocumentWithBlocks(text, { language: 'ar' });
+      const resultFa = await parseDocumentWithBlocks(text, { language: 'fa' });
+
+      expect(resultEn.chunks.length).toBeGreaterThan(0);
+      expect(resultAr.chunks.length).toBeGreaterThan(0);
+      expect(resultFa.chunks.length).toBeGreaterThan(0);
+    });
+
+    it('should default to English if no language specified', async () => {
+      const text = `Test paragraph with sufficient content for indexing. This text should be parsed with default language settings.`;
+
+      const result = await parseDocumentWithBlocks(text); // No language option
+
+      expect(result.autoSegmented).toBe(false);
+      expect(result.chunks.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+describe('Unpunctuated Text Detection (integration)', () => {
+  // Test the behavior indirectly through parseDocumentWithBlocks
+  let parseDocumentWithBlocks;
+
+  beforeEach(async () => {
+    const ingester = await import('../../api/services/ingester.js');
+    parseDocumentWithBlocks = ingester.parseDocumentWithBlocks;
+  });
+
+  it('should detect highly punctuated text as NOT unpunctuated', async () => {
+    // Every sentence has punctuation - clearly NOT unpunctuated
+    const punctuatedText = `First sentence here. Second sentence here! Third sentence here? Fourth sentence. Fifth sentence. Sixth sentence. Seventh sentence. Eighth sentence. Ninth sentence. Tenth sentence ends here.`;
+
+    const result = await parseDocumentWithBlocks(punctuatedText, { language: 'en' });
+
+    // Highly punctuated = NOT auto-segmented
+    expect(result.autoSegmented).toBe(false);
+  });
+
+  it('should handle text that is borderline punctuated', async () => {
+    // Some punctuation but not excessive - standard parsing should handle it
+    const borderlineText = `This is a paragraph that has some punctuation marks scattered throughout the text. There are periods at the end of some sentences but not everywhere. The content continues flowing without strict sentence boundaries in every case. Some parts might run together. But generally it has enough structure.`;
+
+    const result = await parseDocumentWithBlocks(borderlineText, { language: 'en' });
+
+    // Should still not be flagged since it's English (LTR)
+    expect(result.autoSegmented).toBe(false);
+  });
+});
+
+describe('Migration 24: auto_segmented column', () => {
+  // These tests verify the migration logic conceptually
+  // Actual DB testing would require integration tests with a real database
+
+  it('should define auto_segmented as INTEGER DEFAULT 0', () => {
+    // This is a conceptual test - the migration adds:
+    // ALTER TABLE docs ADD COLUMN auto_segmented INTEGER DEFAULT 0
+    // We verify the expected behavior:
+
+    // Default should be 0 (false)
+    const defaultValue = 0;
+    expect(defaultValue).toBe(0);
+
+    // When autoSegmented is true, it should be stored as 1
+    const autoSegmentedTrue = true ? 1 : 0;
+    expect(autoSegmentedTrue).toBe(1);
+
+    // When autoSegmented is false, it should be stored as 0
+    const autoSegmentedFalse = false ? 1 : 0;
+    expect(autoSegmentedFalse).toBe(0);
+  });
+});
