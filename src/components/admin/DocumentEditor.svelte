@@ -35,17 +35,18 @@
   let originalMetadata = $state({});
   let originalBodyContent = $state('');
 
-  // Metadata field definitions
+  // Metadata field definitions (collection/religion are derived from file path, not frontmatter)
   const METADATA_FIELDS = [
     { key: 'title', label: 'Title', type: 'text', required: true },
     { key: 'author', label: 'Author', type: 'text' },
     { key: 'language', label: 'Language', type: 'select', options: ['en', 'ar', 'fa', 'he', 'ur', 'es', 'fr', 'de', 'ru', 'zh'] },
-    { key: 'religion', label: 'Religion', type: 'text' },
-    { key: 'collection', label: 'Collection', type: 'text' },
     { key: 'year', label: 'Year', type: 'text' },
     { key: 'description', label: 'Description', type: 'textarea' },
     { key: 'tags', label: 'Tags', type: 'text', help: 'Comma-separated list' }
   ];
+
+  // Fields to strip from frontmatter (derived from folder structure, not editable)
+  const STRIP_FIELDS = ['collection', 'religion'];
 
   // Common optional fields that can be added
   const OPTIONAL_FIELDS = [
@@ -93,6 +94,8 @@
       const colonIdx = line.indexOf(':');
       if (colonIdx > 0) {
         const key = line.slice(0, colonIdx).trim();
+        // Skip fields that should be stripped (derived from folder structure)
+        if (STRIP_FIELDS.includes(key)) continue;
         let value = line.slice(colonIdx + 1).trim();
         // Remove quotes if present
         if ((value.startsWith('"') && value.endsWith('"')) ||
@@ -522,8 +525,8 @@
               </div>
             {/each}
 
-            <!-- Show other metadata fields not in the form -->
-            {#each Object.entries(metadata).filter(([k]) => !METADATA_FIELDS.some(f => f.key === k)) as [key, value]}
+            <!-- Show other metadata fields not in the form (excluding stripped fields) -->
+            {#each Object.entries(metadata).filter(([k]) => !METADATA_FIELDS.some(f => f.key === k) && !STRIP_FIELDS.includes(k)) as [key, value]}
               <div class="form-field custom-field">
                 <div class="field-header">
                   <label for={key}>{OPTIONAL_FIELDS.find(f => f.key === key)?.label || key}</label>
