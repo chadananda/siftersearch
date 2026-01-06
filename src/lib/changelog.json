@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T02:57:39.964Z",
+  "generated": "2026-01-06T03:00:35.412Z",
   "entries": [
+    {
+      "hash": "83049f0",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add Raw Search admin page for direct Meilisearch access",
+      "scope": null
+    },
     {
       "hash": "b07a87b",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve Study view layout and translation prompts",
       "scope": null
-    },
-    {
-      "hash": "644b813",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Include Arabic terms in study translation for difficult words",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "83049f0",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add Raw Search admin page for direct Meilisearch access",
+        "scope": null
+      },
       {
         "hash": "b07a87b",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Improve Study view layout and translation prompts",
-        "scope": null
-      },
-      {
-        "hash": "644b813",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Include Arabic terms in study translation for difficult words",
         "scope": null
       }
     ]

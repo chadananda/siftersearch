@@ -48,7 +48,7 @@
 
     debounceTimer = setTimeout(() => {
       performSearch();
-    }, 150); // 150ms debounce for snappy feel
+    }, 30); // 30ms debounce - trust Meilisearch speed
   }
 
   async function performSearch() {
@@ -59,11 +59,12 @@
     const startTime = performance.now();
 
     try {
-      // Use keyword-only search for maximum speed (no embedding generation)
+      // Use hybrid search: 85% keyword, 15% semantic for typo tolerance
       const data = await search.search({
         query: query.trim(),
         limit: 50,
-        mode: 'keyword',
+        mode: 'hybrid',
+        semanticRatio: 0.15,
         offset: 0
       });
 
@@ -138,7 +139,7 @@
   {:else}
     <header class="page-header">
       <h1>Raw Search</h1>
-      <p class="subtitle">Direct Meilisearch - No AI, Maximum Speed</p>
+      <p class="subtitle">Direct Meilisearch - No AI Reranking, Maximum Speed</p>
     </header>
 
     <!-- Search Input -->
