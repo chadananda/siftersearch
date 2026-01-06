@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T02:53:03.609Z",
+  "generated": "2026-01-06T02:57:39.964Z",
   "entries": [
+    {
+      "hash": "b07a87b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Highlight active nav item in admin sidebar",
+      "scope": null
+    },
     {
       "hash": "55a3bf0",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Include Arabic terms in study translation for difficult words",
       "scope": null
-    },
-    {
-      "hash": "996891f",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Robust TOON parser that strips LLM explanatory text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "b07a87b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Highlight active nav item in admin sidebar",
+        "scope": null
+      },
       {
         "hash": "55a3bf0",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Include Arabic terms in study translation for difficult words",
-        "scope": null
-      },
-      {
-        "hash": "996891f",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Robust TOON parser that strips LLM explanatory text",
         "scope": null
       }
     ]
