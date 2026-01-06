@@ -98,7 +98,7 @@
 
     <!-- Tier Cards -->
     <div class="tier-grid">
-      {#each tiers as tier}
+      {#each tiers.filter(t => t.id !== 'institutional') as tier}
         <button
           class="tier-card"
           class:selected={selectedTier === tier.id}
@@ -113,6 +113,25 @@
         </button>
       {/each}
     </div>
+
+    <!-- Institutional Tier (centered) -->
+    {#if tiers.find(t => t.id === 'institutional')}
+      {@const institutional = tiers.find(t => t.id === 'institutional')}
+      <div class="institutional-section">
+        <button
+          class="tier-card institutional"
+          class:selected={selectedTier === 'institutional'}
+          onclick={() => selectedTier = 'institutional'}
+        >
+          <h3>{institutional.name}</h3>
+          <div class="price">
+            <span class="amount">${institutional.amounts.monthly}</span>
+            <span class="period">/mo</span>
+          </div>
+          <p class="description">{institutional.description}</p>
+        </button>
+      </div>
+    {/if}
 
     <!-- Subscribe Button -->
     <div class="donate-section">
@@ -260,9 +279,22 @@
 
   .tier-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    margin-bottom: 1.5rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .institutional-section {
+    display: flex;
+    justify-content: center;
     margin-bottom: 2rem;
+  }
+
+  .institutional-section .tier-card {
+    max-width: 280px;
   }
 
   .tier-card {
@@ -468,14 +500,6 @@
   }
 
   @media (max-width: 640px) {
-    .frequency-toggle {
-      flex-direction: column;
-    }
-
-    .freq-btn {
-      text-align: center;
-    }
-
     .tier-grid {
       grid-template-columns: 1fr;
     }
