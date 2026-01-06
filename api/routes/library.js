@@ -1595,14 +1595,15 @@ Return ONLY the description text, no quotes or formatting.`;
     request.log.info({ docId: id }, '[TranslationStats] Querying for doc_id');
 
     // Get counts from libsql (source of truth)
-    // Check both 'translation' and 'translation_segments' fields
-    // Translations can be stored in either field depending on the translation mode
+    // Translation is stored as JSON: {"reading": "...", "study": "...", "segments": [...]}
+    // Or as legacy plain text string
+    // Count as translated if translation field has content (not null, not empty, not literal "null")
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
         SUM(CASE
-          WHEN (translation IS NOT NULL AND translation != '' AND translation != 'null')
-            OR (translation_segments IS NOT NULL AND translation_segments != '' AND translation_segments != 'null')
+          WHEN translation IS NOT NULL
+            AND length(translation) > 4
           THEN 1 ELSE 0
         END) as translated
       FROM content
@@ -1713,11 +1714,16 @@ Return ONLY the description text, no quotes or formatting.`;
     const sourceLang = doc.language || 'ar';
     const result = await translateTextWithSegments(para.text, sourceLang, 'en', 'scriptural');
 
-    // Save result
-    const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
+    // Save result as JSON object (segments embedded, not separate column)
+    const translationJson = JSON.stringify({
+      reading: result.translation,
+      study: null,
+      segments: result.segments || null,
+      notes: null
+    });
     await query(
-      'UPDATE content SET translation = ?, translation_segments = ?, synced = 0, updated_at = ? WHERE id = ?',
-      [result.translation, segmentsJson, new Date().toISOString(), para.id]
+      'UPDATE content SET translation = ?, synced = 0, updated_at = ? WHERE id = ?',
+      [translationJson, new Date().toISOString(), para.id]
     );
 
     return {
@@ -2016,19 +2022,22 @@ Provide only the translation, no explanations.`;
             contentType
           );
 
-          const translation = result.translation;
-          const segmentsJson = result.segments ? JSON.stringify(result.segments) : null;
-
-          // Save translation and segments to database
+          // Save translation as JSON object (segments embedded, not separate column)
+          const translationJson = JSON.stringify({
+            reading: result.translation,
+            study: null,
+            segments: result.segments || null,
+            notes: null
+          });
           await query(
-            'UPDATE content SET translation = ?, translation_segments = ?, synced = 0, updated_at = ? WHERE id = ?',
-            [translation, segmentsJson, new Date().toISOString(), para.id]
+            'UPDATE content SET translation = ?, synced = 0, updated_at = ? WHERE id = ?',
+            [translationJson, new Date().toISOString(), para.id]
           );
 
           return {
             id: para.id,
             paragraphIndex: para.paragraph_index,
-            translation,
+            translation: result.translation,
             segments: result.segments,
             success: true
           };

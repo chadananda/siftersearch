@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T14:02:36.844Z",
+  "generated": "2026-01-06T14:12:48.637Z",
   "entries": [
+    {
+      "hash": "1b183cd",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Translation stats now check both translation and translation_segments fields",
+      "scope": null
+    },
     {
       "hash": "56ad1ef",
       "date": "2026-01-05",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Never cut text at arbitrary char limit - always find word boundary",
       "scope": null
-    },
-    {
-      "hash": "6934e10",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-06": [
+      {
+        "hash": "1b183cd",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Translation stats now check both translation and translation_segments fields",
+        "scope": null
+      }
+    ],
     "2026-01-05": [
       {
         "hash": "56ad1ef",
@@ -697,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Never cut text at arbitrary char limit - always find word boundary",
-        "scope": null
-      },
-      {
-        "hash": "6934e10",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
         "scope": null
       }
     ]

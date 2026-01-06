@@ -1317,7 +1317,7 @@ Collection: ${doc.collection || 'Unknown'}
           hasMarkers: false
         });
 
-        // Store as JSON with both reading and study translations
+        // Store as JSON with both reading and study translations (segments embedded in JSON)
         const translationJson = JSON.stringify({
           reading: result.reading,
           study: result.study,
@@ -1326,8 +1326,8 @@ Collection: ${doc.collection || 'Unknown'}
         });
 
         await query(
-          'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
-          [translationJson, JSON.stringify(result.segments || []), para.id]
+          'UPDATE content SET translation = ?, synced = 0 WHERE id = ?',
+          [translationJson, para.id]
         );
 
         // Update context for next paragraph
@@ -1465,7 +1465,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         segmentIntegrity = originalNormalized === segmentsJoined;
       }
 
-      // Save to database if requested
+      // Save to database if requested (segments embedded in translation JSON)
       if (save && paragraph) {
         const translationJson = JSON.stringify({
           reading: result.reading,
@@ -1475,8 +1475,8 @@ Collection: ${paragraph.collection || 'Unknown'}
         });
 
         await query(
-          'UPDATE content SET translation = ?, translation_segments = ?, synced = 0 WHERE id = ?',
-          [translationJson, JSON.stringify(result.segments || []), paragraph.id]
+          'UPDATE content SET translation = ?, synced = 0 WHERE id = ?',
+          [translationJson, paragraph.id]
         );
         logger.info({ paragraphId }, 'Test translation saved to database');
       }

@@ -783,11 +783,12 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             notes: result.notes || null
           };
 
+          // Segments are embedded in translationData JSON, no separate column needed
           await query(`
             UPDATE content
-            SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+            SET translation = ?, synced = 0, updated_at = ?
             WHERE id = ?
-          `, [JSON.stringify(translationData), JSON.stringify(result.segments || null), now, para.id]);
+          `, [JSON.stringify(translationData), now, para.id]);
 
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
@@ -833,11 +834,12 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
           if (result && result.reading && result.study) {
             const now = new Date().toISOString();
             try {
+              // Segments are embedded in result JSON, no separate column needed
               await query(`
                 UPDATE content
-                SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+                SET translation = ?, synced = 0, updated_at = ?
                 WHERE id = ?
-              `, [JSON.stringify(result), JSON.stringify(result.segments || null), now, para.id]);
+              `, [JSON.stringify(result), now, para.id]);
               logger.info({ paraId: para.id }, 'Translation saved successfully');
             } catch (saveErr) {
               logger.error({ paraId: para.id, err: saveErr.message }, 'Failed to save translation');
@@ -939,11 +941,12 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
         translationData.notes = studyResult.studyNotes?.segments || null;
       }
 
+      // Segments are embedded in translationData JSON, no separate column needed
       await query(`
         UPDATE content
-        SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+        SET translation = ?, synced = 0, updated_at = ?
         WHERE id = ?
-      `, [JSON.stringify(translationData), JSON.stringify(translationData.segments), now, para.id]);
+      `, [JSON.stringify(translationData), now, para.id]);
 
       translatedCount++;
       await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);
