@@ -1595,10 +1595,16 @@ Return ONLY the description text, no quotes or formatting.`;
     request.log.info({ docId: id }, '[TranslationStats] Querying for doc_id');
 
     // Get counts from libsql (source of truth)
+    // Check both 'translation' and 'translation_segments' fields
+    // Translations can be stored in either field depending on the translation mode
     const stats = await queryOne(`
       SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN translation IS NOT NULL AND translation != '' THEN 1 ELSE 0 END) as translated
+        SUM(CASE
+          WHEN (translation IS NOT NULL AND translation != '' AND translation != 'null')
+            OR (translation_segments IS NOT NULL AND translation_segments != '' AND translation_segments != 'null')
+          THEN 1 ELSE 0
+        END) as translated
       FROM content
       WHERE doc_id = ?
     `, [id]);

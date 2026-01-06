@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T05:17:03.679Z",
+  "generated": "2026-01-06T14:02:36.844Z",
   "entries": [
+    {
+      "hash": "56ad1ef",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Add prerender to agent pages + comprehensive link tests",
+      "scope": null
+    },
     {
       "hash": "657b6cd",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
       "scope": null
-    },
-    {
-      "hash": "34f35ff",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "56ad1ef",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Add prerender to agent pages + comprehensive link tests",
+        "scope": null
+      },
       {
         "hash": "657b6cd",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
-        "scope": null
-      },
-      {
-        "hash": "34f35ff",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
         "scope": null
       }
     ]
