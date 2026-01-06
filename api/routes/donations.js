@@ -20,9 +20,8 @@ const DONATION_TIERS = [
     id: 'supporter',
     name: 'Supporter',
     amounts: {
-      monthly: 5,
-      yearly: 50,
-      once: 10
+      monthly: 15,
+      once: 25
     },
     description: 'Help keep SifterSearch running'
   },
@@ -30,9 +29,8 @@ const DONATION_TIERS = [
     id: 'patron',
     name: 'Patron',
     amounts: {
-      monthly: 15,
-      yearly: 150,
-      once: 25
+      monthly: 50,
+      once: 100
     },
     description: 'Enhanced access and priority support',
     upgradeTier: 'patron'
@@ -41,9 +39,8 @@ const DONATION_TIERS = [
     id: 'benefactor',
     name: 'Benefactor',
     amounts: {
-      monthly: 50,
-      yearly: 500,
-      once: 100
+      monthly: 200,
+      once: 400
     },
     description: 'Major support for development and hosting',
     upgradeTier: 'patron'

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:33:23.156Z",
+  "generated": "2026-01-06T03:35:53.981Z",
   "entries": [
+    {
+      "hash": "4669304",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Admin panel logo, search results, and add translation debug",
+      "scope": null
+    },
     {
       "hash": "e254855",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "SBS English text styling - larger font, proper LTR direction",
       "scope": null
-    },
-    {
-      "hash": "a563a00",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Move ai_usage migration to correct directory",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "4669304",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Admin panel logo, search results, and add translation debug",
+        "scope": null
+      },
       {
         "hash": "e254855",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "SBS English text styling - larger font, proper LTR direction",
-        "scope": null
-      },
-      {
-        "hash": "a563a00",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Move ai_usage migration to correct directory",
         "scope": null
       }
     ]

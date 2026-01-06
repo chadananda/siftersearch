@@ -114,14 +114,6 @@
       </button>
       <button
         class="freq-btn"
-        class:active={frequency === 'yearly'}
-        onclick={() => frequency = 'yearly'}
-      >
-        Yearly
-        <span class="save-badge">Save 17%</span>
-      </button>
-      <button
-        class="freq-btn"
         class:active={frequency === 'once'}
         onclick={() => frequency = 'once'}
       >
@@ -347,17 +339,6 @@
     background: var(--accent-primary);
     border-color: var(--accent-primary);
     color: white;
-  }
-
-  .save-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    padding: 0.125rem 0.375rem;
-    background: var(--success);
-    color: white;
-    font-size: 0.625rem;
-    border-radius: 0.25rem;
   }
 
   .tier-grid {
