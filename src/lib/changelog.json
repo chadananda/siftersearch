@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T05:08:11.257Z",
+  "generated": "2026-01-06T05:17:03.679Z",
   "entries": [
+    {
+      "hash": "657b6cd",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Add visible mark highlighting for admin RawSearch",
+      "scope": null
+    },
     {
       "hash": "8f3dddc",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
       "scope": null
-    },
-    {
-      "hash": "ee6e494",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Enforce max paragraph size with force-split fallback for translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "657b6cd",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Add visible mark highlighting for admin RawSearch",
+        "scope": null
+      },
       {
         "hash": "8f3dddc",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
-        "scope": null
-      },
-      {
-        "hash": "ee6e494",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Enforce max paragraph size with force-split fallback for translation",
         "scope": null
       }
     ]
