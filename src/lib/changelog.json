@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T04:18:28.543Z",
+  "generated": "2026-01-06T04:57:46.377Z",
   "entries": [
+    {
+      "hash": "d1e341b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
+      "scope": null
+    },
     {
       "hash": "7b55dca",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
       "scope": null
-    },
-    {
-      "hash": "2bbefa2",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add test translation API endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "d1e341b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
+        "scope": null
+      },
       {
         "hash": "7b55dca",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
-        "scope": null
-      },
-      {
-        "hash": "2bbefa2",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add test translation API endpoint",
         "scope": null
       }
     ]

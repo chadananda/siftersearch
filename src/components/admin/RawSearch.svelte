@@ -94,10 +94,48 @@
     return score.toFixed(2);
   }
 
-  // Truncate text for display
+  // Truncate text for display, preserving HTML tags
   function truncate(text, maxLength = 200) {
-    if (!text || text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+    if (!text) return text;
+
+    // Strip HTML to check actual text length
+    const stripped = text.replace(/<[^>]*>/g, '');
+    if (stripped.length <= maxLength) return text;
+
+    // Truncate while preserving HTML structure
+    let count = 0;
+    let result = '';
+    let inTag = false;
+
+    for (let i = 0; i < text.length && count < maxLength; i++) {
+      const char = text[i];
+      if (char === '<') {
+        inTag = true;
+        result += char;
+      } else if (char === '>') {
+        inTag = false;
+        result += char;
+      } else if (inTag) {
+        result += char;
+      } else {
+        result += char;
+        count++;
+      }
+    }
+
+    // Close any open mark tags
+    const openMarks = (result.match(/<mark>/g) || []).length;
+    const closeMarks = (result.match(/<\/mark>/g) || []).length;
+    for (let i = 0; i < openMarks - closeMarks; i++) {
+      result += '</mark>';
+    }
+
+    return result + '...';
+  }
+
+  // Get highlighted text or fall back to plain text
+  function getHighlightedText(result) {
+    return result._formatted?.text || result.text || '';
   }
 </script>
 
@@ -169,7 +207,7 @@
               <span class="result-score">{formatScore(result.score)}</span>
             </div>
             <div class="result-content">
-              <p class="result-text">{truncate(result.text, 300)}</p>
+              <p class="result-text">{@html truncate(getHighlightedText(result), 300)}</p>
               <div class="result-meta">
                 <span class="meta-title">{result.title || 'Untitled'}</span>
                 {#if result.author}
@@ -333,6 +371,14 @@
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0 0 0.75rem;
+  }
+
+  .result-text :global(mark) {
+    background: var(--accent-primary);
+    color: white;
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+    font-weight: 500;
   }
 
   .result-meta {
