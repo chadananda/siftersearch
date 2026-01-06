@@ -391,7 +391,7 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   } = options;
 
   if (!text || typeof text !== 'string') {
-    return [];
+    return { chunks: [], autoSegmented: false };
   }
 
   // Detect language for AI hints
@@ -441,7 +441,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
         }, 'Split oversized paragraphs');
       }
 
-      return finalChunks;
+      // AI segmentation was used for unpunctuated RTL text
+      return { chunks: finalChunks, autoSegmented: true };
     } catch (err) {
       logger.warn({ err: err.message }, 'Sentence-first segmentation failed, falling back to standard approach');
       // Fall through to standard approach
@@ -453,7 +454,7 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   const blocks = parseMarkdownBlocks(text);
 
   if (blocks.length === 0) {
-    return [];
+    return { chunks: [], autoSegmented: false };
   }
 
   // Use segmentBlocks for ALL content
@@ -482,7 +483,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     }, 'Split oversized paragraphs (standard path)');
   }
 
-  return finalChunks;
+  // Standard path preserves natural paragraph breaks (not auto-segmented)
+  return { chunks: finalChunks, autoSegmented: false };
 }
 
 /**
@@ -622,7 +624,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
 
   // Parse into chunks/paragraphs with blocktype awareness
   // Uses AI segmentation for RTL languages without punctuation
-  const chunks = await parseDocumentWithBlocks(content, {
+  const { chunks, autoSegmented } = await parseDocumentWithBlocks(content, {
     language: finalMeta.language
   });
 
@@ -716,8 +718,8 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   // Insert/update document record with slug
   await query(`
     INSERT OR REPLACE INTO docs
-    (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    (id, file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `, [
     finalDocId,
     filePath,
@@ -730,7 +732,8 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     safeParseYear(finalMeta.year),
     finalMeta.description,
     chunks.length,
-    finalSlug
+    finalSlug,
+    autoSegmented ? 1 : 0
   ]);
 
   // Create redirect if URL slug changed (for SEO and link preservation)
@@ -848,6 +851,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     reused: reusedCount,
     new: newCount,
     deleted: deletedCount,
+    autoSegmented,
     filePath
   }, existingDoc ? 'Document updated (incremental)' : 'Document ingested');
 

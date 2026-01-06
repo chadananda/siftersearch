@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T01:55:00.887Z",
+  "generated": "2026-01-06T01:59:59.695Z",
   "entries": [
+    {
+      "hash": "ddc9c14",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Strip collection/religion from source document frontmatter",
+      "scope": null
+    },
     {
       "hash": "7227a20",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Optimize translation for 6-10x speedup with TOON format",
       "scope": null
-    },
-    {
-      "hash": "bcfa25a",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "ddc9c14",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Strip collection/religion from source document frontmatter",
+        "scope": null
+      },
       {
         "hash": "7227a20",
         "date": "2026-01-05",
@@ -697,15 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Optimize translation for 6-10x speedup with TOON format",
-        "scope": null
-      }
-    ],
-    "2026-01-03": [
-      {
-        "hash": "bcfa25a",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
         "scope": null
       }
     ]

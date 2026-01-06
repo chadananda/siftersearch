@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 23;
+const CURRENT_VERSION = 24;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -930,6 +930,23 @@ const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_redirects_doc_id ON redirects(doc_id)`);
 
     logger.info('Created redirects table for URL path tracking');
+  },
+
+  // Version 24: Add auto_segmented flag to track documents that were AI-segmented
+  // Documents with no natural paragraph breaks (Arabic/Farsi) are segmented during ingestion
+  // This flag helps identify them for careful re-editing to avoid breaking translations
+  24: async () => {
+    try {
+      await query('ALTER TABLE docs ADD COLUMN auto_segmented INTEGER DEFAULT 0');
+      logger.info('Added auto_segmented column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Create index for filtering auto-segmented documents
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_auto_segmented ON docs(auto_segmented)');
+
+    logger.info('Migration 24: auto_segmented flag added for tracking AI-segmented documents');
   },
 };
 
