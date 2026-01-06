@@ -196,6 +196,10 @@ const homeDir = process.env.HOME || '/home/chad';
 const defaultLibraryBase = `${homeDir}/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library`;
 
 const libraryConfig = {
+  // Canonical base path - ALL document IDs are relative to this
+  // This ensures portable IDs that work across machines
+  basePath: process.env.LIBRARY_BASE_PATH || defaultLibraryBase,
+
   // Paths to index - array of directories containing markdown files
   // Structure expected: Religion/Collection/filename.md
   paths: process.env.LIBRARY_PATH

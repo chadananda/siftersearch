@@ -558,25 +558,29 @@ function extractHeading(fullContent, chunkText) {
  *
  * @param {string} text - Raw document text
  * @param {Object} metadata - Document metadata
- * @param {string} filePath - Optional file path for tracking
+ * @param {string} relativePath - Relative path from library base (canonical identifier)
  * @returns {Object} - { documentId, paragraphCount, status }
  */
-export async function ingestDocument(text, metadata = {}, filePath = null) {
-  const documentId = metadata.id || `doc_${nanoid(12)}`;
+export async function ingestDocument(text, metadata = {}, relativePath = null) {
+  // Generate deterministic ID from relative path, or fall back to random
+  // The relative path is the canonical, portable identifier
+  const documentId = relativePath
+    ? relativePath.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100)
+    : (metadata.id || `doc_${nanoid(12)}`);
   const fileHash = hashContent(text);
 
-  // Check if document already exists
+  // Check if document already exists (by relative path)
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
 
-  if (filePath) {
+  if (relativePath) {
     existingDoc = await queryOne(
       'SELECT id, file_hash, title, filename, religion, collection, language FROM docs WHERE file_path = ?',
-      [filePath]
+      [relativePath]
     );
 
     if (existingDoc && existingDoc.file_hash === fileHash) {
-      logger.info({ documentId: existingDoc.id, filePath }, 'Document unchanged, skipping');
+      logger.info({ documentId: existingDoc.id, relativePath }, 'Document unchanged, skipping');
       return {
         documentId: existingDoc.id,
         paragraphCount: 0,
@@ -594,7 +598,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
       for (const p of paragraphs) {
         existingParagraphs.set(p.content_hash, p);
       }
-      logger.info({ documentId: existingDoc.id, filePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
+      logger.info({ documentId: existingDoc.id, relativePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
     }
   }
 
@@ -629,7 +633,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   });
 
   if (chunks.length === 0) {
-    logger.warn({ documentId, filePath }, 'Document has no content to ingest');
+    logger.warn({ documentId, relativePath }, 'Document has no content to ingest');
     return {
       documentId,
       paragraphCount: 0,
@@ -684,7 +688,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
   const finalDocId = existingDoc ? existingDoc.id : documentId;
 
   // Extract filename from path for slug generation
-  const fileName = filePath ? filePath.split('/').pop() : existingDoc?.filename || null;
+  const fileName = relativePath ? relativePath.split('/').pop() : existingDoc?.filename || null;
 
   // Generate unique slug for this document
   // Format: author_title_lang (e.g., the-bab_address-to-believers_ar)
@@ -722,7 +726,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `, [
     finalDocId,
-    filePath,
+    relativePath,
     fileHash,
     finalMeta.title,
     finalMeta.author,
@@ -852,7 +856,7 @@ export async function ingestDocument(text, metadata = {}, filePath = null) {
     new: newCount,
     deleted: deletedCount,
     autoSegmented,
-    filePath
+    relativePath
   }, existingDoc ? 'Document updated (incremental)' : 'Document ingested');
 
   return {

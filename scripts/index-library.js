@@ -77,7 +77,13 @@ async function getFileHash(filePath) {
 }
 
 // Helper to extract metadata from filename and path
+// ALWAYS compute relativePath from canonical basePath for deterministic IDs
 function extractMetadataFromPath(filePath, basePath) {
+  // Use canonical basePath for ID generation - this ensures portable, consistent IDs
+  const canonicalBase = config.library.basePath;
+  const canonicalRelativePath = path.relative(canonicalBase, filePath);
+
+  // For metadata extraction (religion/collection), use the provided basePath
   const relativePath = path.relative(basePath, filePath);
   const parts = relativePath.split(path.sep);
 
@@ -216,8 +222,8 @@ function extractMetadataFromPath(filePath, basePath) {
     }
   }
 
-  // Generate unique ID from path
-  const id = relativePath
+  // Generate unique ID from CANONICAL relative path (ensures consistent IDs)
+  const id = canonicalRelativePath
     .replace(/\.md$/, '')
     .replace(/[^a-zA-Z0-9]+/g, '_')
     .toLowerCase()
@@ -225,6 +231,7 @@ function extractMetadataFromPath(filePath, basePath) {
 
   return {
     id,
+    relativePath: canonicalRelativePath,  // Store for ingester
     title,
     author,
     religion,
@@ -232,7 +239,7 @@ function extractMetadataFromPath(filePath, basePath) {
     year,
     // Don't set language here - let frontmatter take precedence
     // language detection happens in indexer.js from frontmatter
-    description: `From ${relativePath}`
+    description: `From ${canonicalRelativePath}`
   };
 }
 
