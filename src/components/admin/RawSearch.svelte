@@ -66,8 +66,8 @@
         offset: 0
       });
 
-      results = data.results || [];
-      totalHits = data.totalHits || results.length;
+      results = data.hits || [];
+      totalHits = data.estimatedTotalHits || results.length;
       searchTime = Math.round(performance.now() - startTime);
     } catch (err) {
       error = err.message || 'Search failed';

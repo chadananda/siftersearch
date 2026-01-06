@@ -148,12 +148,20 @@
 
   // Load translation stats for non-English docs when documents change
   $effect(() => {
+    // Debug: log all documents and their languages
+    console.log('[TranslationStats] Effect running, documents:', documents.length,
+      'non-English:', documents.filter(d => d.language && d.language !== 'en').length);
+
     // Find non-English docs that need stats loaded
     const docsNeedingStats = documents.filter(doc =>
       doc.language && doc.language !== 'en' &&
       !docTranslationStats[doc.id] &&
       !loadingStats[doc.id]
     );
+
+    console.log('[TranslationStats] Docs needing stats:', docsNeedingStats.map(d => ({
+      id: d.id, title: d.title?.slice(0, 30), lang: d.language
+    })));
 
     // Load stats for each (limit to first 10 to avoid overwhelming API)
     docsNeedingStats.slice(0, 10).forEach(doc => {
@@ -200,8 +208,11 @@
   // Get translation percentage for a doc
   function getTranslationPercent(docId) {
     const stats = docTranslationStats[docId];
+    console.log('[TranslationStats] getTranslationPercent for', docId, '→ stats:', stats);
     if (!stats || !stats.total) return null;
-    return Math.round((stats.translated / stats.total) * 100);
+    const percent = Math.round((stats.translated / stats.total) * 100);
+    console.log('[TranslationStats] Returning percent:', percent);
+    return percent;
   }
 
 

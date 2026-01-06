@@ -20,16 +20,13 @@ function isActive(href: string): boolean {
 ---
 
 <Layout title={title} description={description}>
-  <NavBar client:load currentPage="admin" hideLogo={true} />
+  <NavBar client:load currentPage="admin" />
   <slot name="background" />
   <div class="admin-layout">
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <a href="/" class="logo-link">
-          <img src="/ocean.svg" alt="SifterSearch" class="logo" />
-          <span class="logo-text">Admin</span>
-        </a>
+        <span class="logo-text">Admin Panel</span>
       </div>
       <nav class="sidebar-nav">
         <a href="/admin" class:list={["nav-item", { active: isActive('/admin') }]}>

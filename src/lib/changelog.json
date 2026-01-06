@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:19:14.091Z",
+  "generated": "2026-01-06T03:33:23.156Z",
   "entries": [
+    {
+      "hash": "e254855",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Admin panel improvements and search performance",
+      "scope": null
+    },
     {
       "hash": "67c0b4f",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Move ai_usage migration to correct directory",
       "scope": null
-    },
-    {
-      "hash": "5265338",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add AI usage tracking and cost dashboard",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "e254855",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Admin panel improvements and search performance",
+        "scope": null
+      },
       {
         "hash": "67c0b4f",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Move ai_usage migration to correct directory",
-        "scope": null
-      },
-      {
-        "hash": "5265338",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add AI usage tracking and cost dashboard",
         "scope": null
       }
     ]
