@@ -5,13 +5,14 @@
    */
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
   const auth = getAuthState();
 
   let users = $state([]);
   let total = $state(0);
   let loading = $state(true);
+  let authReady = $state(false);
   let error = $state(null);
   let actionLoading = $state(null);
 
@@ -25,7 +26,14 @@
   const TIERS = ['verified', 'approved', 'patron', 'institutional', 'admin', 'banned'];
 
   onMount(async () => {
-    await loadUsers();
+    await initAuth();
+    authReady = true;
+
+    if (auth.isAuthenticated && auth.user?.tier === 'admin') {
+      await loadUsers();
+    } else {
+      loading = false;
+    }
   });
 
   async function loadUsers() {
@@ -92,7 +100,12 @@
 </script>
 
 <div class="user-manager">
-  {#if !auth.isAuthenticated || auth.user?.tier !== 'admin'}
+  {#if !authReady}
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  {:else if !auth.isAuthenticated || auth.user?.tier !== 'admin'}
     <div class="access-denied">
       <h2>Access Denied</h2>
       <p>You need admin access to view this page.</p>

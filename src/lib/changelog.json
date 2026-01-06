@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T02:41:06.798Z",
+  "generated": "2026-01-06T02:47:52.412Z",
   "entries": [
+    {
+      "hash": "e2ef58d",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add edit button for admins on library document list",
+      "scope": null
+    },
     {
       "hash": "bd977f6",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Improve study translation prompt - readable literal, theological notes",
       "scope": null
-    },
-    {
-      "hash": "b229fe5",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "e2ef58d",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add edit button for admins on library document list",
+        "scope": null
+      },
       {
         "hash": "bd977f6",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Improve study translation prompt - readable literal, theological notes",
-        "scope": null
-      },
-      {
-        "hash": "b229fe5",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
         "scope": null
       }
     ]

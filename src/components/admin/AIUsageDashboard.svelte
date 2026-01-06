@@ -5,7 +5,7 @@
    */
   import { onMount } from 'svelte';
   import { admin } from '../../lib/api.js';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
   const auth = getAuthState();
 
@@ -13,6 +13,7 @@
   let recentCalls = $state([]);
   let filters = $state({ models: [], callers: [] });
   let loading = $state(true);
+  let authReady = $state(false);
   let error = $state(null);
 
   // Filter state
@@ -23,7 +24,14 @@
   const pageSize = 50;
 
   onMount(async () => {
-    await loadData();
+    await initAuth();
+    authReady = true;
+
+    if (auth.isAuthenticated && auth.user?.tier === 'admin') {
+      await loadData();
+    } else {
+      loading = false;
+    }
   });
 
   async function loadData() {

@@ -397,7 +397,7 @@
             <a
               class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
                      {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
-              href="/admin/documents/{doc.id}"
+              href="/admin/edit?id={doc.id}"
               target="_blank"
               rel="noopener"
               onclick={(e) => e.stopPropagation()}

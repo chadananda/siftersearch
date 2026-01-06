@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 24;
+const CURRENT_VERSION = 25;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -947,6 +947,31 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_docs_auto_segmented ON docs(auto_segmented)');
 
     logger.info('Migration 24: auto_segmented flag added for tracking AI-segmented documents');
+  },
+
+  // Version 25: Add ingestion_queue table for document submission/review workflow
+  25: async () => {
+    await query(`
+      CREATE TABLE IF NOT EXISTS ingestion_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_type TEXT NOT NULL,
+        source_data TEXT,
+        analysis_result TEXT,
+        suggested_metadata TEXT,
+        status TEXT DEFAULT 'pending',
+        target_document_id INTEGER,
+        error_message TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for common queries
+    await query('CREATE INDEX IF NOT EXISTS idx_ingestion_queue_status ON ingestion_queue(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_ingestion_queue_created_by ON ingestion_queue(created_by)');
+
+    logger.info('Migration 25: ingestion_queue table created for document submission workflow');
   },
 };
 
