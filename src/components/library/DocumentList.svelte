@@ -143,51 +143,60 @@
   }
 
   // Track which documents have translation stats loaded
-  let docTranslationStats = $state(new Map()); // doc.id → { translated: n, total: n }
-  let loadingStats = $state(new Set());
+  let docTranslationStats = $state({}); // doc.id → { translated: n, total: n }
+  let loadingStats = $state({}); // doc.id → true if loading
 
-  // Load translation stats for non-English docs
+  // Load translation stats for non-English docs when documents change
+  $effect(() => {
+    // Find non-English docs that need stats loaded
+    const docsNeedingStats = documents.filter(doc =>
+      doc.language && doc.language !== 'en' &&
+      !docTranslationStats[doc.id] &&
+      !loadingStats[doc.id]
+    );
+
+    // Load stats for each (limit to first 10 to avoid overwhelming API)
+    docsNeedingStats.slice(0, 10).forEach(doc => {
+      loadTranslationStats(doc);
+    });
+  });
+
+  // Load translation stats for a single doc
   async function loadTranslationStats(doc) {
-    if (!doc.language || doc.language === 'en' || docTranslationStats.has(doc.id) || loadingStats.has(doc.id)) {
+    if (!doc.language || doc.language === 'en' || docTranslationStats[doc.id] || loadingStats[doc.id]) {
       return;
     }
-    loadingStats = new Set([...loadingStats, doc.id]);
+    loadingStats = { ...loadingStats, [doc.id]: true };
     try {
       // Fetch translation stats directly
       const statsRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
       if (statsRes.ok) {
         const stats = await statsRes.json();
-        docTranslationStats = new Map(docTranslationStats).set(doc.id, {
-          translated: stats.translated || 0,
-          total: stats.total || 0
-        });
+        docTranslationStats = {
+          ...docTranslationStats,
+          [doc.id]: {
+            translated: stats.translated || 0,
+            total: stats.total || 0
+          }
+        };
       } else {
         // Mark as checked but no stats available
-        docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total: 0 });
+        docTranslationStats = { ...docTranslationStats, [doc.id]: { translated: 0, total: 0 } };
       }
     } catch {
       // Mark as checked to prevent retry loops
-      docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total: 0 });
+      docTranslationStats = { ...docTranslationStats, [doc.id]: { translated: 0, total: 0 } };
     } finally {
-      const newSet = new Set(loadingStats);
-      newSet.delete(doc.id);
-      loadingStats = newSet;
+      const { [doc.id]: _, ...rest } = loadingStats;
+      loadingStats = rest;
     }
   }
 
   // Get translation percentage for a doc
   function getTranslationPercent(docId) {
-    const stats = docTranslationStats.get(docId);
+    const stats = docTranslationStats[docId];
     if (!stats || !stats.total) return null;
     return Math.round((stats.translated / stats.total) * 100);
-  }
-
-  // Svelte action to load translation stats when element mounts
-  function loadStatsOnMount(node, { doc }) {
-    loadTranslationStats(doc);
-    return {
-      destroy() {}
-    };
   }
 
 
@@ -290,12 +299,7 @@
     {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
     {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
     {@const translationPercent = getTranslationPercent(doc.id)}
-    {@const statsLoading = loadingStats.has(doc.id)}
-
-    <!-- Load translation stats for non-English docs when they become visible -->
-    {#if isNonEnglish && !docTranslationStats.has(doc.id) && !loadingStats.has(doc.id)}
-      <div class="hidden" use:loadStatsOnMount={{ doc }}></div>
-    {/if}
+    {@const statsLoading = !!loadingStats[doc.id]}
 
     <div class="group border rounded-lg overflow-hidden transition-colors
                 {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
