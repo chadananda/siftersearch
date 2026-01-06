@@ -59,11 +59,10 @@
     const startTime = performance.now();
 
     try {
-      // Use hybrid search: 85% keyword, 15% semantic for typo tolerance
+      // Use pure keyword search for maximum speed - no vector embedding needed
       const data = await search.query(query.trim(), {
         limit: 50,
-        mode: 'hybrid',
-        semanticRatio: 0.15,
+        mode: 'keyword',
         offset: 0
       });
 
@@ -138,7 +137,7 @@
   {:else}
     <header class="page-header">
       <h1>Raw Search</h1>
-      <p class="subtitle">Direct Meilisearch - No AI Reranking, Maximum Speed</p>
+      <p class="subtitle">Pure Keyword Search - No AI, No Embeddings, Maximum Speed</p>
     </header>
 
     <!-- Search Input -->

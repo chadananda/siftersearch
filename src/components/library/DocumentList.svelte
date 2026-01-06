@@ -169,9 +169,12 @@
     loadingStats = { ...loadingStats, [doc.id]: true };
     try {
       // Fetch translation stats directly
-      const statsRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
+      const url = `${API_BASE}/api/library/documents/${doc.id}/translation-stats`;
+      console.log('[TranslationStats] Fetching:', url, 'for doc:', doc.title);
+      const statsRes = await authenticatedFetch(url);
       if (statsRes.ok) {
         const stats = await statsRes.json();
+        console.log('[TranslationStats] Response for', doc.id, ':', stats);
         docTranslationStats = {
           ...docTranslationStats,
           [doc.id]: {
@@ -180,10 +183,12 @@
           }
         };
       } else {
+        console.warn('[TranslationStats] Failed for', doc.id, '- status:', statsRes.status);
         // Mark as checked but no stats available
         docTranslationStats = { ...docTranslationStats, [doc.id]: { translated: 0, total: 0 } };
       }
-    } catch {
+    } catch (err) {
+      console.error('[TranslationStats] Error for', doc.id, ':', err);
       // Mark as checked to prevent retry loops
       docTranslationStats = { ...docTranslationStats, [doc.id]: { translated: 0, total: 0 } };
     } finally {
@@ -219,10 +224,13 @@
 
       // Update local translation stats
       if (data.total) {
-        docTranslationStats = new Map(docTranslationStats).set(docId, {
-          translated: data.progress || 0,
-          total: data.total
-        });
+        docTranslationStats = {
+          ...docTranslationStats,
+          [docId]: {
+            translated: data.progress || 0,
+            total: data.total
+          }
+        };
       }
 
       // Track active job for polling
@@ -260,10 +268,13 @@
 
             // Update stats
             if (status.stats) {
-              docTranslationStats = new Map(docTranslationStats).set(docId, {
-                translated: status.stats.translated || 0,
-                total: status.stats.total || 0
-              });
+              docTranslationStats = {
+                ...docTranslationStats,
+                [docId]: {
+                  translated: status.stats.translated || 0,
+                  total: status.stats.total || 0
+                }
+              };
             }
 
             // Remove from active jobs if completed or failed

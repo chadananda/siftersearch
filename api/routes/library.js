@@ -1592,6 +1592,8 @@ Return ONLY the description text, no quotes or formatting.`;
   }, async (request) => {
     const { id } = request.params;
 
+    request.log.info({ docId: id }, '[TranslationStats] Querying for doc_id');
+
     // Get counts from libsql (source of truth)
     const stats = await queryOne(`
       SELECT
@@ -1601,8 +1603,11 @@ Return ONLY the description text, no quotes or formatting.`;
       WHERE doc_id = ?
     `, [id]);
 
+    request.log.info({ docId: id, stats }, '[TranslationStats] Query result');
+
     // If libsql has no data, document needs to be re-indexed
     if (!stats?.total) {
+      request.log.warn({ docId: id }, '[TranslationStats] No data found - needsReindex');
       return {
         total: 0,
         translated: 0,
@@ -1611,11 +1616,14 @@ Return ONLY the description text, no quotes or formatting.`;
       };
     }
 
-    return {
+    const result = {
       total: stats.total || 0,
       translated: stats.translated || 0,
       percent: stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0
     };
+
+    request.log.info({ docId: id, result }, '[TranslationStats] Returning');
+    return result;
   });
 
   /**

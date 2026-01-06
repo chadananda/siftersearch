@@ -20,7 +20,7 @@ function isActive(href: string): boolean {
 ---
 
 <Layout title={title} description={description}>
-  <NavBar client:load currentPage="admin" />
+  <NavBar client:load currentPage="admin" hideLogo={true} />
   <slot name="background" />
   <div class="admin-layout">
     <!-- Sidebar -->

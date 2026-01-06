@@ -7,7 +7,7 @@
   import AuthModal from '../AuthModal.svelte';
 
   // Props
-  let { currentPage = 'search', showAboutModal = $bindable(false) } = $props();
+  let { currentPage = 'search', showAboutModal = $bindable(false), hideLogo = false } = $props();
 
   // App version
   const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
@@ -105,18 +105,20 @@
 <header class="navbar">
   <div class="navbar-container">
     <!-- Logo and brand -->
-    <a href="/" class="navbar-brand">
-      <img src="/ocean.svg" alt="SifterSearch" class="navbar-logo" />
-      <span class="navbar-title">
-        <span class="title-full">SifterSearch</span>
-        <span class="title-short">Sifter</span>
-        {#if pwa.updateAvailable}
-          <button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>
-        {:else}
-          <span class="version">v.{SHORT_VERSION}</span>
-        {/if}
-      </span>
-    </a>
+    {#if !hideLogo}
+      <a href="/" class="navbar-brand">
+        <img src="/ocean.svg" alt="SifterSearch" class="navbar-logo" />
+        <span class="navbar-title">
+          <span class="title-full">SifterSearch</span>
+          <span class="title-short">Sifter</span>
+          {#if pwa.updateAvailable}
+            <button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>
+          {:else}
+            <span class="version">v.{SHORT_VERSION}</span>
+          {/if}
+        </span>
+      </a>
+    {/if}
 
     <!-- Center spacer - pushes right controls to the edge -->
     <div class="navbar-spacer"></div>

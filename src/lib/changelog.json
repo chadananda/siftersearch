@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:12:48.523Z",
+  "generated": "2026-01-06T03:19:14.091Z",
   "entries": [
+    {
+      "hash": "67c0b4f",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use $effect and objects for translation stats reactivity",
+      "scope": null
+    },
     {
       "hash": "39735b4",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add AI usage tracking and cost dashboard",
       "scope": null
-    },
-    {
-      "hash": "4975c08",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Cap batch translation max_tokens at 16000",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "67c0b4f",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use $effect and objects for translation stats reactivity",
+        "scope": null
+      },
       {
         "hash": "39735b4",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add AI usage tracking and cost dashboard",
-        "scope": null
-      },
-      {
-        "hash": "4975c08",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Cap batch translation max_tokens at 16000",
         "scope": null
       }
     ]
