@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T02:47:52.412Z",
+  "generated": "2026-01-06T02:53:03.609Z",
   "entries": [
+    {
+      "hash": "55a3bf0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Auth timing and missing ingestion_queue table",
+      "scope": null
+    },
     {
       "hash": "e2ef58d",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Robust TOON parser that strips LLM explanatory text",
       "scope": null
-    },
-    {
-      "hash": "3b7f8be",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Improve study translation prompt - readable literal, theological notes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "55a3bf0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Auth timing and missing ingestion_queue table",
+        "scope": null
+      },
       {
         "hash": "e2ef58d",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Robust TOON parser that strips LLM explanatory text",
-        "scope": null
-      },
-      {
-        "hash": "3b7f8be",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Improve study translation prompt - readable literal, theological notes",
         "scope": null
       }
     ]
