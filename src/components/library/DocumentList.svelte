@@ -153,23 +153,21 @@
     }
     loadingStats = new Set([...loadingStats, doc.id]);
     try {
-      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=1`);
-      if (res.ok) {
-        const data = await res.json();
-        const total = data.total || 0;
-        const translated = data.paragraphs?.filter(p => p.translation)?.length || 0;
-        // Get full stats by fetching all paragraphs counts
-        const statsRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
-        if (statsRes.ok) {
-          const stats = await statsRes.json();
-          docTranslationStats = new Map(docTranslationStats).set(doc.id, stats);
-        } else {
-          // Fallback: estimate based on initial data
-          docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total });
-        }
+      // Fetch translation stats directly
+      const statsRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/translation-stats`);
+      if (statsRes.ok) {
+        const stats = await statsRes.json();
+        docTranslationStats = new Map(docTranslationStats).set(doc.id, {
+          translated: stats.translated || 0,
+          total: stats.total || 0
+        });
+      } else {
+        // Mark as checked but no stats available
+        docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total: 0 });
       }
     } catch {
-      // Ignore errors
+      // Mark as checked to prevent retry loops
+      docTranslationStats = new Map(docTranslationStats).set(doc.id, { translated: 0, total: 0 });
     } finally {
       const newSet = new Set(loadingStats);
       newSet.delete(doc.id);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:00:35.412Z",
+  "generated": "2026-01-06T03:04:26.697Z",
   "entries": [
+    {
+      "hash": "87a9396",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
+      "scope": null
+    },
     {
       "hash": "83049f0",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Move translation notes to paragraph footnotes",
       "scope": null
-    },
-    {
-      "hash": "bbb1b5e",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Improve Study view layout and translation prompts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "87a9396",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
+        "scope": null
+      },
       {
         "hash": "83049f0",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Move translation notes to paragraph footnotes",
-        "scope": null
-      },
-      {
-        "hash": "bbb1b5e",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Improve Study view layout and translation prompts",
         "scope": null
       }
     ]
