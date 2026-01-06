@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T04:57:46.377Z",
+  "generated": "2026-01-06T05:08:11.257Z",
   "entries": [
+    {
+      "hash": "8f3dddc",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Highlight search terms in RawSearch results",
+      "scope": null
+    },
     {
       "hash": "d1e341b",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Enforce max paragraph size with force-split fallback for translation",
       "scope": null
-    },
-    {
-      "hash": "31c1289",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "8f3dddc",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Highlight search terms in RawSearch results",
+        "scope": null
+      },
       {
         "hash": "d1e341b",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Enforce max paragraph size with force-split fallback for translation",
-        "scope": null
-      },
-      {
-        "hash": "31c1289",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
         "scope": null
       }
     ]

@@ -250,6 +250,15 @@ mark {
   font-weight: 500;
 }
 
+/* Admin Raw Search - visible highlighting for search hits */
+.raw-search mark {
+  background: var(--accent-primary) !important;
+  color: white !important;
+  padding: 0.1em 0.25em;
+  border-radius: 0.2em;
+  font-weight: 500;
+}
+
 /* ============================================
    SBS Translation Column Line-Height Fix
    Force English translation to single-spaced
