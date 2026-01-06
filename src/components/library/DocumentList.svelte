@@ -148,9 +148,14 @@
 
   // Load translation stats for non-English docs when documents change
   $effect(() => {
-    // Debug: log all documents and their languages
-    console.log('[TranslationStats] Effect running, documents:', documents.length,
-      'non-English:', documents.filter(d => d.language && d.language !== 'en').length);
+    // Debug: log all documents with their languages
+    const nonEnglish = documents.filter(d => d.language && d.language !== 'en');
+    console.log('[TranslationStats] Effect triggered', {
+      totalDocs: documents.length,
+      nonEnglishCount: nonEnglish.length,
+      sampleLanguages: documents.slice(0, 5).map(d => ({ id: d.id, title: d.title?.slice(0, 20), lang: d.language })),
+      statsLoaded: Object.keys(docTranslationStats).length
+    });
 
     // Find non-English docs that need stats loaded
     const docsNeedingStats = documents.filter(doc =>
@@ -159,14 +164,15 @@
       !loadingStats[doc.id]
     );
 
-    console.log('[TranslationStats] Docs needing stats:', docsNeedingStats.map(d => ({
-      id: d.id, title: d.title?.slice(0, 30), lang: d.language
-    })));
-
-    // Load stats for each (limit to first 10 to avoid overwhelming API)
-    docsNeedingStats.slice(0, 10).forEach(doc => {
-      loadTranslationStats(doc);
-    });
+    if (docsNeedingStats.length > 0) {
+      console.log('[TranslationStats] Loading stats for:', docsNeedingStats.slice(0, 10).map(d => ({
+        id: d.id, title: d.title?.slice(0, 20), lang: d.language
+      })));
+      // Load stats for each (limit to first 10 to avoid overwhelming API)
+      docsNeedingStats.slice(0, 10).forEach(doc => {
+        loadTranslationStats(doc);
+      });
+    }
   });
 
   // Load translation stats for a single doc
@@ -320,7 +326,8 @@
     {@const hasTranslations = isExpanded && bilingualContent?.paragraphs?.some(p => p.translation)}
     {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
     {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
-    {@const translationPercent = getTranslationPercent(doc.id)}
+    {@const docStats = docTranslationStats[doc.id]}
+    {@const translationPercent = docStats && docStats.total > 0 ? Math.round((docStats.translated / docStats.total) * 100) : null}
     {@const statsLoading = !!loadingStats[doc.id]}
 
     <div class="group border rounded-lg overflow-hidden transition-colors
@@ -378,6 +385,17 @@
                   </button>
                 {:else}
                   <span class="px-2 py-0.5 bg-info/20 text-info">{translationPercent}%</span>
+                {/if}
+              {:else if docStats}
+                <!-- Stats loaded but 0% translated -->
+                {#if isAdmin}
+                  <button
+                    onclick={(e) => { e.stopPropagation(); requestTranslation(doc.id); }}
+                    class="px-2 py-0.5 bg-warning/20 text-warning hover:bg-warning hover:text-white transition-colors cursor-pointer"
+                    title="Start translation (0%)"
+                  >0%</button>
+                {:else}
+                  <span class="px-2 py-0.5 bg-warning/20 text-warning">0%</span>
                 {/if}
               {:else if isAdmin}
                 <!-- Not translated: admin can start translation -->

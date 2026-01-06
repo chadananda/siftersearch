@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:47:38.492Z",
+  "generated": "2026-01-06T04:18:28.543Z",
   "entries": [
+    {
+      "hash": "7b55dca",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Show Institutional tier centered above subscribe button",
+      "scope": null
+    },
     {
       "hash": "7b0f6c1",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add test translation API endpoint",
       "scope": null
-    },
-    {
-      "hash": "4e1a79a",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Concurrent rolling queue for translation + mandatory segments",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "7b55dca",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Show Institutional tier centered above subscribe button",
+        "scope": null
+      },
       {
         "hash": "7b0f6c1",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add test translation API endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4e1a79a",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Concurrent rolling queue for translation + mandatory segments",
         "scope": null
       }
     ]

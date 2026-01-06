@@ -5,9 +5,8 @@
    * Focused on raw speed for admin debugging/testing
    */
   import { onMount } from 'svelte';
-  import { search, documents } from '../../lib/api.js';
+  import { search } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
-  import ReaderModal from '../common/ReaderModal.svelte';
 
   const auth = getAuthState();
 
@@ -18,14 +17,6 @@
   let error = $state(null);
   let searchTime = $state(null);
   let totalHits = $state(0);
-
-  // Reader modal state
-  let readerOpen = $state(false);
-  let readerDocument = $state(null);
-  let readerParagraphs = $state([]);
-  let readerCurrentIndex = $state(0);
-  let readerKeyPhrase = $state('');
-  let readerLoading = $state(false);
 
   // Debounce timer
   let debounceTimer = null;
@@ -52,7 +43,8 @@
   }
 
   async function performSearch() {
-    if (!query.trim()) return;
+    const searchQuery = query.trim();
+    if (!searchQuery) return;
 
     loading = true;
     error = null;
@@ -60,53 +52,40 @@
 
     try {
       // Use pure keyword search for maximum speed - no vector embedding needed
-      const data = await search.query(query.trim(), {
+      const data = await search.query(searchQuery, {
         limit: 50,
         mode: 'keyword',
         offset: 0
       });
 
-      results = data.hits || [];
-      totalHits = data.estimatedTotalHits || results.length;
-      searchTime = Math.round(performance.now() - startTime);
+      // Only update if query hasn't changed during search
+      if (query.trim() === searchQuery) {
+        results = data.hits || [];
+        totalHits = data.estimatedTotalHits || results.length;
+        searchTime = Math.round(performance.now() - startTime);
+      }
     } catch (err) {
-      error = err.message || 'Search failed';
-      results = [];
+      if (query.trim() === searchQuery) {
+        error = err.message || 'Search failed';
+        results = [];
+      }
     } finally {
       loading = false;
     }
   }
 
-  // Open reader modal for a result
-  async function openReader(result) {
-    readerLoading = true;
-    readerOpen = true;
-    readerKeyPhrase = query;
-
-    try {
-      // Load document paragraphs
-      const docData = await documents.getSegments(result.document_id);
-      readerDocument = {
-        id: result.document_id,
-        title: result.title || 'Untitled',
-        author: result.author,
-        religion: result.religion,
-        collection: result.collection,
-        language: result.language
-      };
-      readerParagraphs = docData.paragraphs || [];
-      readerCurrentIndex = result.paragraph_index || 0;
-    } catch (err) {
-      console.error('Failed to load document:', err);
-    } finally {
-      readerLoading = false;
+  // Open document in new tab
+  function openDocument(result) {
+    if (!result.document_id) {
+      error = 'Search result has no document_id';
+      console.error('[RawSearch] Result missing document_id:', result);
+      return;
     }
-  }
 
-  function closeReader() {
-    readerOpen = false;
-    readerDocument = null;
-    readerParagraphs = [];
+    // Build URL with paragraph anchor
+    const paraAnchor = result.paragraph_index ? `#p${result.paragraph_index}` : '';
+    const url = `/library/view?doc=${result.document_id}${paraAnchor}`;
+    window.open(url, '_blank');
   }
 
   // Format score for display
@@ -160,12 +139,12 @@
         {/if}
       </div>
 
-      {#if searchTime !== null}
-        <div class="search-stats">
-          <span class="stat">{totalHits.toLocaleString()} hits</span>
+      <div class="search-stats">
+        <span class="stat">{totalHits.toLocaleString()} hits</span>
+        {#if searchTime !== null}
           <span class="stat">{searchTime}ms</span>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
 
     <!-- Error -->
@@ -183,7 +162,7 @@
         {#each results as result, i}
           <button
             class="result-card"
-            onclick={() => openReader(result)}
+            onclick={() => openDocument(result)}
           >
             <div class="result-header">
               <span class="result-number">{i + 1}</span>
@@ -207,17 +186,6 @@
     </div>
   {/if}
 </div>
-
-<!-- Reader Modal -->
-<ReaderModal
-  bind:open={readerOpen}
-  document={readerDocument}
-  paragraphs={readerParagraphs}
-  currentIndex={readerCurrentIndex}
-  keyPhrase={readerKeyPhrase}
-  loading={readerLoading}
-  onClose={closeReader}
-/>
 
 <style>
   .raw-search {
