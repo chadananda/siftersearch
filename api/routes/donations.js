@@ -14,36 +14,34 @@ import { ApiError } from '../lib/errors.js';
 import { authenticate, optionalAuthenticate } from '../lib/auth.js';
 import { logger } from '../lib/logger.js';
 
-// Donation tiers
+// Donation tiers (monthly subscriptions only)
 const DONATION_TIERS = [
   {
     id: 'supporter',
     name: 'Supporter',
-    amounts: {
-      monthly: 15,
-      once: 25
-    },
+    amounts: { monthly: 15 },
     description: 'Help keep SifterSearch running'
   },
   {
     id: 'patron',
     name: 'Patron',
-    amounts: {
-      monthly: 50,
-      once: 100
-    },
+    amounts: { monthly: 50 },
     description: 'Enhanced access and priority support',
     upgradeTier: 'patron'
   },
   {
     id: 'benefactor',
     name: 'Benefactor',
-    amounts: {
-      monthly: 200,
-      once: 400
-    },
+    amounts: { monthly: 200 },
     description: 'Major support for development and hosting',
     upgradeTier: 'patron'
+  },
+  {
+    id: 'institutional',
+    name: 'Institutional',
+    amounts: { monthly: 500 },
+    description: 'For libraries, universities, and organizations',
+    upgradeTier: 'institutional'
   }
 ];
 

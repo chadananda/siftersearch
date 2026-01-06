@@ -14,9 +14,11 @@
   let error = $state(null);
   let tiers = $state([]);
   let selectedTier = $state(null);
-  let frequency = $state('monthly');
   let customAmount = $state(25);
   let processing = $state(false);
+
+  // All subscriptions are monthly
+  const frequency = 'monthly';
 
   onMount(async () => {
     try {
@@ -71,15 +73,6 @@
     return tier.amounts[frequency] || 0;
   }
 
-  $effect(() => {
-    // Reset custom amount when switching tiers
-    if (selectedTier !== 'custom') {
-      const tier = tiers.find(t => t.id === selectedTier);
-      if (tier) {
-        customAmount = tier.amounts[frequency] || 25;
-      }
-    }
-  });
 </script>
 
 <div class="support-page">
@@ -103,24 +96,6 @@
       </div>
     {/if}
 
-    <!-- Frequency Toggle -->
-    <div class="frequency-toggle">
-      <button
-        class="freq-btn"
-        class:active={frequency === 'monthly'}
-        onclick={() => frequency = 'monthly'}
-      >
-        Monthly
-      </button>
-      <button
-        class="freq-btn"
-        class:active={frequency === 'once'}
-        onclick={() => frequency = 'once'}
-      >
-        One-time
-      </button>
-    </div>
-
     <!-- Tier Cards -->
     <div class="tier-grid">
       {#each tiers as tier}
@@ -131,45 +106,15 @@
         >
           <h3>{tier.name}</h3>
           <div class="price">
-            <span class="amount">${tier.amounts[frequency]}</span>
-            {#if frequency !== 'once'}
-              <span class="period">/{frequency === 'monthly' ? 'mo' : 'yr'}</span>
-            {/if}
+            <span class="amount">${tier.amounts.monthly}</span>
+            <span class="period">/mo</span>
           </div>
           <p class="description">{tier.description}</p>
-          {#if tier.upgradeTier}
-            <span class="badge">Includes Patron tier</span>
-          {/if}
         </button>
       {/each}
-
-      <!-- Custom Amount -->
-      <button
-        class="tier-card custom"
-        class:selected={selectedTier === 'custom'}
-        onclick={() => selectedTier = 'custom'}
-      >
-        <h3>Custom</h3>
-        {#if selectedTier === 'custom'}
-          <div class="custom-input">
-            <span class="currency">$</span>
-            <input
-              type="number"
-              bind:value={customAmount}
-              min="1"
-              max="10000"
-            />
-          </div>
-        {:else}
-          <div class="price">
-            <span class="amount">$?</span>
-          </div>
-        {/if}
-        <p class="description">Choose your own amount</p>
-      </button>
     </div>
 
-    <!-- Donate Button -->
+    <!-- Subscribe Button -->
     <div class="donate-section">
       <button
         class="donate-btn"
@@ -179,10 +124,7 @@
         {#if processing}
           Processing...
         {:else}
-          Donate ${selectedTier === 'custom' ? customAmount : getTierAmount(tiers.find(t => t.id === selectedTier))}
-          {#if frequency !== 'once'}
-            / {frequency === 'monthly' ? 'month' : 'year'}
-          {/if}
+          Subscribe for ${getTierAmount(tiers.find(t => t.id === selectedTier))}/month
         {/if}
       </button>
 
@@ -316,31 +258,6 @@
     margin-bottom: 1.5rem;
   }
 
-  .frequency-toggle {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .freq-btn {
-    padding: 0.75rem 1.5rem;
-    background: var(--surface-1);
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-
-  .freq-btn.active {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
-    color: white;
-  }
-
   .tier-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -392,41 +309,6 @@
     margin: 0;
     font-size: 0.875rem;
     color: var(--text-secondary);
-  }
-
-  .badge {
-    display: inline-block;
-    margin-top: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    background: var(--accent-primary);
-    color: white;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-  }
-
-  .custom-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .currency {
-    font-size: 1.5rem;
-    color: var(--text-secondary);
-  }
-
-  .custom-input input {
-    width: 80px;
-    padding: 0.5rem;
-    border: 1px solid var(--border-default);
-    border-radius: 0.375rem;
-    background: var(--surface-0);
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    font-weight: 600;
-    text-align: center;
   }
 
   .donate-section {
