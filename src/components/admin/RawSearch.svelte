@@ -60,8 +60,7 @@
 
     try {
       // Use hybrid search: 85% keyword, 15% semantic for typo tolerance
-      const data = await search.search({
-        query: query.trim(),
+      const data = await search.query(query.trim(), {
         limit: 50,
         mode: 'hybrid',
         semanticRatio: 0.15,

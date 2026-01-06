@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-06T03:04:26.697Z",
+  "generated": "2026-01-06T03:09:05.617Z",
   "entries": [
+    {
+      "hash": "9458417",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Simplify translation stats loading to fix indicator display",
+      "scope": null
+    },
     {
       "hash": "87a9396",
       "date": "2026-01-05",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Prefer Shoghi Effendi translations for terminology",
       "scope": null
-    },
-    {
-      "hash": "27bfd11",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Move translation notes to paragraph footnotes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-05": [
+      {
+        "hash": "9458417",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Simplify translation stats loading to fix indicator display",
+        "scope": null
+      },
       {
         "hash": "87a9396",
         "date": "2026-01-05",
@@ -697,13 +704,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Prefer Shoghi Effendi translations for terminology",
-        "scope": null
-      },
-      {
-        "hash": "27bfd11",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Move translation notes to paragraph footnotes",
         "scope": null
       }
     ]

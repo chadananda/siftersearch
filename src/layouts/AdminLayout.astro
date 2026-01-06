@@ -1,5 +1,6 @@
 ---
 import Layout from './Layout.astro';
+import NavBar from '../components/common/NavBar.svelte';
 
 interface Props {
   title: string;
@@ -19,6 +20,7 @@ function isActive(href: string): boolean {
 ---
 
 <Layout title={title} description={description}>
+  <NavBar client:load currentPage="admin" />
   <slot name="background" />
   <div class="admin-layout">
     <!-- Sidebar -->
@@ -98,10 +100,9 @@ function isActive(href: string): boolean {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    bottom: 0;
+    height: 100vh;
     z-index: 50;
   }
 
@@ -171,7 +172,6 @@ function isActive(href: string): boolean {
 
   .main-content {
     flex: 1;
-    margin-left: 240px;
     padding: 2rem;
     min-height: 100vh;
   }
@@ -179,10 +179,6 @@ function isActive(href: string): boolean {
   @media (max-width: 768px) {
     .sidebar {
       display: none;
-    }
-
-    .main-content {
-      margin-left: 0;
     }
   }
 </style>
