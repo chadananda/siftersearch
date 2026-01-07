@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T02:01:06.937Z",
+  "generated": "2026-01-07T03:38:16.420Z",
   "entries": [
+    {
+      "hash": "8351fc8",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Add CORS PUT method and file_hash uniqueness migration",
+      "scope": null
+    },
     {
       "hash": "7eeee70",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Generate phrase-level segments for marked text translation",
       "scope": null
-    },
-    {
-      "hash": "a63e548",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Paragraph 0 translation + segment format normalization",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "8351fc8",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Add CORS PUT method and file_hash uniqueness migration",
+        "scope": null
+      },
       {
         "hash": "7eeee70",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Generate phrase-level segments for marked text translation",
-        "scope": null
-      },
-      {
-        "hash": "a63e548",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Paragraph 0 translation + segment format normalization",
         "scope": null
       }
     ]
