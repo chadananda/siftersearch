@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T13:38:27.228Z",
+  "generated": "2026-01-07T13:41:36.223Z",
   "entries": [
+    {
+      "hash": "8a66cad",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Convert absolute paths to relative paths in library-watcher",
+      "scope": null
+    },
     {
       "hash": "10c848d",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Reduce corner icon overlap on mobile to slight overlap",
       "scope": null
-    },
-    {
-      "hash": "80421ca",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "SBS phrase highlighting uses composite keys + styling improvements",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "8a66cad",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Convert absolute paths to relative paths in library-watcher",
+        "scope": null
+      },
       {
         "hash": "10c848d",
         "date": "2026-01-07",
@@ -699,15 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Reduce corner icon overlap on mobile to slight overlap",
-        "scope": null
-      }
-    ],
-    "2026-01-04": [
-      {
-        "hash": "80421ca",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "SBS phrase highlighting uses composite keys + styling improvements",
         "scope": null
       }
     ]

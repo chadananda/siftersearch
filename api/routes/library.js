@@ -2375,50 +2375,15 @@ Provide only the translation, no explanations.`;
     }
 
     const { config } = await import('../lib/config.js');
-    let absolutePath = null;
-    let filePath = doc.file_path;
+    const filePath = doc.file_path;
 
-    // If file_path is set, use it
-    if (filePath) {
-      absolutePath = filePath.startsWith('/')
-        ? filePath
-        : `${config.library.basePath}/${filePath}`;
-    } else if (doc.religion && doc.collection && (doc.filename || doc.title)) {
-      // Search for file within the collection folder
-      // Folder structure: {basePath}/{religion}/{collection}/.../{filename}.md
-      const targetFilename = (doc.filename || `${doc.title}.md`).replace(/\.md$/, '') + '.md';
-      const collectionPath = `${config.library.basePath}/${doc.religion}/${doc.collection}`;
-
-      // Recursive search for the file
-      async function findFile(dir, filename) {
-        try {
-          const { readdir } = await import('fs/promises');
-          const entries = await readdir(dir, { withFileTypes: true });
-          for (const entry of entries) {
-            const fullPath = `${dir}/${entry.name}`;
-            if (entry.isDirectory()) {
-              const found = await findFile(fullPath, filename);
-              if (found) return found;
-            } else if (entry.name === filename) {
-              return fullPath;
-            }
-          }
-        } catch {
-          // Directory doesn't exist or isn't readable
-        }
-        return null;
-      }
-
-      absolutePath = await findFile(collectionPath, targetFilename);
-      if (absolutePath) {
-        // Extract relative path from base
-        filePath = absolutePath.replace(config.library.basePath + '/', '');
-      }
+    if (!filePath) {
+      throw ApiError.badRequest('Document has no source file path. Run link-source-files.js to fix.');
     }
 
-    if (!absolutePath) {
-      throw ApiError.badRequest('Cannot find source file - check religion, collection, and filename');
-    }
+    const absolutePath = filePath.startsWith('/')
+      ? filePath
+      : `${config.library.basePath}/${filePath}`;
 
     // Verify file exists
     try {
@@ -2497,47 +2462,15 @@ Provide only the translation, no explanations.`;
     }
 
     const { config } = await import('../lib/config.js');
-    let absolutePath = null;
-    let filePath = doc.file_path;
+    const filePath = doc.file_path;
 
-    // If file_path is set, use it
-    if (filePath) {
-      absolutePath = filePath.startsWith('/')
-        ? filePath
-        : `${config.library.basePath}/${filePath}`;
-    } else if (doc.religion && doc.collection && (doc.filename || doc.title)) {
-      // Search for file within the collection folder
-      const targetFilename = (doc.filename || `${doc.title}.md`).replace(/\.md$/, '') + '.md';
-      const collectionPath = `${config.library.basePath}/${doc.religion}/${doc.collection}`;
-
-      async function findFile(dir, filename) {
-        try {
-          const { readdir } = await import('fs/promises');
-          const entries = await readdir(dir, { withFileTypes: true });
-          for (const entry of entries) {
-            const fullPath = `${dir}/${entry.name}`;
-            if (entry.isDirectory()) {
-              const found = await findFile(fullPath, filename);
-              if (found) return found;
-            } else if (entry.name === filename) {
-              return fullPath;
-            }
-          }
-        } catch {
-          // Directory doesn't exist or isn't readable
-        }
-        return null;
-      }
-
-      absolutePath = await findFile(collectionPath, targetFilename);
-      if (absolutePath) {
-        filePath = absolutePath.replace(config.library.basePath + '/', '');
-      }
+    if (!filePath) {
+      throw ApiError.badRequest('Document has no source file path. Run link-source-files.js to fix.');
     }
 
-    if (!absolutePath) {
-      throw ApiError.badRequest('Cannot find source file - check religion, collection, and filename');
-    }
+    const absolutePath = filePath.startsWith('/')
+      ? filePath
+      : `${config.library.basePath}/${filePath}`;
 
     // Validate YAML frontmatter
     let parsedContent;
