@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T05:08:25.128Z",
+  "generated": "2026-01-07T12:37:20.668Z",
   "entries": [
+    {
+      "hash": "5ae5605",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Document ID preservation and comprehensive API testing",
+      "scope": null
+    },
     {
       "hash": "700e7df",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "SBS phrase highlighting now uses composite keys (para+seg)",
       "scope": null
-    },
-    {
-      "hash": "b08b58b",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "5ae5605",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Document ID preservation and comprehensive API testing",
+        "scope": null
+      },
       {
         "hash": "700e7df",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "SBS phrase highlighting now uses composite keys (para+seg)",
-        "scope": null
-      },
-      {
-        "hash": "b08b58b",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
         "scope": null
       }
     ]

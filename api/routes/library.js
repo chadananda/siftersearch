@@ -2366,7 +2366,7 @@ Provide only the translation, no explanations.`;
 
     // Get document with file_path
     const doc = await queryOne(`
-      SELECT id, file_path, title, author, religion, collection, language, year, description
+      SELECT id, file_path, filename, title, author, religion, collection, language, year, description
       FROM docs WHERE id = ?
     `, [id]);
 
@@ -2374,22 +2374,57 @@ Provide only the translation, no explanations.`;
       throw ApiError.notFound('Document not found');
     }
 
-    if (!doc.file_path) {
-      throw ApiError.badRequest('Document has no source file path');
+    const { config } = await import('../lib/config.js');
+    let absolutePath = null;
+    let filePath = doc.file_path;
+
+    // If file_path is set, use it
+    if (filePath) {
+      absolutePath = filePath.startsWith('/')
+        ? filePath
+        : `${config.library.basePath}/${filePath}`;
+    } else if (doc.religion && doc.collection && (doc.filename || doc.title)) {
+      // Search for file within the collection folder
+      // Folder structure: {basePath}/{religion}/{collection}/.../{filename}.md
+      const targetFilename = (doc.filename || `${doc.title}.md`).replace(/\.md$/, '') + '.md';
+      const collectionPath = `${config.library.basePath}/${doc.religion}/${doc.collection}`;
+
+      // Recursive search for the file
+      async function findFile(dir, filename) {
+        try {
+          const { readdir } = await import('fs/promises');
+          const entries = await readdir(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = `${dir}/${entry.name}`;
+            if (entry.isDirectory()) {
+              const found = await findFile(fullPath, filename);
+              if (found) return found;
+            } else if (entry.name === filename) {
+              return fullPath;
+            }
+          }
+        } catch {
+          // Directory doesn't exist or isn't readable
+        }
+        return null;
+      }
+
+      absolutePath = await findFile(collectionPath, targetFilename);
+      if (absolutePath) {
+        // Extract relative path from base
+        filePath = absolutePath.replace(config.library.basePath + '/', '');
+      }
     }
 
-    // Resolve file path - prepend library base if it's a relative path
-    const { config } = await import('../lib/config.js');
-    let absolutePath = doc.file_path;
-    if (!doc.file_path.startsWith('/')) {
-      absolutePath = `${config.library.basePath}/${doc.file_path}`;
+    if (!absolutePath) {
+      throw ApiError.badRequest('Cannot find source file - check religion, collection, and filename');
     }
 
     // Verify file exists
     try {
       await access(absolutePath, fsConstants.R_OK);
     } catch {
-      throw ApiError.notFound(`Source file not found: ${doc.file_path}`);
+      throw ApiError.notFound(`Source file not found: ${filePath}`);
     }
 
     // Read raw content
@@ -2401,12 +2436,11 @@ Provide only the translation, no explanations.`;
       const parsed = matter(content);
       metadata = parsed.data || {};
     } catch (err) {
-      logger.warn({ err, filePath: doc.file_path }, 'Failed to parse frontmatter');
+      logger.warn({ err, filePath }, 'Failed to parse frontmatter');
     }
 
-    // Display the stored path (already relative if converted by migration)
-    // Strip library base path if it's still absolute
-    let displayPath = doc.file_path;
+    // Display the path (already relative from construction or strip base path if absolute)
+    let displayPath = filePath;
     if (displayPath.startsWith('/') && config.library.basePath && displayPath.startsWith(config.library.basePath)) {
       displayPath = displayPath.slice(config.library.basePath.length).replace(/^\//, '');
     }
@@ -2454,7 +2488,7 @@ Provide only the translation, no explanations.`;
 
     // Get document with file_path
     const doc = await queryOne(`
-      SELECT id, file_path, title, religion, collection, language
+      SELECT id, file_path, filename, title, author, religion, collection, language
       FROM docs WHERE id = ?
     `, [id]);
 
@@ -2462,15 +2496,47 @@ Provide only the translation, no explanations.`;
       throw ApiError.notFound('Document not found');
     }
 
-    if (!doc.file_path) {
-      throw ApiError.badRequest('Document has no source file path');
+    const { config } = await import('../lib/config.js');
+    let absolutePath = null;
+    let filePath = doc.file_path;
+
+    // If file_path is set, use it
+    if (filePath) {
+      absolutePath = filePath.startsWith('/')
+        ? filePath
+        : `${config.library.basePath}/${filePath}`;
+    } else if (doc.religion && doc.collection && (doc.filename || doc.title)) {
+      // Search for file within the collection folder
+      const targetFilename = (doc.filename || `${doc.title}.md`).replace(/\.md$/, '') + '.md';
+      const collectionPath = `${config.library.basePath}/${doc.religion}/${doc.collection}`;
+
+      async function findFile(dir, filename) {
+        try {
+          const { readdir } = await import('fs/promises');
+          const entries = await readdir(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = `${dir}/${entry.name}`;
+            if (entry.isDirectory()) {
+              const found = await findFile(fullPath, filename);
+              if (found) return found;
+            } else if (entry.name === filename) {
+              return fullPath;
+            }
+          }
+        } catch {
+          // Directory doesn't exist or isn't readable
+        }
+        return null;
+      }
+
+      absolutePath = await findFile(collectionPath, targetFilename);
+      if (absolutePath) {
+        filePath = absolutePath.replace(config.library.basePath + '/', '');
+      }
     }
 
-    // Resolve file path - prepend library base if it's a relative path
-    const { config } = await import('../lib/config.js');
-    let absolutePath = doc.file_path;
-    if (!doc.file_path.startsWith('/')) {
-      absolutePath = `${config.library.basePath}/${doc.file_path}`;
+    if (!absolutePath) {
+      throw ApiError.badRequest('Cannot find source file - check religion, collection, and filename');
     }
 
     // Validate YAML frontmatter
@@ -2485,7 +2551,7 @@ Provide only the translation, no explanations.`;
     try {
       await access(absolutePath, fsConstants.W_OK);
     } catch {
-      throw ApiError.notFound(`Source file not found or not writable: ${doc.file_path}`);
+      throw ApiError.notFound(`Source file not found or not writable: ${filePath}`);
     }
 
     // Atomic write: write to temp file, then rename
@@ -2502,14 +2568,14 @@ Provide only the translation, no explanations.`;
       } catch {
         // Temp file doesn't exist or already cleaned up
       }
-      logger.error({ err, filePath: doc.file_path }, 'Failed to write document file');
+      logger.error({ err, filePath }, 'Failed to write document file');
       throw ApiError.internal('Failed to save file');
     }
 
     // Re-ingest the document to update the database and search index
     let ingestResult;
     try {
-      ingestResult = await ingestDocument(content, { id }, doc.file_path);
+      ingestResult = await ingestDocument(content, { id }, filePath);
     } catch (err) {
       logger.error({ err, documentId: id }, 'Failed to re-ingest document after save');
       throw ApiError.internal('File saved but re-indexing failed. Please manually reindex.');
@@ -2517,7 +2583,7 @@ Provide only the translation, no explanations.`;
 
     logger.info({
       documentId: id,
-      filePath: doc.file_path,
+      filePath,
       paragraphCount: ingestResult.paragraphCount,
       user: request.user?.email
     }, 'Document raw content updated');
