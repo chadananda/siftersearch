@@ -175,8 +175,12 @@ async function main() {
   // Show sample matches
   console.log('\n=== Sample Matches (first 10) ===');
   matches.slice(0, 10).forEach(m => {
+    // Show relative path for clarity
+    const relativePath = m.filePath.startsWith(LIBRARY_ROOT)
+      ? m.filePath.slice(LIBRARY_ROOT.length + 1)
+      : m.filePath;
     console.log(`  ${m.docId}`);
-    console.log(`    → ${m.filePath.replace(LIBRARY_ROOT, '.')}`);
+    console.log(`    → ${relativePath}`);
     console.log(`    (${m.matchType})`);
   });
 
@@ -196,9 +200,14 @@ async function main() {
 
     let updated = 0;
     for (const match of matches) {
+      // Convert absolute path to relative path from library root
+      const relativePath = match.filePath.startsWith(LIBRARY_ROOT)
+        ? match.filePath.slice(LIBRARY_ROOT.length + 1) // +1 for the trailing slash
+        : match.filePath;
+
       await query(
         'UPDATE docs SET file_path = ? WHERE id = ?',
-        [match.filePath, match.docId]
+        [relativePath, match.docId]
       );
       updated++;
     }
