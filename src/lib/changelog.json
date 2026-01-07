@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T03:47:07.415Z",
+  "generated": "2026-01-07T04:05:53.497Z",
   "entries": [
+    {
+      "hash": "62c17bf",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
+      "scope": null
+    },
     {
       "hash": "8351fc8",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve phrase segmentation for Study mode",
       "scope": null
-    },
-    {
-      "hash": "92e2ec5",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Generate phrase-level segments for marked text translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "62c17bf",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
+        "scope": null
+      },
       {
         "hash": "8351fc8",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Improve phrase segmentation for Study mode",
-        "scope": null
-      },
-      {
-        "hash": "92e2ec5",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Generate phrase-level segments for marked text translation",
         "scope": null
       }
     ]

@@ -77,7 +77,9 @@ describe('CORS Configuration', () => {
       'X-Internal-Key',
       'X-API-Key',
       'X-Requested-With',
-      'X-User-Id'
+      'X-User-Id',
+      'X-Client-Version',
+      'X-Request-Id'
     ];
 
     it('should include all required headers in preflight response', async () => {

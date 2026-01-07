@@ -57,7 +57,16 @@ export async function createServer(opts = {}) {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Key', 'X-API-Key', 'X-Requested-With', 'X-User-Id']
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Internal-Key',
+      'X-API-Key',
+      'X-Requested-With',
+      'X-User-Id',
+      'X-Client-Version',
+      'X-Request-Id'
+    ]
   });
 
   // Cookies (for refresh tokens)
