@@ -2379,10 +2379,10 @@ Provide only the translation, no explanations.`;
     }
 
     // Resolve file path - prepend library base if it's a relative path
-    const { library } = await import('../lib/config.js');
+    const { config } = await import('../lib/config.js');
     let absolutePath = doc.file_path;
     if (!doc.file_path.startsWith('/')) {
-      absolutePath = `${library.basePath}/${doc.file_path}`;
+      absolutePath = `${config.library.basePath}/${doc.file_path}`;
     }
 
     // Verify file exists
@@ -2407,8 +2407,8 @@ Provide only the translation, no explanations.`;
     // Display the stored path (already relative if converted by migration)
     // Strip library base path if it's still absolute
     let displayPath = doc.file_path;
-    if (displayPath.startsWith('/') && library.basePath && displayPath.startsWith(library.basePath)) {
-      displayPath = displayPath.slice(library.basePath.length).replace(/^\//, '');
+    if (displayPath.startsWith('/') && config.library.basePath && displayPath.startsWith(config.library.basePath)) {
+      displayPath = displayPath.slice(config.library.basePath.length).replace(/^\//, '');
     }
 
     return {
@@ -2467,10 +2467,10 @@ Provide only the translation, no explanations.`;
     }
 
     // Resolve file path - prepend library base if it's a relative path
-    const { library } = await import('../lib/config.js');
+    const { config } = await import('../lib/config.js');
     let absolutePath = doc.file_path;
     if (!doc.file_path.startsWith('/')) {
-      absolutePath = `${library.basePath}/${doc.file_path}`;
+      absolutePath = `${config.library.basePath}/${doc.file_path}`;
     }
 
     // Validate YAML frontmatter
