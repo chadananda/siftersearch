@@ -720,9 +720,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   });
 
   if (chunks.length === 0) {
-    logger.warn({ documentId, relativePath }, 'Document has no content to ingest');
+    logger.warn({ documentId: existingDoc?.id, relativePath }, 'Document has no content to ingest');
     return {
-      documentId,
+      documentId: existingDoc?.id ?? null,
       paragraphCount: 0,
       status: 'empty',
       error: 'No content to index'

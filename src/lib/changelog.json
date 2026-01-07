@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-07T14:46:53.844Z",
+  "generated": "2026-01-07T15:18:13.128Z",
   "entries": [
+    {
+      "hash": "ed45019",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
+      "scope": null
+    },
+    {
+      "hash": "941ea7c",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Support file moves without re-indexing content",
+      "scope": null
+    },
+    {
+      "hash": "37d6f29",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add filename editing in document editor",
+      "scope": null
+    },
     {
       "hash": "ddfd1d1",
       "date": "2026-01-07",
@@ -329,31 +350,31 @@
       "type": "Fixed",
       "description": "Study view improvements and batch translation notes",
       "scope": null
-    },
-    {
-      "hash": "659d5b3",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Remove paragraph hover background",
-      "scope": null
-    },
-    {
-      "hash": "228c37a",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Redesign Study view with aligned phrase rows",
-      "scope": null
-    },
-    {
-      "hash": "74980a0",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Correct Study view column order for RTL documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "ed45019",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
+        "scope": null
+      },
+      {
+        "hash": "941ea7c",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Support file moves without re-indexing content",
+        "scope": null
+      },
+      {
+        "hash": "37d6f29",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add filename editing in document editor",
+        "scope": null
+      },
       {
         "hash": "ddfd1d1",
         "date": "2026-01-07",
@@ -685,27 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Study view improvements and batch translation notes",
-        "scope": null
-      },
-      {
-        "hash": "659d5b3",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Remove paragraph hover background",
-        "scope": null
-      },
-      {
-        "hash": "228c37a",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Redesign Study view with aligned phrase rows",
-        "scope": null
-      },
-      {
-        "hash": "74980a0",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Correct Study view column order for RTL documents",
         "scope": null
       }
     ]

@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 26;
+const CURRENT_VERSION = 27;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**

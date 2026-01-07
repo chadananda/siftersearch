@@ -697,11 +697,12 @@ New content here with sufficient text.`;
       expect(result.documentId).toBe('doc_from_path');
     });
 
-    it('should generate new ID when neither metadata.id nor file_path finds existing doc', async () => {
+    it('should generate new INTEGER ID when neither metadata.id nor file_path finds existing doc', async () => {
       // Setup mock - nothing found
       queryOne.mockResolvedValue(null);
       queryAll.mockResolvedValue([]);
-      query.mockResolvedValue({ changes: 1 });
+      // Mock SQLite INSERT returning auto-generated ID
+      query.mockResolvedValue({ changes: 1, lastInsertRowid: BigInt(42) });
       transaction.mockResolvedValue(undefined);
 
       const newContent = `---
@@ -712,8 +713,9 @@ Brand new content with sufficient text to be indexed properly.`;
 
       const result = await ingestDocument(newContent, {}, 'brand/new/path.md');
 
-      // Should generate ID from path
-      expect(result.documentId).toBe('brand_new_path');
+      // Should have INTEGER ID from SQLite auto-increment (not path-based string)
+      expect(typeof result.documentId).toBe('number');
+      expect(result.documentId).toBe(42);
       expect(result.status).toBe('ingested');
     });
   });
