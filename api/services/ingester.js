@@ -569,6 +569,29 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     : (metadata.id || `doc_${nanoid(12)}`);
   const fileHash = hashContent(text);
 
+  // GLOBAL DEDUPLICATION: Check if this exact content exists ANYWHERE in the database
+  // This prevents importing duplicate files from different locations
+  const duplicateByHash = await queryOne(
+    `SELECT id, file_path, title FROM docs WHERE file_hash = ? AND (file_path IS NULL OR file_path != ?)`,
+    [fileHash, relativePath || '']
+  );
+
+  if (duplicateByHash) {
+    logger.info({
+      documentId: duplicateByHash.id,
+      existingPath: duplicateByHash.file_path,
+      newPath: relativePath,
+      title: duplicateByHash.title
+    }, 'Duplicate content detected - same file exists at different location, skipping');
+    return {
+      documentId: duplicateByHash.id,
+      paragraphCount: 0,
+      status: 'duplicate',
+      skipped: true,
+      existingPath: duplicateByHash.file_path
+    };
+  }
+
   // Check if document already exists (by relative path)
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
