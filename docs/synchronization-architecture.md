@@ -154,11 +154,15 @@ When a file is moved to a different folder/collection:
 
 | Column | Purpose |
 |--------|---------|
-| `id` | Immutable document identifier |
+| `id` | INTEGER PRIMARY KEY AUTOINCREMENT - immutable document identifier |
+| `old_id` | TEXT - preserved from migration for reference |
 | `file_path` | Relative path from library root (can change on rename) |
 | `file_hash` | SHA-256 of full file content |
+| `slug` | URL-friendly identifier (slugify(author + title + lang)) |
 | `updated_at` | Last modification timestamp |
 | `title`, `author`, etc. | Metadata from frontmatter |
+
+**Note:** Document IDs are internal integers, never exposed in URLs. URLs use `slug` for routing.
 
 ## Synchronization Guarantees
 

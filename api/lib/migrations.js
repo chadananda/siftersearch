@@ -1042,6 +1042,115 @@ const migrations = {
 
     logger.info('Migration 26: file_hash uniqueness and relative file_path enforcement');
   },
+
+  // Version 27: Migrate docs.id from TEXT to INTEGER for efficiency
+  // This is a major schema change that requires recreating tables
+  27: async () => {
+    logger.info('Starting migration 27: Convert docs.id from TEXT to INTEGER');
+
+    // Step 1: Create new docs table with INTEGER PRIMARY KEY
+    await query(`
+      CREATE TABLE IF NOT EXISTS docs_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        old_id TEXT,
+        file_path TEXT UNIQUE,
+        file_hash TEXT,
+        filename TEXT,
+        title TEXT,
+        author TEXT,
+        religion TEXT,
+        collection TEXT,
+        language TEXT DEFAULT 'en',
+        year INTEGER,
+        description TEXT,
+        paragraph_count INTEGER DEFAULT 0,
+        source_file TEXT,
+        cover_url TEXT,
+        slug TEXT UNIQUE,
+        auto_segmented INTEGER DEFAULT 0,
+        encumbered INTEGER DEFAULT 0,
+        metadata TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Step 2: Copy all docs, preserving old_id for reference and mapping
+    await query(`
+      INSERT INTO docs_new (old_id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at)
+      SELECT id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at
+      FROM docs
+    `);
+
+    const docCount = await queryOne('SELECT COUNT(*) as count FROM docs_new');
+    logger.info({ count: docCount?.count }, 'Copied docs to new table with INTEGER ids');
+
+    // Step 3: Create new content table with INTEGER doc_id
+    await query(`
+      CREATE TABLE IF NOT EXISTS content_new (
+        id TEXT PRIMARY KEY,
+        doc_id INTEGER NOT NULL,
+        paragraph_index INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        content_hash TEXT,
+        heading TEXT,
+        blocktype TEXT DEFAULT 'paragraph',
+        translation TEXT,
+        translation_segments TEXT,
+        context TEXT,
+        embedding BLOB,
+        embedding_model TEXT,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (doc_id) REFERENCES docs_new(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Step 4: Copy content with mapped doc_id (join on old_id)
+    await query(`
+      INSERT INTO content_new (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, translation, translation_segments, context, embedding, embedding_model, synced, created_at, updated_at)
+      SELECT c.id, d.id, c.paragraph_index, c.text, c.content_hash, c.heading, c.blocktype, c.translation, c.translation_segments, c.context, c.embedding, c.embedding_model, c.synced, c.created_at, c.updated_at
+      FROM content c
+      INNER JOIN docs_new d ON d.old_id = c.doc_id
+    `);
+
+    const contentCount = await queryOne('SELECT COUNT(*) as count FROM content_new');
+    logger.info({ count: contentCount?.count }, 'Copied content with new INTEGER doc_ids');
+
+    // Step 5: Update redirects table doc_id (if exists)
+    try {
+      await query(`
+        UPDATE redirects SET doc_id = (
+          SELECT CAST(d.id AS TEXT) FROM docs_new d WHERE d.old_id = redirects.doc_id
+        )
+        WHERE doc_id IS NOT NULL
+      `);
+      logger.info('Updated redirects table with new doc_ids');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Redirects table update skipped (may not exist)');
+    }
+
+    // Step 6: Drop old tables and rename new ones
+    await query('DROP TABLE IF EXISTS content');
+    await query('DROP TABLE IF EXISTS docs');
+    await query('ALTER TABLE docs_new RENAME TO docs');
+    await query('ALTER TABLE content_new RENAME TO content');
+
+    // Step 7: Recreate indexes
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_file_path ON docs(file_path)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_file_hash ON docs(file_hash)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_slug ON docs(slug)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_religion ON docs(religion)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_collection ON docs(collection)');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_doc ON content(doc_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash)');
+
+    // Step 8: Remove old_id column (SQLite doesn't support DROP COLUMN easily, so we keep it for now)
+    // It's useful for debugging anyway and takes minimal space
+
+    logger.info('Migration 27 complete: docs.id is now INTEGER PRIMARY KEY AUTOINCREMENT');
+  },
 };
 
 /**
