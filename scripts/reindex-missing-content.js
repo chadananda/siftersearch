@@ -16,7 +16,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const LIMIT = parseInt(process.argv.find(a => a.startsWith('--limit='))?.split('=')[1] || '0') || Infinity;
+const LIMIT = parseInt(process.argv.find(a => a.startsWith('--limit='))?.split('=')[1] || '0') || 999999;
 const VERBOSE = process.argv.includes('--verbose');
 
 async function reindexMissing() {

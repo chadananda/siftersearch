@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-07T17:58:13.101Z",
+  "generated": "2026-01-07T18:42:09.438Z",
   "entries": [
+    {
+      "hash": "2a673a6",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to re-index documents missing content",
+      "scope": null
+    },
+    {
+      "hash": "cc39037",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
+      "scope": null
+    },
+    {
+      "hash": "6ab38c6",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to sync Meilisearch titles with SQLite",
+      "scope": null
+    },
     {
       "hash": "9eb0897",
       "date": "2026-01-07",
@@ -329,31 +350,31 @@
       "type": "Fixed",
       "description": "Auth timing and missing ingestion_queue table",
       "scope": null
-    },
-    {
-      "hash": "e2ef58d",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add edit button for admins on library document list",
-      "scope": null
-    },
-    {
-      "hash": "bd977f6",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Wait for auth before checking admin permissions in dashboard",
-      "scope": null
-    },
-    {
-      "hash": "fa09a0c",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add auto_segmented flag to track AI-segmented documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "2a673a6",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to re-index documents missing content",
+        "scope": null
+      },
+      {
+        "hash": "cc39037",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
+        "scope": null
+      },
+      {
+        "hash": "6ab38c6",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to sync Meilisearch titles with SQLite",
+        "scope": null
+      },
       {
         "hash": "9eb0897",
         "date": "2026-01-07",
@@ -685,27 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Auth timing and missing ingestion_queue table",
-        "scope": null
-      },
-      {
-        "hash": "e2ef58d",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add edit button for admins on library document list",
-        "scope": null
-      },
-      {
-        "hash": "bd977f6",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Wait for auth before checking admin permissions in dashboard",
-        "scope": null
-      },
-      {
-        "hash": "fa09a0c",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add auto_segmented flag to track AI-segmented documents",
         "scope": null
       }
     ]
