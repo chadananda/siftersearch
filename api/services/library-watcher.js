@@ -11,6 +11,7 @@ import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
 import { ingestDocument, removeDocument, getDocumentByPath } from './ingester.js';
 import { logger } from '../lib/logger.js';
+import { config } from '../lib/config.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
@@ -32,6 +33,23 @@ let watcherStats = {
 };
 
 /**
+ * Convert absolute file path to relative path from library basePath
+ */
+function toRelativePath(absolutePath) {
+  const basePath = config.library.basePath;
+  if (absolutePath.startsWith(basePath)) {
+    // Remove basePath and leading slash
+    let relative = absolutePath.slice(basePath.length);
+    if (relative.startsWith('/')) {
+      relative = relative.slice(1);
+    }
+    return relative;
+  }
+  // Already relative or different base - return as-is
+  return absolutePath;
+}
+
+/**
  * Handle file add or change event
  */
 async function handleFileChange(filePath, eventType) {
@@ -46,8 +64,11 @@ async function handleFileChange(filePath, eventType) {
     // Read file content
     const content = await readFile(filePath, 'utf-8');
 
+    // Convert absolute path to relative path for consistent document IDs
+    const relativePath = toRelativePath(filePath);
+
     // Ingest document (will handle both new and updated files)
-    const result = await ingestDocument(content, {}, filePath);
+    const result = await ingestDocument(content, {}, relativePath);
 
     if (result.skipped) {
       logger.debug({ filePath, eventType }, 'File unchanged, skipped');
@@ -78,8 +99,11 @@ async function handleFileDelete(filePath) {
   watcherStats.lastEvent = { type: 'unlink', path: filePath, at: new Date().toISOString() };
 
   try {
+    // Convert absolute path to relative path for consistent lookup
+    const relativePath = toRelativePath(filePath);
+
     // Get document by path to find its ID
-    const doc = await getDocumentByPath(filePath);
+    const doc = await getDocumentByPath(relativePath);
 
     if (doc) {
       await removeDocument(doc.id);

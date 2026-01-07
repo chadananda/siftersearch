@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T12:37:20.668Z",
+  "generated": "2026-01-07T13:38:27.228Z",
   "entries": [
+    {
+      "hash": "10c848d",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Search for source file when file_path is missing",
+      "scope": null
+    },
     {
       "hash": "5ae5605",
       "date": "2026-01-06",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "SBS phrase highlighting uses composite keys + styling improvements",
       "scope": null
-    },
-    {
-      "hash": "885d664",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "SBS phrase highlighting now uses composite keys (para+seg)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-07": [
+      {
+        "hash": "10c848d",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Search for source file when file_path is missing",
+        "scope": null
+      }
+    ],
     "2026-01-06": [
       {
         "hash": "5ae5605",
@@ -699,13 +708,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "SBS phrase highlighting uses composite keys + styling improvements",
-        "scope": null
-      },
-      {
-        "hash": "885d664",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "SBS phrase highlighting now uses composite keys (para+seg)",
         "scope": null
       }
     ]
