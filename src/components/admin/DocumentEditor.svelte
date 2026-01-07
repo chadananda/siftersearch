@@ -484,9 +484,9 @@
 
     <!-- Tab content -->
     <div class="tab-content">
-      {#if activeTab === 'metadata'}
-        <div class="metadata-editor">
-          <div class="metadata-form">
+      <!-- Use CSS visibility instead of {#if} to preserve editor state -->
+      <div class="metadata-editor" class:hidden={activeTab !== 'metadata'}>
+        <div class="metadata-form">
             {#each METADATA_FIELDS as field}
               <div class="form-field">
                 <label for={field.key}>
@@ -603,9 +603,7 @@
             </div>
           </div>
         </div>
-      {:else}
-        <div class="editor-container" bind:this={editorContainer}></div>
-      {/if}
+      <div class="editor-container" class:hidden={activeTab !== 'content'} bind:this={editorContainer}></div>
     </div>
 
     <!-- Keyboard hints -->
@@ -1049,6 +1047,11 @@
   .cancel-add-btn:hover {
     background: var(--surface-3);
     color: var(--text-primary);
+  }
+
+  /* Hidden state for tab switching (preserves state unlike {#if}) */
+  .hidden {
+    display: none !important;
   }
 
   /* Editor container */

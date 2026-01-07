@@ -2397,9 +2397,16 @@ Provide only the translation, no explanations.`;
       logger.warn({ err, filePath: doc.file_path }, 'Failed to parse frontmatter');
     }
 
+    // Create display-friendly relative path (strip library base path)
+    const { library } = await import('../lib/config.js');
+    let displayPath = doc.file_path;
+    if (library.basePath && displayPath.startsWith(library.basePath)) {
+      displayPath = displayPath.slice(library.basePath.length).replace(/^\//, '');
+    }
+
     return {
       documentId: id,
-      filePath: doc.file_path,
+      filePath: displayPath,
       content,
       metadata,
       document: {
