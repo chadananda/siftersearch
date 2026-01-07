@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 27;
+const CURRENT_VERSION = 28;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1146,10 +1146,55 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_doc ON content(doc_id)');
     await query('CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash)');
 
-    // Step 8: Remove old_id column (SQLite doesn't support DROP COLUMN easily, so we keep it for now)
-    // It's useful for debugging anyway and takes minimal space
-
     logger.info('Migration 27 complete: docs.id is now INTEGER PRIMARY KEY AUTOINCREMENT');
+  },
+
+  // Version 28: Drop old_id column from docs table
+  28: async () => {
+    logger.info('Starting migration 28: Drop old_id column from docs table');
+
+    // Step 1: Create new docs table without old_id
+    await query(`
+      CREATE TABLE IF NOT EXISTS docs_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_path TEXT UNIQUE,
+        file_hash TEXT,
+        filename TEXT,
+        title TEXT,
+        author TEXT,
+        religion TEXT,
+        collection TEXT,
+        language TEXT DEFAULT 'en',
+        source TEXT,
+        source_url TEXT,
+        year TEXT,
+        slug TEXT,
+        metadata TEXT,
+        auto_segmented INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Step 2: Copy all docs (excluding old_id)
+    await query(`
+      INSERT INTO docs_new (id, file_path, file_hash, filename, title, author, religion, collection, language, source, source_url, year, slug, metadata, auto_segmented, created_at, updated_at)
+      SELECT id, file_path, file_hash, filename, title, author, religion, collection, language, source, source_url, year, slug, metadata, auto_segmented, created_at, updated_at
+      FROM docs
+    `);
+
+    // Step 3: Drop old table and rename new one
+    await query('DROP TABLE docs');
+    await query('ALTER TABLE docs_new RENAME TO docs');
+
+    // Step 4: Recreate indexes
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_file_path ON docs(file_path)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_file_hash ON docs(file_hash)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_slug ON docs(slug)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_religion ON docs(religion)');
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_collection ON docs(collection)');
+
+    logger.info('Migration 28 complete: old_id column removed from docs table');
   },
 };
 
