@@ -9,6 +9,7 @@
 
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
+import { resolve, relative } from 'path';
 import { ingestDocument, removeDocument, getDocumentByPath } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
@@ -34,19 +35,12 @@ let watcherStats = {
 
 /**
  * Convert absolute file path to relative path from library basePath
+ * Uses Node's path module for consistent handling across platforms
  */
 function toRelativePath(absolutePath) {
-  const basePath = config.library.basePath;
-  if (absolutePath.startsWith(basePath)) {
-    // Remove basePath and leading slash
-    let relative = absolutePath.slice(basePath.length);
-    if (relative.startsWith('/')) {
-      relative = relative.slice(1);
-    }
-    return relative;
-  }
-  // Already relative or different base - return as-is
-  return absolutePath;
+  const basePath = resolve(config.library.basePath);
+  const normalizedPath = resolve(absolutePath);
+  return relative(basePath, normalizedPath);
 }
 
 /**

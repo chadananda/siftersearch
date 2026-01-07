@@ -1,6 +1,34 @@
 {
-  "generated": "2026-01-07T13:41:36.223Z",
+  "generated": "2026-01-07T14:36:58.848Z",
   "entries": [
+    {
+      "hash": "0d2fd25",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Skip already-linked documents in link-source-files",
+      "scope": null
+    },
+    {
+      "hash": "f9f88bd",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use config.library.basePath in link-source-files script",
+      "scope": null
+    },
+    {
+      "hash": "f9078c4",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Store relative paths in link-source-files script",
+      "scope": null
+    },
+    {
+      "hash": "8322153",
+      "date": "2026-01-07",
+      "type": "Updated",
+      "description": "Remove fallback file search in favor of fixing root cause",
+      "scope": null
+    },
     {
       "hash": "8a66cad",
       "date": "2026-01-07",
@@ -322,38 +350,38 @@
       "type": "New",
       "description": "Add numbered middle column to Study view (like SBS)",
       "scope": null
-    },
-    {
-      "hash": "6dc2d44",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Redesign Study view with aligned phrase rows",
-      "scope": null
-    },
-    {
-      "hash": "9991825",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view now uses API pre-parsed translation fields",
-      "scope": null
-    },
-    {
-      "hash": "ad5bdd5",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view now correctly detects study translations in JSON",
-      "scope": null
-    },
-    {
-      "hash": "3c2d6c0",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Reduce corner icon overlap on mobile to slight overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "0d2fd25",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Skip already-linked documents in link-source-files",
+        "scope": null
+      },
+      {
+        "hash": "f9f88bd",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use config.library.basePath in link-source-files script",
+        "scope": null
+      },
+      {
+        "hash": "f9078c4",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Store relative paths in link-source-files script",
+        "scope": null
+      },
+      {
+        "hash": "8322153",
+        "date": "2026-01-07",
+        "type": "Updated",
+        "description": "Remove fallback file search in favor of fixing root cause",
+        "scope": null
+      },
       {
         "hash": "8a66cad",
         "date": "2026-01-07",
@@ -678,34 +706,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add numbered middle column to Study view (like SBS)",
-        "scope": null
-      },
-      {
-        "hash": "6dc2d44",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Redesign Study view with aligned phrase rows",
-        "scope": null
-      },
-      {
-        "hash": "9991825",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view now uses API pre-parsed translation fields",
-        "scope": null
-      },
-      {
-        "hash": "ad5bdd5",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view now correctly detects study translations in JSON",
-        "scope": null
-      },
-      {
-        "hash": "3c2d6c0",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Reduce corner icon overlap on mobile to slight overlap",
         "scope": null
       }
     ]
