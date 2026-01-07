@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T04:40:36.490Z",
+  "generated": "2026-01-07T05:08:25.128Z",
   "entries": [
+    {
+      "hash": "700e7df",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Correct config import for library.basePath",
+      "scope": null
+    },
     {
       "hash": "5959dd1",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
       "scope": null
-    },
-    {
-      "hash": "e80af5c",
-      "date": "2026-01-04",
-      "type": "Updated",
-      "description": "Add logging to translation save path",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "700e7df",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Correct config import for library.basePath",
+        "scope": null
+      },
       {
         "hash": "5959dd1",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
-        "scope": null
-      },
-      {
-        "hash": "e80af5c",
-        "date": "2026-01-04",
-        "type": "Updated",
-        "description": "Add logging to translation save path",
         "scope": null
       }
     ]

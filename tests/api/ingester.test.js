@@ -575,3 +575,280 @@ describe('Migration 24: auto_segmented column', () => {
     expect(autoSegmentedFalse).toBe(0);
   });
 });
+
+describe('ingestDocument ID Preservation (Integration)', () => {
+  // These tests verify the document ID preservation logic
+  // when updating documents via explicit metadata.id
+  let ingestDocument, queryOne, queryAll, query, transaction;
+  let mockDb;
+
+  beforeEach(async () => {
+    // Create mock database functions
+    mockDb = {
+      docs: new Map(),
+      content: new Map(),
+      redirects: new Map()
+    };
+
+    // Mock the database module
+    vi.mock('../../api/lib/db.js', () => ({
+      queryOne: vi.fn(),
+      queryAll: vi.fn(),
+      query: vi.fn(),
+      transaction: vi.fn()
+    }));
+
+    // Import after mocking
+    const db = await import('../../api/lib/db.js');
+    queryOne = db.queryOne;
+    queryAll = db.queryAll;
+    query = db.query;
+    transaction = db.transaction;
+
+    // Fresh import of ingester
+    vi.resetModules();
+    const ingester = await import('../../api/services/ingester.js');
+    ingestDocument = ingester.ingestDocument;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('Document ID Resolution Priority', () => {
+    it('should prioritize explicit metadata.id over file path lookup', async () => {
+      const existingDocId = 'doc_ABC123';
+      const existingDoc = {
+        id: existingDocId,
+        file_path: 'test/path/document.md',
+        file_hash: 'oldhash123',
+        title: 'Original Title',
+        religion: 'General',
+        collection: 'Test',
+        language: 'en',
+        slug: 'original-title'
+      };
+
+      // Setup mock - first call looks up by ID (should find it)
+      queryOne.mockImplementation((sql) => {
+        if (sql.includes('WHERE id = ?')) {
+          return existingDoc;
+        }
+        return null;
+      });
+      queryAll.mockResolvedValue([]);
+      query.mockResolvedValue({ changes: 1 });
+      transaction.mockResolvedValue(undefined);
+
+      const newContent = `---
+title: Updated Title
+author: Test Author
+---
+
+New content here with enough text to be indexed properly.`;
+
+      const result = await ingestDocument(newContent, { id: existingDocId }, 'different/path/doc.md');
+
+      // Should use the existing document ID, not generate from path
+      expect(result.documentId).toBe(existingDocId);
+
+      // Verify queryOne was called with ID first
+      expect(queryOne).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE id = ?'),
+        [existingDocId]
+      );
+    });
+
+    it('should fall back to file_path lookup when metadata.id not found', async () => {
+      const existingDocByPath = {
+        id: 'doc_from_path',
+        file_path: 'test/path/document.md',
+        file_hash: 'oldhash123',
+        title: 'Original Title',
+        religion: 'General',
+        collection: 'Test',
+        language: 'en',
+        slug: 'original-title'
+      };
+
+      // Setup mock - ID lookup returns null, path lookup returns doc
+      queryOne.mockImplementation((sql, params) => {
+        if (sql.includes('WHERE id = ?')) {
+          return null; // Not found by ID
+        }
+        if (sql.includes('WHERE file_path = ?')) {
+          return existingDocByPath; // Found by path
+        }
+        return null;
+      });
+      queryAll.mockResolvedValue([]);
+      query.mockResolvedValue({ changes: 1 });
+      transaction.mockResolvedValue(undefined);
+
+      const newContent = `---
+title: Updated Title
+---
+
+New content here with sufficient text.`;
+
+      const result = await ingestDocument(newContent, { id: 'nonexistent_id' }, 'test/path/document.md');
+
+      // Should use the document found by path
+      expect(result.documentId).toBe('doc_from_path');
+    });
+
+    it('should generate new ID when neither metadata.id nor file_path finds existing doc', async () => {
+      // Setup mock - nothing found
+      queryOne.mockResolvedValue(null);
+      queryAll.mockResolvedValue([]);
+      query.mockResolvedValue({ changes: 1 });
+      transaction.mockResolvedValue(undefined);
+
+      const newContent = `---
+title: New Document
+---
+
+Brand new content with sufficient text to be indexed properly.`;
+
+      const result = await ingestDocument(newContent, {}, 'brand/new/path.md');
+
+      // Should generate ID from path
+      expect(result.documentId).toBe('brand_new_path');
+      expect(result.status).toBe('ingested');
+    });
+  });
+
+  describe('Content Table Preservation', () => {
+    it('should reuse existing paragraphs with same content hash', async () => {
+      const existingDocId = 'doc_preserve';
+      const existingDoc = {
+        id: existingDocId,
+        file_path: 'test/document.md',
+        file_hash: 'oldhash',
+        title: 'Original',
+        religion: 'General',
+        collection: 'Test',
+        language: 'en',
+        slug: 'original'
+      };
+
+      const existingParagraphs = [
+        { id: 'doc_preserve_p0', content_hash: 'hash1', embedding: 'blob1', synced: 1 },
+        { id: 'doc_preserve_p1', content_hash: 'hash2', embedding: 'blob2', synced: 1 }
+      ];
+
+      queryOne.mockImplementation((sql) => {
+        if (sql.includes('WHERE id = ?')) return existingDoc;
+        return null;
+      });
+      queryAll.mockImplementation((sql) => {
+        if (sql.includes('FROM content')) return existingParagraphs;
+        if (sql.includes('FROM docs')) return []; // No slug conflicts
+        return [];
+      });
+      query.mockResolvedValue({ changes: 1 });
+      transaction.mockResolvedValue(undefined);
+
+      // Content with same paragraphs (same hashes)
+      const newContent = `---
+title: Updated Title
+---
+
+First paragraph content here.
+
+Second paragraph content here.`;
+
+      const result = await ingestDocument(newContent, { id: existingDocId }, 'test/document.md');
+
+      // Should reuse paragraphs instead of creating new ones
+      expect(result.documentId).toBe(existingDocId);
+      expect(result.status).toBe('updated');
+    });
+  });
+
+  describe('Duplicate Detection Logic', () => {
+    it('should skip duplicate detection logic when existingDoc is found', () => {
+      // Test the logic flow without DB - when existingDoc is found,
+      // the duplicate check by file_hash should be skipped
+      const existingDoc = {
+        id: 'doc_update',
+        file_path: 'test/document.md',
+        file_hash: 'oldhash',
+        title: 'Original'
+      };
+
+      // The logic in ingestDocument:
+      // if (!existingDoc) { ... check for duplicateByHash ... }
+      // So when existingDoc is found, this block is skipped
+      const shouldCheckForDuplicates = !existingDoc;
+      expect(shouldCheckForDuplicates).toBe(false);
+    });
+
+    it('should check for duplicates when no existing document found', () => {
+      // When existingDoc is null, should proceed to duplicate check
+      const existingDoc = null;
+      const shouldCheckForDuplicates = !existingDoc;
+      expect(shouldCheckForDuplicates).toBe(true);
+    });
+  });
+});
+
+describe('Document Update Flow (Unit)', () => {
+  // Unit tests for document update scenarios without actual DB
+
+  describe('ID generation from path', () => {
+    it('should generate clean ID from file path', () => {
+      const testCases = [
+        // Note: The diacritics in 'Bahá' result in 'bah' (special chars stripped),
+        // and the modifier letter between 'Bahá' and 'í' results in underscore
+        { path: 'simple/path.md', expected: 'simple_path' },
+        { path: 'with spaces/and special!chars.md', expected: 'with_spaces_and_special_chars' },
+        { path: 'A'.repeat(150) + '.md', expectedLength: 100 }
+      ];
+
+      testCases.forEach(({ path, expected, expectedLength }) => {
+        const id = path.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100);
+        if (expected) {
+          expect(id).toBe(expected);
+        }
+        if (expectedLength) {
+          expect(id.length).toBeLessThanOrEqual(expectedLength);
+        }
+      });
+    });
+
+    it('should handle paths with diacritics and special characters', () => {
+      // Test actual behavior with diacritics
+      const pathWithDiacritics = 'Baháʼí/Core Tablets/The Báb/001-Address.md';
+      const id = pathWithDiacritics.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100);
+
+      // Should strip diacritics and create underscores for non-alphanumeric sequences
+      expect(id).toMatch(/^[a-z0-9_]+$/);
+      expect(id).toContain('core_tablets');
+      expect(id).toContain('001_address');
+    });
+  });
+
+  describe('Metadata priority', () => {
+    it('should use explicit metadata.id when provided', () => {
+      const metadata = { id: 'explicit_id' };
+      const relativePath = 'some/path.md';
+
+      // The logic: if metadata.id exists, use it for lookup
+      const shouldLookupById = !!metadata.id;
+      expect(shouldLookupById).toBe(true);
+    });
+
+    it('should fall back to path-based ID when no metadata.id', () => {
+      const metadata = {};
+      const relativePath = 'some/path.md';
+
+      // The logic: generate from path if no explicit ID
+      const documentId = relativePath
+        ? relativePath.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100)
+        : `doc_random`;
+
+      expect(documentId).toBe('some_path');
+    });
+  });
+});

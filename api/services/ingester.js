@@ -562,67 +562,90 @@ function extractHeading(fullContent, chunkText) {
  * @returns {Object} - { documentId, paragraphCount, status }
  */
 export async function ingestDocument(text, metadata = {}, relativePath = null) {
-  // Generate deterministic ID from relative path, or fall back to random
-  // The relative path is the canonical, portable identifier
-  const documentId = relativePath
-    ? relativePath.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100)
-    : (metadata.id || `doc_${nanoid(12)}`);
   const fileHash = hashContent(text);
-
-  // GLOBAL DEDUPLICATION: Check if this exact content exists ANYWHERE in the database
-  // This prevents importing duplicate files from different locations
-  const duplicateByHash = await queryOne(
-    `SELECT id, file_path, title FROM docs WHERE file_hash = ? AND (file_path IS NULL OR file_path != ?)`,
-    [fileHash, relativePath || '']
-  );
-
-  if (duplicateByHash) {
-    logger.info({
-      documentId: duplicateByHash.id,
-      existingPath: duplicateByHash.file_path,
-      newPath: relativePath,
-      title: duplicateByHash.title
-    }, 'Duplicate content detected - same file exists at different location, skipping');
-    return {
-      documentId: duplicateByHash.id,
-      paragraphCount: 0,
-      status: 'duplicate',
-      skipped: true,
-      existingPath: duplicateByHash.file_path
-    };
-  }
-
-  // Check if document already exists (by relative path)
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
 
-  if (relativePath) {
+  // PRIORITY 1: If explicit ID is passed, look up by ID first
+  // This is critical for updating documents through the editor - the ID must be preserved
+  if (metadata.id) {
     existingDoc = await queryOne(
-      'SELECT id, file_hash, title, filename, religion, collection, language FROM docs WHERE file_path = ?',
+      'SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE id = ?',
+      [metadata.id]
+    );
+    if (existingDoc) {
+      logger.debug({ documentId: metadata.id }, 'Found existing document by explicit ID');
+      // Update relativePath to match the existing document's file_path if not provided
+      if (!relativePath && existingDoc.file_path) {
+        relativePath = existingDoc.file_path;
+      }
+    }
+  }
+
+  // PRIORITY 2: Look up by relative path if no explicit ID or ID not found
+  if (!existingDoc && relativePath) {
+    existingDoc = await queryOne(
+      'SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_path = ?',
       [relativePath]
     );
+    if (existingDoc) {
+      logger.debug({ documentId: existingDoc.id, relativePath }, 'Found existing document by file path');
+    }
+  }
 
-    if (existingDoc && existingDoc.file_hash === fileHash) {
-      logger.info({ documentId: existingDoc.id, relativePath }, 'Document unchanged, skipping');
+  // Generate deterministic ID from relative path, or fall back to random
+  // Only used if no existing document was found
+  const documentId = relativePath
+    ? relativePath.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100)
+    : (metadata.id || `doc_${nanoid(12)}`);
+
+  // GLOBAL DEDUPLICATION: Check if this exact content exists ANYWHERE in the database
+  // This prevents importing duplicate files from different locations
+  // Skip this check if we already found the document by ID (we're updating it)
+  if (!existingDoc) {
+    const duplicateByHash = await queryOne(
+      `SELECT id, file_path, title FROM docs WHERE file_hash = ? AND (file_path IS NULL OR file_path != ?)`,
+      [fileHash, relativePath || '']
+    );
+
+    if (duplicateByHash) {
+      logger.info({
+        documentId: duplicateByHash.id,
+        existingPath: duplicateByHash.file_path,
+        newPath: relativePath,
+        title: duplicateByHash.title
+      }, 'Duplicate content detected - same file exists at different location, skipping');
       return {
-        documentId: existingDoc.id,
+        documentId: duplicateByHash.id,
         paragraphCount: 0,
-        status: 'unchanged',
-        skipped: true
+        status: 'duplicate',
+        skipped: true,
+        existingPath: duplicateByHash.file_path
       };
     }
+  }
 
-    // Document changed - get existing paragraphs for smart diffing
-    if (existingDoc) {
-      const paragraphs = await queryAll(
-        'SELECT id, content_hash, embedding, synced FROM content WHERE doc_id = ?',
-        [existingDoc.id]
-      );
-      for (const p of paragraphs) {
-        existingParagraphs.set(p.content_hash, p);
-      }
-      logger.info({ documentId: existingDoc.id, relativePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
+  // Check if document is unchanged
+  if (existingDoc && existingDoc.file_hash === fileHash) {
+    logger.info({ documentId: existingDoc.id, relativePath }, 'Document unchanged, skipping');
+    return {
+      documentId: existingDoc.id,
+      paragraphCount: 0,
+      status: 'unchanged',
+      skipped: true
+    };
+  }
+
+  // Document changed - get existing paragraphs for smart diffing
+  if (existingDoc) {
+    const paragraphs = await queryAll(
+      'SELECT id, content_hash, embedding, synced FROM content WHERE doc_id = ?',
+      [existingDoc.id]
+    );
+    for (const p of paragraphs) {
+      existingParagraphs.set(p.content_hash, p);
     }
+    logger.info({ documentId: existingDoc.id, relativePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
   }
 
   // Parse frontmatter using gray-matter (handles detection automatically)
