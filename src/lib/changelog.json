@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T15:32:08.425Z",
+  "generated": "2026-01-07T15:34:13.139Z",
   "entries": [
+    {
+      "hash": "c5dd15d",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Drop old_id column from docs table (migration 28)",
+      "scope": null
+    },
     {
       "hash": "011afdb",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Wait for auth before loading document in editor",
       "scope": null
-    },
-    {
-      "hash": "009aa5b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use padding-right for Arabic continuation indent",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "c5dd15d",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Drop old_id column from docs table (migration 28)",
+        "scope": null
+      },
       {
         "hash": "011afdb",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Wait for auth before loading document in editor",
-        "scope": null
-      },
-      {
-        "hash": "009aa5b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use padding-right for Arabic continuation indent",
         "scope": null
       }
     ]

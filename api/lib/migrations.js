@@ -1153,7 +1153,10 @@ const migrations = {
   28: async () => {
     logger.info('Starting migration 28: Drop old_id column from docs table');
 
-    // Step 1: Create new docs table without old_id
+    // Cleanup any leftover docs_new table from failed migration
+    await query('DROP TABLE IF EXISTS docs_new');
+
+    // Step 1: Create new docs table without old_id (matching actual production schema)
     await query(`
       CREATE TABLE IF NOT EXISTS docs_new (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1165,12 +1168,15 @@ const migrations = {
         religion TEXT,
         collection TEXT,
         language TEXT DEFAULT 'en',
-        source TEXT,
-        source_url TEXT,
-        year TEXT,
+        year INTEGER,
+        description TEXT,
+        paragraph_count INTEGER DEFAULT 0,
+        source_file TEXT,
+        cover_url TEXT,
         slug TEXT,
-        metadata TEXT,
         auto_segmented INTEGER DEFAULT 0,
+        encumbered INTEGER DEFAULT 0,
+        metadata TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
@@ -1178,8 +1184,8 @@ const migrations = {
 
     // Step 2: Copy all docs (excluding old_id)
     await query(`
-      INSERT INTO docs_new (id, file_path, file_hash, filename, title, author, religion, collection, language, source, source_url, year, slug, metadata, auto_segmented, created_at, updated_at)
-      SELECT id, file_path, file_hash, filename, title, author, religion, collection, language, source, source_url, year, slug, metadata, auto_segmented, created_at, updated_at
+      INSERT INTO docs_new (id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at)
+      SELECT id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at
       FROM docs
     `);
 
