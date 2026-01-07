@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T17:08:32.352Z",
+  "generated": "2026-01-07T17:44:54.003Z",
   "entries": [
+    {
+      "hash": "f0e0163",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add Meilisearch migration script for doc_id field",
+      "scope": null
+    },
     {
       "hash": "0f22e80",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add tabbed editor with metadata/content tabs and field management",
       "scope": null
-    },
-    {
-      "hash": "559e7d9",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use $effect to initialize editor when container is ready",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "f0e0163",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add Meilisearch migration script for doc_id field",
+        "scope": null
+      },
       {
         "hash": "0f22e80",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add tabbed editor with metadata/content tabs and field management",
-        "scope": null
-      },
-      {
-        "hash": "559e7d9",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use $effect to initialize editor when container is ready",
         "scope": null
       }
     ]
