@@ -55,7 +55,9 @@ export async function createServer(opts = {}) {
       }
       callback(new Error('Not allowed by CORS'), false);
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Internal-Key', 'X-API-Key', 'X-Requested-With']
   });
 
   // Cookies (for refresh tokens)

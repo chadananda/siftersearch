@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 25;
+const CURRENT_VERSION = 26;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -972,6 +972,75 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_ingestion_queue_created_by ON ingestion_queue(created_by)');
 
     logger.info('Migration 25: ingestion_queue table created for document submission workflow');
+  },
+
+  // Version 26: Add unique constraint on file_hash and ensure relative file_path
+  // - file_hash uniqueness prevents duplicate content from being indexed twice
+  // - file_path should be relative to basePath for library portability
+  26: async () => {
+    // Add unique index on file_hash (allows NULL values, only enforces uniqueness on non-NULL)
+    try {
+      await query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_file_hash_unique
+        ON docs(file_hash)
+        WHERE file_hash IS NOT NULL AND file_hash != ''
+      `);
+      logger.info('Created unique index on file_hash');
+    } catch (err) {
+      // If duplicates exist, log warning and skip
+      if (err.message.includes('UNIQUE constraint failed')) {
+        logger.warn('Cannot create unique index on file_hash - duplicates exist. Run cleanup-duplicates.js first.');
+      } else {
+        logger.error({ err: err.message }, 'Failed to create file_hash unique index');
+      }
+    }
+
+    // Convert absolute file_path to relative (remove basePath prefix)
+    // This makes the library portable - files can be moved as long as structure is preserved
+    const docs = await queryAll(`
+      SELECT id, file_path FROM docs
+      WHERE file_path IS NOT NULL AND file_path LIKE '/%'
+    `);
+
+    if (docs.length > 0) {
+      logger.info(`Found ${docs.length} documents with absolute file_path, converting to relative`);
+
+      for (const doc of docs) {
+        // Extract relative path by removing common base prefixes
+        let relativePath = doc.file_path;
+
+        // Common base path patterns to strip
+        const basePrefixes = [
+          '/home/chad/ocean-library/',
+          '/Users/chad/ocean-library/',
+          '/var/lib/siftersearch/library/',
+        ];
+
+        for (const prefix of basePrefixes) {
+          if (relativePath.startsWith(prefix)) {
+            relativePath = relativePath.slice(prefix.length);
+            break;
+          }
+        }
+
+        // If still absolute, try to extract from last known structure pattern
+        // Pattern: .../Baha'i/Collection/Author/filename.md
+        if (relativePath.startsWith('/')) {
+          const match = relativePath.match(/\/(Baha'?i|Buddhism|Christianity|Hinduism|Islam|Judaism|Zoroastrianism)\//i);
+          if (match) {
+            relativePath = relativePath.slice(relativePath.indexOf(match[0]) + 1);
+          }
+        }
+
+        if (relativePath !== doc.file_path) {
+          await query('UPDATE docs SET file_path = ? WHERE id = ?', [relativePath, doc.id]);
+        }
+      }
+
+      logger.info(`Converted ${docs.length} absolute paths to relative`);
+    }
+
+    logger.info('Migration 26: file_hash uniqueness and relative file_path enforcement');
   },
 };
 
