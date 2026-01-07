@@ -15,7 +15,7 @@
  *   node scripts/link-source-files.js            # Apply matches
  */
 
-import '../api/lib/config.js';
+import { config } from '../api/lib/config.js';
 import { query, queryAll, queryOne } from '../api/lib/db.js';
 import { readdir, readFile, stat } from 'fs/promises';
 import { join, basename } from 'path';
@@ -24,8 +24,8 @@ import matter from 'gray-matter';
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 
-// Source library path
-const LIBRARY_ROOT = '/Users/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library';
+// Source library path from config
+const LIBRARY_ROOT = config.library.basePath;
 
 /**
  * Recursively find all markdown files in a directory
