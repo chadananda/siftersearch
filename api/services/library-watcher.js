@@ -51,12 +51,15 @@ async function handleFileChange(filePath, eventType) {
 
   watcherStats.lastEvent = { type: eventType, path: filePath, at: new Date().toISOString() };
 
+  // Convert path early to check for pending deletes
+  const relativePath = toRelativePath(filePath);
+
+  // Cancel any pending delete for this path (file reappeared)
+  cancelPendingDelete(relativePath);
+
   try {
     // Read file content
     const content = await readFile(filePath, 'utf-8');
-
-    // Convert absolute path to relative path for consistent document IDs
-    const relativePath = toRelativePath(filePath);
 
     // Ingest document (will handle both new and updated files)
     const result = await ingestDocument(content, {}, relativePath);
@@ -78,8 +81,13 @@ async function handleFileChange(filePath, eventType) {
   }
 }
 
+// Pending deletes - allows cancellation if file was actually moved
+const pendingDeletes = new Map();
+const DELETE_GRACE_PERIOD_MS = 2000;  // Wait 2s before deleting (allows move detection)
+
 /**
  * Handle file delete event
+ * Uses a grace period to avoid deleting files that are being moved
  */
 async function handleFileDelete(filePath) {
   // Only process markdown files
@@ -88,25 +96,52 @@ async function handleFileDelete(filePath) {
   }
 
   watcherStats.lastEvent = { type: 'unlink', path: filePath, at: new Date().toISOString() };
+  const relativePath = toRelativePath(filePath);
 
-  try {
-    // Convert absolute path to relative path for consistent lookup
-    const relativePath = toRelativePath(filePath);
+  // Schedule deletion after grace period
+  // If the file reappears (add event), cancel the pending delete
+  const timeoutId = setTimeout(async () => {
+    pendingDeletes.delete(relativePath);
 
-    // Get document by path to find its ID
-    const doc = await getDocumentByPath(relativePath);
+    try {
+      // Re-fetch document to ensure it wasn't moved during grace period
+      const doc = await getDocumentByPath(relativePath);
 
-    if (doc) {
-      await removeDocument(doc.id);
-      watcherStats.filesRemoved++;
-      logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
-    } else {
-      logger.debug({ filePath }, 'File removed but no matching document found');
+      if (doc) {
+        // Double-check: if doc exists but path doesn't match, it was moved
+        if (doc.file_path !== relativePath) {
+          logger.debug({ filePath, docPath: doc.file_path }, 'File moved during grace period, skipping delete');
+          return;
+        }
+
+        await removeDocument(doc.id);
+        watcherStats.filesRemoved++;
+        logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
+      } else {
+        logger.debug({ filePath }, 'File removed but no matching document found');
+      }
+    } catch (err) {
+      watcherStats.errors++;
+      logger.error({ err: err.message, filePath }, 'Failed to process file deletion');
     }
-  } catch (err) {
-    watcherStats.errors++;
-    logger.error({ err: err.message, filePath }, 'Failed to process file deletion');
+  }, DELETE_GRACE_PERIOD_MS);
+
+  pendingDeletes.set(relativePath, timeoutId);
+  logger.debug({ filePath }, 'File delete scheduled (grace period)');
+}
+
+/**
+ * Cancel pending delete (called when file reappears at same path)
+ */
+function cancelPendingDelete(relativePath) {
+  const timeoutId = pendingDeletes.get(relativePath);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    pendingDeletes.delete(relativePath);
+    logger.debug({ relativePath }, 'Pending delete cancelled (file reappeared)');
+    return true;
   }
+  return false;
 }
 
 /**

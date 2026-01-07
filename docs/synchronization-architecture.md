@@ -113,6 +113,35 @@ Each paragraph has its own hash. Used to:
 
 **Important:** Document ID remains unchanged throughout rename.
 
+### Moving Files (via filesystem)
+
+When a file is moved to a different folder/collection:
+
+1. Watcher sees `unlink` on old path → schedules delete with 2s grace period
+2. Watcher sees `add` on new path → cancels pending delete
+3. Ingester:
+   - Lookup by new path → not found
+   - Lookup by file_hash → found existing doc
+   - Update `file_path`, `religion`, `collection` in database
+   - Mark paragraphs as unsynced (to update search index)
+   - Return status: 'moved' (no content re-processing)
+
+**Race condition protection:**
+- Deletes use a 2-second grace period
+- If file reappears during grace period, delete is cancelled
+- This handles filesystem rename operations (unlink + add in quick succession)
+
+**What gets updated on file move:**
+- `file_path` → new location
+- `religion` → extracted from new path (first folder)
+- `collection` → extracted from new path (second folder)
+- Search index → paragraphs re-synced with new religion/collection
+
+**What stays the same:**
+- Document ID (immutable)
+- All paragraph content and embeddings
+- Translations, annotations, bookmarks
+
 ### Manual File Edits (outside admin UI)
 
 1. User edits file directly on filesystem

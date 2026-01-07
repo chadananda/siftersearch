@@ -599,34 +599,78 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     ? relativePath.replace(/\.md$/, '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase().substring(0, 100)
     : (metadata.id || `doc_${nanoid(12)}`);
 
-  // GLOBAL DEDUPLICATION: Check if this exact content exists ANYWHERE in the database
-  // This prevents importing duplicate files from different locations
-  // Skip this check if we already found the document by ID (we're updating it)
-  if (!existingDoc) {
-    const duplicateByHash = await queryOne(
-      `SELECT id, file_path, title FROM docs WHERE file_hash = ? AND (file_path IS NULL OR file_path != ?)`,
-      [fileHash, relativePath || '']
+  // PRIORITY 3: Look up by file_hash if file was moved
+  // This handles the case where a file is moved to a different folder/collection
+  // We recognize it by content hash and update the path-derived metadata
+  if (!existingDoc && relativePath) {
+    const movedDoc = await queryOne(
+      `SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_hash = ?`,
+      [fileHash]
     );
 
-    if (duplicateByHash) {
+    if (movedDoc) {
+      // File was moved! Use existing doc and update path-derived fields
+      existingDoc = movedDoc;
       logger.info({
-        documentId: duplicateByHash.id,
-        existingPath: duplicateByHash.file_path,
+        documentId: movedDoc.id,
+        oldPath: movedDoc.file_path,
         newPath: relativePath,
-        title: duplicateByHash.title
-      }, 'Duplicate content detected - same file exists at different location, skipping');
-      return {
-        documentId: duplicateByHash.id,
-        paragraphCount: 0,
-        status: 'duplicate',
-        skipped: true,
-        existingPath: duplicateByHash.file_path
-      };
+        title: movedDoc.title
+      }, 'File moved detected by hash - will update path and metadata');
     }
   }
 
-  // Check if document is unchanged
+  // Check if document content is unchanged
   if (existingDoc && existingDoc.file_hash === fileHash) {
+    // Content unchanged, but check if path-derived metadata changed (file moved)
+    const pathChanged = existingDoc.file_path !== relativePath;
+
+    if (pathChanged && relativePath) {
+      // File was moved - update path and path-derived metadata only
+      const pathParts = relativePath.split('/');
+      let newReligion = existingDoc.religion;
+      let newCollection = existingDoc.collection;
+
+      // Extract religion/collection from path (e.g., "Baha'i/Core Tablets/...")
+      if (pathParts.length >= 2) {
+        newReligion = pathParts[0];
+        newCollection = pathParts[1];
+      }
+
+      await query(`
+        UPDATE docs SET
+          file_path = ?,
+          religion = ?,
+          collection = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [relativePath, newReligion, newCollection, existingDoc.id]);
+
+      // Mark all paragraphs as unsynced so religion/collection updates propagate to search
+      const updateResult = await query(`
+        UPDATE content SET synced = 0 WHERE doc_id = ?
+      `, [existingDoc.id]);
+
+      logger.info({
+        documentId: existingDoc.id,
+        oldPath: existingDoc.file_path,
+        newPath: relativePath,
+        religion: newReligion,
+        collection: newCollection,
+        paragraphsMarkedUnsynced: updateResult.changes || 0
+      }, 'File moved - updated path and metadata, marked paragraphs for re-sync');
+
+      return {
+        documentId: existingDoc.id,
+        paragraphCount: updateResult.changes || 0,
+        status: 'moved',
+        skipped: false,
+        oldPath: existingDoc.file_path,
+        newPath: relativePath
+      };
+    }
+
+    // Truly unchanged - skip entirely
     logger.info({ documentId: existingDoc.id, relativePath }, 'Document unchanged, skipping');
     return {
       documentId: existingDoc.id,
