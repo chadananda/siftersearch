@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T14:36:58.848Z",
+  "generated": "2026-01-07T14:38:36.096Z",
   "entries": [
+    {
+      "hash": "ddfd1d1",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use Node path module for reliable path handling in library-watcher",
+      "scope": null
+    },
     {
       "hash": "0d2fd25",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Correct Study view column order for RTL documents",
       "scope": null
-    },
-    {
-      "hash": "a1bf8d7",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add numbered middle column to Study view (like SBS)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "ddfd1d1",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use Node path module for reliable path handling in library-watcher",
+        "scope": null
+      },
       {
         "hash": "0d2fd25",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Correct Study view column order for RTL documents",
-        "scope": null
-      },
-      {
-        "hash": "a1bf8d7",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add numbered middle column to Study view (like SBS)",
         "scope": null
       }
     ]
