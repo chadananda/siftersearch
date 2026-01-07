@@ -132,12 +132,20 @@ async function main() {
   const sourceFiles = await findMarkdownFiles(LIBRARY_ROOT);
   console.log(`Found ${sourceFiles.length} markdown files`);
 
-  // Get all database documents
+  // Get all database documents (only those without file_path)
   const allDocs = await queryAll(`
     SELECT id, title, author, language, file_path
     FROM docs
+    WHERE file_path IS NULL
   `);
-  console.log(`Found ${allDocs.length} documents in database`);
+  console.log(`Found ${allDocs.length} documents without file_path`);
+
+  // Get existing file_paths to avoid duplicates
+  const existingPaths = new Set(
+    (await queryAll(`SELECT file_path FROM docs WHERE file_path IS NOT NULL`))
+      .map(d => d.file_path)
+  );
+  console.log(`Found ${existingPaths.size} documents with existing file_path`);
 
   // Track unmatched docs for reporting
   const unmatchedDocs = new Set(allDocs.map(d => d.id));
@@ -145,12 +153,23 @@ async function main() {
   // Parse source files and find matches
   const matches = [];
   const unmatched = [];
+  const skippedAlreadyLinked = [];
 
   console.log('\nMatching source files to database records...\n');
 
   for (const filePath of sourceFiles) {
     const sourceFile = await parseSourceFile(filePath);
     if (!sourceFile) continue;
+
+    // Skip files that are already linked to a document
+    const relativePath = sourceFile.path.startsWith(LIBRARY_ROOT)
+      ? sourceFile.path.slice(LIBRARY_ROOT.length + 1)
+      : sourceFile.path;
+
+    if (existingPaths.has(relativePath)) {
+      skippedAlreadyLinked.push(sourceFile);
+      continue;
+    }
 
     const match = await findMatch(sourceFile, allDocs);
 
@@ -168,7 +187,8 @@ async function main() {
   }
 
   console.log(`\n=== Results ===`);
-  console.log(`Matched: ${matches.length}`);
+  console.log(`Already linked (skipped): ${skippedAlreadyLinked.length}`);
+  console.log(`Matched (to update): ${matches.length}`);
   console.log(`Unmatched source files: ${unmatched.length}`);
   console.log(`Unmatched database docs: ${unmatchedDocs.size}`);
 
