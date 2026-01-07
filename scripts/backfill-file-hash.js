@@ -18,7 +18,7 @@ import { config } from '../api/lib/config.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const limitArg = process.argv.find(arg => arg.startsWith('--limit='));
-const LIMIT = limitArg ? parseInt(limitArg.split('=')[1], 10) : Infinity;
+const LIMIT = limitArg ? parseInt(limitArg.split('=')[1], 10) : 10000000; // SQLite can't handle Infinity
 
 function hashContent(text) {
   return createHash('sha256').update(text).digest('hex');

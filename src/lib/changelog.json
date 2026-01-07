@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T00:20:22.758Z",
+  "generated": "2026-01-07T00:22:36.889Z",
   "entries": [
+    {
+      "hash": "fbdad20",
+      "date": "2026-01-06",
+      "type": "New",
+      "description": "Add backfill script for file_hash",
+      "scope": null
+    },
     {
       "hash": "a28f09b",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
       "scope": null
-    },
-    {
-      "hash": "2da673a",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "fbdad20",
+        "date": "2026-01-06",
+        "type": "New",
+        "description": "Add backfill script for file_hash",
+        "scope": null
+      },
       {
         "hash": "a28f09b",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
-        "scope": null
-      },
-      {
-        "hash": "2da673a",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
         "scope": null
       }
     ]
