@@ -14,7 +14,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { query, queryOne } from '../api/lib/db.js';
+import { query, queryAll } from '../api/lib/db.js';
 import { parseMarkdownFrontmatter } from '../api/services/ingester.js';
 import config from '../api/lib/config.js';
 
@@ -28,7 +28,7 @@ async function fixTitles() {
   console.log(`Library base: ${config.library.basePath}\n`);
 
   // Get all documents with file_path
-  const docs = await query(`
+  const docs = await queryAll(`
     SELECT id, title, file_path
     FROM docs
     WHERE file_path IS NOT NULL AND file_path != ''

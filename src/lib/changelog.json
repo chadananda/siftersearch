@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T17:47:19.335Z",
+  "generated": "2026-01-07T17:49:16.958Z",
   "entries": [
+    {
+      "hash": "ae3a704",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to fix corrupted titles from frontmatter",
+      "scope": null
+    },
     {
       "hash": "f0e0163",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Strip collection/religion from source document frontmatter",
       "scope": null
-    },
-    {
-      "hash": "7227a20",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add tabbed editor with metadata/content tabs and field management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "ae3a704",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to fix corrupted titles from frontmatter",
+        "scope": null
+      },
       {
         "hash": "f0e0163",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Strip collection/religion from source document frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "7227a20",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add tabbed editor with metadata/content tabs and field management",
         "scope": null
       }
     ]
