@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T15:18:13.128Z",
+  "generated": "2026-01-07T15:29:32.307Z",
   "entries": [
+    {
+      "hash": "011afdb",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
+      "scope": null
+    },
     {
       "hash": "ed45019",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use padding-right for Arabic continuation indent",
       "scope": null
-    },
-    {
-      "hash": "fe6bc12",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view improvements and batch translation notes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "011afdb",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
+        "scope": null
+      },
       {
         "hash": "ed45019",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Use padding-right for Arabic continuation indent",
-        "scope": null
-      },
-      {
-        "hash": "fe6bc12",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view improvements and batch translation notes",
         "scope": null
       }
     ]

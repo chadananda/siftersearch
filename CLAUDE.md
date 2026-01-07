@@ -53,3 +53,30 @@ Colors are centrally defined in `src/styles/global.css`. Components use **semant
 npm test        # Run all tests
 npm run build   # Build (must pass)
 ```
+
+### Server Deployment
+
+```bash
+# SSH to server
+ssh chad@boss
+
+# Application directory
+cd ~/sifter/siftersearch
+
+# Deploy updates
+git pull && pm2 restart siftersearch-api
+
+# Check logs
+pm2 logs siftersearch-api --lines 50 --nostream
+
+# Check all processes
+pm2 list
+```
+
+**PM2 Process Names:**
+- `siftersearch-api` - Main API server
+- `siftersearch-jobs` - Background job workers
+- `siftersearch-watchdog` - Health monitoring
+- `siftersearch-updater` - Auto-update service
+
+**Database:** `~/sifter/siftersearch/data/sifter.db`
