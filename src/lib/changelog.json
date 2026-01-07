@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T17:49:16.958Z",
+  "generated": "2026-01-07T17:58:13.101Z",
   "entries": [
+    {
+      "hash": "9eb0897",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use queryAll for fix-titles script",
+      "scope": null
+    },
     {
       "hash": "ae3a704",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add auto_segmented flag to track AI-segmented documents",
       "scope": null
-    },
-    {
-      "hash": "ddc9c14",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Strip collection/religion from source document frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "9eb0897",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use queryAll for fix-titles script",
+        "scope": null
+      },
       {
         "hash": "ae3a704",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add auto_segmented flag to track AI-segmented documents",
-        "scope": null
-      },
-      {
-        "hash": "ddc9c14",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Strip collection/religion from source document frontmatter",
         "scope": null
       }
     ]
