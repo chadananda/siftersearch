@@ -2378,15 +2378,22 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('Document has no source file path');
     }
 
+    // Resolve file path - prepend library base if it's a relative path
+    const { library } = await import('../lib/config.js');
+    let absolutePath = doc.file_path;
+    if (!doc.file_path.startsWith('/')) {
+      absolutePath = `${library.basePath}/${doc.file_path}`;
+    }
+
     // Verify file exists
     try {
-      await access(doc.file_path, fsConstants.R_OK);
+      await access(absolutePath, fsConstants.R_OK);
     } catch {
       throw ApiError.notFound(`Source file not found: ${doc.file_path}`);
     }
 
     // Read raw content
-    const content = await readFile(doc.file_path, 'utf-8');
+    const content = await readFile(absolutePath, 'utf-8');
 
     // Parse frontmatter to return metadata separately
     let metadata = {};
@@ -2397,10 +2404,10 @@ Provide only the translation, no explanations.`;
       logger.warn({ err, filePath: doc.file_path }, 'Failed to parse frontmatter');
     }
 
-    // Create display-friendly relative path (strip library base path)
-    const { library } = await import('../lib/config.js');
+    // Display the stored path (already relative if converted by migration)
+    // Strip library base path if it's still absolute
     let displayPath = doc.file_path;
-    if (library.basePath && displayPath.startsWith(library.basePath)) {
+    if (displayPath.startsWith('/') && library.basePath && displayPath.startsWith(library.basePath)) {
       displayPath = displayPath.slice(library.basePath.length).replace(/^\//, '');
     }
 
@@ -2459,6 +2466,13 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('Document has no source file path');
     }
 
+    // Resolve file path - prepend library base if it's a relative path
+    const { library } = await import('../lib/config.js');
+    let absolutePath = doc.file_path;
+    if (!doc.file_path.startsWith('/')) {
+      absolutePath = `${library.basePath}/${doc.file_path}`;
+    }
+
     // Validate YAML frontmatter
     let parsedContent;
     try {
@@ -2469,16 +2483,16 @@ Provide only the translation, no explanations.`;
 
     // Ensure file exists (we're replacing, not creating)
     try {
-      await access(doc.file_path, fsConstants.W_OK);
+      await access(absolutePath, fsConstants.W_OK);
     } catch {
       throw ApiError.notFound(`Source file not found or not writable: ${doc.file_path}`);
     }
 
     // Atomic write: write to temp file, then rename
-    const tempPath = `${doc.file_path}.tmp.${Date.now()}`;
+    const tempPath = `${absolutePath}.tmp.${Date.now()}`;
     try {
       await writeFile(tempPath, content, 'utf-8');
-      await rename(tempPath, doc.file_path);
+      await rename(tempPath, absolutePath);
     } catch (err) {
       // Clean up temp file if rename failed
       try {

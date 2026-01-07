@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T04:05:53.497Z",
+  "generated": "2026-01-07T04:12:39.872Z",
   "entries": [
+    {
+      "hash": "76dcafd",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Add X-Client-Version and X-Request-Id to CORS headers",
+      "scope": null
+    },
     {
       "hash": "62c17bf",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Cap maxTokens at 16000 to prevent model limit errors",
       "scope": null
-    },
-    {
-      "hash": "81cdebf",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Improve phrase segmentation for Study mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "76dcafd",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Add X-Client-Version and X-Request-Id to CORS headers",
+        "scope": null
+      },
       {
         "hash": "62c17bf",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Cap maxTokens at 16000 to prevent model limit errors",
-        "scope": null
-      },
-      {
-        "hash": "81cdebf",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Improve phrase segmentation for Study mode",
         "scope": null
       }
     ]
