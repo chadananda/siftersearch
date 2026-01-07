@@ -2442,14 +2442,15 @@ Provide only the translation, no explanations.`;
       body: {
         type: 'object',
         properties: {
-          content: { type: 'string', minLength: 1 }
+          content: { type: 'string', minLength: 1 },
+          newFilename: { type: 'string', minLength: 1 }
         },
         required: ['content']
       }
     }
   }, async (request) => {
     const { id } = request.params;
-    const { content } = request.body;
+    const { content, newFilename } = request.body;
 
     // Get document with file_path
     const doc = await queryOne(`
@@ -2505,10 +2506,58 @@ Provide only the translation, no explanations.`;
       throw ApiError.internal('Failed to save file');
     }
 
+    // Handle file renaming if newFilename is provided
+    let finalFilePath = filePath;
+    let finalAbsolutePath = absolutePath;
+    if (newFilename && newFilename !== filePath.split('/').pop()) {
+      // Sanitize filename: remove diacritics and invalid chars, ensure .md
+      const sanitizedFilename = newFilename
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')  // Remove diacritics
+        .replace(/[/\\:*?"<>|]/g, '')      // Remove invalid chars
+        .replace(/\.md$/, '') + '.md';     // Ensure .md extension
+
+      // Build new path (same directory, new filename)
+      const dir = dirname(absolutePath);
+      const newAbsolutePath = join(dir, sanitizedFilename);
+      const newRelativePath = filePath.includes('/')
+        ? filePath.split('/').slice(0, -1).join('/') + '/' + sanitizedFilename
+        : sanitizedFilename;
+
+      // Check if target already exists (don't overwrite)
+      try {
+        await access(newAbsolutePath, fsConstants.F_OK);
+        throw ApiError.badRequest(`A file named "${sanitizedFilename}" already exists in this directory`);
+      } catch (err) {
+        if (err.code !== 'ENOENT') throw err;
+        // ENOENT is expected (file doesn't exist) - proceed with rename
+      }
+
+      // Rename the file
+      try {
+        await rename(absolutePath, newAbsolutePath);
+        finalFilePath = newRelativePath;
+        finalAbsolutePath = newAbsolutePath;
+
+        // Update file_path in database
+        await query('UPDATE docs SET file_path = ? WHERE id = ?', [newRelativePath, id]);
+
+        logger.info({
+          documentId: id,
+          oldPath: filePath,
+          newPath: newRelativePath,
+          user: request.user?.email
+        }, 'Document file renamed');
+      } catch (err) {
+        logger.error({ err, oldPath: absolutePath, newPath: newAbsolutePath }, 'Failed to rename document file');
+        throw ApiError.internal('Content saved but file rename failed');
+      }
+    }
+
     // Re-ingest the document to update the database and search index
     let ingestResult;
     try {
-      ingestResult = await ingestDocument(content, { id }, filePath);
+      ingestResult = await ingestDocument(content, { id }, finalFilePath);
     } catch (err) {
       logger.error({ err, documentId: id }, 'Failed to re-ingest document after save');
       throw ApiError.internal('File saved but re-indexing failed. Please manually reindex.');
@@ -2516,7 +2565,8 @@ Provide only the translation, no explanations.`;
 
     logger.info({
       documentId: id,
-      filePath,
+      filePath: finalFilePath,
+      renamed: finalFilePath !== filePath,
       paragraphCount: ingestResult.paragraphCount,
       user: request.user?.email
     }, 'Document raw content updated');
@@ -2524,9 +2574,12 @@ Provide only the translation, no explanations.`;
     return {
       success: true,
       documentId: id,
+      filePath: finalFilePath,
       paragraphCount: ingestResult.paragraphCount,
       status: ingestResult.status,
-      message: 'Document saved and re-indexed successfully'
+      message: finalFilePath !== filePath
+        ? 'Document renamed, saved, and re-indexed successfully'
+        : 'Document saved and re-indexed successfully'
     };
   });
 

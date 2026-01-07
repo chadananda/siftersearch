@@ -25,6 +25,8 @@
   let originalContent = $state('');
   let document = $state(null);
   let filePath = $state('');
+  let filename = $state('');
+  let originalFilename = $state('');
   let editorContainer = $state(null);
   let editorView = $state(null);
   let activeTab = $state('content'); // 'metadata' or 'content'
@@ -73,8 +75,11 @@
   // Derived
   let dirty = $derived(
     JSON.stringify(metadata) !== JSON.stringify(originalMetadata) ||
-    bodyContent !== originalBodyContent
+    bodyContent !== originalBodyContent ||
+    filename !== originalFilename
   );
+  let filenameChanged = $derived(filename !== originalFilename);
+  let directoryPath = $derived(filePath ? filePath.split('/').slice(0, -1).join('/') : '');
   let isRTL = $derived(metadata?.language && ['ar', 'fa', 'he', 'ur'].includes(metadata.language));
   let editorInitialized = $state(false);
 
@@ -180,7 +185,14 @@
       rawContent = data.content;
       originalContent = data.content;
       document = data.document;
-      filePath = data.filePath;
+      filePath = data.filePath || '';
+
+      // Extract filename from path
+      if (filePath) {
+        const parts = filePath.split('/');
+        filename = parts.pop() || '';
+        originalFilename = filename;
+      }
 
       // Parse frontmatter
       const parsed = parseFrontmatter(data.content);
@@ -292,10 +304,16 @@
       // Recombine frontmatter and body
       const content = serializeFrontmatter(metadata, bodyContent);
 
+      // Build request payload - include newFilename only if changed
+      const payload = { content };
+      if (filenameChanged && filename) {
+        payload.newFilename = filename;
+      }
+
       const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${documentId}/raw`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -303,9 +321,17 @@
         throw new Error(data.message || `Failed to save document (${res.status})`);
       }
 
+      const result = await res.json().catch(() => ({}));
+
+      // Update file path if it was returned (after rename)
+      if (result.filePath) {
+        filePath = result.filePath;
+      }
+
       originalContent = content;
       originalMetadata = { ...metadata };
       originalBodyContent = bodyContent;
+      originalFilename = filename;
       saveSuccess = true;
 
       // Clear success message after 3 seconds
@@ -487,6 +513,36 @@
       <!-- Use CSS visibility instead of {#if} to preserve editor state -->
       <div class="metadata-editor" class:hidden={activeTab !== 'metadata'}>
         <div class="metadata-form">
+            <!-- Filename field -->
+            <div class="form-field filename-field">
+              <label for="filename">
+                Filename
+                {#if filenameChanged}<span class="changed-badge">Changed</span>{/if}
+              </label>
+              <div class="filename-input-wrapper">
+                <span class="directory-prefix" title={directoryPath || 'Root'}>{directoryPath ? directoryPath + '/' : ''}</span>
+                <input
+                  type="text"
+                  id="filename"
+                  value={filename}
+                  oninput={(e) => {
+                    // Normalize and strip diacritics (Báb → Bab), remove invalid chars
+                    let val = e.target.value
+                      .normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')  // Remove combining diacritical marks
+                      .replace(/[/\\:*?"<>|]/g, '');    // Remove invalid filename chars
+                    // Ensure .md extension
+                    if (!val.endsWith('.md') && val.length > 0) {
+                      val = val.replace(/\.md$/, '') + '.md';
+                    }
+                    filename = val;
+                  }}
+                  placeholder="document-name.md"
+                />
+              </div>
+              <span class="field-help">Filename only (location cannot be changed)</span>
+            </div>
+
             {#each METADATA_FIELDS as field}
               <div class="form-field">
                 <label for={field.key}>
@@ -930,6 +986,65 @@
   .field-help {
     font-size: 0.75rem;
     color: var(--text-muted);
+  }
+
+  /* Filename field */
+  .filename-field {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-default);
+    margin-bottom: 0.5rem;
+  }
+
+  .filename-input-wrapper {
+    display: flex;
+    align-items: stretch;
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 0.375rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .filename-input-wrapper:focus-within {
+    border-color: var(--accent-primary);
+  }
+
+  .directory-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem;
+    border-right: 1px solid var(--border-default);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .filename-input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  .filename-input-wrapper input:focus {
+    outline: none;
+    border-color: transparent;
+  }
+
+  .changed-badge {
+    display: inline-flex;
+    padding: 0.125rem 0.375rem;
+    background: var(--warning-bg, rgba(245, 158, 11, 0.1));
+    color: var(--warning, #f59e0b);
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
   }
 
   /* Custom field with remove button */
