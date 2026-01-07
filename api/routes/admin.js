@@ -2723,6 +2723,55 @@ Collection: ${paragraph.collection || 'Unknown'}
     };
   });
 
+  /**
+   * Update a document's file_path
+   * Used to fix incorrect paths or clear paths for documents without source files
+   *
+   * PATCH /server/documents/:id/file-path
+   * Body: { filePath: "new/path.md" } or { filePath: null }
+   */
+  fastify.patch('/server/documents/:id/file-path', {
+    preHandler: requireInternal,
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      },
+      body: {
+        type: 'object',
+        properties: {
+          filePath: { type: ['string', 'null'] }
+        },
+        required: ['filePath']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+    const { filePath } = request.body;
+
+    // Verify document exists
+    const doc = await queryOne('SELECT id, file_path FROM docs WHERE id = ?', [id]);
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    const oldPath = doc.file_path;
+
+    // Update file_path
+    await query('UPDATE docs SET file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [filePath, id]);
+
+    logger.info({ documentId: id, oldPath, newPath: filePath }, 'Document file_path updated');
+
+    return {
+      success: true,
+      documentId: id,
+      oldFilePath: oldPath,
+      newFilePath: filePath,
+      message: filePath ? 'File path updated' : 'File path cleared'
+    };
+  });
+
   // ========================================
   // Job Queue Monitoring
   // ========================================

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T04:12:39.872Z",
+  "generated": "2026-01-07T04:24:47.187Z",
   "entries": [
+    {
+      "hash": "5341700",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Resolve relative file paths with library base path",
+      "scope": null
+    },
     {
       "hash": "76dcafd",
       "date": "2026-01-06",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Allow saving translations even if segments are null",
       "scope": null
-    },
-    {
-      "hash": "f6bb5ca",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Cap maxTokens at 16000 to prevent model limit errors",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-06": [
+      {
+        "hash": "5341700",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Resolve relative file paths with library base path",
+        "scope": null
+      },
       {
         "hash": "76dcafd",
         "date": "2026-01-06",
@@ -699,13 +706,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Allow saving translations even if segments are null",
-        "scope": null
-      },
-      {
-        "hash": "f6bb5ca",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Cap maxTokens at 16000 to prevent model limit errors",
         "scope": null
       }
     ]
