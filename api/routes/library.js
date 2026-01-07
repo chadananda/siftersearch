@@ -1367,7 +1367,7 @@ Return ONLY the description text, no quotes or formatting.`;
       // Update paragraphs with inherited metadata if relevant fields changed
       if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
         const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-          filter: `document_id = "${id}"`,
+          filter: `doc_id = ${id}`,  // INTEGER, no quotes
           limit: 10000,
           attributesToRetrieve: ['id']
         });

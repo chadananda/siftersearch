@@ -1,40 +1,23 @@
 /**
  * Navigation step definitions for NavBar feature tests
+ *
+ * Uses real Playwright browser automation.
+ * Note: Basic page navigation (Given I am on X page) is in all-links.steps.js
  */
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from 'chai';
 
 // ============================================
-// Page Navigation Steps
+// Search Page (alias for home)
 // ============================================
 
-Given('I am on the home page', async function () {
-  this.currentPage = '/';
-  // In a full implementation, this would use Playwright
-  this.pageContext = { path: '/', viewport: 1200 };
-});
-
 Given('I am on the search page', async function () {
-  this.currentPage = '/';
-  this.pageContext = { path: '/', viewport: 1200 };
-});
-
-Given('I am on the library page', async function () {
-  this.currentPage = '/library';
-  this.pageContext = { path: '/library', viewport: 1200 };
+  await this.goto('/');
 });
 
 Given('I am on the docs page', async function () {
-  this.currentPage = '/docs';
-  this.pageContext = { path: '/docs', viewport: 1200 };
-});
-
-// Note: "I visit the home page" step is defined in user-tracking.steps.js
-// Using a unique step name here to avoid conflicts
-When('I navigate to the home page', async function () {
-  this.currentPage = '/';
-  this.pageContext = { path: '/', viewport: this.pageContext?.viewport || 1200 };
+  await this.goto('/docs');
 });
 
 // ============================================
@@ -42,197 +25,170 @@ When('I navigate to the home page', async function () {
 // ============================================
 
 Given('my viewport is {int} pixels wide', async function (width) {
-  this.pageContext = { ...this.pageContext, viewport: width };
+  if (!this.page) await this.launchBrowser();
+  await this.page.setViewportSize({ width, height: 720 });
 });
 
 // ============================================
-// Navigation Bar Visibility Steps
+// Navigation Bar Visibility
 // ============================================
-
-Then('I should see the navigation bar', async function () {
-  // NavBar component should be present
-  this.navBarVisible = true;
-  expect(this.navBarVisible).to.be.true;
-});
 
 Then('I should see the SifterSearch logo', async function () {
-  // Logo is always visible in NavBar
-  expect(true).to.be.true;
+  // Look for logo link or image
+  const logo = this.page.locator('a[href="/"]').first();
+  await this.assertVisible(logo);
 });
 
 Then('I should see the theme toggle button', async function () {
-  // Theme toggle is always visible
-  expect(true).to.be.true;
+  const themeToggle = this.getByRole('button', { name: /theme|dark|light/i });
+  await this.assertVisible(themeToggle);
 });
 
 // ============================================
-// Navigation Links Visibility Steps
+// Navigation Links
 // ============================================
 
 Then('I should see the {string} navigation link', async function (linkName) {
-  const viewport = this.pageContext?.viewport || 1200;
-  const visibleLinks = getVisibleLinks(viewport);
-  expect(visibleLinks).to.include(linkName);
+  const nav = this.getByRole('navigation');
+  const link = nav.getByRole('link', { name: linkName });
+  await this.assertVisible(link);
 });
 
 Then('I should not see the {string} navigation link in the main nav', async function (linkName) {
-  const viewport = this.pageContext?.viewport || 1200;
-  const visibleLinks = getVisibleLinks(viewport);
-  expect(visibleLinks).to.not.include(linkName);
+  const nav = this.getByRole('navigation');
+  const link = nav.getByRole('link', { name: linkName });
+  await expect(await link.isVisible()).to.be.false;
 });
 
 Then('I should not see any navigation links in the main nav', async function () {
-  const viewport = this.pageContext?.viewport || 1200;
-  const visibleLinks = getVisibleLinks(viewport);
-  expect(visibleLinks.length).to.equal(0);
+  // On very small viewports, nav links are hidden
+  const nav = this.getByRole('navigation');
+  const links = nav.getByRole('link');
+  const count = await links.count();
+  // At minimum there's the logo link
+  expect(count).to.be.lessThanOrEqual(1);
 });
 
 Then('I should see the hamburger menu button', async function () {
-  const viewport = this.pageContext?.viewport || 1200;
-  // Hamburger is visible when any links are hidden
-  const hasHiddenLinks = viewport < 1100;
-  expect(hasHiddenLinks).to.be.true;
+  const hamburger = this.getByRole('button', { name: /menu/i });
+  await this.assertVisible(hamburger);
 });
 
 // ============================================
-// Hamburger Menu Steps
+// Hamburger Menu
 // ============================================
 
 When('I click the hamburger menu button', async function () {
-  this.hamburgerMenuOpen = true;
+  const hamburger = this.getByRole('button', { name: /menu/i });
+  await hamburger.click();
+  // Wait for menu animation
+  await this.page.waitForTimeout(300);
 });
 
 Then('I should see {string} in the dropdown menu', async function (linkName) {
-  expect(this.hamburgerMenuOpen).to.be.true;
-  const viewport = this.pageContext?.viewport || 1200;
-  const hiddenLinks = getHiddenLinks(viewport);
-  // About is always in hamburger
-  if (linkName === 'About') {
-    expect(true).to.be.true;
-  } else {
-    // Handle legacy "Search" -> "Chat" mapping
-    const actualLinkName = linkName === 'Search' ? 'Chat' : linkName;
-    expect(hiddenLinks).to.include(actualLinkName);
-  }
+  // Look for link in any menu/dropdown
+  const link = this.getByRole('link', { name: linkName });
+  await this.assertVisible(link);
 });
 
 // ============================================
-// User Menu Steps
+// User Menu / Auth
 // ============================================
 
 Then('I should see the {string} button', async function (buttonName) {
-  if (buttonName === 'Sign In' || buttonName === 'Connect') {
-    expect(this.authToken).to.be.null;
-  }
+  const button = this.getByRole('button', { name: buttonName });
+  await this.assertVisible(button);
 });
 
 Then('I should not see the {string} button', async function (buttonName) {
-  if (buttonName === 'Sign In' || buttonName === 'Connect') {
-    expect(this.authToken).to.not.be.null;
-  }
+  const button = this.getByRole('button', { name: buttonName });
+  await expect(await button.isVisible()).to.be.false;
 });
 
 Then('I should see my user avatar', async function () {
-  expect(this.authToken).to.not.be.null;
+  // Look for user menu button or avatar
+  const avatar = this.page.locator('[data-testid="user-menu"], [aria-label*="user"], [aria-label*="account"]').first();
+  await this.assertVisible(avatar);
 });
 
 When('I click on my user avatar', async function () {
-  this.userMenuOpen = true;
+  const avatar = this.page.locator('[data-testid="user-menu"], [aria-label*="user"], [aria-label*="account"]').first();
+  await avatar.click();
+  await this.page.waitForTimeout(300);
 });
 
 Then('I should see {string} in the user dropdown', async function (linkName) {
-  expect(this.userMenuOpen).to.be.true;
-  const userMenuLinks = ['Profile', 'Settings', 'Referrals', 'Support', 'Sign Out'];
-  if (this.testUser?.tier === 'admin') {
-    userMenuLinks.push('Admin');
-  }
-  expect(userMenuLinks).to.include(linkName);
+  const link = this.getByRole('link', { name: linkName });
+  await this.assertVisible(link);
 });
 
 Then('I should not see {string} in the user dropdown', async function (linkName) {
-  expect(this.userMenuOpen).to.be.true;
-  if (linkName === 'Admin') {
-    expect(this.testUser?.tier).to.not.equal('admin');
-  }
+  const link = this.getByRole('link', { name: linkName });
+  await expect(await link.isVisible()).to.be.false;
 });
 
 // ============================================
-// Navigation Action Steps
+// Navigation Actions
 // ============================================
 
 When('I click on the {string} navigation link', async function (linkName) {
-  const linkPaths = {
-    'Chat': '/',
-    'Search': '/', // Legacy support
-    'Library': '/library',
-    'Community': '/community',
-    'Docs': '/docs'
-  };
-  this.currentPage = linkPaths[linkName] || '/';
-});
-
-Then('I should be on the home page', async function () {
-  expect(this.currentPage).to.equal('/');
+  await this.clickLink(linkName);
 });
 
 Then('I should be on the library page', async function () {
-  expect(this.currentPage).to.equal('/library');
+  const url = this.currentUrl();
+  expect(url).to.include('/library');
 });
 
 Then('the {string} link should be active', async function (linkName) {
-  const linkPaths = {
-    'Chat': '/',
-    'Search': '/', // Legacy support
-    'Library': '/library',
-    'Community': '/community',
-    'Docs': '/docs'
-  };
-  expect(this.currentPage).to.equal(linkPaths[linkName]);
+  // Check for active state via aria-current or CSS class
+  const link = this.getByRole('link', { name: linkName });
+  const ariaCurrent = await link.getAttribute('aria-current');
+  const className = await link.getAttribute('class');
+
+  const isActive = ariaCurrent === 'page' ||
+                   className?.includes('active') ||
+                   className?.includes('current');
+  expect(isActive, `${linkName} link should be active`).to.be.true;
 });
 
 // ============================================
-// Theme Steps
+// Theme Toggle
 // ============================================
 
 Given('the current theme is {string}', async function (theme) {
-  this.currentTheme = theme;
+  // Check document has the expected theme class/attribute
+  const html = this.page.locator('html');
+  const className = await html.getAttribute('class');
+  const dataTheme = await html.getAttribute('data-theme');
+
+  if (theme === 'dark') {
+    expect(className?.includes('dark') || dataTheme === 'dark').to.be.true;
+  } else {
+    expect(!className?.includes('dark') && dataTheme !== 'dark').to.be.true;
+  }
 });
 
 When('I click the theme toggle button', async function () {
-  this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+  const themeToggle = this.getByRole('button', { name: /theme|dark|light/i });
+  await themeToggle.click();
+  await this.page.waitForTimeout(100);
 });
 
 When('I click the theme toggle button again', async function () {
-  this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+  const themeToggle = this.getByRole('button', { name: /theme|dark|light/i });
+  await themeToggle.click();
+  await this.page.waitForTimeout(100);
 });
 
 Then('the current theme should be {string}', async function (theme) {
-  expect(this.currentTheme).to.equal(theme);
+  const html = this.page.locator('html');
+  const className = await html.getAttribute('class');
+  const dataTheme = await html.getAttribute('data-theme');
+
+  if (theme === 'dark') {
+    expect(className?.includes('dark') || dataTheme === 'dark').to.be.true;
+  } else {
+    expect(!className?.includes('dark') && dataTheme !== 'dark').to.be.true;
+  }
 });
-
-// ============================================
-// Helper Functions
-// ============================================
-
-function getVisibleLinks(viewport) {
-  const links = [];
-  // Chat and Library visible at 640px+
-  if (viewport >= 640) {
-    links.push('Chat', 'Library');
-  }
-  // Community visible at 768px+ (md breakpoint)
-  if (viewport >= 768) {
-    links.push('Community');
-  }
-  // Docs visible at 1024px+ (lg breakpoint)
-  if (viewport >= 1024) {
-    links.push('Docs');
-  }
-  return links;
-}
-
-function getHiddenLinks(viewport) {
-  const allLinks = ['Chat', 'Library', 'Community', 'Docs'];
-  const visible = getVisibleLinks(viewport);
-  return allLinks.filter(link => !visible.includes(link));
-}

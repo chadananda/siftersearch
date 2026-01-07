@@ -84,7 +84,7 @@ export async function initializeIndexes() {
       'author'
     ],
     filterableAttributes: [
-      'document_id',
+      'doc_id',  // INTEGER from SQLite docs.id
       'religion',
       'collection',
       'language',
@@ -180,7 +180,7 @@ export async function hybridSearch(query, options = {}) {
   if (filters.language) filterParts.push(`language = "${filters.language}"`);
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
-  if (filters.documentId) filterParts.push(`document_id = "${filters.documentId}"`);
+  if (filters.documentId) filterParts.push(`doc_id = ${filters.documentId}`);  // INTEGER, no quotes
 
   // Add text-based filters for author/collection/title (from parenthetical query syntax)
   if (filterTerms.length > 0) {
@@ -352,7 +352,7 @@ export async function deleteDocument(documentId) {
 
   await meili.index(INDEXES.DOCUMENTS).deleteDocument(documentId);
   await meili.index(INDEXES.PARAGRAPHS).deleteDocuments({
-    filter: `document_id = "${documentId}"`
+    filter: `doc_id = ${documentId}`  // INTEGER, no quotes
   });
 
   logger.info({ documentId }, 'Document deleted from index');

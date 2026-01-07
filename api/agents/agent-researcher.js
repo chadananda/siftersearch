@@ -199,7 +199,7 @@ RULES:
     if (filters.language) filterParts.push(`language = "${filters.language}"`);
     if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
     if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
-    if (filters.documentId) filterParts.push(`document_id = "${filters.documentId}"`);
+    if (filters.documentId) filterParts.push(`doc_id = ${filters.documentId}`);  // INTEGER
 
     // Parenthetical filter terms (author/collection/title CONTAINS)
     if (filterTerms.length > 0) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T15:34:13.139Z",
+  "generated": "2026-01-07T17:05:07.724Z",
   "entries": [
+    {
+      "hash": "7ba8246",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Correct migration 28 schema to match production",
+      "scope": null
+    },
     {
       "hash": "c5dd15d",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Wait for auth before loading admin queue data",
       "scope": null
-    },
-    {
-      "hash": "c9e8893",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Wait for auth before loading document in editor",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "7ba8246",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Correct migration 28 schema to match production",
+        "scope": null
+      },
       {
         "hash": "c5dd15d",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Wait for auth before loading admin queue data",
-        "scope": null
-      },
-      {
-        "hash": "c9e8893",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Wait for auth before loading document in editor",
         "scope": null
       }
     ]

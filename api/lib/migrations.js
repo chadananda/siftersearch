@@ -1048,6 +1048,25 @@ const migrations = {
   27: async () => {
     logger.info('Starting migration 27: Convert docs.id from TEXT to INTEGER');
 
+    // Drop any leftover temp tables from failed migrations
+    await query('DROP TABLE IF EXISTS docs_new');
+    await query('DROP TABLE IF EXISTS content_new');
+
+    // Get current columns in docs table
+    const columnsResult = await queryAll("PRAGMA table_info(docs)");
+    const existingColumns = new Set(columnsResult.map(c => c.name));
+
+    // Define canonical schema with optional columns
+    const requiredColumns = ['file_path', 'file_hash', 'filename', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count', 'source_file', 'cover_url', 'auto_segmented', 'encumbered', 'metadata', 'created_at', 'updated_at'];
+    const optionalColumns = ['slug']; // slug exists in production but not in dev
+
+    // Build column list for copy - only include columns that exist
+    const columnsToCopy = requiredColumns.filter(c => existingColumns.has(c));
+    const hasSlug = existingColumns.has('slug');
+    if (hasSlug) columnsToCopy.push('slug');
+
+    logger.info({ columns: columnsToCopy, hasSlug }, 'Detected schema columns');
+
     // Step 1: Create new docs table with INTEGER PRIMARY KEY
     await query(`
       CREATE TABLE IF NOT EXISTS docs_new (
@@ -1076,11 +1095,9 @@ const migrations = {
     `);
 
     // Step 2: Copy all docs, preserving old_id for reference and mapping
-    await query(`
-      INSERT INTO docs_new (old_id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at)
-      SELECT id, file_path, file_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, source_file, cover_url, slug, auto_segmented, encumbered, metadata, created_at, updated_at
-      FROM docs
-    `);
+    const destColumns = ['old_id', ...columnsToCopy].join(', ');
+    const srcColumns = ['id', ...columnsToCopy].join(', ');
+    await query(`INSERT INTO docs_new (${destColumns}) SELECT ${srcColumns} FROM docs`);
 
     const docCount = await queryOne('SELECT COUNT(*) as count FROM docs_new');
     logger.info({ count: docCount?.count }, 'Copied docs to new table with INTEGER ids');

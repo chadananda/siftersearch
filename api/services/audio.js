@@ -116,7 +116,7 @@ export async function processAudioJob(job) {
 
     // Get all segments
     const segmentsResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${documentId}"`,
+      filter: `doc_id = ${documentId}`,  // INTEGER, no quotes
       limit: 10000,
       sort: ['paragraph_index:asc']
     });
@@ -349,7 +349,7 @@ export async function audioExists(documentId, voice) {
   try {
     // Get segment count
     const result = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${documentId}"`,
+      filter: `doc_id = ${documentId}`,  // INTEGER, no quotes
       limit: 0
     });
 

@@ -419,7 +419,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   // Create paragraph records with embeddings (for Meilisearch)
   const paragraphs = chunks.map((text, index) => ({
     id: `${documentId}_p${index}`,
-    document_id: documentId,
+    doc_id: documentId,  // INTEGER from SQLite docs.id
     paragraph_index: index,
     text,
     title: finalMeta.title,
@@ -654,7 +654,7 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
         try {
           // Get paragraphs for this document with vectors
           const parasResponse = await parasIndex.search('', {
-            filter: `document_id = "${doc.id}"`,
+            filter: `doc_id = ${doc.id}`,  // INTEGER, no quotes
             limit: 1000,
             retrieveVectors: true
           });

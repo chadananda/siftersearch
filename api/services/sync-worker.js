@@ -162,7 +162,7 @@ async function syncDocument(docId) {
     const embedding = blobToFloatArray(p.embedding);
     return {
       id: p.id,
-      document_id: p.doc_id,
+      doc_id: p.doc_id,  // INTEGER from SQLite docs.id
       paragraph_index: p.paragraph_index,
       text: p.text,
       translation: p.translation || null,  // English translation for side-by-side display
@@ -313,7 +313,7 @@ async function runCleanupCycle() {
       for (const id of staleIds) {
         try {
           await meili.index('paragraphs').deleteDocuments({
-            filter: `document_id = "${id}"`
+            filter: `doc_id = ${id}`  // INTEGER, no quotes
           });
         } catch (err) {
           logger.warn({ id, err: err.message }, 'Failed to delete paragraphs for stale document');
@@ -397,7 +397,7 @@ async function runFullSyncCheck() {
 
       try {
         const meiliResult = await meili.index('paragraphs').search('', {
-          filter: `document_id = "${row.doc_id}"`,
+          filter: `doc_id = ${row.doc_id}`,  // INTEGER, no quotes
           limit: 0
         });
 
