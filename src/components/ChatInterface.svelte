@@ -2158,7 +2158,7 @@
   .ingestion-percent {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-primary-light);
   }
 
   .ingestion-bar {
@@ -2170,7 +2170,7 @@
 
   .ingestion-fill {
     height: 100%;
-    background: var(--accent);
+    background: var(--accent-primary-light);
     border-radius: 0.1875rem;
     transition: width 0.3s ease;
   }

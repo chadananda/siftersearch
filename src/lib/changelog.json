@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T15:27:41.507Z",
+  "generated": "2026-01-08T15:58:12.204Z",
   "entries": [
+    {
+      "hash": "ef61209",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add two-tier BDD testing infrastructure",
+      "scope": null
+    },
     {
       "hash": "1f8a97d",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Highlight search terms in RawSearch results",
       "scope": null
-    },
-    {
-      "hash": "d1e341b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "ef61209",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add two-tier BDD testing infrastructure",
+        "scope": null
+      },
       {
         "hash": "1f8a97d",
         "date": "2026-01-08",
@@ -701,13 +708,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Highlight search terms in RawSearch results",
-        "scope": null
-      },
-      {
-        "hash": "d1e341b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
         "scope": null
       }
     ]
