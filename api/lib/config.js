@@ -162,6 +162,9 @@ function getDevOrProd(key, defaultProd, defaultDev) {
 
 // Search configuration
 const searchConfig = {
+  // Set MEILISEARCH_ENABLED=false to disable all Meilisearch operations
+  // This allows focusing on SQLite as source of truth during development
+  enabled: getBool('MEILISEARCH_ENABLED', true),
   host: getDevOrProd('MEILI_HOST', 'http://localhost:7700', 'http://localhost:7701'),
   apiKey: get('MEILISEARCH_KEY') || get('MEILI_MASTER_KEY'),
   maxResults: getInt('SEARCH_MAX_RESULTS', 100),

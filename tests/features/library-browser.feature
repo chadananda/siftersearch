@@ -45,7 +45,7 @@ Feature: Library Browser
   Scenario: Clicking a collection filters documents
     When I navigate to the library page
     And I expand the "Bahá'í" religion node
-    And I click on the "Writings" collection
+    And I click on the "Core Publications" collection
     Then the document list should show only documents from that collection
     And the collection should appear selected
 
@@ -99,8 +99,8 @@ Feature: Library Browser
   @implemented
   Scenario: Filtering by collection updates document list
     When I navigate to the library page
-    And I select "Writings" from the collection filter
-    Then all visible documents should be from the "Writings" collection
+    And I select "Core Publications" from the collection filter
+    Then all visible documents should be from the "Core Publications" collection
 
   @implemented
   Scenario: Filtering by status shows only matching documents

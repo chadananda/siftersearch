@@ -120,3 +120,8 @@ Before({ tags: '@tablet' }, async function () {
   if (!this.page) await this.launchBrowser();
   await this.setTabletViewport();
 });
+
+// Critical path tests - ensure browser is ready
+Before({ tags: '@critical-path' }, async function () {
+  if (!this.page) await this.launchBrowser();
+});

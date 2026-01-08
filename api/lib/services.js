@@ -130,6 +130,13 @@ export async function ensureServicesRunning() {
   const results = {};
 
   for (const serviceName of Object.keys(SERVICES)) {
+    // Skip Meilisearch if disabled
+    if (serviceName === 'meilisearch' && !config.search.enabled) {
+      logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), skipping');
+      results[serviceName] = { skipped: true, reason: 'disabled' };
+      continue;
+    }
+
     try {
       results[serviceName] = await ensureServiceRunning(serviceName);
     } catch (err) {

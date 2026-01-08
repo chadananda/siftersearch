@@ -44,6 +44,7 @@ async function reindexMissing() {
 
   for (let i = 0; i < docs.length; i++) {
     const doc = docs[i];
+    // file_path is always relative to basePath
     const fullPath = path.join(config.library.basePath, doc.file_path);
 
     if (VERBOSE || (i + 1) % 100 === 0) {

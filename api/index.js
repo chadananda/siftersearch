@@ -78,11 +78,16 @@ const start = async () => {
     }
 
     // Start background content sync worker (keeps Content Table → Meilisearch in sync)
-    try {
-      startSyncWorker();
-      logger.info('Content sync worker started');
-    } catch (err) {
-      logger.warn({ err }, 'Failed to start sync worker');
+    // Only if Meilisearch is enabled
+    if (config.search.enabled) {
+      try {
+        startSyncWorker();
+        logger.info('Content sync worker started');
+      } catch (err) {
+        logger.warn({ err }, 'Failed to start sync worker');
+      }
+    } else {
+      logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), sync worker not started');
     }
 
     // Start library watcher (auto-ingest file changes)
