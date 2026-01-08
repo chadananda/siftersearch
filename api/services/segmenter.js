@@ -26,6 +26,107 @@ const SEGMENT_CONFIG = {
 };
 
 /**
+ * Block types for structural analysis
+ */
+export const BLOCK_TYPES = {
+  HEADING: 'heading',      // Section titles, chapter markers
+  PROSE: 'prose',          // Regular prose paragraphs
+  VERSE: 'verse',          // Poetry, verses (preserve line structure)
+  PRAYER: 'prayer',        // Prayers, invocations
+  CITATION: 'citation',    // Quoted scripture, citations
+  LIST: 'list'             // Enumerated items
+};
+
+/**
+ * AI Structural Analysis - Identify block types by semantic understanding
+ *
+ * Only AI can determine if a section is a heading, verse, prose, etc.
+ * by understanding the CONTEXT and MEANING of the text.
+ *
+ * @param {string} text - Raw text with original formatting preserved
+ * @param {object} options - Options including language
+ * @returns {Promise<Array<{type: string, content: string, preserveLineBreaks: boolean}>>}
+ */
+export async function analyzeStructure(text, options = {}) {
+  const { language = 'ar' } = options;
+
+  if (!text || !text.trim()) {
+    return [];
+  }
+
+  const languageHint = language === 'fa' ? 'Persian/Farsi' :
+                       language === 'ar' ? 'Arabic' : 'English';
+
+  const systemPrompt = `You are an expert in ${languageHint} classical and religious texts. Analyze the structure of this text and identify each distinct section.
+
+## BLOCK TYPES
+- heading: Section titles, chapter markers (e.g., "الباب الاول في الاية الاولى")
+- prose: Regular prose paragraphs
+- verse: Poetry, verses, couplets (line structure is meaningful)
+- prayer: Prayers, invocations, supplications
+- citation: Quoted scripture or referenced text
+
+## YOUR TASK
+1. Read the text and understand its structure
+2. Identify where one type of content ends and another begins
+3. For each block, determine its type based on MEANING, not formatting
+4. Section headings often introduce chapters/sections - they should be EXCLUDED from searchable content
+
+## CRITICAL RULES
+- NEVER modify the text content
+- Return the EXACT text for each block
+- Identify section headings that should be excluded
+- Verses/poetry: line breaks within them are MEANINGFUL
+- Prose: line breaks may be OCR artifacts (not meaningful)
+
+## RESPONSE FORMAT
+Return JSON array:
+[
+  {"type": "heading", "content": "exact text", "exclude": true},
+  {"type": "prose", "content": "exact text", "exclude": false},
+  {"type": "verse", "content": "exact text\\nwith\\nline breaks", "exclude": false}
+]`;
+
+  const userPrompt = `Analyze this ${languageHint} text and identify each structural block:
+
+${text}
+
+Return JSON array of blocks with type, content, and exclude flag.`;
+
+  try {
+    const response = await aiService.chat({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.1,
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(response.content);
+    const blocks = Array.isArray(result) ? result : result.blocks || [];
+
+    logger.info({ blockCount: blocks.length, types: blocks.map(b => b.type) }, 'AI structural analysis complete');
+
+    return blocks.map(block => ({
+      type: block.type || BLOCK_TYPES.PROSE,
+      content: block.content,
+      exclude: block.exclude || block.type === 'heading',
+      preserveLineBreaks: block.type === 'verse' || block.type === 'prayer'
+    }));
+  } catch (err) {
+    logger.error({ err: err.message }, 'AI structural analysis failed');
+    // Fallback: treat entire text as prose
+    return [{
+      type: BLOCK_TYPES.PROSE,
+      content: text,
+      exclude: false,
+      preserveLineBreaks: false
+    }];
+  }
+}
+
+/**
  * Detect language features of text
  *
  * @param {string} text - Input text
