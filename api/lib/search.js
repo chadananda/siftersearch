@@ -391,14 +391,37 @@ export async function deleteDocument(documentId) {
  * Get index statistics
  */
 export async function getStats() {
+  // Get ingestion progress from SQLite (always available)
+  let ingestionProgress = null;
+  try {
+    const [docCount, docsWithContent] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
+    ]);
+    const totalDocs = docCount?.count || 0;
+    const withContent = docsWithContent?.count || 0;
+    ingestionProgress = {
+      totalDocs,
+      docsWithContent: withContent,
+      docsPending: totalDocs - withContent,
+      percentComplete: totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0
+    };
+  } catch {
+    // SQLite may not be available
+  }
+
   if (!config.search.enabled) {
     return {
-      documents: 0,
-      paragraphs: 0,
-      religions: {},
-      collections: {},
+      totalDocuments: 0,
+      totalPassages: 0,
+      religions: 0,
+      religionCounts: {},
+      collections: 0,
+      collectionCounts: {},
       totalWords: 0,
-      meilisearchEnabled: false
+      meilisearchEnabled: false,
+      ingestionProgress,
+      lastUpdated: new Date().toISOString()
     };
   }
   const meili = getMeili();
@@ -489,25 +512,6 @@ export async function getStats() {
       }
     } catch {
       // Tasks API may not be available
-    }
-
-    // Get ingestion progress from SQLite (docs with content vs total)
-    let ingestionProgress = null;
-    try {
-      const [docCount, docsWithContent] = await Promise.all([
-        queryOne('SELECT COUNT(*) as count FROM docs'),
-        queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
-      ]);
-      const totalDocs = docCount?.count || 0;
-      const withContent = docsWithContent?.count || 0;
-      ingestionProgress = {
-        totalDocs,
-        docsWithContent: withContent,
-        docsPending: totalDocs - withContent,
-        percentComplete: totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0
-      };
-    } catch {
-      // SQLite may not be available
     }
 
     return {
