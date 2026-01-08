@@ -38,6 +38,7 @@ import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
+import { startImportBatch, updateImportProgress, clearImportBatch } from '../api/services/progress.js';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -520,6 +521,11 @@ async function indexLibrary() {
   console.log(`📝 Processing ${filesToProcess.length} documents...`);
   console.log('');
 
+  // Start tracking import batch (for API progress reporting)
+  if (!dryRun) {
+    startImportBatch(filesToProcess.length, 'index-library');
+  }
+
   for (let i = 0; i < filesToProcess.length; i++) {
     const file = filesToProcess[i];
     const progress = `[${i + 1}/${filesToProcess.length}]`;
@@ -535,6 +541,7 @@ async function indexLibrary() {
 
           console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (already indexed)`);
           stats.skipped++;
+          updateImportProgress('skipped');
           continue;
         }
       }
@@ -555,9 +562,11 @@ async function indexLibrary() {
       if (result.success && !result.skipped) {
         console.log(`         ✅ Indexed ${result.chunks} chunks`);
         stats.indexed++;
+        updateImportProgress('completed');
       } else if (result.skipped) {
         console.log(`         ⏭️  Skipped: ${result.reason}`);
         stats.skipped++;
+        updateImportProgress('skipped');
       } else {
         throw new Error(result.error);
       }
@@ -572,7 +581,15 @@ async function indexLibrary() {
       console.error(`         Error: ${err.message}`);
       stats.failed++;
       stats.errors.push({ file: file.path, error: err.message });
+      if (!dryRun) {
+        updateImportProgress('failed');
+      }
     }
+  }
+
+  // Clear import batch tracking
+  if (!dryRun) {
+    clearImportBatch();
   }
 
   // Print summary

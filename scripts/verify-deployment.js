@@ -75,9 +75,12 @@ async function testStatsEndpoint() {
     }
     console.log(`  ✓ Stats OK - ${data.totalDocuments} documents, ${data.totalPassages} passages`);
 
-    // Check ingestion progress is included
-    if (data.ingestionProgress) {
-      console.log(`  ✓ Ingestion progress: ${data.ingestionProgress.percentComplete}% (${data.ingestionProgress.docsWithContent}/${data.ingestionProgress.totalDocs})`);
+    // Check progress stats are included
+    if (data.importProgress) {
+      console.log(`  ✓ Import progress: ${data.importProgress.percentComplete}% (${data.importProgress.completed}/${data.importProgress.total})`);
+    }
+    if (data.indexingProgress) {
+      console.log(`  ✓ Indexing progress: ${data.indexingProgress.percentComplete}% (${data.indexingProgress.indexed}/${data.indexingProgress.totalWithContent})`);
     }
     return true;
   } catch (err) {

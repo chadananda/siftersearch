@@ -10,6 +10,7 @@ import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
 import { queryOne } from './db.js';
+import { getImportProgress, getIndexingProgress } from '../services/progress.js';
 
 let client = null;
 
@@ -391,24 +392,13 @@ export async function deleteDocument(documentId) {
  * Get index statistics
  */
 export async function getStats() {
-  // Get ingestion progress from SQLite (always available)
-  let ingestionProgress = null;
-  try {
-    const [docCount, docsWithContent] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
-    ]);
-    const totalDocs = docCount?.count || 0;
-    const withContent = docsWithContent?.count || 0;
-    ingestionProgress = {
-      totalDocs,
-      docsWithContent: withContent,
-      docsPending: totalDocs - withContent,
-      percentComplete: totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0
-    };
-  } catch {
-    // SQLite may not be available
-  }
+  // Get progress from progress service
+  // - importProgress: current batch being imported (null if no active import)
+  // - indexingProgress: docs in Meilisearch vs docs with content in SQLite
+  const [importProgress, indexingProgress] = await Promise.all([
+    Promise.resolve(getImportProgress()),
+    getIndexingProgress()
+  ]);
 
   if (!config.search.enabled) {
     return {
@@ -420,7 +410,8 @@ export async function getStats() {
       collectionCounts: {},
       totalWords: 0,
       meilisearchEnabled: false,
-      ingestionProgress,
+      importProgress,
+      indexingProgress,
       lastUpdated: new Date().toISOString()
     };
   }
@@ -461,12 +452,11 @@ export async function getStats() {
     // Average paragraph has ~100 words, so multiply passages by 100
     totalWords = paraStats.numberOfDocuments * 100;
 
-    // Detect indexing activity
+    // Detect Meilisearch indexing activity
     // Meilisearch's isIndexing flag clears quickly between documents,
     // so also check if recent tasks completed (within last 60 seconds)
-    // Large documents can take 30+ seconds for embedding generation
-    let isIndexing = docStats.isIndexing || paraStats.isIndexing;
-    let indexingProgress = null;
+    let isMeiliIndexing = docStats.isIndexing || paraStats.isIndexing;
+    let meiliTaskProgress = null;
 
     try {
       // Check pending/processing tasks
@@ -476,17 +466,16 @@ export async function getStats() {
       });
 
       if (pendingTasks.results.length > 0) {
-        isIndexing = true;
+        isMeiliIndexing = true;
         const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
         const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
-        indexingProgress = {
+        meiliTaskProgress = {
           pending: enqueuedCount,
           processing: processingCount,
           total: pendingTasks.total || enqueuedCount + processingCount
         };
       } else {
-        // No pending tasks - check if tasks completed recently (indexing in progress)
-        // Use 60 second window since large documents can take 30+ seconds for embeddings
+        // No pending tasks - check if tasks completed recently
         const recentTasks = await meili.tasks.getTasks({
           statuses: ['succeeded'],
           types: ['documentAdditionOrUpdate'],
@@ -500,8 +489,8 @@ export async function getStats() {
 
           // If a document was indexed within last 60 seconds, likely still indexing
           if (secondsAgo < 60) {
-            isIndexing = true;
-            indexingProgress = {
+            isMeiliIndexing = true;
+            meiliTaskProgress = {
               pending: 0,
               processing: 0,
               recentlyCompleted: true,
@@ -522,9 +511,10 @@ export async function getStats() {
       religionCounts: religions,
       collections: Object.keys(collections).length,
       collectionCounts: collections,
-      indexing: isIndexing,
-      indexingProgress,
-      ingestionProgress,
+      meilisearchIndexing: isMeiliIndexing,
+      meiliTaskProgress,
+      importProgress,      // Current batch import (null if no active import)
+      indexingProgress,    // Docs with content vs indexed in Meilisearch
       lastUpdated: new Date().toISOString()
     };
   } catch (err) {
@@ -537,8 +527,10 @@ export async function getStats() {
       religionCounts: {},
       collections: 0,
       collectionCounts: {},
-      indexing: false,
-      indexingProgress: null,
+      meilisearchIndexing: false,
+      meiliTaskProgress: null,
+      importProgress,
+      indexingProgress,
       error: err.message
     };
   }

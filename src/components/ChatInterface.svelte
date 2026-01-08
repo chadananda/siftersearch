@@ -1160,18 +1160,36 @@
                   {/each}
                 </div>
               {/if}
-              <!-- Ingestion progress -->
-              {#if libraryStats.ingestionProgress && libraryStats.ingestionProgress.percentComplete < 100}
-                <div class="ingestion-progress">
+              <!-- Import progress (current batch) -->
+              {#if libraryStats.importProgress}
+                <div class="ingestion-progress importing">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Content indexed</span>
-                    <span class="ingestion-percent">{libraryStats.ingestionProgress.percentComplete}%</span>
+                    <span class="ingestion-label">Importing documents</span>
+                    <span class="ingestion-percent">{libraryStats.importProgress.percentComplete}%</span>
                   </div>
                   <div class="ingestion-bar">
-                    <div class="ingestion-fill" style="width: {libraryStats.ingestionProgress.percentComplete}%"></div>
+                    <div class="ingestion-fill" style="width: {libraryStats.importProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatNumber(libraryStats.ingestionProgress.docsWithContent)} / {formatNumber(libraryStats.ingestionProgress.totalDocs)} documents
+                    {formatNumber(libraryStats.importProgress.completed)} / {formatNumber(libraryStats.importProgress.total)} documents
+                    {#if libraryStats.importProgress.failed > 0}
+                      <span class="failed-count">({libraryStats.importProgress.failed} failed)</span>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+              <!-- Indexing progress (Meilisearch) -->
+              {#if libraryStats.indexingProgress && libraryStats.indexingProgress.percentComplete < 100}
+                <div class="ingestion-progress indexing">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Indexed in search</span>
+                    <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatNumber(libraryStats.indexingProgress.indexed)} / {formatNumber(libraryStats.indexingProgress.totalWithContent)} documents
                   </div>
                 </div>
               {/if}
@@ -1183,20 +1201,20 @@
                   <span class="server-version">Server v{libraryStats.serverVersion}</span>
                 {/if}
               </div>
-              {#if libraryStats.indexingProgress && (libraryStats.indexingProgress.processing > 0 || libraryStats.indexingProgress.pending > 0)}
+              {#if libraryStats.meiliTaskProgress && (libraryStats.meiliTaskProgress.processing > 0 || libraryStats.meiliTaskProgress.pending > 0)}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
                       <circle cx="4" cy="4" r="3" />
                     </svg>
-                    <span>Indexing documents</span>
+                    <span>Meilisearch processing</span>
                   </div>
                   <div class="indexing-status">
-                    {#if libraryStats.indexingProgress.processing > 0}
-                      <span class="status-item processing">{libraryStats.indexingProgress.processing} processing</span>
+                    {#if libraryStats.meiliTaskProgress.processing > 0}
+                      <span class="status-item processing">{libraryStats.meiliTaskProgress.processing} processing</span>
                     {/if}
-                    {#if libraryStats.indexingProgress.pending > 0}
-                      <span class="status-item pending">{libraryStats.indexingProgress.pending} queued</span>
+                    {#if libraryStats.meiliTaskProgress.pending > 0}
+                      <span class="status-item pending">{libraryStats.meiliTaskProgress.pending} queued</span>
                     {/if}
                   </div>
                 </div>
@@ -2180,6 +2198,16 @@
     font-size: 0.6875rem;
     color: var(--text-muted);
     text-align: center;
+  }
+
+  .ingestion-detail .failed-count {
+    color: var(--error);
+    margin-left: 0.25rem;
+  }
+
+  /* Importing variant - slightly different color */
+  .ingestion-progress.importing .ingestion-fill {
+    background: var(--info);
   }
 
   @keyframes pulse {

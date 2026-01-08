@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T16:51:45.921Z",
+  "generated": "2026-01-08T18:57:27.488Z",
   "entries": [
+    {
+      "hash": "ff92fd9",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add deployment verification script",
+      "scope": null
+    },
     {
       "hash": "cd06088",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add prerender to agent pages + comprehensive link tests",
       "scope": null
-    },
-    {
-      "hash": "657b6cd",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Add visible mark highlighting for admin RawSearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "ff92fd9",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add deployment verification script",
+        "scope": null
+      },
       {
         "hash": "cd06088",
         "date": "2026-01-08",
@@ -701,13 +708,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Add prerender to agent pages + comprehensive link tests",
-        "scope": null
-      },
-      {
-        "hash": "657b6cd",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Add visible mark highlighting for admin RawSearch",
         "scope": null
       }
     ]
