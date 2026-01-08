@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T18:57:27.488Z",
+  "generated": "2026-01-08T21:45:16.770Z",
   "entries": [
+    {
+      "hash": "d449677",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add dual progress bars for import and indexing",
+      "scope": null
+    },
     {
       "hash": "ff92fd9",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Translation stats now check both translation and translation_segments fields",
       "scope": null
-    },
-    {
-      "hash": "56ad1ef",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Add prerender to agent pages + comprehensive link tests",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "d449677",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add dual progress bars for import and indexing",
+        "scope": null
+      },
       {
         "hash": "ff92fd9",
         "date": "2026-01-08",
@@ -699,15 +706,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Translation stats now check both translation and translation_segments fields",
-        "scope": null
-      }
-    ],
-    "2026-01-05": [
-      {
-        "hash": "56ad1ef",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Add prerender to agent pages + comprehensive link tests",
         "scope": null
       }
     ]

@@ -1993,36 +1993,37 @@ async function detectSentencesInChunk(text, language, maxRetries) {
 
   const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
 
-Find ALL sentence boundaries by MEANING. Return the LAST 3-5 WORDS of each sentence.
+Your task is to identify COMPLETE SENTENCE boundaries by MEANING.
 
-Sentence boundaries:
-- Complete invocations (بسم الله الرحمن الرحيم)
-- Divine attributes (هو العزيز الحكيم)
-- Address changes (يا أيها...)
-- Topic/subject shifts
-- Complete commands
+CRITICAL RULES:
+1. A sentence is a COMPLETE THOUGHT - typically 50-150 characters (8-25 words)
+2. DO NOT break at every phrase - only at SENTENCE endings
+3. Divine names, attributes, and blessings are PART of sentences, not separate sentences
+4. "بسم الله الرحمن الرحيم" is typically the START of a sentence, not a sentence by itself
 
-CRITICAL: Use TOON format - ONE ending per line, no JSON, no numbering, no extra text.`;
+Sentence boundaries occur at:
+- End of a complete statement or declaration
+- End of a command (full command, not just the verb)
+- Before a major topic shift (new subject being discussed)
+- Before "قل" (Say:) or "يا" (O!) starting a new address
 
-  // Build user prompt - on retries, be more aggressive about finding short sentences
+Return the LAST 3-5 WORDS of each COMPLETE sentence, one per line.
+NO JSON. NO numbering. NO explanations.`;
+
+  // Build user prompt
   const makeUserPrompt = (attemptNum) => {
-    const aggressive = attemptNum > 1 ? `
-IMPORTANT: Previous attempt found sentences that were too long.
-Find MORE sentence boundaries - classical ${languageHint} sentences are typically 50-150 characters.
-Look for EVERY clause ending, topic change, or natural pause.` : '';
+    const feedback = attemptNum > 1 ? `
+IMPORTANT: Previous attempt had issues. Remember:
+- Sentences should be 50-150 characters (8-25 words) on average
+- If you're finding more than 1 ending per 60 characters, you're breaking too often
+- Only break at COMPLETE THOUGHTS, not every phrase` : '';
 
-    return `Find ALL sentence endings in this UNPUNCTUATED ${languageHint} text.
-${aggressive}
+    return `Identify COMPLETE SENTENCE endings in this UNPUNCTUATED ${languageHint} text.
+${feedback}
 TEXT:
 ${text}
 
-Output ONLY the last 3-5 words of each sentence, one per line.
-No JSON. No numbers. No explanation. Just the ending phrases, one per line.
-
-Example output format:
-الرحمن الرحيم
-العزيز الحكيم
-من الصالحين`;
+Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
   };
 
   let lastError = null;
@@ -2078,15 +2079,25 @@ Example output format:
       }
 
       // Convert endings to actual sentences by finding them in the text
-      const sentences = extractSentencesFromEndings(text, endings);
+      let sentences = extractSentencesFromEndings(text, endings);
 
       if (sentences.length > 0) {
-        // Two-tier sentence length validation:
-        // - SUSPICIOUS: Classical Arabic sentences are typically 50-150 chars
-        //   Sentences > 200 chars likely have missed boundaries - verify with AI
-        // - MAX: Absolute limit, force split if exceeded
-        const SUSPICIOUS_SENTENCE_CHARS = 200;
-        const MAX_SENTENCE_CHARS = 500;
+        // Sentence length thresholds
+        const MIN_SENTENCE_CHARS = 40;    // Sentences below this are likely fragments
+        const SUSPICIOUS_SENTENCE_CHARS = 200;  // Above this, may have missed boundaries
+        const MAX_SENTENCE_CHARS = 500;   // Absolute maximum
+
+        // Merge sentences that are too short (fragments)
+        const shortCount = sentences.filter(s => s.length < MIN_SENTENCE_CHARS).length;
+        if (shortCount > sentences.length * 0.3) {
+          // More than 30% are too short - AI over-fragmented, merge them
+          logger.info({
+            shortCount,
+            totalSentences: sentences.length,
+            avgLength: Math.round(sentences.reduce((a, s) => a + s.length, 0) / sentences.length)
+          }, 'Detected over-fragmentation, merging short sentences');
+          sentences = mergeShortSentences(sentences, MIN_SENTENCE_CHARS);
+        }
 
         // Check for suspicious sentences that might have missed boundaries
         const suspicious = sentences.filter(s => s.length > SUSPICIOUS_SENTENCE_CHARS);
@@ -2242,6 +2253,55 @@ function snapToWordStart(text, pos) {
     wordStart--;
   }
   return wordStart;
+}
+
+/**
+ * Merge sentences that are too short (fragments) into adjacent sentences
+ * Works by combining short sentences with the following sentence until minimum length is reached
+ * @param {string[]} sentences - Array of sentences to process
+ * @param {number} minLength - Minimum acceptable sentence length
+ * @returns {string[]} - Array with short sentences merged
+ */
+function mergeShortSentences(sentences, minLength) {
+  if (sentences.length <= 1) return sentences;
+
+  const merged = [];
+  let accumulator = '';
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i].trim();
+
+    if (accumulator) {
+      // We have accumulated short sentences, add to them
+      accumulator += ' ' + sentence;
+    } else {
+      accumulator = sentence;
+    }
+
+    // If we've reached minimum length or this is the last sentence, emit
+    if (accumulator.length >= minLength || i === sentences.length - 1) {
+      merged.push(accumulator);
+      accumulator = '';
+    }
+  }
+
+  // Handle any remaining accumulator (shouldn't happen but safety first)
+  if (accumulator) {
+    if (merged.length > 0) {
+      merged[merged.length - 1] += ' ' + accumulator;
+    } else {
+      merged.push(accumulator);
+    }
+  }
+
+  logger.debug({
+    originalCount: sentences.length,
+    mergedCount: merged.length,
+    avgLengthBefore: Math.round(sentences.reduce((a, s) => a + s.length, 0) / sentences.length),
+    avgLengthAfter: Math.round(merged.reduce((a, s) => a + s.length, 0) / merged.length)
+  }, 'Merged short sentences');
+
+  return merged;
 }
 
 /**
