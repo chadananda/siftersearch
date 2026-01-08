@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T01:50:58.744Z",
+  "generated": "2026-01-08T13:04:04.012Z",
   "entries": [
+    {
+      "hash": "32be47e",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add body_hash for metadata-only updates",
+      "scope": null
+    },
     {
       "hash": "e1a81e7",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Raw Search admin page for direct Meilisearch access",
       "scope": null
-    },
-    {
-      "hash": "b07a87b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Highlight active nav item in admin sidebar",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "32be47e",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add body_hash for metadata-only updates",
+        "scope": null
+      },
       {
         "hash": "e1a81e7",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add Raw Search admin page for direct Meilisearch access",
-        "scope": null
-      },
-      {
-        "hash": "b07a87b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Highlight active nav item in admin sidebar",
         "scope": null
       }
     ]

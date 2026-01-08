@@ -63,6 +63,64 @@ export function detectLanguageFeatures(text) {
 }
 
 /**
+ * Check if text has sufficient punctuation for sentence-based splitting
+ * Text is considered "punctuated" if it has sentence-ending marks every ~200 chars average
+ *
+ * @param {string} text - Input text
+ * @returns {boolean} True if text has sufficient punctuation
+ */
+export function hasPunctuation(text) {
+  if (!text || typeof text !== 'string') return false;
+
+  // Count sentence-ending punctuation marks (., !, ?, etc.)
+  const punctuationMarks = (text.match(/[.!?؟۔。！？]/g) || []).length;
+
+  // Text should have punctuation roughly every 200 chars on average
+  // If text is 10000 chars, we expect ~50 sentence endings
+  const expectedPunctuation = Math.floor(text.length / 200);
+
+  // Require at least 50% of expected punctuation to consider it "punctuated"
+  return punctuationMarks >= Math.max(3, expectedPunctuation * 0.5);
+}
+
+/**
+ * Split text at sentence boundaries (for punctuated text)
+ * Uses standard punctuation marks followed by whitespace
+ *
+ * @param {string} text - Input text
+ * @param {number} maxChunkSize - Maximum chars per chunk
+ * @param {number} minChunkSize - Minimum chars per chunk
+ * @returns {string[]} Array of segments
+ */
+function splitAtSentenceBoundaries(text, maxChunkSize, minChunkSize) {
+  // Split on sentence endings followed by space
+  const sentences = text.split(/(?<=[.!?؟۔。！？])\s+/);
+
+  const segments = [];
+  let currentSegment = '';
+
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+
+    // If adding this sentence would exceed max, save current and start new
+    if (currentSegment.length + trimmedSentence.length + 1 > maxChunkSize && currentSegment.length >= minChunkSize) {
+      segments.push(currentSegment.trim());
+      currentSegment = trimmedSentence;
+    } else {
+      currentSegment = currentSegment ? `${currentSegment} ${trimmedSentence}` : trimmedSentence;
+    }
+  }
+
+  // Don't forget the last segment
+  if (currentSegment.trim().length >= minChunkSize) {
+    segments.push(currentSegment.trim());
+  }
+
+  return segments;
+}
+
+/**
  * Check if text contains verse markers that can be used for segmentation
  *
  * @param {string} text - Input text
@@ -550,8 +608,18 @@ export async function segmentText(text, options = {}) {
     }
   }
 
-  // Use AI semantic segmentation for oversized text
-  logger.info({ language: detectedLanguage, textLength: normalized.length }, 'Using AI semantic segmentation');
+  // For punctuated text, use fast sentence-based splitting (no AI needed)
+  if (hasPunctuation(normalized)) {
+    logger.info({ language: detectedLanguage, textLength: normalized.length }, 'Using sentence-based segmentation (punctuated text)');
+    const segments = splitAtSentenceBoundaries(normalized, maxChunkSize, minChunkSize);
+    if (segments.length > 0) {
+      return segments;
+    }
+    logger.warn('Sentence-based segmentation produced no segments, falling back to AI');
+  }
+
+  // Use AI semantic segmentation for unpunctuated text
+  logger.info({ language: detectedLanguage, textLength: normalized.length }, 'Using AI semantic segmentation (unpunctuated text)');
 
   try {
     const result = await getAIBreakPositions(normalized, {
