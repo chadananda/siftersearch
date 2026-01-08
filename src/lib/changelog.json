@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-07T18:42:09.438Z",
+  "generated": "2026-01-08T01:50:58.744Z",
   "entries": [
+    {
+      "hash": "e1a81e7",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use large number instead of Infinity for SQL limit",
+      "scope": null
+    },
     {
       "hash": "2a673a6",
       "date": "2026-01-07",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Highlight active nav item in admin sidebar",
       "scope": null
-    },
-    {
-      "hash": "55a3bf0",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Auth timing and missing ingestion_queue table",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-07": [
+      {
+        "hash": "e1a81e7",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use large number instead of Infinity for SQL limit",
+        "scope": null
+      },
       {
         "hash": "2a673a6",
         "date": "2026-01-07",
@@ -699,13 +706,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Highlight active nav item in admin sidebar",
-        "scope": null
-      },
-      {
-        "hash": "55a3bf0",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Auth timing and missing ingestion_queue table",
         "scope": null
       }
     ]

@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 28;
+const CURRENT_VERSION = 29;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1218,6 +1218,23 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_docs_collection ON docs(collection)');
 
     logger.info('Migration 28 complete: old_id column removed from docs table');
+  },
+
+  // Version 29: Add body_hash column for metadata-only updates
+  // Allows editing frontmatter (title, author, etc.) without re-processing content
+  // file_hash detects ANY file change, body_hash detects CONTENT change only
+  29: async () => {
+    try {
+      await query('ALTER TABLE docs ADD COLUMN body_hash TEXT');
+      logger.info('Added body_hash column to docs table');
+    } catch (err) {
+      if (!err.message.includes('duplicate column')) throw err;
+    }
+
+    // Create index for potential future queries by body_hash
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_body_hash ON docs(body_hash)');
+
+    logger.info('Migration 29 complete: body_hash column added for metadata-only updates');
   },
 };
 

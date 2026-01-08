@@ -562,7 +562,13 @@ function extractHeading(fullContent, chunkText) {
  * @returns {Object} - { documentId, paragraphCount, status }
  */
 export async function ingestDocument(text, metadata = {}, relativePath = null) {
-  const fileHash = hashContent(text);
+  // Parse frontmatter FIRST to separate body from metadata
+  // This allows us to detect metadata-only changes vs content changes
+  const { content: bodyContent, metadata: frontmatterMeta } = parseMarkdownFrontmatter(text);
+
+  const fileHash = hashContent(text);           // Hash of entire file (detects ANY change)
+  const bodyHash = hashContent(bodyContent);    // Hash of body only (detects CONTENT change)
+
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
 
@@ -570,7 +576,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This is critical for updating documents through the editor - the ID must be preserved
   if (metadata.id) {
     existingDoc = await queryOne(
-      'SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE id = ?',
+      'SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE id = ?',
       [metadata.id]
     );
     if (existingDoc) {
@@ -585,7 +591,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // PRIORITY 2: Look up by relative path if no explicit ID or ID not found
   if (!existingDoc && relativePath) {
     existingDoc = await queryOne(
-      'SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_path = ?',
+      'SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_path = ?',
       [relativePath]
     );
     if (existingDoc) {
@@ -601,7 +607,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // We recognize it by content hash and update the path-derived metadata
   if (!existingDoc && relativePath) {
     const movedDoc = await queryOne(
-      `SELECT id, file_path, file_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_hash = ?`,
+      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_hash = ?`,
       [fileHash]
     );
 
@@ -674,6 +680,59 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       paragraphCount: 0,
       status: 'unchanged',
       skipped: true
+    };
+  }
+
+  // NEW: Check if body content unchanged but metadata (frontmatter) changed
+  // This allows updating title, author, etc. without re-processing expensive content segmentation
+  if (existingDoc && existingDoc.body_hash === bodyHash) {
+    // Body unchanged - only update metadata in docs table, skip content processing
+    const pathParts = relativePath?.split('/') || [];
+    const newReligion = frontmatterMeta.religion || (pathParts.length >= 1 ? pathParts[0] : existingDoc.religion);
+    const newCollection = frontmatterMeta.collection || (pathParts.length >= 2 ? pathParts[1] : existingDoc.collection);
+
+    await query(`
+      UPDATE docs SET
+        file_path = ?,
+        file_hash = ?,
+        title = ?,
+        author = ?,
+        religion = ?,
+        collection = ?,
+        language = ?,
+        year = ?,
+        description = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      relativePath || existingDoc.file_path,
+      fileHash,
+      frontmatterMeta.title || existingDoc.title,
+      frontmatterMeta.author || existingDoc.author,
+      newReligion,
+      newCollection,
+      frontmatterMeta.language || existingDoc.language,
+      safeParseYear(frontmatterMeta.year) || existingDoc.year,
+      frontmatterMeta.description || existingDoc.description,
+      existingDoc.id
+    ]);
+
+    // Mark paragraphs as unsynced so metadata updates propagate to search
+    const updateResult = await query(`
+      UPDATE content SET synced = 0 WHERE doc_id = ?
+    `, [existingDoc.id]);
+
+    logger.info({
+      documentId: existingDoc.id,
+      title: frontmatterMeta.title || existingDoc.title,
+      paragraphsMarkedUnsynced: updateResult.changes || 0
+    }, 'Metadata-only update (body unchanged)');
+
+    return {
+      documentId: existingDoc.id,
+      paragraphCount: updateResult.changes || 0,
+      status: 'metadata_updated',
+      skipped: false
     };
   }
 
@@ -816,6 +875,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       UPDATE docs SET
         file_path = ?,
         file_hash = ?,
+        body_hash = ?,
         title = ?,
         author = ?,
         religion = ?,
@@ -831,6 +891,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     `, [
       relativePath,
       fileHash,
+      bodyHash,
       finalMeta.title,
       finalMeta.author,
       finalMeta.religion,
@@ -847,11 +908,12 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
+      bodyHash,
       finalMeta.title,
       finalMeta.author,
       finalMeta.religion,
