@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T14:42:31.927Z",
+  "generated": "2026-01-08T14:51:16.103Z",
   "entries": [
+    {
+      "hash": "8747c19",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Simplify RTL segmentation, add ingestion progress",
+      "scope": null
+    },
     {
       "hash": "1323078",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Update donation tiers and remove yearly option",
       "scope": null
-    },
-    {
-      "hash": "4669304",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Admin panel logo, search results, and add translation debug",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "8747c19",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Simplify RTL segmentation, add ingestion progress",
+        "scope": null
+      },
       {
         "hash": "1323078",
         "date": "2026-01-08",
@@ -701,13 +708,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Update donation tiers and remove yearly option",
-        "scope": null
-      },
-      {
-        "hash": "4669304",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Admin panel logo, search results, and add translation debug",
         "scope": null
       }
     ]

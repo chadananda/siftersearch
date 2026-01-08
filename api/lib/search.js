@@ -9,10 +9,21 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
+import { queryOne } from './db.js';
 
 let client = null;
 
+/**
+ * Check if Meilisearch is enabled
+ */
+export function isMeiliEnabled() {
+  return config.search.enabled;
+}
+
 export function getMeili() {
+  if (!config.search.enabled) {
+    return null;
+  }
   if (!client) {
     client = new MeiliSearch({
       host: config.search.host,
@@ -52,6 +63,11 @@ function buildRankingRules() {
  * Initialize indexes with proper settings
  */
 export async function initializeIndexes() {
+  if (!config.search.enabled) {
+    logger.info('Meilisearch disabled, skipping index initialization');
+    return null;
+  }
+
   const meili = getMeili();
   const expectedDimensions = config.ai.embeddings.dimensions;
 
@@ -158,6 +174,11 @@ export async function initializeIndexes() {
  * Hybrid search combining keyword and semantic search
  */
 export async function hybridSearch(query, options = {}) {
+  if (!config.search.enabled) {
+    logger.warn('Meilisearch disabled, returning empty results');
+    return { hits: [], totalHits: 0, query };
+  }
+
   const {
     limit = 20,
     offset = 0,
@@ -316,6 +337,10 @@ const MEILI_BATCH_SIZE = 200;
  * Handles batching for large documents to avoid Meilisearch payload limits
  */
 export async function indexDocument(document, paragraphs) {
+  if (!config.search.enabled) {
+    logger.debug({ documentId: document.id }, 'Meilisearch disabled, skipping indexing');
+    return;
+  }
   const meili = getMeili();
 
   // Index document metadata (primary key: id)
@@ -348,6 +373,10 @@ export async function indexDocument(document, paragraphs) {
  * Delete a document and its paragraphs
  */
 export async function deleteDocument(documentId) {
+  if (!config.search.enabled) {
+    logger.debug({ documentId }, 'Meilisearch disabled, skipping delete');
+    return;
+  }
   const meili = getMeili();
 
   await meili.index(INDEXES.DOCUMENTS).deleteDocument(documentId);
@@ -362,6 +391,16 @@ export async function deleteDocument(documentId) {
  * Get index statistics
  */
 export async function getStats() {
+  if (!config.search.enabled) {
+    return {
+      documents: 0,
+      paragraphs: 0,
+      religions: {},
+      collections: {},
+      totalWords: 0,
+      meilisearchEnabled: false
+    };
+  }
   const meili = getMeili();
 
   try {
@@ -452,6 +491,25 @@ export async function getStats() {
       // Tasks API may not be available
     }
 
+    // Get ingestion progress from SQLite (docs with content vs total)
+    let ingestionProgress = null;
+    try {
+      const [docCount, docsWithContent] = await Promise.all([
+        queryOne('SELECT COUNT(*) as count FROM docs'),
+        queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
+      ]);
+      const totalDocs = docCount?.count || 0;
+      const withContent = docsWithContent?.count || 0;
+      ingestionProgress = {
+        totalDocs,
+        docsWithContent: withContent,
+        docsPending: totalDocs - withContent,
+        percentComplete: totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0
+      };
+    } catch {
+      // SQLite may not be available
+    }
+
     return {
       totalDocuments: docStats.numberOfDocuments,
       totalPassages: paraStats.numberOfDocuments,
@@ -462,6 +520,7 @@ export async function getStats() {
       collectionCounts: collections,
       indexing: isIndexing,
       indexingProgress,
+      ingestionProgress,
       lastUpdated: new Date().toISOString()
     };
   } catch (err) {
@@ -485,6 +544,9 @@ export async function getStats() {
  * Health check
  */
 export async function healthCheck() {
+  if (!config.search.enabled) {
+    return { status: 'disabled', message: 'Meilisearch is disabled' };
+  }
   try {
     const meili = getMeili();
     const health = await meili.health();
