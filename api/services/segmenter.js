@@ -105,8 +105,14 @@ Return JSON array of blocks with type, content, and exclude flag.`;
     // Extract JSON from response (may be wrapped in markdown code block)
     let jsonStr = response.content || response;
     if (typeof jsonStr !== 'string') jsonStr = JSON.stringify(jsonStr);
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, jsonStr];
-    const result = JSON.parse(jsonMatch[1].trim());
+
+    // Strip markdown code block if present
+    const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1];
+    }
+
+    const result = JSON.parse(jsonStr.trim());
     const blocks = Array.isArray(result) ? result : result.blocks || [];
 
     logger.info({ blockCount: blocks.length, types: blocks.map(b => b.type) }, 'AI structural analysis complete');
