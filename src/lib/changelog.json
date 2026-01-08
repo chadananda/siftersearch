@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-08T15:58:12.204Z",
+  "generated": "2026-01-08T16:14:42.414Z",
   "entries": [
+    {
+      "hash": "cd06088",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Use correct CSS variable for ingestion progress bar fill",
+      "scope": null
+    },
     {
       "hash": "ef61209",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add visible mark highlighting for admin RawSearch",
       "scope": null
-    },
-    {
-      "hash": "8f3dddc",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Highlight search terms in RawSearch results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "cd06088",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Use correct CSS variable for ingestion progress bar fill",
+        "scope": null
+      },
       {
         "hash": "ef61209",
         "date": "2026-01-08",
@@ -701,13 +708,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Add visible mark highlighting for admin RawSearch",
-        "scope": null
-      },
-      {
-        "hash": "8f3dddc",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Highlight search terms in RawSearch results",
         "scope": null
       }
     ]

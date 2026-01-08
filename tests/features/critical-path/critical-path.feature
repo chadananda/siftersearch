@@ -118,16 +118,20 @@ Feature: Critical Path Tests
   @critical-path @stats
   Scenario: Library stats are displayed
     Given I am on the home page
-    Then I should see library statistics
-    And I should see the document count
-    And I should see the passage count
+    Then I should see the "Library Contents" stats panel
+    And I should see a religions count greater than 0
+    And I should see a documents count greater than 0
+    And I should see a paragraphs count greater than 0
 
-  @critical-path @stats
-  Scenario: Ingestion progress is shown when applicable
+  @critical-path @stats @ingestion
+  Scenario: Ingestion progress bar displays correctly
     Given I am on the home page
-    When the library is partially indexed
-    Then I should see ingestion progress
-    And the progress should show percentage complete
+    Then I should see the ingestion progress section
+    And I should see "Content indexed" label
+    And I should see a percentage value
+    And I should see the progress bar
+    And the progress bar fill should be visible with color
+    And I should see document counts in format "X / Y documents"
 
   # ============================================
   # Error Handling

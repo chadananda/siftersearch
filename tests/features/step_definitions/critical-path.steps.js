@@ -259,42 +259,83 @@ Then('focus should be visible', async function () {
 // Stats & Ingestion Progress
 // ============================================
 
-Then('I should see library statistics', async function () {
-  const stats = this.page.locator('[aria-label*="stats"], [aria-label*="library"], .stats-container, .library-stats');
-  await this.assertVisible(stats.first());
+Then('I should see the {string} stats panel', async function (panelTitle) {
+  const panel = this.page.locator(`.stats-card, [aria-label*="stats"]`).filter({ hasText: panelTitle });
+  await this.assertVisible(panel.first());
 });
 
-Then('I should see the passage count', async function () {
-  // Look for passage count in stats
-  const passageStats = this.page.locator(':text("passages"), :text("paragraphs")');
-  await this.assertVisible(passageStats.first());
+Then('I should see a religions count greater than {int}', async function (minCount) {
+  const statsPanel = this.page.locator('.stats-card, .library-stats');
+  const religionStat = statsPanel.locator('.stat').filter({ hasText: 'Religions' });
+  const value = await religionStat.locator('.stat-value').textContent();
+  const count = parseInt(value.replace(/[^\d]/g, ''), 10);
+  expect(count, `Religions count should be > ${minCount}`).to.be.greaterThan(minCount);
 });
 
-When('the library is partially indexed', async function () {
-  // This is a precondition check - we just verify the state
-  // The ingestion progress should show if < 100% indexed
-  this.expectPartialIndexing = true;
+Then('I should see a documents count greater than {int}', async function (minCount) {
+  const statsPanel = this.page.locator('.stats-card, .library-stats');
+  const docStat = statsPanel.locator('.stat').filter({ hasText: 'Documents' });
+  const value = await docStat.locator('.stat-value').textContent();
+  const count = parseInt(value.replace(/[^\d.K]/g, '').replace('K', '000'), 10);
+  expect(count, `Documents count should be > ${minCount}`).to.be.greaterThan(minCount);
 });
 
-Then('I should see ingestion progress', async function () {
-  // Look for progress indicator
-  const progress = this.page.locator('[aria-label*="progress"], [role="progressbar"], .ingestion-progress, .progress-bar');
-  // This might not be visible if fully indexed
-  try {
-    await progress.first().waitFor({ state: 'visible', timeout: 3000 });
-  } catch {
-    // Not visible means fully indexed - that's OK
-    console.log('Ingestion progress not visible - library may be fully indexed');
-  }
+Then('I should see a paragraphs count greater than {int}', async function (minCount) {
+  const statsPanel = this.page.locator('.stats-card, .library-stats');
+  const paraStat = statsPanel.locator('.stat').filter({ hasText: 'Paragraphs' });
+  const value = await paraStat.locator('.stat-value').textContent();
+  const count = parseInt(value.replace(/[^\d.K]/g, '').replace('K', '000'), 10);
+  expect(count, `Paragraphs count should be > ${minCount}`).to.be.greaterThan(minCount);
 });
 
-Then('the progress should show percentage complete', async function () {
-  const progressText = this.page.locator(':text("%"), [aria-valuenow]');
-  // This might not be visible if fully indexed
-  const isVisible = await progressText.first().isVisible().catch(() => false);
-  if (this.expectPartialIndexing && !isVisible) {
-    console.log('Warning: Expected partial indexing but no progress shown');
-  }
+Then('I should see the ingestion progress section', async function () {
+  const progress = this.page.locator('.ingestion-progress');
+  await this.assertVisible(progress);
+});
+
+Then('I should see {string} label', async function (labelText) {
+  const label = this.page.locator('.ingestion-label, .ingestion-progress').filter({ hasText: labelText });
+  await this.assertVisible(label.first());
+});
+
+Then('I should see a percentage value', async function () {
+  const percent = this.page.locator('.ingestion-percent');
+  await this.assertVisible(percent);
+  const text = await percent.textContent();
+  expect(text).to.match(/\d+%/);
+});
+
+Then('I should see the progress bar', async function () {
+  const bar = this.page.locator('.ingestion-bar');
+  await this.assertVisible(bar);
+});
+
+Then('the progress bar fill should be visible with color', async function () {
+  const fill = this.page.locator('.ingestion-fill');
+  await this.assertVisible(fill);
+
+  // Verify fill has width > 0 (not empty)
+  const width = await fill.evaluate(el => {
+    const computed = window.getComputedStyle(el);
+    return parseFloat(computed.width);
+  });
+  expect(width, 'Progress bar fill width should be > 0').to.be.greaterThan(0);
+
+  // Verify fill has a background color (not transparent)
+  const bgColor = await fill.evaluate(el => {
+    const computed = window.getComputedStyle(el);
+    return computed.backgroundColor;
+  });
+  expect(bgColor, 'Progress bar fill should have background color').to.not.equal('rgba(0, 0, 0, 0)');
+  expect(bgColor, 'Progress bar fill should have background color').to.not.equal('transparent');
+});
+
+Then('I should see document counts in format {string}', async function (_format) {
+  const detail = this.page.locator('.ingestion-detail');
+  await this.assertVisible(detail);
+  const text = await detail.textContent();
+  // Should match pattern like "2.7K / 4.3K documents" or "1,234 / 5,678 documents"
+  expect(text).to.match(/[\d.,]+K?\s*\/\s*[\d.,]+K?\s*documents/i);
 });
 
 // ============================================
