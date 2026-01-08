@@ -12,7 +12,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
-import { segmentBlocks, detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument, analyzeStructure, BLOCK_TYPES as SEGMENTER_BLOCK_TYPES } from './segmenter.js';
+import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument, analyzeStructure } from './segmenter.js';
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 
@@ -484,42 +484,30 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     }
   }
 
-  // Standard approach for punctuated texts
-  // Parse markdown into typed blocks
+  // Standard approach for punctuated texts (English, etc.)
+  // Already segmented - just parse markdown and use directly
   const blocks = parseMarkdownBlocks(text);
 
   if (blocks.length === 0) {
     return { chunks: [], autoSegmented: false };
   }
 
-  // Use segmentBlocks for ALL content
-  // It will use AI only for blocks > maxChunkSize
-  const chunks = await segmentBlocks(blocks, {
-    maxChunkSize,
-    minChunkSize,
-    language: detectedLanguage
-  });
+  // Use markdown paragraphs directly - NO processing needed
+  const chunks = blocks
+    .filter(block => block.content && block.content.length >= minChunkSize)
+    .map(block => ({
+      text: block.content,
+      blocktype: block.type
+    }));
 
   logger.debug({
-    inputBlocks: blocks.length,
-    outputChunks: chunks.length,
+    blocks: blocks.length,
+    chunks: chunks.length,
     language: detectedLanguage
-  }, 'Document segmented');
+  }, 'Using markdown paragraphs directly (already segmented)');
 
-  // Split any oversized paragraphs (max 1500 chars for translation compatibility)
-  const maxParagraphChars = 1500;
-  const finalChunks = splitOversizedParagraphs(chunks, maxParagraphChars);
-
-  if (finalChunks.length !== chunks.length) {
-    logger.info({
-      before: chunks.length,
-      after: finalChunks.length,
-      split: finalChunks.length - chunks.length
-    }, 'Split oversized paragraphs (standard path)');
-  }
-
-  // Standard path preserves natural paragraph breaks (not auto-segmented)
-  return { chunks: finalChunks, autoSegmented: false };
+  // Already segmented text - return as-is
+  return { chunks, autoSegmented: false };
 }
 
 /**
