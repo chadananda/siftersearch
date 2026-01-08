@@ -12,6 +12,7 @@
   "scripts": {
     "preflight": "node scripts/preflight.js",
     "dev": "DEV_MODE=true node scripts/dev.js",
+    "dev:prod": "DEV_MODE=true PUBLIC_API_URL=https://api.siftersearch.com astro dev --port 5173",
     "dev:api": "DEV_MODE=true node --watch api/index.js",
     "dev:ui": "DEV_MODE=true astro dev --port 5173",
     "build": "astro build",
@@ -23,6 +24,7 @@
     "test:api": "vitest run tests/api",
     "test:e2e": "playwright test",
     "test:bdd": "cucumber-js",
+    "test:bdd:prod": "PUBLIC_API_URL=https://api.siftersearch.com cucumber-js",
     "test:bdd:implemented": "cucumber-js --profile implemented",
     "test:bdd:pending": "cucumber-js --profile pending",
     "test:coverage": "vitest run --coverage",
