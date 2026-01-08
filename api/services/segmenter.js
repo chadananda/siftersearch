@@ -2082,24 +2082,13 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
       let sentences = extractSentencesFromEndings(text, endings);
 
       if (sentences.length > 0) {
-        // Sentence length thresholds
-        const MIN_SENTENCE_CHARS = 40;    // Sentences below this are likely fragments
+        // Only MAX_SENTENCE_CHARS matters - for translation API limits on paragraphs
+        // Sentence detection is purely AI-based on meaning, not length rules
         const SUSPICIOUS_SENTENCE_CHARS = 200;  // Above this, may have missed boundaries
-        const MAX_SENTENCE_CHARS = 500;   // Absolute maximum
+        const MAX_SENTENCE_CHARS = 500;   // Practical limit for translation APIs
 
-        // Merge sentences that are too short (fragments)
-        const shortCount = sentences.filter(s => s.length < MIN_SENTENCE_CHARS).length;
-        if (shortCount > sentences.length * 0.3) {
-          // More than 30% are too short - AI over-fragmented, merge them
-          logger.info({
-            shortCount,
-            totalSentences: sentences.length,
-            avgLength: Math.round(sentences.reduce((a, s) => a + s.length, 0) / sentences.length)
-          }, 'Detected over-fragmentation, merging short sentences');
-          sentences = mergeShortSentences(sentences, MIN_SENTENCE_CHARS);
-        }
-
-        // Check for suspicious sentences that might have missed boundaries
+        // Check for very long sentences that might have missed boundaries
+        // (This is for practical chunking, not semantic correctness)
         const suspicious = sentences.filter(s => s.length > SUSPICIOUS_SENTENCE_CHARS);
 
         if (suspicious.length > 0) {
@@ -2253,55 +2242,6 @@ function snapToWordStart(text, pos) {
     wordStart--;
   }
   return wordStart;
-}
-
-/**
- * Merge sentences that are too short (fragments) into adjacent sentences
- * Works by combining short sentences with the following sentence until minimum length is reached
- * @param {string[]} sentences - Array of sentences to process
- * @param {number} minLength - Minimum acceptable sentence length
- * @returns {string[]} - Array with short sentences merged
- */
-function mergeShortSentences(sentences, minLength) {
-  if (sentences.length <= 1) return sentences;
-
-  const merged = [];
-  let accumulator = '';
-
-  for (let i = 0; i < sentences.length; i++) {
-    const sentence = sentences[i].trim();
-
-    if (accumulator) {
-      // We have accumulated short sentences, add to them
-      accumulator += ' ' + sentence;
-    } else {
-      accumulator = sentence;
-    }
-
-    // If we've reached minimum length or this is the last sentence, emit
-    if (accumulator.length >= minLength || i === sentences.length - 1) {
-      merged.push(accumulator);
-      accumulator = '';
-    }
-  }
-
-  // Handle any remaining accumulator (shouldn't happen but safety first)
-  if (accumulator) {
-    if (merged.length > 0) {
-      merged[merged.length - 1] += ' ' + accumulator;
-    } else {
-      merged.push(accumulator);
-    }
-  }
-
-  logger.debug({
-    originalCount: sentences.length,
-    mergedCount: merged.length,
-    avgLengthBefore: Math.round(sentences.reduce((a, s) => a + s.length, 0) / sentences.length),
-    avgLengthAfter: Math.round(merged.reduce((a, s) => a + s.length, 0) / merged.length)
-  }, 'Merged short sentences');
-
-  return merged;
 }
 
 /**
