@@ -94,16 +94,19 @@ ${text}
 Return JSON array of blocks with type, content, and exclude flag.`;
 
   try {
-    const response = await aiService.chat({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], {
       temperature: 0.1,
-      response_format: { type: 'json_object' }
+      max_tokens: 8000
     });
 
-    const result = JSON.parse(response.content);
+    // Extract JSON from response (may be wrapped in markdown code block)
+    let jsonStr = response.content || response;
+    if (typeof jsonStr !== 'string') jsonStr = JSON.stringify(jsonStr);
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, jsonStr];
+    const result = JSON.parse(jsonMatch[1].trim());
     const blocks = Array.isArray(result) ? result : result.blocks || [];
 
     logger.info({ blockCount: blocks.length, types: blocks.map(b => b.type) }, 'AI structural analysis complete');
