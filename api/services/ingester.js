@@ -410,8 +410,10 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     logger.info({ language: detectedLanguage }, 'Using sentence-first segmentation for unpunctuated RTL text');
 
     try {
+      // Strip HTML comments (section headings, notes, etc.)
+      const textWithoutComments = text.replace(/<!--[\s\S]*?-->/g, '');
       // Normalize line breaks to spaces (classical texts often have arbitrary line breaks)
-      const normalizedText = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+      const normalizedText = textWithoutComments.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
       const result = await segmentUnpunctuatedDocument(normalizedText, {
         language: detectedLanguage
