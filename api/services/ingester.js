@@ -12,7 +12,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import matter from 'gray-matter';
 import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
-import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument, analyzeStructure } from './segmenter.js';
+import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 
@@ -404,65 +404,28 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     isRTL: features.isRTL
   }, 'Parsing document with block awareness');
 
-  // For unpunctuated RTL texts, use AI structural analysis
-  // AI identifies block types (heading, verse, prose, prayer) by semantic understanding
+  // Document-type check: Does this need segmentation?
+  // Only unpunctuated Arabic/Farsi classical texts need AI segmentation
   if (features.isRTL && isUnpunctuatedText(text)) {
-    logger.info({ language: detectedLanguage }, 'Using AI structural analysis for unpunctuated RTL text');
+    logger.info({ language: detectedLanguage, textLength: text.length }, 'Unpunctuated RTL text - using AI segmentation');
 
     try {
-      // Strip HTML comments first (manual exclusions)
-      const textWithoutComments = text.replace(/<!--[\s\S]*?-->/g, '');
+      // Strip HTML comments (manual exclusions like page markers)
+      const cleanText = text.replace(/<!--[\s\S]*?-->/g, '');
 
-      // AI structural analysis - identifies block types by meaning
-      const structuredBlocks = await analyzeStructure(textWithoutComments, {
+      // Segmentation creates paragraphs from sentences
+      // Handles large documents internally via chunking with carryover
+      const result = await segmentUnpunctuatedDocument(cleanText, {
         language: detectedLanguage
       });
 
-      const chunks = [];
-      const excludedHeadings = [];
+      // Convert paragraphs to chunks
+      const chunks = result.paragraphs.map(p => ({
+        text: p.text,
+        blocktype: BLOCK_TYPES.PARAGRAPH
+      }));
 
-      for (const block of structuredBlocks) {
-        // Skip excluded blocks (headings, page markers, etc.)
-        if (block.exclude) {
-          excludedHeadings.push(block.content.substring(0, 50));
-          continue;
-        }
-
-        let processedContent = block.content;
-
-        // For prose blocks, collapse OCR line breaks
-        // For verse/prayer blocks, preserve line structure
-        if (!block.preserveLineBreaks) {
-          processedContent = processedContent
-            .replace(/(?<!\n)\n(?!\n)/g, ' ')  // Single newline → space
-            .replace(/ +/g, ' ')               // Collapse multiple spaces
-            .trim();
-        }
-
-        // Now do sentence detection on the processed content
-        if (processedContent.length > CHUNK_CONFIG.minChunkSize) {
-          const result = await segmentUnpunctuatedDocument(processedContent, {
-            language: detectedLanguage
-          });
-
-          // Add paragraphs with appropriate block type
-          for (const para of result.paragraphs) {
-            chunks.push({
-              text: para.text,
-              blocktype: block.type === 'verse' ? 'verse' :
-                        block.type === 'prayer' ? 'prayer' :
-                        BLOCK_TYPES.PARAGRAPH
-            });
-          }
-        }
-      }
-
-      if (excludedHeadings.length > 0) {
-        logger.info({ excludedCount: excludedHeadings.length, samples: excludedHeadings.slice(0, 3) },
-          'Excluded structural headings/markers from content');
-      }
-
-      logger.info({ chunks: chunks.length }, 'AI structural analysis complete');
+      logger.info({ paragraphs: chunks.length }, 'AI segmentation complete');
 
       // Split any oversized paragraphs (max 1500 chars for translation compatibility)
       const maxParagraphChars = 1500;
@@ -476,10 +439,9 @@ export async function parseDocumentWithBlocks(text, options = {}) {
         }, 'Split oversized paragraphs');
       }
 
-      // AI segmentation was used for unpunctuated RTL text
       return { chunks: finalChunks, autoSegmented: true };
     } catch (err) {
-      logger.warn({ err: err.message }, 'AI structural analysis failed, falling back to standard approach');
+      logger.warn({ err: err.message }, 'AI segmentation failed, falling back to markdown blocks');
       // Fall through to standard approach
     }
   }

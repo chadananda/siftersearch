@@ -163,9 +163,10 @@ export default async function libraryRoutes(fastify) {
    */
   fastify.get('/stats', async () => {
     // Get document and paragraph counts from libsql
-    const [docCount, paraCount, facetStats] = await Promise.all([
+    const [docCount, paraCount, docsWithContent, facetStats] = await Promise.all([
       queryOne('SELECT COUNT(*) as count FROM docs'),
       queryOne('SELECT COUNT(*) as count FROM content'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content'),
       queryAll(`
         SELECT
           religion,
@@ -239,8 +240,14 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
+    // Calculate ingestion progress
+    const totalDocs = docCount?.count || 0;
+    const withContent = docsWithContent?.count || 0;
+    const pendingDocs = totalDocs - withContent;
+    const percentComplete = totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0;
+
     return {
-      totalDocuments: docCount?.count || 0,
+      totalDocuments: totalDocs,
       totalParagraphs: paraCount?.count || 0,
       religions: Object.keys(religionCounts).length,
       collections: Object.keys(collectionCounts).length,
@@ -251,7 +258,13 @@ export default async function libraryRoutes(fastify) {
       indexing: indexingStats.pending > 0 || indexingStats.processing > 0,
       indexingProgress: indexingStats,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
-      translationProgress: translationStats
+      translationProgress: translationStats,
+      ingestionProgress: {
+        totalDocs,
+        docsWithContent: withContent,
+        docsPending: pendingDocs,
+        percentComplete
+      }
     };
   });
 

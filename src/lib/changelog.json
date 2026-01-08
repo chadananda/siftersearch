@@ -1,6 +1,48 @@
 {
-  "generated": "2026-01-08T13:04:04.012Z",
+  "generated": "2026-01-08T14:42:31.927Z",
   "entries": [
+    {
+      "hash": "1323078",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "JSON extraction from AI response with code blocks",
+      "scope": null
+    },
+    {
+      "hash": "5fa2fb6",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "English text passes through unchanged - no segmentation",
+      "scope": null
+    },
+    {
+      "hash": "88a54f0",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Use correct aiService API for structural analysis",
+      "scope": null
+    },
+    {
+      "hash": "787e268",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "AI structural analysis for RTL text segmentation",
+      "scope": null
+    },
+    {
+      "hash": "d5a2e1b",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Support HTML comments for section headings in unsegmented RTL texts",
+      "scope": null
+    },
+    {
+      "hash": "a21480e",
+      "date": "2026-01-08",
+      "type": "Improved",
+      "description": "Skip AI segmentation for punctuated English text",
+      "scope": null
+    },
     {
       "hash": "32be47e",
       "date": "2026-01-07",
@@ -308,51 +350,53 @@
       "type": "Fixed",
       "description": "Admin panel logo, search results, and add translation debug",
       "scope": null
-    },
-    {
-      "hash": "e254855",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Admin panel improvements and search performance",
-      "scope": null
-    },
-    {
-      "hash": "67c0b4f",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use $effect and objects for translation stats reactivity",
-      "scope": null
-    },
-    {
-      "hash": "39735b4",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Raw Search API call and add NavBar to admin layout",
-      "scope": null
-    },
-    {
-      "hash": "9458417",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Simplify translation stats loading to fix indicator display",
-      "scope": null
-    },
-    {
-      "hash": "87a9396",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
-      "scope": null
-    },
-    {
-      "hash": "83049f0",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add Raw Search admin page for direct Meilisearch access",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-08": [
+      {
+        "hash": "1323078",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "JSON extraction from AI response with code blocks",
+        "scope": null
+      },
+      {
+        "hash": "5fa2fb6",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "English text passes through unchanged - no segmentation",
+        "scope": null
+      },
+      {
+        "hash": "88a54f0",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Use correct aiService API for structural analysis",
+        "scope": null
+      },
+      {
+        "hash": "787e268",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "AI structural analysis for RTL text segmentation",
+        "scope": null
+      },
+      {
+        "hash": "d5a2e1b",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Support HTML comments for section headings in unsegmented RTL texts",
+        "scope": null
+      },
+      {
+        "hash": "a21480e",
+        "date": "2026-01-08",
+        "type": "Improved",
+        "description": "Skip AI segmentation for punctuated English text",
+        "scope": null
+      }
+    ],
     "2026-01-07": [
       {
         "hash": "32be47e",
@@ -664,48 +708,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Admin panel logo, search results, and add translation debug",
-        "scope": null
-      },
-      {
-        "hash": "e254855",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Admin panel improvements and search performance",
-        "scope": null
-      },
-      {
-        "hash": "67c0b4f",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use $effect and objects for translation stats reactivity",
-        "scope": null
-      },
-      {
-        "hash": "39735b4",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Raw Search API call and add NavBar to admin layout",
-        "scope": null
-      },
-      {
-        "hash": "9458417",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Simplify translation stats loading to fix indicator display",
-        "scope": null
-      },
-      {
-        "hash": "87a9396",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
-        "scope": null
-      },
-      {
-        "hash": "83049f0",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add Raw Search admin page for direct Meilisearch access",
         "scope": null
       }
     ]

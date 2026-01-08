@@ -1160,6 +1160,21 @@
                   {/each}
                 </div>
               {/if}
+              <!-- Ingestion progress -->
+              {#if libraryStats.ingestionProgress && libraryStats.ingestionProgress.percentComplete < 100}
+                <div class="ingestion-progress">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Content indexed</span>
+                    <span class="ingestion-percent">{libraryStats.ingestionProgress.percentComplete}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {libraryStats.ingestionProgress.percentComplete}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatNumber(libraryStats.ingestionProgress.docsWithContent)} / {formatNumber(libraryStats.ingestionProgress.totalDocs)} documents
+                  </div>
+                </div>
+              {/if}
               <div class="stats-footer">
                 {#if libraryStats.lastUpdated}
                   <span>Last indexed: {new Date(libraryStats.lastUpdated).toLocaleDateString()}</span>
@@ -2119,6 +2134,52 @@
 
   .indexing-indicator.translating {
     color: var(--accent);
+  }
+
+  /* Ingestion progress bar */
+  .ingestion-progress {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-default);
+  }
+
+  .ingestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.375rem;
+  }
+
+  .ingestion-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .ingestion-percent {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .ingestion-bar {
+    height: 0.375rem;
+    background: var(--surface-2);
+    border-radius: 0.1875rem;
+    overflow: hidden;
+  }
+
+  .ingestion-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 0.1875rem;
+    transition: width 0.3s ease;
+  }
+
+  .ingestion-detail {
+    margin-top: 0.25rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-align: center;
   }
 
   @keyframes pulse {
