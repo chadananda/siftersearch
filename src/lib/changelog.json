@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T17:58:43.647Z",
+  "generated": "2026-01-09T18:13:20.596Z",
   "entries": [
+    {
+      "hash": "1b246e9",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Strip duplicate frontmatter blocks from document content",
+      "scope": null
+    },
     {
       "hash": "acc986e",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Drop old_id column from docs table (migration 28)",
       "scope": null
-    },
-    {
-      "hash": "011afdb",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "1b246e9",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Strip duplicate frontmatter blocks from document content",
+        "scope": null
+      },
       {
         "hash": "acc986e",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Drop old_id column from docs table (migration 28)",
-        "scope": null
-      },
-      {
-        "hash": "011afdb",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
         "scope": null
       }
     ]
