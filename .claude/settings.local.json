@@ -42,7 +42,8 @@
       "WebFetch(domain:milkdown.dev)",
       "WebFetch(domain:tiptap.dev)",
       "WebFetch(domain:bytemd.js.org)",
-      "Skill(commit)"
+      "Skill(commit)",
+      "WebFetch(domain:siftersearch.com)"
     ]
   }
 }
