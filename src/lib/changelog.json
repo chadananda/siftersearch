@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T20:18:09.767Z",
+  "generated": "2026-01-09T21:52:10.759Z",
   "entries": [
+    {
+      "hash": "571e1a6",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Error out when religion/collection missing instead of using fake defaults",
+      "scope": null
+    },
     {
       "hash": "5b2e977",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add script to re-index documents missing content",
       "scope": null
-    },
-    {
-      "hash": "cc39037",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "571e1a6",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Error out when religion/collection missing instead of using fake defaults",
+        "scope": null
+      },
       {
         "hash": "5b2e977",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to re-index documents missing content",
-        "scope": null
-      },
-      {
-        "hash": "cc39037",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
         "scope": null
       }
     ]

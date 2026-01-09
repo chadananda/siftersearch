@@ -460,7 +460,7 @@ export default async function libraryRoutes(fastify) {
 
     // Get all documents for this religion (for listing)
     const documents = await queryAll(`
-      SELECT id, title, author, religion, collection, language, year, paragraph_count, filename
+      SELECT id, title, author, religion, collection, language, year, paragraph_count, filename, slug
       FROM docs
       WHERE religion = ?
       ORDER BY collection, title
@@ -521,7 +521,7 @@ export default async function libraryRoutes(fastify) {
 
     const [documents, countResult] = await Promise.all([
       queryAll(`
-        SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename
+        SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename, slug
         FROM docs
         ${whereClause}
         ORDER BY title ASC
