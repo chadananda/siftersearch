@@ -76,6 +76,7 @@
   let bilingualContent = $state(null);
   let loadingContent = $state(false);
   let translating = $state(null); // Document ID being translated
+  let reingesting = $state(null); // Document ID being re-ingested
   let activeJobs = $state(new Map()); // docId → jobId for active translation jobs
   let pollingInterval = $state(null);
 
@@ -237,6 +238,118 @@
     return percent;
   }
 
+
+  // Request re-ingestion of document (admin only)
+  async function requestReingest(docId, docTitle) {
+    if (!confirm(`Re-import "${docTitle || docId}"?\n\nThis will re-read the source file and re-segment the document. Unchanged paragraphs will keep their embeddings.`)) {
+      return;
+    }
+
+    reingesting = docId;
+    console.log(`[Re-Import] Starting re-ingestion for document: ${docId}`);
+
+    try {
+      const res = await authenticatedFetch(`${API_BASE}/api/admin/server/reingest-document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('[Re-Import] Task started:', data);
+
+      // Poll for completion
+      await pollReingestStatus(docId);
+
+    } catch (err) {
+      console.error('[Re-Import] Error:', err);
+      alert(`Re-import failed: ${err.message}`);
+    } finally {
+      reingesting = null;
+    }
+  }
+
+  // Poll for re-ingest task status and log details
+  async function pollReingestStatus(docId) {
+    const startTime = Date.now();
+    const maxWait = 5 * 60 * 1000; // 5 minutes max
+
+    while (Date.now() - startTime < maxWait) {
+      await new Promise(r => setTimeout(r, 2000)); // Poll every 2 seconds
+
+      try {
+        const res = await authenticatedFetch(`${API_BASE}/api/admin/server/tasks/reingest`);
+        if (!res.ok) continue;
+
+        const status = await res.json();
+        console.log('[Re-Import] Status:', status);
+
+        if (status.status === 'completed') {
+          console.log('[Re-Import] ✅ Complete!');
+
+          // Parse JSON summary from output if available
+          let summary = null;
+          if (status.output?.length > 0) {
+            // Find the JSON summary line
+            for (let i = status.output.length - 1; i >= 0; i--) {
+              const line = status.output[i];
+              if (line.startsWith('{') && line.includes('paragraphCount')) {
+                try {
+                  summary = JSON.parse(line);
+                  break;
+                } catch {}
+              }
+            }
+          }
+
+          if (summary) {
+            console.log('[Re-Import] Summary:', summary);
+            console.log(`  📄 Document: ${summary.title}`);
+            console.log(`  🌐 Language: ${summary.language}`);
+            console.log(`  📊 Total paragraphs: ${summary.paragraphCount}`);
+            console.log(`  ♻️  Reused (unchanged): ${summary.reusedParagraphs}`);
+            console.log(`  ✨ New/changed: ${summary.newParagraphs}`);
+            console.log(`  🗑️  Deleted: ${summary.deletedParagraphs}`);
+            console.log(`  📏 Avg chars/paragraph: ${summary.avgCharsPerParagraph}`);
+
+            alert(`Re-import complete!\n\n` +
+              `Total paragraphs: ${summary.paragraphCount}\n` +
+              `Reused: ${summary.reusedParagraphs}\n` +
+              `New/changed: ${summary.newParagraphs}\n` +
+              `Deleted: ${summary.deletedParagraphs}`);
+          } else {
+            // Fallback - log all output
+            console.log('[Re-Import] Full output:', status.output);
+            alert('Re-import complete!\n\nCheck browser console for details.');
+          }
+          return;
+        }
+
+        if (status.status === 'failed') {
+          console.error('[Re-Import] ❌ Failed:', status.error);
+          alert(`Re-import failed: ${status.error || 'Unknown error'}`);
+          return;
+        }
+
+        // Still running...
+        if (status.output) {
+          // Log any new output
+          console.log('[Re-Import] Output:', status.output);
+        }
+
+      } catch (err) {
+        console.warn('[Re-Import] Poll error:', err);
+      }
+    }
+
+    console.warn('[Re-Import] Timeout waiting for completion');
+    alert('Re-import is taking longer than expected. Check server logs for status.');
+  }
 
   // Queue document for translation (background job)
   async function requestTranslation(docId) {
@@ -450,11 +563,25 @@
               {/if}
             {/if}
           {/if}
-          <!-- Edit button - admin only, visible on hover or when expanded -->
+          <!-- View button - always visible -->
+          <a
+            class="p-1.5 text-secondary hover:text-accent rounded transition-colors cursor-pointer"
+            href={getDocumentUrl(doc)}
+            target="_blank"
+            rel="noopener"
+            onclick={(e) => e.stopPropagation()}
+            title="View document"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+          <!-- Edit button - admin only, always visible -->
           {#if isAdmin}
             <a
-              class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
-                     {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+              class="p-1.5 text-secondary hover:text-accent rounded transition-colors cursor-pointer"
               href="/admin/edit?id={doc.id}"
               target="_blank"
               rel="noopener"
@@ -466,23 +593,22 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </a>
+            <!-- Re-import button - admin only -->
+            <button
+              class="p-1.5 text-secondary hover:text-warning rounded transition-colors cursor-pointer
+                     {reingesting === doc.id ? 'text-warning animate-pulse' : ''}"
+              onclick={(e) => { e.stopPropagation(); requestReingest(doc.id, doc.title); }}
+              disabled={reingesting === doc.id}
+              title="Re-import document (force re-ingestion)"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 21h5v-5"/>
+              </svg>
+            </button>
           {/if}
-          <!-- Open in new tab button - visible on hover or when expanded -->
-          <a
-            class="p-1.5 text-muted hover:text-accent rounded transition-all cursor-pointer
-                   {isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
-            href={getDocumentUrl(doc)}
-            target="_blank"
-            rel="noopener"
-            onclick={(e) => e.stopPropagation()}
-            title="Open in new tab"
-          >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
         </div>
       </div>
 

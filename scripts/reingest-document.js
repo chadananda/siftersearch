@@ -182,6 +182,22 @@ async function reingestDocument(docId) {
   if (result.reusedParagraphs > 0) {
     console.log(`✓ ${result.reusedParagraphs} unchanged paragraphs kept their embeddings.`);
   }
+
+  // Output JSON summary for frontend parsing
+  console.log('\n=== JSON SUMMARY ===');
+  console.log(JSON.stringify({
+    documentId: docId,
+    title: doc.title,
+    language: doc.language,
+    status: result.status,
+    paragraphCount: result.paragraphCount,
+    reusedParagraphs: result.reusedParagraphs || 0,
+    newParagraphs: result.newParagraphs || 0,
+    deletedParagraphs: result.deletedParagraphs || 0,
+    avgCharsPerParagraph: newStats.length > 0
+      ? Math.round(newStats.reduce((sum, p) => sum + p.chars, 0) / newStats.length)
+      : 0
+  }));
 }
 
 async function main() {
