@@ -114,8 +114,8 @@ async function reingestDocument(docId) {
   console.log('\n=== Removing existing content... ===');
   await query('DELETE FROM content WHERE doc_id = ?', [docId]);
 
-  // Update file_hash to force re-ingestion
-  await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [docId]);
+  // Reset file_hash AND body_hash to force full re-ingestion (not metadata-only path)
+  await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]);
 
   // Re-ingest with new segmentation
   console.log('\n=== Re-ingesting with new AI segmentation... ===');
