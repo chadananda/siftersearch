@@ -1750,8 +1750,12 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
   }
 
   // Stream through large documents
+  // CRITICAL: Chunk boundaries can cut mid-sentence. We handle this by:
+  // 1. Prepending trailing text from previous chunk to current chunk
+  // 2. Only extracting sentences from the new text (avoiding duplicates)
   const allParagraphs = [];
   const allSentences = [];
+  let carryoverText = ''; // Trailing text from previous chunk that wasn't a complete sentence
   let carryoverSentences = []; // Sentences from incomplete paragraph
   let position = 0;
 
@@ -1765,7 +1769,9 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
       }
     }
 
-    const chunk = cleanText.slice(position, chunkEnd);
+    // Prepend carryover text so AI has full context for sentence detection
+    const rawChunk = cleanText.slice(position, chunkEnd);
+    const chunk = carryoverText ? carryoverText + ' ' + rawChunk : rawChunk;
     const isLastChunk = chunkEnd >= cleanText.length;
 
     logger.debug({
@@ -1777,10 +1783,23 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
     }, 'Processing chunk');
 
     // Detect sentences in this chunk
-    const chunkSentences = await detectSentencesInChunk(chunk, language, 3);
+    // Pass isLastChunk so we know whether to capture trailing text
+    const { sentences: chunkSentences, trailingText } = await detectSentencesInChunkWithTrailing(
+      chunk, language, 3, isLastChunk
+    );
 
-    // Combine with carryover from previous chunk
-    const combinedSentences = [...carryoverSentences, ...chunkSentences];
+    // If there's trailing text (incomplete sentence at chunk boundary),
+    // prepend it to the next chunk for proper context
+    carryoverText = trailingText || '';
+
+    // Filter out sentences that came from the carryover (already processed)
+    // We identify them by checking if they're in the carryoverText range
+    const newSentences = carryoverText
+      ? chunkSentences // All sentences from AI are considered new since carryover gives context
+      : chunkSentences;
+
+    // Combine with carryover sentences from previous paragraph grouping
+    const combinedSentences = [...carryoverSentences, ...newSentences];
 
     if (isLastChunk) {
       // Last chunk: group all remaining sentences into paragraphs
@@ -1985,10 +2004,49 @@ function splitIntoChunks(text, maxSize, overlap) {
 }
 
 /**
+ * Detect sentences in a chunk, returning both sentences and any trailing incomplete text.
+ * This wrapper handles chunk boundaries properly:
+ * - If isLastChunk=true, captures all remaining text as the final sentence
+ * - If isLastChunk=false, returns trailing text separately to be prepended to next chunk
+ *
+ * @param {string} text - Chunk text (may include carryover from previous chunk)
+ * @param {string} language - Language code
+ * @param {number} maxRetries - Max AI retries
+ * @param {boolean} isLastChunk - Whether this is the final chunk
+ * @returns {Promise<{sentences: string[], trailingText: string}>}
+ */
+async function detectSentencesInChunkWithTrailing(text, language, maxRetries, isLastChunk) {
+  const sentences = await detectSentencesInChunk(text, language, maxRetries, !isLastChunk);
+
+  if (isLastChunk) {
+    // Last chunk: all text should be captured as sentences
+    return { sentences, trailingText: '' };
+  }
+
+  // Not last chunk: check if the last sentence looks incomplete
+  // (ends with a preposition or particle that needs an object)
+  const INCOMPLETE_ENDINGS = /\s(بين|من|الى|الی|على|في|عن|ب|ل|و|ف|ثم|ان|لا|ما|الا|حتى|منذ|مع|عند|لدى|نحو|خلال|قبل|بعد|فوق|تحت|امام|وراء|حول|دون|غير|سوى)$/;
+
+  if (sentences.length > 0) {
+    const lastSentence = sentences[sentences.length - 1];
+    if (INCOMPLETE_ENDINGS.test(lastSentence)) {
+      // Last sentence is incomplete - remove it and return as trailing text
+      const trailingText = sentences.pop();
+      logger.debug({ trailingText: trailingText.slice(-50) }, 'Found incomplete sentence at chunk boundary, carrying forward');
+      return { sentences, trailingText };
+    }
+  }
+
+  return { sentences, trailingText: '' };
+}
+
+/**
  * Detect sentences in a single chunk of text using ending words approach
  * Returns array of sentence texts extracted from the chunk
+ *
+ * @param {boolean} skipTrailing - If true, don't capture trailing text as a sentence
  */
-async function detectSentencesInChunk(text, language, maxRetries) {
+async function detectSentencesInChunk(text, language, maxRetries, skipTrailing = false) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
 
   const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
@@ -2079,7 +2137,8 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
       }
 
       // Convert endings to actual sentences by finding them in the text
-      let sentences = extractSentencesFromEndings(text, endings);
+      // Pass skipTrailing to avoid capturing incomplete text at chunk boundaries
+      let sentences = extractSentencesFromEndings(text, endings, skipTrailing);
 
       if (sentences.length > 0) {
         // Only MAX_SENTENCE_CHARS matters - for translation API limits on paragraphs
@@ -2146,8 +2205,12 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
  * CRITICAL: All positions must snap to word boundaries to avoid breaking words
  * CRITICAL: Track actual original position to prevent overlapping extractions
  * CRITICAL: Each sentence starts where the previous one ended - no gaps allowed
+ *
+ * @param {string} text - Source text
+ * @param {string[]} endings - AI-identified sentence endings
+ * @param {boolean} skipTrailing - If true, don't capture remaining text as a sentence
  */
-function extractSentencesFromEndings(text, endings) {
+function extractSentencesFromEndings(text, endings, skipTrailing = false) {
   const sentences = [];
   let searchStart = 0;           // Position in NORMALIZED text for finding endings
   let lastOrigEnd = 0;           // Actual position in ORIGINAL text we've processed (prevents overlap)
@@ -2202,7 +2265,8 @@ function extractSentencesFromEndings(text, endings) {
 
   // Handle any remaining text after last ending
   // Use lastOrigEnd to ensure no overlap with extracted sentences
-  if (lastOrigEnd < text.length) {
+  // BUT: if skipTrailing is true, don't capture - it will be prepended to next chunk
+  if (!skipTrailing && lastOrigEnd < text.length) {
     let remainingStart = lastOrigEnd;
     // Skip any whitespace
     while (remainingStart < text.length && /\s/.test(text[remainingStart])) {

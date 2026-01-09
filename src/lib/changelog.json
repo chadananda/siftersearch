@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T02:48:46.480Z",
+  "generated": "2026-01-09T03:04:53.843Z",
   "entries": [
+    {
+      "hash": "3b6c424",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Remove arbitrary sentence count limit from segmentation",
+      "scope": null
+    },
     {
       "hash": "3c9f8ed",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Search for source file when file_path is missing",
       "scope": null
-    },
-    {
-      "hash": "5ae5605",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Document ID preservation and comprehensive API testing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "3b6c424",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Remove arbitrary sentence count limit from segmentation",
+        "scope": null
+      },
       {
         "hash": "3c9f8ed",
         "date": "2026-01-08",
@@ -697,15 +704,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Search for source file when file_path is missing",
-        "scope": null
-      }
-    ],
-    "2026-01-06": [
-      {
-        "hash": "5ae5605",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Document ID preservation and comprehensive API testing",
         "scope": null
       }
     ]
