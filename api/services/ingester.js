@@ -832,7 +832,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Merge metadata: religion/collection come ONLY from path (folder structure = library organization)
   // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories
   // This keeps documents portable - moving a file changes its collection
-  // IMPORTANT: Don't default to 'General' - keep existing values when updating
+  // IMPORTANT: Don't default to fake data - error out if required fields are missing
   const finalMeta = {
     title: extractedMeta.title || metadata.title || 'Untitled',
     // For author: prefer frontmatter, unless filename has real author and frontmatter doesn't
@@ -845,6 +845,19 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     year: extractedMeta.year || metadata.year || null,
     description: extractedMeta.description || metadata.description || ''
   };
+
+  // Validate required fields - error out rather than using fake defaults
+  if (!finalMeta.religion || !finalMeta.collection) {
+    const error = `Missing required metadata: religion=${finalMeta.religion}, collection=${finalMeta.collection}. ` +
+                  `Path must be in format: Religion/Collection/filename.md (got: ${relativePath})`;
+    logger.error({ relativePath, religion: finalMeta.religion, collection: finalMeta.collection }, error);
+    return {
+      documentId: existingDoc?.id ?? null,
+      paragraphCount: 0,
+      status: 'error',
+      error
+    };
+  }
 
   // Parse into chunks/paragraphs with blocktype awareness
   // Uses AI segmentation for RTL languages without punctuation

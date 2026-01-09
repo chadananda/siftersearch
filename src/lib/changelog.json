@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:50:48.562Z",
+  "generated": "2026-01-09T20:18:09.767Z",
   "entries": [
+    {
+      "hash": "5b2e977",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add partial slug matching for document URLs",
+      "scope": null
+    },
     {
       "hash": "2508670",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
       "scope": null
-    },
-    {
-      "hash": "6ab38c6",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to sync Meilisearch titles with SQLite",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "5b2e977",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add partial slug matching for document URLs",
+        "scope": null
+      },
       {
         "hash": "2508670",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
-        "scope": null
-      },
-      {
-        "hash": "6ab38c6",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to sync Meilisearch titles with SQLite",
         "scope": null
       }
     ]
