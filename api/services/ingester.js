@@ -1066,9 +1066,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       existingParagraphs.delete(wordHash);
     } else {
       // New paragraph - insert it with blocktype
-      // Use content-hash-based ID to avoid conflicts when positions shift
-      // (position-based IDs conflict when UPDATEs change positions)
+      // Use position + timestamp for unique IDs (hash-based IDs can collide on first 12 chars)
       newCount++;
+      const uniqueId = `${finalDocId}_p${index}_${Date.now().toString(36)}`;
       insertStatements.push({
         sql: `
           INSERT INTO content
@@ -1076,7 +1076,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
-          `${finalDocId}_${contentHash.substring(0, 12)}`,  // First 12 chars of hash = unique ID
+          uniqueId,
           finalDocId,
           index,
           chunkText,

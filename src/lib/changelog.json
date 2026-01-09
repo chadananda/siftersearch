@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T17:15:37.060Z",
+  "generated": "2026-01-09T17:31:38.748Z",
   "entries": [
+    {
+      "hash": "6063de5",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
+      "scope": null
+    },
     {
       "hash": "daa2a95",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Support file moves without re-indexing content",
       "scope": null
-    },
-    {
-      "hash": "37d6f29",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add filename editing in document editor",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "6063de5",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
+        "scope": null
+      },
       {
         "hash": "daa2a95",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Support file moves without re-indexing content",
-        "scope": null
-      },
-      {
-        "hash": "37d6f29",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add filename editing in document editor",
         "scope": null
       }
     ]
