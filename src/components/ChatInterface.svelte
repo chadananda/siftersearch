@@ -343,12 +343,28 @@
               const reloadKey = `reload_attempted_${stats.serverVersion}`;
               if (!sessionStorage.getItem(reloadKey)) {
                 sessionStorage.setItem(reloadKey, 'true');
-                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading client...`);
-                // Clear service worker cache and reload
-                if ('caches' in window) {
-                  caches.keys().then(names => names.forEach(name => caches.delete(name)));
-                }
-                window.location.reload();
+                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), updating PWA...`);
+                // Unregister service worker and clear all caches before reloading
+                (async () => {
+                  try {
+                    // Unregister all service workers
+                    if ('serviceWorker' in navigator) {
+                      const registrations = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(registrations.map(r => r.unregister()));
+                      console.log('[Deploy] Service workers unregistered');
+                    }
+                    // Clear all caches
+                    if ('caches' in window) {
+                      const names = await caches.keys();
+                      await Promise.all(names.map(name => caches.delete(name)));
+                      console.log('[Deploy] Caches cleared');
+                    }
+                  } catch (e) {
+                    console.error('[Deploy] Error clearing PWA state:', e);
+                  }
+                  // Hard reload bypassing cache
+                  window.location.reload(true);
+                })();
               } else {
                 console.log(`[Deploy] Already attempted reload for ${stats.serverVersion}, skipping`);
               }
