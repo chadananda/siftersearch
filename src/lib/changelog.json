@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:37:59.428Z",
+  "generated": "2026-01-09T18:50:48.562Z",
   "entries": [
+    {
+      "hash": "2508670",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Prevent bad redirects to general/general paths",
+      "scope": null
+    },
     {
       "hash": "01f5fc8",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add script to sync Meilisearch titles with SQLite",
       "scope": null
-    },
-    {
-      "hash": "9eb0897",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use queryAll for fix-titles script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "2508670",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Prevent bad redirects to general/general paths",
+        "scope": null
+      },
       {
         "hash": "01f5fc8",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to sync Meilisearch titles with SQLite",
-        "scope": null
-      },
-      {
-        "hash": "9eb0897",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use queryAll for fix-titles script",
         "scope": null
       }
     ]

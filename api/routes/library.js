@@ -1145,6 +1145,31 @@ Return ONLY the description text, no quotes or formatting.`;
         return reply.redirect(redirect.new_path, 301);
       }
 
+      // Try partial slug match: find docs where slug ends with requested slug
+      // This handles cases where author prefix is missing from the URL
+      const partialMatch = await queryOne(`
+        SELECT id, title, author, religion, collection, language, year, description,
+               paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
+        FROM docs
+        WHERE slug LIKE ? AND slug != ?
+      `, [`%_${slug}`, slug]);
+
+      if (partialMatch) {
+        const matchReligionSlug = slugifyPath(partialMatch.religion || '');
+        const matchCollectionSlug = slugifyPath(partialMatch.collection || '');
+        // Only redirect if religion/collection also match
+        if (matchReligionSlug === religion && matchCollectionSlug === collection) {
+          const correctPath = `/library/${matchReligionSlug}/${matchCollectionSlug}/${partialMatch.slug}`;
+          // Create redirect for future requests (fire and forget)
+          query(`
+            INSERT INTO redirects (old_path, new_path, doc_id)
+            VALUES (?, ?, ?)
+            ON CONFLICT(old_path) DO UPDATE SET new_path = excluded.new_path
+          `, [requestedPath, correctPath, partialMatch.id]).catch(() => {});
+          return reply.redirect(correctPath, 301);
+        }
+      }
+
       throw ApiError.notFound('Document not found');
     }
 
