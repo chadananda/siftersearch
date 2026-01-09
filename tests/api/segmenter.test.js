@@ -26,9 +26,9 @@ describe('Segmenter Service', () => {
     });
 
     it('should detect Persian/Farsi text', () => {
-      // Persian uses ی (U+06CC) instead of Arabic ي (U+064A)
-      // Persian uses گ چ پ ژ which are not in Arabic
-      const persianText = 'این یک متن فارسی است که از حروف گ چ پ ژ استفاده می کند';
+      // Persian uses گ چ پ ژ ی which are not in Arabic
+      // Need >10% of these chars among Arabic-script chars to be detected as Farsi
+      const persianText = 'این گفتگو پیرامون چگونگی ژرف‌نگری در پژوهش‌های گوناگون است که می‌پردازیم';
       const features = detectLanguageFeatures(persianText);
 
       expect(features.language).toBe('fa');
@@ -44,11 +44,17 @@ describe('Segmenter Service', () => {
     });
 
     it('should handle mixed RTL/LTR text (majority wins)', () => {
-      // Mostly Arabic with some English words
-      const mixedText = 'هذا النص يحتوي على بعض الكلمات مثل Hello وكذلك World ولكن الأغلبية عربية';
-      const features = detectLanguageFeatures(mixedText);
+      // Mostly Arabic with some English words - should be RTL
+      const mostlyArabic = 'هذا النص يحتوي على بعض الكلمات مثل Hello وكذلك World ولكن الأغلبية عربية';
+      const features1 = detectLanguageFeatures(mostlyArabic);
+      expect(features1.isRTL).toBe(true);
+      expect(features1.language).toBe('ar');
 
-      expect(features.isRTL).toBe(true);
+      // English article with Arabic quotes - should be LTR/English
+      const mostlyEnglish = 'This is a scholarly article about the Báb. He wrote "بسم الله" which means In the name of God. The rest is all English commentary.';
+      const features2 = detectLanguageFeatures(mostlyEnglish);
+      expect(features2.isRTL).toBe(false);
+      expect(features2.language).toBe('en');
     });
 
     it('should return en for empty text', () => {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T16:04:57.902Z",
+  "generated": "2026-01-09T16:14:57.424Z",
   "entries": [
+    {
+      "hash": "abd6e63",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Word-based hashing for re-segmentation preserves embeddings",
+      "scope": null
+    },
     {
       "hash": "ddbb46a",
       "date": "2026-01-08",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Use config.library.basePath in link-source-files script",
       "scope": null
-    },
-    {
-      "hash": "f9078c4",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Store relative paths in link-source-files script",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-09": [
+      {
+        "hash": "abd6e63",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Word-based hashing for re-segmentation preserves embeddings",
+        "scope": null
+      }
+    ],
     "2026-01-08": [
       {
         "hash": "ddbb46a",
@@ -697,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use config.library.basePath in link-source-files script",
-        "scope": null
-      },
-      {
-        "hash": "f9078c4",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Store relative paths in link-source-files script",
         "scope": null
       }
     ]

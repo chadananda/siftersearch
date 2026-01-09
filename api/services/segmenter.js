@@ -37,29 +37,40 @@ export function detectLanguageFeatures(text) {
     return { isRTL: false, language: 'en', textLength: 0 };
   }
 
-  // Arabic Unicode range: \u0600-\u06FF
-  const arabicPattern = /[\u0600-\u06FF]/;
-  // Extended Arabic and Farsi: \u0750-\u077F, \uFB50-\uFDFF, \uFE70-\uFEFF
-  const extendedArabicPattern = /[\u0750-\u077F]|[\uFB50-\uFDFF]|[\uFE70-\uFEFF]/;
-  // Farsi-specific characters
-  const farsiPattern = /[\u067E\u0686\u0698\u06AF\u06CC]/; // پ چ ژ گ ی
+  // Count characters by script type to determine MAJORITY language
+  // Arabic Unicode ranges: \u0600-\u06FF, \u0750-\u077F, \uFB50-\uFDFF, \uFE70-\uFEFF
+  const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+  // Latin characters (basic + extended)
+  const latinChars = (text.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
 
-  const hasArabic = arabicPattern.test(text) || extendedArabicPattern.test(text);
-  const hasFarsi = farsiPattern.test(text);
-  const isRTL = hasArabic || hasFarsi;
+  // Farsi-specific characters: پ چ ژ گ ی
+  const farsiChars = (text.match(/[\u067E\u0686\u0698\u06AF\u06CC]/g) || []).length;
 
-  // Determine primary language
+  const totalAlpha = arabicChars + latinChars;
+  if (totalAlpha === 0) {
+    return { isRTL: false, language: 'en', textLength: text.length };
+  }
+
+  // Calculate ratio - document is RTL only if MAJORITY (>50%) is Arabic script
+  const arabicRatio = arabicChars / totalAlpha;
+  const isRTL = arabicRatio > 0.5;
+
+  // Determine primary language based on majority
   let language = 'en';
-  if (hasFarsi) {
-    language = 'fa';
-  } else if (hasArabic) {
-    language = 'ar';
+  if (isRTL) {
+    // Among RTL, check if Farsi-specific chars (پ چ ژ گ ی) are present
+    // Threshold: 10% Farsi-specific chars among all Arabic-script chars = Farsi document
+    // Farsi shares most chars with Arabic, only these 5 are unique
+    // 10% threshold prevents Arabic docs with occasional Farsi quotes from being misclassified
+    const farsiRatio = arabicChars > 0 ? farsiChars / arabicChars : 0;
+    language = farsiRatio > 0.10 ? 'fa' : 'ar';
   }
 
   return {
     isRTL,
     language,
-    textLength: text.length
+    textLength: text.length,
+    arabicRatio  // Include for debugging
   };
 }
 
