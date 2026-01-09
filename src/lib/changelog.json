@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T22:15:33.656Z",
+  "generated": "2026-01-09T22:25:21.269Z",
   "entries": [
+    {
+      "hash": "c67d69a",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Render paragraph headings through markdown to handle links",
+      "scope": null
+    },
     {
       "hash": "e42cb42",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "AI structural analysis for RTL text segmentation",
       "scope": null
-    },
-    {
-      "hash": "d5a2e1b",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Support HTML comments for section headings in unsegmented RTL texts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "c67d69a",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Render paragraph headings through markdown to handle links",
+        "scope": null
+      },
       {
         "hash": "e42cb42",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "AI structural analysis for RTL text segmentation",
-        "scope": null
-      },
-      {
-        "hash": "d5a2e1b",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Support HTML comments for section headings in unsegmented RTL texts",
         "scope": null
       }
     ]

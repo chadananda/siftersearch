@@ -2124,6 +2124,7 @@
 
   .paragraph {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 0;
     padding: 0.75rem 0;
@@ -2201,10 +2202,11 @@
   }
 
   .paragraph-heading {
+    width: 100%;
     font-size: 1.25rem;
     font-weight: 600;
     color: #1a1a1a;
-    margin: 2rem 0 1rem 0;
+    margin: 1rem 0 0.5rem 0;
     padding-top: 1rem;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
