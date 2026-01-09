@@ -24,6 +24,9 @@ const DUPLICATE_FM_REGEX = /^(---\n[\s\S]*?\n---)\n(---\n[\s\S]*?\n---)\n/;
 // Pattern 2: First --- block, then legacy content without opening ---, then closing ---
 // Matches: ---[block1]---\nid: ...[block2]---
 const LEGACY_NO_OPEN_REGEX = /^(---\n[\s\S]*?\n---)\n((?:id:|title:)[\s\S]*?\n---)\n/;
+// Pattern 3: First --- block, then YAML content without ANY --- delimiters
+// Stop at first blank line or markdown header
+const YAML_NO_DELIM_REGEX = /^(---\n[\s\S]*?\n---)\n((?:title:|id:|author:)(?:[^\n]*\n)+?)(\n#|\n\n)/;
 
 async function processFile(filePath, dryRun = true) {
   const content = await readFile(filePath, 'utf-8');
@@ -38,27 +41,38 @@ async function processFile(filePath, dryRun = true) {
     pattern = 'pattern2';
   }
 
+  // If no match, try pattern 3 (YAML content without any --- delimiters)
+  if (!match) {
+    match = content.match(YAML_NO_DELIM_REGEX);
+    pattern = 'pattern3';
+  }
+
   if (!match) {
     return { status: 'clean', file: filePath };
   }
 
-  const [fullMatch, firstBlock, secondBlock] = match;
+  const [fullMatch, firstBlock, secondBlock, delimiter] = match;
 
-  // Check if second block has legacy markers
-  const isLegacy = secondBlock.includes('author: "Various"') ||
-                   secondBlock.includes('ocnmd_version:') ||
-                   secondBlock.includes('ocnmd_version') ||
-                   secondBlock.includes('processing_method:') ||
-                   secondBlock.includes('source_url:') ||
-                   secondBlock.includes('id: bahai_');
+  // Check if second block looks like frontmatter/YAML (should be removed)
+  const looksLikeFrontmatter = secondBlock.includes('title:') ||
+                                secondBlock.includes('author:') ||
+                                secondBlock.includes('id:') ||
+                                secondBlock.includes('ocnmd_version:') ||
+                                secondBlock.includes('source_url:');
 
-  if (!isLegacy) {
+  if (!looksLikeFrontmatter) {
     return { status: 'unknown_duplicate', file: filePath, secondBlock: secondBlock.substring(0, 200) };
   }
 
-  // Remove the second (legacy) frontmatter block
-  const regex = pattern === 'pattern1' ? DUPLICATE_FM_REGEX : LEGACY_NO_OPEN_REGEX;
-  const fixedContent = content.replace(regex, '$1\n');
+  // Remove the second frontmatter block
+  let fixedContent;
+  if (pattern === 'pattern3') {
+    // For pattern 3, keep the delimiter (blank line or header)
+    fixedContent = content.replace(YAML_NO_DELIM_REGEX, '$1$3');
+  } else {
+    const regex = pattern === 'pattern1' ? DUPLICATE_FM_REGEX : LEGACY_NO_OPEN_REGEX;
+    fixedContent = content.replace(regex, '$1\n');
+  }
 
   if (dryRun) {
     return { status: 'would_fix', file: filePath, pattern };

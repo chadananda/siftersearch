@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:24:07.845Z",
+  "generated": "2026-01-09T18:27:01.230Z",
   "entries": [
+    {
+      "hash": "46d7f9c",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Handle legacy frontmatter without opening --- delimiter",
+      "scope": null
+    },
     {
       "hash": "cefa05c",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add script to fix corrupted titles from frontmatter",
       "scope": null
-    },
-    {
-      "hash": "f0e0163",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add Meilisearch migration script for doc_id field",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "46d7f9c",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Handle legacy frontmatter without opening --- delimiter",
+        "scope": null
+      },
       {
         "hash": "cefa05c",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to fix corrupted titles from frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "f0e0163",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add Meilisearch migration script for doc_id field",
         "scope": null
       }
     ]
