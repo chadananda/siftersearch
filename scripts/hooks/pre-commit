@@ -108,16 +108,34 @@ node scripts/generate-changelog.js > /dev/null 2>&1
 git add package.json src/lib/changelog.json
 
 # ============================================
-# PHASE 4: Deploy Client to Cloudflare Pages
+# PHASE 4: Deploy Client to Cloudflare Pages (with retries)
 # ============================================
 
-echo -e "${BLUE}[pre-commit]${NC} Deploying client to Cloudflare Pages..."
-if ! npx wrangler pages deploy ./dist --project-name siftersearch --commit-dirty=true --commit-message="v${NEW_VERSION}" 2>&1; then
-  echo -e "${RED}[pre-commit]${NC} Client deployment failed! Commit aborted."
-  echo -e "${YELLOW}[pre-commit]${NC} Version was bumped but not deployed. You may need to reset."
+deploy_to_cloudflare() {
+  local max_retries=3
+  local retry_delay=5
+
+  for ((i=1; i<=max_retries; i++)); do
+    echo -e "${BLUE}[pre-commit]${NC} Deploying to Cloudflare Pages (attempt $i/$max_retries)..."
+    if npx wrangler pages deploy ./dist --project-name siftersearch --branch main --commit-dirty=true --commit-message="v${NEW_VERSION}" 2>&1; then
+      return 0
+    fi
+
+    if [ $i -lt $max_retries ]; then
+      echo -e "${YELLOW}[pre-commit]${NC} Deploy failed, retrying in ${retry_delay}s..."
+      sleep $retry_delay
+      retry_delay=$((retry_delay * 2))
+    fi
+  done
+  return 1
+}
+
+if ! deploy_to_cloudflare; then
+  echo -e "${RED}[pre-commit]${NC} Client deployment failed after 3 attempts! Commit aborted."
+  echo -e "${YELLOW}[pre-commit]${NC} Version was bumped but not deployed. Run: git restore package.json src/lib/changelog.json"
   exit 1
 fi
-echo -e "${GREEN}[pre-commit]${NC} ✓ Client deployed to Cloudflare Pages"
+echo -e "${GREEN}[pre-commit]${NC} ✓ Client deployed to Cloudflare Pages (production)"
 
 # ============================================
 # PHASE 5: Push to GitHub (triggers server update)

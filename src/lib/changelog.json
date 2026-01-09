@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T17:08:24.347Z",
+  "generated": "2026-01-09T17:15:37.060Z",
   "entries": [
+    {
+      "hash": "daa2a95",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add re-import button and make view/edit always visible on library items",
+      "scope": null
+    },
     {
       "hash": "86b708a",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add filename editing in document editor",
       "scope": null
-    },
-    {
-      "hash": "ddfd1d1",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use Node path module for reliable path handling in library-watcher",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "daa2a95",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add re-import button and make view/edit always visible on library items",
+        "scope": null
+      },
       {
         "hash": "86b708a",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add filename editing in document editor",
-        "scope": null
-      },
-      {
-        "hash": "ddfd1d1",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use Node path module for reliable path handling in library-watcher",
         "scope": null
       }
     ]
