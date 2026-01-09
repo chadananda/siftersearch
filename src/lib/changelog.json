@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:15:41.769Z",
+  "generated": "2026-01-09T18:20:17.940Z",
   "entries": [
+    {
+      "hash": "a96d91f",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add script to remove duplicate frontmatter from source files",
+      "scope": null
+    },
     {
       "hash": "cf6a336",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Standardize doc_id field across SQLite and Meilisearch",
       "scope": null
-    },
-    {
-      "hash": "7ba8246",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Correct migration 28 schema to match production",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "a96d91f",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add script to remove duplicate frontmatter from source files",
+        "scope": null
+      },
       {
         "hash": "cf6a336",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Standardize doc_id field across SQLite and Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "7ba8246",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Correct migration 28 schema to match production",
         "scope": null
       }
     ]

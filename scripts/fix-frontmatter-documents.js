@@ -49,9 +49,9 @@ async function fixDocument(docId, title, filePath) {
     return { status: 'skipped', reason: 'source_not_found' };
   }
 
-  // Clear existing content and reset body_hash
+  // Clear existing content and reset hashes to force full re-ingestion
   await query(`DELETE FROM content WHERE doc_id = ?`, [docId]);
-  await query(`UPDATE docs SET body_hash = '' WHERE id = ?`, [docId]);
+  await query(`UPDATE docs SET body_hash = '', file_hash = '' WHERE id = ?`, [docId]);
 
   // Re-ingest with the fixed parser
   try {
