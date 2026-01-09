@@ -1117,7 +1117,7 @@
             data-index={para.paragraph_index}
           >
             {#if para.heading}
-              <h2 class="paragraph-heading">{para.heading}</h2>
+              <h2 class="paragraph-heading">{@html renderMarkdown(para.heading)}</h2>
             {/if}
 
             <!-- SBS Mode: Side-by-side reading translation (English on LEFT) -->

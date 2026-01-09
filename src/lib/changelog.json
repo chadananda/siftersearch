@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-09T22:02:07.125Z",
+  "generated": "2026-01-09T22:15:33.656Z",
   "entries": [
+    {
+      "hash": "e42cb42",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
+      "scope": null
+    },
+    {
+      "hash": "b4214e6",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
+      "scope": null
+    },
     {
       "hash": "7b60188",
       "date": "2026-01-09",
@@ -336,24 +350,24 @@
       "type": "New",
       "description": "Support HTML comments for section headings in unsegmented RTL texts",
       "scope": null
-    },
-    {
-      "hash": "a21480e",
-      "date": "2026-01-08",
-      "type": "Improved",
-      "description": "Skip AI segmentation for punctuated English text",
-      "scope": null
-    },
-    {
-      "hash": "32be47e",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add body_hash for metadata-only updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "e42cb42",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
+        "scope": null
+      },
+      {
+        "hash": "b4214e6",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
+        "scope": null
+      },
       {
         "hash": "7b60188",
         "date": "2026-01-09",
@@ -690,22 +704,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "Support HTML comments for section headings in unsegmented RTL texts",
-        "scope": null
-      },
-      {
-        "hash": "a21480e",
-        "date": "2026-01-08",
-        "type": "Improved",
-        "description": "Skip AI segmentation for punctuated English text",
-        "scope": null
-      }
-    ],
-    "2026-01-07": [
-      {
-        "hash": "32be47e",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add body_hash for metadata-only updates",
         "scope": null
       }
     ]
