@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T16:27:07.447Z",
+  "generated": "2026-01-09T16:47:03.658Z",
   "entries": [
+    {
+      "hash": "86b708a",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add ingestion progress display to home page",
+      "scope": null
+    },
     {
       "hash": "1c133b2",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use Node path module for reliable path handling in library-watcher",
       "scope": null
-    },
-    {
-      "hash": "0d2fd25",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Skip already-linked documents in link-source-files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "86b708a",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add ingestion progress display to home page",
+        "scope": null
+      },
       {
         "hash": "1c133b2",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use Node path module for reliable path handling in library-watcher",
-        "scope": null
-      },
-      {
-        "hash": "0d2fd25",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Skip already-linked documents in link-source-files",
         "scope": null
       }
     ]
