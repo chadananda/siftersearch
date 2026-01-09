@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:13:20.596Z",
+  "generated": "2026-01-09T18:15:41.769Z",
   "entries": [
+    {
+      "hash": "cf6a336",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add script to fix documents with frontmatter in first paragraph",
+      "scope": null
+    },
     {
       "hash": "1b246e9",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Correct migration 28 schema to match production",
       "scope": null
-    },
-    {
-      "hash": "c5dd15d",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Drop old_id column from docs table (migration 28)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "cf6a336",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add script to fix documents with frontmatter in first paragraph",
+        "scope": null
+      },
       {
         "hash": "1b246e9",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Correct migration 28 schema to match production",
-        "scope": null
-      },
-      {
-        "hash": "c5dd15d",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Drop old_id column from docs table (migration 28)",
         "scope": null
       }
     ]
