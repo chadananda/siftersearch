@@ -83,6 +83,22 @@
   // RTL languages that need special handling
   const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
 
+  /**
+   * Strip sentence/phrase markers from text before display
+   * Handles both Unicode markers ⁅s1⁆ and bracket markers [s1]
+   */
+  function stripMarkers(text) {
+    if (!text) return '';
+    return text
+      // Unicode markers: ⁅s1⁆, ⁅/s1⁆, ⁅p1⁆, etc.
+      .replace(/⁅\/?[sp]\d+⁆/g, '')
+      // Bracket markers: [s1], [/s1], [p1], etc.
+      .replace(/\[\/?[sp]\d+\]/g, '')
+      // Clean up any double spaces left behind
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   // Language display names
   const LANG_NAMES = {
     en: 'English', ar: 'Arabic', fa: 'Persian', he: 'Hebrew', ur: 'Urdu',
@@ -500,7 +516,7 @@
                         <p
                           class="para-text"
                           dir={isRTL(docLang) ? 'rtl' : 'ltr'}
-                        >{para.text || para.content || ''}</p>
+                        >{stripMarkers(para.text || para.content || '')}</p>
                       </div>
                     {/each}
                   {:else}

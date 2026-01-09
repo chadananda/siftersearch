@@ -787,6 +787,11 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Check if chunks already have sentence markers (from sentence-first segmentation)
   const hasExistingMarkers = chunks.some(c => c.text && c.text.includes('\u2045'));
 
+  // Only add sentence markers for RTL texts (Arabic, Farsi, Hebrew, Urdu)
+  // English and other LTR texts don't need sentence markers
+  const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+  const isRTLText = RTL_LANGUAGES.includes(finalMeta.language);
+
   if (hasExistingMarkers) {
     // Count existing sentences
     for (const chunk of chunks) {
@@ -794,8 +799,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       totalSentences += matches ? matches.length : 0;
     }
     logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Using pre-existing sentence markers');
-  } else {
-    // Add sentence markers in batch (1-2 AI calls instead of 100+)
+  } else if (isRTLText) {
+    // Add sentence markers ONLY for RTL texts (for per-sentence translations)
     try {
       const paragraphsToMark = chunks.map((chunk, idx) => ({
         id: String(idx),
@@ -812,13 +817,14 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           totalSentences += result.sentenceCount;
         }
       }
+      logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers for RTL text');
     } catch (err) {
       // If batch marking fails completely, log but keep original text
-      // Individual paragraphs will still have fallback single-sentence wrapping
       logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
     }
-
-    logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers');
+  } else {
+    // LTR texts (English, etc.) - no sentence markers needed
+    logger.debug({ paragraphs: chunks.length, language: finalMeta.language }, 'Skipping sentence markers for LTR text');
   }
 
   // Use existing document ID if updating, otherwise null (will be assigned after INSERT)

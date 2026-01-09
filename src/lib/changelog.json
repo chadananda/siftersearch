@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T01:15:58.213Z",
+  "generated": "2026-01-09T01:30:17.656Z",
   "entries": [
+    {
+      "hash": "31d93ac",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Library preview matches book view with floating paragraph numbers",
+      "scope": null
+    },
     {
       "hash": "79d2630",
       "date": "2026-01-08",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add CORS PUT method and file_hash uniqueness migration",
       "scope": null
-    },
-    {
-      "hash": "7eeee70",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Use large number instead of Infinity for SQL LIMIT",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "31d93ac",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Library preview matches book view with floating paragraph numbers",
+        "scope": null
+      },
       {
         "hash": "79d2630",
         "date": "2026-01-08",
@@ -699,13 +706,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Add CORS PUT method and file_hash uniqueness migration",
-        "scope": null
-      },
-      {
-        "hash": "7eeee70",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Use large number instead of Infinity for SQL LIMIT",
         "scope": null
       }
     ]
