@@ -1900,8 +1900,8 @@ async function splitCompleteParagraphs(sentences, language) {
     return { complete: [], incomplete: sentences };
   }
 
-  // Use marker-based grouping (deterministic, fast)
-  const allParagraphs = groupSentencesByMarkers(sentences, 5);
+  // Use marker-based grouping (deterministic, fast) - NO sentence count limit
+  const allParagraphs = groupSentencesByMarkers(sentences);
 
   if (allParagraphs.length <= 1) {
     // If we got a single paragraph or none, carry everything forward
@@ -2133,10 +2133,12 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
     }
   }
 
-  logger.error({ err: lastError?.message }, 'Sentence detection failed after all retries');
+  logger.error({ err: lastError?.message, textLength: text.length }, 'Sentence detection FAILED after all retries');
 
-  // Fallback: treat entire chunk as one sentence
-  return [text.trim()];
+  // CRITICAL: NO FALLBACK - we MUST NOT treat the entire chunk as one sentence
+  // This causes massive paragraphs with no semantic structure
+  // Fail loudly so the issue can be fixed upstream
+  throw new Error(`Sentence detection failed after ${maxRetries} retries: ${lastError?.message}. Document needs manual review.`);
 }
 
 /**
@@ -2551,16 +2553,23 @@ function startsNewParagraph(sentence) {
 }
 
 /**
- * Group sentences into paragraphs using discourse markers and length limits
- * This is a fast, deterministic approach that works well for classical texts
+ * Group sentences into paragraphs using discourse markers ONLY
+ *
+ * CRITICAL: NEVER break paragraphs based on sentence count. The AI has already
+ * identified sentences semantically. Paragraph boundaries MUST come from:
+ * 1. Discourse markers (invocations, addresses, topic shifts)
+ * 2. AI-detected semantic boundaries
+ *
+ * Breaking at arbitrary sentence counts (5, 10, etc.) destroys meaning -
+ * sentences like "فلتجمعن بين" (ending with preposition) show mid-phrase cuts.
  */
-function groupSentencesByMarkers(sentences, maxSentences = 5) {
+function groupSentencesByMarkers(sentences) {
   const paragraphs = [];
   let currentPara = [];
 
   for (const sentence of sentences) {
-    // Start new paragraph if this sentence has a break marker
-    // and we already have some content in current paragraph
+    // Start new paragraph ONLY if this sentence has a discourse marker break
+    // (invocation, address, topic shift) AND we already have content
     if (currentPara.length > 0 && startsNewParagraph(sentence)) {
       paragraphs.push({
         text: buildMarkedParagraphText(currentPara),
@@ -2571,16 +2580,7 @@ function groupSentencesByMarkers(sentences, maxSentences = 5) {
     }
 
     currentPara.push(sentence);
-
-    // Also break if we've reached max sentences
-    if (currentPara.length >= maxSentences) {
-      paragraphs.push({
-        text: buildMarkedParagraphText(currentPara),
-        sentences: currentPara,
-        sentenceCount: currentPara.length
-      });
-      currentPara = [];
-    }
+    // NO arbitrary sentence count limit - let semantic markers drive breaks
   }
 
   // Don't forget the last paragraph
@@ -2600,31 +2600,19 @@ async function groupSentencesIntoParagraphs(sentences, language) {
     return [];
   }
 
-  // Use marker-based grouping for Arabic/Farsi
-  // This is fast, deterministic, and respects natural discourse structure
-  if (language === 'ar' || language === 'fa') {
-    const paragraphs = groupSentencesByMarkers(sentences, 5);
-    logger.debug({
-      sentences: sentences.length,
-      paragraphs: paragraphs.length,
-      avgPerPara: (sentences.length / paragraphs.length).toFixed(1)
-    }, 'Grouped sentences using discourse markers');
-    return paragraphs;
-  }
-
-  // For other languages, use simple fixed-size grouping
-  const paragraphs = [];
-  const groupSize = 4;
-  for (let i = 0; i < sentences.length; i += groupSize) {
-    const paraSentences = sentences.slice(i, i + groupSize);
-    paragraphs.push({
-      text: buildMarkedParagraphText(paraSentences),
-      sentences: paraSentences,
-      sentenceCount: paraSentences.length
-    });
-  }
+  // Use marker-based grouping for ALL languages
+  // CRITICAL: NEVER use fixed-size grouping - it destroys semantic coherence
+  // The AI has already detected sentence boundaries by meaning; paragraphs
+  // should be formed by discourse markers, not arbitrary counts
+  const paragraphs = groupSentencesByMarkers(sentences);
+  logger.debug({
+    sentences: sentences.length,
+    paragraphs: paragraphs.length,
+    avgPerPara: paragraphs.length > 0 ? (sentences.length / paragraphs.length).toFixed(1) : 0
+  }, 'Grouped sentences using discourse markers');
   return paragraphs;
 }
+
 
 /**
  * STRICT validation: Ensure segmented output matches original text EXACTLY

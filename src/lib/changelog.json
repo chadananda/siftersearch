@@ -1,6 +1,34 @@
 {
-  "generated": "2026-01-09T02:09:33.760Z",
+  "generated": "2026-01-09T02:48:46.480Z",
   "entries": [
+    {
+      "hash": "3c9f8ed",
+      "date": "2026-01-08",
+      "type": "Updated",
+      "description": "Meilisearch orphan cleanup script",
+      "scope": null
+    },
+    {
+      "hash": "eab6aa9",
+      "date": "2026-01-08",
+      "type": "Updated",
+      "description": "Redirect creation script",
+      "scope": null
+    },
+    {
+      "hash": "88af05a",
+      "date": "2026-01-08",
+      "type": "Updated",
+      "description": "Production database fix script",
+      "scope": null
+    },
+    {
+      "hash": "248e7fd",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Prevent sentence markers in English texts + require file_path",
+      "scope": null
+    },
     {
       "hash": "d75040d",
       "date": "2026-01-08",
@@ -322,38 +350,38 @@
       "type": "Fixed",
       "description": "Document ID preservation and comprehensive API testing",
       "scope": null
-    },
-    {
-      "hash": "700e7df",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Correct config import for library.basePath",
-      "scope": null
-    },
-    {
-      "hash": "5959dd1",
-      "date": "2026-01-06",
-      "type": "New",
-      "description": "Add PATCH endpoint to update document file_path",
-      "scope": null
-    },
-    {
-      "hash": "5341700",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Resolve relative file paths with library base path",
-      "scope": null
-    },
-    {
-      "hash": "76dcafd",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Add X-Client-Version and X-Request-Id to CORS headers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "3c9f8ed",
+        "date": "2026-01-08",
+        "type": "Updated",
+        "description": "Meilisearch orphan cleanup script",
+        "scope": null
+      },
+      {
+        "hash": "eab6aa9",
+        "date": "2026-01-08",
+        "type": "Updated",
+        "description": "Redirect creation script",
+        "scope": null
+      },
+      {
+        "hash": "88af05a",
+        "date": "2026-01-08",
+        "type": "Updated",
+        "description": "Production database fix script",
+        "scope": null
+      },
+      {
+        "hash": "248e7fd",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Prevent sentence markers in English texts + require file_path",
+        "scope": null
+      },
       {
         "hash": "d75040d",
         "date": "2026-01-08",
@@ -678,34 +706,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Document ID preservation and comprehensive API testing",
-        "scope": null
-      },
-      {
-        "hash": "700e7df",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Correct config import for library.basePath",
-        "scope": null
-      },
-      {
-        "hash": "5959dd1",
-        "date": "2026-01-06",
-        "type": "New",
-        "description": "Add PATCH endpoint to update document file_path",
-        "scope": null
-      },
-      {
-        "hash": "5341700",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Resolve relative file paths with library base path",
-        "scope": null
-      },
-      {
-        "hash": "76dcafd",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Add X-Client-Version and X-Request-Id to CORS headers",
         "scope": null
       }
     ]
