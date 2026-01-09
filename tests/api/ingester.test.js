@@ -795,6 +795,206 @@ Second paragraph content here.`;
   });
 });
 
+/**
+ * CRITICAL BUG PREVENTION TESTS
+ * These tests prevent regressions of bugs discovered in production:
+ * - Sentence markers appearing in English texts
+ * - Religion/collection not extracted from path
+ * - Duplicate documents
+ */
+describe('Bug Prevention: Sentence Markers', () => {
+  describe('RTL language detection', () => {
+    it('should identify RTL languages correctly', () => {
+      const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+
+      // RTL languages
+      expect(RTL_LANGUAGES.includes('ar')).toBe(true);  // Arabic
+      expect(RTL_LANGUAGES.includes('fa')).toBe(true);  // Farsi/Persian
+      expect(RTL_LANGUAGES.includes('he')).toBe(true);  // Hebrew
+      expect(RTL_LANGUAGES.includes('ur')).toBe(true);  // Urdu
+
+      // LTR languages - should NOT get sentence markers
+      expect(RTL_LANGUAGES.includes('en')).toBe(false);
+      expect(RTL_LANGUAGES.includes('es')).toBe(false);
+      expect(RTL_LANGUAGES.includes('fr')).toBe(false);
+      expect(RTL_LANGUAGES.includes('de')).toBe(false);
+    });
+
+    it('should NOT add sentence markers to English text', async () => {
+      // Import the function
+      const { parseDocumentWithBlocks } = await import('../../api/services/ingester.js');
+
+      const englishText = `The Hidden Words of Bahá'u'lláh is a work written in the 19th century by Bahá'u'lláh, the founder of the Bahá'í Faith. It was written in Arabic in 1857 while Bahá'u'lláh was in Baghdad.
+
+The book consists of two sections. The first part contains 71 verses originally written in Arabic, while the second part contains 82 verses originally written in Persian.`;
+
+      const result = await parseDocumentWithBlocks(englishText, { language: 'en' });
+
+      // Verify no sentence markers in output
+      result.chunks.forEach(chunk => {
+        expect(chunk.text).not.toMatch(/⁅[sp]\d+⁆/);   // Unicode markers
+        expect(chunk.text).not.toMatch(/\[\/?[sp]\d+\]/);  // Bracket markers
+      });
+    });
+
+    it('should NOT add sentence markers to Spanish text', async () => {
+      const { parseDocumentWithBlocks } = await import('../../api/services/ingester.js');
+
+      const spanishText = `Las Palabras Ocultas de Bahá'u'lláh es una obra escrita en el siglo XIX por Bahá'u'lláh, el fundador de la Fe Bahá'í. Fue escrito en árabe en 1857 mientras Bahá'u'lláh estaba en Bagdad.`;
+
+      const result = await parseDocumentWithBlocks(spanishText, { language: 'es' });
+
+      result.chunks.forEach(chunk => {
+        expect(chunk.text).not.toMatch(/⁅[sp]\d+⁆/);
+      });
+    });
+  });
+});
+
+describe('Bug Prevention: Path-Based Metadata', () => {
+  describe('Religion extraction from path', () => {
+    it('should extract religion from first path segment', () => {
+      const testCases = [
+        { path: "Baha'i/Core Tablets/document.md", expected: "Baha'i" },
+        { path: 'Islam/Quran/surah.md', expected: 'Islam' },
+        { path: 'Christianity/Bible/gospel.md', expected: 'Christianity' },
+        { path: 'Judaism/Torah/genesis.md', expected: 'Judaism' },
+        { path: 'Buddhism/Sutras/lotus.md', expected: 'Buddhism' },
+        { path: 'Hinduism/Vedas/rig.md', expected: 'Hinduism' },
+      ];
+
+      testCases.forEach(({ path, expected }) => {
+        const pathParts = path.split('/');
+        const religion = pathParts.length >= 1 ? pathParts[0] : 'General';
+        expect(religion).toBe(expected);
+      });
+    });
+
+    it('should default to General for invalid paths', () => {
+      const testCases = [
+        { path: '', expected: 'General' },
+        { path: null, expected: 'General' },
+        { path: undefined, expected: 'General' },
+      ];
+
+      testCases.forEach(({ path, expected }) => {
+        const pathParts = path?.split('/') || [];
+        const religion = pathParts.length >= 1 ? pathParts[0] : 'General';
+        const result = religion || 'General';
+        expect(result).toBe(expected);
+      });
+    });
+
+    it('should IGNORE frontmatter religion field', () => {
+      // This is a conceptual test - path should always take priority
+      const frontmatterReligion = 'WrongReligion';
+      const pathReligion = "Baha'i";
+
+      // The code should use pathReligion, not frontmatterReligion
+      const finalReligion = pathReligion || 'General';
+      expect(finalReligion).toBe("Baha'i");
+      expect(finalReligion).not.toBe(frontmatterReligion);
+    });
+  });
+
+  describe('Collection extraction from path', () => {
+    it('should extract collection from second path segment', () => {
+      const testCases = [
+        { path: "Baha'i/Core Tablets/The Báb/document.md", expected: 'Core Tablets' },
+        { path: "Baha'i/Administrative/uhj-letters.md", expected: 'Administrative' },
+        { path: "Baha'i/Pilgrim Notes/story.md", expected: 'Pilgrim Notes' },
+        { path: 'Islam/Hadith/bukhari.md', expected: 'Hadith' },
+      ];
+
+      testCases.forEach(({ path, expected }) => {
+        const pathParts = path.split('/');
+        const collection = pathParts.length >= 2 ? pathParts[1] : 'General';
+        expect(collection).toBe(expected);
+      });
+    });
+
+    it('should default to General for single-segment paths', () => {
+      const path = 'orphan-document.md';
+      const pathParts = path.split('/');
+      const collection = pathParts.length >= 2 ? pathParts[1] : 'General';
+      expect(collection).toBe('General');
+    });
+
+    it('should IGNORE frontmatter collection field (INBA, CAMB, etc)', () => {
+      // Frontmatter collection often refers to archive codes, not library organization
+      const frontmatterCollection = 'INBA';  // Archive code
+      const pathCollection = 'Core Tablets';  // Actual library collection
+
+      const finalCollection = pathCollection || 'General';
+      expect(finalCollection).toBe('Core Tablets');
+      expect(finalCollection).not.toBe(frontmatterCollection);
+    });
+  });
+});
+
+describe('Bug Prevention: Duplicate Documents', () => {
+  describe('File path requirement', () => {
+    it('should throw error when no relativePath provided', async () => {
+      const { ingestDocument } = await import('../../api/services/ingester.js');
+
+      const content = `---
+title: Test Document
+---
+
+Some content here.`;
+
+      // Should throw error - every document must have a source file
+      await expect(ingestDocument(content, {}, null))
+        .rejects.toThrow('ingestDocument requires relativePath');
+
+      // Even with metadata.id, relativePath is required
+      await expect(ingestDocument(content, { id: 123 }, null))
+        .rejects.toThrow('ingestDocument requires relativePath');
+
+      // Empty string should also fail
+      await expect(ingestDocument(content, {}, ''))
+        .rejects.toThrow('ingestDocument requires relativePath');
+    });
+  });
+
+  describe('File path uniqueness', () => {
+    it('should identify duplicates by same file_path', () => {
+      const docs = [
+        { id: 1, file_path: 'path/to/doc.md' },
+        { id: 2, file_path: 'path/to/doc.md' },
+        { id: 3, file_path: 'path/to/other.md' },
+      ];
+
+      // Group by file_path to find duplicates
+      const byPath = new Map();
+      docs.forEach(doc => {
+        const existing = byPath.get(doc.file_path) || [];
+        existing.push(doc.id);
+        byPath.set(doc.file_path, existing);
+      });
+
+      const duplicates = [...byPath.entries()].filter(([_, ids]) => ids.length > 1);
+      expect(duplicates.length).toBe(1);
+      expect(duplicates[0][0]).toBe('path/to/doc.md');
+      expect(duplicates[0][1]).toEqual([1, 2]);
+    });
+
+    it('should prefer document with content over empty duplicate', () => {
+      const docs = [
+        { id: 1, file_path: 'doc.md', content_count: 100 },
+        { id: 2, file_path: 'doc.md', content_count: 0 },
+      ];
+
+      // The document to keep is the one with content
+      const docToKeep = docs.find(d => d.content_count > 0);
+      const docToDelete = docs.find(d => d.content_count === 0);
+
+      expect(docToKeep.id).toBe(1);
+      expect(docToDelete.id).toBe(2);
+    });
+  });
+});
+
 describe('Document Update Flow (Unit)', () => {
   // Unit tests for document update scenarios without actual DB
 

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-09T01:30:17.656Z",
+  "generated": "2026-01-09T02:09:33.760Z",
   "entries": [
+    {
+      "hash": "d75040d",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Reingest script resets body_hash to force full re-ingestion",
+      "scope": null
+    },
+    {
+      "hash": "1d85649",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Only add sentence markers for RTL texts, not English",
+      "scope": null
+    },
     {
       "hash": "31d93ac",
       "date": "2026-01-08",
@@ -336,24 +350,24 @@
       "type": "Fixed",
       "description": "Add X-Client-Version and X-Request-Id to CORS headers",
       "scope": null
-    },
-    {
-      "hash": "62c17bf",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
-      "scope": null
-    },
-    {
-      "hash": "8351fc8",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Add CORS PUT method and file_hash uniqueness migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "d75040d",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Reingest script resets body_hash to force full re-ingestion",
+        "scope": null
+      },
+      {
+        "hash": "1d85649",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Only add sentence markers for RTL texts, not English",
+        "scope": null
+      },
       {
         "hash": "31d93ac",
         "date": "2026-01-08",
@@ -692,20 +706,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Add X-Client-Version and X-Request-Id to CORS headers",
-        "scope": null
-      },
-      {
-        "hash": "62c17bf",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
-        "scope": null
-      },
-      {
-        "hash": "8351fc8",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Add CORS PUT method and file_hash uniqueness migration",
         "scope": null
       }
     ]

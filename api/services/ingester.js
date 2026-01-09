@@ -547,6 +547,13 @@ function extractHeading(fullContent, chunkText) {
  * @returns {Object} - { documentId, paragraphCount, status }
  */
 export async function ingestDocument(text, metadata = {}, relativePath = null) {
+  // CRITICAL: Every document MUST have a file_path - no exceptions
+  // The file_path is the canonical identifier and enables the UNIQUE constraint
+  // to prevent duplicate documents. Documents are always tied to source files.
+  if (!relativePath) {
+    throw new Error('ingestDocument requires relativePath - every document must have a source file');
+  }
+
   // Parse frontmatter FIRST to separate body from metadata
   // This allows us to detect metadata-only changes vs content changes
   const { content: bodyContent, metadata: frontmatterMeta } = parseMarkdownFrontmatter(text);
@@ -672,9 +679,11 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This allows updating title, author, etc. without re-processing expensive content segmentation
   if (existingDoc && existingDoc.body_hash === bodyHash) {
     // Body unchanged - only update metadata in docs table, skip content processing
+    // Religion/collection come ONLY from path (folder structure = library organization)
+    // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories
     const pathParts = relativePath?.split('/') || [];
-    const newReligion = frontmatterMeta.religion || (pathParts.length >= 1 ? pathParts[0] : existingDoc.religion);
-    const newCollection = frontmatterMeta.collection || (pathParts.length >= 2 ? pathParts[1] : existingDoc.collection);
+    const newReligion = pathParts.length >= 1 ? pathParts[0] : existingDoc.religion;
+    const newCollection = pathParts.length >= 2 ? pathParts[1] : existingDoc.collection;
 
     await query(`
       UPDATE docs SET
