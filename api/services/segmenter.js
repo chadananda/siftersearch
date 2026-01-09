@@ -2004,40 +2004,29 @@ function splitIntoChunks(text, maxSize, overlap) {
 }
 
 /**
- * Detect sentences in a chunk, returning both sentences and any trailing incomplete text.
- * This wrapper handles chunk boundaries properly:
- * - If isLastChunk=true, captures all remaining text as the final sentence
- * - If isLastChunk=false, returns trailing text separately to be prepended to next chunk
+ * Detect sentences in a chunk, returning sentences and trailing text.
  *
- * @param {string} text - Chunk text (may include carryover from previous chunk)
+ * CRITICAL: Trailing text after the last AI-detected sentence ending ALWAYS
+ * gets carried forward to the next chunk. NEVER use trailing text unless
+ * this is the FINAL chunk. No exceptions, no heuristics needed.
+ *
+ * @param {string} text - Chunk text (includes carryover from previous chunk)
  * @param {string} language - Language code
  * @param {number} maxRetries - Max AI retries
  * @param {boolean} isLastChunk - Whether this is the final chunk
  * @returns {Promise<{sentences: string[], trailingText: string}>}
  */
 async function detectSentencesInChunkWithTrailing(text, language, maxRetries, isLastChunk) {
-  const sentences = await detectSentencesInChunk(text, language, maxRetries, !isLastChunk);
+  // Call with returnTrailing=true to get both sentences AND any trailing text
+  const result = await detectSentencesInChunk(text, language, maxRetries, !isLastChunk);
 
   if (isLastChunk) {
-    // Last chunk: all text should be captured as sentences
-    return { sentences, trailingText: '' };
+    // Last chunk: trailing text becomes final sentence (already handled inside)
+    return { sentences: result.sentences, trailingText: '' };
   }
 
-  // Not last chunk: check if the last sentence looks incomplete
-  // (ends with a preposition or particle that needs an object)
-  const INCOMPLETE_ENDINGS = /\s(بين|من|الى|الی|على|في|عن|ب|ل|و|ف|ثم|ان|لا|ما|الا|حتى|منذ|مع|عند|لدى|نحو|خلال|قبل|بعد|فوق|تحت|امام|وراء|حول|دون|غير|سوى)$/;
-
-  if (sentences.length > 0) {
-    const lastSentence = sentences[sentences.length - 1];
-    if (INCOMPLETE_ENDINGS.test(lastSentence)) {
-      // Last sentence is incomplete - remove it and return as trailing text
-      const trailingText = sentences.pop();
-      logger.debug({ trailingText: trailingText.slice(-50) }, 'Found incomplete sentence at chunk boundary, carrying forward');
-      return { sentences, trailingText };
-    }
-  }
-
-  return { sentences, trailingText: '' };
+  // Not last chunk: trailing text MUST be carried forward
+  return { sentences: result.sentences, trailingText: result.trailingText || '' };
 }
 
 /**
@@ -2137,8 +2126,8 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
       }
 
       // Convert endings to actual sentences by finding them in the text
-      // Pass skipTrailing to avoid capturing incomplete text at chunk boundaries
-      let sentences = extractSentencesFromEndings(text, endings, skipTrailing);
+      // Pass skipTrailing - if true, trailing text returned separately (not as sentence)
+      const { sentences, trailingText } = extractSentencesFromEndings(text, endings, skipTrailing);
 
       if (sentences.length > 0) {
         // Only MAX_SENTENCE_CHARS matters - for translation API limits on paragraphs
@@ -2175,10 +2164,10 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
             }, 'Sentences still exceed max after phrase-boundary splitting (edge case)');
           }
 
-          return verifiedSentences;
+          return { sentences: verifiedSentences, trailingText };
         }
 
-        return sentences;
+        return { sentences, trailingText };
       }
 
       throw new Error('No sentences extracted from endings');
@@ -2265,21 +2254,27 @@ function extractSentencesFromEndings(text, endings, skipTrailing = false) {
 
   // Handle any remaining text after last ending
   // Use lastOrigEnd to ensure no overlap with extracted sentences
-  // BUT: if skipTrailing is true, don't capture - it will be prepended to next chunk
-  if (!skipTrailing && lastOrigEnd < text.length) {
+  let trailingText = '';
+  if (lastOrigEnd < text.length) {
     let remainingStart = lastOrigEnd;
     // Skip any whitespace
     while (remainingStart < text.length && /\s/.test(text[remainingStart])) {
       remainingStart++;
     }
     const remaining = text.slice(remainingStart).trim();
-    // Capture ANY remaining content, even short segments (could contain important words)
+
     if (remaining.length > 0) {
-      sentences.push(remaining);
+      if (skipTrailing) {
+        // NOT the last chunk - trailing text MUST be carried forward
+        trailingText = remaining;
+      } else {
+        // Last chunk - capture trailing as final sentence
+        sentences.push(remaining);
+      }
     }
   }
 
-  return sentences;
+  return { sentences, trailingText };
 }
 
 /**
@@ -2572,8 +2567,8 @@ CRITICAL: Only split if you're confident. Classical religious texts sometimes ha
     return [sentence];
   }
 
-  // Extract sub-sentences using the endings
-  const subSentences = extractSentencesFromEndings(sentence, endings);
+  // Extract sub-sentences using the endings (no skipTrailing needed for single sentence)
+  const { sentences: subSentences } = extractSentencesFromEndings(sentence, endings, false);
 
   // Validate we got reasonable splits
   if (subSentences.length > 1 && subSentences.every(s => s.length > 10)) {
