@@ -124,16 +124,31 @@
     for (const [key, value] of Object.entries(meta)) {
       if (value === undefined || value === null || value === '') continue;
       if (Array.isArray(value)) {
-        lines.push(`${key}: [${value.map(v => `"${v}"`).join(', ')}]`);
-      } else if (typeof value === 'string' && (value.includes(':') || value.includes('#') || value.includes('\n'))) {
-        lines.push(`${key}: "${value.replace(/"/g, '\\"')}"`);
+        // Quote each array item properly
+        lines.push(`${key}: [${value.map(v => quoteYamlValue(v)).join(', ')}]`);
       } else {
-        lines.push(`${key}: ${value}`);
+        lines.push(`${key}: ${quoteYamlValue(value)}`);
       }
     }
     lines.push('---');
     lines.push('');
     return lines.join('\n') + body;
+  }
+
+  // Properly quote YAML values to prevent parsing errors
+  function quoteYamlValue(value) {
+    if (typeof value !== 'string') return value;
+    // YAML special characters that require quoting
+    const needsQuotes = /[:#[\]{}',&*!|>"'%@`\n\r]|^[\s?|>-]|[\s]$/.test(value) ||
+      value === '' ||
+      value === 'true' || value === 'false' ||
+      value === 'null' || value === 'yes' || value === 'no' ||
+      /^[\d.eE+-]+$/.test(value); // Numbers
+    if (needsQuotes) {
+      // Use double quotes and escape special chars
+      return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"';
+    }
+    return value;
   }
 
   // Initialize editor when container becomes available and content is loaded
