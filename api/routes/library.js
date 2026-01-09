@@ -1141,7 +1141,8 @@ Return ONLY the description text, no quotes or formatting.`;
           WHERE old_path = ?
         `, [requestedPath]).catch(() => {});
 
-        // HTTP 301 Moved Permanently - SEO friendly, browsers cache this
+        // HTTP 301 Moved Permanently - SEO friendly, but limit cache to 1 hour
+        reply.header('Cache-Control', 'public, max-age=3600');
         return reply.redirect(redirect.new_path, 301);
       }
 
@@ -1166,6 +1167,8 @@ Return ONLY the description text, no quotes or formatting.`;
             VALUES (?, ?, ?)
             ON CONFLICT(old_path) DO UPDATE SET new_path = excluded.new_path
           `, [requestedPath, correctPath, partialMatch.id]).catch(() => {});
+          // HTTP 301 Moved Permanently - SEO friendly, but limit cache to 1 hour
+          reply.header('Cache-Control', 'public, max-age=3600');
           return reply.redirect(correctPath, 301);
         }
       }

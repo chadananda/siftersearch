@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T22:00:18.439Z",
+  "generated": "2026-01-09T22:02:07.125Z",
   "entries": [
+    {
+      "hash": "7b60188",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Properly unregister service worker and await cache clearing before PWA reload",
+      "scope": null
+    },
     {
       "hash": "4e9cf5f",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add body_hash for metadata-only updates",
       "scope": null
-    },
-    {
-      "hash": "e1a81e7",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use large number instead of Infinity for SQL limit",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "7b60188",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Properly unregister service worker and await cache clearing before PWA reload",
+        "scope": null
+      },
       {
         "hash": "4e9cf5f",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add body_hash for metadata-only updates",
-        "scope": null
-      },
-      {
-        "hash": "e1a81e7",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use large number instead of Infinity for SQL limit",
         "scope": null
       }
     ]
