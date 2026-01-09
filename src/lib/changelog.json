@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T17:55:08.166Z",
+  "generated": "2026-01-09T17:58:43.647Z",
   "entries": [
+    {
+      "hash": "acc986e",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
+      "scope": null
+    },
     {
       "hash": "8aa3d76",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
       "scope": null
-    },
-    {
-      "hash": "ed45019",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "acc986e",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
+        "scope": null
+      },
       {
         "hash": "8aa3d76",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
-        "scope": null
-      },
-      {
-        "hash": "ed45019",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
         "scope": null
       }
     ]

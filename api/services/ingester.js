@@ -543,9 +543,18 @@ export function parseMarkdownFrontmatter(text) {
       }
     }
 
+    // Strip any additional frontmatter blocks at the start of content
+    // (some files have duplicate frontmatter blocks)
+    let content = parsed.content.trim();
+    const additionalFrontmatter = content.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---[\r\n]*([\s\S]*)$/);
+    if (additionalFrontmatter) {
+      logger.warn('Stripping additional frontmatter block from content');
+      content = additionalFrontmatter[2].trim();
+    }
+
     return {
       metadata,
-      content: parsed.content.trim()
+      content
     };
   } catch (err) {
     // If gray-matter fails (malformed YAML), manually strip frontmatter block
