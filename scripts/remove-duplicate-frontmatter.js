@@ -18,13 +18,26 @@ import { glob } from 'glob';
 
 const LIBRARY_PATH = '/home/chad/Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library';
 
-// Regex to find duplicate frontmatter: first block, then second block starting with ---
+// Regex patterns for duplicate frontmatter:
+// Pattern 1: Two complete --- delimited blocks
 const DUPLICATE_FM_REGEX = /^(---\n[\s\S]*?\n---)\n(---\n[\s\S]*?\n---)\n/;
+// Pattern 2: First --- block, then legacy content without opening ---, then closing ---
+// Matches: ---[block1]---\nid: ...[block2]---
+const LEGACY_NO_OPEN_REGEX = /^(---\n[\s\S]*?\n---)\n((?:id:|title:)[\s\S]*?\n---)\n/;
 
 async function processFile(filePath, dryRun = true) {
   const content = await readFile(filePath, 'utf-8');
 
-  const match = content.match(DUPLICATE_FM_REGEX);
+  // Try pattern 1 first (two complete --- blocks)
+  let match = content.match(DUPLICATE_FM_REGEX);
+  let pattern = 'pattern1';
+
+  // If no match, try pattern 2 (legacy block without opening ---)
+  if (!match) {
+    match = content.match(LEGACY_NO_OPEN_REGEX);
+    pattern = 'pattern2';
+  }
+
   if (!match) {
     return { status: 'clean', file: filePath };
   }
@@ -34,17 +47,21 @@ async function processFile(filePath, dryRun = true) {
   // Check if second block has legacy markers
   const isLegacy = secondBlock.includes('author: "Various"') ||
                    secondBlock.includes('ocnmd_version:') ||
-                   secondBlock.includes('processing_method:');
+                   secondBlock.includes('ocnmd_version') ||
+                   secondBlock.includes('processing_method:') ||
+                   secondBlock.includes('source_url:') ||
+                   secondBlock.includes('id: bahai_');
 
   if (!isLegacy) {
     return { status: 'unknown_duplicate', file: filePath, secondBlock: secondBlock.substring(0, 200) };
   }
 
   // Remove the second (legacy) frontmatter block
-  const fixedContent = content.replace(DUPLICATE_FM_REGEX, '$1\n');
+  const regex = pattern === 'pattern1' ? DUPLICATE_FM_REGEX : LEGACY_NO_OPEN_REGEX;
+  const fixedContent = content.replace(regex, '$1\n');
 
   if (dryRun) {
-    return { status: 'would_fix', file: filePath };
+    return { status: 'would_fix', file: filePath, pattern };
   }
 
   await writeFile(filePath, fixedContent);

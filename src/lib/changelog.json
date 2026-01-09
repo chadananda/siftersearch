@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:20:17.940Z",
+  "generated": "2026-01-09T18:24:07.845Z",
   "entries": [
+    {
+      "hash": "cefa05c",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Clear file_hash in addition to body_hash to force re-ingestion",
+      "scope": null
+    },
     {
       "hash": "a96d91f",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add Meilisearch migration script for doc_id field",
       "scope": null
-    },
-    {
-      "hash": "0f22e80",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Standardize doc_id field across SQLite and Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "cefa05c",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Clear file_hash in addition to body_hash to force re-ingestion",
+        "scope": null
+      },
       {
         "hash": "a96d91f",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add Meilisearch migration script for doc_id field",
-        "scope": null
-      },
-      {
-        "hash": "0f22e80",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Standardize doc_id field across SQLite and Meilisearch",
         "scope": null
       }
     ]
