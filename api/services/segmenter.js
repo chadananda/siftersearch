@@ -2048,6 +2048,14 @@ CRITICAL RULES:
 3. Divine names, attributes, and blessings are PART of sentences, not separate sentences
 4. "بسم الله الرحمن الرحيم" is typically the START of a sentence, not a sentence by itself
 
+NEVER END A SENTENCE WITH A PREPOSITION OR PARTICLE:
+These words REQUIRE an object - a sentence cannot end with them:
+- بين (between), من (from), الى/إلى (to), على (on), في (in), عن (from)
+- ب (with), ل (for), و (and), ف (so), ثم (then), ان/أن (that)
+- لا (no), ما (what), الا/إلا (except), حتى (until), مع (with)
+- عند (at), نحو (toward), قبل (before), بعد (after)
+If text ends with one of these, the sentence is INCOMPLETE - continue to include the object.
+
 Sentence boundaries occur at:
 - End of a complete statement or declaration
 - End of a command (full command, not just the verb)
@@ -2103,7 +2111,10 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
         .trim();
 
       // Extract endings - one per line, filter out empty or too-short lines
-      const endings = cleanContent
+      // Also reject endings that end with prepositions (incomplete sentences)
+      const INCOMPLETE_ENDING_PATTERN = /\s(بين|من|الى|إلى|على|في|عن|ب|ل|و|ف|ثم|ان|أن|لا|ما|الا|إلا|حتى|مع|عند|نحو|قبل|بعد|فوق|تحت|دون|غير)$/;
+
+      const rawEndings = cleanContent
         .split('\n')
         .map(line => line.trim())
         .filter(line => {
@@ -2115,11 +2126,23 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
           return arabicChars > line.length * 0.5;  // At least 50% Arabic/Persian
         });
 
+      // Validate: reject endings that end with prepositions/particles
+      const rejectedEndings = rawEndings.filter(e => INCOMPLETE_ENDING_PATTERN.test(e));
+      const endings = rawEndings.filter(e => !INCOMPLETE_ENDING_PATTERN.test(e));
+
+      if (rejectedEndings.length > 0) {
+        logger.warn({
+          rejected: rejectedEndings.length,
+          examples: rejectedEndings.slice(0, 3).map(e => e.slice(-30))
+        }, 'Rejected endings that end with prepositions (incomplete sentences)');
+      }
+
       logger.debug({
         responseLength: content?.length,
-        endingsFound: endings.length,
+        rawEndingsFound: rawEndings.length,
+        validEndingsAfterFilter: endings.length,
         sampleEndings: endings.slice(0, 5)
-      }, 'Parsed TOON sentence endings');
+      }, 'Parsed and validated sentence endings');
 
       if (endings.length === 0) {
         throw new Error('No valid sentence endings found in response');
