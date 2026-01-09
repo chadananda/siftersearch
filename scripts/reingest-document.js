@@ -12,7 +12,11 @@
 
 import '../api/lib/config.js';
 import { readFile } from 'fs/promises';
+import { join } from 'path';
 import { query, queryOne, queryAll } from '../api/lib/db.js';
+
+// Library base path
+const libraryBase = join(process.env.HOME, 'Dropbox/Ocean2.0 Supplemental/ocean-supplemental-markdown/Ocean Library');
 import { ingestDocument } from '../api/services/ingester.js';
 import { logger } from '../api/lib/logger.js';
 
@@ -94,13 +98,15 @@ async function reingestDocument(docId) {
     });
   }
 
-  // Read source file
+  // Read source file (prepend library base path)
+  const fullPath = join(libraryBase, doc.file_path);
   let fileContent;
   try {
-    fileContent = await readFile(doc.file_path, 'utf-8');
+    fileContent = await readFile(fullPath, 'utf-8');
     console.log(`\nFile read: ${fileContent.length} characters`);
   } catch (err) {
     console.error(`Cannot read file: ${err.message}`);
+    console.error(`Full path: ${fullPath}`);
     process.exit(1);
   }
 
