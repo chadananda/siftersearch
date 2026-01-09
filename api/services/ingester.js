@@ -832,12 +832,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Merge metadata: religion/collection come ONLY from path (folder structure = library organization)
   // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories
   // This keeps documents portable - moving a file changes its collection
+  // IMPORTANT: Don't default to 'General' - keep existing values when updating
   const finalMeta = {
     title: extractedMeta.title || metadata.title || 'Untitled',
     // For author: prefer frontmatter, unless filename has real author and frontmatter doesn't
     author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
-    religion: pathReligion || 'General',
-    collection: pathCollection || 'General',
+    religion: pathReligion || existingDoc?.religion || null,
+    collection: pathCollection || existingDoc?.collection || null,
     // Language: detected Arabic/Farsi > frontmatter > filename metadata > default 'en'
     // Content detection takes priority because frontmatter often incorrectly says 'en' for RTL texts
     language: contentLanguage || extractedMeta.language || metadata.language || 'en',
@@ -1022,7 +1023,12 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const newCollectionSlug = slugifyPath(finalMeta.collection || '');
     const newPath = `/library/${newReligionSlug}/${newCollectionSlug}/${finalSlug}`;
 
-    if (oldPath !== newPath && oldSlug && finalSlug) {
+    // Only create redirect if both old and new paths have valid religion/collection
+    // Avoid creating redirects to 'general/general' which is a fallback for missing metadata
+    const hasValidOldPath = oldReligionSlug && oldCollectionSlug && oldReligionSlug !== 'general';
+    const hasValidNewPath = newReligionSlug && newCollectionSlug && newReligionSlug !== 'general';
+
+    if (oldPath !== newPath && oldSlug && finalSlug && hasValidOldPath && hasValidNewPath) {
       try {
         await query(`
           INSERT INTO redirects (old_path, new_path, doc_id)

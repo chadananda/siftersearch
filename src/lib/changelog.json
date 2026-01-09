@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T18:27:01.230Z",
+  "generated": "2026-01-09T18:37:59.428Z",
   "entries": [
+    {
+      "hash": "01f5fc8",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Handle pattern 3 - duplicate YAML without delimiters",
+      "scope": null
+    },
     {
       "hash": "46d7f9c",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use queryAll for fix-titles script",
       "scope": null
-    },
-    {
-      "hash": "ae3a704",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to fix corrupted titles from frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "01f5fc8",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Handle pattern 3 - duplicate YAML without delimiters",
+        "scope": null
+      },
       {
         "hash": "46d7f9c",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use queryAll for fix-titles script",
-        "scope": null
-      },
-      {
-        "hash": "ae3a704",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to fix corrupted titles from frontmatter",
         "scope": null
       }
     ]

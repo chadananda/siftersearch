@@ -460,7 +460,7 @@ export default async function libraryRoutes(fastify) {
 
     // Get all documents for this religion (for listing)
     const documents = await queryAll(`
-      SELECT id, title, author, collection, language, year, paragraph_count, filename
+      SELECT id, title, author, religion, collection, language, year, paragraph_count, filename
       FROM docs
       WHERE religion = ?
       ORDER BY collection, title
