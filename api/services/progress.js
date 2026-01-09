@@ -95,6 +95,33 @@ export function getImportProgress() {
 }
 
 /**
+ * Get ingestion progress (docs with content vs total docs)
+ * Shows how many documents have been parsed/ingested vs total in library
+ */
+export async function getIngestionProgress() {
+  try {
+    const [totalResult, withContentResult] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
+    ]);
+
+    const totalDocs = totalResult?.count || 0;
+    const docsWithContent = withContentResult?.count || 0;
+    const docsPending = totalDocs - docsWithContent;
+
+    return {
+      totalDocs,
+      docsWithContent,
+      docsPending,
+      percentComplete: totalDocs > 0 ? Math.round((docsWithContent / totalDocs) * 100) : 100
+    };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to get ingestion progress');
+    return null;
+  }
+}
+
+/**
  * Get indexing progress (docs in Meilisearch vs docs with content)
  * Returns null if Meilisearch is disabled
  */
@@ -160,6 +187,7 @@ export default {
   updateImportProgress,
   clearImportBatch,
   getImportProgress,
+  getIngestionProgress,
   getIndexingProgress,
   getAllProgress
 };

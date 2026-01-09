@@ -1178,6 +1178,24 @@
                   </div>
                 </div>
               {/if}
+              <!-- Ingestion progress (docs parsed vs total) -->
+              {#if libraryStats.ingestionProgress && libraryStats.ingestionProgress.percentComplete < 100}
+                <div class="ingestion-progress ingesting">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Content parsed</span>
+                    <span class="ingestion-percent">{libraryStats.ingestionProgress.percentComplete}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {libraryStats.ingestionProgress.percentComplete}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatNumber(libraryStats.ingestionProgress.docsWithContent)} / {formatNumber(libraryStats.ingestionProgress.totalDocs)} documents
+                    {#if libraryStats.ingestionProgress.docsPending > 0}
+                      <span class="pending-count">({libraryStats.ingestionProgress.docsPending} pending)</span>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
               <!-- Indexing progress (Meilisearch) -->
               {#if libraryStats.indexingProgress && libraryStats.indexingProgress.percentComplete < 100}
                 <div class="ingestion-progress indexing">
@@ -2208,6 +2226,16 @@
   /* Importing variant - slightly different color */
   .ingestion-progress.importing .ingestion-fill {
     background: var(--info);
+  }
+
+  /* Ingesting variant - shows content parsing progress */
+  .ingestion-progress.ingesting .ingestion-fill {
+    background: var(--warning);
+  }
+
+  .ingestion-detail .pending-count {
+    color: var(--warning);
+    margin-left: 0.25rem;
   }
 
   @keyframes pulse {

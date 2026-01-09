@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T16:14:57.424Z",
+  "generated": "2026-01-09T16:27:07.447Z",
   "entries": [
+    {
+      "hash": "1c133b2",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Improve language detection using character ratio",
+      "scope": null
+    },
     {
       "hash": "abd6e63",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Skip already-linked documents in link-source-files",
       "scope": null
-    },
-    {
-      "hash": "f9f88bd",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use config.library.basePath in link-source-files script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "1c133b2",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Improve language detection using character ratio",
+        "scope": null
+      },
       {
         "hash": "abd6e63",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Skip already-linked documents in link-source-files",
-        "scope": null
-      },
-      {
-        "hash": "f9f88bd",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use config.library.basePath in link-source-files script",
         "scope": null
       }
     ]

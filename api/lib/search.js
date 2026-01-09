@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
 import { queryOne } from './db.js';
-import { getImportProgress, getIndexingProgress } from '../services/progress.js';
+import { getImportProgress, getIngestionProgress, getIndexingProgress } from '../services/progress.js';
 
 let client = null;
 
@@ -394,9 +394,11 @@ export async function deleteDocument(documentId) {
 export async function getStats() {
   // Get progress from progress service
   // - importProgress: current batch being imported (null if no active import)
+  // - ingestionProgress: docs with content vs total docs in library
   // - indexingProgress: docs in Meilisearch vs docs with content in SQLite
-  const [importProgress, indexingProgress] = await Promise.all([
+  const [importProgress, ingestionProgress, indexingProgress] = await Promise.all([
     Promise.resolve(getImportProgress()),
+    getIngestionProgress(),
     getIndexingProgress()
   ]);
 
@@ -411,6 +413,7 @@ export async function getStats() {
       totalWords: 0,
       meilisearchEnabled: false,
       importProgress,
+      ingestionProgress,   // Docs with content vs total docs
       indexingProgress,
       lastUpdated: new Date().toISOString()
     };
@@ -514,6 +517,7 @@ export async function getStats() {
       meilisearchIndexing: isMeiliIndexing,
       meiliTaskProgress,
       importProgress,      // Current batch import (null if no active import)
+      ingestionProgress,   // Docs with content vs total docs
       indexingProgress,    // Docs with content vs indexed in Meilisearch
       lastUpdated: new Date().toISOString()
     };
@@ -530,6 +534,7 @@ export async function getStats() {
       meilisearchIndexing: false,
       meiliTaskProgress: null,
       importProgress,
+      ingestionProgress,
       indexingProgress,
       error: err.message
     };
