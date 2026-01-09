@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-09T03:04:53.843Z",
+  "generated": "2026-01-09T16:04:57.902Z",
   "entries": [
+    {
+      "hash": "ddbb46a",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Prevent sentences ending with prepositions",
+      "scope": null
+    },
+    {
+      "hash": "0b788dd",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Trailing text after last sentence ending ALWAYS carried forward",
+      "scope": null
+    },
+    {
+      "hash": "9197ce6",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
+      "scope": null
+    },
     {
       "hash": "3b6c424",
       "date": "2026-01-08",
@@ -329,31 +350,31 @@
       "type": "Fixed",
       "description": "Store relative paths in link-source-files script",
       "scope": null
-    },
-    {
-      "hash": "8322153",
-      "date": "2026-01-07",
-      "type": "Updated",
-      "description": "Remove fallback file search in favor of fixing root cause",
-      "scope": null
-    },
-    {
-      "hash": "8a66cad",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Convert absolute paths to relative paths in library-watcher",
-      "scope": null
-    },
-    {
-      "hash": "10c848d",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Search for source file when file_path is missing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-08": [
+      {
+        "hash": "ddbb46a",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Prevent sentences ending with prepositions",
+        "scope": null
+      },
+      {
+        "hash": "0b788dd",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Trailing text after last sentence ending ALWAYS carried forward",
+        "scope": null
+      },
+      {
+        "hash": "9197ce6",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
+        "scope": null
+      },
       {
         "hash": "3b6c424",
         "date": "2026-01-08",
@@ -683,27 +704,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Store relative paths in link-source-files script",
-        "scope": null
-      },
-      {
-        "hash": "8322153",
-        "date": "2026-01-07",
-        "type": "Updated",
-        "description": "Remove fallback file search in favor of fixing root cause",
-        "scope": null
-      },
-      {
-        "hash": "8a66cad",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Convert absolute paths to relative paths in library-watcher",
-        "scope": null
-      },
-      {
-        "hash": "10c848d",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Search for source file when file_path is missing",
         "scope": null
       }
     ]

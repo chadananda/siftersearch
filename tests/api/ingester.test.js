@@ -8,6 +8,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   hashContent,
+  hashContentWords,
+  stripMarkersForHash,
   parseDocument,
   parseMarkdownFrontmatter
 } from '../../api/services/ingester.js';
@@ -59,6 +61,139 @@ describe('Ingester Service', () => {
       const hash = hashContent(special);
 
       expect(hash).toHaveLength(64);
+    });
+  });
+
+  describe('stripMarkersForHash', () => {
+    it('should remove sentence markers from text', () => {
+      const markedText = '⁅s1⁆First sentence.⁅/s1⁆ ⁅s2⁆Second sentence.⁅/s2⁆';
+      const stripped = stripMarkersForHash(markedText);
+
+      expect(stripped).toBe('First sentence. Second sentence.');
+      expect(stripped).not.toContain('⁅');
+      expect(stripped).not.toContain('⁆');
+    });
+
+    it('should remove phrase markers from text', () => {
+      const markedText = '⁅ph1⁆Hello world⁅/ph1⁆ ⁅ph2⁆from here⁅/ph2⁆';
+      const stripped = stripMarkersForHash(markedText);
+
+      expect(stripped).toBe('Hello world from here');
+    });
+
+    it('should handle mixed sentence and phrase markers', () => {
+      const markedText = '⁅s1⁆⁅ph1⁆Word one⁅/ph1⁆ ⁅ph2⁆word two⁅/ph2⁆⁅/s1⁆';
+      const stripped = stripMarkersForHash(markedText);
+
+      expect(stripped).toBe('Word one word two');
+    });
+
+    it('should normalize whitespace after stripping', () => {
+      const markedText = '⁅s1⁆Word⁅/s1⁆   ⁅s2⁆another⁅/s2⁆';
+      const stripped = stripMarkersForHash(markedText);
+
+      expect(stripped).toBe('Word another');
+      expect(stripped).not.toMatch(/\s{2,}/);
+    });
+
+    it('should handle Arabic text with markers', () => {
+      const arabicWithMarkers = '⁅s1⁆بسم الله الرحمن الرحيم⁅/s1⁆ ⁅s2⁆الحمد لله⁅/s2⁆';
+      const stripped = stripMarkersForHash(arabicWithMarkers);
+
+      expect(stripped).toBe('بسم الله الرحمن الرحيم الحمد لله');
+    });
+
+    it('should handle text without markers (passthrough)', () => {
+      const plainText = 'Text without any markers at all.';
+      const stripped = stripMarkersForHash(plainText);
+
+      expect(stripped).toBe('Text without any markers at all.');
+    });
+
+    it('should handle empty string', () => {
+      const stripped = stripMarkersForHash('');
+      expect(stripped).toBe('');
+    });
+
+    it('should handle markers with high numbers', () => {
+      const markedText = '⁅s999⁆Content here⁅/s999⁆ ⁅ph12345⁆more⁅/ph12345⁆';
+      const stripped = stripMarkersForHash(markedText);
+
+      expect(stripped).toBe('Content here more');
+    });
+  });
+
+  describe('hashContentWords', () => {
+    it('should produce same hash for same words with different markers', () => {
+      // Same words, different sentence boundaries
+      const text1 = '⁅s1⁆Hello world.⁅/s1⁆ ⁅s2⁆How are you?⁅/s2⁆';
+      const text2 = '⁅s1⁆Hello⁅/s1⁆ ⁅s2⁆world. How⁅/s2⁆ ⁅s3⁆are you?⁅/s3⁆';
+
+      const hash1 = hashContentWords(text1);
+      const hash2 = hashContentWords(text2);
+
+      expect(hash1).toBe(hash2);
+    });
+
+    it('should produce different hash for different words', () => {
+      const text1 = '⁅s1⁆Hello world⁅/s1⁆';
+      const text2 = '⁅s1⁆Goodbye world⁅/s1⁆';
+
+      const hash1 = hashContentWords(text1);
+      const hash2 = hashContentWords(text2);
+
+      expect(hash1).not.toBe(hash2);
+    });
+
+    it('should ignore marker positions for Arabic re-segmentation', () => {
+      // This is critical for re-segmentation: same Arabic words with different sentence/phrase breaks
+      const original = '⁅s1⁆بسم الله⁅/s1⁆ ⁅s2⁆الرحمن الرحيم⁅/s2⁆';
+      const resegmented = '⁅s1⁆بسم⁅/s1⁆ ⁅s2⁆الله الرحمن⁅/s2⁆ ⁅s3⁆الرحيم⁅/s3⁆';
+
+      expect(hashContentWords(original)).toBe(hashContentWords(resegmented));
+    });
+
+    it('should return valid SHA256 hash', () => {
+      const text = '⁅s1⁆Test content⁅/s1⁆';
+      const hash = hashContentWords(text);
+
+      expect(hash).toHaveLength(64);
+      expect(hash).toMatch(/^[a-f0-9]+$/);
+    });
+
+    it('should handle text without markers', () => {
+      const plainText = 'Plain text without markers';
+      const hash = hashContentWords(plainText);
+
+      expect(hash).toHaveLength(64);
+      // Should equal hash of the same text
+      expect(hash).toBe(hashContentWords('Plain text without markers'));
+    });
+  });
+
+  describe('hashContentWords vs hashContent (marker-aware comparison)', () => {
+    it('hashContent should differ when markers change', () => {
+      const text1 = '⁅s1⁆Word⁅/s1⁆';
+      const text2 = '⁅s2⁆Word⁅/s2⁆';  // Different marker number
+
+      // Full hash includes markers - should differ
+      expect(hashContent(text1)).not.toBe(hashContent(text2));
+    });
+
+    it('hashContentWords should be same when only markers change', () => {
+      const text1 = '⁅s1⁆Word⁅/s1⁆';
+      const text2 = '⁅s2⁆Word⁅/s2⁆';  // Different marker number
+
+      // Word hash ignores markers - should be same
+      expect(hashContentWords(text1)).toBe(hashContentWords(text2));
+    });
+
+    it('both hashes should differ when actual content changes', () => {
+      const text1 = '⁅s1⁆Word One⁅/s1⁆';
+      const text2 = '⁅s1⁆Word Two⁅/s1⁆';
+
+      expect(hashContent(text1)).not.toBe(hashContent(text2));
+      expect(hashContentWords(text1)).not.toBe(hashContentWords(text2));
     });
   });
 
@@ -735,8 +870,8 @@ Brand new content with sufficient text to be indexed properly.`;
       };
 
       const existingParagraphs = [
-        { id: 'doc_preserve_p0', content_hash: 'hash1', embedding: 'blob1', synced: 1 },
-        { id: 'doc_preserve_p1', content_hash: 'hash2', embedding: 'blob2', synced: 1 }
+        { id: 'doc_preserve_p0', text: 'First paragraph content here.', content_hash: 'hash1', embedding: 'blob1', synced: 1 },
+        { id: 'doc_preserve_p1', text: 'Second paragraph content here.', content_hash: 'hash2', embedding: 'blob2', synced: 1 }
       ];
 
       queryOne.mockImplementation((sql) => {

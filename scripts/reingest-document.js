@@ -110,11 +110,18 @@ async function reingestDocument(docId) {
     process.exit(1);
   }
 
-  // Delete existing content (force fresh segmentation)
-  console.log('\n=== Removing existing content... ===');
-  await query('DELETE FROM content WHERE doc_id = ?', [docId]);
+  // DON'T delete existing content - let incremental logic preserve unchanged paragraphs
+  // Reset both hashes to force full re-segmentation (ingester will diff by content_hash)
+  // Note: Re-segmentation creates new paragraph boundaries, so content_hashes will differ.
+  // The incremental logic mainly helps when source content changes slightly.
+  console.log('\n=== Preparing for incremental re-ingestion... ===');
+  const existingParagraphs = await queryOne(
+    'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
+    [docId]
+  );
+  console.log(`Existing paragraphs: ${existingParagraphs?.count || 0}`);
 
-  // Reset file_hash AND body_hash to force full re-ingestion (not metadata-only path)
+  // Reset both hashes to force full re-ingestion pass
   await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]);
 
   // Re-ingest with new segmentation
@@ -125,7 +132,10 @@ async function reingestDocument(docId) {
 
   console.log(`\n=== AFTER Re-Ingestion ===`);
   console.log(`Status: ${result.status}`);
-  console.log(`New paragraphs: ${result.paragraphCount}`);
+  console.log(`Total paragraphs: ${result.paragraphCount}`);
+  console.log(`  Reused (unchanged): ${result.reusedParagraphs || 0}`);
+  console.log(`  New/changed: ${result.newParagraphs || 0}`);
+  console.log(`  Deleted: ${result.deletedParagraphs || 0}`);
 
   // Get new paragraph stats
   const newStats = await queryAll(`
@@ -165,8 +175,13 @@ async function reingestDocument(docId) {
   }
 
   console.log('\n✅ Re-ingestion complete!');
-  console.log('Note: Embeddings will need to be regenerated for these paragraphs.');
-  console.log('Run the embedding worker or wait for the scheduled job.');
+  if (result.newParagraphs > 0) {
+    console.log(`Note: ${result.newParagraphs} new/changed paragraphs need embeddings.`);
+    console.log('Run the embedding worker or wait for the scheduled job.');
+  }
+  if (result.reusedParagraphs > 0) {
+    console.log(`✓ ${result.reusedParagraphs} unchanged paragraphs kept their embeddings.`);
+  }
 }
 
 async function main() {

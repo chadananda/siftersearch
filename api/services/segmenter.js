@@ -1729,131 +1729,442 @@ export async function segmentUnpunctuatedDocument(text, options = {}) {
     return { sentences: [], paragraphs: [] };
   }
 
-  const cleanText = text.replace(/\s+/g, ' ').trim();
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
 
-  logger.info({ textLength: cleanText.length, language, chunkSize }, 'Segmenting unpunctuated document');
+  logger.info({ textLength: text.length, language, chunkSize }, 'Segmenting unpunctuated document');
 
-  // For small documents, process in one go
-  if (cleanText.length <= chunkSize) {
-    const sentences = await detectSentencesInChunk(cleanText, language, 3);
-    const paragraphs = await groupSentencesIntoParagraphs(sentences, language);
+  // ============================================================================
+  // STAGE 0: Structure & Noise Detection
+  // - Identifies verse/header sections (preserve line breaks)
+  // - Identifies non-content text (instructions, page numbers) → wrap in <!-- -->
+  // - Joins prose lines for segmentation
+  // ============================================================================
+  const { cleanedText, hasStructure } = await stage0_detectStructure(text, languageHint);
+  logger.info({ originalLen: text.length, cleanedLen: cleanedText.length, hasStructure }, 'Stage 0 complete');
 
-    // STRICT VALIDATION for small documents too
-    const strictValidation = validateSegmentationStrict(cleanText, paragraphs);
-    if (!strictValidation.valid) {
-      logger.error({ errors: strictValidation.errors }, 'CRITICAL SEGMENTATION ERROR (small doc)');
-      throw new Error(`Segmentation validation failed: ${strictValidation.errors.join('; ')}`);
-    }
+  // Strip comments for segmentation (they're preserved in cleanedText for reference)
+  const textForSegmentation = cleanedText.replace(/<!--.*?-->/g, '').replace(/\s+/g, ' ').trim();
+  const processText = textForSegmentation;
 
-    logger.info('✅ Segmentation validation passed (small document)');
-    return { sentences, paragraphs };
-  }
+  // ============================================================================
+  // STAGES 1-3: Phrase → Sentence → Paragraph Pipeline
+  // Stage 1: AI identifies phrase boundaries from numbered words
+  // Stage 2: AI identifies which phrases END sentences
+  // Stage 3: AI identifies which sentences BEGIN paragraphs
+  // Chunk handling: Last incomplete paragraph is carried to next chunk
+  // ============================================================================
 
-  // Stream through large documents
-  // CRITICAL: Chunk boundaries can cut mid-sentence. We handle this by:
-  // 1. Prepending trailing text from previous chunk to current chunk
-  // 2. Only extracting sentences from the new text (avoiding duplicates)
   const allParagraphs = [];
-  const allSentences = [];
-  let carryoverText = ''; // Trailing text from previous chunk that wasn't a complete sentence
-  let carryoverSentences = []; // Sentences from incomplete paragraph
+  let carryoverText = ''; // Last incomplete paragraph from previous chunk
   let position = 0;
+  const cleanText = processText; // Use cleaned text from Stage 0
 
   while (position < cleanText.length) {
-    // Get next chunk, trying to break at whitespace
+    // Get chunk, breaking at whitespace
     let chunkEnd = Math.min(position + chunkSize, cleanText.length);
     if (chunkEnd < cleanText.length) {
       const lastSpace = cleanText.lastIndexOf(' ', chunkEnd);
-      if (lastSpace > position + chunkSize * 0.7) {
-        chunkEnd = lastSpace;
-      }
+      if (lastSpace > position + chunkSize * 0.7) chunkEnd = lastSpace;
     }
 
-    // Prepend carryover text so AI has full context for sentence detection
     const rawChunk = cleanText.slice(position, chunkEnd);
     const chunk = carryoverText ? carryoverText + ' ' + rawChunk : rawChunk;
     const isLastChunk = chunkEnd >= cleanText.length;
 
-    logger.debug({
-      position,
-      chunkEnd,
-      chunkLength: chunk.length,
-      carryover: carryoverSentences.length,
-      isLastChunk
-    }, 'Processing chunk');
+    logger.info({ position, chunkEnd, chunkLen: chunk.length, carryover: carryoverText.length, isLastChunk }, 'Processing chunk');
 
-    // Detect sentences in this chunk
-    // Pass isLastChunk so we know whether to capture trailing text
-    const { sentences: chunkSentences, trailingText } = await detectSentencesInChunkWithTrailing(
-      chunk, language, 3, isLastChunk
-    );
+    // STAGE 1: Mark phrases (every word gets inside a phrase marker)
+    const phrases = await stage1_markPhrases(chunk, languageHint);
+    logger.info({ phrasesFound: phrases.length, wordCount: chunk.split(/\s+/).length }, 'Stage 1 complete');
 
-    // If there's trailing text (incomplete sentence at chunk boundary),
-    // prepend it to the next chunk for proper context
-    carryoverText = trailingText || '';
+    // STAGE 2: Identify sentence ends (which phrases end complete sentences)
+    const sentenceEndIds = await stage2_identifySentenceEnds(phrases, languageHint);
+    logger.info({ sentenceEndsFound: sentenceEndIds.length }, 'Stage 2 complete');
 
-    // Filter out sentences that came from the carryover (already processed)
-    // We identify them by checking if they're in the carryoverText range
-    const newSentences = carryoverText
-      ? chunkSentences // All sentences from AI are considered new since carryover gives context
-      : chunkSentences;
+    // Build sentences from phrases
+    const sentences = buildSentencesFromPhrases(phrases, sentenceEndIds);
+    logger.info({ sentencesBuilt: sentences.length }, 'Sentences built');
 
-    // Combine with carryover sentences from previous paragraph grouping
-    const combinedSentences = [...carryoverSentences, ...newSentences];
+    // STAGE 3: Group sentences into paragraphs
+    const paragraphStartIds = await stage3_identifyParagraphStarts(sentences, languageHint);
+    logger.info({ paragraphStartsFound: paragraphStartIds.length }, 'Stage 3 complete');
+
+    // Build paragraphs from sentences
+    const paragraphs = buildParagraphsFromSentences(sentences, paragraphStartIds);
+    logger.info({ paragraphsBuilt: paragraphs.length }, 'Paragraphs built');
 
     if (isLastChunk) {
-      // Last chunk: group all remaining sentences into paragraphs
-      const paragraphs = await groupSentencesIntoParagraphs(combinedSentences, language);
+      // Last chunk: add all paragraphs
       allParagraphs.push(...paragraphs);
-      allSentences.push(...combinedSentences);
+      carryoverText = '';
     } else {
-      // Not last chunk: find complete paragraphs and carry over the rest
-      const { complete, incomplete } = await splitCompleteParagraphs(combinedSentences, language);
-
-      allParagraphs.push(...complete);
-      for (const p of complete) {
-        allSentences.push(...p.sentences);
+      // Not last chunk: keep last paragraph as carryover
+      if (paragraphs.length > 1) {
+        allParagraphs.push(...paragraphs.slice(0, -1));
       }
-
-      // Carry over incomplete paragraph's sentences to next iteration
-      carryoverSentences = incomplete;
+      // Strip tags from last paragraph and carry to next chunk
+      const lastPara = paragraphs[paragraphs.length - 1];
+      carryoverText = lastPara ? lastPara.text.replace(/⁅\/?[sp]\d+⁆/g, '') : '';
     }
 
     position = chunkEnd;
+    while (position < cleanText.length && /\s/.test(cleanText[position])) position++;
   }
 
-  logger.info({
-    totalSentences: allSentences.length,
-    totalParagraphs: allParagraphs.length
-  }, 'Document segmentation complete');
+  // Extract all sentences from paragraphs for return value
+  const allSentences = [];
+  for (const para of allParagraphs) {
+    if (para.sentences) allSentences.push(...para.sentences);
+  }
 
-  // STRICT VALIDATION: Ensure no words were duplicated, deleted, or reordered
-  const strictValidation = validateSegmentationStrict(cleanText, allParagraphs);
+  logger.info({ totalSentences: allSentences.length, totalParagraphs: allParagraphs.length }, 'Document segmentation complete');
+
+  // Validate against text-for-segmentation (excludes noise that was commented out)
+  const strictValidation = validateSegmentationStrict(textForSegmentation, allParagraphs);
   if (!strictValidation.valid) {
-    logger.error({
-      errors: strictValidation.errors
-    }, 'CRITICAL SEGMENTATION ERROR: Output does not match original');
-
-    // Fail hard - we cannot accept corrupted output
+    logger.error({ errors: strictValidation.errors }, 'CRITICAL SEGMENTATION ERROR');
     throw new Error(`Segmentation validation failed: ${strictValidation.errors.join('; ')}`);
   }
 
-  // Also check for broken words (fragments)
-  const integrityValidation = validateSegmentationIntegrity(cleanText, allSentences);
-  if (!integrityValidation.valid) {
-    logger.error({
-      brokenWords: integrityValidation.brokenWords.slice(0, 10),
-      totalBroken: integrityValidation.brokenWords.length
-    }, 'SEGMENTATION ERROR: Words were broken during sentence detection');
-
-    // This is also a critical error
-    throw new Error(`Segmentation broke words: ${integrityValidation.brokenWords.slice(0, 5).map(b => b.fragment).join(', ')}`);
-  }
-
-  logger.info('✅ Segmentation validation passed - output matches original exactly');
-
+  logger.info('✅ Segmentation validation passed');
   return { sentences: allSentences, paragraphs: allParagraphs };
 }
+
+// ============================================================================
+// STAGE 0: Structure & Noise Detection
+// Identifies verse/headers, non-content (instructions, page numbers), and prose
+// ============================================================================
+async function stage0_detectStructure(text, languageHint) {
+  // Split into lines, preserving structure
+  const lines = text.split('\n').map((line, i) => ({ id: i + 1, text: line.trim() })).filter(l => l.text);
+
+  if (lines.length === 0) {
+    return { cleanedText: '', hasStructure: false };
+  }
+
+  // For short texts, skip structure detection
+  if (lines.length < 5 || text.length < 500) {
+    return { cleanedText: text.replace(/\n+/g, ' '), hasStructure: false };
+  }
+
+  // Number lines for AI
+  const numberedLines = lines.map(l => `${l.id}. ${l.text}`).join('\n');
+
+  const prompt = `You are an expert in classical ${languageHint} manuscripts and OCR cleanup.
+
+Below is OCR'd text with line numbers. Classify each line:
+
+CONTENT TYPES:
+- prose: Main content (scripture, teaching) - will be joined for segmentation
+- verse: Headers, invocations, poetry - preserve line breaks
+- noise: Editorial instructions (often Persian in Arabic texts), page numbers, footnotes - wrap in comments
+
+Examples of NOISE to exclude:
+- Persian instructions: "را تلاوت نمايد" (read this), "بگويد" (say), "ايمان باين واحد اورده"
+- Page numbers: "۱۲۳", "صفحه ۴۵"
+- Chapter markers that aren't content: "الواحد الاول" when just a label
+
+Examples of VERSE to preserve breaks:
+- Invocations: "بسم الله الرحمن الرحيم", "بسم الله الامنع الاقدس"
+- Short headers: "الواحد الثاني" when starting a section
+- Poetry with intentional line structure
+
+LINES:
+${numberedLines}
+
+For each line, output: LINE_NUMBER:TYPE
+Example:
+1:verse
+2:verse
+3:prose
+4:noise
+5:prose`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'user', content: prompt }
+    ], { temperature: 0.1, maxTokens: 2000 });
+
+    const content = response.choices?.[0]?.message?.content || response.content || '';
+
+    // Parse classifications
+    const classifications = new Map();
+    for (const line of content.trim().split('\n')) {
+      const match = line.match(/(\d+)\s*:\s*(\w+)/);
+      if (match) {
+        classifications.set(parseInt(match[1], 10), match[2].toLowerCase());
+      }
+    }
+
+    // Build cleaned text (noise wrapped in comments, verse with line breaks)
+    const resultParts = [];
+    let noiseCount = 0;
+    let inProse = false;
+
+    for (const line of lines) {
+      const type = classifications.get(line.id) || 'prose';
+
+      if (type === 'noise') {
+        // Wrap in HTML comment (preserved for validation, ignored in display)
+        resultParts.push(` <!-- ${line.text} --> `);
+        noiseCount++;
+        inProse = false;
+      } else if (type === 'verse') {
+        // Preserve with markdown line break
+        if (inProse && resultParts.length > 0) resultParts.push('\n');
+        resultParts.push(line.text + '  \n'); // Two spaces + newline = MD line break
+        inProse = false;
+      } else {
+        // Prose - join with space
+        resultParts.push((inProse ? ' ' : '') + line.text);
+        inProse = true;
+      }
+    }
+
+    if (noiseCount > 0) {
+      logger.info({ noiseLines: noiseCount }, 'Stage 0: Wrapped noise in comments');
+    }
+
+    const cleanedText = resultParts.join('').trim();
+    const hasNoise = noiseCount > 0;
+    const hasVerse = [...classifications.values()].some(t => t === 'verse');
+
+    logger.debug({
+      totalLines: lines.length,
+      noise: [...classifications.values()].filter(t => t === 'noise').length,
+      verse: [...classifications.values()].filter(t => t === 'verse').length,
+      prose: [...classifications.values()].filter(t => t === 'prose').length
+    }, 'Stage 0: Structure detected');
+
+    return { cleanedText, hasStructure: hasNoise || hasVerse };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Stage 0 failed, using raw text');
+    return { cleanedText: text.replace(/\n+/g, ' '), hasStructure: false };
+  }
+}
+
+// ============================================================================
+// STAGE 1: Identify phrase boundaries
+// AI identifies which word numbers end phrases
+// ============================================================================
+async function stage1_markPhrases(text, languageHint) {
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 0) return [];
+
+  // Number words simply: "word₁ word₂ word₃" - subscript numbers don't disrupt reading
+  const numberedText = words.map((w, i) => `${w}₍${i + 1}₎`).join(' ');
+
+  const prompt = `You are an expert in classical ${languageHint} texts.
+
+Below is text with word numbers in subscript: word₍N₎
+
+Your task: List the word numbers that END each phrase.
+
+A phrase is 3-8 words forming a grammatical/semantic unit.
+Read naturally and identify where phrases end.
+
+Return ONLY comma-separated numbers, nothing else.
+Example: 5, 12, 18, 25, 33
+
+TEXT:
+${numberedText}`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 2000 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+
+  // Parse word IDs from AI response
+  const phraseEndIds = content.match(/\d+/g)?.map(n => parseInt(n, 10)) || [];
+
+  // Validate and sort IDs
+  const validIds = phraseEndIds
+    .filter(id => id >= 1 && id <= words.length)
+    .sort((a, b) => a - b);
+
+  // Ensure last word is included
+  if (validIds.length === 0 || validIds[validIds.length - 1] !== words.length) {
+    validIds.push(words.length);
+  }
+
+  // Build phrases from word boundaries
+  const phrases = [];
+  let wordStart = 0;
+  let phraseId = 1;
+
+  for (const endIdx of validIds) {
+    if (endIdx > wordStart) {
+      const phraseWords = words.slice(wordStart, endIdx);
+      phrases.push({ id: phraseId++, text: phraseWords.join(' ') });
+      wordStart = endIdx;
+    }
+  }
+
+  logger.debug({ phrases: phrases.length, words: words.length, aiEndIds: validIds.length }, 'Stage 1: Phrases marked');
+  return phrases;
+}
+
+// ============================================================================
+// STAGE 2: Identify which phrases END complete sentences
+// ============================================================================
+async function stage2_identifySentenceEnds(phrases, languageHint) {
+  if (phrases.length === 0) return [];
+
+  // Clean numbered list - no markers in the text
+  const numberedList = phrases.map(p => `${p.id}. ${p.text}`).join('\n');
+
+  const prompt = `You are an expert in classical ${languageHint} texts.
+
+Below is a numbered list of phrases from an unpunctuated text.
+
+Your task: List which phrase numbers END a complete sentence.
+
+A complete sentence expresses a FINISHED thought:
+✓ "الله قوي عزيز" - COMPLETE (God is Powerful, Mighty)
+✗ "وهو على كل" - INCOMPLETE (needs شيء قدير)
+✓ "صراط مستقيم" - COMPLETE (straight path)
+✗ "على صراط" - INCOMPLETE (needs مستقيم)
+
+DO NOT include phrases ending with: كل، من، الى، على، في، عن، الا، حتى، الذي، التي
+
+PHRASES:
+${numberedList}
+
+Return ONLY comma-separated phrase numbers that END sentences.
+Example: 3, 7, 12, 18, ${phrases.length}`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 1000 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+  const endIds = content.match(/\d+/g)?.map(n => parseInt(n, 10)) || [];
+
+  // Validate and ensure last phrase included
+  const uniqueIds = [...new Set(endIds)]
+    .filter(id => id >= 1 && id <= phrases.length)
+    .sort((a, b) => a - b);
+
+  if (uniqueIds.length === 0 || uniqueIds[uniqueIds.length - 1] !== phrases.length) {
+    uniqueIds.push(phrases.length);
+  }
+
+  logger.debug({ sentenceEnds: uniqueIds.length }, 'Stage 2: Sentence ends identified');
+  return uniqueIds;
+}
+
+function buildSentencesFromPhrases(phrases, sentenceEndIds) {
+  if (phrases.length === 0) return [];
+
+  const sentences = [];
+  let sentenceId = 1;
+  let startIdx = 0;
+
+  for (const endId of sentenceEndIds) {
+    // Find the phrase index for this ID
+    const endIdx = phrases.findIndex(p => p.id === endId);
+    if (endIdx >= startIdx) {
+      const sentencePhrases = phrases.slice(startIdx, endIdx + 1);
+      if (sentencePhrases.length > 0) {
+        sentences.push({
+          id: sentenceId++,
+          text: sentencePhrases.map(p => p.text).join(' '),
+          phrases: sentencePhrases.map(p => p.text)
+        });
+      }
+      startIdx = endIdx + 1;
+    }
+  }
+
+  return sentences;
+}
+
+// ============================================================================
+// STAGE 3: Group sentences into paragraphs
+// ============================================================================
+async function stage3_identifyParagraphStarts(sentences, languageHint) {
+  if (sentences.length === 0) return [1];
+
+  // Clean numbered list of sentences
+  const numberedList = sentences.map(s => `${s.id}. ${s.text}`).join('\n');
+
+  const prompt = `You are an expert in classical ${languageHint} texts.
+
+Below is a numbered list of sentences. Group them into paragraphs.
+
+A paragraph is 2-5 related sentences. Break when:
+- Topic shifts significantly
+- New address begins (يا ايها، قل)
+- New invocation (بسم الله، اللهم)
+
+SENTENCES:
+${numberedList}
+
+Return ONLY comma-separated sentence numbers that START new paragraphs.
+Example: 1, 5, 12, 18
+
+Sentence 1 always starts the first paragraph.
+With ${sentences.length} sentences, expect roughly ${Math.ceil(sentences.length / 4)} paragraphs.`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 500 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+  const ids = content.match(/\d+/g)?.map(n => parseInt(n, 10)) || [];
+
+  // Validate and ensure sentence 1 included
+  const uniqueStarts = [...new Set(ids)]
+    .filter(id => id >= 1 && id <= sentences.length)
+    .sort((a, b) => a - b);
+
+  if (!uniqueStarts.includes(1)) {
+    uniqueStarts.unshift(1);
+  }
+
+  logger.debug({ paragraphStarts: uniqueStarts.length }, 'Stage 3: Paragraph starts identified');
+  return uniqueStarts;
+}
+
+function buildParagraphsFromSentences(sentences, paragraphStartIds) {
+  if (sentences.length === 0) return [];
+
+  const paragraphs = [];
+  let currentSentences = [];
+
+  for (const sentence of sentences) {
+    if (paragraphStartIds.includes(sentence.id) && currentSentences.length > 0) {
+      paragraphs.push(buildParagraph(currentSentences));
+      currentSentences = [];
+    }
+    currentSentences.push(sentence);
+  }
+
+  if (currentSentences.length > 0) {
+    paragraphs.push(buildParagraph(currentSentences));
+  }
+
+  return paragraphs;
+}
+
+function buildParagraph(sentences) {
+  // Add sentence markers ⁅sN⁆...⁅/sN⁆
+  let sentenceNum = 1;
+  const markedSentences = sentences.map(s => {
+    const marked = `⁅s${sentenceNum}⁆${s.text}⁅/s${sentenceNum}⁆`;
+    sentenceNum++;
+    return marked;
+  });
+
+  return {
+    text: markedSentences.join(' '),
+    sentences: sentences.map(s => s.text),
+    sentenceCount: sentences.length
+  };
+}
+
+// Note: Legacy code removed - now using clean 3-stage pipeline above
 
 /**
  * Validate that segmentation didn't break any words
@@ -2030,6 +2341,300 @@ async function detectSentencesInChunkWithTrailing(text, language, maxRetries, is
 }
 
 /**
+ * THREE-STAGE PIPELINE for unpunctuated text segmentation:
+ * Stage 1: Detect PHRASES (small, natural units of 3-10 words) - assign IDs
+ * Stage 2: AI returns phrase IDs that END complete sentences
+ * Stage 3: AI returns sentence IDs that END complete paragraphs
+ *
+ * The AI only returns IDs - all grouping is done in code. This eliminates
+ * text matching errors and simplifies the AI task.
+ */
+
+/**
+ * Stage 1: Detect phrase boundaries and assign IDs
+ * Returns text with phrase markers: ⁅p1⁆text⁅/p1⁆ ⁅p2⁆text⁅/p2⁆ ...
+ */
+async function detectAndMarkPhrases(text, language) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  const prompt = `You are an expert in classical ${languageHint} texts. This is UNPUNCTUATED text.
+
+Find natural PHRASE boundaries. A phrase is 3-10 words that belong together as a unit of meaning.
+
+Examples:
+- "بسم الله الرحمن الرحيم" = one phrase (the basmala)
+- "ان هذا كتاب قد نزل" = one phrase ("this book has been revealed")
+- "على الارض المقدسة بين الحرمين" = two phrases ("upon the holy land" + "between the two sanctuaries")
+
+Return the LAST 2-3 WORDS of each phrase, one per line. Nothing else.
+
+TEXT:
+${text}`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 4000 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+  const endings = content.trim().split('\n').map(l => l.trim()).filter(l => l.length >= 3);
+
+  // Split text into words for robust matching
+  const words = text.split(/\s+/);
+  const phrases = [];
+  let wordStart = 0;
+  let phraseId = 1;
+
+  for (const ending of endings) {
+    const endingWords = ending.split(/\s+/);
+    if (endingWords.length === 0) continue;
+
+    // Find where this ending appears in our word array
+    let foundAt = -1;
+    for (let i = wordStart; i <= words.length - endingWords.length; i++) {
+      let match = true;
+      for (let j = 0; j < endingWords.length; j++) {
+        // Normalize for comparison (remove diacritics for matching)
+        const w1 = words[i + j].replace(/[\u064B-\u0652\u0670]/g, '');
+        const w2 = endingWords[j].replace(/[\u064B-\u0652\u0670]/g, '');
+        if (w1 !== w2) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        foundAt = i;
+        break;
+      }
+    }
+
+    if (foundAt >= 0) {
+      const phraseEndWord = foundAt + endingWords.length;
+      const phraseWords = words.slice(wordStart, phraseEndWord);
+      if (phraseWords.length > 0) {
+        phrases.push({ id: phraseId++, text: phraseWords.join(' ') });
+      }
+      wordStart = phraseEndWord;
+    }
+  }
+
+  // Capture remaining words
+  if (wordStart < words.length) {
+    const remaining = words.slice(wordStart).join(' ');
+    if (remaining.trim()) phrases.push({ id: phraseId++, text: remaining });
+  }
+
+  logger.debug({ phraseCount: phrases.length, totalWords: words.length }, 'Stage 1: Phrases detected');
+  return phrases;
+}
+
+/**
+ * Stage 2: Given marked phrases, ask AI which phrase IDs end complete sentences
+ */
+async function getSentenceEndingPhraseIds(phrases, language) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  // Format phrases with IDs
+  const markedText = phrases.map(p => `⁅p${p.id}⁆${p.text}⁅/p${p.id}⁆`).join(' ');
+
+  const prompt = `You are an expert in classical ${languageHint} texts.
+
+Below is text with PHRASE markers ⁅pN⁆...⁅/pN⁆. Each phrase has an ID number.
+
+Your task: List the phrase IDs that mark the END of a complete sentence.
+
+A complete sentence expresses a finished thought. If it leaves the reader asking "what?" or "who?" - it's incomplete, so don't include that phrase ID.
+
+TEXT:
+${markedText}
+
+Output ONLY the phrase ID numbers that end complete sentences, one per line. Example:
+3
+7
+12
+
+Nothing else - just the numbers.`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 1000 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+
+  // Parse IDs
+  const sentenceEndIds = [];
+  for (const line of content.trim().split('\n')) {
+    const num = parseInt(line.trim());
+    if (!isNaN(num) && num >= 1 && num <= phrases.length) {
+      sentenceEndIds.push(num);
+    }
+  }
+
+  // Sort and deduplicate
+  const uniqueIds = [...new Set(sentenceEndIds)].sort((a, b) => a - b);
+  logger.debug({ sentenceEndIds: uniqueIds }, 'Stage 2: Sentence endings identified');
+  return uniqueIds;
+}
+
+/**
+ * Stage 3: Given sentences, ask AI which sentence IDs end complete paragraphs
+ */
+async function getParagraphEndingSentenceIds(sentences, language) {
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  // Format sentences with IDs (truncated for readability)
+  const markedText = sentences.map((s, i) =>
+    `⁅s${i + 1}⁆${s.text.substring(0, 60)}...⁅/s${i + 1}⁆`
+  ).join('\n');
+
+  // Calculate target: every ~4-6 sentences should be a paragraph
+  const targetParagraphSize = Math.max(3, Math.min(6, Math.floor(sentences.length / 10)));
+
+  const prompt = `You are an expert in classical ${languageHint} religious texts.
+
+Below are SENTENCES with markers ⁅sN⁆...⁅/sN⁆ (shown truncated).
+
+Your task: Group sentences into READING PARAGRAPHS (3-6 sentences each).
+
+A paragraph should end when there's a natural pause in the text:
+- A thought is completed
+- A point is made
+- Before addressing something new
+
+Create paragraphs roughly every ${targetParagraphSize} sentences. With ${sentences.length} sentences, aim for ${Math.ceil(sentences.length / targetParagraphSize)} paragraphs.
+
+SENTENCES:
+${markedText}
+
+Output ONLY the sentence ID numbers that end paragraphs, one per line.
+For ${sentences.length} sentences, give approximately ${Math.ceil(sentences.length / targetParagraphSize)} paragraph endings.
+
+Nothing else - just the numbers.`;
+
+  const response = await aiService('quality', { forceRemote: true }).chat([
+    { role: 'user', content: prompt }
+  ], { temperature: 0.1, maxTokens: 500 });
+
+  const content = response.choices?.[0]?.message?.content || response.content || '';
+
+  // Parse IDs
+  const paragraphEndIds = [];
+  for (const line of content.trim().split('\n')) {
+    const num = parseInt(line.trim());
+    if (!isNaN(num) && num >= 1 && num <= sentences.length) {
+      paragraphEndIds.push(num);
+    }
+  }
+
+  // Sort, deduplicate, ensure last sentence is included
+  const uniqueIds = [...new Set(paragraphEndIds)].sort((a, b) => a - b);
+  if (uniqueIds.length === 0 || uniqueIds[uniqueIds.length - 1] !== sentences.length) {
+    uniqueIds.push(sentences.length);
+  }
+
+  logger.debug({ paragraphEndIds: uniqueIds }, 'Stage 3: Paragraph endings identified');
+  return uniqueIds;
+}
+
+/**
+ * Process a chunk using the three-stage ID-based pipeline
+ */
+async function processChunkWithPipeline(text, language) {
+  // Stage 1: Detect and mark phrases
+  const phrases = await detectAndMarkPhrases(text, language);
+  if (phrases.length === 0) {
+    return { sentences: [], paragraphs: [] };
+  }
+
+  // Stage 2: Get phrase IDs that end sentences
+  const sentenceEndIds = await getSentenceEndingPhraseIds(phrases, language);
+  if (sentenceEndIds.length === 0) {
+    // Fallback: treat all phrases as one sentence
+    const allText = phrases.map(p => p.text).join(' ');
+    return {
+      sentences: [{ id: 1, text: allText }],
+      paragraphs: [{ text: allText, sentences: [allText], sentenceCount: 1 }]
+    };
+  }
+
+  // Group phrases into sentences based on ending IDs
+  const sentences = [];
+  let sentenceStart = 0;
+  for (const endId of sentenceEndIds) {
+    const sentencePhrases = phrases.slice(sentenceStart, endId);
+    const sentenceText = sentencePhrases.map(p => p.text).join(' ');
+    sentences.push({ id: sentences.length + 1, text: sentenceText });
+    sentenceStart = endId;
+  }
+
+  // Capture any trailing phrases not included in the last sentence
+  if (sentenceStart < phrases.length) {
+    const trailingPhrases = phrases.slice(sentenceStart);
+    if (trailingPhrases.length > 0) {
+      const trailingSentenceText = trailingPhrases.map(p => p.text).join(' ');
+      sentences.push({ id: sentences.length + 1, text: trailingSentenceText });
+    }
+  }
+
+  // Stage 3: Get sentence IDs that end paragraphs
+  const paragraphEndIds = await getParagraphEndingSentenceIds(sentences, language);
+
+  // Group sentences into paragraphs based on ending IDs
+  // Add sentence markers ⁅sN⁆...⁅/sN⁆ to each sentence
+  const paragraphs = [];
+  let paraStart = 0;
+  let globalSentenceNum = 1;  // Track sentence numbers across paragraphs
+
+  for (const endId of paragraphEndIds) {
+    const paraSentences = sentences.slice(paraStart, endId);
+
+    // Add markers to each sentence and join
+    // Reset sentence numbering within each paragraph for consistency
+    let paraSentenceNum = 1;
+    const markedSentences = paraSentences.map(s => {
+      const marked = `⁅s${paraSentenceNum}⁆${s.text}⁅/s${paraSentenceNum}⁆`;
+      paraSentenceNum++;
+      globalSentenceNum++;
+      return marked;
+    });
+
+    const paraText = markedSentences.join(' ');
+    paragraphs.push({
+      text: paraText,
+      sentences: paraSentences.map(s => s.text),
+      sentenceCount: paraSentences.length
+    });
+    paraStart = endId;
+  }
+
+  // Capture any trailing sentences not included in the last paragraph
+  if (paraStart < sentences.length) {
+    const trailingSentences = sentences.slice(paraStart);
+    if (trailingSentences.length > 0) {
+      let paraSentenceNum = 1;
+      const markedSentences = trailingSentences.map(s => {
+        const marked = `⁅s${paraSentenceNum}⁆${s.text}⁅/s${paraSentenceNum}⁆`;
+        paraSentenceNum++;
+        return marked;
+      });
+      const paraText = markedSentences.join(' ');
+      paragraphs.push({
+        text: paraText,
+        sentences: trailingSentences.map(s => s.text),
+        sentenceCount: trailingSentences.length
+      });
+    }
+  }
+
+  logger.info({
+    phrases: phrases.length,
+    sentences: sentences.length,
+    paragraphs: paragraphs.length
+  }, 'Pipeline segmentation complete');
+
+  return { sentences: sentences.map(s => s.text), paragraphs };
+}
+
+/**
  * Detect sentences in a single chunk of text using ending words approach
  * Returns array of sentence texts extracted from the chunk
  *
@@ -2038,32 +2643,21 @@ async function detectSentencesInChunkWithTrailing(text, language, maxRetries, is
 async function detectSentencesInChunk(text, language, maxRetries, skipTrailing = false) {
   const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
 
-  const systemPrompt = `You are an expert in classical ${languageHint} religious texts. These are UNPUNCTUATED 19th century texts - NO punctuation marks exist.
+  const systemPrompt = `You are an expert in classical ${languageHint} religious texts. This is UNPUNCTUATED text from the 19th century.
 
-Your task is to identify COMPLETE SENTENCE boundaries by MEANING.
+Your task: Find where COMPLETE SENTENCES end.
 
-CRITICAL RULES:
-1. A sentence is a COMPLETE THOUGHT - typically 50-150 characters (8-25 words)
-2. DO NOT break at every phrase - only at SENTENCE endings
-3. Divine names, attributes, and blessings are PART of sentences, not separate sentences
-4. "بسم الله الرحمن الرحيم" is typically the START of a sentence, not a sentence by itself
+A COMPLETE SENTENCE expresses a finished thought. If removing the last word would leave the meaning intact, you've gone too far. If the sentence leaves the reader asking "what?" or "about whom?" - it's incomplete.
 
-NEVER END A SENTENCE WITH A PREPOSITION OR PARTICLE:
-These words REQUIRE an object - a sentence cannot end with them:
-- بين (between), من (from), الى/إلى (to), على (on), في (in), عن (from)
-- ب (with), ل (for), و (and), ف (so), ثم (then), ان/أن (that)
-- لا (no), ما (what), الا/إلا (except), حتى (until), مع (with)
-- عند (at), نحو (toward), قبل (before), بعد (after)
-If text ends with one of these, the sentence is INCOMPLETE - continue to include the object.
+Test each potential ending by asking: "Does this make sense on its own?"
+- "فسبحان الله" ✓ (Glory be to God - complete praise)
+- "فسبحان الله الذي" ✗ (Glory be to God who... - who WHAT? Incomplete!)
+- "اتقوا الله يا اولي الالباب" ✓ (Fear God, O possessors of understanding - complete command)
+- "واذا شاء الله يبين من" ✗ (And if God wills He clarifies from... - from WHAT? Incomplete!)
 
-Sentence boundaries occur at:
-- End of a complete statement or declaration
-- End of a command (full command, not just the verb)
-- Before a major topic shift (new subject being discussed)
-- Before "قل" (Say:) or "يا" (O!) starting a new address
+Sentence length: typically 50-150 characters. Divine names and blessings belong WITH their sentences, not separate.
 
-Return the LAST 3-5 WORDS of each COMPLETE sentence, one per line.
-NO JSON. NO numbering. NO explanations.`;
+Output: The LAST 3-5 WORDS of each complete sentence, one per line. Nothing else.`;
 
   // Build user prompt
   const makeUserPrompt = (attemptNum) => {
@@ -2111,8 +2705,11 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
         .trim();
 
       // Extract endings - one per line, filter out empty or too-short lines
-      // Also reject endings that end with prepositions (incomplete sentences)
-      const INCOMPLETE_ENDING_PATTERN = /\s(بين|من|الى|إلى|على|في|عن|ب|ل|و|ف|ثم|ان|أن|لا|ما|الا|إلا|حتى|مع|عند|نحو|قبل|بعد|فوق|تحت|دون|غير)$/;
+      // Also reject endings that end with prepositions, relative pronouns, or conjunctions requiring continuation
+      // - Prepositions: بين، من، الى، على، في، عن، etc.
+      // - Relative pronouns: الذي، التي، الذين، اللاتي، اللواتي (who/which - require relative clause)
+      // - Conjunctions requiring continuation: كما، لان، اذ، كي، لكي (as, because, since, in order to)
+      const INCOMPLETE_ENDING_PATTERN = /\s(بين|من|الى|إلى|على|في|عن|ب|ل|و|ف|ثم|ان|أن|لا|ما|الا|إلا|حتى|مع|عند|نحو|قبل|بعد|فوق|تحت|دون|غير|الذي|التي|الذين|اللاتي|اللواتي|كما|لان|لأن|لانه|لأنه|اذ|إذ|كي|لكي|بان|بأن)$/;
 
       const rawEndings = cleanContent
         .split('\n')
@@ -2297,7 +2894,21 @@ function extractSentencesFromEndings(text, endings, skipTrailing = false) {
     }
   }
 
-  return { sentences, trailingText };
+  // Post-processing: merge sentences that end with incomplete words
+  const mergedSentences = [];
+  const INCOMPLETE_WORDS = /\s(بين|من|الى|إلى|على|في|عن|ب|ل|و|ف|ثم|ان|أن|لا|ما|الا|إلا|حتى|مع|عند|نحو|قبل|بعد|فوق|تحت|دون|غير|الذي|التي|الذين|اللاتي|اللواتي|كما|لان|لأن|لانه|لأنه|اذ|إذ|كي|لكي|بان|بأن)$/;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+    if (mergedSentences.length > 0 && INCOMPLETE_WORDS.test(mergedSentences[mergedSentences.length - 1])) {
+      // Previous sentence ends with incomplete word - merge current sentence into it
+      mergedSentences[mergedSentences.length - 1] += ' ' + sentence;
+    } else {
+      mergedSentences.push(sentence);
+    }
+  }
+
+  return { sentences: mergedSentences, trailingText };
 }
 
 /**
@@ -2650,8 +3261,7 @@ function groupSentencesByMarkers(sentences) {
   let currentPara = [];
 
   for (const sentence of sentences) {
-    // Start new paragraph ONLY if this sentence has a discourse marker break
-    // (invocation, address, topic shift) AND we already have content
+    // Start new paragraph only when discourse marker detected
     if (currentPara.length > 0 && startsNewParagraph(sentence)) {
       paragraphs.push({
         text: buildMarkedParagraphText(currentPara),
@@ -2662,7 +3272,6 @@ function groupSentencesByMarkers(sentences) {
     }
 
     currentPara.push(sentence);
-    // NO arbitrary sentence count limit - let semantic markers drive breaks
   }
 
   // Don't forget the last paragraph
@@ -2682,17 +3291,98 @@ async function groupSentencesIntoParagraphs(sentences, language) {
     return [];
   }
 
-  // Use marker-based grouping for ALL languages
-  // CRITICAL: NEVER use fixed-size grouping - it destroys semantic coherence
-  // The AI has already detected sentence boundaries by meaning; paragraphs
-  // should be formed by discourse markers, not arbitrary counts
-  const paragraphs = groupSentencesByMarkers(sentences);
-  logger.debug({
-    sentences: sentences.length,
-    paragraphs: paragraphs.length,
-    avgPerPara: paragraphs.length > 0 ? (sentences.length / paragraphs.length).toFixed(1) : 0
-  }, 'Grouped sentences using discourse markers');
-  return paragraphs;
+  // Use AI to determine paragraph breaks
+  // Show truncated sentences with IDs and ask AI which ones end paragraphs
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : 'Arabic';
+
+  // Format sentences with IDs (truncated for context)
+  const markedText = sentences.map((s, i) =>
+    `[${i + 1}] ${s.substring(0, 50)}...`
+  ).join('\n');
+
+  const prompt = `You are an expert in classical ${languageHint} religious texts.
+
+Below are sentences (shown truncated) from a document.
+
+Your task: Identify which sentences END a paragraph.
+
+Guidelines for paragraph breaks in religious texts:
+- A paragraph is typically 2-5 sentences
+- Break at natural thought completions
+- Break before new addresses (يا ايها, اللهم)
+- Break before new topics or instructions
+- Break before invocations (بسم الله)
+
+With ${sentences.length} sentences, aim for roughly ${Math.ceil(sentences.length / 4)} paragraphs.
+
+SENTENCES:
+${markedText}
+
+Output ONLY the sentence numbers that END paragraphs, one per line.
+Example: If sentences 4, 8, and 12 each end a paragraph, output:
+4
+8
+12
+
+Nothing else - just the numbers.`;
+
+  try {
+    const response = await aiService('quality', { forceRemote: true }).chat([
+      { role: 'user', content: prompt }
+    ], { temperature: 0.1, maxTokens: 1000 });
+
+    const content = response.choices?.[0]?.message?.content || response.content || '';
+
+    // Parse paragraph ending IDs
+    const paragraphEndIds = [];
+    for (const line of content.trim().split('\n')) {
+      const num = parseInt(line.trim());
+      if (!isNaN(num) && num >= 1 && num <= sentences.length) {
+        paragraphEndIds.push(num);
+      }
+    }
+
+    // Sort and ensure last sentence is included
+    const uniqueIds = [...new Set(paragraphEndIds)].sort((a, b) => a - b);
+    if (uniqueIds.length === 0 || uniqueIds[uniqueIds.length - 1] !== sentences.length) {
+      uniqueIds.push(sentences.length);
+    }
+
+    // Group sentences into paragraphs based on ending IDs
+    const paragraphs = [];
+    let sentenceStart = 0;
+
+    for (const endId of uniqueIds) {
+      const paraSentences = sentences.slice(sentenceStart, endId);
+      if (paraSentences.length > 0) {
+        paragraphs.push({
+          text: buildMarkedParagraphText(paraSentences),
+          sentences: paraSentences,
+          sentenceCount: paraSentences.length
+        });
+      }
+      sentenceStart = endId;
+    }
+
+    logger.debug({
+      sentences: sentences.length,
+      paragraphs: paragraphs.length,
+      avgPerPara: paragraphs.length > 0 ? (sentences.length / paragraphs.length).toFixed(1) : 0
+    }, 'Grouped sentences using AI guidance');
+
+    return paragraphs;
+
+  } catch (err) {
+    // Fallback to marker-based grouping
+    logger.warn({ err: err.message }, 'AI paragraph grouping failed, using marker-based fallback');
+    const paragraphs = groupSentencesByMarkers(sentences);
+    logger.debug({
+      sentences: sentences.length,
+      paragraphs: paragraphs.length,
+      avgPerPara: paragraphs.length > 0 ? (sentences.length / paragraphs.length).toFixed(1) : 0
+    }, 'Grouped sentences using discourse markers');
+    return paragraphs;
+  }
 }
 
 

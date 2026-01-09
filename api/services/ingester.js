@@ -33,6 +33,27 @@ export function hashContent(text) {
 }
 
 /**
+ * Strip sentence/phrase markers from text, returning just the words
+ * Used for content hashing - so same words with different marker positions hash the same
+ * Markers: ⁅s1⁆ ⁅/s1⁆ ⁅ph1⁆ ⁅/ph1⁆ etc.
+ */
+export function stripMarkersForHash(text) {
+  return text
+    .replace(/⁅\/?(?:s|ph)\d+⁆/g, '')  // Remove sentence/phrase markers
+    .replace(/\s+/g, ' ')                // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Generate content hash that ignores marker positions
+ * Same words with different sentence/phrase boundaries = same hash
+ */
+export function hashContentWords(text) {
+  const stripped = stripMarkersForHash(text);
+  return createHash('sha256').update(stripped).digest('hex');
+}
+
+/**
  * Safely parse a year value, returning null for invalid/non-numeric values
  * Handles strings like "n.d.", empty values, and non-numeric data
  */
@@ -129,6 +150,22 @@ function isUnpunctuatedText(text) {
  * @param {number} maxChars - Maximum characters per paragraph (default 1500)
  * @returns {Array<{text: string, blocktype: string}>} - Split paragraphs
  */
+// Check if text ends with an incomplete word (preposition, relative pronoun, conjunction)
+// These words require continuation and shouldn't be split after
+function endsWithIncompleteWord(text) {
+  // Strip sentence markers to get actual text
+  const cleanText = text.replace(/⁅\/?s\d+⁆/g, '').trim();
+  if (!cleanText) return false;
+
+  // Pattern for words that require continuation (same list as in segmenter.js)
+  // - Prepositions: بين، من، الى، على، في، عن، etc.
+  // - Relative pronouns: الذي، التي، الذين، etc.
+  // - Conjunctions: كما، لان، اذ، كي، etc.
+  const incompletePattern = /\s(بين|من|الى|إلى|على|في|عن|ب|ل|و|ف|ثم|ان|أن|لا|ما|الا|إلا|حتى|مع|عند|نحو|قبل|بعد|فوق|تحت|دون|غير|الذي|التي|الذين|اللاتي|اللواتي|كما|لان|لأن|لانه|لأنه|اذ|إذ|كي|لكي|بان|بأن|لدى|كنت|يوجد|كان|يكون|ليس)$/;
+
+  return incompletePattern.test(cleanText);
+}
+
 function splitOversizedParagraphs(chunks, maxChars = 1500) {
   const result = [];
 
@@ -154,7 +191,7 @@ function splitOversizedParagraphs(chunks, maxChars = 1500) {
     const sentenceMarkers = [...text.matchAll(sentenceEndPattern)];
 
     if (sentenceMarkers.length > 1) {
-      // Split at sentence boundaries
+      // Split at sentence boundaries, but only at COMPLETE sentences
       let lastEnd = 0;
       let currentChunk = '';
 
@@ -172,9 +209,19 @@ function splitOversizedParagraphs(chunks, maxChars = 1500) {
           result.push(...splitAtWordBoundary(sentence, maxChars, blocktype));
           currentChunk = '';
         } else if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
-          // Save current chunk and start new one
-          result.push({ text: currentChunk.trim(), blocktype });
-          currentChunk = sentence;
+          // Want to split here, but first check if currentChunk ends with incomplete word
+          if (endsWithIncompleteWord(currentChunk)) {
+            // Don't split - the sentence is incomplete, keep accumulating
+            logger.debug({
+              ending: currentChunk.slice(-50),
+              reason: 'incomplete sentence ending'
+            }, 'Skipping split at incomplete sentence');
+            currentChunk += sentence;
+          } else {
+            // Safe to split - sentence is complete
+            result.push({ text: currentChunk.trim(), blocktype });
+            currentChunk = sentence;
+          }
         } else {
           currentChunk += sentence;
         }
@@ -419,10 +466,10 @@ export async function parseDocumentWithBlocks(text, options = {}) {
         language: detectedLanguage
       });
 
-      // Convert paragraphs to chunks
+      // Convert paragraphs to chunks (preserve blocktype from segmentation)
       const chunks = result.paragraphs.map(p => ({
         text: p.text,
-        blocktype: BLOCK_TYPES.PARAGRAPH
+        blocktype: p.blocktype || BLOCK_TYPES.PARAGRAPH
       }));
 
       logger.info({ paragraphs: chunks.length }, 'AI segmentation complete');
@@ -731,13 +778,18 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   }
 
   // Document changed - get existing paragraphs for smart diffing
+  // Use word hashes (ignoring markers) so re-segmentation preserves embeddings
   if (existingDoc) {
     const paragraphs = await queryAll(
-      'SELECT id, content_hash, embedding, synced FROM content WHERE doc_id = ?',
+      'SELECT id, text, content_hash, embedding, synced FROM content WHERE doc_id = ?',
       [existingDoc.id]
     );
     for (const p of paragraphs) {
-      existingParagraphs.set(p.content_hash, p);
+      // Key by word hash (ignoring markers) so same words match even if markers differ
+      // Skip paragraphs without text (shouldn't happen, but defensive)
+      if (!p.text) continue;
+      const wordHash = hashContentWords(p.text);
+      existingParagraphs.set(wordHash, p);
     }
     logger.info({ documentId: existingDoc.id, relativePath, existingParagraphs: paragraphs.length }, 'Document changed, doing incremental update');
   }
@@ -970,8 +1022,12 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   }
 
   // Smart paragraph diffing: compare new chunks with existing paragraphs
-  const newContentHashes = new Set();
-  const paragraphStatements = [];
+  // Execute in order: DELETEs first, then UPDATEs, then INSERTs
+  // This avoids UNIQUE constraint errors when paragraph positions change
+  const newWordHashes = new Set();  // Track word hashes (ignoring markers)
+  const deleteStatements = [];  // Stale paragraphs to remove
+  const updateStatements = [];  // Reused paragraphs (update position, possibly markers)
+  const insertStatements = [];  // New paragraphs
   let reusedCount = 0;
   let newCount = 0;
 
@@ -979,40 +1035,48 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const chunk = chunks[index];
     const chunkText = chunk.text;
     const blocktype = chunk.blocktype || BLOCK_TYPES.PARAGRAPH;
-    const contentHash = hashContent(chunkText);
-    newContentHashes.add(contentHash);
+    // Use word hash (ignoring markers) for comparison
+    // Same words with different sentence/phrase boundaries = same paragraph
+    const wordHash = hashContentWords(chunkText);
+    const contentHash = hashContent(chunkText);  // Full hash for storage
+    newWordHashes.add(wordHash);
 
-    const existing = existingParagraphs.get(contentHash);
+    const existing = existingParagraphs.get(wordHash);
 
     if (existing) {
-      // Paragraph content unchanged - update metadata only (position might have changed)
+      // Same words found - update paragraph with new markers (preserves embeddings!)
+      // This allows re-segmentation to shift sentence/phrase boundaries without losing embeddings
       reusedCount++;
-      paragraphStatements.push({
+      updateStatements.push({
         sql: `
           UPDATE content
-          SET paragraph_index = ?, heading = ?, blocktype = ?, synced = 0
+          SET paragraph_index = ?, text = ?, content_hash = ?, heading = ?, blocktype = ?, synced = 0
           WHERE id = ?
         `,
         args: [
           index,
+          chunkText,  // New text with updated markers
+          contentHash,  // New full hash
           extractHeading(content, chunkText),
           blocktype,
           existing.id
         ]
       });
       // Mark as used so we don't delete it later
-      existingParagraphs.delete(contentHash);
+      existingParagraphs.delete(wordHash);
     } else {
       // New paragraph - insert it with blocktype
+      // Use content-hash-based ID to avoid conflicts when positions shift
+      // (position-based IDs conflict when UPDATEs change positions)
       newCount++;
-      paragraphStatements.push({
+      insertStatements.push({
         sql: `
           INSERT INTO content
           (id, doc_id, paragraph_index, text, content_hash, heading, blocktype)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
-          `${finalDocId}_p${index}`,
+          `${finalDocId}_${contentHash.substring(0, 12)}`,  // First 12 chars of hash = unique ID
           finalDocId,
           index,
           chunkText,
@@ -1024,23 +1088,37 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
-  // Delete paragraphs that no longer exist in the document (remainders in existingParagraphs)
+  // Collect stale paragraphs that no longer exist in the document
   let deletedCount = 0;
   for (const [, oldParagraph] of existingParagraphs) {
     deletedCount++;
-    // Delete from paragraph_embeddings first (but keep the content_hash based cache!)
-    // Note: We DON'T delete from paragraph_embeddings by paragraph_id anymore
-    // The embeddings table is keyed by content_hash, so they persist for reuse
-    paragraphStatements.push({
+    // Note: Embeddings are cached by content_hash, not paragraph_id
+    // So deleting the content row doesn't lose the embedding cache
+    deleteStatements.push({
       sql: `DELETE FROM content WHERE id = ?`,
       args: [oldParagraph.id]
     });
   }
 
-  // Execute in batches of 100 to avoid hitting limits
+  // Execute in order: DELETEs first, then UPDATEs, then INSERTs
+  // This prevents UNIQUE constraint errors when paragraph positions shift
   const BATCH_SIZE = 100;
-  for (let i = 0; i < paragraphStatements.length; i += BATCH_SIZE) {
-    const batch = paragraphStatements.slice(i, i + BATCH_SIZE);
+
+  // 1. Delete stale paragraphs first (frees up ids/positions)
+  for (let i = 0; i < deleteStatements.length; i += BATCH_SIZE) {
+    const batch = deleteStatements.slice(i, i + BATCH_SIZE);
+    await transaction(batch);
+  }
+
+  // 2. Update existing paragraphs (position changes, preserves embeddings)
+  for (let i = 0; i < updateStatements.length; i += BATCH_SIZE) {
+    const batch = updateStatements.slice(i, i + BATCH_SIZE);
+    await transaction(batch);
+  }
+
+  // 3. Insert new paragraphs
+  for (let i = 0; i < insertStatements.length; i += BATCH_SIZE) {
+    const batch = insertStatements.slice(i, i + BATCH_SIZE);
     await transaction(batch);
   }
 
@@ -1141,6 +1219,8 @@ export async function getDocumentByPath(filePath) {
 
 export const ingester = {
   hashContent,
+  hashContentWords,
+  stripMarkersForHash,
   parseDocument,
   parseDocumentWithBlocks,
   parseMarkdownFrontmatter,
