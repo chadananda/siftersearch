@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T17:31:38.748Z",
+  "generated": "2026-01-09T17:55:08.166Z",
   "entries": [
+    {
+      "hash": "8aa3d76",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Use unique IDs for content rows to avoid hash collisions",
+      "scope": null
+    },
     {
       "hash": "6063de5",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
       "scope": null
-    },
-    {
-      "hash": "941ea7c",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Support file moves without re-indexing content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "8aa3d76",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Use unique IDs for content rows to avoid hash collisions",
+        "scope": null
+      },
       {
         "hash": "6063de5",
         "date": "2026-01-09",
@@ -699,13 +706,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
-        "scope": null
-      },
-      {
-        "hash": "941ea7c",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Support file moves without re-indexing content",
         "scope": null
       }
     ]

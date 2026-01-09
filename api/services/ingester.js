@@ -548,8 +548,20 @@ export function parseMarkdownFrontmatter(text) {
       content: parsed.content.trim()
     };
   } catch (err) {
-    // If gray-matter fails, return original text as content
-    logger.warn({ error: err.message }, 'Failed to parse frontmatter, using raw content');
+    // If gray-matter fails (malformed YAML), manually strip frontmatter block
+    logger.warn({ error: err.message }, 'Failed to parse frontmatter, stripping manually');
+
+    // Try to find and remove frontmatter block (between --- markers)
+    const frontmatterMatch = text.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---[\r\n]+([\s\S]*)$/);
+    if (frontmatterMatch) {
+      // Found frontmatter block - return content after it (can't parse metadata)
+      return {
+        metadata: {},
+        content: frontmatterMatch[2].trim()
+      };
+    }
+
+    // No frontmatter block found - return original text
     return {
       metadata: {},
       content: text
