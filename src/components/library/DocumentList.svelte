@@ -522,12 +522,13 @@
 </div>
 
 <style>
-  /* Paper-like content area */
+  /* Paper-like content area - matches DocumentPresentation book view */
   .paper-content {
     width: 100%;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
     background: #faf8f3;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     overflow: hidden;
     max-width: 100%;
   }
@@ -535,12 +536,11 @@
   .paper-scroll {
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 1rem 1.25rem;
+    padding: 1.25rem 1.5rem 1.25rem 2.5rem; /* Extra left padding for floating numbers */
   }
 
   .paper-paragraph {
-    display: flex;
-    gap: 0.75rem;
+    position: relative;
     padding: 0.75rem 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
@@ -549,36 +549,31 @@
     border-bottom: none;
   }
 
-  .paper-paragraph:hover {
-    background: rgba(0, 0, 0, 0.02);
-    margin: 0 -0.5rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    border-radius: 0.25rem;
-  }
-
   .paper-paragraph.rtl {
-    flex-direction: row-reverse;
+    padding-left: 0;
+    padding-right: 1rem;
   }
 
+  /* Floating paragraph number in left margin */
   .para-num {
-    flex-shrink: 0;
+    position: absolute;
+    left: -2rem;
+    top: 0.75rem;
     width: 1.5rem;
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Libre Caslon Text', Georgia, serif;
     font-size: 0.6875rem;
     color: #999;
     text-align: right;
-    padding-top: 0.25rem;
   }
 
   .paper-paragraph.rtl .para-num {
+    left: auto;
+    right: -2rem;
     text-align: left;
     font-family: 'Amiri', 'Traditional Arabic', serif;
   }
 
   .para-text {
-    flex: 1;
-    min-width: 0;
     margin: 0;
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 0.9375rem;
@@ -592,6 +587,8 @@
     font-style: italic;
     color: #888;
     font-size: 0.875rem;
+    text-align: center;
+    padding: 1rem;
   }
 
   /* RTL text styling */
@@ -599,5 +596,9 @@
     font-family: 'Amiri', 'Traditional Arabic', serif;
     font-size: 1.0625rem;
     line-height: 1.8;
+  }
+
+  .paper-scroll:has(.paper-paragraph.rtl) {
+    padding: 1.25rem 2.5rem 1.25rem 1.5rem; /* Flip padding for RTL */
   }
 </style>
