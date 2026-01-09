@@ -5,10 +5,17 @@
    */
   import { onMount } from 'svelte';
   import { user } from '../lib/api.js';
-  import { getAuthState, logout } from '../lib/auth.svelte.js';
+  import { getAuthState, logout, requireAuth } from '../lib/auth.svelte.js';
   import TierBadge from './TierBadge.svelte';
 
   const auth = getAuthState();
+
+  // Route guard - redirect to home if not authenticated
+  $effect(() => {
+    if (!auth.loading && !auth.isAuthenticated) {
+      requireAuth('/');
+    }
+  });
 
   // Profile state
   let profile = $state(null);

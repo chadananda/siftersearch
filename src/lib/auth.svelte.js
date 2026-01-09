@@ -116,10 +116,58 @@ export function getAuthState() {
   };
 }
 
+/**
+ * Route guard - redirects to home if not authenticated
+ * Call this in onMount or as an effect in protected components
+ * @param {string} redirectTo - URL to redirect to (default: '/')
+ * @returns {boolean} - true if authenticated, false if redirecting
+ */
+export function requireAuth(redirectTo = '/') {
+  // Skip during SSR
+  if (typeof window === 'undefined') return true;
+
+  // Wait for auth to initialize
+  if (loading) return true;
+
+  // Redirect if not authenticated
+  if (!user) {
+    window.location.href = redirectTo;
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if user has required tier
+ * @param {string|string[]} allowedTiers - tier(s) required
+ * @param {string} redirectTo - URL to redirect to if unauthorized
+ * @returns {boolean} - true if authorized
+ */
+export function requireTier(allowedTiers, redirectTo = '/') {
+  if (typeof window === 'undefined') return true;
+  if (loading) return true;
+
+  if (!user) {
+    window.location.href = redirectTo;
+    return false;
+  }
+
+  const tiers = Array.isArray(allowedTiers) ? allowedTiers : [allowedTiers];
+  if (!tiers.includes(user.tier)) {
+    window.location.href = redirectTo;
+    return false;
+  }
+
+  return true;
+}
+
 export default {
   initAuth,
   login,
   signup,
   logout,
-  getAuthState
+  getAuthState,
+  requireAuth,
+  requireTier
 };

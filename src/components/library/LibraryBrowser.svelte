@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { getAuthState } from '../../lib/auth.svelte.js';
+  import { getAuthState, requireAuth } from '../../lib/auth.svelte.js';
   import { authenticatedFetch } from '../../lib/api.js';
   import TreeView from './TreeView.svelte';
   import DocumentList from './DocumentList.svelte';
@@ -61,6 +61,13 @@
 
   // Debounce timer for search
   let searchDebounceTimer = null;
+
+  // Route guard - redirect to home if not authenticated
+  $effect(() => {
+    if (!auth.loading && !auth.isAuthenticated) {
+      requireAuth('/');
+    }
+  });
 
   async function fetchTree() {
     try {

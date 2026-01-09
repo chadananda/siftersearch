@@ -5,9 +5,16 @@
    */
   import { onMount } from 'svelte';
   import { user } from '../lib/api.js';
-  import { getAuthState, logout } from '../lib/auth.svelte.js';
+  import { getAuthState, logout, requireAuth } from '../lib/auth.svelte.js';
 
   const auth = getAuthState();
+
+  // Route guard - redirect to home if not authenticated
+  $effect(() => {
+    if (!auth.loading && !auth.isAuthenticated) {
+      requireAuth('/');
+    }
+  });
 
   // Loading states
   let loading = $state(true);
