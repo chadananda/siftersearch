@@ -747,15 +747,14 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const pathReligion = pathParts.length >= 1 ? pathParts[0] : null;
   const pathCollection = pathParts.length >= 2 ? pathParts[1] : null;
 
-  // Merge metadata: frontmatter takes precedence over path-extracted data
-  // Use frontmatter if available, fall back to path-extracted, then passed-in metadata, then defaults
-  // Exception: if filename-extracted has meaningful data (not "Unknown"), prefer that for some fields
+  // Merge metadata: path-based collection takes precedence (folder structure = library organization)
+  // Frontmatter collection often contains archive codes (INBA, CAMB) not library categories
   const finalMeta = {
     title: extractedMeta.title || metadata.title || 'Untitled',
     // For author: prefer frontmatter, unless filename has real author and frontmatter doesn't
     author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
-    religion: extractedMeta.religion || pathReligion || metadata.religion || 'General',
-    collection: extractedMeta.collection || pathCollection || metadata.collection || 'General',
+    religion: pathReligion || extractedMeta.religion || metadata.religion || 'General',
+    collection: pathCollection || extractedMeta.collection || metadata.collection || 'General',
     // Language: detected Arabic/Farsi > frontmatter > filename metadata > default 'en'
     // Content detection takes priority because frontmatter often incorrectly says 'en' for RTL texts
     language: contentLanguage || extractedMeta.language || metadata.language || 'en',
