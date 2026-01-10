@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T01:18:34.417Z",
+  "generated": "2026-01-10T01:33:57.604Z",
   "entries": [
+    {
+      "hash": "cc7b55b",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Only assign heading to immediately following paragraph",
+      "scope": null
+    },
     {
       "hash": "32de4df",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "JSON extraction from AI response with code blocks",
       "scope": null
-    },
-    {
-      "hash": "5fa2fb6",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "English text passes through unchanged - no segmentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "cc7b55b",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Only assign heading to immediately following paragraph",
+        "scope": null
+      },
       {
         "hash": "32de4df",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "JSON extraction from AI response with code blocks",
-        "scope": null
-      },
-      {
-        "hash": "5fa2fb6",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "English text passes through unchanged - no segmentation",
         "scope": null
       }
     ]

@@ -94,6 +94,19 @@ export default defineConfig({
             handler: 'NetworkOnly'
           },
           {
+            // Document content - NetworkFirst for immediate updates after editing
+            urlPattern: /^https:\/\/api\.siftersearch\.com\/api\/library\/by-path\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'document-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 3600 // 1 hour fallback cache
+              }
+            }
+          },
+          {
             // Cache other API responses
             urlPattern: /^https:\/\/api\.siftersearch\.com\/api\//,
             handler: 'StaleWhileRevalidate',
