@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T01:42:50.359Z",
+  "generated": "2026-01-10T01:48:07.756Z",
   "entries": [
+    {
+      "hash": "7b589dc",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
+      "scope": null
+    },
     {
       "hash": "9e5db4e",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add ingestionProgress to search stats endpoint",
       "scope": null
-    },
-    {
-      "hash": "8747c19",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Simplify RTL segmentation, add ingestion progress",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "7b589dc",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
+        "scope": null
+      },
       {
         "hash": "9e5db4e",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Add ingestionProgress to search stats endpoint",
-        "scope": null
-      },
-      {
-        "hash": "8747c19",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Simplify RTL segmentation, add ingestion progress",
         "scope": null
       }
     ]

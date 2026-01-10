@@ -1237,7 +1237,7 @@
                   <!-- Fallback: plain text side by side -->
                   <div class="study-phrase-row">
                     <div class="study-phrase-original" dir={getLanguageDirection(document.language)}>
-                      {@html renderMarkdown(para.text)}
+                      {@html renderBlockContent(para.text, para.blocktype)}
                     </div>
                     <div class="study-phrase-translation" dir="ltr">
                       {@html renderMarkdown(trans.study)}
