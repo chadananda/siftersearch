@@ -65,7 +65,7 @@
   }
 </script>
 
-<div class="bilingual-container w-full" style="max-height: {maxHeight}; background: #faf8f3; {isRTL ? 'color: #1a1a1a;' : ''} border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+<div class="bilingual-container" style="max-height: {maxHeight};">
   {#if loading}
     <div class="loading-state">
       <span class="spinner"></span>
@@ -74,12 +74,12 @@
   {:else if paragraphs.length === 0}
     <p class="text-muted text-sm italic p-4">No content available</p>
   {:else if !showBilingual || showOriginalOnly}
-    <!-- Single column: original only -->
-    <div class="single-column" class:rtl={isRTL} dir={isRTL ? 'rtl' : 'ltr'}>
+    <!-- Single column: original only (same structure as DocumentList paper-content) -->
+    <div class="paper-scroll" class:rtl={isRTL}>
       {#each paragraphs as para}
-        <div class="paragraph-row" class:rtl={isRTL}>
+        <div class="paper-paragraph" class:rtl={isRTL}>
           <span class="para-num">{para.index + 1}</span>
-          <p class="para-text">{stripMarkers(para.original)}</p>
+          <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{stripMarkers(para.original)}</p>
         </div>
       {/each}
     </div>
@@ -194,42 +194,7 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Single column layout - paper style */
-  .single-column {
-    padding: 1.25rem 1.5rem;
-  }
-
-  /* RTL single column - applies Amiri font to entire container */
-  .single-column.rtl {
-    font-family: 'Amiri', 'Traditional Arabic', serif;
-    font-size: 1.25rem;
-    line-height: 1.85;
-  }
-
-  .paragraph-row {
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .paragraph-row:last-child {
-    border-bottom: none;
-  }
-
-  .paragraph-row:hover {
-    background: rgba(0, 0, 0, 0.02);
-  }
-
-  /* RTL paragraph row - number floats to edge */
-  .paragraph-row.rtl {
-    /* dir="rtl" on parent naturally reverses flex, so no row-reverse needed */
-  }
-
-  .paragraph-row.rtl .para-num {
-    /* Number stays at the edge (right side in RTL) */
-    order: 0;
-  }
+  /* Single column uses global .paper-* styles */
 
   /* Bilingual grid layout */
   .bilingual-grid {

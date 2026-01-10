@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T04:15:17.225Z",
+  "generated": "2026-01-10T12:20:15.466Z",
   "entries": [
+    {
+      "hash": "c4bc674",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Proper RTL styling for BilingualView preview",
+      "scope": null
+    },
     {
       "hash": "63dd0eb",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Extract collection from path when not in frontmatter",
       "scope": null
-    },
-    {
-      "hash": "6c08a7d",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Remove rule-based sentence length validation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "c4bc674",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Proper RTL styling for BilingualView preview",
+        "scope": null
+      },
       {
         "hash": "63dd0eb",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Extract collection from path when not in frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "6c08a7d",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Remove rule-based sentence length validation",
         "scope": null
       }
     ]
