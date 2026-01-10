@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T03:04:06.981Z",
+  "generated": "2026-01-10T03:32:11.437Z",
   "entries": [
+    {
+      "hash": "a3fa5e7",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
+      "scope": null
+    },
     {
       "hash": "6ed1421",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add dual progress bars for import and indexing",
       "scope": null
-    },
-    {
-      "hash": "ff92fd9",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add deployment verification script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "a3fa5e7",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
+        "scope": null
+      },
       {
         "hash": "6ed1421",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "Add dual progress bars for import and indexing",
-        "scope": null
-      },
-      {
-        "hash": "ff92fd9",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add deployment verification script",
         "scope": null
       }
     ]
