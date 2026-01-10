@@ -53,6 +53,16 @@
   function hasSegments(para) {
     return para.segments && Array.isArray(para.segments) && para.segments.length > 0;
   }
+
+  // Strip sentence/phrase markers like ⁅s1⁆ and ⁅/s1⁆
+  function stripMarkers(text) {
+    if (!text) return '';
+    return text
+      .replace(/⁅\/?[sp]\d+⁆/g, '')
+      .replace(/\[\/?[sp]\d+\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 </script>
 
 <div class="bilingual-container w-full" style="max-height: {maxHeight}">
@@ -69,7 +79,7 @@
       {#each paragraphs as para}
         <div class="paragraph-row" class:rtl={isRTL}>
           <span class="para-num">{para.index + 1}</span>
-          <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
+          <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{stripMarkers(para.original)}</p>
         </div>
       {/each}
     </div>
@@ -126,7 +136,7 @@
           <!-- Standard bilingual row without segments -->
           <div class="bilingual-row">
             <div class="para-cell original" class:rtl={isRTL}>
-              <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{para.original}</p>
+              <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{stripMarkers(para.original)}</p>
             </div>
             <div class="para-num-cell">
               <span class="para-num">{para.index + 1}</span>

@@ -158,9 +158,15 @@
     hasChanges = JSON.stringify(editableDoc) !== JSON.stringify(document);
   }
 
+  // Strip sentence/phrase markers like ⁅s1⁆ and ⁅/s1⁆
+  function stripMarkers(text) {
+    if (!text) return '';
+    return text.replace(/⁅\/?[sp]\d+⁆/g, '');
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
-    return marked.parse(text);
+    return marked.parse(stripMarkers(text));
   }
 
   // Load compare content when tab changes to compare
