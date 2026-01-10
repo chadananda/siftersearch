@@ -614,7 +614,7 @@
 
       <!-- Expanded content -->
       {#if isExpanded}
-        <div class="bg-surface-0 overflow-hidden relative">
+        <div class="overflow-hidden relative">
           <!-- Content area -->
           <div>
             {#if loadingContent}

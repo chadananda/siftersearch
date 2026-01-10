@@ -168,6 +168,7 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 0.5rem;
     background: #faf8f3;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     max-width: 100%;
   }
 

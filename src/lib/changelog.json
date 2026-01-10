@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T02:51:56.010Z",
+  "generated": "2026-01-10T03:04:06.981Z",
   "entries": [
+    {
+      "hash": "6ed1421",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
+      "scope": null
+    },
     {
       "hash": "36afe13",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add deployment verification script",
       "scope": null
-    },
-    {
-      "hash": "cd06088",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Use correct CSS variable for ingestion progress bar fill",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "6ed1421",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
+        "scope": null
+      },
       {
         "hash": "36afe13",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "Add deployment verification script",
-        "scope": null
-      },
-      {
-        "hash": "cd06088",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Use correct CSS variable for ingestion progress bar fill",
         "scope": null
       }
     ]
