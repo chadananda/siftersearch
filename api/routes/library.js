@@ -919,11 +919,12 @@ Return ONLY the description text, no quotes or formatting.`;
       orderBy = `title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
     }
 
-    // Get documents and total count
+    // Get documents and total count (include preview for instant accordion)
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, created_at, updated_at, cover_url, encumbered, filename
+               paragraph_count, created_at, updated_at, cover_url, encumbered, filename,
+               (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = docs.id ORDER BY paragraph_index LIMIT 3)) as preview
         FROM docs
         ${whereClause}
         ORDER BY ${orderBy}
