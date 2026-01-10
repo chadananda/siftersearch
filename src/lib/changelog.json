@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T12:36:18.831Z",
+  "generated": "2026-01-10T12:57:17.607Z",
   "entries": [
+    {
+      "hash": "8722eee",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Use single paper-content path for all preview languages",
+      "scope": null
+    },
     {
       "hash": "c4bc674",
       "date": "2026-01-09",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Reingest script uses correct library base path",
       "scope": null
-    },
-    {
-      "hash": "dabb8e8",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Extract collection from path when not in frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-10": [
+      {
+        "hash": "8722eee",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Use single paper-content path for all preview languages",
+        "scope": null
+      }
+    ],
     "2026-01-09": [
       {
         "hash": "c4bc674",
@@ -697,13 +706,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Reingest script uses correct library base path",
-        "scope": null
-      },
-      {
-        "hash": "dabb8e8",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Extract collection from path when not in frontmatter",
         "scope": null
       }
     ]

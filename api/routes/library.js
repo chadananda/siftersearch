@@ -458,12 +458,13 @@ export default async function libraryRoutes(fastify) {
       ORDER BY ln.display_order, ln.name
     `, [node.name, node.id]);
 
-    // Get all documents for this religion (for listing)
+    // Get all documents for this religion (for listing) with preview
     const documents = await queryAll(`
-      SELECT id, title, author, religion, collection, language, year, paragraph_count, filename, slug
-      FROM docs
-      WHERE religion = ?
-      ORDER BY collection, title
+      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.paragraph_count, d.filename, d.slug,
+        (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview
+      FROM docs d
+      WHERE d.religion = ?
+      ORDER BY d.collection, d.title
       LIMIT 500
     `, [node.name]);
 
@@ -509,28 +510,24 @@ export default async function libraryRoutes(fastify) {
     const parsedOffset = parseInt(offset);
     const searchTerm = search.trim();
 
-    // Build query with optional search filter
-    let whereClause = 'WHERE religion = ? AND collection = ?';
+    // Build query with optional search filter (use d. prefix for aliased query)
     let params = [religion.name, node.name];
-
+    let searchCondition = '';
     if (searchTerm) {
-      whereClause += ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)';
+      searchCondition = ' AND (d.title LIKE ? OR d.author LIKE ? OR d.description LIKE ?)';
       const searchPattern = `%${searchTerm}%`;
       params.push(searchPattern, searchPattern, searchPattern);
     }
-
     const [documents, countResult] = await Promise.all([
       queryAll(`
-        SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename, slug
-        FROM docs
-        ${whereClause}
-        ORDER BY title ASC
+        SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
+          (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview
+        FROM docs d
+        WHERE d.religion = ? AND d.collection = ?${searchCondition}
+        ORDER BY d.title ASC
         LIMIT ? OFFSET ?
       `, [...params, parsedLimit, parsedOffset]),
-      queryOne(
-        `SELECT COUNT(*) as count FROM docs ${whereClause}`,
-        params
-      )
+      queryOne(`SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?${searchTerm ? ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)' : ''}`, params)
     ]);
 
     return {

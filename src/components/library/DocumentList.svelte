@@ -71,9 +71,6 @@
   const dispatch = createEventDispatcher();
 
   let expandedDocId = $state(null);
-  let expandedContent = $state(null);
-  let bilingualContent = $state(null);
-  let loadingContent = $state(false);
   let translating = $state(null); // Document ID being translated
   let reingesting = $state(null); // Document ID being re-ingested
   let activeJobs = $state(new Map()); // docId → jobId for active translation jobs
@@ -106,47 +103,9 @@
   };
 
   function toggleDocument(doc) {
-    if (expandedDocId === doc.id) {
-      expandedDocId = null;
-      expandedContent = null;
-      bilingualContent = null;
-    } else {
-      expandedDocId = doc.id;
-      expandedContent = null;
-      bilingualContent = null;
-      loadDocumentContent(doc);
-    }
+    // Accordion: toggle this doc, auto-close previous (no fetch needed - preview preloaded)
+    expandedDocId = expandedDocId === doc.id ? null : doc.id;
     dispatch('select', doc);
-  }
-
-  async function loadDocumentContent(doc) {
-    loadingContent = true;
-    try {
-      // For non-English documents, try bilingual endpoint first
-      const isNonEnglish = doc.language && doc.language !== 'en';
-
-      if (isNonEnglish) {
-        const bilingualRes = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}/bilingual?limit=100`);
-        if (bilingualRes.ok) {
-          const data = await bilingualRes.json();
-          // Only use bilingual if it has paragraphs, otherwise fall back
-          if (data.paragraphs?.length > 0) {
-            bilingualContent = data;
-            loadingContent = false;
-            return;
-          }
-        }
-      }
-
-      // Fallback to standard content
-      const res = await authenticatedFetch(`${API_BASE}/api/library/documents/${doc.id}?paragraphs=true`);
-      if (!res.ok) throw new Error('Failed to load content');
-      expandedContent = await res.json();
-    } catch (err) {
-      expandedContent = { error: err.message };
-    } finally {
-      loadingContent = false;
-    }
   }
 
   function isRTL(language) {
@@ -451,33 +410,30 @@
     {@const isExpanded = expandedDocId === doc.id}
     {@const langName = getLangName(doc.language)}
     {@const isNonEnglish = doc.language && doc.language !== 'en'}
-    {@const hasTranslations = isExpanded && bilingualContent?.paragraphs?.some(p => p.translation)}
-    {@const docLang = bilingualContent?.document?.language || expandedContent?.document?.language || doc.language}
-    {@const needsTranslation = isExpanded && docLang && docLang !== 'en' && !hasTranslations}
+    {@const needsTranslation = isExpanded && doc.language && doc.language !== 'en'}
     {@const docStats = docTranslationStats[doc.id]}
     {@const translationPercent = docStats && docStats.total > 0 ? Math.round((docStats.translated / docStats.total) * 100) : null}
     {@const statsLoading = !!loadingStats[doc.id]}
 
     <div class="group border rounded-lg overflow-hidden transition-colors
                 {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
-      <!-- Title row -->
+      <!-- Title row - full row clickable -->
       <div
-        class="w-full flex items-center gap-2 py-2.5 px-3 transition-colors
+        class="w-full flex items-center gap-2 py-2.5 px-3 transition-colors cursor-pointer
                {isExpanded ? 'bg-accent/10 border-b border-border-subtle' : 'bg-surface-1 hover:bg-surface-2'}"
+        onclick={() => toggleDocument(doc)}
+        onkeydown={(e) => e.key === 'Enter' && toggleDocument(doc)}
+        role="button"
+        tabindex="0"
       >
-        <button
-          class="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer"
-          onclick={() => toggleDocument(doc)}
-        >
-          <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
-          <div class="flex-1 min-w-0 flex items-baseline gap-2">
-            <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
-            {#if doc.author}
-              <span class="text-xs text-secondary shrink-0">{doc.author}</span>
-            {/if}
-          </div>
-        </button>
-        <div class="flex items-center gap-1.5 shrink-0">
+        <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
+        <div class="flex-1 min-w-0 flex items-baseline gap-2">
+          <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
+          {#if doc.author}
+            <span class="text-xs text-secondary shrink-0">{doc.author}</span>
+          {/if}
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0" onclick={(e) => e.stopPropagation()}>
           <!-- Language + Translation compound pill -->
           {#if langName && langName !== 'English'}
             <div class="inline-flex items-center rounded-sm overflow-hidden text-[0.6875rem] font-semibold border border-accent/40">
@@ -543,25 +499,6 @@
             </div>
           {/if}
 
-          {#if isExpanded}
-            {#if isAdmin && (expandedContent?.assets?.length > 0 || bilingualContent?.document)}
-              {@const originalFile = expandedContent?.assets?.find(a => a.asset_type === 'original')}
-              {#if originalFile?.storage_url}
-                <a
-                  href={originalFile.storage_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="p-1.5 text-muted hover:text-accent rounded transition-colors cursor-pointer"
-                  title="Edit source file"
-                  onclick={(e) => e.stopPropagation()}
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                </a>
-              {/if}
-            {/if}
-          {/if}
           <!-- View button - always visible -->
           <a
             class="p-1.5 text-secondary hover:text-accent rounded transition-colors cursor-pointer"
@@ -611,35 +548,14 @@
         </div>
       </div>
 
-      <!-- Expanded content -->
+      <!-- Expanded preview - instant, no fetch needed -->
       {#if isExpanded}
-        <div class="overflow-hidden relative">
-          <!-- Content area -->
-          <div>
-            {#if loadingContent}
-              <div class="flex items-center gap-2 py-4 px-3 text-muted text-sm">
-                <span class="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"></span>
-                Loading content...
-              </div>
-            {:else if expandedContent?.error}
-              <div class="p-3 bg-error/10 text-error rounded text-sm">Failed to load: {expandedContent.error}</div>
-            {:else if bilingualContent || expandedContent}
-              {@const content = bilingualContent || expandedContent}
-              {@const docLang = content.document?.language}
-              <div class="paper-content">
-                <div class="paper-scroll" class:rtl={isRTL(docLang)} style="max-height: 300px">
-                  {#if content.paragraphs?.length > 0}
-                    {#each content.paragraphs as para, i}
-                      <div class="paper-paragraph" class:rtl={isRTL(docLang)}>
-                        <span class="para-num">{i + 1}</span>
-                        <p class="para-text" dir={isRTL(docLang) ? 'rtl' : 'ltr'}>{stripMarkers(para.text || para.original || para.content || '')}</p>
-                      </div>
-                    {/each}
-                  {:else}
-                    <p class="empty-text">No content available</p>
-                  {/if}
-                </div>
-              </div>
+        <div class="paper-content relative">
+          <div class="paper-scroll" class:rtl={isRTL(doc.language)} style="max-height: 150px; overflow-y: auto">
+            {#if doc.preview}
+              <p class="para-text" dir={isRTL(doc.language) ? 'rtl' : 'ltr'}>{stripMarkers(doc.preview)}</p>
+            {:else}
+              <p class="empty-text">No preview available</p>
             {/if}
           </div>
           {#if isAdmin && doc.authority}
