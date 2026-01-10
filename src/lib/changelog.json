@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T20:38:32.499Z",
+  "generated": "2026-01-10T20:42:13.392Z",
   "entries": [
+    {
+      "hash": "63af5e2",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Make .para-text CSS work standalone for library previews",
+      "scope": null
+    },
     {
       "hash": "2f1b870",
       "date": "2026-01-10",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Library preview matches book view with floating paragraph numbers",
       "scope": null
-    },
-    {
-      "hash": "79d2630",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Religion/collection come ONLY from path, ignore frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-10": [
+      {
+        "hash": "63af5e2",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Make .para-text CSS work standalone for library previews",
+        "scope": null
+      },
       {
         "hash": "2f1b870",
         "date": "2026-01-10",
@@ -699,13 +706,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Library preview matches book view with floating paragraph numbers",
-        "scope": null
-      },
-      {
-        "hash": "79d2630",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Religion/collection come ONLY from path, ignore frontmatter",
         "scope": null
       }
     ]

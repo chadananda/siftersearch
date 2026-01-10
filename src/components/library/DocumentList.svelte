@@ -91,6 +91,12 @@
       .replace(/⁅\/?[sp]\d+⁆/g, '')
       // Bracket markers: [s1], [/s1], [p1], etc.
       .replace(/\[\/?[sp]\d+\]/g, '')
+      // Markdown links: [text](url) → text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Markdown bold/italic
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
       // Clean up any double spaces left behind
       .replace(/\s+/g, ' ')
       .trim();
@@ -552,8 +558,13 @@
       {#if isExpanded}
         <div class="paper-content relative">
           <div class="paper-scroll" class:rtl={isRTL(doc.language)} style="max-height: 150px; overflow-y: auto">
-            {#if doc.preview}
-              <p class="para-text" dir={isRTL(doc.language) ? 'rtl' : 'ltr'}>{stripMarkers(doc.preview)}</p>
+            {#if doc.previewParagraphs?.length > 0}
+              {#each doc.previewParagraphs as para}
+                <div class="paper-paragraph" class:rtl={isRTL(doc.language)}>
+                  <span class="para-num">{para.i + 1}</span>
+                  <p class="para-text" dir={isRTL(doc.language) ? 'rtl' : 'ltr'}>{stripMarkers(para.t)}</p>
+                </div>
+              {/each}
             {:else}
               <p class="empty-text">No preview available</p>
             {/if}

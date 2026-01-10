@@ -458,15 +458,26 @@ export default async function libraryRoutes(fastify) {
       ORDER BY ln.display_order, ln.name
     `, [node.name, node.id]);
 
-    // Get all documents for this religion (for listing) with preview
-    const documents = await queryAll(`
+    // Get all documents for this religion (for listing) with preview paragraphs
+    const rawDocuments = await queryAll(`
       SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.paragraph_count, d.filename, d.slug,
-        (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview
+        (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
+         FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview_json
       FROM docs d
       WHERE d.religion = ?
       ORDER BY d.collection, d.title
       LIMIT 500
     `, [node.name]);
+
+    // Parse preview JSON
+    const documents = rawDocuments.map(doc => {
+      let previewParagraphs = [];
+      if (doc.preview_json) {
+        try { previewParagraphs = JSON.parse(doc.preview_json); } catch { /* ignore */ }
+      }
+      const { preview_json, ...rest } = doc;
+      return { ...rest, previewParagraphs };
+    });
 
     return {
       node: {
@@ -518,10 +529,11 @@ export default async function libraryRoutes(fastify) {
       const searchPattern = `%${searchTerm}%`;
       params.push(searchPattern, searchPattern, searchPattern);
     }
-    const [documents, countResult] = await Promise.all([
+    const [rawDocuments, countResult] = await Promise.all([
       queryAll(`
         SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
-          (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview
+          (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
+           FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs d
         WHERE d.religion = ? AND d.collection = ?${searchCondition}
         ORDER BY d.title ASC
@@ -529,6 +541,16 @@ export default async function libraryRoutes(fastify) {
       `, [...params, parsedLimit, parsedOffset]),
       queryOne(`SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?${searchTerm ? ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)' : ''}`, params)
     ]);
+
+    // Parse preview JSON
+    const documents = rawDocuments.map(doc => {
+      let previewParagraphs = [];
+      if (doc.preview_json) {
+        try { previewParagraphs = JSON.parse(doc.preview_json); } catch { /* ignore */ }
+      }
+      const { preview_json, ...rest } = doc;
+      return { ...rest, previewParagraphs };
+    });
 
     return {
       node: {
@@ -919,12 +941,13 @@ Return ONLY the description text, no quotes or formatting.`;
       orderBy = `title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
     }
 
-    // Get documents and total count (include preview for instant accordion)
+    // Get documents and total count (include preview paragraphs for instant accordion)
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
                paragraph_count, created_at, updated_at, cover_url, encumbered, filename,
-               (SELECT GROUP_CONCAT(text, ' ') FROM (SELECT text FROM content WHERE doc_id = docs.id ORDER BY paragraph_index LIMIT 3)) as preview
+               (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
+                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = docs.id ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs
         ${whereClause}
         ORDER BY ${orderBy}
@@ -952,11 +975,21 @@ Return ONLY the description text, no quotes or formatting.`;
       }
     }
 
-    // Add status to each document
-    const documentsWithStatus = documents.map(doc => ({
-      ...doc,
-      status: processingDocs.has(doc.id) ? 'processing' : 'indexed'
-    }));
+    // Add status and parse preview JSON for each document
+    const documentsWithStatus = documents.map(doc => {
+      let previewParagraphs = [];
+      if (doc.preview_json) {
+        try {
+          previewParagraphs = JSON.parse(doc.preview_json);
+        } catch { /* ignore parse errors */ }
+      }
+      const { preview_json, ...rest } = doc;
+      return {
+        ...rest,
+        previewParagraphs,
+        status: processingDocs.has(doc.id) ? 'processing' : 'indexed'
+      };
+    });
 
     return {
       documents: documentsWithStatus,
