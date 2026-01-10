@@ -1,6 +1,5 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import BilingualView from './BilingualView.svelte';
   import { authenticatedFetch } from '../../lib/api.js';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
@@ -624,25 +623,16 @@
               </div>
             {:else if expandedContent?.error}
               <div class="p-3 bg-error/10 text-error rounded text-sm">Failed to load: {expandedContent.error}</div>
-            {:else if bilingualContent}
-              <BilingualView
-                paragraphs={bilingualContent.paragraphs}
-                isRTL={bilingualContent.document?.isRTL || isRTL(bilingualContent.document?.language)}
-                maxHeight="300px"
-                loading={loadingContent}
-              />
-            {:else if expandedContent}
+            {:else if bilingualContent || expandedContent}
+              {@const content = bilingualContent || expandedContent}
+              {@const docLang = content.document?.language}
               <div class="paper-content">
-                <div class="paper-scroll" style="max-height: 300px">
-                  {#if expandedContent.paragraphs?.length > 0}
-                    {#each expandedContent.paragraphs as para, i}
-                      {@const docLang = expandedContent.document?.language}
+                <div class="paper-scroll" class:rtl={isRTL(docLang)} style="max-height: 300px">
+                  {#if content.paragraphs?.length > 0}
+                    {#each content.paragraphs as para, i}
                       <div class="paper-paragraph" class:rtl={isRTL(docLang)}>
                         <span class="para-num">{i + 1}</span>
-                        <p
-                          class="para-text"
-                          dir={isRTL(docLang) ? 'rtl' : 'ltr'}
-                        >{stripMarkers(para.text || para.content || '')}</p>
+                        <p class="para-text" dir={isRTL(docLang) ? 'rtl' : 'ltr'}>{stripMarkers(para.text || para.original || para.content || '')}</p>
                       </div>
                     {/each}
                   {:else}
