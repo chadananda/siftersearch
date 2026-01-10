@@ -332,14 +332,15 @@ mark {
   text-align: left;
 }
 
-.paper-paragraph .para-text {
+/* Para text - works inside .paper-paragraph or directly in .paper-scroll (for previews) */
+.para-text {
   margin: 0;
   font-family: 'Libre Caslon Text', Georgia, serif;
   font-size: 0.9375rem;
   line-height: 1.65;
   color: #1a1a1a;
 }
-.paper-paragraph .para-text[dir="rtl"] {
+.para-text[dir="rtl"] {
   font-family: 'Amiri', 'Traditional Arabic', serif;
   font-size: 1.0625rem;
   line-height: 1.8;

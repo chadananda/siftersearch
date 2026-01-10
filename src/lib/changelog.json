@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T13:02:50.419Z",
+  "generated": "2026-01-10T20:38:32.499Z",
   "entries": [
+    {
+      "hash": "2f1b870",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Add preview field to /api/library/documents endpoint",
+      "scope": null
+    },
     {
       "hash": "29f93f3",
       "date": "2026-01-10",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Religion/collection come ONLY from path, ignore frontmatter",
       "scope": null
-    },
-    {
-      "hash": "3754d45",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Path-based collection takes precedence over frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-10": [
+      {
+        "hash": "2f1b870",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Add preview field to /api/library/documents endpoint",
+        "scope": null
+      },
       {
         "hash": "29f93f3",
         "date": "2026-01-10",
@@ -699,13 +706,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Religion/collection come ONLY from path, ignore frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "3754d45",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Path-based collection takes precedence over frontmatter",
         "scope": null
       }
     ]

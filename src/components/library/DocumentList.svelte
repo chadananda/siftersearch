@@ -570,13 +570,6 @@
 </div>
 
 <style>
-  /* Paper styles use global .paper-* classes from global.css */
-  /* Local overrides only */
-  .paper-content {
-    width: 100%;
-    max-width: 100%;
-  }
-
   .empty-text {
     font-style: italic;
     color: #888;
