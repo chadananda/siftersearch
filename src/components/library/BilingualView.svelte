@@ -75,11 +75,11 @@
     <p class="text-muted text-sm italic p-4">No content available</p>
   {:else if !showBilingual || showOriginalOnly}
     <!-- Single column: original only -->
-    <div class="single-column">
+    <div class="single-column" class:rtl={isRTL} dir={isRTL ? 'rtl' : 'ltr'}>
       {#each paragraphs as para}
         <div class="paragraph-row" class:rtl={isRTL}>
           <span class="para-num">{para.index + 1}</span>
-          <p class="para-text" dir={isRTL ? 'rtl' : 'ltr'}>{stripMarkers(para.original)}</p>
+          <p class="para-text">{stripMarkers(para.original)}</p>
         </div>
       {/each}
     </div>
@@ -196,7 +196,14 @@
 
   /* Single column layout - paper style */
   .single-column {
-    padding: 1rem 1.25rem;
+    padding: 1.25rem 1.5rem;
+  }
+
+  /* RTL single column - applies Amiri font to entire container */
+  .single-column.rtl {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: 1.25rem;
+    line-height: 1.85;
   }
 
   .paragraph-row {
@@ -214,8 +221,14 @@
     background: rgba(0, 0, 0, 0.02);
   }
 
+  /* RTL paragraph row - number floats to edge */
   .paragraph-row.rtl {
-    flex-direction: row-reverse;
+    /* dir="rtl" on parent naturally reverses flex, so no row-reverse needed */
+  }
+
+  .paragraph-row.rtl .para-num {
+    /* Number stays at the edge (right side in RTL) */
+    order: 0;
   }
 
   /* Bilingual grid layout */

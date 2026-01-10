@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T04:05:02.462Z",
+  "generated": "2026-01-10T04:15:17.225Z",
   "entries": [
+    {
+      "hash": "63dd0eb",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Apply text color only to RTL content in BilingualView",
+      "scope": null
+    },
     {
       "hash": "580019c",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove rule-based sentence length validation",
       "scope": null
-    },
-    {
-      "hash": "8db7658",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Prevent segmenter from producing word fragments",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "63dd0eb",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Apply text color only to RTL content in BilingualView",
+        "scope": null
+      },
       {
         "hash": "580019c",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Remove rule-based sentence length validation",
-        "scope": null
-      },
-      {
-        "hash": "8db7658",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Prevent segmenter from producing word fragments",
         "scope": null
       }
     ]
