@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T02:02:08.477Z",
+  "generated": "2026-01-10T02:15:36.577Z",
   "entries": [
+    {
+      "hash": "c294f1c",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
+      "scope": null
+    },
     {
       "hash": "dcb1d37",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add dev:prod and test:bdd:prod scripts",
       "scope": null
-    },
-    {
-      "hash": "e7fc50b",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Calculate ingestionProgress even when Meilisearch disabled",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "c294f1c",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
+        "scope": null
+      },
       {
         "hash": "dcb1d37",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "Add dev:prod and test:bdd:prod scripts",
-        "scope": null
-      },
-      {
-        "hash": "e7fc50b",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Calculate ingestionProgress even when Meilisearch disabled",
         "scope": null
       }
     ]

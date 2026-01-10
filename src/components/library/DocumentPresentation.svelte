@@ -356,16 +356,16 @@
   function renderBlockContent(text, blocktype) {
     if (!text) return '';
     const clean = stripMarkers(text);
-    // For headings, wrap in appropriate tag (marked.parse would wrap in <p>)
+    // For headings, use marked.parseInline to handle links/formatting but not wrap in <p>
     switch (blocktype) {
       case 'heading1':
-        return `<h1>${clean}</h1>`;
+        return `<h1>${marked.parseInline(clean)}</h1>`;
       case 'heading2':
-        return `<h2>${clean}</h2>`;
+        return `<h2>${marked.parseInline(clean)}</h2>`;
       case 'heading3':
-        return `<h3>${clean}</h3>`;
+        return `<h3>${marked.parseInline(clean)}</h3>`;
       case 'heading4':
-        return `<h4>${clean}</h4>`;
+        return `<h4>${marked.parseInline(clean)}</h4>`;
       case 'quote':
         return `<blockquote>${marked.parse(clean)}</blockquote>`;
       default:
