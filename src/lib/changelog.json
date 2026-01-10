@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T01:48:07.756Z",
+  "generated": "2026-01-10T02:02:08.477Z",
   "entries": [
+    {
+      "hash": "dcb1d37",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
+      "scope": null
+    },
     {
       "hash": "7b589dc",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Calculate ingestionProgress even when Meilisearch disabled",
       "scope": null
-    },
-    {
-      "hash": "3c2bb81",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Add ingestionProgress to search stats endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "dcb1d37",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
+        "scope": null
+      },
       {
         "hash": "7b589dc",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Calculate ingestionProgress even when Meilisearch disabled",
-        "scope": null
-      },
-      {
-        "hash": "3c2bb81",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Add ingestionProgress to search stats endpoint",
         "scope": null
       }
     ]

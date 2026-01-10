@@ -352,7 +352,7 @@
     return marked.parse(clean);
   }
 
-  // Render content based on blocktype (heading1, heading2, heading3, quote, etc.)
+  // Render content based on blocktype (heading1, heading2, heading3, heading4, quote, etc.)
   function renderBlockContent(text, blocktype) {
     if (!text) return '';
     const clean = stripMarkers(text);
@@ -364,6 +364,8 @@
         return `<h2>${clean}</h2>`;
       case 'heading3':
         return `<h3>${clean}</h3>`;
+      case 'heading4':
+        return `<h4>${clean}</h4>`;
       case 'quote':
         return `<blockquote>${marked.parse(clean)}</blockquote>`;
       default:
@@ -2253,6 +2255,45 @@
 
   .paragraph-text :global(p:last-child) {
     margin-bottom: 0;
+  }
+
+  /* Block-level headings within paragraphs */
+  .paragraph-text :global(h1),
+  .paragraph-text :global(h2),
+  .paragraph-text :global(h3),
+  .paragraph-text :global(h4) {
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .paragraph-text :global(h1) {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+  }
+
+  .paragraph-text :global(h2) {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+  }
+
+  .paragraph-text :global(h3) {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+  }
+
+  .paragraph-text :global(h4) {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .paragraph-text :global(blockquote) {
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+    margin: 0;
+    font-style: italic;
+    color: var(--text-secondary);
   }
 
   /* Bilingual layout - three columns: original | par# | translation */
