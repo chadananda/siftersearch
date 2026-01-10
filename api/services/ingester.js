@@ -580,7 +580,7 @@ export function parseMarkdownFrontmatter(text) {
 
 /**
  * Try to extract the heading for a chunk from the full document
- * (Reused from original indexer.js)
+ * Only assigns heading if it IMMEDIATELY precedes this chunk (no other paragraphs between)
  */
 function extractHeading(fullContent, chunkText) {
   // Find chunk position in document
@@ -589,15 +589,31 @@ function extractHeading(fullContent, chunkText) {
 
   // Look for markdown headings before this position
   const beforeChunk = fullContent.substring(0, chunkPos);
-  const headingMatches = beforeChunk.match(/^#+\s+(.+)$/gm);
 
-  if (headingMatches && headingMatches.length > 0) {
-    // Return the last heading before this chunk
-    const lastHeading = headingMatches[headingMatches.length - 1];
-    return lastHeading.replace(/^#+\s+/, '');
+  // Find the last heading and its position
+  const headingRegex = /^(#+\s+.+)$/gm;
+  let lastHeading = null;
+  let lastHeadingEnd = -1;
+  let match;
+
+  while ((match = headingRegex.exec(beforeChunk)) !== null) {
+    lastHeading = match[1];
+    lastHeadingEnd = match.index + match[0].length;
   }
 
-  return null;
+  if (!lastHeading) return null;
+
+  // Check if there's substantial content between heading and this chunk
+  // Only whitespace/blank lines allowed between heading and its first paragraph
+  const betweenContent = beforeChunk.substring(lastHeadingEnd).trim();
+
+  // If there's other text between the heading and this chunk, don't assign the heading
+  // (it belongs to an earlier paragraph)
+  if (betweenContent.length > 0) {
+    return null;
+  }
+
+  return lastHeading.replace(/^#+\s+/, '');
 }
 
 /**

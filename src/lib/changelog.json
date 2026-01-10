@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-09T22:58:55.310Z",
+  "generated": "2026-01-10T01:18:34.417Z",
   "entries": [
+    {
+      "hash": "32de4df",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "YAML frontmatter serialization with special characters",
+      "scope": null
+    },
     {
       "hash": "bb364e3",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "English text passes through unchanged - no segmentation",
       "scope": null
-    },
-    {
-      "hash": "88a54f0",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Use correct aiService API for structural analysis",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "32de4df",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "YAML frontmatter serialization with special characters",
+        "scope": null
+      },
       {
         "hash": "bb364e3",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "English text passes through unchanged - no segmentation",
-        "scope": null
-      },
-      {
-        "hash": "88a54f0",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Use correct aiService API for structural analysis",
         "scope": null
       }
     ]
