@@ -65,7 +65,7 @@
   }
 </script>
 
-<div class="bilingual-container w-full" style="max-height: {maxHeight}; background: #faf8f3; border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+<div class="bilingual-container w-full" style="max-height: {maxHeight}; background: #faf8f3; {isRTL ? 'color: #1a1a1a;' : ''} border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
   {#if loading}
     <div class="loading-state">
       <span class="spinner"></span>
