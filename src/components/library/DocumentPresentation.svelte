@@ -352,6 +352,25 @@
     return marked.parse(clean);
   }
 
+  // Render content based on blocktype (heading1, heading2, heading3, quote, etc.)
+  function renderBlockContent(text, blocktype) {
+    if (!text) return '';
+    const clean = stripMarkers(text);
+    // For headings, wrap in appropriate tag (marked.parse would wrap in <p>)
+    switch (blocktype) {
+      case 'heading1':
+        return `<h1>${clean}</h1>`;
+      case 'heading2':
+        return `<h2>${clean}</h2>`;
+      case 'heading3':
+        return `<h3>${clean}</h3>`;
+      case 'quote':
+        return `<blockquote>${marked.parse(clean)}</blockquote>`;
+      default:
+        return marked.parse(clean);
+    }
+  }
+
   function getLanguageDirection(lang) {
     const rtlLanguages = ['ar', 'fa', 'he', 'ur'];
     return rtlLanguages.includes(lang) ? 'rtl' : 'ltr';
@@ -1177,7 +1196,7 @@
                     </div>
                   {:else}
                     <!-- Fallback: plain original text -->
-                    <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                    <div class="paragraph-text">{@html renderBlockContent(para.text, para.blocktype)}</div>
                   {/if}
                 </div>
               </div>
@@ -1251,7 +1270,7 @@
                 {(para.paragraph_index ?? i) + 1}
               </button>
               <div class="para-text-wrapper">
-                <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
+                <div class="paragraph-text">{@html renderBlockContent(para.text, para.blocktype)}</div>
               </div>
             {/if}
           </div>
