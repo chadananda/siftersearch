@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T02:45:31.580Z",
+  "generated": "2026-01-10T02:51:56.010Z",
   "entries": [
+    {
+      "hash": "36afe13",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
+      "scope": null
+    },
     {
       "hash": "348ed87",
       "date": "2026-01-09",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use correct CSS variable for ingestion progress bar fill",
       "scope": null
-    },
-    {
-      "hash": "ef61209",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add two-tier BDD testing infrastructure",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-09": [
+      {
+        "hash": "36afe13",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
+        "scope": null
+      },
       {
         "hash": "348ed87",
         "date": "2026-01-09",
@@ -697,13 +704,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Use correct CSS variable for ingestion progress bar fill",
-        "scope": null
-      },
-      {
-        "hash": "ef61209",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add two-tier BDD testing infrastructure",
         "scope": null
       }
     ]

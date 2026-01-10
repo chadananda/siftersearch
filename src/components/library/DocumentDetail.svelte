@@ -1,7 +1,11 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { marked } from 'marked';
+  import markedFootnote from 'marked-footnote';
   import { authenticatedFetch } from '../../lib/api.js';
+
+  // Enable footnote extension for markdown
+  marked.use(markedFootnote());
 
   let { document = null, isAdmin = false } = $props();
 

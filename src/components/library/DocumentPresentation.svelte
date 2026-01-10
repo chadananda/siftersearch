@@ -15,7 +15,11 @@
 
   import { onMount, onDestroy } from 'svelte';
   import { marked } from 'marked';
+  import markedFootnote from 'marked-footnote';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
+
+  // Enable footnote extension for markdown
+  marked.use(markedFootnote());
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
   import { authenticatedFetch } from '../../lib/api.js';
   import AuthModal from '../AuthModal.svelte';
