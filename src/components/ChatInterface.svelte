@@ -1275,8 +1275,8 @@
                   </div>
                 </div>
               {/if}
-              <!-- Indexing progress (Meilisearch) -->
-              {#if libraryStats.indexingProgress && libraryStats.indexingProgress.percentComplete < 100}
+              <!-- Indexing progress (Meilisearch) - only show when data available -->
+              {#if libraryStats.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.percentComplete < 100}
                 <div class="ingestion-progress indexing">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Indexed in search</span>
@@ -1669,7 +1669,7 @@
       <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
       <div class="input-wrapper">
         <!-- Lightning toggle for quick search mode -->
-        <button type="button" class="lightning-btn {searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'Switch to Chat Mode' : 'Quick Search Mode'}>
+        <button type="button" class="lightning-btn {searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'AI Search Mode' : 'Quick Search Mode'}>
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </button>
         <input

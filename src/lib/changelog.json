@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T17:03:50.800Z",
+  "generated": "2026-01-11T17:17:33.621Z",
   "entries": [
+    {
+      "hash": "a0ed63f",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Show search results when searchMode is active",
+      "scope": null
+    },
     {
       "hash": "d68e6e9",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Meilisearch orphan cleanup script",
       "scope": null
-    },
-    {
-      "hash": "eab6aa9",
-      "date": "2026-01-08",
-      "type": "Updated",
-      "description": "Redirect creation script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "a0ed63f",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Show search results when searchMode is active",
+        "scope": null
+      },
       {
         "hash": "d68e6e9",
         "date": "2026-01-11",
@@ -701,13 +708,6 @@
         "date": "2026-01-08",
         "type": "Updated",
         "description": "Meilisearch orphan cleanup script",
-        "scope": null
-      },
-      {
-        "hash": "eab6aa9",
-        "date": "2026-01-08",
-        "type": "Updated",
-        "description": "Redirect creation script",
         "scope": null
       }
     ]
