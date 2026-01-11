@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T23:13:23.651Z",
+  "generated": "2026-01-11T23:36:49.348Z",
   "entries": [
+    {
+      "hash": "f8ab0f4",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Simplify quick search to always-expanded cards",
+      "scope": null
+    },
     {
       "hash": "5e07cca",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add script to remove duplicate frontmatter from source files",
       "scope": null
-    },
-    {
-      "hash": "cf6a336",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add script to fix documents with frontmatter in first paragraph",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "f8ab0f4",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Simplify quick search to always-expanded cards",
+        "scope": null
+      },
       {
         "hash": "5e07cca",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add script to remove duplicate frontmatter from source files",
-        "scope": null
-      },
-      {
-        "hash": "cf6a336",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add script to fix documents with frontmatter in first paragraph",
         "scope": null
       }
     ]
