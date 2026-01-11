@@ -100,19 +100,22 @@ export function getImportProgress() {
  */
 export async function getIngestionProgress() {
   try {
-    const [totalResult, withContentResult] = await Promise.all([
+    const [totalResult, withContentResult, paragraphResult] = await Promise.all([
       queryOne('SELECT COUNT(*) as count FROM docs'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content')
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content'),
+      queryOne('SELECT COUNT(*) as count FROM content')
     ]);
 
     const totalDocs = totalResult?.count || 0;
     const docsWithContent = withContentResult?.count || 0;
     const docsPending = totalDocs - docsWithContent;
+    const totalParagraphs = paragraphResult?.count || 0;
 
     return {
       totalDocs,
       docsWithContent,
       docsPending,
+      totalParagraphs,  // Total paragraphs ingested (stable LibSQL count)
       percentComplete: totalDocs > 0 ? Math.round((docsWithContent / totalDocs) * 100) : 100
     };
   } catch (err) {

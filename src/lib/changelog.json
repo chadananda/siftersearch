@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T18:02:11.218Z",
+  "generated": "2026-01-11T18:07:35.503Z",
   "entries": [
+    {
+      "hash": "8c9eeb9",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Use correct doc_id field for Meilisearch facet query",
+      "scope": null
+    },
     {
       "hash": "f56fbf0",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Prevent sentences ending with prepositions",
       "scope": null
-    },
-    {
-      "hash": "0b788dd",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Trailing text after last sentence ending ALWAYS carried forward",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "8c9eeb9",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Use correct doc_id field for Meilisearch facet query",
+        "scope": null
+      },
       {
         "hash": "f56fbf0",
         "date": "2026-01-11",
@@ -701,13 +708,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Prevent sentences ending with prepositions",
-        "scope": null
-      },
-      {
-        "hash": "0b788dd",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Trailing text after last sentence ending ALWAYS carried forward",
         "scope": null
       }
     ]
