@@ -176,7 +176,7 @@ async function syncDocument(docId) {
       authority,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
-      ...(embedding && { _vectors: { default: embedding } }),
+      _vectors: { default: embedding || null },  // Explicit null opts out of embeddings
       created_at: new Date().toISOString()
     };
   });

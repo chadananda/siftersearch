@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T18:07:35.503Z",
+  "generated": "2026-01-11T18:10:58.605Z",
   "entries": [
+    {
+      "hash": "eedf7d6",
+      "date": "2026-01-11",
+      "type": "New",
+      "description": "Add stable LibSQL paragraph count to ingestionProgress",
+      "scope": null
+    },
     {
       "hash": "8c9eeb9",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Word-based hashing for re-segmentation preserves embeddings",
       "scope": null
-    },
-    {
-      "hash": "ddbb46a",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Prevent sentences ending with prepositions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "eedf7d6",
+        "date": "2026-01-11",
+        "type": "New",
+        "description": "Add stable LibSQL paragraph count to ingestionProgress",
+        "scope": null
+      },
       {
         "hash": "8c9eeb9",
         "date": "2026-01-11",
@@ -699,15 +706,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Word-based hashing for re-segmentation preserves embeddings",
-        "scope": null
-      }
-    ],
-    "2026-01-08": [
-      {
-        "hash": "ddbb46a",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Prevent sentences ending with prepositions",
         "scope": null
       }
     ]
