@@ -1255,20 +1255,17 @@
   <!-- Messages area - Main content region -->
   <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
     {#if searchMode}
-      <!-- Quick Search Results - uses same source-card styling as chat hits -->
-      <div class="analysis-sources p-2 sm:p-4 overflow-y-auto flex-1">
+      <!-- Quick Search Results - always expanded cards matching chat hit style -->
+      <div class="quick-search-results">
         {#if searchLoading}
-          <div class="text-muted text-sm flex items-center gap-2 p-2">
+          <div class="text-muted text-sm flex items-center gap-2 p-4">
             <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
             Searching...
           </div>
         {:else if searchResults.length > 0}
-          <div class="text-xs text-muted px-2 mb-2">{totalHits.toLocaleString()} results in {searchTime}ms</div>
+          <div class="text-xs text-muted px-4 py-2">{totalHits.toLocaleString()} results in {searchTime}ms</div>
           {#each searchResults as result, i}
-            {@const resultKey = `quick-${i}`}
-            {@const expanded = expandedResults[resultKey] !== undefined ? expandedResults[resultKey] : i === 0}
             {@const text = result._formatted?.text || result.text || ''}
-            {@const plainText = text.replace(/<[^>]*>/g, '')}
             {@const title = result.title || 'Untitled'}
             {@const author = result.author}
             {@const religion = result.religion || ''}
@@ -1277,42 +1274,26 @@
             {@const language = result.language || 'en'}
             {@const isRTL = ['ar', 'fa', 'he', 'ur'].includes(language)}
 
-            <div class="source-card {expanded ? 'expanded' : 'collapsed'}" role="article">
-              {#if !expanded}
-                <button class="source-summary-header" onclick={() => toggleResult('quick', i)}>
-                  <span class="source-num">{i + 1}</span>
-                  <span class="source-summary-text">{truncateAtSentence(plainText, 100)}</span>
-                  <span class="source-summary-author">{author || ''}</span>
-                  <svg class="source-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              {:else}
-                <button class="source-collapse-btn px-3 py-2 sm:px-4" onclick={() => toggleResult('quick', i)}>
-                  <span class="source-num">{i + 1}</span>
-                  <span class="source-summary-expanded">{truncateAtSentence(plainText, 120)}</span>
-                  <svg class="source-expand-icon open" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+            <div class="source-card expanded" role="article">
+              <!-- Paper-like text area -->
+              <div class="source-paper p-3 sm:p-4 sm:px-5" class:rtl={isRTL}>
+                <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
+                <p class="source-text" dir={isRTL ? 'rtl' : 'ltr'}>{@html formatText(text)}</p>
+              </div>
 
-                <div class="source-paper p-3 sm:p-4 sm:px-5" class:rtl={isRTL}>
-                  <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
-                  <p class="source-text" dir={isRTL ? 'rtl' : 'ltr'}>{@html formatText(text)}</p>
+              <!-- Citation bar -->
+              <div class="citation-bar px-3 py-2 gap-2 sm:px-4 sm:gap-4">
+                <div class="citation-path">
+                  <span class="source-num-inline">{i + 1}</span>
+                  {#if religion}<span class="citation-segment">{religion}</span>{/if}
+                  {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
+                  {#if author && !rawCollection.includes(author)}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
+                  <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
                 </div>
-
-                <div class="citation-bar px-3 py-2 gap-2 sm:px-4 sm:gap-4">
-                  <div class="citation-path">
-                    {#if religion}<span class="citation-segment">{religion}</span>{/if}
-                    {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
-                    {#if author && !rawCollection.includes(author)}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
-                    <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
-                  </div>
-                  <button class="read-more-btn" onclick={(e) => { e.stopPropagation(); openReaderFromSearch(result); }}>
-                    Read More
-                  </button>
-                </div>
-              {/if}
+                <button class="read-more-btn" onclick={() => openReaderFromSearch(result)}>
+                  Read More
+                </button>
+              </div>
             </div>
           {/each}
         {:else if input.trim()}
@@ -2758,6 +2739,32 @@
     background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
     padding: 0.1em 0.2em;
     border-radius: 0.2em;
+  }
+
+  /* Quick Search Results Container */
+  .quick-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Inline result number for citation bar */
+  .source-num-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    background-color: var(--accent-primary);
+    color: white;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
   }
 
   /* Source Card - Paper-like hit card design */
