@@ -17,6 +17,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
+import { getIndexingProgress } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -162,8 +163,8 @@ export default async function libraryRoutes(fastify) {
    * Uses libsql as source of truth for counts
    */
   fastify.get('/stats', async () => {
-    // Get document and paragraph counts from libsql
-    const [docCount, paraCount, docsWithContent, facetStats] = await Promise.all([
+    // Get document and paragraph counts from libsql + Meilisearch indexing progress
+    const [docCount, paraCount, docsWithContent, facetStats, meiliProgress] = await Promise.all([
       queryOne('SELECT COUNT(*) as count FROM docs'),
       queryOne('SELECT COUNT(*) as count FROM content'),
       queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content'),
@@ -175,7 +176,8 @@ export default async function libraryRoutes(fastify) {
           COUNT(*) as count
         FROM docs
         GROUP BY religion, collection, language
-      `)
+      `),
+      getIndexingProgress()
     ]);
 
     // Build facet distributions from query results
@@ -256,7 +258,8 @@ export default async function libraryRoutes(fastify) {
       collectionCounts,
       languageCounts,
       indexing: indexingStats.pending > 0 || indexingStats.processing > 0,
-      indexingProgress: indexingStats,
+      ingestionQueue: indexingStats,  // Renamed: queue status for document processing
+      indexingProgress: meiliProgress,  // Meilisearch indexing: indexed vs totalWithContent
       translating: translationStats.pending > 0 || translationStats.processing > 0,
       translationProgress: translationStats,
       ingestionProgress: {
