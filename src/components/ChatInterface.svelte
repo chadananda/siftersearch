@@ -1394,21 +1394,17 @@
                   <span class="server-version">Server v{libraryStats.serverVersion}</span>
                 {/if}
               </div>
-              {#if libraryStats.meiliTaskProgress && (libraryStats.meiliTaskProgress.processing > 0 || libraryStats.meiliTaskProgress.pending > 0)}
+              {#if libraryStats.indexingProgress && libraryStats.indexingProgress.pending > 0}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
                       <circle cx="4" cy="4" r="3" />
                     </svg>
-                    <span>Meilisearch processing</span>
+                    <span>Indexing for search</span>
                   </div>
                   <div class="indexing-status">
-                    {#if libraryStats.meiliTaskProgress.processing > 0}
-                      <span class="status-item processing">{libraryStats.meiliTaskProgress.processing} processing</span>
-                    {/if}
-                    {#if libraryStats.meiliTaskProgress.pending > 0}
-                      <span class="status-item pending">{libraryStats.meiliTaskProgress.pending} queued</span>
-                    {/if}
+                    <span class="status-item processing">{libraryStats.indexingProgress.indexed.toLocaleString()} of {libraryStats.indexingProgress.totalWithContent.toLocaleString()} documents</span>
+                    <span class="status-item pending">{libraryStats.indexingProgress.percentComplete}% complete</span>
                   </div>
                 </div>
               {/if}
