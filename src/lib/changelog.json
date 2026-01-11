@@ -1,6 +1,34 @@
 {
-  "generated": "2026-01-11T19:06:38.471Z",
+  "generated": "2026-01-11T21:34:11.938Z",
   "entries": [
+    {
+      "hash": "0225f67",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Add retrieveVectors option to rescue script",
+      "scope": null
+    },
+    {
+      "hash": "ec263bd",
+      "date": "2026-01-11",
+      "type": "Updated",
+      "description": "Rescue embeddings migration script",
+      "scope": null
+    },
+    {
+      "hash": "78d9a3d",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Hide internal tech stack from UI, show meaningful indexing progress",
+      "scope": null
+    },
+    {
+      "hash": "f6c21f3",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "PWA update uses 2-min cooldown instead of permanent block",
+      "scope": null
+    },
     {
       "hash": "30cb95c",
       "date": "2026-01-11",
@@ -322,38 +350,38 @@
       "type": "Fixed",
       "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
       "scope": null
-    },
-    {
-      "hash": "8aa3d76",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use unique IDs for content rows to avoid hash collisions",
-      "scope": null
-    },
-    {
-      "hash": "6063de5",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
-      "scope": null
-    },
-    {
-      "hash": "daa2a95",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add re-import button and make view/edit always visible on library items",
-      "scope": null
-    },
-    {
-      "hash": "86b708a",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add ingestion progress display to home page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "0225f67",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Add retrieveVectors option to rescue script",
+        "scope": null
+      },
+      {
+        "hash": "ec263bd",
+        "date": "2026-01-11",
+        "type": "Updated",
+        "description": "Rescue embeddings migration script",
+        "scope": null
+      },
+      {
+        "hash": "78d9a3d",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Hide internal tech stack from UI, show meaningful indexing progress",
+        "scope": null
+      },
+      {
+        "hash": "f6c21f3",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "PWA update uses 2-min cooldown instead of permanent block",
+        "scope": null
+      },
       {
         "hash": "30cb95c",
         "date": "2026-01-11",
@@ -678,34 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
-        "scope": null
-      },
-      {
-        "hash": "8aa3d76",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use unique IDs for content rows to avoid hash collisions",
-        "scope": null
-      },
-      {
-        "hash": "6063de5",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
-        "scope": null
-      },
-      {
-        "hash": "daa2a95",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add re-import button and make view/edit always visible on library items",
-        "scope": null
-      },
-      {
-        "hash": "86b708a",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add ingestion progress display to home page",
         "scope": null
       }
     ]
