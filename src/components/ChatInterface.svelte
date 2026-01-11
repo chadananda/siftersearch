@@ -391,11 +391,17 @@
           if (serverNewer) {
             // Server is newer - client needs to reload (only if no active conversation)
             if (messages.length === 0) {
-              // Check if we already tried reloading this session
+              // Check if we recently tried reloading (with 2-minute cooldown to allow CDN propagation)
               const reloadKey = `reload_attempted_${stats.serverVersion}`;
-              if (!sessionStorage.getItem(reloadKey)) {
-                sessionStorage.setItem(reloadKey, 'true');
+              const lastAttempt = sessionStorage.getItem(reloadKey);
+              const cooldownMs = 2 * 60 * 1000; // 2 minutes
+              const cooldownExpired = !lastAttempt || (Date.now() - parseInt(lastAttempt, 10)) > cooldownMs;
+
+              if (cooldownExpired) {
+                // Store timestamp for cooldown (not boolean - allows retry after cooldown)
+                sessionStorage.setItem(reloadKey, Date.now().toString());
                 console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), updating PWA...`);
+
                 // Unregister service worker and clear all caches before reloading
                 (async () => {
                   try {
@@ -414,11 +420,16 @@
                   } catch (e) {
                     console.error('[Deploy] Error clearing PWA state:', e);
                   }
-                  // Hard reload bypassing cache
-                  window.location.reload(true);
+                  // Small delay to ensure cache clearing completes
+                  await new Promise(r => setTimeout(r, 100));
+                  // Reload with cache-busting query param to bypass CDN/browser cache
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('_v', stats.serverVersion);
+                  window.location.replace(url.toString());
                 })();
               } else {
-                console.log(`[Deploy] Already attempted reload for ${stats.serverVersion}, skipping`);
+                const secondsLeft = Math.ceil((parseInt(lastAttempt, 10) + cooldownMs - Date.now()) / 1000);
+                console.log(`[Deploy] Update cooldown active (${secondsLeft}s remaining), waiting for CDN propagation...`);
               }
             } else {
               console.log(`[Deploy] Server newer but conversation active, skipping reload`);

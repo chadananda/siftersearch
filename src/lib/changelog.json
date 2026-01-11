@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T19:05:25.500Z",
+  "generated": "2026-01-11T19:06:38.471Z",
   "entries": [
+    {
+      "hash": "30cb95c",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Use Meilisearch stats API for indexing progress",
+      "scope": null
+    },
     {
       "hash": "66d944f",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add ingestion progress display to home page",
       "scope": null
-    },
-    {
-      "hash": "1c133b2",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Improve language detection using character ratio",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "30cb95c",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Use Meilisearch stats API for indexing progress",
+        "scope": null
+      },
       {
         "hash": "66d944f",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add ingestion progress display to home page",
-        "scope": null
-      },
-      {
-        "hash": "1c133b2",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Improve language detection using character ratio",
         "scope": null
       }
     ]
