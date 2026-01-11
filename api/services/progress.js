@@ -143,12 +143,12 @@ export async function getIndexingProgress() {
       const meili = getMeili();
       if (meili) {
         // Query for unique doc_ids that have paragraphs indexed
-        // Using facets to get unique document_id count
+        // Using facets to get unique doc_id count
         const result = await meili.index(INDEXES.PARAGRAPHS).search('', {
           limit: 0,
-          facets: ['document_id']
+          facets: ['doc_id']
         });
-        indexedDocs = Object.keys(result.facetDistribution?.document_id || {}).length;
+        indexedDocs = Object.keys(result.facetDistribution?.doc_id || {}).length;
       }
     } catch {
       // Meilisearch not available - show as 0 indexed
