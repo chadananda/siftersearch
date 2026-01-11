@@ -73,7 +73,8 @@ async function main() {
     const batch = await paragraphsIndex.getDocuments({
       limit: BATCH_SIZE,
       offset,
-      fields: ['id', 'text', '_vectors']
+      fields: ['id', 'text', '_vectors'],
+      retrieveVectors: true
     });
 
     if (!batch.results || batch.results.length === 0) break;
