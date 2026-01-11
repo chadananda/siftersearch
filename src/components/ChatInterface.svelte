@@ -309,7 +309,7 @@
     searchLoading = true;
     const start = performance.now();
     try {
-      const data = await search.query(q, { limit: 50, mode: 'keyword', offset: 0 });
+      const data = await search.quick(q, 20);
       if (input.trim() === q) {
         searchResults = data.hits || [];
         totalHits = data.estimatedTotalHits || searchResults.length;
