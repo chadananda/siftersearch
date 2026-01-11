@@ -335,11 +335,17 @@
   let retryInterval = $state(null);
   let refreshInterval = $state(null);
   const RETRY_DELAY = 10000; // 10 seconds
-  const REFRESH_INTERVAL = 10000; // 10 seconds - check for server version and stats
+  const MIN_REFRESH_INTERVAL = 10000; // 10 seconds - minimum polling interval
+  const MAX_REFRESH_INTERVAL = 300000; // 5 minutes - maximum backoff
   const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
+  const BACKOFF_MULTIPLIER = 1.5; // Increase interval by 50% each time stats unchanged
 
   // Track if we've already triggered an update this session
   let updateTriggered = $state(false);
+
+  // Backoff state for reducing polling when idle
+  let currentBackoffInterval = $state(MIN_REFRESH_INTERVAL);
+  let lastUserActivity = $state(Date.now());
 
   async function loadLibraryStats(silent = false) {
     if (!silent) statsLoading = true;
@@ -356,6 +362,20 @@
       if (hasChanged) {
         libraryStats = stats;
         if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
+        // Reset backoff when stats change
+        currentBackoffInterval = MIN_REFRESH_INTERVAL;
+      } else if (silent) {
+        // Stats unchanged - increase backoff for next poll (unless actively indexing)
+        if (!stats.indexing && !stats.translating) {
+          const timeSinceActivity = Date.now() - lastUserActivity;
+          if (timeSinceActivity > 30000) { // User idle for 30+ seconds
+            const newInterval = Math.min(currentBackoffInterval * BACKOFF_MULTIPLIER, MAX_REFRESH_INTERVAL);
+            if (newInterval > currentBackoffInterval) {
+              console.log('[Library] User idle, backing off polling to', Math.round(newInterval / 1000), 's');
+            }
+            currentBackoffInterval = newInterval;
+          }
+        }
       }
 
       // Check for version mismatch
@@ -450,32 +470,79 @@
   }
 
   let currentPollingInterval = $state(null);
+  let isActivelyIndexing = $state(false);
+  let refreshTimeoutId = null;
+
+  // Track user activity to reset backoff
+  function handleUserActivity() {
+    const wasIdle = Date.now() - lastUserActivity > 30000;
+    lastUserActivity = Date.now();
+    // If user was idle and is now active, reset backoff and trigger immediate refresh
+    if (wasIdle && currentBackoffInterval > MIN_REFRESH_INTERVAL) {
+      currentBackoffInterval = MIN_REFRESH_INTERVAL;
+      console.log('[Library] User active - resetting backoff to', MIN_REFRESH_INTERVAL / 1000, 's');
+    }
+  }
+
+  function scheduleNextPoll() {
+    // Clear any existing timeout
+    if (refreshTimeoutId) {
+      clearTimeout(refreshTimeoutId);
+      refreshTimeoutId = null;
+    }
+
+    // Don't schedule if page is hidden - we'll resume on visibility change
+    if (document.hidden) {
+      return;
+    }
+
+    // Determine interval: fast polling during indexing, otherwise use backoff
+    const interval = isActivelyIndexing ? INDEXING_REFRESH_INTERVAL : currentBackoffInterval;
+
+    refreshTimeoutId = setTimeout(() => {
+      if (!document.hidden) {
+        loadLibraryStats(true); // silent refresh - this will call startRefreshPolling again
+      }
+    }, interval);
+  }
+
+  // Handle tab visibility changes - stop polling when hidden, resume when visible
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      // Tab hidden - stop polling entirely
+      if (refreshTimeoutId) {
+        clearTimeout(refreshTimeoutId);
+        refreshTimeoutId = null;
+      }
+      console.log('[Library] Tab hidden - polling paused');
+    } else {
+      // Tab visible again - reset backoff and resume polling
+      currentBackoffInterval = MIN_REFRESH_INTERVAL;
+      console.log('[Library] Tab visible - resuming polling');
+      loadLibraryStats(true); // Immediate refresh on return
+    }
+  }
 
   function startRefreshPolling(isActive = false) {
-    const targetInterval = isActive ? INDEXING_REFRESH_INTERVAL : REFRESH_INTERVAL;
+    // Update indexing state
+    const wasActive = isActivelyIndexing;
+    isActivelyIndexing = isActive;
 
-    // If interval changed, restart polling
-    if (refreshInterval && currentPollingInterval !== targetInterval) {
-      clearInterval(refreshInterval);
-      refreshInterval = null;
-    }
-
-    if (refreshInterval) return; // Already polling at correct rate
-
-    currentPollingInterval = targetInterval;
-    if (isActive) {
+    if (isActive && !wasActive) {
       console.log('[Library] Indexing/translating detected - polling every 3s');
+      // Reset backoff when indexing starts
+      currentBackoffInterval = MIN_REFRESH_INTERVAL;
     }
 
-    refreshInterval = setInterval(() => {
-      // Only refresh if page is visible
-      if (!document.hidden) {
-        loadLibraryStats(true); // silent refresh
-      }
-    }, targetInterval);
+    // Schedule next poll with dynamic interval
+    scheduleNextPoll();
   }
 
   function stopRefreshPolling() {
+    if (refreshTimeoutId) {
+      clearTimeout(refreshTimeoutId);
+      refreshTimeoutId = null;
+    }
     if (refreshInterval) {
       clearInterval(refreshInterval);
       refreshInterval = null;
@@ -939,6 +1006,17 @@
     initSession();
     inputEl?.focus();
 
+    // Track user activity to reset polling backoff
+    // Use passive listeners for better scroll performance
+    window.addEventListener('mousemove', handleUserActivity, { passive: true });
+    window.addEventListener('keydown', handleUserActivity, { passive: true });
+    window.addEventListener('click', handleUserActivity, { passive: true });
+    window.addEventListener('scroll', handleUserActivity, { passive: true });
+    window.addEventListener('touchstart', handleUserActivity, { passive: true });
+
+    // Stop polling when tab is hidden, resume when visible
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Capture referral code from URL if present
     captureReferral();
 
@@ -961,6 +1039,13 @@
     return () => {
       stopRetryPolling();
       stopRefreshPolling();
+      // Remove activity listeners
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+      window.removeEventListener('touchstart', handleUserActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   });
 </script>

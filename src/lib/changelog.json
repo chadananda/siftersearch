@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T18:10:58.605Z",
+  "generated": "2026-01-11T19:05:25.500Z",
   "entries": [
+    {
+      "hash": "66d944f",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Always include _vectors in Meilisearch sync (null to opt-out)",
+      "scope": null
+    },
     {
       "hash": "eedf7d6",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Improve language detection using character ratio",
       "scope": null
-    },
-    {
-      "hash": "abd6e63",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Word-based hashing for re-segmentation preserves embeddings",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "66d944f",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Always include _vectors in Meilisearch sync (null to opt-out)",
+        "scope": null
+      },
       {
         "hash": "eedf7d6",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Improve language detection using character ratio",
-        "scope": null
-      },
-      {
-        "hash": "abd6e63",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Word-based hashing for re-segmentation preserves embeddings",
         "scope": null
       }
     ]

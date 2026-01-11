@@ -139,28 +139,32 @@ export async function getIndexingProgress() {
     const contentCount = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content');
     const docsWithContent = contentCount?.count || 0;
 
-    // Get indexed docs from Meilisearch by counting unique document_ids in paragraphs
+    // Get indexed docs from Meilisearch documents index
+    // Using index stats instead of facets (facets have a 100 value limit by default)
     let indexedDocs = 0;
+    let indexedParagraphs = 0;
     try {
       const { getMeili, INDEXES } = await getMeiliClient();
-      const meili = getMeili();
+      const meili = await getMeili();
       if (meili) {
-        // Query for unique doc_ids that have paragraphs indexed
-        // Using facets to get unique doc_id count
-        const result = await meili.index(INDEXES.PARAGRAPHS).search('', {
-          limit: 0,
-          facets: ['doc_id']
-        });
-        indexedDocs = Object.keys(result.facetDistribution?.doc_id || {}).length;
+        // Get document count directly from documents index stats
+        const docStats = await meili.index(INDEXES.DOCUMENTS).getStats();
+        indexedDocs = docStats.numberOfDocuments || 0;
+
+        // Also get paragraph count for display
+        const paraStats = await meili.index(INDEXES.PARAGRAPHS).getStats();
+        indexedParagraphs = paraStats.numberOfDocuments || 0;
       }
     } catch {
       // Meilisearch not available - show as 0 indexed
       indexedDocs = 0;
+      indexedParagraphs = 0;
     }
 
     return {
       totalWithContent: docsWithContent,
       indexed: indexedDocs,
+      indexedParagraphs,
       pending: Math.max(0, docsWithContent - indexedDocs),
       percentComplete: docsWithContent > 0 ? Math.round((indexedDocs / docsWithContent) * 100) : 100
     };
