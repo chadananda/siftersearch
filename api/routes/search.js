@@ -262,12 +262,19 @@ export default async function searchRoutes(fastify) {
     return {
       hits: results.hits.map(hit => ({
         id: hit.id,
-        text: hit._formatted?.text || hit.text,
+        document_id: hit.doc_id,
+        paragraph_index: hit.paragraph_index,
+        text: hit.text,
+        _formatted: hit._formatted,
         title: hit.title,
         author: hit.author,
+        religion: hit.religion,
+        collection: hit.collection,
+        language: hit.language,
         score: hit._rankingScore
       })),
       query: q,
+      estimatedTotalHits: results.estimatedTotalHits,
       processingTimeMs: results.processingTimeMs
     };
   });

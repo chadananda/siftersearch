@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T21:34:11.938Z",
+  "generated": "2026-01-11T23:02:45.318Z",
   "entries": [
+    {
+      "hash": "1f601f7",
+      "date": "2026-01-11",
+      "type": "Improved",
+      "description": "Use integer rowid for Meilisearch paragraph IDs",
+      "scope": null
+    },
     {
       "hash": "0225f67",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Strip duplicate frontmatter blocks from document content",
       "scope": null
-    },
-    {
-      "hash": "acc986e",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "1f601f7",
+        "date": "2026-01-11",
+        "type": "Improved",
+        "description": "Use integer rowid for Meilisearch paragraph IDs",
+        "scope": null
+      },
       {
         "hash": "0225f67",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Strip duplicate frontmatter blocks from document content",
-        "scope": null
-      },
-      {
-        "hash": "acc986e",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
         "scope": null
       }
     ]
