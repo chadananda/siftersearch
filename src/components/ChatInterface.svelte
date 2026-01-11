@@ -1275,21 +1275,6 @@
                   </div>
                 </div>
               {/if}
-              <!-- Indexing progress (Meilisearch) - only show when data available -->
-              {#if libraryStats.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.percentComplete < 100}
-                <div class="ingestion-progress indexing">
-                  <div class="ingestion-header">
-                    <span class="ingestion-label">Indexed in search</span>
-                    <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
-                  </div>
-                  <div class="ingestion-bar">
-                    <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
-                  </div>
-                  <div class="ingestion-detail">
-                    {formatNumber(libraryStats.indexingProgress.indexed)} / {formatNumber(libraryStats.indexingProgress.totalWithContent)} documents
-                  </div>
-                </div>
-              {/if}
               <div class="stats-footer">
                 {#if libraryStats.lastUpdated}
                   <span>Last indexed: {new Date(libraryStats.lastUpdated).toLocaleDateString()}</span>

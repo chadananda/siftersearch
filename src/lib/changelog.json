@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T17:17:33.621Z",
+  "generated": "2026-01-11T17:30:57.143Z",
   "entries": [
+    {
+      "hash": "0d283af",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Default dark mode and hide misleading indexing progress",
+      "scope": null
+    },
     {
       "hash": "a0ed63f",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove arbitrary sentence count limit from segmentation",
       "scope": null
-    },
-    {
-      "hash": "3c9f8ed",
-      "date": "2026-01-08",
-      "type": "Updated",
-      "description": "Meilisearch orphan cleanup script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "0d283af",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Default dark mode and hide misleading indexing progress",
+        "scope": null
+      },
       {
         "hash": "a0ed63f",
         "date": "2026-01-11",
@@ -701,13 +708,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Remove arbitrary sentence count limit from segmentation",
-        "scope": null
-      },
-      {
-        "hash": "3c9f8ed",
-        "date": "2026-01-08",
-        "type": "Updated",
-        "description": "Meilisearch orphan cleanup script",
         "scope": null
       }
     ]
