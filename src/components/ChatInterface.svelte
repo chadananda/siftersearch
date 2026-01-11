@@ -1664,14 +1664,14 @@
     <a href={getReferralUrl(getUserId())} class="qr-link" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
       <img src={qrCodeUrl || '/qr-siftersearch.svg'} alt="QR code for sharing siftersearch.com" class="qr-code" />
     </a>
-    <!-- Lightning toggle for quick search mode -->
-    <button type="button" class="absolute left-[5rem] top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors z-10 {searchMode ? 'bg-accent text-white' : 'text-muted hover:text-primary hover:bg-surface-1'}" onclick={toggleSearchMode} title={searchMode ? 'Switch to Chat Mode' : 'Quick Search Mode'}>
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    </button>
-    <!-- Input form with search button inside -->
+    <!-- Input form with lightning toggle and search button inside -->
     <form onsubmit={(e) => { e.preventDefault(); if (!searchMode) sendMessage(); }} class="input-form" aria-label="Search form">
       <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
       <div class="input-wrapper">
+        <!-- Lightning toggle for quick search mode -->
+        <button type="button" class="lightning-btn {searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'Switch to Chat Mode' : 'Quick Search Mode'}>
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </button>
         <input
           id="search-input"
           bind:this={inputEl}
@@ -3133,16 +3133,42 @@
   .input-wrapper {
     display: flex;
     align-items: center;
-    background-color: var(--input-bg);
-    border: 1px solid var(--input-border);
+    background-color: light-dark(rgba(255, 255, 255, 0.95), rgba(30, 41, 59, 0.9));
+    border: 1px solid light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.2));
     border-radius: 0.75rem;
     overflow: hidden;
-    transition: border-color 0.15s;
-    backdrop-filter: blur(8px);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .input-wrapper:focus-within {
     border-color: var(--input-border-focus);
+    box-shadow: 0 2px 12px rgba(7, 89, 133, 0.2);
+  }
+
+  /* Lightning button inside input */
+  .lightning-btn {
+    padding: 0.5rem 0.625rem;
+    margin-left: 0.25rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .lightning-btn:hover {
+    color: var(--accent-primary);
+    background-color: light-dark(rgba(7, 89, 133, 0.1), rgba(14, 165, 233, 0.15));
+  }
+  .lightning-btn.active {
+    color: white;
+    background-color: var(--accent-primary);
   }
 
   .search-input {

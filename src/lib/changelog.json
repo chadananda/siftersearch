@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T16:11:19.089Z",
+  "generated": "2026-01-11T16:18:58.613Z",
   "entries": [
+    {
+      "hash": "f474a51",
+      "date": "2026-01-11",
+      "type": "New",
+      "description": "Add quick search mode toggle with lightning button",
+      "scope": null
+    },
     {
       "hash": "0e7481b",
       "date": "2026-01-10",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Reingest script resets body_hash to force full re-ingestion",
       "scope": null
-    },
-    {
-      "hash": "1d85649",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Only add sentence markers for RTL texts, not English",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-11": [
+      {
+        "hash": "f474a51",
+        "date": "2026-01-11",
+        "type": "New",
+        "description": "Add quick search mode toggle with lightning button",
+        "scope": null
+      }
+    ],
     "2026-01-10": [
       {
         "hash": "0e7481b",
@@ -699,13 +708,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Reingest script resets body_hash to force full re-ingestion",
-        "scope": null
-      },
-      {
-        "hash": "1d85649",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Only add sentence markers for RTL texts, not English",
         "scope": null
       }
     ]
