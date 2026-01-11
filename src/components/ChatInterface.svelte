@@ -124,8 +124,13 @@
 
   // Research plan state - shows the researcher agent's strategy
   let researchPlan = $state(null);
-
-
+  // Quick search mode state (lightning button toggle)
+  let searchMode = $state(false);
+  let searchResults = $state([]);
+  let searchLoading = $state(false);
+  let searchTime = $state(null);
+  let totalHits = $state(0);
+  let debounceTimer = null;
   // Preloaded document cache: Map<document_id, { segments: [], total: number }>
   const documentCache = new Map();
 
@@ -288,7 +293,34 @@
     messages = [];
     inputEl?.focus();
   }
-
+  // Quick search mode functions
+  function toggleSearchMode() {
+    searchMode = !searchMode;
+    if (searchMode) { searchResults = []; totalHits = 0; searchTime = null; }
+  }
+  function handleSearchInput() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (!input.trim()) { searchResults = []; totalHits = 0; searchTime = null; return; }
+    debounceTimer = setTimeout(performQuickSearch, 30);
+  }
+  async function performQuickSearch() {
+    const q = input.trim();
+    if (!q) return;
+    searchLoading = true;
+    const start = performance.now();
+    try {
+      const data = await search.query(q, { limit: 50, mode: 'keyword', offset: 0 });
+      if (input.trim() === q) {
+        searchResults = data.hits || [];
+        totalHits = data.estimatedTotalHits || searchResults.length;
+        searchTime = Math.round(performance.now() - start);
+      }
+    } catch (err) { console.error('Quick search error:', err); }
+    finally { searchLoading = false; }
+  }
+  async function openReaderFromSearch(result) {
+    await openReader({ doc_id: result.doc_id, paragraph_index: result.paragraph_index, title: result.title, text: result.text }, input.trim());
+  }
   const auth = getAuthState();
 
   // Check if user can access AI-powered research (approved+ only)
@@ -1306,6 +1338,37 @@
           {/each}
         </div>
       </div>
+    {:else if searchMode}
+      <!-- Quick Search Results -->
+      <div class="flex flex-col gap-2 p-4 overflow-y-auto">
+        {#if searchLoading}
+          <div class="text-muted text-sm flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            Searching...
+          </div>
+        {:else if searchResults.length > 0}
+          <div class="text-xs text-muted px-2">{totalHits.toLocaleString()} hits in {searchTime}ms</div>
+          {#each searchResults as result, i}
+            <button class="bg-surface-1 border border-border-subtle rounded-lg p-3 text-left cursor-pointer transition-all hover:border-accent hover:bg-surface-2" onclick={() => openReaderFromSearch(result)}>
+              <div class="flex items-start gap-2">
+                <span class="text-[0.625rem] text-muted shrink-0 w-5">{i + 1}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm leading-relaxed text-primary [&_mark]:bg-accent [&_mark]:text-white [&_mark]:px-0.5 [&_mark]:rounded">{@html result._formatted?.text || result.text}</p>
+                  <div class="text-xs text-secondary mt-2 flex flex-wrap gap-x-2">
+                    <span class="font-medium">{result.title}</span>
+                    {#if result.author}<span>by {result.author}</span>{/if}
+                    {#if result.collection}<span class="text-muted">• {result.collection}</span>{/if}
+                  </div>
+                </div>
+              </div>
+            </button>
+          {/each}
+        {:else if input.trim()}
+          <div class="text-muted text-center py-8">No results found</div>
+        {:else}
+          <div class="text-muted text-center py-8">Type to search instantly...</div>
+        {/if}
+      </div>
     {:else}
       {#each messages as message, msgIndex}
         <div class="message-row {message.role === 'user' ? 'user' : 'assistant'}">
@@ -1601,33 +1664,34 @@
     <a href={getReferralUrl(getUserId())} class="qr-link" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
       <img src={qrCodeUrl || '/qr-siftersearch.svg'} alt="QR code for sharing siftersearch.com" class="qr-code" />
     </a>
-
+    <!-- Lightning toggle for quick search mode -->
+    <button type="button" class="absolute left-[5rem] top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors z-10 {searchMode ? 'bg-accent text-white' : 'text-muted hover:text-primary hover:bg-surface-1'}" onclick={toggleSearchMode} title={searchMode ? 'Switch to Chat Mode' : 'Quick Search Mode'}>
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </button>
     <!-- Input form with search button inside -->
-    <form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="input-form" aria-label="Search form">
-      <label for="search-input" class="sr-only">Search sacred texts</label>
+    <form onsubmit={(e) => { e.preventDefault(); if (!searchMode) sendMessage(); }} class="input-form" aria-label="Search form">
+      <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
       <div class="input-wrapper">
         <input
           id="search-input"
           bind:this={inputEl}
           bind:value={input}
-          onkeydown={handleKeydown}
-          placeholder="Search sacred texts..."
-          disabled={loading}
+          oninput={searchMode ? handleSearchInput : undefined}
+          onkeydown={searchMode ? undefined : handleKeydown}
+          placeholder={searchMode ? 'Type to search instantly...' : 'Search sacred texts...'}
+          disabled={loading && !searchMode}
           class="search-input"
           type="search"
           autocomplete="off"
           aria-describedby="search-status"
         />
-        <button
-          type="submit"
-          disabled={!input.trim() || loading || !libraryConnected}
-          aria-label={loading ? 'Searching...' : 'Search'}
-          class="submit-btn"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </button>
+        {#if !searchMode}
+          <button type="submit" disabled={!input.trim() || loading || !libraryConnected} aria-label={loading ? 'Searching...' : 'Search'} class="submit-btn">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        {/if}
       </div>
     </form>
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-10T20:42:13.392Z",
+  "generated": "2026-01-11T16:11:19.089Z",
   "entries": [
+    {
+      "hash": "0e7481b",
+      "date": "2026-01-10",
+      "type": "New",
+      "description": "Structured preview with paragraph numbers and stripped markdown",
+      "scope": null
+    },
     {
       "hash": "63af5e2",
       "date": "2026-01-10",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Only add sentence markers for RTL texts, not English",
       "scope": null
-    },
-    {
-      "hash": "31d93ac",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Library preview matches book view with floating paragraph numbers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-10": [
+      {
+        "hash": "0e7481b",
+        "date": "2026-01-10",
+        "type": "New",
+        "description": "Structured preview with paragraph numbers and stripped markdown",
+        "scope": null
+      },
       {
         "hash": "63af5e2",
         "date": "2026-01-10",
@@ -699,13 +706,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Only add sentence markers for RTL texts, not English",
-        "scope": null
-      },
-      {
-        "hash": "31d93ac",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Library preview matches book view with floating paragraph numbers",
         "scope": null
       }
     ]
