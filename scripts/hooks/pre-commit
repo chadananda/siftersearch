@@ -45,10 +45,11 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-# Load secrets from .env-secrets (strip quotes from values)
+# Load secrets from .env-secrets (source handles KEY="value" format)
 if [ -f .env-secrets ]; then
-  DEPLOY_SECRET=$(grep "^DEPLOY_SECRET=" .env-secrets | cut -d'=' -f2 | tr -d '"')
-  export CLOUDFLARE_API_TOKEN=$(grep "^CLOUDFLARE_API_TOKEN=" .env-secrets | cut -d'=' -f2 | tr -d '"')
+  set -a  # auto-export all variables
+  source .env-secrets
+  set +a
 fi
 
 # ============================================

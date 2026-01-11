@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-11T16:48:33.782Z",
+  "generated": "2026-01-11T16:56:36.914Z",
   "entries": [
+    {
+      "hash": "d68e6e9",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
+      "scope": null
+    },
     {
       "hash": "bba469b",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Updated",
       "description": "Redirect creation script",
       "scope": null
-    },
-    {
-      "hash": "88af05a",
-      "date": "2026-01-08",
-      "type": "Updated",
-      "description": "Production database fix script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "d68e6e9",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
+        "scope": null
+      },
       {
         "hash": "bba469b",
         "date": "2026-01-11",
@@ -701,13 +708,6 @@
         "date": "2026-01-08",
         "type": "Updated",
         "description": "Redirect creation script",
-        "scope": null
-      },
-      {
-        "hash": "88af05a",
-        "date": "2026-01-08",
-        "type": "Updated",
-        "description": "Production database fix script",
         "scope": null
       }
     ]
