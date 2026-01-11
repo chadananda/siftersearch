@@ -1157,7 +1157,38 @@
 
   <!-- Messages area - Main content region -->
   <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
-    {#if messages.length === 0}
+    {#if searchMode}
+      <!-- Quick Search Results -->
+      <div class="flex flex-col gap-2 p-4 overflow-y-auto flex-1">
+        {#if searchLoading}
+          <div class="text-muted text-sm flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            Searching...
+          </div>
+        {:else if searchResults.length > 0}
+          <div class="text-xs text-muted px-2">{totalHits.toLocaleString()} hits in {searchTime}ms</div>
+          {#each searchResults as result, i}
+            <button class="bg-surface-1 border border-border-subtle rounded-lg p-3 text-left cursor-pointer transition-all hover:border-accent hover:bg-surface-2" onclick={() => openReaderFromSearch(result)}>
+              <div class="flex items-start gap-2">
+                <span class="text-[0.625rem] text-muted shrink-0 w-5">{i + 1}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm leading-relaxed text-primary [&_mark]:bg-accent [&_mark]:text-white [&_mark]:px-0.5 [&_mark]:rounded">{@html result._formatted?.text || result.text}</p>
+                  <div class="text-xs text-secondary mt-2 flex flex-wrap gap-x-2">
+                    <span class="font-medium">{result.title}</span>
+                    {#if result.author}<span>by {result.author}</span>{/if}
+                    {#if result.collection}<span class="text-muted">• {result.collection}</span>{/if}
+                  </div>
+                </div>
+              </div>
+            </button>
+          {/each}
+        {:else if input.trim()}
+          <div class="text-muted text-center py-8">No results found</div>
+        {:else}
+          <div class="text-muted text-center py-8">Type to search instantly...</div>
+        {/if}
+      </div>
+    {:else if messages.length === 0}
       <div class="welcome-screen">
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
         <h2 class="welcome-title"><a href="https://oceanlibrary.com" target="_blank" rel="noopener" class="ocean-link">Ocean 2.0 Library</a> Agentic Research Engine</h2>
@@ -1337,37 +1368,6 @@
             </button>
           {/each}
         </div>
-      </div>
-    {:else if searchMode}
-      <!-- Quick Search Results -->
-      <div class="flex flex-col gap-2 p-4 overflow-y-auto">
-        {#if searchLoading}
-          <div class="text-muted text-sm flex items-center gap-2">
-            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-            Searching...
-          </div>
-        {:else if searchResults.length > 0}
-          <div class="text-xs text-muted px-2">{totalHits.toLocaleString()} hits in {searchTime}ms</div>
-          {#each searchResults as result, i}
-            <button class="bg-surface-1 border border-border-subtle rounded-lg p-3 text-left cursor-pointer transition-all hover:border-accent hover:bg-surface-2" onclick={() => openReaderFromSearch(result)}>
-              <div class="flex items-start gap-2">
-                <span class="text-[0.625rem] text-muted shrink-0 w-5">{i + 1}</span>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm leading-relaxed text-primary [&_mark]:bg-accent [&_mark]:text-white [&_mark]:px-0.5 [&_mark]:rounded">{@html result._formatted?.text || result.text}</p>
-                  <div class="text-xs text-secondary mt-2 flex flex-wrap gap-x-2">
-                    <span class="font-medium">{result.title}</span>
-                    {#if result.author}<span>by {result.author}</span>{/if}
-                    {#if result.collection}<span class="text-muted">• {result.collection}</span>{/if}
-                  </div>
-                </div>
-              </div>
-            </button>
-          {/each}
-        {:else if input.trim()}
-          <div class="text-muted text-center py-8">No results found</div>
-        {:else}
-          <div class="text-muted text-center py-8">Type to search instantly...</div>
-        {/if}
       </div>
     {:else}
       {#each messages as message, msgIndex}
