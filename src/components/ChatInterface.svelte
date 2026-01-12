@@ -953,8 +953,9 @@
       (match) => match.replace(/<\/?(?:em|mark|b|strong)>/gi, '')
     );
 
-    // Parse with marked (handles links, bold, italic, etc.)
-    result = marked.parse(result);
+    // Parse with marked.parseInline to avoid wrapping in <p> tags
+    // (outer element is already a <p>, so nested <p> would be invalid HTML)
+    result = marked.parseInline(result);
 
     // Make all links open in new tab
     result = result.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" class="text-link" href="');
