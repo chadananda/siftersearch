@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T13:49:45.337Z",
+  "generated": "2026-01-12T14:30:57.281Z",
   "entries": [
+    {
+      "hash": "f7411fb",
+      "date": "2026-01-12",
+      "type": "New",
+      "description": "Improve quick search UX with animations and defaults",
+      "scope": null
+    },
     {
       "hash": "a1804dc",
       "date": "2026-01-11",
@@ -343,16 +350,18 @@
       "type": "New",
       "description": "Add partial slug matching for document URLs",
       "scope": null
-    },
-    {
-      "hash": "2508670",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Prevent bad redirects to general/general paths",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-12": [
+      {
+        "hash": "f7411fb",
+        "date": "2026-01-12",
+        "type": "New",
+        "description": "Improve quick search UX with animations and defaults",
+        "scope": null
+      }
+    ],
     "2026-01-11": [
       {
         "hash": "a1804dc",
@@ -699,13 +708,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add partial slug matching for document URLs",
-        "scope": null
-      },
-      {
-        "hash": "2508670",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Prevent bad redirects to general/general paths",
         "scope": null
       }
     ]

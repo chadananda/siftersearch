@@ -1281,8 +1281,8 @@
 
   <!-- Messages area - Main content region -->
   <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
-    {#if searchMode}
-      <!-- Quick Search Results - always expanded cards matching chat hit style -->
+    {#if searchMode && (input.trim() || searchResults.length > 0 || searchLoading)}
+      <!-- Quick Search Results - only show when actively searching -->
       <div class="quick-search-results">
         {#if searchLoading && searchResults.length === 0}
           <!-- Only show loading spinner when we have NO results yet -->
@@ -1330,10 +1330,8 @@
               </div>
             </div>
           {/each}
-        {:else if input.trim()}
-          <div class="text-muted text-center py-8">No results found</div>
         {:else}
-          <div class="text-muted text-center py-8">Type to search instantly...</div>
+          <div class="text-muted text-center py-8">No results found</div>
         {/if}
       </div>
     {:else if messages.length === 0}
