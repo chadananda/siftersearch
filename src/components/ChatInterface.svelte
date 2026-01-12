@@ -953,6 +953,19 @@
       (match) => match.replace(/<\/?(?:em|mark|b|strong)>/gi, '')
     );
 
+    // Extend <mark> tags to cover complete words (Meilisearch sometimes splits mid-word)
+    // Pattern: word-chars before <mark>, content, </mark>, word-chars after
+    result = result.replace(
+      /(\w*)(<mark>)(.*?)(<\/mark>)(\w*)/gi,
+      (match, before, openTag, content, closeTag, after) => {
+        // If there are word characters before or after, extend the mark
+        if (before || after) {
+          return `${openTag}${before}${content}${after}${closeTag}`;
+        }
+        return match;
+      }
+    );
+
     // Parse with marked.parseInline to avoid wrapping in <p> tags
     // (outer element is already a <p>, so nested <p> would be invalid HTML)
     result = marked.parseInline(result);

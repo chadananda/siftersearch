@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T02:09:50.796Z",
+  "generated": "2026-01-12T03:45:04.167Z",
   "entries": [
+    {
+      "hash": "f030541",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Source-card collapsing in flex container causing text to be clipped",
+      "scope": null
+    },
     {
       "hash": "8b58fe9",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Handle legacy frontmatter without opening --- delimiter",
       "scope": null
-    },
-    {
-      "hash": "cefa05c",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Clear file_hash in addition to body_hash to force re-ingestion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "f030541",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Source-card collapsing in flex container causing text to be clipped",
+        "scope": null
+      },
       {
         "hash": "8b58fe9",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Handle legacy frontmatter without opening --- delimiter",
-        "scope": null
-      },
-      {
-        "hash": "cefa05c",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Clear file_hash in addition to body_hash to force re-ingestion",
         "scope": null
       }
     ]
