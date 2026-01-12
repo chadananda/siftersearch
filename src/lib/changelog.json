@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T14:30:57.281Z",
+  "generated": "2026-01-12T14:33:36.971Z",
   "entries": [
+    {
+      "hash": "987b927",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Show library stats when quick search input is empty",
+      "scope": null
+    },
     {
       "hash": "f7411fb",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Error out when religion/collection missing instead of using fake defaults",
       "scope": null
-    },
-    {
-      "hash": "5b2e977",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add partial slug matching for document URLs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "987b927",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Show library stats when quick search input is empty",
+        "scope": null
+      },
       {
         "hash": "f7411fb",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Error out when religion/collection missing instead of using fake defaults",
-        "scope": null
-      },
-      {
-        "hash": "5b2e977",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add partial slug matching for document URLs",
         "scope": null
       }
     ]

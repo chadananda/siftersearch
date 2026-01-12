@@ -241,7 +241,8 @@ export async function hybridSearch(query, options = {}) {
     highlightPreTag,
     highlightPostTag,
     showRankingScore: true,
-    showMatchesPosition: true  // Get exact byte positions of matches for sentence extraction
+    showMatchesPosition: true,  // Get exact byte positions of matches for sentence extraction
+    matchingStrategy: 'all'  // Require ALL words to match (AND), not just some (OR)
   };
 
   // Add hybrid search if we have a vector
@@ -300,7 +301,8 @@ export async function federatedSearch(queries, options = {}) {
     attributesToRetrieve: ['*'],
     attributesToHighlight: ['text', 'heading'],
     highlightPreTag: '<mark>',
-    highlightPostTag: '</mark>'
+    highlightPostTag: '</mark>',
+    matchingStrategy: 'all'  // Require ALL words to match
   }));
 
   // Federated search: merges and deduplicates results across all queries
