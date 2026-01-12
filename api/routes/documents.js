@@ -64,7 +64,7 @@ async function handleBulkDownload(meili, documentIds, format, options, reply) {
       const [document, segmentsResult] = await Promise.all([
         meili.index(INDEXES.DOCUMENTS).getDocument(docId),
         meili.index(INDEXES.PARAGRAPHS).search('', {
-          filter: `document_id = "${docId}"`,
+          filter: `doc_id = ${docId}`,
           limit: 10000,
           sort: ['paragraph_index:asc']
         })
@@ -212,7 +212,7 @@ export default async function documentsRoutes(fastify) {
 
     // Get segments for this document
     const results = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `document_id = "${id}"`,
+      filter: `doc_id = ${id}`,
       limit,
       offset,
       sort: ['paragraph_index:asc']
@@ -304,7 +304,7 @@ export default async function documentsRoutes(fastify) {
     const [document, segmentsResult] = await Promise.all([
       meili.index(INDEXES.DOCUMENTS).getDocument(documentId),
       meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `document_id = "${documentId}"`,
+        filter: `doc_id = ${documentId}`,
         limit: 10000,
         sort: ['paragraph_index:asc']
       })

@@ -965,7 +965,7 @@ export default async function adminRoutes(fastify) {
 
         // Delete paragraphs from paragraphs index
         await meili.index('paragraphs').deleteDocuments({
-          filter: `document_id = "${documentId}"`
+          filter: `doc_id = ${documentId}`
         });
 
         meiliDeleted = true;
@@ -1895,7 +1895,7 @@ Collection: ${paragraph.collection || 'Unknown'}
 
       // Delete paragraphs using filter
       const result = await meili.index('paragraphs').deleteDocuments({
-        filter: `document_id = "${documentId}"`
+        filter: `doc_id = ${documentId}`
       });
 
       logger.info({ documentId, taskUid: result.taskUid }, 'Meilisearch paragraph deletion requested');
@@ -2305,7 +2305,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     for (const doc of orphanedDocs) {
       try {
         const parasResult = await meili.index('paragraphs').search('', {
-          filter: `document_id = "${doc.id}"`,
+          filter: `doc_id = ${doc.id}`,
           limit: 10000,
           sort: ['paragraph_index:asc'],
           attributesToRetrieve: ['id', 'text', 'paragraph_index', 'heading', 'blocktype', '_vectors']

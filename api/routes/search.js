@@ -63,7 +63,7 @@ function buildMetadataFilter(filterTerms, existingFilters = {}) {
   if (existingFilters.language) filterParts.push(`language = "${existingFilters.language}"`);
   if (existingFilters.yearFrom) filterParts.push(`year >= ${existingFilters.yearFrom}`);
   if (existingFilters.yearTo) filterParts.push(`year <= ${existingFilters.yearTo}`);
-  if (existingFilters.documentId) filterParts.push(`document_id = "${existingFilters.documentId}"`);
+  if (existingFilters.documentId) filterParts.push(`doc_id = ${existingFilters.documentId}`);
 
   // Add text-based filters for author/collection/title
   // Meilisearch uses CONTAINS operator for partial text matching
