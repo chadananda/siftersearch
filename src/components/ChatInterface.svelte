@@ -1,5 +1,7 @@
 <script>
   import { onMount, tick } from 'svelte';
+  import { flip } from 'svelte/animate';
+  import { fade, slide } from 'svelte/transition';
   import { marked } from 'marked';
   import { search, session, documents, triggerServerUpdate, authenticatedFetch } from '../lib/api.js';
 
@@ -124,8 +126,8 @@
 
   // Research plan state - shows the researcher agent's strategy
   let researchPlan = $state(null);
-  // Quick search mode state (lightning button toggle)
-  let searchMode = $state(false);
+  // Quick search mode state (lightning button toggle) - default ON for instant search
+  let searchMode = $state(true);
   let searchResults = $state([]);
   let searchLoading = $state(false);
   let searchTime = $state(null);
@@ -1161,8 +1163,8 @@
         </div>
 
         <div class="reader-actions">
-          <!-- Translation button (patron+ only) -->
-          {#if auth.isAuthenticated && ['patron', 'institutional', 'admin'].includes(auth.user?.tier)}
+          <!-- Translation button (patron+ only, non-English documents only) -->
+          {#if auth.isAuthenticated && ['patron', 'institutional', 'admin'].includes(auth.user?.tier) && readerDocument?.language && readerDocument.language !== 'en'}
             <button
               class="reader-action-btn"
               onclick={() => showTranslationView = !showTranslationView}
@@ -1174,6 +1176,8 @@
                 <path d="M3 5h12M9 3v2m1.048 3.5A7.5 7.5 0 0 0 19.5 15m0 0a7.5 7.5 0 0 1-7.5 7.5m7.5-7.5h-3m0 0l1.5-1.5m-1.5 1.5l1.5 1.5M5 12h3l1-3 2 6 1-3h3" />
               </svg>
             </button>
+          {/if}
+          {#if auth.isAuthenticated && ['patron', 'institutional', 'admin'].includes(auth.user?.tier)}
             <!-- Audio button (patron+ only) -->
             <button
               class="reader-action-btn"
@@ -1280,14 +1284,21 @@
     {#if searchMode}
       <!-- Quick Search Results - always expanded cards matching chat hit style -->
       <div class="quick-search-results">
-        {#if searchLoading}
+        {#if searchLoading && searchResults.length === 0}
+          <!-- Only show loading spinner when we have NO results yet -->
           <div class="text-muted text-sm flex items-center gap-2 p-4">
             <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
             Searching...
           </div>
         {:else if searchResults.length > 0}
-          <div class="text-xs text-muted px-4 py-2">{totalHits.toLocaleString()} results in {searchTime}ms</div>
-          {#each searchResults as result, i}
+          <!-- Show results with optional loading indicator -->
+          <div class="text-xs text-muted px-4 py-2 flex items-center gap-2">
+            {#if searchLoading}
+              <svg class="w-3 h-3 animate-spin opacity-60" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            {/if}
+            {totalHits.toLocaleString()} results in {searchTime}ms
+          </div>
+          {#each searchResults as result, i ((result.doc_id || result.document_id) + '-' + result.paragraph_index)}
             {@const text = result._formatted?.text || result.text || ''}
             {@const title = result.title || 'Untitled'}
             {@const author = result.author}
@@ -1297,7 +1308,7 @@
             {@const language = result.language || 'en'}
             {@const isRTL = ['ar', 'fa', 'he', 'ur'].includes(language)}
 
-            <div class="source-card expanded" role="article">
+            <div class="source-card expanded" role="article" animate:flip={{ duration: 250 }} in:fade={{ duration: 150 }} out:fade={{ duration: 100 }}>
               <!-- Paper-like text area -->
               <div class="source-paper p-3 sm:p-4 sm:px-5" class:rtl={isRTL}>
                 <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
