@@ -30,6 +30,85 @@ export const BLOCK_TYPES = {
 };
 
 /**
+ * Maximum paragraph size in characters (~2 pages of text)
+ * Paragraphs exceeding this will be split at sentence boundaries
+ */
+export const MAX_PARAGRAPH_SIZE = 3000;
+
+/**
+ * Split oversized text into chunks at sentence boundaries
+ *
+ * Uses rules-based sentence detection (no AI):
+ * - Split at .!? followed by space and capital letter, quote, or number
+ * - Groups sentences into ~maxSize chunks
+ *
+ * @param {string} text - Text to split
+ * @param {number} maxSize - Maximum chunk size (default: MAX_PARAGRAPH_SIZE)
+ * @returns {string[]} Array of text chunks
+ */
+export function splitOversizedBlock(text, maxSize = MAX_PARAGRAPH_SIZE) {
+  if (!text || text.length <= maxSize) {
+    return [text];
+  }
+
+  // Split at sentence boundaries: .!? followed by whitespace and capital letter, quote, or number
+  // Use a capturing group to preserve the punctuation
+  const sentencePattern = /([.!?])(\s+)(?=[A-Z"'\d])/g;
+
+  // Replace with a unique delimiter that preserves punctuation
+  const delimiter = '\u0000SPLIT\u0000';
+  const markedText = text.replace(sentencePattern, '$1' + delimiter);
+  const sentences = markedText.split(delimiter);
+
+  // Group sentences into chunks that don't exceed maxSize
+  const chunks = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+
+    // If adding this sentence would exceed maxSize, start a new chunk
+    if (current.length + trimmedSentence.length + 1 > maxSize && current) {
+      chunks.push(current.trim());
+      current = trimmedSentence;
+    } else {
+      // Add sentence to current chunk
+      current += (current ? ' ' : '') + trimmedSentence;
+    }
+  }
+
+  // Don't forget the last chunk
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  // If no chunks were created (e.g., no sentence boundaries found), return original
+  return chunks.length > 0 ? chunks : [text];
+}
+
+/**
+ * Helper to create paragraph blocks, splitting oversized ones at sentence boundaries
+ *
+ * @param {string} text - Paragraph text
+ * @param {Array} blocks - Array to push blocks to
+ */
+function addParagraphBlocks(text, blocks) {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  // Split if oversized
+  const chunks = splitOversizedBlock(trimmed);
+  for (const chunk of chunks) {
+    blocks.push({
+      type: BLOCK_TYPES.PARAGRAPH,
+      content: chunk,
+      raw: chunk
+    });
+  }
+}
+
+/**
  * Parse markdown text into typed blocks
  *
  * @param {string} text - Raw markdown text
@@ -65,14 +144,7 @@ export function parseMarkdownBlocks(text) {
       } else {
         // Start of code block - flush any pending paragraph
         if (currentParagraph.length) {
-          const paragraphText = currentParagraph.join('\n').trim();
-          if (paragraphText) {
-            blocks.push({
-              type: BLOCK_TYPES.PARAGRAPH,
-              content: paragraphText,
-              raw: paragraphText
-            });
-          }
+          addParagraphBlocks(currentParagraph.join('\n'), blocks);
           currentParagraph = [];
         }
         codeBlockStart = line;
@@ -91,14 +163,7 @@ export function parseMarkdownBlocks(text) {
     if (headingMatch) {
       // Flush any pending paragraph
       if (currentParagraph.length) {
-        const paragraphText = currentParagraph.join('\n').trim();
-        if (paragraphText) {
-          blocks.push({
-            type: BLOCK_TYPES.PARAGRAPH,
-            content: paragraphText,
-            raw: paragraphText
-          });
-        }
+        addParagraphBlocks(currentParagraph.join('\n'), blocks);
         currentParagraph = [];
       }
 
@@ -119,14 +184,7 @@ export function parseMarkdownBlocks(text) {
     if (line.startsWith('> ')) {
       // Flush paragraph
       if (currentParagraph.length) {
-        const paragraphText = currentParagraph.join('\n').trim();
-        if (paragraphText) {
-          blocks.push({
-            type: BLOCK_TYPES.PARAGRAPH,
-            content: paragraphText,
-            raw: paragraphText
-          });
-        }
+        addParagraphBlocks(currentParagraph.join('\n'), blocks);
         currentParagraph = [];
       }
 
@@ -143,14 +201,7 @@ export function parseMarkdownBlocks(text) {
     if (listMatch) {
       // Flush paragraph
       if (currentParagraph.length) {
-        const paragraphText = currentParagraph.join('\n').trim();
-        if (paragraphText) {
-          blocks.push({
-            type: BLOCK_TYPES.PARAGRAPH,
-            content: paragraphText,
-            raw: paragraphText
-          });
-        }
+        addParagraphBlocks(currentParagraph.join('\n'), blocks);
         currentParagraph = [];
       }
 
@@ -165,14 +216,7 @@ export function parseMarkdownBlocks(text) {
     // Empty line = paragraph break
     if (!line.trim()) {
       if (currentParagraph.length) {
-        const paragraphText = currentParagraph.join('\n').trim();
-        if (paragraphText) {
-          blocks.push({
-            type: BLOCK_TYPES.PARAGRAPH,
-            content: paragraphText,
-            raw: paragraphText
-          });
-        }
+        addParagraphBlocks(currentParagraph.join('\n'), blocks);
         currentParagraph = [];
       }
       continue;
@@ -184,14 +228,7 @@ export function parseMarkdownBlocks(text) {
 
   // Flush remaining paragraph
   if (currentParagraph.length) {
-    const paragraphText = currentParagraph.join('\n').trim();
-    if (paragraphText) {
-      blocks.push({
-        type: BLOCK_TYPES.PARAGRAPH,
-        content: paragraphText,
-        raw: paragraphText
-      });
-    }
+    addParagraphBlocks(currentParagraph.join('\n'), blocks);
   }
 
   // Handle unclosed code block

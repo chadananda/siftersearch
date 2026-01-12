@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T14:47:33.058Z",
+  "generated": "2026-01-12T15:53:11.876Z",
   "entries": [
+    {
+      "hash": "877a6fc",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Use single consistent API port 7839",
+      "scope": null
+    },
     {
       "hash": "a0a0e03",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Properly unregister service worker and await cache clearing before PWA reload",
       "scope": null
-    },
-    {
-      "hash": "4e9cf5f",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add missing slug field to collection and religion document queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "877a6fc",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Use single consistent API port 7839",
+        "scope": null
+      },
       {
         "hash": "a0a0e03",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Properly unregister service worker and await cache clearing before PWA reload",
-        "scope": null
-      },
-      {
-        "hash": "4e9cf5f",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add missing slug field to collection and religion document queries",
         "scope": null
       }
     ]
