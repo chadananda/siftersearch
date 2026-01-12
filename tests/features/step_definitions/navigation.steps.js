@@ -140,6 +140,11 @@ Then('I should be on the library page', async function () {
   expect(url).to.include('/library');
 });
 
+Then('I should be on the docs page', async function () {
+  const url = this.currentUrl();
+  expect(url).to.include('/docs');
+});
+
 Then('the {string} link should be active', async function (linkName) {
   // Check for active state via aria-current or CSS class
   const link = this.getByRole('link', { name: linkName });

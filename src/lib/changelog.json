@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-12T03:45:04.167Z",
+  "generated": "2026-01-12T04:53:43.678Z",
   "entries": [
+    {
+      "hash": "a1804dc",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Use doc_id (INTEGER) instead of document_id for Meilisearch filters",
+      "scope": null
+    },
+    {
+      "hash": "21c0c63",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Extend mark tags to cover complete words in search highlighting",
+      "scope": null
+    },
     {
       "hash": "f030541",
       "date": "2026-01-11",
@@ -336,24 +350,24 @@
       "type": "Fixed",
       "description": "Prevent bad redirects to general/general paths",
       "scope": null
-    },
-    {
-      "hash": "01f5fc8",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Handle pattern 3 - duplicate YAML without delimiters",
-      "scope": null
-    },
-    {
-      "hash": "46d7f9c",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Handle legacy frontmatter without opening --- delimiter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "a1804dc",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Use doc_id (INTEGER) instead of document_id for Meilisearch filters",
+        "scope": null
+      },
+      {
+        "hash": "21c0c63",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Extend mark tags to cover complete words in search highlighting",
+        "scope": null
+      },
       {
         "hash": "f030541",
         "date": "2026-01-11",
@@ -692,20 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Prevent bad redirects to general/general paths",
-        "scope": null
-      },
-      {
-        "hash": "01f5fc8",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Handle pattern 3 - duplicate YAML without delimiters",
-        "scope": null
-      },
-      {
-        "hash": "46d7f9c",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Handle legacy frontmatter without opening --- delimiter",
         "scope": null
       }
     ]

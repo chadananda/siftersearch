@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.668",
+  "version": "0.1.669",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -35,6 +35,9 @@
     "test:bdd:a11y": "cucumber-js --profile accessibility",
     "test:bdd:implemented": "cucumber-js --profile implemented",
     "test:bdd:pending": "cucumber-js --profile pending",
+    "test:visual": "node tests/visual/capture-all-pages.js",
+    "test:visual:screenshots": "node tests/visual/capture-all-pages.js --screenshots",
+    "test:visual:links": "node tests/visual/capture-all-pages.js --links",
     "test:coverage": "vitest run --coverage",
     "migrate": "node scripts/migrate.js",
     "migrate:create": "node scripts/migrate.js create",

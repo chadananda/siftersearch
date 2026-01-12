@@ -19,8 +19,8 @@ Feature: Critical Path Tests
   @critical-path @smoke
   Scenario: Navigation links work
     Given I am on the home page
-    When I click on the "Library" navigation link
-    Then I should be on the library page
+    When I click on the "Docs" navigation link
+    Then I should be on the docs page
     When I click on the "Chat" navigation link
     Then I should be on the home page
 

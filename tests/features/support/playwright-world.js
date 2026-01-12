@@ -81,13 +81,17 @@ class PlaywrightWorld extends World {
 
   async goto(path) {
     const url = path.startsWith('http') ? path : `${this.baseUrl}${path}`;
-    const response = await this.page.goto(url, { waitUntil: 'networkidle' });
+    // Use 'load' instead of 'networkidle' to avoid hanging on failed API requests
+    const response = await this.page.goto(url, { waitUntil: 'load', timeout: 30000 });
+    // Give page time to initialize after load
+    await this.page.waitForTimeout(1000);
     this.lastResponse = response;
     return response;
   }
 
   async waitForNavigation() {
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
+    await this.page.waitForTimeout(500);
   }
 
   // ============================================

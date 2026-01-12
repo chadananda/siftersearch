@@ -54,7 +54,9 @@ Given('I have a user ID in localStorage', function () {
 When('I visit the home page', async function () {
   if (this.page) {
     await this.page.goto(this.uiBaseUrl);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
+    // Give the page a moment to initialize
+    await this.page.waitForTimeout(500);
     userId = await this.page.evaluate(() => localStorage.getItem('sifter_user_id'));
   } else {
     // API-only test - simulate user ID generation
@@ -67,7 +69,8 @@ When('I visit the home page', async function () {
 When('I reload the page', async function () {
   if (this.page) {
     await this.page.reload();
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
+    await this.page.waitForTimeout(500);
     const newUserId = await this.page.evaluate(() => localStorage.getItem('sifter_user_id'));
     this.storedUserId = userId;
     userId = newUserId;
@@ -79,7 +82,8 @@ When('I navigate to the about page', async function () {
   this.storedUserId = userId;
   if (this.page) {
     await this.page.goto(`${this.uiBaseUrl}/about`);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
+    await this.page.waitForTimeout(500);
     userId = await this.page.evaluate(() => localStorage.getItem('sifter_user_id'));
   }
   // For API-only tests, userId stays the same (no localStorage change)
@@ -88,7 +92,8 @@ When('I navigate to the about page', async function () {
 When('I navigate back to the home page', async function () {
   if (this.page) {
     await this.page.goto(this.uiBaseUrl);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('load');
+    await this.page.waitForTimeout(500);
     userId = await this.page.evaluate(() => localStorage.getItem('sifter_user_id'));
   }
   // For API-only tests, userId stays the same
