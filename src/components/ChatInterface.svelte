@@ -320,7 +320,16 @@
   }
   async function openReaderFromSearch(result) {
     const docId = result.document_id || result.doc_id;
-    await openReader({ doc_id: docId, paragraph_index: result.paragraph_index, title: result.title, text: result.text }, input.trim());
+    await openReader({
+      document_id: docId,
+      paragraph_index: result.paragraph_index,
+      title: result.title,
+      author: result.author,
+      religion: result.religion,
+      collection: result.collection,
+      language: result.language,
+      text: result.text
+    }, input.trim());
   }
   const auth = getAuthState();
 

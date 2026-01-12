@@ -90,6 +90,14 @@ export const navigation = {
   format: ['@cucumber/pretty-formatter']
 };
 
+// Quick search mode tests
+export const quicksearch = {
+  ...common,
+  paths: ['tests/features/quick-search.feature'],
+  tags: '@implemented and @quick-search',
+  format: ['@cucumber/pretty-formatter']
+};
+
 export const accessibility = {
   ...common,
   paths: ['tests/features/accessibility.feature', 'tests/features/critical-path/**/*.feature'],

@@ -74,6 +74,10 @@ Feature: Search Functionality
     Then I should receive an empty result set
 
   # ============================================
+  # Quick Search Mode tests are in quick-search.feature
+  # ============================================
+
+  # ============================================
   # PENDING - AI-Powered Search (Sifter)
   # ============================================
 
