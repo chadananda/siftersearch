@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T14:33:36.971Z",
+  "generated": "2026-01-12T14:47:33.058Z",
   "entries": [
+    {
+      "hash": "a0a0e03",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Require all search words to match (AND not OR)",
+      "scope": null
+    },
     {
       "hash": "987b927",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add missing slug field to collection and religion document queries",
       "scope": null
-    },
-    {
-      "hash": "571e1a6",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Error out when religion/collection missing instead of using fake defaults",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "a0a0e03",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Require all search words to match (AND not OR)",
+        "scope": null
+      },
       {
         "hash": "987b927",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Add missing slug field to collection and religion document queries",
-        "scope": null
-      },
-      {
-        "hash": "571e1a6",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Error out when religion/collection missing instead of using fake defaults",
         "scope": null
       }
     ]
