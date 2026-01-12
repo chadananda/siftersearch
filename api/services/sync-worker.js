@@ -56,8 +56,9 @@ async function getUnsyncedDocuments() {
  * Get unsynced paragraphs for a document
  */
 async function getUnsyncedParagraphs(docId) {
+  // After migration 30, content.id is INTEGER PRIMARY KEY (same as rowid)
   return queryAll(`
-    SELECT rowid, id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash, translation, translation_segments
+    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash, translation, translation_segments
     FROM content
     WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index
@@ -161,7 +162,7 @@ async function syncDocument(docId) {
   const meiliParagraphs = paragraphs.map(p => {
     const embedding = blobToFloatArray(p.embedding);
     return {
-      id: p.rowid,  // INTEGER rowid for fast indexing
+      id: p.id,  // INTEGER id (same as rowid after migration 30)
       doc_id: p.doc_id,  // INTEGER from SQLite docs.id
       paragraph_index: p.paragraph_index,
       text: p.text,

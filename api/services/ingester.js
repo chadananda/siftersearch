@@ -1122,17 +1122,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       existingParagraphs.delete(wordHash);
     } else {
       // New paragraph - insert it with blocktype
-      // Use position + timestamp for unique IDs (hash-based IDs can collide on first 12 chars)
+      // Let SQLite auto-generate INTEGER id (matches Meilisearch rowid)
       newCount++;
-      const uniqueId = `${finalDocId}_p${index}_${Date.now().toString(36)}`;
       insertStatements.push({
         sql: `
           INSERT INTO content
-          (id, doc_id, paragraph_index, text, content_hash, heading, blocktype)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          (doc_id, paragraph_index, text, content_hash, heading, blocktype)
+          VALUES (?, ?, ?, ?, ?, ?)
         `,
         args: [
-          uniqueId,
           finalDocId,
           index,
           chunkText,

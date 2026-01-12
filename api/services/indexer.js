@@ -118,6 +118,7 @@ async function getCachedEmbeddings(docId, paragraphs) {
  */
 async function storeInLibsql(document, paragraphs) {
   const now = new Date().toISOString();
+  const insertedIds = [];
 
   try {
     // Upsert document
@@ -151,18 +152,18 @@ async function storeInLibsql(document, paragraphs) {
     // Delete existing paragraphs for this document (simpler than complex upsert)
     await query('DELETE FROM content WHERE doc_id = ?', [document.id]);
 
-    // Insert all paragraphs
+    // Insert all paragraphs and collect auto-generated ids
     for (const para of paragraphs) {
       // Convert Float32Array to Buffer for BLOB storage
       const embeddingBlob = para.embedding
         ? Buffer.from(para.embedding.buffer || para.embedding)
         : null;
 
-      await query(`
-        INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      // Let SQLite auto-generate INTEGER id
+      const result = await query(`
+        INSERT INTO content (doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
       `, [
-        para.id,
         document.id,
         para.paragraph_index,
         para.text,
@@ -174,9 +175,13 @@ async function storeInLibsql(document, paragraphs) {
         now,
         now
       ]);
+
+      // Get the auto-generated id (lastInsertRowid)
+      insertedIds.push(Number(result.lastInsertRowid));
     }
 
     logger.debug({ docId: document.id, paragraphs: paragraphs.length }, 'Stored in libsql');
+    return insertedIds;
   } catch (err) {
     logger.error({ err: err.message, docId: document.id }, 'Failed to store in libsql');
     throw err;
@@ -416,9 +421,21 @@ export async function indexDocumentFromText(text, metadata = {}) {
     created_at: new Date().toISOString()
   };
 
-  // Create paragraph records with embeddings (for Meilisearch)
+  // Store in SQLite first (to get auto-generated INTEGER ids)
+  const libsqlParagraphs = chunks.map((text, index) => ({
+    paragraph_index: index,
+    text,
+    content_hash: chunksWithHashes[index].hash,
+    heading: extractHeading(content, text),
+    blocktype: 'paragraph',
+    embedding: embeddings[index]
+  }));
+
+  const paragraphIds = await storeInLibsql(document, libsqlParagraphs);
+
+  // Create paragraph records for Meilisearch using SQLite-generated ids
   const paragraphs = chunks.map((text, index) => ({
-    id: `${documentId}_p${index}`,
+    id: paragraphIds[index],  // INTEGER id from SQLite
     doc_id: documentId,  // INTEGER from SQLite docs.id
     paragraph_index: index,
     text,
@@ -439,18 +456,13 @@ export async function indexDocumentFromText(text, metadata = {}) {
   // Index in Meilisearch
   await indexDocument(document, paragraphs);
 
-  // Also store in libsql (with embeddings for caching)
-  const libsqlParagraphs = chunks.map((text, index) => ({
-    id: `${documentId}_p${index}`,
-    paragraph_index: index,
-    text,
-    content_hash: chunksWithHashes[index].hash,
-    heading: extractHeading(content, text),
-    blocktype: 'paragraph',
-    embedding: embeddings[index]
-  }));
-
-  await storeInLibsql(document, libsqlParagraphs);
+  // Mark paragraphs as synced
+  if (paragraphIds.length > 0) {
+    await query(`
+      UPDATE content SET synced = 1
+      WHERE id IN (${paragraphIds.map(() => '?').join(',')})
+    `, paragraphIds);
+  }
 
   return {
     documentId,

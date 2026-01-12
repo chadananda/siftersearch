@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T15:53:11.876Z",
+  "generated": "2026-01-12T16:59:30.971Z",
   "entries": [
+    {
+      "hash": "f38cb51",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Split oversized paragraphs at ingestion time",
+      "scope": null
+    },
     {
       "hash": "877a6fc",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
       "scope": null
-    },
-    {
-      "hash": "7b60188",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Properly unregister service worker and await cache clearing before PWA reload",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "f38cb51",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Split oversized paragraphs at ingestion time",
+        "scope": null
+      },
       {
         "hash": "877a6fc",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
-        "scope": null
-      },
-      {
-        "hash": "7b60188",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Properly unregister service worker and await cache clearing before PWA reload",
         "scope": null
       }
     ]

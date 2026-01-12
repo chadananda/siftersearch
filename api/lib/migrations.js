@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 29;
+const CURRENT_VERSION = 30;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1235,6 +1235,101 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_docs_body_hash ON docs(body_hash)');
 
     logger.info('Migration 29 complete: body_hash column added for metadata-only updates');
+  },
+
+  // Version 30: Convert content.id from TEXT to INTEGER
+  // Meilisearch already uses rowid as its id - this makes SQLite match
+  // Preserves all embeddings and data by copying with rowid as new id
+  30: async () => {
+    logger.info('Starting migration 30: Convert content.id from TEXT to INTEGER');
+
+    // Check current schema
+    const schema = await queryAll("PRAGMA table_info(content)");
+    const idColumn = schema.find(c => c.name === 'id');
+
+    if (idColumn && idColumn.type === 'INTEGER') {
+      logger.info('content.id is already INTEGER, skipping migration');
+      return;
+    }
+
+    // Get count for progress logging
+    const countResult = await queryOne('SELECT COUNT(*) as count FROM content');
+    const totalRows = countResult?.count || 0;
+    logger.info({ totalRows }, 'Migrating content table to INTEGER id');
+
+    // Step 1: Create new content table with INTEGER PRIMARY KEY
+    // Using AUTOINCREMENT to ensure new IDs continue from highest existing
+    await query(`
+      CREATE TABLE IF NOT EXISTS content_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        doc_id INTEGER NOT NULL,
+        paragraph_index INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        content_hash TEXT,
+        heading TEXT,
+        blocktype TEXT DEFAULT 'paragraph',
+        translation TEXT,
+        translation_segments TEXT,
+        context TEXT,
+        embedding BLOB,
+        embedding_model TEXT,
+        synced INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (doc_id) REFERENCES docs(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Step 2: Copy all data using rowid as the new id
+    // This preserves the Meilisearch link since Meili uses rowid
+    await query(`
+      INSERT INTO content_new (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, translation, translation_segments, context, embedding, embedding_model, synced, created_at, updated_at)
+      SELECT rowid, doc_id, paragraph_index, text, content_hash, heading, blocktype, translation, translation_segments, context, embedding, embedding_model, synced, created_at, updated_at
+      FROM content
+    `);
+
+    const newCount = await queryOne('SELECT COUNT(*) as count FROM content_new');
+    logger.info({ originalCount: totalRows, newCount: newCount?.count }, 'Copied content with INTEGER ids');
+
+    // Verify counts match before proceeding
+    if (newCount?.count !== totalRows) {
+      throw new Error(`Row count mismatch: original ${totalRows}, new ${newCount?.count}`);
+    }
+
+    // Step 3: Verify embeddings were preserved (spot check)
+    const embeddingCheck = await queryOne(`
+      SELECT
+        (SELECT COUNT(*) FROM content WHERE embedding IS NOT NULL) as old_count,
+        (SELECT COUNT(*) FROM content_new WHERE embedding IS NOT NULL) as new_count
+    `);
+    logger.info({
+      oldEmbeddings: embeddingCheck?.old_count,
+      newEmbeddings: embeddingCheck?.new_count
+    }, 'Embedding preservation check');
+
+    if (embeddingCheck?.old_count !== embeddingCheck?.new_count) {
+      throw new Error(`Embedding count mismatch: original ${embeddingCheck?.old_count}, new ${embeddingCheck?.new_count}`);
+    }
+
+    // Step 4: Drop old table and rename new one
+    await query('DROP TABLE content');
+    await query('ALTER TABLE content_new RENAME TO content');
+
+    // Step 5: Recreate indexes
+    await query('CREATE INDEX IF NOT EXISTS idx_content_doc ON content(doc_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash)');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_synced ON content(synced)');
+
+    // Step 6: Update sqlite_sequence to ensure AUTOINCREMENT continues correctly
+    const maxId = await queryOne('SELECT MAX(id) as max_id FROM content');
+    if (maxId?.max_id) {
+      await query(`
+        INSERT OR REPLACE INTO sqlite_sequence (name, seq)
+        VALUES ('content', ?)
+      `, [maxId.max_id]);
+    }
+
+    logger.info('Migration 30 complete: content.id is now INTEGER PRIMARY KEY AUTOINCREMENT');
   },
 };
 
