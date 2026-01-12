@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T16:59:30.971Z",
+  "generated": "2026-01-12T19:09:05.463Z",
   "entries": [
+    {
+      "hash": "4f14e0e",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Migrate content.id from TEXT to INTEGER to match Meilisearch",
+      "scope": null
+    },
     {
       "hash": "f38cb51",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
       "scope": null
-    },
-    {
-      "hash": "b4214e6",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "4f14e0e",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Migrate content.id from TEXT to INTEGER to match Meilisearch",
+        "scope": null
+      },
       {
         "hash": "f38cb51",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
-        "scope": null
-      },
-      {
-        "hash": "b4214e6",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
         "scope": null
       }
     ]

@@ -1,7 +1,7 @@
 /**
- * PWA Update State Management
- * Provides reactive state for service worker updates
- * v7 - single reload via controllerchange only
+ * PWA Service Worker - Backup update detection
+ * Primary version checking is in ChatInterface via /api/search/stats
+ * SW manifest hash changes trigger this as a backup mechanism
  */
 
 // Reactive state for PWA updates
@@ -63,10 +63,10 @@ export async function initPWA() {
             r.update();
           }, 2000);
 
-          // Check frequently (every 15 seconds) to pick up updates quickly
+          // Backup polling (60s) - primary version check is via /api/search/stats (10s)
           setInterval(() => {
             r.update();
-          }, 15 * 1000);
+          }, 60 * 1000);
         }
       },
       onRegisterError(error) {

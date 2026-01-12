@@ -403,10 +403,10 @@
           if (serverNewer) {
             // Server is newer - client needs to reload (only if no active conversation)
             if (messages.length === 0) {
-              // Check if we recently tried reloading (with 2-minute cooldown to allow CDN propagation)
+              // Check if we recently tried reloading (with 30-second cooldown to allow CDN propagation)
               const reloadKey = `reload_attempted_${stats.serverVersion}`;
               const lastAttempt = sessionStorage.getItem(reloadKey);
-              const cooldownMs = 2 * 60 * 1000; // 2 minutes
+              const cooldownMs = 30 * 1000; // 30 seconds
               const cooldownExpired = !lastAttempt || (Date.now() - parseInt(lastAttempt, 10)) > cooldownMs;
 
               if (cooldownExpired) {
@@ -1040,6 +1040,18 @@
     setConversationChecker(() => messages.length > 0);
     initPWA();
     loadLibraryStats();
+
+    // Dedicated version check every 10 seconds (separate from stats polling which backs off)
+    const versionCheckInterval = setInterval(async () => {
+      try {
+        const stats = await search.stats();
+        if (stats?.serverVersion && stats.serverVersion !== CLIENT_VERSION) {
+          // Version mismatch detected - trigger the full version check logic
+          loadLibraryStats(true);
+        }
+      } catch (e) { /* silent fail - will retry on next poll */ }
+    }, 10_000);
+
     initSession();
     inputEl?.focus();
 
@@ -1076,6 +1088,7 @@
     return () => {
       stopRetryPolling();
       stopRefreshPolling();
+      clearInterval(versionCheckInterval);
       // Remove activity listeners
       window.removeEventListener('mousemove', handleUserActivity);
       window.removeEventListener('keydown', handleUserActivity);
