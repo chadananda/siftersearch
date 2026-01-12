@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T01:07:39.509Z",
+  "generated": "2026-01-12T02:09:50.796Z",
   "entries": [
+    {
+      "hash": "8b58fe9",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Use marked.parseInline to avoid nested p tags in quick search results",
+      "scope": null
+    },
     {
       "hash": "f8ab0f4",
       "date": "2026-01-11",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Clear file_hash in addition to body_hash to force re-ingestion",
       "scope": null
-    },
-    {
-      "hash": "a96d91f",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add script to remove duplicate frontmatter from source files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-11": [
+      {
+        "hash": "8b58fe9",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Use marked.parseInline to avoid nested p tags in quick search results",
+        "scope": null
+      },
       {
         "hash": "f8ab0f4",
         "date": "2026-01-11",
@@ -699,13 +706,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Clear file_hash in addition to body_hash to force re-ingestion",
-        "scope": null
-      },
-      {
-        "hash": "a96d91f",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add script to remove duplicate frontmatter from source files",
         "scope": null
       }
     ]

@@ -2784,6 +2784,10 @@
     border-radius: 0.75rem;
     overflow: hidden;
     transition: box-shadow 0.15s, border-color 0.15s;
+    /* Ensure card expands to fit content when in flex container */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
   }
   .source-card.expanded {
     border-color: var(--border-strong, var(--border-default));
