@@ -263,7 +263,7 @@ async function findMarkdownFiles(dir, basePath = dir) {
 
       const subFiles = await findMarkdownFiles(fullPath, basePath);
       files.push(...subFiles);
-    } else if (entry.name.endsWith('.md')) {
+    } else if (entry.name.endsWith('.md') && !entry.name.endsWith('.backup.md')) {
       files.push({
         path: fullPath,
         metadata: extractMetadataFromPath(fullPath, basePath)
@@ -391,7 +391,7 @@ function setupWatcher(basePath) {
   async function watchDir(dir) {
     try {
       const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
-        if (!filename || !filename.endsWith('.md')) return;
+        if (!filename || !filename.endsWith('.md') || filename.endsWith('.backup.md')) return;
 
         const fullPath = path.join(dir, filename);
 
