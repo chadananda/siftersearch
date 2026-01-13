@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:48:59.601Z",
+  "generated": "2026-01-13T16:49:44.157Z",
   "entries": [
+    {
+      "hash": "7eb4e0d",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Improved release history page with collapsible months",
+      "scope": null
+    },
     {
       "hash": "5923d3f",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add admin API endpoints for remote server management",
       "scope": null
-    },
-    {
-      "hash": "09e016f",
-      "date": "2025-12-27",
-      "type": "New",
-      "description": "Add public translation endpoint with Shoghi Effendi style",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "7eb4e0d",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Improved release history page with collapsible months",
+        "scope": null
+      },
       {
         "hash": "5923d3f",
         "date": "2026-01-13",
@@ -7027,15 +7034,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add admin API endpoints for remote server management",
-        "scope": null
-      }
-    ],
-    "2025-12-27": [
-      {
-        "hash": "09e016f",
-        "date": "2025-12-27",
-        "type": "New",
-        "description": "Add public translation endpoint with Shoghi Effendi style",
         "scope": null
       }
     ]
