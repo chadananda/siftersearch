@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:32:17.356Z",
+  "generated": "2026-01-13T16:42:52.033Z",
   "entries": [
+    {
+      "hash": "2f1c4dd",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Cache library stats for instant home page display",
+      "scope": null
+    },
     {
       "hash": "19447c2",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove misleading Meilisearch indexing progress bar",
       "scope": null
-    },
-    {
-      "hash": "0d283af",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Default dark mode and hide misleading indexing progress",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "2f1c4dd",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Cache library stats for instant home page display",
+        "scope": null
+      },
       {
         "hash": "19447c2",
         "date": "2026-01-13",
@@ -699,13 +706,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Remove misleading Meilisearch indexing progress bar",
-        "scope": null
-      },
-      {
-        "hash": "0d283af",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Default dark mode and hide misleading indexing progress",
         "scope": null
       }
     ]

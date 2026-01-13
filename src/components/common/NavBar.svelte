@@ -113,7 +113,7 @@
           {#if pwa.updateAvailable}
             <button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>
           {:else}
-            <span class="version">v.{SHORT_VERSION}</span>
+            <a href="/changelog" class="version" title="View version history">v.{SHORT_VERSION}</a>
           {/if}
         </span>
       </a>
@@ -386,6 +386,13 @@
     background: var(--surface-3);
     border-radius: 0.25rem;
     margin-left: 0.25rem;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .version:hover {
+    background: var(--accent-primary);
+    color: white;
   }
 
   .version-update {
