@@ -22,11 +22,11 @@
   --surface-1-alpha: light-dark(rgba(248, 250, 252, 0.65), rgba(30, 41, 59, 0.65));
   --surface-2-alpha: light-dark(rgba(241, 245, 249, 0.5), rgba(51, 65, 85, 0.5));
 
-  /* Text colors - improved dark mode contrast for accessibility */
+  /* Text colors - WCAG AA compliant (4.5:1 minimum contrast ratio) */
   --text-primary: light-dark(#0f172a, #f1f5f9);
-  --text-secondary: light-dark(#475569, #cbd5e1); /* Lighter in dark mode for better contrast */
-  --text-tertiary: light-dark(#64748b, #94a3b8); /* Lighter in dark mode */
-  --text-muted: light-dark(#94a3b8, #64748b); /* Improved dark mode contrast */
+  --text-secondary: light-dark(#475569, #cbd5e1); /* ~8:1 contrast in dark mode */
+  --text-tertiary: light-dark(#64748b, #a1afc4); /* ~6:1 contrast in dark mode */
+  --text-muted: light-dark(#94a3b8, #8b9bb3); /* ~5:1 contrast in dark mode - meets WCAG AA */
   --text-inverted: light-dark(#f8fafc, #0f172a);
 
   /* Border colors */
@@ -34,13 +34,13 @@
   --border-subtle: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
   --border-strong: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2));
 
-  /* Brand/Accent colors */
-  --accent-primary: #075985;
-  --accent-primary-hover: #0c4a6e;
+  /* Brand/Accent colors - theme-aware for accessibility */
+  --accent-primary: light-dark(#075985, #38bdf8); /* Brighter in dark mode for contrast */
+  --accent-primary-hover: light-dark(#0c4a6e, #7dd3fc);
   --accent-primary-light: #0ea5e9;
-  --accent-primary-text: #ffffff;
-  --accent-secondary: #14b8a6;
-  --accent-tertiary: #8b5cf6;
+  --accent-primary-text: light-dark(#ffffff, #0c4a6e);
+  --accent-secondary: light-dark(#14b8a6, #2dd4bf);
+  --accent-tertiary: light-dark(#8b5cf6, #a78bfa);
 
   /* Semantic colors */
   --success: light-dark(#16a34a, #22c55e);

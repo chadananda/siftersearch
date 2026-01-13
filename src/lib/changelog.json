@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:55:07.573Z",
+  "generated": "2026-01-13T16:57:59.421Z",
   "entries": [
+    {
+      "hash": "48e3ea3",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Larger page titles and better contrast on changelog",
+      "scope": null
+    },
     {
       "hash": "9518d02",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add testing and debugging API endpoints",
       "scope": null
-    },
-    {
-      "hash": "4a82bc1",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add granular server management API controls",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "48e3ea3",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Larger page titles and better contrast on changelog",
+        "scope": null
+      },
       {
         "hash": "9518d02",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add testing and debugging API endpoints",
-        "scope": null
-      },
-      {
-        "hash": "4a82bc1",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add granular server management API controls",
         "scope": null
       }
     ]
