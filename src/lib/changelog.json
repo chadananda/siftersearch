@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T04:19:25.902Z",
+  "generated": "2026-01-13T04:20:56.424Z",
   "entries": [
+    {
+      "hash": "483ea78",
+      "date": "2026-01-12",
+      "type": "Updated",
+      "description": "Add logging to keywordSearch filter",
+      "scope": null
+    },
     {
       "hash": "b7b314b",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
       "scope": null
-    },
-    {
-      "hash": "9e5db4e",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use NetworkFirst caching for document content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "483ea78",
+        "date": "2026-01-12",
+        "type": "Updated",
+        "description": "Add logging to keywordSearch filter",
+        "scope": null
+      },
       {
         "hash": "b7b314b",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
-        "scope": null
-      },
-      {
-        "hash": "9e5db4e",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use NetworkFirst caching for document content",
         "scope": null
       }
     ]

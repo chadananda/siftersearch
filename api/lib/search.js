@@ -300,7 +300,7 @@ export async function keywordSearch(query, options = {}) {
     .split(/\s+/)
     .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 
-  logger.debug({ query, queryTerms, rawHitCount: results.hits.length }, 'keywordSearch filtering');
+  logger.info({ query, queryTerms, rawHitCount: results.hits.length }, 'keywordSearch filtering');
 
   // If only stop words or single short word, return unfiltered
   if (queryTerms.length === 0) {
@@ -315,12 +315,12 @@ export async function keywordSearch(query, options = {}) {
     const text = hit.text || '';
     const matches = textContainsAllTerms(text, queryTerms);
     if (!matches) {
-      logger.debug({ hitId: hit.id, textPreview: text.slice(0, 100), queryTerms }, 'Filtering out hit - missing terms');
+      logger.info({ hitId: hit.id, textPreview: text.slice(0, 100), queryTerms }, 'Filtering out hit - missing terms');
     }
     return matches;
   });
 
-  logger.debug({ rawCount: results.hits.length, filteredCount: filteredHits.length, queryTerms }, 'keywordSearch filter results');
+  logger.info({ rawCount: results.hits.length, filteredCount: filteredHits.length, queryTerms }, 'keywordSearch filter results');
 
   return {
     ...results,
