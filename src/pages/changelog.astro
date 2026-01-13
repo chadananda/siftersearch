@@ -82,7 +82,7 @@ function formatDate(dateStr: string): string {
         </p>
       </header>
 
-      <div class="space-y-4">
+      <div class="space-y-8">
         {sortedMonths.map((monthKey, monthIndex) => {
           const isFirstTwo = monthIndex < 2;
           const monthData = entriesByMonth[monthKey];
@@ -90,10 +90,10 @@ function formatDate(dateStr: string): string {
 
           return (
             <details
-              class="group bg-surface-1-alpha backdrop-blur-lg rounded-xl border border-border overflow-hidden"
+              class="group"
               open={isFirstTwo}
             >
-              <summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-hover select-none">
+              <summary class="flex items-center justify-between py-3 cursor-pointer select-none border-b border-border">
                 <h2 class="text-lg font-semibold text-primary">
                   {formatMonth(monthKey)}
                 </h2>
@@ -112,23 +112,23 @@ function formatDate(dateStr: string): string {
                 </div>
               </summary>
 
-              <div class="px-4 pb-4 space-y-4">
+              <div class="pt-6 pb-2 space-y-6">
                 {sortedDates.map((date) => (
-                  <div class="border-l-2 border-border pl-4">
-                    <h3 class="text-sm font-medium text-muted mb-2 uppercase tracking-wide">
+                  <div class="border-l-2 border-border pl-5">
+                    <h3 class="text-sm font-medium text-muted mb-3 uppercase tracking-wide">
                       {formatDate(date)}
                     </h3>
-                    <ul class="space-y-1.5">
+                    <ul class="space-y-3">
                       {monthData[date].map((entry) => (
-                        <li class="flex items-start gap-2">
+                        <li class="flex items-start gap-3">
                           <span
-                            class={`text-xs px-1.5 py-0.5 rounded border font-medium shrink-0 ${
+                            class={`text-xs px-2 py-1 rounded border font-medium shrink-0 ${
                               typeColors[entry.type] || typeColors['Other']
                             }`}
                           >
                             {entry.type}
                           </span>
-                          <span class="text-primary text-sm leading-snug">{entry.description}</span>
+                          <span class="text-primary text-sm leading-relaxed flex-1">{entry.description}</span>
                           <a
                             href={`https://github.com/chadananda/siftersearch/commit/${entry.hash}`}
                             target="_blank"

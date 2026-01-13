@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:49:44.157Z",
+  "generated": "2026-01-13T16:53:50.353Z",
   "entries": [
+    {
+      "hash": "43d0186",
+      "date": "2026-01-13",
+      "type": "Chore",
+      "description": "Update changelog",
+      "scope": null
+    },
     {
       "hash": "7eb4e0d",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Require authentication for auto-update trigger",
       "scope": null
-    },
-    {
-      "hash": "bf98589",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add admin API endpoints for remote server management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "43d0186",
+        "date": "2026-01-13",
+        "type": "Chore",
+        "description": "Update changelog",
+        "scope": null
+      },
       {
         "hash": "7eb4e0d",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Require authentication for auto-update trigger",
-        "scope": null
-      },
-      {
-        "hash": "bf98589",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add admin API endpoints for remote server management",
         "scope": null
       }
     ]
