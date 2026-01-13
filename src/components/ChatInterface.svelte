@@ -2897,6 +2897,8 @@
     overflow: hidden;
     cursor: pointer;
     text-align: left;
+    color: var(--text-primary);
+    font: inherit;
     transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
     display: flex;
     flex-direction: column;
@@ -2919,6 +2921,11 @@
   }
   .source-paper-compact.rtl {
     direction: rtl;
+  }
+
+  .source-paper-compact .source-text {
+    color: var(--text-primary);
+    margin-left: 0;
   }
 
   .para-num-compact {
@@ -3465,7 +3472,7 @@
   /* Chat toggle button inside input */
   .chat-toggle-btn {
     padding: 0.5rem 0.625rem;
-    margin-left: 0.5rem;
+    margin: 0.375rem;
     color: var(--text-secondary);
     background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
     border: 1px solid light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15));

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T15:07:41.456Z",
+  "generated": "2026-01-13T15:23:37.660Z",
   "entries": [
+    {
+      "hash": "6b7794d",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use theme-aware text color for search results",
+      "scope": null
+    },
     {
       "hash": "d80d5a9",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Add quick search mode toggle with lightning button",
       "scope": null
-    },
-    {
-      "hash": "0e7481b",
-      "date": "2026-01-10",
-      "type": "New",
-      "description": "Structured preview with paragraph numbers and stripped markdown",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "6b7794d",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use theme-aware text color for search results",
+        "scope": null
+      },
       {
         "hash": "d80d5a9",
         "date": "2026-01-13",
@@ -699,15 +706,6 @@
         "date": "2026-01-11",
         "type": "New",
         "description": "Add quick search mode toggle with lightning button",
-        "scope": null
-      }
-    ],
-    "2026-01-10": [
-      {
-        "hash": "0e7481b",
-        "date": "2026-01-10",
-        "type": "New",
-        "description": "Structured preview with paragraph numbers and stripped markdown",
         "scope": null
       }
     ]
