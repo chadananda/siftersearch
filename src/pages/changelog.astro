@@ -70,8 +70,8 @@ function formatDate(dateStr: string): string {
 <Layout title="Release History - SifterSearch">
   <NavBar client:load currentPage="changelog" />
 
-  <main class="min-h-screen pt-16 pb-12 px-4">
-    <div class="max-w-3xl mx-auto">
+  <main class="min-h-screen pt-16 pb-12 px-6 sm:px-8 lg:px-12">
+    <div class="max-w-4xl mx-auto">
       <header class="mb-12 text-center pt-8">
         <h1 class="text-4xl font-bold text-primary mb-4">Release History</h1>
         <p class="text-xl text-secondary">
@@ -112,28 +112,28 @@ function formatDate(dateStr: string): string {
                 </div>
               </summary>
 
-              <div class="pt-6 pb-2 space-y-6">
+              <div class="pt-8 pb-4 space-y-8">
                 {sortedDates.map((date) => (
-                  <div class="border-l-2 border-border pl-5">
-                    <h3 class="text-sm font-medium text-muted mb-3 uppercase tracking-wide">
+                  <div class="border-l-2 border-border pl-6 sm:pl-8">
+                    <h3 class="text-base font-medium text-secondary mb-4 uppercase tracking-wide">
                       {formatDate(date)}
                     </h3>
-                    <ul class="space-y-3">
+                    <ul class="space-y-4">
                       {monthData[date].map((entry) => (
-                        <li class="flex items-start gap-3">
+                        <li class="flex items-start gap-4">
                           <span
-                            class={`text-xs px-2 py-1 rounded border font-medium shrink-0 ${
+                            class={`text-sm px-3 py-1.5 rounded border font-medium shrink-0 ${
                               typeColors[entry.type] || typeColors['Other']
                             }`}
                           >
                             {entry.type}
                           </span>
-                          <span class="text-primary text-sm leading-relaxed flex-1">{entry.description}</span>
+                          <span class="text-primary text-base leading-relaxed flex-1">{entry.description}</span>
                           <a
                             href={`https://github.com/chadananda/siftersearch/commit/${entry.hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="text-xs text-muted hover:text-accent font-mono shrink-0"
+                            class="text-sm text-muted hover:text-accent font-mono shrink-0"
                             title="View commit"
                           >
                             {entry.hash}
