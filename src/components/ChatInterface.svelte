@@ -1481,9 +1481,9 @@
                   title="Copy to clipboard"
                 >
                   {#if copiedResultId === (result.id || result.doc_id)}
-                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   {:else}
-                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" /><path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   {/if}
                 </button>
               </div>
@@ -3124,8 +3124,9 @@
     background-color: #faf8f3;
     position: relative;
     padding: 0.875rem 1rem 0.75rem 0.5rem; /* generous top/right/bottom padding */
-    user-select: text;
-    -webkit-user-select: text;
+    user-select: none; /* No text selection - use copy button */
+    -webkit-user-select: none;
+    cursor: pointer;
   }
 
   /* Floating paragraph number */
@@ -3140,32 +3141,30 @@
     pointer-events: none;
   }
 
-  /* Copy to clipboard button */
+  /* Copy to clipboard button - always visible */
   .copy-btn {
     position: absolute;
     right: 0.5rem;
     top: 0.5rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0.25rem;
-    background: transparent;
-    border: none;
-    border-radius: 0.25rem;
-    color: #9ca3af;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0.3rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+    color: #6b7280;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s, color 0.15s, background-color 0.15s;
-  }
-  .source-paper:hover .copy-btn {
-    opacity: 1;
+    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
   }
   .copy-btn:hover {
-    color: #4a4a4a;
-    background-color: rgba(0, 0, 0, 0.05);
+    color: #374151;
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
   }
   .copy-btn.copied {
     color: #16a34a;
-    opacity: 1;
+    background-color: #ecfdf5;
+    border-color: #16a34a;
   }
 
   .source-text {
@@ -3175,10 +3174,10 @@
     color: #1a1a1a; /* Always dark - displays on light cream background */
     margin: 0;
     margin-left: 2.5rem; /* Space for 4-digit paragraph numbers */
-    margin-right: 0.5rem; /* Right padding for copy button */
-    user-select: text;
-    -webkit-user-select: text;
-    cursor: text;
+    margin-right: 2rem; /* Right space for copy button */
+    user-select: none; /* No text selection - use copy button */
+    -webkit-user-select: none;
+    cursor: pointer; /* Indicates clickable card */
   }
 
   /* Meilisearch keyword matches - just bold, no background (avoid over-highlighting) */

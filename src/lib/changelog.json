@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:21:29.361Z",
+  "generated": "2026-01-13T16:27:25.871Z",
   "entries": [
+    {
+      "hash": "04fe007",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Improve search result cards and navigation",
+      "scope": null
+    },
     {
       "hash": "cdb72bf",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Show search results when searchMode is active",
       "scope": null
-    },
-    {
-      "hash": "d68e6e9",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "04fe007",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Improve search result cards and navigation",
+        "scope": null
+      },
       {
         "hash": "cdb72bf",
         "date": "2026-01-13",
@@ -699,13 +706,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Show search results when searchMode is active",
-        "scope": null
-      },
-      {
-        "hash": "d68e6e9",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
         "scope": null
       }
     ]
