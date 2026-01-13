@@ -184,8 +184,8 @@
     }
   });
 
-  // Search suggestion examples - randomly select 3 on each page load
-  const ALL_SUGGESTIONS = [
+  // AI Chat suggestions - full questions/phrases for conversational search
+  const CHAT_SUGGESTIONS = [
     // Soul & Afterlife
     'What is the nature of the soul?',
     'What happens after death?',
@@ -228,12 +228,62 @@
     'How to find inner peace?'
   ];
 
-  // Randomly select 3 suggestions
-  function getRandomSuggestions(count = 3) {
-    const shuffled = [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5);
+  // Quick Search suggestions - keyword phrases for instant search
+  const SEARCH_SUGGESTIONS = [
+    // Soul & Afterlife
+    'nature of the soul',
+    'life after death',
+    'immortality of soul',
+    'purpose of life',
+    // Comparative
+    'creation story',
+    'meaning of suffering',
+    'forgiveness teachings',
+    'divine love',
+    // Virtues & Ethics
+    'compassion mercy',
+    'true humility',
+    'overcoming anger',
+    'honesty truthfulness',
+    'justice righteousness',
+    // Prayer & Worship
+    'how to pray',
+    'purpose of fasting',
+    'meditation spiritual',
+    'nearness to God',
+    // Social teachings
+    'marriage family',
+    'world peace',
+    'service to humanity',
+    'wealth poverty',
+    // Knowledge & Truth
+    'source of knowledge',
+    'recognizing truth',
+    'science and religion',
+    'wisdom understanding',
+    // Unity & Oneness
+    'unity of humanity',
+    'oneness of God',
+    'eliminating prejudice',
+    // Spiritual Growth
+    'spiritual development',
+    'tests and trials',
+    'inner peace',
+    'Book of Certitude'
+  ];
+
+  // Randomly select suggestions based on mode
+  function getRandomSuggestions(suggestions, count = 3) {
+    const shuffled = [...suggestions].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, count);
   }
-  const displayedSuggestions = getRandomSuggestions(3);
+
+  // Pre-select random indices so we can show corresponding suggestions in both modes
+  const selectedChatSuggestions = getRandomSuggestions(CHAT_SUGGESTIONS, 3);
+  const selectedSearchSuggestions = getRandomSuggestions(SEARCH_SUGGESTIONS, 3);
+
+  // Reactive: show different suggestions based on search mode
+  let displayedSuggestions = $derived(searchMode ? selectedSearchSuggestions : selectedChatSuggestions);
 
   // Typewriter loading messages
   const LOADING_MESSAGES = [
