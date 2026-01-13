@@ -73,14 +73,29 @@ function computeContentHash(text, context = '') {
 
 /**
  * Get cached embeddings from libsql for paragraphs that haven't changed
- * @param {string} docId - Document ID
+ * @param {string} filePath - Document file_path for lookup
  * @param {Array<{text: string, hash: string}>} paragraphs - Paragraphs with hashes
+ * @param {string} [fileHash] - Optional file_hash for lookup if file was renamed
  * @returns {Promise<Map<number, Float32Array>>} Map of paragraph_index to embedding
  */
-async function getCachedEmbeddings(docId, paragraphs) {
+async function getCachedEmbeddings(filePath, paragraphs, fileHash = null) {
   const cached = new Map();
 
   try {
+    // Look up doc_id: first by file_path, then by file_hash (handles renames)
+    let doc = await queryOne('SELECT id FROM docs WHERE file_path = ?', [filePath]);
+
+    // If not found by path but we have a file_hash, try that (file may have been renamed)
+    if (!doc && fileHash) {
+      doc = await queryOne('SELECT id FROM docs WHERE file_hash = ? AND file_hash IS NOT NULL', [fileHash]);
+    }
+
+    if (!doc) {
+      return cached;  // No existing document, nothing to cache
+    }
+
+    const docId = doc.id;
+
     // Get existing content rows for this document
     const existing = await queryAll(
       `SELECT paragraph_index, content_hash, embedding, embedding_model
@@ -103,9 +118,9 @@ async function getCachedEmbeddings(docId, paragraphs) {
       }
     }
 
-    logger.debug({ docId, cached: cached.size, total: paragraphs.length }, 'Embedding cache hits');
+    logger.debug({ filePath, cached: cached.size, total: paragraphs.length }, 'Embedding cache hits');
   } catch (err) {
-    logger.warn({ err: err.message, docId }, 'Failed to get cached embeddings');
+    logger.warn({ err: err.message, filePath }, 'Failed to get cached embeddings');
   }
 
   return cached;
@@ -113,44 +128,96 @@ async function getCachedEmbeddings(docId, paragraphs) {
 
 /**
  * Store document and content in libsql
- * @param {Object} document - Document metadata
+ * @param {Object} document - Document metadata (must include file_path and file_hash)
  * @param {Array<Object>} paragraphs - Paragraphs with text, hash, embedding
+ * @returns {{ docId: number, paragraphIds: number[] }} Generated integer IDs
  */
 async function storeInLibsql(document, paragraphs) {
   const now = new Date().toISOString();
   const insertedIds = [];
 
   try {
-    // Upsert document
-    await query(`
-      INSERT INTO docs (id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        title = excluded.title,
-        author = excluded.author,
-        religion = excluded.religion,
-        collection = excluded.collection,
-        language = excluded.language,
-        year = excluded.year,
-        description = excluded.description,
-        paragraph_count = excluded.paragraph_count,
-        updated_at = excluded.updated_at
-    `, [
-      document.id,
-      document.title,
-      document.author,
-      document.religion,
-      document.collection,
-      document.language,
-      document.year,
-      document.description,
-      paragraphs.length,
-      now,
-      now
-    ]);
+    let docId;
+
+    // Strategy: First try to find existing doc by file_hash (content unchanged, file may have been renamed)
+    // This preserves the document record even if the file path changes
+    if (document.file_hash) {
+      const existingByHash = await queryOne(
+        'SELECT id FROM docs WHERE file_hash = ? AND file_hash IS NOT NULL',
+        [document.file_hash]
+      );
+
+      if (existingByHash) {
+        // Found by content hash - update with new path and metadata
+        docId = existingByHash.id;
+        await query(`
+          UPDATE docs SET
+            file_path = ?,
+            title = ?,
+            author = ?,
+            religion = ?,
+            collection = ?,
+            language = ?,
+            year = ?,
+            description = ?,
+            paragraph_count = ?,
+            updated_at = ?
+          WHERE id = ?
+        `, [
+          document.file_path,
+          document.title,
+          document.author,
+          document.religion,
+          document.collection,
+          document.language,
+          document.year,
+          document.description,
+          paragraphs.length,
+          now,
+          docId
+        ]);
+        logger.debug({ docId, file_path: document.file_path }, 'Updated existing doc found by file_hash');
+      }
+    }
+
+    // If not found by hash, try upsert by file_path
+    if (!docId) {
+      const docResult = await query(`
+        INSERT INTO docs (file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(file_path) DO UPDATE SET
+          file_hash = excluded.file_hash,
+          title = excluded.title,
+          author = excluded.author,
+          religion = excluded.religion,
+          collection = excluded.collection,
+          language = excluded.language,
+          year = excluded.year,
+          description = excluded.description,
+          paragraph_count = excluded.paragraph_count,
+          updated_at = excluded.updated_at
+        RETURNING id
+      `, [
+        document.file_path,
+        document.file_hash || null,
+        document.title,
+        document.author,
+        document.religion,
+        document.collection,
+        document.language,
+        document.year,
+        document.description,
+        paragraphs.length,
+        now,
+        now
+      ]);
+
+      // Get the INTEGER doc id (either newly inserted or existing)
+      docId = Number(docResult.rows?.[0]?.id || docResult.lastInsertRowid);
+    }
 
     // Delete existing paragraphs for this document (simpler than complex upsert)
-    await query('DELETE FROM content WHERE doc_id = ?', [document.id]);
+    await query('DELETE FROM content WHERE doc_id = ?', [docId]);
 
     // Insert all paragraphs and collect auto-generated ids
     for (const para of paragraphs) {
@@ -164,7 +231,7 @@ async function storeInLibsql(document, paragraphs) {
         INSERT INTO content (doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
       `, [
-        document.id,
+        docId,  // INTEGER doc id from above
         para.paragraph_index,
         para.text,
         para.content_hash,
@@ -180,8 +247,8 @@ async function storeInLibsql(document, paragraphs) {
       insertedIds.push(Number(result.lastInsertRowid));
     }
 
-    logger.debug({ docId: document.id, paragraphs: paragraphs.length }, 'Stored in libsql');
-    return insertedIds;
+    logger.debug({ docId, paragraphs: paragraphs.length }, 'Stored in libsql');
+    return { docId, paragraphIds: insertedIds };
   } catch (err) {
     logger.error({ err: err.message, docId: document.id }, 'Failed to store in libsql');
     throw err;
@@ -304,7 +371,8 @@ export function parseMarkdownFrontmatter(text) {
  * Uses embedding cache in libsql to avoid regenerating unchanged paragraphs
  */
 export async function indexDocumentFromText(text, metadata = {}) {
-  const documentId = metadata.id || `doc_${nanoid(12)}`;
+  // file_path is required for database uniqueness (comes from metadata.relativePath)
+  const filePath = metadata.relativePath || metadata.file_path || `generated/${nanoid(12)}.md`;
 
   const {
     title = 'Untitled',
@@ -363,15 +431,18 @@ export async function indexDocumentFromText(text, metadata = {}) {
     hash: computeContentHash(text)
   }));
 
-  // Check for cached embeddings in libsql
-  const cachedEmbeddings = await getCachedEmbeddings(documentId, chunksWithHashes);
+  // Compute file_hash from content for document deduplication
+  const fileHash = computeContentHash(content);
+
+  // Check for cached embeddings in libsql (using file_path for lookup, fallback to file_hash for renames)
+  const cachedEmbeddings = await getCachedEmbeddings(filePath, chunksWithHashes, fileHash);
   const cachedCount = cachedEmbeddings.size;
 
   // Find chunks that need new embeddings
   const chunksToEmbed = chunksWithHashes.filter((_, i) => !cachedEmbeddings.has(i));
 
   logger.info({
-    documentId,
+    documentId: filePath,
     chunks: chunks.length,
     cached: cachedCount,
     toGenerate: chunksToEmbed.length
@@ -382,7 +453,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   if (chunksToEmbed.length > 0) {
     const textsToEmbed = chunksToEmbed.map(c => c.text);
     newEmbeddings = await aiService('embedding').embed(textsToEmbed);
-    logger.info({ documentId, generated: newEmbeddings.length }, 'Generated new embeddings');
+    logger.info({ documentId: filePath, generated: newEmbeddings.length }, 'Generated new embeddings');
   }
 
   // Merge cached and new embeddings
@@ -404,11 +475,12 @@ export async function indexDocumentFromText(text, metadata = {}) {
     authority: metadata.authority  // Allow explicit override
   });
 
-  logger.debug({ documentId, authority, author: finalMeta.author, collection: finalMeta.collection }, 'Calculated document authority');
+  logger.debug({ filePath, authority, author: finalMeta.author, collection: finalMeta.collection }, 'Calculated document authority');
 
-  // Create document record
+  // Create document record for SQLite (id is auto-generated INTEGER)
   const document = {
-    id: documentId,
+    file_path: filePath,
+    file_hash: fileHash,
     title: finalMeta.title,
     author: finalMeta.author,
     religion: finalMeta.religion,
@@ -431,12 +503,27 @@ export async function indexDocumentFromText(text, metadata = {}) {
     embedding: embeddings[index]
   }));
 
-  const paragraphIds = await storeInLibsql(document, libsqlParagraphs);
+  const { docId, paragraphIds } = await storeInLibsql(document, libsqlParagraphs);
+
+  // Create document record for Meilisearch (uses INTEGER id from SQLite)
+  const meiliDocument = {
+    id: docId,  // INTEGER id from SQLite
+    title: finalMeta.title,
+    author: finalMeta.author,
+    religion: finalMeta.religion,
+    collection: finalMeta.collection,
+    language: finalMeta.language,
+    year: finalMeta.year ? parseInt(finalMeta.year, 10) : null,
+    description: finalMeta.description,
+    authority,
+    chunk_count: chunks.length,
+    created_at: new Date().toISOString()
+  };
 
   // Create paragraph records for Meilisearch using SQLite-generated ids
   const paragraphs = chunks.map((text, index) => ({
     id: paragraphIds[index],  // INTEGER id from SQLite
-    doc_id: documentId,  // INTEGER from SQLite docs.id
+    doc_id: docId,  // INTEGER from SQLite docs.id
     paragraph_index: index,
     text,
     title: finalMeta.title,
@@ -454,7 +541,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   }));
 
   // Index in Meilisearch
-  await indexDocument(document, paragraphs);
+  await indexDocument(meiliDocument, paragraphs);
 
   // Mark paragraphs as synced
   if (paragraphIds.length > 0) {
@@ -465,7 +552,8 @@ export async function indexDocumentFromText(text, metadata = {}) {
   }
 
   return {
-    documentId,
+    documentId: docId,
+    filePath,
     title: finalMeta.title,
     chunks: chunks.length,
     cached: cachedCount,

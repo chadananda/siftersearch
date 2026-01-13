@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T18:30:37.302Z",
+  "generated": "2026-01-13T20:28:37.579Z",
   "entries": [
+    {
+      "hash": "7da43ff",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Limit document slug length to stay under Fastify 100 char param limit",
+      "scope": null
+    },
     {
       "hash": "a9ea579",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct getSearchStats property names in admin endpoints",
       "scope": null
-    },
-    {
-      "hash": "efd14d8",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Reduce Baha'i star size to match other religion symbols",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "7da43ff",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Limit document slug length to stay under Fastify 100 char param limit",
+        "scope": null
+      },
       {
         "hash": "a9ea579",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Correct getSearchStats property names in admin endpoints",
-        "scope": null
-      },
-      {
-        "hash": "efd14d8",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Reduce Baha'i star size to match other religion symbols",
         "scope": null
       }
     ]
