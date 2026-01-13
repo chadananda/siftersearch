@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { initAuth, logout, getAuthState } from '../../lib/auth.svelte.js';
   import { performUpdate, getPWAState } from '../../lib/pwa.svelte.js';
-  import ThemeToggle from '../ThemeToggle.svelte';
   import TierBadge from '../TierBadge.svelte';
   import AuthModal from '../AuthModal.svelte';
 
@@ -147,7 +146,7 @@
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
-            <span class="nav-label">Community</span>
+            <span class="nav-label">Discuss</span>
           </a>
         {/if}
         <a href="/docs" class="nav-link show-lg" class:active={currentPage === 'docs'}>
@@ -204,7 +203,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
                 </svg>
-                Community
+                Discuss
               </a>
             {/if}
             <a href="/docs" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'docs'} role="menuitem" onclick={closeNavMenu}>
@@ -272,14 +271,6 @@
                   <TierBadge compact />
                 </div>
               </div>
-            </div>
-
-            <div class="dropdown-divider"></div>
-
-            <!-- Theme toggle row -->
-            <div class="dropdown-row theme-row">
-              <span class="row-label">Theme</span>
-              <ThemeToggle minimal />
             </div>
 
             <div class="dropdown-divider"></div>

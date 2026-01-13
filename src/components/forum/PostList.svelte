@@ -113,7 +113,7 @@
 
 <div class="post-list">
   <header class="list-header">
-    <h1>Community Forum</h1>
+    <h1>Library Discussion</h1>
     <p class="subtitle">Discuss sacred texts, share insights, and connect with fellow seekers</p>
   </header>
 

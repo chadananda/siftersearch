@@ -1,11 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import PostEditor from '../../components/forum/PostEditor.svelte';
 ---
 
-<Layout title="Create Post">
+<Layout title="Create Post - SifterSearch">
   <LiquidBackground slot="background" client:only="svelte" />
+  <NavBar client:load currentPage="community" />
   <div class="new-post-page">
     <PostEditor client:only="svelte" />
   </div>
@@ -15,5 +17,6 @@ import PostEditor from '../../components/forum/PostEditor.svelte';
   .new-post-page {
     min-height: 100vh;
     padding: 1rem;
+    padding-top: 5rem; /* Space for navbar */
   }
 </style>

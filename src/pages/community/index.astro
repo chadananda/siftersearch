@@ -1,20 +1,14 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import PostList from '../../components/forum/PostList.svelte';
 ---
 
-<Layout title="Community Forum">
+<Layout title="Library Discussion - SifterSearch">
   <LiquidBackground slot="background" client:only="svelte" />
+  <NavBar client:load currentPage="community" />
   <div class="community-page">
-    <nav class="back-nav">
-      <a href="/" class="back-link">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="icon">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to Search
-      </a>
-    </nav>
     <PostList client:only="svelte" />
   </div>
 </Layout>
@@ -23,30 +17,6 @@ import PostList from '../../components/forum/PostList.svelte';
   .community-page {
     min-height: 100vh;
     padding: 1rem;
-  }
-
-  .back-nav {
-    max-width: 800px;
-    margin: 0 auto 1rem;
-  }
-
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.875rem;
-    padding: 0.5rem 0;
-    transition: color 0.2s;
-  }
-
-  .back-link:hover {
-    color: var(--text-primary);
-  }
-
-  .icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    padding-top: 5rem; /* Space for navbar */
   }
 </style>

@@ -184,92 +184,133 @@
     }
   });
 
-  // AI Chat suggestions - full questions/phrases for conversational search
+  // AI Chat suggestions - full questions/phrases for conversational search (50 items)
   const CHAT_SUGGESTIONS = [
     // Soul & Afterlife
     'What is the nature of the soul?',
     'What happens after death?',
     'Is the soul immortal?',
     'What is the purpose of life?',
-    // Comparative
+    'What is the relationship between body and soul?',
+    // Comparative Religion
     'Compare creation stories across religions',
     'How do religions view suffering?',
     'What do scriptures say about forgiveness?',
     'Compare teachings on love',
+    'How do different faiths describe God?',
+    'What are common teachings on the afterlife?',
     // Virtues & Ethics
     'Teachings on compassion',
     'What is true humility?',
     'How to overcome anger?',
     'Guidance on honesty and truthfulness',
     'What is justice?',
+    'How to practice patience?',
+    'Teachings on gratitude',
+    'What is the meaning of sacrifice?',
     // Prayer & Worship
     'How should one pray?',
     'What is the purpose of fasting?',
     'Importance of meditation',
     'How to draw closer to God?',
-    // Social teachings
+    'What are sacred obligations?',
+    'Why is pilgrimage important?',
+    // Social Teachings
     'Teachings on marriage and family',
     'How to achieve peace?',
     'What is the role of service?',
     'Guidance on wealth and poverty',
+    'How to raise children spiritually?',
+    'What is the purpose of work?',
+    'Teachings on education',
     // Knowledge & Truth
     'What is the source of knowledge?',
     'How to recognize truth?',
     'Relationship between science and religion',
     'What is wisdom?',
+    'How do we know God exists?',
+    'What is the role of reason?',
     // Unity & Oneness
     'Teachings on unity of humanity',
     'What does oneness mean?',
     'How to overcome prejudice?',
+    'What is the purpose of diversity?',
+    'How do religions teach equality?',
     // Spiritual Growth
     'How to develop spiritually?',
     'What are spiritual tests?',
     'Purpose of trials and difficulties',
-    'How to find inner peace?'
+    'How to find inner peace?',
+    'What is detachment?',
+    'How to purify the heart?',
+    'What is spiritual awakening?',
+    'How to overcome the ego?'
   ];
 
-  // Quick Search suggestions - keyword phrases for instant search
+  // Quick Search suggestions - keyword phrases for instant search (50 items)
   const SEARCH_SUGGESTIONS = [
     // Soul & Afterlife
     'nature of the soul',
     'life after death',
     'immortality of soul',
     'purpose of life',
-    // Comparative
+    'body and spirit',
+    // Comparative Religion
     'creation story',
     'meaning of suffering',
     'forgiveness teachings',
     'divine love',
+    'names of God',
+    'heaven paradise',
     // Virtues & Ethics
     'compassion mercy',
     'true humility',
     'overcoming anger',
     'honesty truthfulness',
     'justice righteousness',
+    'patience forbearance',
+    'gratitude thankfulness',
+    'sacrifice selflessness',
     // Prayer & Worship
     'how to pray',
     'purpose of fasting',
     'meditation spiritual',
     'nearness to God',
-    // Social teachings
+    'sacred duties',
+    'pilgrimage holy places',
+    // Social Teachings
     'marriage family',
     'world peace',
     'service to humanity',
     'wealth poverty',
+    'spiritual education',
+    'work worship',
+    'raising children',
     // Knowledge & Truth
     'source of knowledge',
     'recognizing truth',
     'science and religion',
     'wisdom understanding',
+    'proof of God',
+    'reason intellect',
     // Unity & Oneness
     'unity of humanity',
     'oneness of God',
     'eliminating prejudice',
+    'diversity unity',
+    'equality mankind',
     // Spiritual Growth
     'spiritual development',
     'tests and trials',
     'inner peace',
-    'Book of Certitude'
+    'detachment material',
+    'purity of heart',
+    'spiritual awakening',
+    'overcoming ego',
+    // Sacred Texts
+    'Book of Certitude',
+    'Hidden Words',
+    'Sermon on Mount'
   ];
 
   // Randomly select suggestions based on mode
@@ -403,6 +444,33 @@
       coreTerms: coreTerms
     });
   }
+
+  // Track which result is showing "copied" state
+  let copiedResultId = $state(null);
+
+  /**
+   * Copy search result text and attribution to clipboard
+   */
+  async function copyResultToClipboard(event, result) {
+    event.stopPropagation(); // Don't trigger card click
+    const text = result.text || '';
+    const author = result.author || '';
+    const title = result.title || '';
+    const paraNum = result.paragraph_index != null ? result.paragraph_index + 1 : '';
+
+    // Format: "Text" — Author, Title, ¶N
+    const attribution = [author, title, paraNum ? `¶${paraNum}` : ''].filter(Boolean).join(', ');
+    const clipboardText = `"${text.trim()}"\n— ${attribution}`;
+
+    try {
+      await navigator.clipboard.writeText(clipboardText);
+      copiedResultId = result.id || result.doc_id;
+      setTimeout(() => { copiedResultId = null; }, 1500);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }
+
   const auth = getAuthState();
 
   // Check if user can access AI-powered research (approved+ only)
@@ -1405,15 +1473,26 @@
               <div class="source-paper" class:rtl={isRTL}>
                 <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
                 <p class="source-text" dir={isRTL ? 'rtl' : 'ltr'}>{@html formatText(text)}</p>
+                <!-- Copy to clipboard button -->
+                <button
+                  class="copy-btn"
+                  class:copied={copiedResultId === (result.id || result.doc_id)}
+                  onclick={(e) => copyResultToClipboard(e, result)}
+                  title="Copy to clipboard"
+                >
+                  {#if copiedResultId === (result.id || result.doc_id)}
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                  {:else}
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" /><path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z" /></svg>
+                  {/if}
+                </button>
               </div>
 
-              <!-- Compact citation line -->
+              <!-- Compact citation line - floated right -->
               <div class="citation-line">
-                <span class="citation-num">{i + 1}.</span>
                 <span class="citation-meta">
                   {#if author}{author} — {/if}{title}
                 </span>
-                <svg class="citation-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
               </div>
             </div>
           {/each}
@@ -2911,41 +2990,35 @@
     transform: translateY(0);
   }
 
-  /* Compact citation line */
+  /* Compact citation line - floated right */
   .citation-line {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.75rem;
+    justify-content: flex-end; /* Float content to right */
+    padding: 0.25rem 0.75rem;
     background-color: #f0ece3; /* Slightly darker than card cream #faf8f3 */
     font-size: 0.75rem;
     color: #4a4a4a; /* Dark readable text on light background */
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-  }
-
-  .citation-num {
-    font-weight: 600;
-    color: #6b6b6b; /* Dark text on light attribution bar */
   }
 
   .citation-meta {
-    flex: 1;
-    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
   }
 
+  /* Keep citation-arrow for AI chat results that still use it */
   .citation-arrow {
     flex-shrink: 0;
     width: 0.875rem;
     height: 0.875rem;
     color: #9ca3af; /* Muted arrow on light attribution bar */
-    transition: transform 0.15s, color 0.15s;
+    transition: color 0.15s;
   }
   .source-card.clickable:hover .citation-arrow {
     color: var(--accent-primary);
-    transform: translateX(2px);
+    /* no transform - prevents layout shift */
   }
 
   /* Collapsed summary header */
@@ -3049,8 +3122,8 @@
   /* Paper-like text area - ALWAYS light paper color regardless of theme */
   .source-paper {
     background-color: #faf8f3;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     position: relative;
+    padding: 0.875rem 1rem 0.75rem 0.5rem; /* generous top/right/bottom padding */
     user-select: text;
     -webkit-user-select: text;
   }
@@ -3059,12 +3132,40 @@
   .para-num {
     position: absolute;
     left: 0.5rem;
-    top: 0.75rem;
+    top: 0.875rem;
     font-size: 0.65rem;
     font-family: system-ui, -apple-system, sans-serif;
     color: #9ca3af;
     user-select: none;
     pointer-events: none;
+  }
+
+  /* Copy to clipboard button */
+  .copy-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.25rem;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    color: #9ca3af;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background-color 0.15s;
+  }
+  .source-paper:hover .copy-btn {
+    opacity: 1;
+  }
+  .copy-btn:hover {
+    color: #4a4a4a;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  .copy-btn.copied {
+    color: #16a34a;
+    opacity: 1;
   }
 
   .source-text {
@@ -3073,7 +3174,8 @@
     line-height: 1.65;
     color: #1a1a1a; /* Always dark - displays on light cream background */
     margin: 0;
-    margin-left: 2rem; /* Space for paragraph number */
+    margin-left: 2.5rem; /* Space for 4-digit paragraph numbers */
+    margin-right: 0.5rem; /* Right padding for copy button */
     user-select: text;
     -webkit-user-select: text;
     cursor: text;
