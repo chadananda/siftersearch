@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:42:52.033Z",
+  "generated": "2026-01-13T16:48:59.601Z",
   "entries": [
+    {
+      "hash": "5923d3f",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Add changelog page with version pill link",
+      "scope": null
+    },
     {
       "hash": "2f1c4dd",
       "date": "2026-01-13",
@@ -79,6 +86,13 @@
       "scope": null
     },
     {
+      "hash": "588c016",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Add visible button outline to chat toggle",
+      "scope": null
+    },
+    {
       "hash": "6350a42",
       "date": "2026-01-13",
       "type": "New",
@@ -144,14 +158,14 @@
     {
       "hash": "a2a51f3",
       "date": "2026-01-12",
-      "type": "Updated",
+      "type": "Other",
       "description": "Use info level for filter logs",
       "scope": null
     },
     {
       "hash": "483ea78",
       "date": "2026-01-12",
-      "type": "Updated",
+      "type": "Other",
       "description": "Add logging to keywordSearch filter",
       "scope": null
     },
@@ -233,6 +247,13 @@
       "scope": null
     },
     {
+      "hash": "6f4ee39",
+      "date": "2026-01-11",
+      "type": "Test",
+      "description": "Comprehensive test improvements for site-wide coverage",
+      "scope": null
+    },
+    {
       "hash": "a1804dc",
       "date": "2026-01-11",
       "type": "Fixed",
@@ -261,6 +282,27 @@
       "scope": null
     },
     {
+      "hash": "5fccb52",
+      "date": "2026-01-11",
+      "type": "Chore",
+      "description": "Bump version to 0.1.665",
+      "scope": null
+    },
+    {
+      "hash": "056c9cd",
+      "date": "2026-01-11",
+      "type": "Test",
+      "description": "Add BDD tests for quick search mode",
+      "scope": null
+    },
+    {
+      "hash": "59622d4",
+      "date": "2026-01-11",
+      "type": "Chore",
+      "description": "Bump version to 0.1.662",
+      "scope": null
+    },
+    {
       "hash": "f8ab0f4",
       "date": "2026-01-11",
       "type": "Fixed",
@@ -277,7 +319,7 @@
     {
       "hash": "1f601f7",
       "date": "2026-01-11",
-      "type": "Improved",
+      "type": "Performance",
       "description": "Use integer rowid for Meilisearch paragraph IDs",
       "scope": null
     },
@@ -291,7 +333,7 @@
     {
       "hash": "ec263bd",
       "date": "2026-01-11",
-      "type": "Updated",
+      "type": "Other",
       "description": "Rescue embeddings migration script",
       "scope": null
     },
@@ -350,10 +392,3125 @@
       "type": "Fixed",
       "description": "Remove misleading Meilisearch indexing progress bar",
       "scope": null
+    },
+    {
+      "hash": "0d283af",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Default dark mode and hide misleading indexing progress",
+      "scope": null
+    },
+    {
+      "hash": "a0ed63f",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Show search results when searchMode is active",
+      "scope": null
+    },
+    {
+      "hash": "c34ddda",
+      "date": "2026-01-11",
+      "type": "Refactor",
+      "description": "Use source instead of custom parser for .env-secrets",
+      "scope": null
+    },
+    {
+      "hash": "d68e6e9",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
+      "scope": null
+    },
+    {
+      "hash": "bba469b",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Use search.quick endpoint for lightning search mode",
+      "scope": null
+    },
+    {
+      "hash": "bed1f8a",
+      "date": "2026-01-11",
+      "type": "Fixed",
+      "description": "Improve search input visibility and move lightning button inside",
+      "scope": null
+    },
+    {
+      "hash": "f474a51",
+      "date": "2026-01-11",
+      "type": "New",
+      "description": "Add quick search mode toggle with lightning button",
+      "scope": null
+    },
+    {
+      "hash": "0e7481b",
+      "date": "2026-01-10",
+      "type": "New",
+      "description": "Structured preview with paragraph numbers and stripped markdown",
+      "scope": null
+    },
+    {
+      "hash": "63af5e2",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Make .para-text CSS work standalone for library previews",
+      "scope": null
+    },
+    {
+      "hash": "2f1b870",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Add preview field to /api/library/documents endpoint",
+      "scope": null
+    },
+    {
+      "hash": "29f93f3",
+      "date": "2026-01-10",
+      "type": "New",
+      "description": "Instant accordion preview for library documents",
+      "scope": null
+    },
+    {
+      "hash": "8722eee",
+      "date": "2026-01-10",
+      "type": "Fixed",
+      "description": "Use single paper-content path for all preview languages",
+      "scope": null
+    },
+    {
+      "hash": "f0b6b63",
+      "date": "2026-01-10",
+      "type": "Refactor",
+      "description": "Move paper styles to global.css for reuse",
+      "scope": null
+    },
+    {
+      "hash": "c4bc674",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Proper RTL styling for BilingualView preview",
+      "scope": null
+    },
+    {
+      "hash": "63dd0eb",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Apply text color only to RTL content in BilingualView",
+      "scope": null
+    },
+    {
+      "hash": "580019c",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add inline styles to BilingualView paper container to ensure visibility",
+      "scope": null
+    },
+    {
+      "hash": "a3fa5e7",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
+      "scope": null
+    },
+    {
+      "hash": "6ed1421",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
+      "scope": null
+    },
+    {
+      "hash": "36afe13",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
+      "scope": null
+    },
+    {
+      "hash": "348ed87",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
+      "scope": null
+    },
+    {
+      "hash": "c294f1c",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
+      "scope": null
+    },
+    {
+      "hash": "dcb1d37",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
+      "scope": null
+    },
+    {
+      "hash": "7b589dc",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
+      "scope": null
+    },
+    {
+      "hash": "9e5db4e",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Use NetworkFirst caching for document content",
+      "scope": null
+    },
+    {
+      "hash": "cc7b55b",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Only assign heading to immediately following paragraph",
+      "scope": null
+    },
+    {
+      "hash": "32de4df",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "YAML frontmatter serialization with special characters",
+      "scope": null
+    },
+    {
+      "hash": "bb364e3",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Make paragraph headings full-width to prevent side-by-side layout",
+      "scope": null
+    },
+    {
+      "hash": "c67d69a",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Render paragraph headings through markdown to handle links",
+      "scope": null
+    },
+    {
+      "hash": "e42cb42",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
+      "scope": null
+    },
+    {
+      "hash": "b4214e6",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
+      "scope": null
+    },
+    {
+      "hash": "7b60188",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Properly unregister service worker and await cache clearing before PWA reload",
+      "scope": null
+    },
+    {
+      "hash": "4e9cf5f",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add missing slug field to collection and religion document queries",
+      "scope": null
+    },
+    {
+      "hash": "571e1a6",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Error out when religion/collection missing instead of using fake defaults",
+      "scope": null
+    },
+    {
+      "hash": "5b2e977",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add partial slug matching for document URLs",
+      "scope": null
+    },
+    {
+      "hash": "2508670",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Prevent bad redirects to general/general paths",
+      "scope": null
+    },
+    {
+      "hash": "01f5fc8",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Handle pattern 3 - duplicate YAML without delimiters",
+      "scope": null
+    },
+    {
+      "hash": "46d7f9c",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Handle legacy frontmatter without opening --- delimiter",
+      "scope": null
+    },
+    {
+      "hash": "cefa05c",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Clear file_hash in addition to body_hash to force re-ingestion",
+      "scope": null
+    },
+    {
+      "hash": "a96d91f",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add script to remove duplicate frontmatter from source files",
+      "scope": null
+    },
+    {
+      "hash": "cf6a336",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add script to fix documents with frontmatter in first paragraph",
+      "scope": null
+    },
+    {
+      "hash": "1b246e9",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Strip duplicate frontmatter blocks from document content",
+      "scope": null
+    },
+    {
+      "hash": "acc986e",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
+      "scope": null
+    },
+    {
+      "hash": "8aa3d76",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Use unique IDs for content rows to avoid hash collisions",
+      "scope": null
+    },
+    {
+      "hash": "6063de5",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
+      "scope": null
+    },
+    {
+      "hash": "daa2a95",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add re-import button and make view/edit always visible on library items",
+      "scope": null
+    },
+    {
+      "hash": "e8d9f37",
+      "date": "2026-01-09",
+      "type": "Chore",
+      "description": "Bump version to 0.1.603",
+      "scope": null
+    },
+    {
+      "hash": "86b708a",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Add ingestion progress display to home page",
+      "scope": null
+    },
+    {
+      "hash": "1c133b2",
+      "date": "2026-01-09",
+      "type": "Fixed",
+      "description": "Improve language detection using character ratio",
+      "scope": null
+    },
+    {
+      "hash": "abd6e63",
+      "date": "2026-01-09",
+      "type": "New",
+      "description": "Word-based hashing for re-segmentation preserves embeddings",
+      "scope": null
+    },
+    {
+      "hash": "ddbb46a",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Prevent sentences ending with prepositions",
+      "scope": null
+    },
+    {
+      "hash": "0b788dd",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Trailing text after last sentence ending ALWAYS carried forward",
+      "scope": null
+    },
+    {
+      "hash": "9197ce6",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
+      "scope": null
+    },
+    {
+      "hash": "3b6c424",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Remove arbitrary sentence count limit from segmentation",
+      "scope": null
+    },
+    {
+      "hash": "3c9f8ed",
+      "date": "2026-01-08",
+      "type": "Other",
+      "description": "Meilisearch orphan cleanup script",
+      "scope": null
+    },
+    {
+      "hash": "eab6aa9",
+      "date": "2026-01-08",
+      "type": "Other",
+      "description": "Redirect creation script",
+      "scope": null
+    },
+    {
+      "hash": "88af05a",
+      "date": "2026-01-08",
+      "type": "Other",
+      "description": "Production database fix script",
+      "scope": null
+    },
+    {
+      "hash": "248e7fd",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Prevent sentence markers in English texts + require file_path",
+      "scope": null
+    },
+    {
+      "hash": "d75040d",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Reingest script resets body_hash to force full re-ingestion",
+      "scope": null
+    },
+    {
+      "hash": "1d85649",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Only add sentence markers for RTL texts, not English",
+      "scope": null
+    },
+    {
+      "hash": "31d93ac",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Library preview matches book view with floating paragraph numbers",
+      "scope": null
+    },
+    {
+      "hash": "79d2630",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Religion/collection come ONLY from path, ignore frontmatter",
+      "scope": null
+    },
+    {
+      "hash": "3754d45",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Path-based collection takes precedence over frontmatter",
+      "scope": null
+    },
+    {
+      "hash": "1574a36",
+      "date": "2026-01-08",
+      "type": "Chore",
+      "description": "Remove one-time fix-collections script",
+      "scope": null
+    },
+    {
+      "hash": "3e9d563",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Reingest script uses correct library base path",
+      "scope": null
+    },
+    {
+      "hash": "dabb8e8",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Extract collection from path when not in frontmatter",
+      "scope": null
+    },
+    {
+      "hash": "6c08a7d",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Remove rule-based sentence length validation",
+      "scope": null
+    },
+    {
+      "hash": "8db7658",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Prevent segmenter from producing word fragments",
+      "scope": null
+    },
+    {
+      "hash": "d449677",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add dual progress bars for import and indexing",
+      "scope": null
+    },
+    {
+      "hash": "ff92fd9",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add deployment verification script",
+      "scope": null
+    },
+    {
+      "hash": "7f6ebc9",
+      "date": "2026-01-08",
+      "type": "Test",
+      "description": "Add BDD tests for ingestion progress bar",
+      "scope": null
+    },
+    {
+      "hash": "cd06088",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Use correct CSS variable for ingestion progress bar fill",
+      "scope": null
+    },
+    {
+      "hash": "ef61209",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add two-tier BDD testing infrastructure",
+      "scope": null
+    },
+    {
+      "hash": "1f8a97d",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Add dev:prod and test:bdd:prod scripts",
+      "scope": null
+    },
+    {
+      "hash": "e7fc50b",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Calculate ingestionProgress even when Meilisearch disabled",
+      "scope": null
+    },
+    {
+      "hash": "3c2bb81",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Add ingestionProgress to search stats endpoint",
+      "scope": null
+    },
+    {
+      "hash": "8747c19",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Simplify RTL segmentation, add ingestion progress",
+      "scope": null
+    },
+    {
+      "hash": "1323078",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "JSON extraction from AI response with code blocks",
+      "scope": null
+    },
+    {
+      "hash": "5fa2fb6",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "English text passes through unchanged - no segmentation",
+      "scope": null
+    },
+    {
+      "hash": "88a54f0",
+      "date": "2026-01-08",
+      "type": "Fixed",
+      "description": "Use correct aiService API for structural analysis",
+      "scope": null
+    },
+    {
+      "hash": "787e268",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "AI structural analysis for RTL text segmentation",
+      "scope": null
+    },
+    {
+      "hash": "d5a2e1b",
+      "date": "2026-01-08",
+      "type": "New",
+      "description": "Support HTML comments for section headings in unsegmented RTL texts",
+      "scope": null
+    },
+    {
+      "hash": "a21480e",
+      "date": "2026-01-08",
+      "type": "Performance",
+      "description": "Skip AI segmentation for punctuated English text",
+      "scope": null
+    },
+    {
+      "hash": "32be47e",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add body_hash for metadata-only updates",
+      "scope": null
+    },
+    {
+      "hash": "e1a81e7",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use large number instead of Infinity for SQL limit",
+      "scope": null
+    },
+    {
+      "hash": "2a673a6",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to re-index documents missing content",
+      "scope": null
+    },
+    {
+      "hash": "cc39037",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
+      "scope": null
+    },
+    {
+      "hash": "6ab38c6",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to sync Meilisearch titles with SQLite",
+      "scope": null
+    },
+    {
+      "hash": "9eb0897",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use queryAll for fix-titles script",
+      "scope": null
+    },
+    {
+      "hash": "ae3a704",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add script to fix corrupted titles from frontmatter",
+      "scope": null
+    },
+    {
+      "hash": "79f2d84",
+      "date": "2026-01-07",
+      "type": "Chore",
+      "description": "Add temp test script",
+      "scope": null
+    },
+    {
+      "hash": "f0e0163",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add Meilisearch migration script for doc_id field",
+      "scope": null
+    },
+    {
+      "hash": "0f22e80",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Standardize doc_id field across SQLite and Meilisearch",
+      "scope": null
+    },
+    {
+      "hash": "7ba8246",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Correct migration 28 schema to match production",
+      "scope": null
+    },
+    {
+      "hash": "c5dd15d",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Drop old_id column from docs table (migration 28)",
+      "scope": null
+    },
+    {
+      "hash": "a9b659d",
+      "date": "2026-01-07",
+      "type": "Docs",
+      "description": "Add server deployment info to CLAUDE.md",
+      "scope": null
+    },
+    {
+      "hash": "011afdb",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
+      "scope": null
+    },
+    {
+      "hash": "ed45019",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
+      "scope": null
+    },
+    {
+      "hash": "941ea7c",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Support file moves without re-indexing content",
+      "scope": null
+    },
+    {
+      "hash": "689f1a8",
+      "date": "2026-01-07",
+      "type": "Docs",
+      "description": "Add synchronization architecture documentation",
+      "scope": null
+    },
+    {
+      "hash": "37d6f29",
+      "date": "2026-01-07",
+      "type": "New",
+      "description": "Add filename editing in document editor",
+      "scope": null
+    },
+    {
+      "hash": "863ce9a",
+      "date": "2026-01-07",
+      "type": "Refactor",
+      "description": "Simplify path handling - just use path.relative()",
+      "scope": null
+    },
+    {
+      "hash": "ddfd1d1",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use Node path module for reliable path handling in library-watcher",
+      "scope": null
+    },
+    {
+      "hash": "0d2fd25",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Skip already-linked documents in link-source-files",
+      "scope": null
+    },
+    {
+      "hash": "f9f88bd",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Use config.library.basePath in link-source-files script",
+      "scope": null
+    },
+    {
+      "hash": "f9078c4",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Store relative paths in link-source-files script",
+      "scope": null
+    },
+    {
+      "hash": "8322153",
+      "date": "2026-01-07",
+      "type": "Other",
+      "description": "Remove fallback file search in favor of fixing root cause",
+      "scope": null
+    },
+    {
+      "hash": "8a66cad",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Convert absolute paths to relative paths in library-watcher",
+      "scope": null
+    },
+    {
+      "hash": "10c848d",
+      "date": "2026-01-07",
+      "type": "Fixed",
+      "description": "Search for source file when file_path is missing",
+      "scope": null
+    },
+    {
+      "hash": "5ae5605",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Document ID preservation and comprehensive API testing",
+      "scope": null
+    },
+    {
+      "hash": "700e7df",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Correct config import for library.basePath",
+      "scope": null
+    },
+    {
+      "hash": "5959dd1",
+      "date": "2026-01-06",
+      "type": "New",
+      "description": "Add PATCH endpoint to update document file_path",
+      "scope": null
+    },
+    {
+      "hash": "5341700",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Resolve relative file paths with library base path",
+      "scope": null
+    },
+    {
+      "hash": "76dcafd",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Add X-Client-Version and X-Request-Id to CORS headers",
+      "scope": null
+    },
+    {
+      "hash": "62c17bf",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
+      "scope": null
+    },
+    {
+      "hash": "67e94ba",
+      "date": "2026-01-06",
+      "type": "Test",
+      "description": "Add CORS configuration tests",
+      "scope": null
+    },
+    {
+      "hash": "8351fc8",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Add CORS PUT method and file_hash uniqueness migration",
+      "scope": null
+    },
+    {
+      "hash": "7eeee70",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Use large number instead of Infinity for SQL LIMIT",
+      "scope": null
+    },
+    {
+      "hash": "fbdad20",
+      "date": "2026-01-06",
+      "type": "New",
+      "description": "Add backfill script for file_hash",
+      "scope": null
+    },
+    {
+      "hash": "a28f09b",
+      "date": "2026-01-06",
+      "type": "New",
+      "description": "Add global file_hash deduplication and cleanup script",
+      "scope": null
+    },
+    {
+      "hash": "af18046",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Use canonical base path for deterministic document IDs",
+      "scope": null
+    },
+    {
+      "hash": "c2972f3",
+      "date": "2026-01-06",
+      "type": "Chore",
+      "description": "Bump version to 0.1.547",
+      "scope": null
+    },
+    {
+      "hash": "7bfb836",
+      "date": "2026-01-06",
+      "type": "New",
+      "description": "Add one-time migration for translation_segments to JSON",
+      "scope": null
+    },
+    {
+      "hash": "317dd5f",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Store translations as JSON only, remove translation_segments column usage",
+      "scope": null
+    },
+    {
+      "hash": "1b183cd",
+      "date": "2026-01-06",
+      "type": "Fixed",
+      "description": "Translation stats now check both translation and translation_segments fields",
+      "scope": null
+    },
+    {
+      "hash": "56ad1ef",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Add prerender to agent pages + comprehensive link tests",
+      "scope": null
+    },
+    {
+      "hash": "657b6cd",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Add visible mark highlighting for admin RawSearch",
+      "scope": null
+    },
+    {
+      "hash": "8f3dddc",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Highlight search terms in RawSearch results",
+      "scope": null
+    },
+    {
+      "hash": "d1e341b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
+      "scope": null
+    },
+    {
+      "hash": "7b55dca",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Show Institutional tier centered above subscribe button",
+      "scope": null
+    },
+    {
+      "hash": "7b0f6c1",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Simplify to monthly subscriptions only, add Institutional tier",
+      "scope": null
+    },
+    {
+      "hash": "daf78cc",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Update donation tiers and remove yearly option",
+      "scope": null
+    },
+    {
+      "hash": "4669304",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Admin panel logo, search results, and add translation debug",
+      "scope": null
+    },
+    {
+      "hash": "e254855",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Admin panel improvements and search performance",
+      "scope": null
+    },
+    {
+      "hash": "67c0b4f",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use $effect and objects for translation stats reactivity",
+      "scope": null
+    },
+    {
+      "hash": "39735b4",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Raw Search API call and add NavBar to admin layout",
+      "scope": null
+    },
+    {
+      "hash": "9458417",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Simplify translation stats loading to fix indicator display",
+      "scope": null
+    },
+    {
+      "hash": "87a9396",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
+      "scope": null
+    },
+    {
+      "hash": "83049f0",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add Raw Search admin page for direct Meilisearch access",
+      "scope": null
+    },
+    {
+      "hash": "b07a87b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Highlight active nav item in admin sidebar",
+      "scope": null
+    },
+    {
+      "hash": "55a3bf0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Auth timing and missing ingestion_queue table",
+      "scope": null
+    },
+    {
+      "hash": "e2ef58d",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add edit button for admins on library document list",
+      "scope": null
+    },
+    {
+      "hash": "bd977f6",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Wait for auth before checking admin permissions in dashboard",
+      "scope": null
+    },
+    {
+      "hash": "bace91b",
+      "date": "2026-01-05",
+      "type": "Test",
+      "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
+      "scope": null
+    },
+    {
+      "hash": "fa09a0c",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add auto_segmented flag to track AI-segmented documents",
+      "scope": null
+    },
+    {
+      "hash": "ddc9c14",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Strip collection/religion from source document frontmatter",
+      "scope": null
+    },
+    {
+      "hash": "7227a20",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add tabbed editor with metadata/content tabs and field management",
+      "scope": null
+    },
+    {
+      "hash": "559e7d9",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use $effect to initialize editor when container is ready",
+      "scope": null
+    },
+    {
+      "hash": "f721eb4",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Wait for auth before loading admin queue data",
+      "scope": null
+    },
+    {
+      "hash": "c9e8893",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Wait for auth before loading document in editor",
+      "scope": null
+    },
+    {
+      "hash": "009aa5b",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Use padding-right for Arabic continuation indent",
+      "scope": null
+    },
+    {
+      "hash": "fe6bc12",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Study view improvements and batch translation notes",
+      "scope": null
+    },
+    {
+      "hash": "659d5b3",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Remove paragraph hover background",
+      "scope": null
+    },
+    {
+      "hash": "228c37a",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Redesign Study view with aligned phrase rows",
+      "scope": null
+    },
+    {
+      "hash": "8d76e43",
+      "date": "2026-01-05",
+      "type": "Chore",
+      "description": "Remove test screenshots",
+      "scope": null
+    },
+    {
+      "hash": "74980a0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Correct Study view column order for RTL documents",
+      "scope": null
+    },
+    {
+      "hash": "a1bf8d7",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Add numbered middle column to Study view (like SBS)",
+      "scope": null
+    },
+    {
+      "hash": "6dc2d44",
+      "date": "2026-01-05",
+      "type": "New",
+      "description": "Redesign Study view with aligned phrase rows",
+      "scope": null
+    },
+    {
+      "hash": "9991825",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Study view now uses API pre-parsed translation fields",
+      "scope": null
+    },
+    {
+      "hash": "ad5bdd5",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Study view now correctly detects study translations in JSON",
+      "scope": null
+    },
+    {
+      "hash": "3c2d6c0",
+      "date": "2026-01-05",
+      "type": "Fixed",
+      "description": "Reduce corner icon overlap on mobile to slight overlap",
+      "scope": null
+    },
+    {
+      "hash": "2d00a1c",
+      "date": "2026-01-05",
+      "type": "Style",
+      "description": "Move utility bar down to 12rem to avoid clash",
+      "scope": null
+    },
+    {
+      "hash": "e1ae51b",
+      "date": "2026-01-05",
+      "type": "Style",
+      "description": "Increase content max-width to 900px",
+      "scope": null
+    },
+    {
+      "hash": "80421ca",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS phrase highlighting uses composite keys + styling improvements",
+      "scope": null
+    },
+    {
+      "hash": "885d664",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS phrase highlighting now uses composite keys (para+seg)",
+      "scope": null
+    },
+    {
+      "hash": "b08b58b",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
+      "scope": null
+    },
+    {
+      "hash": "e80af5c",
+      "date": "2026-01-04",
+      "type": "Other",
+      "description": "Add logging to translation save path",
+      "scope": null
+    },
+    {
+      "hash": "534d209",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Allow saving translations even if segments are null",
+      "scope": null
+    },
+    {
+      "hash": "f6bb5ca",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Cap maxTokens at 16000 to prevent model limit errors",
+      "scope": null
+    },
+    {
+      "hash": "81cdebf",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Improve phrase segmentation for Study mode",
+      "scope": null
+    },
+    {
+      "hash": "92e2ec5",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Generate phrase-level segments for marked text translation",
+      "scope": null
+    },
+    {
+      "hash": "a63e548",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Paragraph 0 translation + segment format normalization",
+      "scope": null
+    },
+    {
+      "hash": "efa656b",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
+      "scope": null
+    },
+    {
+      "hash": "2da673a",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
+      "scope": null
+    },
+    {
+      "hash": "9eed5e0",
+      "date": "2026-01-04",
+      "type": "Chore",
+      "description": "Add test script for segmentation",
+      "scope": null
+    },
+    {
+      "hash": "18e9939",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Prevent sentence overlap in extractSentencesFromEndings",
+      "scope": null
+    },
+    {
+      "hash": "1c26fe2",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add strict word-for-word validation for segmentation",
+      "scope": null
+    },
+    {
+      "hash": "528a0ee",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Snap sentence marker insertion to word boundaries",
+      "scope": null
+    },
+    {
+      "hash": "bdd00f0",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Never cut text at arbitrary char limit - always find word boundary",
+      "scope": null
+    },
+    {
+      "hash": "6934e10",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
+      "scope": null
+    },
+    {
+      "hash": "34f35ff",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
+      "scope": null
+    },
+    {
+      "hash": "ee6e494",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Enforce max paragraph size with force-split fallback for translation",
+      "scope": null
+    },
+    {
+      "hash": "31c1289",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
+      "scope": null
+    },
+    {
+      "hash": "2bbefa2",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add test translation API endpoint",
+      "scope": null
+    },
+    {
+      "hash": "4e1a79a",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Concurrent rolling queue for translation + mandatory segments",
+      "scope": null
+    },
+    {
+      "hash": "41fffd9",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Correct checkpoint boundary bug in translation resume logic",
+      "scope": null
+    },
+    {
+      "hash": "43d06e3",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "SBS English text styling - larger font, proper LTR direction",
+      "scope": null
+    },
+    {
+      "hash": "a563a00",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Move ai_usage migration to correct directory",
+      "scope": null
+    },
+    {
+      "hash": "5265338",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add AI usage tracking and cost dashboard",
+      "scope": null
+    },
+    {
+      "hash": "4975c08",
+      "date": "2026-01-04",
+      "type": "Fixed",
+      "description": "Cap batch translation max_tokens at 16000",
+      "scope": null
+    },
+    {
+      "hash": "7aa93fd",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Prefer Shoghi Effendi translations for terminology",
+      "scope": null
+    },
+    {
+      "hash": "27bfd11",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Move translation notes to paragraph footnotes",
+      "scope": null
+    },
+    {
+      "hash": "bbb1b5e",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Improve Study view layout and translation prompts",
+      "scope": null
+    },
+    {
+      "hash": "644b813",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Include Arabic terms in study translation for difficult words",
+      "scope": null
+    },
+    {
+      "hash": "996891f",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Robust TOON parser that strips LLM explanatory text",
+      "scope": null
+    },
+    {
+      "hash": "3b7f8be",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Improve study translation prompt - readable literal, theological notes",
+      "scope": null
+    },
+    {
+      "hash": "b229fe5",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
+      "scope": null
+    },
+    {
+      "hash": "1b2d3af",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Add pattern-based translation clearing for batch operations",
+      "scope": null
+    },
+    {
+      "hash": "4eea663",
+      "date": "2026-01-04",
+      "type": "New",
+      "description": "Optimize translation for 6-10x speedup with TOON format",
+      "scope": null
+    },
+    {
+      "hash": "357fb51",
+      "date": "2026-01-04",
+      "type": "Chore",
+      "description": "Bump version for PWA cache bust",
+      "scope": null
+    },
+    {
+      "hash": "bcfa25a",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
+      "scope": null
+    },
+    {
+      "hash": "041746c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add ingest-file endpoint for ingesting from file path",
+      "scope": null
+    },
+    {
+      "hash": "23e9ca5",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Translation service now reads from LibSQL, not Meilisearch",
+      "scope": null
+    },
+    {
+      "hash": "fb1308b",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Resegment endpoint now uses reingest from source file",
+      "scope": null
+    },
+    {
+      "hash": "699c5f1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add admin API endpoints for document management",
+      "scope": null
+    },
+    {
+      "hash": "0c12b1b",
+      "date": "2026-01-03",
+      "type": "Chore",
+      "description": "Delete one-time migration scripts",
+      "scope": null
+    },
+    {
+      "hash": "539b7f8",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Use gradient highlight to prevent line overlap",
+      "scope": null
+    },
+    {
+      "hash": "893d0a2",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Remove box-shadow from segment highlights to prevent line overlap",
+      "scope": null
+    },
+    {
+      "hash": "452625a",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Remove padding/margin from segment-phrase for tighter highlights",
+      "scope": null
+    },
+    {
+      "hash": "50c6ad9",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Prevent highlight overlap with box-decoration-break",
+      "scope": null
+    },
+    {
+      "hash": "202938d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust segment highlight height to match line-height",
+      "scope": null
+    },
+    {
+      "hash": "bea207c",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Set line-height on translation-col parent container",
+      "scope": null
+    },
+    {
+      "hash": "fc3ba6b",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Force single line-height on SBS translation text via JS action",
+      "scope": null
+    },
+    {
+      "hash": "c8875c3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add global CSS override for English translation line-height",
+      "scope": null
+    },
+    {
+      "hash": "00e78c3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Use :global() for English translation line-height in SBS mode",
+      "scope": null
+    },
+    {
+      "hash": "fa25d10",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Force line-height 1 on English translation with !important",
+      "scope": null
+    },
+    {
+      "hash": "fe2a086",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add missing PWA icons (192x192 and 512x512)",
+      "scope": null
+    },
+    {
+      "hash": "295aa6d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Explicitly set English font-size to 1rem in translation column",
+      "scope": null
+    },
+    {
+      "hash": "1e94e52",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Set English line-height to 1 in all paragraph text rules",
+      "scope": null
+    },
+    {
+      "hash": "4dda2fe",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
+      "scope": null
+    },
+    {
+      "hash": "4bb30e8",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Make mode button label white when active",
+      "scope": null
+    },
+    {
+      "hash": "8d0c5e2",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Show existing translation progress when queueing new job",
+      "scope": null
+    },
+    {
+      "hash": "6e1b7cf",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Translation queue reliability + UI fixes",
+      "scope": null
+    },
+    {
+      "hash": "e88776f",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Adjust corner icon positioning for 5px visual overlap",
+      "scope": null
+    },
+    {
+      "hash": "208ed9e",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Three-line centered breadcrumb with corner icons",
+      "scope": null
+    },
+    {
+      "hash": "047902d",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Position icons at actual corners of document box",
+      "scope": null
+    },
+    {
+      "hash": "f4ec0c6",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Allow corner icons to overflow document container",
+      "scope": null
+    },
+    {
+      "hash": "89d8e3f",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Position logo/QR in corners with overlap, make twice as big",
+      "scope": null
+    },
+    {
+      "hash": "dc0c683",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Reduce SBS padding and fix highlight text visibility",
+      "scope": null
+    },
+    {
+      "hash": "008ae07",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Add hanging indent and visible left margin on mobile",
+      "scope": null
+    },
+    {
+      "hash": "a03dd41",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Hide back button on mobile view",
+      "scope": null
+    },
+    {
+      "hash": "eaa94f3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
+      "scope": null
+    },
+    {
+      "hash": "455e1c5",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Collapse all utility buttons to hamburger menu on mobile",
+      "scope": null
+    },
+    {
+      "hash": "e639a3f",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Center utility bar buttons in right margin",
+      "scope": null
+    },
+    {
+      "hash": "8146562",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Responsive right margin for utility bar - prevent content overlap",
+      "scope": null
+    },
+    {
+      "hash": "2c8898f",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
+      "scope": null
+    },
+    {
+      "hash": "70999b3",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Update translation progress after each paragraph instead of each wave",
+      "scope": null
+    },
+    {
+      "hash": "2719520",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add URL-style breadcrumb header and job queue monitoring API",
+      "scope": null
+    },
+    {
+      "hash": "02bc56c",
+      "date": "2026-01-03",
+      "type": "Refactor",
+      "description": "Reorganize utility bar with mobile hamburger menu",
+      "scope": null
+    },
+    {
+      "hash": "7216d9c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add labeled view mode buttons with circular progress indicator",
+      "scope": null
+    },
+    {
+      "hash": "675a804",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add JWT auth middleware + translation job polling",
+      "scope": null
+    },
+    {
+      "hash": "f8551d9",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Use JWT Authorization header for translation API call",
+      "scope": null
+    },
+    {
+      "hash": "8e37130",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Remove translation confirmation popup, queue directly",
+      "scope": null
+    },
+    {
+      "hash": "f550588",
+      "date": "2026-01-03",
+      "type": "Refactor",
+      "description": "Store translations as single JSON field",
+      "scope": null
+    },
+    {
+      "hash": "0f67cc2",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Generate both reading and study translations simultaneously",
+      "scope": null
+    },
+    {
+      "hash": "1250a2f",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add phrase-level hover/tap highlighting in SBS mode",
+      "scope": null
+    },
+    {
+      "hash": "e2acb5c",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Enhanced translation with wave-based processing and context",
+      "scope": null
+    },
+    {
+      "hash": "604645e",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add SBS and Study translation modes with admin buttons",
+      "scope": null
+    },
+    {
+      "hash": "26e3dd1",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Paragraph numbering treats index 0 as falsy",
+      "scope": null
+    },
+    {
+      "hash": "4ac7f50",
+      "date": "2026-01-03",
+      "type": "Chore",
+      "description": "Add document slug migration",
+      "scope": null
+    },
+    {
+      "hash": "92f78b1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add unique slug storage to prevent URL collisions",
+      "scope": null
+    },
+    {
+      "hash": "04df1d1",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add server-side redirect detection and redirect management API",
+      "scope": null
+    },
+    {
+      "hash": "f7c6eaf",
+      "date": "2026-01-03",
+      "type": "Fixed",
+      "description": "Correct Fastify 5 redirect argument order",
+      "scope": null
+    },
+    {
+      "hash": "19579fa",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Allow internal API key for document updates",
+      "scope": null
+    },
+    {
+      "hash": "8991268",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Include author in document URL slugs",
+      "scope": null
+    },
+    {
+      "hash": "43d6357",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
+      "scope": null
+    },
+    {
+      "hash": "288cca6",
+      "date": "2026-01-03",
+      "type": "New",
+      "description": "Add redirect support for changed document URLs",
+      "scope": null
+    },
+    {
+      "hash": "b56aa6c",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
+      "scope": null
+    },
+    {
+      "hash": "de3ee70",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve paragraph grouping with discourse markers",
+      "scope": null
+    },
+    {
+      "hash": "7fc0879",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Integrate sentence-first segmentation into ingester pipeline",
+      "scope": null
+    },
+    {
+      "hash": "0fbdaf6",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add sentence-first streaming segmentation for unpunctuated texts",
+      "scope": null
+    },
+    {
+      "hash": "60740e9",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add retry logic and sanity caps for sentence detection",
+      "scope": null
+    },
+    {
+      "hash": "fc0198c",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve Arabic sentence detection for unpunctuated texts",
+      "scope": null
+    },
+    {
+      "hash": "e3053e8",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Batch sentence detection reduces AI calls by 95%",
+      "scope": null
+    },
+    {
+      "hash": "0fd159b",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Boundary-based segmentation with strict text integrity",
+      "scope": null
+    },
+    {
+      "hash": "543616a",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add strict validation for sentence markers",
+      "scope": null
+    },
+    {
+      "hash": "e855bbc",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve sentence detection accuracy for Arabic text",
+      "scope": null
+    },
+    {
+      "hash": "bce19c6",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add hierarchical sentence markers for translations",
+      "scope": null
+    },
+    {
+      "hash": "4cf01e6",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Remove page-break-after from print header styles",
+      "scope": null
+    },
+    {
+      "hash": "726db88",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add fancy document header with decorative logo and integrated branding",
+      "scope": null
+    },
+    {
+      "hash": "afdceba",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Print view shows logo and site name, hides nav links/version",
+      "scope": null
+    },
+    {
+      "hash": "86de2ef",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve print view - footer with metadata and QR, hide navbar",
+      "scope": null
+    },
+    {
+      "hash": "1c1a94f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve document presentation header and print styles",
+      "scope": null
+    },
+    {
+      "hash": "76bf22f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "RTL paragraph numbers now appear on RIGHT side",
+      "scope": null
+    },
+    {
+      "hash": "1f274e3",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add URL redirect tracking and improve document presentation",
+      "scope": null
+    },
+    {
+      "hash": "55296fa",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Redesign document presentation with integrated metadata",
+      "scope": null
+    },
+    {
+      "hash": "2d5ed70",
+      "date": "2026-01-02",
+      "type": "Chore",
+      "description": "Remove temporary inspection files",
+      "scope": null
+    },
+    {
+      "hash": "a2b760e",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Use fixed light background for document presentation container",
+      "scope": null
+    },
+    {
+      "hash": "24ee64b",
+      "date": "2026-01-02",
+      "type": "Chore",
+      "description": "Disable Cloudflare caching for library pages during development",
+      "scope": null
+    },
+    {
+      "hash": "ba234b1",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Correct dark mode styling in document presentation page",
+      "scope": null
+    },
+    {
+      "hash": "a95e207",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Improve document presentation with paper styling, SBS columns, and print support",
+      "scope": null
+    },
+    {
+      "hash": "57ae7c1",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Correct admin edit button URL path and query param",
+      "scope": null
+    },
+    {
+      "hash": "2c7080a",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Mark Baha'i Books collection as encumbered via migration",
+      "scope": null
+    },
+    {
+      "hash": "bfb7dc9",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add encumbered field support to API and test setup",
+      "scope": null
+    },
+    {
+      "hash": "31076e1",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add paragraph anchor linking for document pages",
+      "scope": null
+    },
+    {
+      "hash": "0c40137",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Disable PWA navigation fallback that broke SSR routes",
+      "scope": null
+    },
+    {
+      "hash": "47f6e95",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Remove non-existent slug column from docs table queries",
+      "scope": null
+    },
+    {
+      "hash": "a53f7ba",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Include filename in document API responses for dynamic slug generation",
+      "scope": null
+    },
+    {
+      "hash": "fff1f03",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add metadata JSON column and encumbered field for docs",
+      "scope": null
+    },
+    {
+      "hash": "a4443d8",
+      "date": "2026-01-02",
+      "type": "Refactor",
+      "description": "Use dynamic slug generation from title/filename + language",
+      "scope": null
+    },
+    {
+      "hash": "db40b19",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add semantic URLs for library documents with SEO hierarchy pages",
+      "scope": null
+    },
+    {
+      "hash": "d8ae948",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add document view page at /library/view",
+      "scope": null
+    },
+    {
+      "hash": "2b6d15f",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
+      "scope": null
+    },
+    {
+      "hash": "4894304",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
+      "scope": null
+    },
+    {
+      "hash": "8dc7d6c",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add generate-embeddings API endpoint for missing paragraphs",
+      "scope": null
+    },
+    {
+      "hash": "7737f8b",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add /server/query-documents endpoint for flexible metadata queries",
+      "scope": null
+    },
+    {
+      "hash": "58471a7",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add /server/reingest-document API endpoint",
+      "scope": null
+    },
+    {
+      "hash": "4a3ab70",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add API endpoints for source file linking",
+      "scope": null
+    },
+    {
+      "hash": "8aabe59",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Concept-based paragraph segmentation",
+      "scope": null
+    },
+    {
+      "hash": "c3b86f0",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add segmentation integrity check to prevent text modification",
+      "scope": null
+    },
+    {
+      "hash": "1f597eb",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add test-segmentation script for verifying translation quality",
+      "scope": null
+    },
+    {
+      "hash": "780f689",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Segmentation based on concepts, not rules - never split sentences",
+      "scope": null
+    },
+    {
+      "hash": "a096001",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Improve segmentation with conceptual description instead of rules",
+      "scope": null
+    },
+    {
+      "hash": "18c0b5a",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Prevent Arabic segmentation from splitting prepositional phrases",
+      "scope": null
+    },
+    {
+      "hash": "b25daa1",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Add admin document editor with CodeMirror 6",
+      "scope": null
+    },
+    {
+      "hash": "0785af5",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Restore middle number column in SBS bilingual view",
+      "scope": null
+    },
+    {
+      "hash": "f04a970",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Prevent collection filter input from clearing on each keystroke",
+      "scope": null
+    },
+    {
+      "hash": "2f8f4a6",
+      "date": "2026-01-02",
+      "type": "New",
+      "description": "Show translation status indicator for all users in library list",
+      "scope": null
+    },
+    {
+      "hash": "2537829",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add Bahá'í transliteration style to translation prompts",
+      "scope": null
+    },
+    {
+      "hash": "23f8f13",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Use established religious terminology in translations",
+      "scope": null
+    },
+    {
+      "hash": "7c1e0d6",
+      "date": "2026-01-02",
+      "type": "Fixed",
+      "description": "Add email_queue table migration to unblock job processor",
+      "scope": null
+    },
+    {
+      "hash": "6aff8b7",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Separate user database from content database",
+      "scope": null
+    },
+    {
+      "hash": "dcfeffa",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Remove duplicate route registrations causing server crash",
+      "scope": null
+    },
+    {
+      "hash": "18e5ed5",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add bulk translation management endpoints",
+      "scope": null
+    },
+    {
+      "hash": "bd2dd6c",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Allow internal key auth for test-segment-translation endpoint",
+      "scope": null
+    },
+    {
+      "hash": "0c8455e",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add test-segment-translation endpoint for verifying phrase alignment",
+      "scope": null
+    },
+    {
+      "hash": "2ee69ee",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add DELETE endpoint to clear document translations for re-translation",
+      "scope": null
+    },
+    {
+      "hash": "21c62f9",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
+      "scope": null
+    },
+    {
+      "hash": "bc13e8c",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use aiService instead of chatCompletion for proper model resolution",
+      "scope": null
+    },
+    {
+      "hash": "fde5219",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Include translation_segments in document endpoint",
+      "scope": null
+    },
+    {
+      "hash": "924c923",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Standardize content table on doc_id, remove document_id column",
+      "scope": null
+    },
+    {
+      "hash": "dcd7408",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Standardize on doc_id column, remove document_id references",
+      "scope": null
+    },
+    {
+      "hash": "62205b5",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use doc_id column in populate-content endpoint",
+      "scope": null
+    },
+    {
+      "hash": "d1bb49b",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add translatable-docs endpoint for debugging",
+      "scope": null
+    },
+    {
+      "hash": "7c6b9c9",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add API endpoints for translation management",
+      "scope": null
+    },
+    {
+      "hash": "3d07fda",
+      "date": "2026-01-01",
+      "type": "Chore",
+      "description": "Add production translation test script",
+      "scope": null
+    },
+    {
+      "hash": "71eaa84",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Resolve print view bugs and add translation script",
+      "scope": null
+    },
+    {
+      "hash": "9155580",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add print views with phrase-level alignment",
+      "scope": null
+    },
+    {
+      "hash": "577c6d4",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add translation field to Meilisearch for side-by-side results",
+      "scope": null
+    },
+    {
+      "hash": "3e03a2a",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Correct column names and Meilisearch SDK API usage",
+      "scope": null
+    },
+    {
+      "hash": "3d6e34d",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add embedding dimension diagnostics and fix model config",
+      "scope": null
+    },
+    {
+      "hash": "41cddd6",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add embedding coverage stats to server status endpoint",
+      "scope": null
+    },
+    {
+      "hash": "a447dc1",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add search filter support to collection detail view",
+      "scope": null
+    },
+    {
+      "hash": "8fa5233",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Hide translate button for docs with 'in English' in title",
+      "scope": null
+    },
+    {
+      "hash": "21537af",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
+      "scope": null
+    },
+    {
+      "hash": "740c6ee",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Require faithful summaries that accurately represent passage content",
+      "scope": null
+    },
+    {
+      "hash": "83544ab",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
+      "scope": null
+    },
+    {
+      "hash": "cc0e5ef",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
+      "scope": null
+    },
+    {
+      "hash": "ff2a8f5",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Prevent AI from copying example summary in analyzer prompt",
+      "scope": null
+    },
+    {
+      "hash": "c01c129",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Require actual answers in summaries, not meta-commentary",
+      "scope": null
+    },
+    {
+      "hash": "eb5557f",
+      "date": "2026-01-01",
+      "type": "Refactor",
+      "description": "Remove search mode toggle - always use ResearcherAgent",
+      "scope": null
+    },
+    {
+      "hash": "ee0f091",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Default to research mode for approved users",
+      "scope": null
+    },
+    {
+      "hash": "951abde",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Increase RTL font size in bilingual view for better readability",
+      "scope": null
+    },
+    {
+      "hash": "78297e1",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add siftersearch-jobs to allowed PM2 restart processes",
+      "scope": null
+    },
+    {
+      "hash": "d8f67f9",
+      "date": "2026-01-01",
+      "type": "Other",
+      "description": "Add siftersearch-jobs to allowed log processes",
+      "scope": null
+    },
+    {
+      "hash": "21f107b",
+      "date": "2026-01-01",
+      "type": "Other",
+      "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
+      "scope": null
+    },
+    {
+      "hash": "2ac33b9",
+      "date": "2026-01-01",
+      "type": "Other",
+      "description": "Add verbose job logging to trace undefined document_id",
+      "scope": null
+    },
+    {
+      "hash": "eed1a69",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Look up admin user for system API jobs instead of using id=0",
+      "scope": null
+    },
+    {
+      "hash": "ba9e1b1",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add system user for API/automation jobs",
+      "scope": null
+    },
+    {
+      "hash": "53fc622",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Add priority column migration and use 0 for system user jobs",
+      "scope": null
+    },
+    {
+      "hash": "e6e5a10",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use correct job.document_id in processInAppTranslation",
+      "scope": null
+    },
+    {
+      "hash": "f83b738",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Handle system users with string IDs in queue-translation",
+      "scope": null
+    },
+    {
+      "hash": "49bae7a",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add /admin/update endpoint for manual server updates",
+      "scope": null
+    },
+    {
+      "hash": "1d3338f",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add DEPLOY_SECRET authentication for API calls",
+      "scope": null
+    },
+    {
+      "hash": "f0bbe17",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Correct chatCompletion call signature in batch translation",
+      "scope": null
+    },
+    {
+      "hash": "b3e3bc5",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use snake_case document_id from jobs table in translation processor",
+      "scope": null
+    },
+    {
+      "hash": "a0e8c72",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add job processor to PM2 ecosystem",
+      "scope": null
+    },
+    {
+      "hash": "7b19e64",
+      "date": "2026-01-01",
+      "type": "New",
+      "description": "Add translation progress polling and remove size labels",
+      "scope": null
+    },
+    {
+      "hash": "c933bcd",
+      "date": "2026-01-01",
+      "type": "Fixed",
+      "description": "Use request.user.sub instead of request.user.id in queue-translation",
+      "scope": null
+    },
+    {
+      "hash": "d1273ab",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use document_id column consistently across all API code",
+      "scope": null
+    },
+    {
+      "hash": "0174fe7",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use document_id in orphaned endpoint queries",
+      "scope": null
+    },
+    {
+      "hash": "467512f",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use document_id column (not doc_id) in populate-content endpoint",
+      "scope": null
+    },
+    {
+      "hash": "5668e06",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Add endpoint to populate missing content from Meilisearch",
+      "scope": null
+    },
+    {
+      "hash": "ac73905",
+      "date": "2025-12-31",
+      "type": "Docs",
+      "description": "Add sync architecture documentation and watcher status endpoint",
+      "scope": null
+    },
+    {
+      "hash": "e818d42",
+      "date": "2025-12-31",
+      "type": "New",
+      "description": "Complete sync architecture with multi-layer protection",
+      "scope": null
+    },
+    {
+      "hash": "74ca0d9",
+      "date": "2025-12-31",
+      "type": "Refactor",
+      "description": "Use libsql as source of truth for library management",
+      "scope": null
+    },
+    {
+      "hash": "f0af752",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Sync script inserts docs and marks content as synced",
+      "scope": null
+    },
+    {
+      "hash": "a4df923",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Increase translation pill contrast with solid backgrounds",
+      "scope": null
+    },
+    {
+      "hash": "034dc84",
+      "date": "2025-12-31",
+      "type": "New",
+      "description": "Add translation UI pill and content sync worker",
+      "scope": null
+    },
+    {
+      "hash": "2514f16",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Remove Meilisearch fallback for translation - content table is source of truth",
+      "scope": null
+    },
+    {
+      "hash": "c6a8fa5",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Use correct column name paragraph_index in content table insert",
+      "scope": null
+    },
+    {
+      "hash": "d20f4e1",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Auto-populate content table from Meilisearch when queueing translation",
+      "scope": null
+    },
+    {
+      "hash": "ae8a35b",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Add empty JSON body to queue-translation POST request",
+      "scope": null
+    },
+    {
+      "hash": "43eee68",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "ReferenceError isIndexing not defined in startRefreshPolling",
+      "scope": null
+    },
+    {
+      "hash": "362def3",
+      "date": "2025-12-31",
+      "type": "New",
+      "description": "Server-side translation queue with priority",
+      "scope": "translation"
+    },
+    {
+      "hash": "161cb03",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Translation reactivity and auto-populate content table from Meilisearch",
+      "scope": null
+    },
+    {
+      "hash": "bca725a",
+      "date": "2025-12-31",
+      "type": "Fixed",
+      "description": "Translation progress NaN and null paragraph errors",
+      "scope": null
+    },
+    {
+      "hash": "10d03c5",
+      "date": "2025-12-30",
+      "type": "Other",
+      "description": "Add logging to translate-batch when no paragraphs found",
+      "scope": null
+    },
+    {
+      "hash": "279da81",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "Use api module token instead of localStorage",
+      "scope": null
+    },
+    {
+      "hash": "b523417",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "PWA auto-update and auth header for translation",
+      "scope": null
+    },
+    {
+      "hash": "59d1e7f",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "Add auth header to DocumentList translate call",
+      "scope": "translation"
+    },
+    {
+      "hash": "dc2d512",
+      "date": "2025-12-30",
+      "type": "Fixed",
+      "description": "Increase limit from 200 to 500 for full document loading",
+      "scope": "bilingual"
+    },
+    {
+      "hash": "29641dd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add auth header and support both doc_id/document_id columns",
+      "scope": "translation"
+    },
+    {
+      "hash": "dd763c3",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Enable SQLite WAL mode for concurrent access",
+      "scope": "db"
+    },
+    {
+      "hash": "fd6a1b5",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Gracefully fall back to Meilisearch when libsql is busy",
+      "scope": "library"
+    },
+    {
+      "hash": "c6172bc",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Use correct content schema with document_id as primary column",
+      "scope": "migration"
+    },
+    {
+      "hash": "f0c7d3c",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Separate connections for auth vs batch operations",
+      "scope": "db"
+    },
+    {
+      "hash": "ec95183",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Remove auth requirement from version-triggered updates",
+      "scope": null
+    },
+    {
+      "hash": "8970a44",
+      "date": "2025-12-29",
+      "type": "Chore",
+      "description": "Add deploy hook to sync Meilisearch to libsql",
+      "scope": null
+    },
+    {
+      "hash": "8e9a0b7",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add Meilisearch fallback for unsynced documents",
+      "scope": "bilingual"
+    },
+    {
+      "hash": "394365f",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Allow all authenticated users to translate documents",
+      "scope": "translate"
+    },
+    {
+      "hash": "18f22d2",
+      "date": "2025-12-29",
+      "type": "Other",
+      "description": "Remove Meilisearch fallback - fix data at source instead",
+      "scope": null
+    },
+    {
+      "hash": "9a01493",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fallback to Meilisearch when SQLite has no content",
+      "scope": "bilingual"
+    },
+    {
+      "hash": "40124ea",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
+      "scope": "translation"
+    },
+    {
+      "hash": "168f852",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add real-time translation progress with batch API",
+      "scope": "translation"
+    },
+    {
+      "hash": "0d3f6bd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fix translate button visibility logic",
+      "scope": "reader"
+    },
+    {
+      "hash": "be46314",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "No highlighted paragraph in library popup",
+      "scope": "reader"
+    },
+    {
+      "hash": "99041ed",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Reusable ReaderModal component with proper styling",
+      "scope": "library"
+    },
+    {
+      "hash": "db86d14",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add fullscreen modal for document viewing",
+      "scope": "library"
+    },
+    {
+      "hash": "edf333e",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Simplify title row, move authority to content overlay",
+      "scope": "library"
+    },
+    {
+      "hash": "0c4615e",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Move tools to title row, eliminate toolbar line",
+      "scope": "library"
+    },
+    {
+      "hash": "38cc20a",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Increase contrast on version badge",
+      "scope": "ui"
+    },
+    {
+      "hash": "184159b",
+      "date": "2025-12-29",
+      "type": "New",
+      "description": "Add fullscreen reader and translate button",
+      "scope": "library"
+    },
+    {
+      "hash": "2b0b2fd",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Improve document view UI and scroll behavior",
+      "scope": "library"
+    },
+    {
+      "hash": "e5f9d4c",
+      "date": "2025-12-29",
+      "type": "Chore",
+      "description": "Bump version to 0.1.211",
+      "scope": null
+    },
+    {
+      "hash": "de0f902",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Unify header styles and fix width/overflow issues",
+      "scope": "library"
+    },
+    {
+      "hash": "7f8a405",
+      "date": "2025-12-29",
+      "type": "Refactor",
+      "description": "Replace custom CSS with Tailwind classes",
+      "scope": "CollectionDetail"
+    },
+    {
+      "hash": "0f65e3f",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add proper spacing between header and content sections",
+      "scope": "CollectionDetail"
+    },
+    {
+      "hash": "6313638",
+      "date": "2025-12-29",
+      "type": "Refactor",
+      "description": "Convert collection display from pills to vertical list",
+      "scope": "TreeView"
+    },
+    {
+      "hash": "deca725",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Fall back to standard content when bilingual returns no paragraphs",
+      "scope": null
+    },
+    {
+      "hash": "e2a3123",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Send empty JSON body on logout to fix 400 error",
+      "scope": null
+    },
+    {
+      "hash": "48711fb",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
+      "scope": null
+    },
+    {
+      "hash": "844950a",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
+      "scope": null
+    },
+    {
+      "hash": "4f8c512",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add schema debug endpoint to diagnose auth refresh error",
+      "scope": null
+    },
+    {
+      "hash": "157177d",
+      "date": "2025-12-29",
+      "type": "Fixed",
+      "description": "Add revoked_at column to refresh_tokens table",
+      "scope": null
+    },
+    {
+      "hash": "f3a055d",
+      "date": "2025-12-29",
+      "type": "Chore",
+      "description": "Bump version to 0.1.198 - sync client and server",
+      "scope": null
+    },
+    {
+      "hash": "d9113a2",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Use correct meili.tasks.cancelTasks method",
+      "scope": "admin"
+    },
+    {
+      "hash": "baa8688",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add meili-cancel endpoint to cancel old queued tasks",
+      "scope": "admin"
+    },
+    {
+      "hash": "b79b1a0",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add PM2 control endpoint to stop/start library watcher",
+      "scope": "admin"
+    },
+    {
+      "hash": "ca286d8",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add author to filterable attributes in Meilisearch paragraphs index",
+      "scope": "search"
+    },
+    {
+      "hash": "db8745a",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add status filter and limit param to meili-tasks endpoint",
+      "scope": "admin"
+    },
+    {
+      "hash": "0f69c92",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
+      "scope": "admin"
+    },
+    {
+      "hash": "58f3d8b",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
+      "scope": "admin"
+    },
+    {
+      "hash": "61171d1",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Update BOTH documents and paragraphs indexes for RTL languages",
+      "scope": "language"
+    },
+    {
+      "hash": "7e6ecc2",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "AI-based semantic paragraph splitting for Arabic/Persian",
+      "scope": "segmentation"
+    },
+    {
+      "hash": "315cd0b",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Correctly detect Arabic/Persian language for documents",
+      "scope": "indexer"
+    },
+    {
+      "hash": "8c4be44",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add content-type aware translation styles",
+      "scope": "translation"
+    },
+    {
+      "hash": "48699be",
+      "date": "2025-12-28",
+      "type": "Chore",
+      "description": "Bump version to trigger server restart",
+      "scope": null
+    },
+    {
+      "hash": "b2bc28d",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
+      "scope": null
+    },
+    {
+      "hash": "fbc817a",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Handle both doc_id and document_id columns in migration",
+      "scope": null
+    },
+    {
+      "hash": "c23d897",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add background task for embedding migration from Meilisearch to libsql",
+      "scope": null
+    },
+    {
+      "hash": "15a59cc",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Correct getSearchStats property names in admin endpoints",
+      "scope": null
+    },
+    {
+      "hash": "efd14d8",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Reduce Baha'i star size to match other religion symbols",
+      "scope": null
+    },
+    {
+      "hash": "2aaae56",
+      "date": "2025-12-28",
+      "type": "Chore",
+      "description": "Version bump to trigger server restart",
+      "scope": null
+    },
+    {
+      "hash": "ddf4666",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
+      "scope": null
+    },
+    {
+      "hash": "f648734",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Add v14 migration to fix content table schema",
+      "scope": null
+    },
+    {
+      "hash": "b120eb4",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
+      "scope": null
+    },
+    {
+      "hash": "1d95af6",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Add v13 migration to rename legacy table names",
+      "scope": null
+    },
+    {
+      "hash": "813600e",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Allow internal API key auth for server management routes",
+      "scope": null
+    },
+    {
+      "hash": "ac842d9",
+      "date": "2025-12-28",
+      "type": "Docs",
+      "description": "Add comprehensive API and scripts documentation",
+      "scope": null
+    },
+    {
+      "hash": "5db303c",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add testing and debugging API endpoints",
+      "scope": null
+    },
+    {
+      "hash": "4a82bc1",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add granular server management API controls",
+      "scope": null
+    },
+    {
+      "hash": "05045cd",
+      "date": "2025-12-28",
+      "type": "Fixed",
+      "description": "Require authentication for auto-update trigger",
+      "scope": null
+    },
+    {
+      "hash": "bf98589",
+      "date": "2025-12-28",
+      "type": "New",
+      "description": "Add admin API endpoints for remote server management",
+      "scope": null
+    },
+    {
+      "hash": "09e016f",
+      "date": "2025-12-27",
+      "type": "New",
+      "description": "Add public translation endpoint with Shoghi Effendi style",
+      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "5923d3f",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Add changelog page with version pill link",
+        "scope": null
+      },
       {
         "hash": "2f1c4dd",
         "date": "2026-01-13",
@@ -432,6 +3589,13 @@
         "scope": null
       },
       {
+        "hash": "588c016",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Add visible button outline to chat toggle",
+        "scope": null
+      },
+      {
         "hash": "6350a42",
         "date": "2026-01-13",
         "type": "New",
@@ -499,14 +3663,14 @@
       {
         "hash": "a2a51f3",
         "date": "2026-01-12",
-        "type": "Updated",
+        "type": "Other",
         "description": "Use info level for filter logs",
         "scope": null
       },
       {
         "hash": "483ea78",
         "date": "2026-01-12",
-        "type": "Updated",
+        "type": "Other",
         "description": "Add logging to keywordSearch filter",
         "scope": null
       },
@@ -590,6 +3754,13 @@
     ],
     "2026-01-11": [
       {
+        "hash": "6f4ee39",
+        "date": "2026-01-11",
+        "type": "Test",
+        "description": "Comprehensive test improvements for site-wide coverage",
+        "scope": null
+      },
+      {
         "hash": "a1804dc",
         "date": "2026-01-11",
         "type": "Fixed",
@@ -618,6 +3789,27 @@
         "scope": null
       },
       {
+        "hash": "5fccb52",
+        "date": "2026-01-11",
+        "type": "Chore",
+        "description": "Bump version to 0.1.665",
+        "scope": null
+      },
+      {
+        "hash": "056c9cd",
+        "date": "2026-01-11",
+        "type": "Test",
+        "description": "Add BDD tests for quick search mode",
+        "scope": null
+      },
+      {
+        "hash": "59622d4",
+        "date": "2026-01-11",
+        "type": "Chore",
+        "description": "Bump version to 0.1.662",
+        "scope": null
+      },
+      {
         "hash": "f8ab0f4",
         "date": "2026-01-11",
         "type": "Fixed",
@@ -634,7 +3826,7 @@
       {
         "hash": "1f601f7",
         "date": "2026-01-11",
-        "type": "Improved",
+        "type": "Performance",
         "description": "Use integer rowid for Meilisearch paragraph IDs",
         "scope": null
       },
@@ -648,7 +3840,7 @@
       {
         "hash": "ec263bd",
         "date": "2026-01-11",
-        "type": "Updated",
+        "type": "Other",
         "description": "Rescue embeddings migration script",
         "scope": null
       },
@@ -706,6 +3898,3144 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Remove misleading Meilisearch indexing progress bar",
+        "scope": null
+      },
+      {
+        "hash": "0d283af",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Default dark mode and hide misleading indexing progress",
+        "scope": null
+      },
+      {
+        "hash": "a0ed63f",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Show search results when searchMode is active",
+        "scope": null
+      },
+      {
+        "hash": "c34ddda",
+        "date": "2026-01-11",
+        "type": "Refactor",
+        "description": "Use source instead of custom parser for .env-secrets",
+        "scope": null
+      },
+      {
+        "hash": "d68e6e9",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
+        "scope": null
+      },
+      {
+        "hash": "bba469b",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Use search.quick endpoint for lightning search mode",
+        "scope": null
+      },
+      {
+        "hash": "bed1f8a",
+        "date": "2026-01-11",
+        "type": "Fixed",
+        "description": "Improve search input visibility and move lightning button inside",
+        "scope": null
+      },
+      {
+        "hash": "f474a51",
+        "date": "2026-01-11",
+        "type": "New",
+        "description": "Add quick search mode toggle with lightning button",
+        "scope": null
+      }
+    ],
+    "2026-01-10": [
+      {
+        "hash": "0e7481b",
+        "date": "2026-01-10",
+        "type": "New",
+        "description": "Structured preview with paragraph numbers and stripped markdown",
+        "scope": null
+      },
+      {
+        "hash": "63af5e2",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Make .para-text CSS work standalone for library previews",
+        "scope": null
+      },
+      {
+        "hash": "2f1b870",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Add preview field to /api/library/documents endpoint",
+        "scope": null
+      },
+      {
+        "hash": "29f93f3",
+        "date": "2026-01-10",
+        "type": "New",
+        "description": "Instant accordion preview for library documents",
+        "scope": null
+      },
+      {
+        "hash": "8722eee",
+        "date": "2026-01-10",
+        "type": "Fixed",
+        "description": "Use single paper-content path for all preview languages",
+        "scope": null
+      },
+      {
+        "hash": "f0b6b63",
+        "date": "2026-01-10",
+        "type": "Refactor",
+        "description": "Move paper styles to global.css for reuse",
+        "scope": null
+      }
+    ],
+    "2026-01-09": [
+      {
+        "hash": "c4bc674",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Proper RTL styling for BilingualView preview",
+        "scope": null
+      },
+      {
+        "hash": "63dd0eb",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Apply text color only to RTL content in BilingualView",
+        "scope": null
+      },
+      {
+        "hash": "580019c",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add inline styles to BilingualView paper container to ensure visibility",
+        "scope": null
+      },
+      {
+        "hash": "a3fa5e7",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
+        "scope": null
+      },
+      {
+        "hash": "6ed1421",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
+        "scope": null
+      },
+      {
+        "hash": "36afe13",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
+        "scope": null
+      },
+      {
+        "hash": "348ed87",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
+        "scope": null
+      },
+      {
+        "hash": "c294f1c",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
+        "scope": null
+      },
+      {
+        "hash": "dcb1d37",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
+        "scope": null
+      },
+      {
+        "hash": "7b589dc",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
+        "scope": null
+      },
+      {
+        "hash": "9e5db4e",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Use NetworkFirst caching for document content",
+        "scope": null
+      },
+      {
+        "hash": "cc7b55b",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Only assign heading to immediately following paragraph",
+        "scope": null
+      },
+      {
+        "hash": "32de4df",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "YAML frontmatter serialization with special characters",
+        "scope": null
+      },
+      {
+        "hash": "bb364e3",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Make paragraph headings full-width to prevent side-by-side layout",
+        "scope": null
+      },
+      {
+        "hash": "c67d69a",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Render paragraph headings through markdown to handle links",
+        "scope": null
+      },
+      {
+        "hash": "e42cb42",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
+        "scope": null
+      },
+      {
+        "hash": "b4214e6",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
+        "scope": null
+      },
+      {
+        "hash": "7b60188",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Properly unregister service worker and await cache clearing before PWA reload",
+        "scope": null
+      },
+      {
+        "hash": "4e9cf5f",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add missing slug field to collection and religion document queries",
+        "scope": null
+      },
+      {
+        "hash": "571e1a6",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Error out when religion/collection missing instead of using fake defaults",
+        "scope": null
+      },
+      {
+        "hash": "5b2e977",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add partial slug matching for document URLs",
+        "scope": null
+      },
+      {
+        "hash": "2508670",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Prevent bad redirects to general/general paths",
+        "scope": null
+      },
+      {
+        "hash": "01f5fc8",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Handle pattern 3 - duplicate YAML without delimiters",
+        "scope": null
+      },
+      {
+        "hash": "46d7f9c",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Handle legacy frontmatter without opening --- delimiter",
+        "scope": null
+      },
+      {
+        "hash": "cefa05c",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Clear file_hash in addition to body_hash to force re-ingestion",
+        "scope": null
+      },
+      {
+        "hash": "a96d91f",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add script to remove duplicate frontmatter from source files",
+        "scope": null
+      },
+      {
+        "hash": "cf6a336",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add script to fix documents with frontmatter in first paragraph",
+        "scope": null
+      },
+      {
+        "hash": "1b246e9",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Strip duplicate frontmatter blocks from document content",
+        "scope": null
+      },
+      {
+        "hash": "acc986e",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
+        "scope": null
+      },
+      {
+        "hash": "8aa3d76",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Use unique IDs for content rows to avoid hash collisions",
+        "scope": null
+      },
+      {
+        "hash": "6063de5",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
+        "scope": null
+      },
+      {
+        "hash": "daa2a95",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add re-import button and make view/edit always visible on library items",
+        "scope": null
+      },
+      {
+        "hash": "e8d9f37",
+        "date": "2026-01-09",
+        "type": "Chore",
+        "description": "Bump version to 0.1.603",
+        "scope": null
+      },
+      {
+        "hash": "86b708a",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Add ingestion progress display to home page",
+        "scope": null
+      },
+      {
+        "hash": "1c133b2",
+        "date": "2026-01-09",
+        "type": "Fixed",
+        "description": "Improve language detection using character ratio",
+        "scope": null
+      },
+      {
+        "hash": "abd6e63",
+        "date": "2026-01-09",
+        "type": "New",
+        "description": "Word-based hashing for re-segmentation preserves embeddings",
+        "scope": null
+      }
+    ],
+    "2026-01-08": [
+      {
+        "hash": "ddbb46a",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Prevent sentences ending with prepositions",
+        "scope": null
+      },
+      {
+        "hash": "0b788dd",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Trailing text after last sentence ending ALWAYS carried forward",
+        "scope": null
+      },
+      {
+        "hash": "9197ce6",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
+        "scope": null
+      },
+      {
+        "hash": "3b6c424",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Remove arbitrary sentence count limit from segmentation",
+        "scope": null
+      },
+      {
+        "hash": "3c9f8ed",
+        "date": "2026-01-08",
+        "type": "Other",
+        "description": "Meilisearch orphan cleanup script",
+        "scope": null
+      },
+      {
+        "hash": "eab6aa9",
+        "date": "2026-01-08",
+        "type": "Other",
+        "description": "Redirect creation script",
+        "scope": null
+      },
+      {
+        "hash": "88af05a",
+        "date": "2026-01-08",
+        "type": "Other",
+        "description": "Production database fix script",
+        "scope": null
+      },
+      {
+        "hash": "248e7fd",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Prevent sentence markers in English texts + require file_path",
+        "scope": null
+      },
+      {
+        "hash": "d75040d",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Reingest script resets body_hash to force full re-ingestion",
+        "scope": null
+      },
+      {
+        "hash": "1d85649",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Only add sentence markers for RTL texts, not English",
+        "scope": null
+      },
+      {
+        "hash": "31d93ac",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Library preview matches book view with floating paragraph numbers",
+        "scope": null
+      },
+      {
+        "hash": "79d2630",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Religion/collection come ONLY from path, ignore frontmatter",
+        "scope": null
+      },
+      {
+        "hash": "3754d45",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Path-based collection takes precedence over frontmatter",
+        "scope": null
+      },
+      {
+        "hash": "1574a36",
+        "date": "2026-01-08",
+        "type": "Chore",
+        "description": "Remove one-time fix-collections script",
+        "scope": null
+      },
+      {
+        "hash": "3e9d563",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Reingest script uses correct library base path",
+        "scope": null
+      },
+      {
+        "hash": "dabb8e8",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Extract collection from path when not in frontmatter",
+        "scope": null
+      },
+      {
+        "hash": "6c08a7d",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Remove rule-based sentence length validation",
+        "scope": null
+      },
+      {
+        "hash": "8db7658",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Prevent segmenter from producing word fragments",
+        "scope": null
+      },
+      {
+        "hash": "d449677",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add dual progress bars for import and indexing",
+        "scope": null
+      },
+      {
+        "hash": "ff92fd9",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add deployment verification script",
+        "scope": null
+      },
+      {
+        "hash": "7f6ebc9",
+        "date": "2026-01-08",
+        "type": "Test",
+        "description": "Add BDD tests for ingestion progress bar",
+        "scope": null
+      },
+      {
+        "hash": "cd06088",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Use correct CSS variable for ingestion progress bar fill",
+        "scope": null
+      },
+      {
+        "hash": "ef61209",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add two-tier BDD testing infrastructure",
+        "scope": null
+      },
+      {
+        "hash": "1f8a97d",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Add dev:prod and test:bdd:prod scripts",
+        "scope": null
+      },
+      {
+        "hash": "e7fc50b",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Calculate ingestionProgress even when Meilisearch disabled",
+        "scope": null
+      },
+      {
+        "hash": "3c2bb81",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Add ingestionProgress to search stats endpoint",
+        "scope": null
+      },
+      {
+        "hash": "8747c19",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Simplify RTL segmentation, add ingestion progress",
+        "scope": null
+      },
+      {
+        "hash": "1323078",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "JSON extraction from AI response with code blocks",
+        "scope": null
+      },
+      {
+        "hash": "5fa2fb6",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "English text passes through unchanged - no segmentation",
+        "scope": null
+      },
+      {
+        "hash": "88a54f0",
+        "date": "2026-01-08",
+        "type": "Fixed",
+        "description": "Use correct aiService API for structural analysis",
+        "scope": null
+      },
+      {
+        "hash": "787e268",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "AI structural analysis for RTL text segmentation",
+        "scope": null
+      },
+      {
+        "hash": "d5a2e1b",
+        "date": "2026-01-08",
+        "type": "New",
+        "description": "Support HTML comments for section headings in unsegmented RTL texts",
+        "scope": null
+      },
+      {
+        "hash": "a21480e",
+        "date": "2026-01-08",
+        "type": "Performance",
+        "description": "Skip AI segmentation for punctuated English text",
+        "scope": null
+      }
+    ],
+    "2026-01-07": [
+      {
+        "hash": "32be47e",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add body_hash for metadata-only updates",
+        "scope": null
+      },
+      {
+        "hash": "e1a81e7",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use large number instead of Infinity for SQL limit",
+        "scope": null
+      },
+      {
+        "hash": "2a673a6",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to re-index documents missing content",
+        "scope": null
+      },
+      {
+        "hash": "cc39037",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
+        "scope": null
+      },
+      {
+        "hash": "6ab38c6",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to sync Meilisearch titles with SQLite",
+        "scope": null
+      },
+      {
+        "hash": "9eb0897",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use queryAll for fix-titles script",
+        "scope": null
+      },
+      {
+        "hash": "ae3a704",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add script to fix corrupted titles from frontmatter",
+        "scope": null
+      },
+      {
+        "hash": "79f2d84",
+        "date": "2026-01-07",
+        "type": "Chore",
+        "description": "Add temp test script",
+        "scope": null
+      },
+      {
+        "hash": "f0e0163",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add Meilisearch migration script for doc_id field",
+        "scope": null
+      },
+      {
+        "hash": "0f22e80",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Standardize doc_id field across SQLite and Meilisearch",
+        "scope": null
+      },
+      {
+        "hash": "7ba8246",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Correct migration 28 schema to match production",
+        "scope": null
+      },
+      {
+        "hash": "c5dd15d",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Drop old_id column from docs table (migration 28)",
+        "scope": null
+      },
+      {
+        "hash": "a9b659d",
+        "date": "2026-01-07",
+        "type": "Docs",
+        "description": "Add server deployment info to CLAUDE.md",
+        "scope": null
+      },
+      {
+        "hash": "011afdb",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
+        "scope": null
+      },
+      {
+        "hash": "ed45019",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
+        "scope": null
+      },
+      {
+        "hash": "941ea7c",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Support file moves without re-indexing content",
+        "scope": null
+      },
+      {
+        "hash": "689f1a8",
+        "date": "2026-01-07",
+        "type": "Docs",
+        "description": "Add synchronization architecture documentation",
+        "scope": null
+      },
+      {
+        "hash": "37d6f29",
+        "date": "2026-01-07",
+        "type": "New",
+        "description": "Add filename editing in document editor",
+        "scope": null
+      },
+      {
+        "hash": "863ce9a",
+        "date": "2026-01-07",
+        "type": "Refactor",
+        "description": "Simplify path handling - just use path.relative()",
+        "scope": null
+      },
+      {
+        "hash": "ddfd1d1",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use Node path module for reliable path handling in library-watcher",
+        "scope": null
+      },
+      {
+        "hash": "0d2fd25",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Skip already-linked documents in link-source-files",
+        "scope": null
+      },
+      {
+        "hash": "f9f88bd",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Use config.library.basePath in link-source-files script",
+        "scope": null
+      },
+      {
+        "hash": "f9078c4",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Store relative paths in link-source-files script",
+        "scope": null
+      },
+      {
+        "hash": "8322153",
+        "date": "2026-01-07",
+        "type": "Other",
+        "description": "Remove fallback file search in favor of fixing root cause",
+        "scope": null
+      },
+      {
+        "hash": "8a66cad",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Convert absolute paths to relative paths in library-watcher",
+        "scope": null
+      },
+      {
+        "hash": "10c848d",
+        "date": "2026-01-07",
+        "type": "Fixed",
+        "description": "Search for source file when file_path is missing",
+        "scope": null
+      }
+    ],
+    "2026-01-06": [
+      {
+        "hash": "5ae5605",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Document ID preservation and comprehensive API testing",
+        "scope": null
+      },
+      {
+        "hash": "700e7df",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Correct config import for library.basePath",
+        "scope": null
+      },
+      {
+        "hash": "5959dd1",
+        "date": "2026-01-06",
+        "type": "New",
+        "description": "Add PATCH endpoint to update document file_path",
+        "scope": null
+      },
+      {
+        "hash": "5341700",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Resolve relative file paths with library base path",
+        "scope": null
+      },
+      {
+        "hash": "76dcafd",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Add X-Client-Version and X-Request-Id to CORS headers",
+        "scope": null
+      },
+      {
+        "hash": "62c17bf",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
+        "scope": null
+      },
+      {
+        "hash": "67e94ba",
+        "date": "2026-01-06",
+        "type": "Test",
+        "description": "Add CORS configuration tests",
+        "scope": null
+      },
+      {
+        "hash": "8351fc8",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Add CORS PUT method and file_hash uniqueness migration",
+        "scope": null
+      },
+      {
+        "hash": "7eeee70",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Use large number instead of Infinity for SQL LIMIT",
+        "scope": null
+      },
+      {
+        "hash": "fbdad20",
+        "date": "2026-01-06",
+        "type": "New",
+        "description": "Add backfill script for file_hash",
+        "scope": null
+      },
+      {
+        "hash": "a28f09b",
+        "date": "2026-01-06",
+        "type": "New",
+        "description": "Add global file_hash deduplication and cleanup script",
+        "scope": null
+      },
+      {
+        "hash": "af18046",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Use canonical base path for deterministic document IDs",
+        "scope": null
+      },
+      {
+        "hash": "c2972f3",
+        "date": "2026-01-06",
+        "type": "Chore",
+        "description": "Bump version to 0.1.547",
+        "scope": null
+      },
+      {
+        "hash": "7bfb836",
+        "date": "2026-01-06",
+        "type": "New",
+        "description": "Add one-time migration for translation_segments to JSON",
+        "scope": null
+      },
+      {
+        "hash": "317dd5f",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Store translations as JSON only, remove translation_segments column usage",
+        "scope": null
+      },
+      {
+        "hash": "1b183cd",
+        "date": "2026-01-06",
+        "type": "Fixed",
+        "description": "Translation stats now check both translation and translation_segments fields",
+        "scope": null
+      }
+    ],
+    "2026-01-05": [
+      {
+        "hash": "56ad1ef",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Add prerender to agent pages + comprehensive link tests",
+        "scope": null
+      },
+      {
+        "hash": "657b6cd",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Add visible mark highlighting for admin RawSearch",
+        "scope": null
+      },
+      {
+        "hash": "8f3dddc",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Highlight search terms in RawSearch results",
+        "scope": null
+      },
+      {
+        "hash": "d1e341b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
+        "scope": null
+      },
+      {
+        "hash": "7b55dca",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Show Institutional tier centered above subscribe button",
+        "scope": null
+      },
+      {
+        "hash": "7b0f6c1",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Simplify to monthly subscriptions only, add Institutional tier",
+        "scope": null
+      },
+      {
+        "hash": "daf78cc",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Update donation tiers and remove yearly option",
+        "scope": null
+      },
+      {
+        "hash": "4669304",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Admin panel logo, search results, and add translation debug",
+        "scope": null
+      },
+      {
+        "hash": "e254855",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Admin panel improvements and search performance",
+        "scope": null
+      },
+      {
+        "hash": "67c0b4f",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use $effect and objects for translation stats reactivity",
+        "scope": null
+      },
+      {
+        "hash": "39735b4",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Raw Search API call and add NavBar to admin layout",
+        "scope": null
+      },
+      {
+        "hash": "9458417",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Simplify translation stats loading to fix indicator display",
+        "scope": null
+      },
+      {
+        "hash": "87a9396",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
+        "scope": null
+      },
+      {
+        "hash": "83049f0",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add Raw Search admin page for direct Meilisearch access",
+        "scope": null
+      },
+      {
+        "hash": "b07a87b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Highlight active nav item in admin sidebar",
+        "scope": null
+      },
+      {
+        "hash": "55a3bf0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Auth timing and missing ingestion_queue table",
+        "scope": null
+      },
+      {
+        "hash": "e2ef58d",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add edit button for admins on library document list",
+        "scope": null
+      },
+      {
+        "hash": "bd977f6",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Wait for auth before checking admin permissions in dashboard",
+        "scope": null
+      },
+      {
+        "hash": "bace91b",
+        "date": "2026-01-05",
+        "type": "Test",
+        "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
+        "scope": null
+      },
+      {
+        "hash": "fa09a0c",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add auto_segmented flag to track AI-segmented documents",
+        "scope": null
+      },
+      {
+        "hash": "ddc9c14",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Strip collection/religion from source document frontmatter",
+        "scope": null
+      },
+      {
+        "hash": "7227a20",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add tabbed editor with metadata/content tabs and field management",
+        "scope": null
+      },
+      {
+        "hash": "559e7d9",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use $effect to initialize editor when container is ready",
+        "scope": null
+      },
+      {
+        "hash": "f721eb4",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Wait for auth before loading admin queue data",
+        "scope": null
+      },
+      {
+        "hash": "c9e8893",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Wait for auth before loading document in editor",
+        "scope": null
+      },
+      {
+        "hash": "009aa5b",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Use padding-right for Arabic continuation indent",
+        "scope": null
+      },
+      {
+        "hash": "fe6bc12",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Study view improvements and batch translation notes",
+        "scope": null
+      },
+      {
+        "hash": "659d5b3",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Remove paragraph hover background",
+        "scope": null
+      },
+      {
+        "hash": "228c37a",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Redesign Study view with aligned phrase rows",
+        "scope": null
+      },
+      {
+        "hash": "8d76e43",
+        "date": "2026-01-05",
+        "type": "Chore",
+        "description": "Remove test screenshots",
+        "scope": null
+      },
+      {
+        "hash": "74980a0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Correct Study view column order for RTL documents",
+        "scope": null
+      },
+      {
+        "hash": "a1bf8d7",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Add numbered middle column to Study view (like SBS)",
+        "scope": null
+      },
+      {
+        "hash": "6dc2d44",
+        "date": "2026-01-05",
+        "type": "New",
+        "description": "Redesign Study view with aligned phrase rows",
+        "scope": null
+      },
+      {
+        "hash": "9991825",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Study view now uses API pre-parsed translation fields",
+        "scope": null
+      },
+      {
+        "hash": "ad5bdd5",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Study view now correctly detects study translations in JSON",
+        "scope": null
+      },
+      {
+        "hash": "3c2d6c0",
+        "date": "2026-01-05",
+        "type": "Fixed",
+        "description": "Reduce corner icon overlap on mobile to slight overlap",
+        "scope": null
+      },
+      {
+        "hash": "2d00a1c",
+        "date": "2026-01-05",
+        "type": "Style",
+        "description": "Move utility bar down to 12rem to avoid clash",
+        "scope": null
+      },
+      {
+        "hash": "e1ae51b",
+        "date": "2026-01-05",
+        "type": "Style",
+        "description": "Increase content max-width to 900px",
+        "scope": null
+      }
+    ],
+    "2026-01-04": [
+      {
+        "hash": "80421ca",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS phrase highlighting uses composite keys + styling improvements",
+        "scope": null
+      },
+      {
+        "hash": "885d664",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS phrase highlighting now uses composite keys (para+seg)",
+        "scope": null
+      },
+      {
+        "hash": "b08b58b",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
+        "scope": null
+      },
+      {
+        "hash": "e80af5c",
+        "date": "2026-01-04",
+        "type": "Other",
+        "description": "Add logging to translation save path",
+        "scope": null
+      },
+      {
+        "hash": "534d209",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Allow saving translations even if segments are null",
+        "scope": null
+      },
+      {
+        "hash": "f6bb5ca",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Cap maxTokens at 16000 to prevent model limit errors",
+        "scope": null
+      },
+      {
+        "hash": "81cdebf",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Improve phrase segmentation for Study mode",
+        "scope": null
+      },
+      {
+        "hash": "92e2ec5",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Generate phrase-level segments for marked text translation",
+        "scope": null
+      },
+      {
+        "hash": "a63e548",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Paragraph 0 translation + segment format normalization",
+        "scope": null
+      },
+      {
+        "hash": "efa656b",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
+        "scope": null
+      },
+      {
+        "hash": "2da673a",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
+        "scope": null
+      },
+      {
+        "hash": "9eed5e0",
+        "date": "2026-01-04",
+        "type": "Chore",
+        "description": "Add test script for segmentation",
+        "scope": null
+      },
+      {
+        "hash": "18e9939",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Prevent sentence overlap in extractSentencesFromEndings",
+        "scope": null
+      },
+      {
+        "hash": "1c26fe2",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add strict word-for-word validation for segmentation",
+        "scope": null
+      },
+      {
+        "hash": "528a0ee",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Snap sentence marker insertion to word boundaries",
+        "scope": null
+      },
+      {
+        "hash": "bdd00f0",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Never cut text at arbitrary char limit - always find word boundary",
+        "scope": null
+      },
+      {
+        "hash": "6934e10",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
+        "scope": null
+      },
+      {
+        "hash": "34f35ff",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
+        "scope": null
+      },
+      {
+        "hash": "ee6e494",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Enforce max paragraph size with force-split fallback for translation",
+        "scope": null
+      },
+      {
+        "hash": "31c1289",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
+        "scope": null
+      },
+      {
+        "hash": "2bbefa2",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add test translation API endpoint",
+        "scope": null
+      },
+      {
+        "hash": "4e1a79a",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Concurrent rolling queue for translation + mandatory segments",
+        "scope": null
+      },
+      {
+        "hash": "41fffd9",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Correct checkpoint boundary bug in translation resume logic",
+        "scope": null
+      },
+      {
+        "hash": "43d06e3",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "SBS English text styling - larger font, proper LTR direction",
+        "scope": null
+      },
+      {
+        "hash": "a563a00",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Move ai_usage migration to correct directory",
+        "scope": null
+      },
+      {
+        "hash": "5265338",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add AI usage tracking and cost dashboard",
+        "scope": null
+      },
+      {
+        "hash": "4975c08",
+        "date": "2026-01-04",
+        "type": "Fixed",
+        "description": "Cap batch translation max_tokens at 16000",
+        "scope": null
+      },
+      {
+        "hash": "7aa93fd",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Prefer Shoghi Effendi translations for terminology",
+        "scope": null
+      },
+      {
+        "hash": "27bfd11",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Move translation notes to paragraph footnotes",
+        "scope": null
+      },
+      {
+        "hash": "bbb1b5e",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Improve Study view layout and translation prompts",
+        "scope": null
+      },
+      {
+        "hash": "644b813",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Include Arabic terms in study translation for difficult words",
+        "scope": null
+      },
+      {
+        "hash": "996891f",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Robust TOON parser that strips LLM explanatory text",
+        "scope": null
+      },
+      {
+        "hash": "3b7f8be",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Improve study translation prompt - readable literal, theological notes",
+        "scope": null
+      },
+      {
+        "hash": "b229fe5",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
+        "scope": null
+      },
+      {
+        "hash": "1b2d3af",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Add pattern-based translation clearing for batch operations",
+        "scope": null
+      },
+      {
+        "hash": "4eea663",
+        "date": "2026-01-04",
+        "type": "New",
+        "description": "Optimize translation for 6-10x speedup with TOON format",
+        "scope": null
+      },
+      {
+        "hash": "357fb51",
+        "date": "2026-01-04",
+        "type": "Chore",
+        "description": "Bump version for PWA cache bust",
+        "scope": null
+      }
+    ],
+    "2026-01-03": [
+      {
+        "hash": "bcfa25a",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
+        "scope": null
+      },
+      {
+        "hash": "041746c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add ingest-file endpoint for ingesting from file path",
+        "scope": null
+      },
+      {
+        "hash": "23e9ca5",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Translation service now reads from LibSQL, not Meilisearch",
+        "scope": null
+      },
+      {
+        "hash": "fb1308b",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Resegment endpoint now uses reingest from source file",
+        "scope": null
+      },
+      {
+        "hash": "699c5f1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add admin API endpoints for document management",
+        "scope": null
+      },
+      {
+        "hash": "0c12b1b",
+        "date": "2026-01-03",
+        "type": "Chore",
+        "description": "Delete one-time migration scripts",
+        "scope": null
+      },
+      {
+        "hash": "539b7f8",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Use gradient highlight to prevent line overlap",
+        "scope": null
+      },
+      {
+        "hash": "893d0a2",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Remove box-shadow from segment highlights to prevent line overlap",
+        "scope": null
+      },
+      {
+        "hash": "452625a",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Remove padding/margin from segment-phrase for tighter highlights",
+        "scope": null
+      },
+      {
+        "hash": "50c6ad9",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Prevent highlight overlap with box-decoration-break",
+        "scope": null
+      },
+      {
+        "hash": "202938d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust segment highlight height to match line-height",
+        "scope": null
+      },
+      {
+        "hash": "bea207c",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Set line-height on translation-col parent container",
+        "scope": null
+      },
+      {
+        "hash": "fc3ba6b",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Force single line-height on SBS translation text via JS action",
+        "scope": null
+      },
+      {
+        "hash": "c8875c3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add global CSS override for English translation line-height",
+        "scope": null
+      },
+      {
+        "hash": "00e78c3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Use :global() for English translation line-height in SBS mode",
+        "scope": null
+      },
+      {
+        "hash": "fa25d10",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Force line-height 1 on English translation with !important",
+        "scope": null
+      },
+      {
+        "hash": "fe2a086",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add missing PWA icons (192x192 and 512x512)",
+        "scope": null
+      },
+      {
+        "hash": "295aa6d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Explicitly set English font-size to 1rem in translation column",
+        "scope": null
+      },
+      {
+        "hash": "1e94e52",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Set English line-height to 1 in all paragraph text rules",
+        "scope": null
+      },
+      {
+        "hash": "4dda2fe",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
+        "scope": null
+      },
+      {
+        "hash": "4bb30e8",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Make mode button label white when active",
+        "scope": null
+      },
+      {
+        "hash": "8d0c5e2",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Show existing translation progress when queueing new job",
+        "scope": null
+      },
+      {
+        "hash": "6e1b7cf",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Translation queue reliability + UI fixes",
+        "scope": null
+      },
+      {
+        "hash": "e88776f",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Adjust corner icon positioning for 5px visual overlap",
+        "scope": null
+      },
+      {
+        "hash": "208ed9e",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Three-line centered breadcrumb with corner icons",
+        "scope": null
+      },
+      {
+        "hash": "047902d",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Position icons at actual corners of document box",
+        "scope": null
+      },
+      {
+        "hash": "f4ec0c6",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Allow corner icons to overflow document container",
+        "scope": null
+      },
+      {
+        "hash": "89d8e3f",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Position logo/QR in corners with overlap, make twice as big",
+        "scope": null
+      },
+      {
+        "hash": "dc0c683",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Reduce SBS padding and fix highlight text visibility",
+        "scope": null
+      },
+      {
+        "hash": "008ae07",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Add hanging indent and visible left margin on mobile",
+        "scope": null
+      },
+      {
+        "hash": "a03dd41",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Hide back button on mobile view",
+        "scope": null
+      },
+      {
+        "hash": "eaa94f3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
+        "scope": null
+      },
+      {
+        "hash": "455e1c5",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Collapse all utility buttons to hamburger menu on mobile",
+        "scope": null
+      },
+      {
+        "hash": "e639a3f",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Center utility bar buttons in right margin",
+        "scope": null
+      },
+      {
+        "hash": "8146562",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Responsive right margin for utility bar - prevent content overlap",
+        "scope": null
+      },
+      {
+        "hash": "2c8898f",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
+        "scope": null
+      },
+      {
+        "hash": "70999b3",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Update translation progress after each paragraph instead of each wave",
+        "scope": null
+      },
+      {
+        "hash": "2719520",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add URL-style breadcrumb header and job queue monitoring API",
+        "scope": null
+      },
+      {
+        "hash": "02bc56c",
+        "date": "2026-01-03",
+        "type": "Refactor",
+        "description": "Reorganize utility bar with mobile hamburger menu",
+        "scope": null
+      },
+      {
+        "hash": "7216d9c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add labeled view mode buttons with circular progress indicator",
+        "scope": null
+      },
+      {
+        "hash": "675a804",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add JWT auth middleware + translation job polling",
+        "scope": null
+      },
+      {
+        "hash": "f8551d9",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Use JWT Authorization header for translation API call",
+        "scope": null
+      },
+      {
+        "hash": "8e37130",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Remove translation confirmation popup, queue directly",
+        "scope": null
+      },
+      {
+        "hash": "f550588",
+        "date": "2026-01-03",
+        "type": "Refactor",
+        "description": "Store translations as single JSON field",
+        "scope": null
+      },
+      {
+        "hash": "0f67cc2",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Generate both reading and study translations simultaneously",
+        "scope": null
+      },
+      {
+        "hash": "1250a2f",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add phrase-level hover/tap highlighting in SBS mode",
+        "scope": null
+      },
+      {
+        "hash": "e2acb5c",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Enhanced translation with wave-based processing and context",
+        "scope": null
+      },
+      {
+        "hash": "604645e",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add SBS and Study translation modes with admin buttons",
+        "scope": null
+      },
+      {
+        "hash": "26e3dd1",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Paragraph numbering treats index 0 as falsy",
+        "scope": null
+      },
+      {
+        "hash": "4ac7f50",
+        "date": "2026-01-03",
+        "type": "Chore",
+        "description": "Add document slug migration",
+        "scope": null
+      },
+      {
+        "hash": "92f78b1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add unique slug storage to prevent URL collisions",
+        "scope": null
+      },
+      {
+        "hash": "04df1d1",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add server-side redirect detection and redirect management API",
+        "scope": null
+      },
+      {
+        "hash": "f7c6eaf",
+        "date": "2026-01-03",
+        "type": "Fixed",
+        "description": "Correct Fastify 5 redirect argument order",
+        "scope": null
+      },
+      {
+        "hash": "19579fa",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Allow internal API key for document updates",
+        "scope": null
+      },
+      {
+        "hash": "8991268",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Include author in document URL slugs",
+        "scope": null
+      },
+      {
+        "hash": "43d6357",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
+        "scope": null
+      },
+      {
+        "hash": "288cca6",
+        "date": "2026-01-03",
+        "type": "New",
+        "description": "Add redirect support for changed document URLs",
+        "scope": null
+      }
+    ],
+    "2026-01-02": [
+      {
+        "hash": "b56aa6c",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
+        "scope": null
+      },
+      {
+        "hash": "de3ee70",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve paragraph grouping with discourse markers",
+        "scope": null
+      },
+      {
+        "hash": "7fc0879",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Integrate sentence-first segmentation into ingester pipeline",
+        "scope": null
+      },
+      {
+        "hash": "0fbdaf6",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add sentence-first streaming segmentation for unpunctuated texts",
+        "scope": null
+      },
+      {
+        "hash": "60740e9",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add retry logic and sanity caps for sentence detection",
+        "scope": null
+      },
+      {
+        "hash": "fc0198c",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve Arabic sentence detection for unpunctuated texts",
+        "scope": null
+      },
+      {
+        "hash": "e3053e8",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Batch sentence detection reduces AI calls by 95%",
+        "scope": null
+      },
+      {
+        "hash": "0fd159b",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Boundary-based segmentation with strict text integrity",
+        "scope": null
+      },
+      {
+        "hash": "543616a",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add strict validation for sentence markers",
+        "scope": null
+      },
+      {
+        "hash": "e855bbc",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve sentence detection accuracy for Arabic text",
+        "scope": null
+      },
+      {
+        "hash": "bce19c6",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add hierarchical sentence markers for translations",
+        "scope": null
+      },
+      {
+        "hash": "4cf01e6",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Remove page-break-after from print header styles",
+        "scope": null
+      },
+      {
+        "hash": "726db88",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add fancy document header with decorative logo and integrated branding",
+        "scope": null
+      },
+      {
+        "hash": "afdceba",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Print view shows logo and site name, hides nav links/version",
+        "scope": null
+      },
+      {
+        "hash": "86de2ef",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve print view - footer with metadata and QR, hide navbar",
+        "scope": null
+      },
+      {
+        "hash": "1c1a94f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve document presentation header and print styles",
+        "scope": null
+      },
+      {
+        "hash": "76bf22f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "RTL paragraph numbers now appear on RIGHT side",
+        "scope": null
+      },
+      {
+        "hash": "1f274e3",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add URL redirect tracking and improve document presentation",
+        "scope": null
+      },
+      {
+        "hash": "55296fa",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Redesign document presentation with integrated metadata",
+        "scope": null
+      },
+      {
+        "hash": "2d5ed70",
+        "date": "2026-01-02",
+        "type": "Chore",
+        "description": "Remove temporary inspection files",
+        "scope": null
+      },
+      {
+        "hash": "a2b760e",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Use fixed light background for document presentation container",
+        "scope": null
+      },
+      {
+        "hash": "24ee64b",
+        "date": "2026-01-02",
+        "type": "Chore",
+        "description": "Disable Cloudflare caching for library pages during development",
+        "scope": null
+      },
+      {
+        "hash": "ba234b1",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Correct dark mode styling in document presentation page",
+        "scope": null
+      },
+      {
+        "hash": "a95e207",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Improve document presentation with paper styling, SBS columns, and print support",
+        "scope": null
+      },
+      {
+        "hash": "57ae7c1",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Correct admin edit button URL path and query param",
+        "scope": null
+      },
+      {
+        "hash": "2c7080a",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Mark Baha'i Books collection as encumbered via migration",
+        "scope": null
+      },
+      {
+        "hash": "bfb7dc9",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add encumbered field support to API and test setup",
+        "scope": null
+      },
+      {
+        "hash": "31076e1",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add paragraph anchor linking for document pages",
+        "scope": null
+      },
+      {
+        "hash": "0c40137",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Disable PWA navigation fallback that broke SSR routes",
+        "scope": null
+      },
+      {
+        "hash": "47f6e95",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Remove non-existent slug column from docs table queries",
+        "scope": null
+      },
+      {
+        "hash": "a53f7ba",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Include filename in document API responses for dynamic slug generation",
+        "scope": null
+      },
+      {
+        "hash": "fff1f03",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add metadata JSON column and encumbered field for docs",
+        "scope": null
+      },
+      {
+        "hash": "a4443d8",
+        "date": "2026-01-02",
+        "type": "Refactor",
+        "description": "Use dynamic slug generation from title/filename + language",
+        "scope": null
+      },
+      {
+        "hash": "db40b19",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add semantic URLs for library documents with SEO hierarchy pages",
+        "scope": null
+      },
+      {
+        "hash": "d8ae948",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add document view page at /library/view",
+        "scope": null
+      },
+      {
+        "hash": "2b6d15f",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
+        "scope": null
+      },
+      {
+        "hash": "4894304",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
+        "scope": null
+      },
+      {
+        "hash": "8dc7d6c",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add generate-embeddings API endpoint for missing paragraphs",
+        "scope": null
+      },
+      {
+        "hash": "7737f8b",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add /server/query-documents endpoint for flexible metadata queries",
+        "scope": null
+      },
+      {
+        "hash": "58471a7",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add /server/reingest-document API endpoint",
+        "scope": null
+      },
+      {
+        "hash": "4a3ab70",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add API endpoints for source file linking",
+        "scope": null
+      },
+      {
+        "hash": "8aabe59",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Concept-based paragraph segmentation",
+        "scope": null
+      },
+      {
+        "hash": "c3b86f0",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add segmentation integrity check to prevent text modification",
+        "scope": null
+      },
+      {
+        "hash": "1f597eb",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add test-segmentation script for verifying translation quality",
+        "scope": null
+      },
+      {
+        "hash": "780f689",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Segmentation based on concepts, not rules - never split sentences",
+        "scope": null
+      },
+      {
+        "hash": "a096001",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Improve segmentation with conceptual description instead of rules",
+        "scope": null
+      },
+      {
+        "hash": "18c0b5a",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Prevent Arabic segmentation from splitting prepositional phrases",
+        "scope": null
+      },
+      {
+        "hash": "b25daa1",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Add admin document editor with CodeMirror 6",
+        "scope": null
+      },
+      {
+        "hash": "0785af5",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Restore middle number column in SBS bilingual view",
+        "scope": null
+      },
+      {
+        "hash": "f04a970",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Prevent collection filter input from clearing on each keystroke",
+        "scope": null
+      },
+      {
+        "hash": "2f8f4a6",
+        "date": "2026-01-02",
+        "type": "New",
+        "description": "Show translation status indicator for all users in library list",
+        "scope": null
+      },
+      {
+        "hash": "2537829",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add Bahá'í transliteration style to translation prompts",
+        "scope": null
+      },
+      {
+        "hash": "23f8f13",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Use established religious terminology in translations",
+        "scope": null
+      },
+      {
+        "hash": "7c1e0d6",
+        "date": "2026-01-02",
+        "type": "Fixed",
+        "description": "Add email_queue table migration to unblock job processor",
+        "scope": null
+      }
+    ],
+    "2026-01-01": [
+      {
+        "hash": "6aff8b7",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Separate user database from content database",
+        "scope": null
+      },
+      {
+        "hash": "dcfeffa",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Remove duplicate route registrations causing server crash",
+        "scope": null
+      },
+      {
+        "hash": "18e5ed5",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add bulk translation management endpoints",
+        "scope": null
+      },
+      {
+        "hash": "bd2dd6c",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Allow internal key auth for test-segment-translation endpoint",
+        "scope": null
+      },
+      {
+        "hash": "0c8455e",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add test-segment-translation endpoint for verifying phrase alignment",
+        "scope": null
+      },
+      {
+        "hash": "2ee69ee",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add DELETE endpoint to clear document translations for re-translation",
+        "scope": null
+      },
+      {
+        "hash": "21c62f9",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
+        "scope": null
+      },
+      {
+        "hash": "bc13e8c",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use aiService instead of chatCompletion for proper model resolution",
+        "scope": null
+      },
+      {
+        "hash": "fde5219",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Include translation_segments in document endpoint",
+        "scope": null
+      },
+      {
+        "hash": "924c923",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Standardize content table on doc_id, remove document_id column",
+        "scope": null
+      },
+      {
+        "hash": "dcd7408",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Standardize on doc_id column, remove document_id references",
+        "scope": null
+      },
+      {
+        "hash": "62205b5",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use doc_id column in populate-content endpoint",
+        "scope": null
+      },
+      {
+        "hash": "d1bb49b",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add translatable-docs endpoint for debugging",
+        "scope": null
+      },
+      {
+        "hash": "7c6b9c9",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add API endpoints for translation management",
+        "scope": null
+      },
+      {
+        "hash": "3d07fda",
+        "date": "2026-01-01",
+        "type": "Chore",
+        "description": "Add production translation test script",
+        "scope": null
+      },
+      {
+        "hash": "71eaa84",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Resolve print view bugs and add translation script",
+        "scope": null
+      },
+      {
+        "hash": "9155580",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add print views with phrase-level alignment",
+        "scope": null
+      },
+      {
+        "hash": "577c6d4",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add translation field to Meilisearch for side-by-side results",
+        "scope": null
+      },
+      {
+        "hash": "3e03a2a",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Correct column names and Meilisearch SDK API usage",
+        "scope": null
+      },
+      {
+        "hash": "3d6e34d",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add embedding dimension diagnostics and fix model config",
+        "scope": null
+      },
+      {
+        "hash": "41cddd6",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add embedding coverage stats to server status endpoint",
+        "scope": null
+      },
+      {
+        "hash": "a447dc1",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add search filter support to collection detail view",
+        "scope": null
+      },
+      {
+        "hash": "8fa5233",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Hide translate button for docs with 'in English' in title",
+        "scope": null
+      },
+      {
+        "hash": "21537af",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
+        "scope": null
+      },
+      {
+        "hash": "740c6ee",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Require faithful summaries that accurately represent passage content",
+        "scope": null
+      },
+      {
+        "hash": "83544ab",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
+        "scope": null
+      },
+      {
+        "hash": "cc0e5ef",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
+        "scope": null
+      },
+      {
+        "hash": "ff2a8f5",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Prevent AI from copying example summary in analyzer prompt",
+        "scope": null
+      },
+      {
+        "hash": "c01c129",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Require actual answers in summaries, not meta-commentary",
+        "scope": null
+      },
+      {
+        "hash": "eb5557f",
+        "date": "2026-01-01",
+        "type": "Refactor",
+        "description": "Remove search mode toggle - always use ResearcherAgent",
+        "scope": null
+      },
+      {
+        "hash": "ee0f091",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Default to research mode for approved users",
+        "scope": null
+      },
+      {
+        "hash": "951abde",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Increase RTL font size in bilingual view for better readability",
+        "scope": null
+      },
+      {
+        "hash": "78297e1",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add siftersearch-jobs to allowed PM2 restart processes",
+        "scope": null
+      },
+      {
+        "hash": "d8f67f9",
+        "date": "2026-01-01",
+        "type": "Other",
+        "description": "Add siftersearch-jobs to allowed log processes",
+        "scope": null
+      },
+      {
+        "hash": "21f107b",
+        "date": "2026-01-01",
+        "type": "Other",
+        "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
+        "scope": null
+      },
+      {
+        "hash": "2ac33b9",
+        "date": "2026-01-01",
+        "type": "Other",
+        "description": "Add verbose job logging to trace undefined document_id",
+        "scope": null
+      },
+      {
+        "hash": "eed1a69",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Look up admin user for system API jobs instead of using id=0",
+        "scope": null
+      },
+      {
+        "hash": "ba9e1b1",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add system user for API/automation jobs",
+        "scope": null
+      },
+      {
+        "hash": "53fc622",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Add priority column migration and use 0 for system user jobs",
+        "scope": null
+      },
+      {
+        "hash": "e6e5a10",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use correct job.document_id in processInAppTranslation",
+        "scope": null
+      },
+      {
+        "hash": "f83b738",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Handle system users with string IDs in queue-translation",
+        "scope": null
+      },
+      {
+        "hash": "49bae7a",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add /admin/update endpoint for manual server updates",
+        "scope": null
+      },
+      {
+        "hash": "1d3338f",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add DEPLOY_SECRET authentication for API calls",
+        "scope": null
+      },
+      {
+        "hash": "f0bbe17",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Correct chatCompletion call signature in batch translation",
+        "scope": null
+      },
+      {
+        "hash": "b3e3bc5",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use snake_case document_id from jobs table in translation processor",
+        "scope": null
+      },
+      {
+        "hash": "a0e8c72",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add job processor to PM2 ecosystem",
+        "scope": null
+      },
+      {
+        "hash": "7b19e64",
+        "date": "2026-01-01",
+        "type": "New",
+        "description": "Add translation progress polling and remove size labels",
+        "scope": null
+      },
+      {
+        "hash": "c933bcd",
+        "date": "2026-01-01",
+        "type": "Fixed",
+        "description": "Use request.user.sub instead of request.user.id in queue-translation",
+        "scope": null
+      }
+    ],
+    "2025-12-31": [
+      {
+        "hash": "d1273ab",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use document_id column consistently across all API code",
+        "scope": null
+      },
+      {
+        "hash": "0174fe7",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use document_id in orphaned endpoint queries",
+        "scope": null
+      },
+      {
+        "hash": "467512f",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use document_id column (not doc_id) in populate-content endpoint",
+        "scope": null
+      },
+      {
+        "hash": "5668e06",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Add endpoint to populate missing content from Meilisearch",
+        "scope": null
+      },
+      {
+        "hash": "ac73905",
+        "date": "2025-12-31",
+        "type": "Docs",
+        "description": "Add sync architecture documentation and watcher status endpoint",
+        "scope": null
+      },
+      {
+        "hash": "e818d42",
+        "date": "2025-12-31",
+        "type": "New",
+        "description": "Complete sync architecture with multi-layer protection",
+        "scope": null
+      },
+      {
+        "hash": "74ca0d9",
+        "date": "2025-12-31",
+        "type": "Refactor",
+        "description": "Use libsql as source of truth for library management",
+        "scope": null
+      },
+      {
+        "hash": "f0af752",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Sync script inserts docs and marks content as synced",
+        "scope": null
+      },
+      {
+        "hash": "a4df923",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Increase translation pill contrast with solid backgrounds",
+        "scope": null
+      },
+      {
+        "hash": "034dc84",
+        "date": "2025-12-31",
+        "type": "New",
+        "description": "Add translation UI pill and content sync worker",
+        "scope": null
+      },
+      {
+        "hash": "2514f16",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Remove Meilisearch fallback for translation - content table is source of truth",
+        "scope": null
+      },
+      {
+        "hash": "c6a8fa5",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Use correct column name paragraph_index in content table insert",
+        "scope": null
+      },
+      {
+        "hash": "d20f4e1",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Auto-populate content table from Meilisearch when queueing translation",
+        "scope": null
+      },
+      {
+        "hash": "ae8a35b",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Add empty JSON body to queue-translation POST request",
+        "scope": null
+      },
+      {
+        "hash": "43eee68",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "ReferenceError isIndexing not defined in startRefreshPolling",
+        "scope": null
+      },
+      {
+        "hash": "362def3",
+        "date": "2025-12-31",
+        "type": "New",
+        "description": "Server-side translation queue with priority",
+        "scope": "translation"
+      },
+      {
+        "hash": "161cb03",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Translation reactivity and auto-populate content table from Meilisearch",
+        "scope": null
+      },
+      {
+        "hash": "bca725a",
+        "date": "2025-12-31",
+        "type": "Fixed",
+        "description": "Translation progress NaN and null paragraph errors",
+        "scope": null
+      }
+    ],
+    "2025-12-30": [
+      {
+        "hash": "10d03c5",
+        "date": "2025-12-30",
+        "type": "Other",
+        "description": "Add logging to translate-batch when no paragraphs found",
+        "scope": null
+      },
+      {
+        "hash": "279da81",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "Use api module token instead of localStorage",
+        "scope": null
+      },
+      {
+        "hash": "b523417",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "PWA auto-update and auth header for translation",
+        "scope": null
+      },
+      {
+        "hash": "59d1e7f",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "Add auth header to DocumentList translate call",
+        "scope": "translation"
+      },
+      {
+        "hash": "dc2d512",
+        "date": "2025-12-30",
+        "type": "Fixed",
+        "description": "Increase limit from 200 to 500 for full document loading",
+        "scope": "bilingual"
+      }
+    ],
+    "2025-12-29": [
+      {
+        "hash": "29641dd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add auth header and support both doc_id/document_id columns",
+        "scope": "translation"
+      },
+      {
+        "hash": "dd763c3",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Enable SQLite WAL mode for concurrent access",
+        "scope": "db"
+      },
+      {
+        "hash": "fd6a1b5",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Gracefully fall back to Meilisearch when libsql is busy",
+        "scope": "library"
+      },
+      {
+        "hash": "c6172bc",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Use correct content schema with document_id as primary column",
+        "scope": "migration"
+      },
+      {
+        "hash": "f0c7d3c",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Separate connections for auth vs batch operations",
+        "scope": "db"
+      },
+      {
+        "hash": "ec95183",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Remove auth requirement from version-triggered updates",
+        "scope": null
+      },
+      {
+        "hash": "8970a44",
+        "date": "2025-12-29",
+        "type": "Chore",
+        "description": "Add deploy hook to sync Meilisearch to libsql",
+        "scope": null
+      },
+      {
+        "hash": "8e9a0b7",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add Meilisearch fallback for unsynced documents",
+        "scope": "bilingual"
+      },
+      {
+        "hash": "394365f",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Allow all authenticated users to translate documents",
+        "scope": "translate"
+      },
+      {
+        "hash": "18f22d2",
+        "date": "2025-12-29",
+        "type": "Other",
+        "description": "Remove Meilisearch fallback - fix data at source instead",
+        "scope": null
+      },
+      {
+        "hash": "9a01493",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fallback to Meilisearch when SQLite has no content",
+        "scope": "bilingual"
+      },
+      {
+        "hash": "40124ea",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
+        "scope": "translation"
+      },
+      {
+        "hash": "168f852",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add real-time translation progress with batch API",
+        "scope": "translation"
+      },
+      {
+        "hash": "0d3f6bd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fix translate button visibility logic",
+        "scope": "reader"
+      },
+      {
+        "hash": "be46314",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "No highlighted paragraph in library popup",
+        "scope": "reader"
+      },
+      {
+        "hash": "99041ed",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Reusable ReaderModal component with proper styling",
+        "scope": "library"
+      },
+      {
+        "hash": "db86d14",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add fullscreen modal for document viewing",
+        "scope": "library"
+      },
+      {
+        "hash": "edf333e",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Simplify title row, move authority to content overlay",
+        "scope": "library"
+      },
+      {
+        "hash": "0c4615e",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Move tools to title row, eliminate toolbar line",
+        "scope": "library"
+      },
+      {
+        "hash": "38cc20a",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Increase contrast on version badge",
+        "scope": "ui"
+      },
+      {
+        "hash": "184159b",
+        "date": "2025-12-29",
+        "type": "New",
+        "description": "Add fullscreen reader and translate button",
+        "scope": "library"
+      },
+      {
+        "hash": "2b0b2fd",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Improve document view UI and scroll behavior",
+        "scope": "library"
+      },
+      {
+        "hash": "e5f9d4c",
+        "date": "2025-12-29",
+        "type": "Chore",
+        "description": "Bump version to 0.1.211",
+        "scope": null
+      },
+      {
+        "hash": "de0f902",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Unify header styles and fix width/overflow issues",
+        "scope": "library"
+      },
+      {
+        "hash": "7f8a405",
+        "date": "2025-12-29",
+        "type": "Refactor",
+        "description": "Replace custom CSS with Tailwind classes",
+        "scope": "CollectionDetail"
+      },
+      {
+        "hash": "0f65e3f",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add proper spacing between header and content sections",
+        "scope": "CollectionDetail"
+      },
+      {
+        "hash": "6313638",
+        "date": "2025-12-29",
+        "type": "Refactor",
+        "description": "Convert collection display from pills to vertical list",
+        "scope": "TreeView"
+      },
+      {
+        "hash": "deca725",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Fall back to standard content when bilingual returns no paragraphs",
+        "scope": null
+      },
+      {
+        "hash": "e2a3123",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Send empty JSON body on logout to fix 400 error",
+        "scope": null
+      },
+      {
+        "hash": "48711fb",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
+        "scope": null
+      },
+      {
+        "hash": "844950a",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
+        "scope": null
+      },
+      {
+        "hash": "4f8c512",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add schema debug endpoint to diagnose auth refresh error",
+        "scope": null
+      },
+      {
+        "hash": "157177d",
+        "date": "2025-12-29",
+        "type": "Fixed",
+        "description": "Add revoked_at column to refresh_tokens table",
+        "scope": null
+      },
+      {
+        "hash": "f3a055d",
+        "date": "2025-12-29",
+        "type": "Chore",
+        "description": "Bump version to 0.1.198 - sync client and server",
+        "scope": null
+      }
+    ],
+    "2025-12-28": [
+      {
+        "hash": "d9113a2",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Use correct meili.tasks.cancelTasks method",
+        "scope": "admin"
+      },
+      {
+        "hash": "baa8688",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add meili-cancel endpoint to cancel old queued tasks",
+        "scope": "admin"
+      },
+      {
+        "hash": "b79b1a0",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add PM2 control endpoint to stop/start library watcher",
+        "scope": "admin"
+      },
+      {
+        "hash": "ca286d8",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add author to filterable attributes in Meilisearch paragraphs index",
+        "scope": "search"
+      },
+      {
+        "hash": "db8745a",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add status filter and limit param to meili-tasks endpoint",
+        "scope": "admin"
+      },
+      {
+        "hash": "0f69c92",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
+        "scope": "admin"
+      },
+      {
+        "hash": "58f3d8b",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
+        "scope": "admin"
+      },
+      {
+        "hash": "61171d1",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Update BOTH documents and paragraphs indexes for RTL languages",
+        "scope": "language"
+      },
+      {
+        "hash": "7e6ecc2",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "AI-based semantic paragraph splitting for Arabic/Persian",
+        "scope": "segmentation"
+      },
+      {
+        "hash": "315cd0b",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Correctly detect Arabic/Persian language for documents",
+        "scope": "indexer"
+      },
+      {
+        "hash": "8c4be44",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add content-type aware translation styles",
+        "scope": "translation"
+      },
+      {
+        "hash": "48699be",
+        "date": "2025-12-28",
+        "type": "Chore",
+        "description": "Bump version to trigger server restart",
+        "scope": null
+      },
+      {
+        "hash": "b2bc28d",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
+        "scope": null
+      },
+      {
+        "hash": "fbc817a",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Handle both doc_id and document_id columns in migration",
+        "scope": null
+      },
+      {
+        "hash": "c23d897",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add background task for embedding migration from Meilisearch to libsql",
+        "scope": null
+      },
+      {
+        "hash": "15a59cc",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Correct getSearchStats property names in admin endpoints",
+        "scope": null
+      },
+      {
+        "hash": "efd14d8",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Reduce Baha'i star size to match other religion symbols",
+        "scope": null
+      },
+      {
+        "hash": "2aaae56",
+        "date": "2025-12-28",
+        "type": "Chore",
+        "description": "Version bump to trigger server restart",
+        "scope": null
+      },
+      {
+        "hash": "ddf4666",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
+        "scope": null
+      },
+      {
+        "hash": "f648734",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Add v14 migration to fix content table schema",
+        "scope": null
+      },
+      {
+        "hash": "b120eb4",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add embedding caching in libsql to avoid regenerating unchanged paragraphs",
+        "scope": null
+      },
+      {
+        "hash": "1d95af6",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Add v13 migration to rename legacy table names",
+        "scope": null
+      },
+      {
+        "hash": "813600e",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Allow internal API key auth for server management routes",
+        "scope": null
+      },
+      {
+        "hash": "ac842d9",
+        "date": "2025-12-28",
+        "type": "Docs",
+        "description": "Add comprehensive API and scripts documentation",
+        "scope": null
+      },
+      {
+        "hash": "5db303c",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add testing and debugging API endpoints",
+        "scope": null
+      },
+      {
+        "hash": "4a82bc1",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add granular server management API controls",
+        "scope": null
+      },
+      {
+        "hash": "05045cd",
+        "date": "2025-12-28",
+        "type": "Fixed",
+        "description": "Require authentication for auto-update trigger",
+        "scope": null
+      },
+      {
+        "hash": "bf98589",
+        "date": "2025-12-28",
+        "type": "New",
+        "description": "Add admin API endpoints for remote server management",
+        "scope": null
+      }
+    ],
+    "2025-12-27": [
+      {
+        "hash": "09e016f",
+        "date": "2025-12-27",
+        "type": "New",
+        "description": "Add public translation endpoint with Shoghi Effendi style",
         "scope": null
       }
     ]

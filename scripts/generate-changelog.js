@@ -21,7 +21,7 @@ const outputPath = join(__dirname, '..', 'src', 'lib', 'changelog.json');
 // Parse args
 const args = process.argv.slice(2);
 const countArg = args.find(a => a.startsWith('--count='));
-const count = countArg ? parseInt(countArg.split('=')[1], 10) : 50; // Default to 50 entries (~1 month)
+const count = countArg ? parseInt(countArg.split('=')[1], 10) : 500; // Default to 500 entries (~6 months)
 
 // Get recent commits with conventional commit format
 // Format: hash|date|subject
@@ -54,21 +54,22 @@ function parseCommit(commit) {
 
   const [, type, scope, description] = conventionalMatch;
 
-  // Skip certain types that aren't user-facing
-  const skipTypes = ['chore', 'ci', 'test', 'build', 'docs', 'style', 'refactor'];
-  if (skipTypes.includes(type.toLowerCase())) {
-    return null;
-  }
-
-  // Map commit types to user-friendly labels
+  // Map commit types to user-friendly labels (include all types for full history)
   const typeLabels = {
     feat: 'New',
     fix: 'Fixed',
-    perf: 'Improved',
-    security: 'Security'
+    perf: 'Performance',
+    security: 'Security',
+    docs: 'Docs',
+    style: 'Style',
+    refactor: 'Refactor',
+    test: 'Test',
+    chore: 'Chore',
+    ci: 'CI',
+    build: 'Build'
   };
 
-  const label = typeLabels[type.toLowerCase()] || 'Updated';
+  const label = typeLabels[type.toLowerCase()] || 'Other';
 
   // Clean up description
   let cleanDescription = description

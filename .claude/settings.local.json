@@ -43,7 +43,8 @@
       "WebFetch(domain:tiptap.dev)",
       "WebFetch(domain:bytemd.js.org)",
       "Skill(commit)",
-      "WebFetch(domain:siftersearch.com)"
+      "WebFetch(domain:siftersearch.com)",
+      "WebFetch(domain:xswarm.ai)"
     ]
   }
 }

@@ -5,59 +5,148 @@ import changelog from '../lib/changelog.json';
 
 const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
 
-// Group entries by date
-const entriesByDate = changelog.entries.reduce((acc, entry) => {
-  if (!acc[entry.date]) acc[entry.date] = [];
-  acc[entry.date].push(entry);
-  return acc;
-}, {} as Record<string, typeof changelog.entries>);
-
-const sortedDates = Object.keys(entriesByDate).sort((a, b) => b.localeCompare(a));
-
 // Type badge colors
 const typeColors: Record<string, string> = {
-  'New': 'bg-green-500/20 text-green-400 border-green-500/30',
+  'New': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   'Fixed': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  'Changed': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  'Removed': 'bg-red-500/20 text-red-400 border-red-500/30',
-  'Security': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  'Deprecated': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  'Performance': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  'Security': 'bg-red-500/20 text-red-400 border-red-500/30',
+  'Docs': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  'Style': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  'Refactor': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  'Test': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  'Chore': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  'CI': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  'Build': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  'Other': 'bg-slate-500/20 text-slate-400 border-slate-500/30',
 };
+
+// Group entries by month
+interface Entry {
+  hash: string;
+  date: string;
+  type: string;
+  description: string;
+  scope: string | null;
+}
+
+const entriesByMonth: Record<string, Record<string, Entry[]>> = {};
+const monthCounts: Record<string, number> = {};
+
+changelog.entries.forEach((entry: Entry) => {
+  const monthKey = entry.date.slice(0, 7); // YYYY-MM
+  if (!entriesByMonth[monthKey]) {
+    entriesByMonth[monthKey] = {};
+    monthCounts[monthKey] = 0;
+  }
+  if (!entriesByMonth[monthKey][entry.date]) {
+    entriesByMonth[monthKey][entry.date] = [];
+  }
+  entriesByMonth[monthKey][entry.date].push(entry);
+  monthCounts[monthKey]++;
+});
+
+// Sort months descending
+const sortedMonths = Object.keys(entriesByMonth).sort((a, b) => b.localeCompare(a));
+
+// Format month for display
+function formatMonth(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// Format date for display
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
+}
 ---
 
-<Layout title="Version History - SifterSearch">
+<Layout title="Release History - SifterSearch">
   <NavBar client:load currentPage="changelog" />
 
   <main class="min-h-screen pt-16 pb-12 px-4">
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-3xl mx-auto">
       <header class="mb-8 text-center">
-        <h1 class="text-2xl font-bold text-primary mb-2">Version History</h1>
-        <p class="text-secondary">Current version: <span class="font-mono text-accent">{APP_VERSION}</span></p>
+        <h1 class="text-2xl font-bold text-primary mb-2">Release History</h1>
+        <p class="text-secondary">
+          Current version: <span class="font-mono text-accent font-semibold">{APP_VERSION}</span>
+        </p>
+        <p class="text-muted text-sm mt-1">
+          {changelog.entries.length} releases across {sortedMonths.length} months
+        </p>
       </header>
 
-      <div class="space-y-6">
-        {sortedDates.map((date) => (
-          <section class="bg-surface-1-alpha backdrop-blur-lg rounded-xl border border-border p-4">
-            <h2 class="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
-              {new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </h2>
-            <ul class="space-y-2">
-              {entriesByDate[date].map((entry) => (
-                <li class="flex items-start gap-3">
-                  <span class={`text-xs px-2 py-0.5 rounded border font-medium shrink-0 ${typeColors[entry.type] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
-                    {entry.type}
+      <div class="space-y-4">
+        {sortedMonths.map((monthKey, monthIndex) => {
+          const isFirstTwo = monthIndex < 2;
+          const monthData = entriesByMonth[monthKey];
+          const sortedDates = Object.keys(monthData).sort((a, b) => b.localeCompare(a));
+
+          return (
+            <details
+              class="group bg-surface-1-alpha backdrop-blur-lg rounded-xl border border-border overflow-hidden"
+              open={isFirstTwo}
+            >
+              <summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-hover select-none">
+                <h2 class="text-lg font-semibold text-primary">
+                  {formatMonth(monthKey)}
+                </h2>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm text-muted">
+                    {monthCounts[monthKey]} {monthCounts[monthKey] === 1 ? 'release' : 'releases'}
                   </span>
-                  <span class="text-primary text-sm">{entry.description}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+                  <svg
+                    class="w-5 h-5 text-muted transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </summary>
+
+              <div class="px-4 pb-4 space-y-4">
+                {sortedDates.map((date) => (
+                  <div class="border-l-2 border-border pl-4">
+                    <h3 class="text-sm font-medium text-muted mb-2 uppercase tracking-wide">
+                      {formatDate(date)}
+                    </h3>
+                    <ul class="space-y-1.5">
+                      {monthData[date].map((entry) => (
+                        <li class="flex items-start gap-2">
+                          <span
+                            class={`text-xs px-1.5 py-0.5 rounded border font-medium shrink-0 ${
+                              typeColors[entry.type] || typeColors['Other']
+                            }`}
+                          >
+                            {entry.type}
+                          </span>
+                          <span class="text-primary text-sm leading-snug">{entry.description}</span>
+                          <a
+                            href={`https://github.com/chadananda/siftersearch/commit/${entry.hash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-xs text-muted hover:text-accent font-mono shrink-0"
+                            title="View commit"
+                          >
+                            {entry.hash}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+        })}
       </div>
 
       <footer class="mt-8 text-center text-sm text-muted">
