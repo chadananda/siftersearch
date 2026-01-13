@@ -3194,7 +3194,7 @@
   }
 
   .source-text {
-    font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+    font-family: 'Amiri', Georgia, 'Times New Roman', serif;
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #1a1a1a; /* Always dark - displays on light cream background */
@@ -3339,6 +3339,7 @@
 
   .result-excerpt {
     flex: 1;
+    font-family: 'Amiri', Georgia, serif;
     font-size: 1rem;
     color: var(--text-primary);
     line-height: 1.4;
@@ -3363,6 +3364,7 @@
   }
 
   .result-full-text {
+    font-family: 'Amiri', Georgia, serif;
     font-size: 1.125rem;
     color: var(--text-primary);
     line-height: 1.7;
