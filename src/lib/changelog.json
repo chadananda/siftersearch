@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T15:02:37.045Z",
+  "generated": "2026-01-13T15:07:41.456Z",
   "entries": [
+    {
+      "hash": "d80d5a9",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Remove duplicate clear button, keep native search input X",
+      "scope": null
+    },
     {
       "hash": "70db628",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Structured preview with paragraph numbers and stripped markdown",
       "scope": null
-    },
-    {
-      "hash": "63af5e2",
-      "date": "2026-01-10",
-      "type": "Fixed",
-      "description": "Make .para-text CSS work standalone for library previews",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "d80d5a9",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Remove duplicate clear button, keep native search input X",
+        "scope": null
+      },
       {
         "hash": "70db628",
         "date": "2026-01-13",
@@ -701,13 +708,6 @@
         "date": "2026-01-10",
         "type": "New",
         "description": "Structured preview with paragraph numbers and stripped markdown",
-        "scope": null
-      },
-      {
-        "hash": "63af5e2",
-        "date": "2026-01-10",
-        "type": "Fixed",
-        "description": "Make .para-text CSS work standalone for library previews",
         "scope": null
       }
     ]

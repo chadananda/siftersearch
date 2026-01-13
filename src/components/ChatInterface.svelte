@@ -3091,7 +3091,7 @@
     font-family: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
     font-size: 1.0625rem;
     line-height: 1.65;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin: 0;
     margin-left: 1rem; /* Space for paragraph number */
     user-select: text;
@@ -3465,11 +3465,11 @@
   /* Chat toggle button inside input */
   .chat-toggle-btn {
     padding: 0.5rem 0.625rem;
-    margin-left: 0.25rem;
+    margin-left: 0.5rem;
     color: var(--text-secondary);
     background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
     border: 1px solid light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15));
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     transition: all 0.15s;
     display: flex;
