@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T01:59:23.807Z",
+  "generated": "2026-01-13T02:34:37.600Z",
   "entries": [
+    {
+      "hash": "218838a",
+      "date": "2026-01-12",
+      "type": "New",
+      "description": "Smart search highlighting with stop words filter",
+      "scope": null
+    },
     {
       "hash": "936f951",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "YAML frontmatter serialization with special characters",
       "scope": null
-    },
-    {
-      "hash": "bb364e3",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Make paragraph headings full-width to prevent side-by-side layout",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "218838a",
+        "date": "2026-01-12",
+        "type": "New",
+        "description": "Smart search highlighting with stop words filter",
+        "scope": null
+      },
       {
         "hash": "936f951",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "YAML frontmatter serialization with special characters",
-        "scope": null
-      },
-      {
-        "hash": "bb364e3",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Make paragraph headings full-width to prevent side-by-side layout",
         "scope": null
       }
     ]

@@ -901,10 +901,72 @@ function splitIntoSentences(text) {
 }
 
 /**
+ * Calculate proximity score for how close search terms appear in text
+ * Higher score = words appear closer together
+ * @param {string} text - Text to analyze
+ * @param {string[]} terms - Search terms to find
+ * @returns {number} Proximity score (higher is better)
+ */
+function calculateProximityScore(text, terms) {
+  if (terms.length < 2) return 0;
+
+  const lowerText = text.toLowerCase();
+  const positions = [];
+
+  // Find first occurrence of each term
+  for (const term of terms) {
+    const pos = lowerText.indexOf(term.toLowerCase());
+    if (pos >= 0) {
+      positions.push({ term, pos });
+    }
+  }
+
+  if (positions.length < 2) return 0;
+
+  // Sort by position
+  positions.sort((a, b) => a.pos - b.pos);
+
+  // Calculate total distance between consecutive terms
+  let totalDistance = 0;
+  for (let i = 1; i < positions.length; i++) {
+    totalDistance += positions[i].pos - positions[i - 1].pos;
+  }
+
+  // Average distance per gap (lower is better, so invert)
+  const avgDistance = totalDistance / (positions.length - 1);
+
+  // Return inverse score (closer = higher score)
+  // Score of 1000 for adjacent words, decreasing as distance increases
+  return Math.max(0, 1000 - avgDistance);
+}
+
+/**
+ * Check if text contains the exact phrase (words in order, allowing some flexibility)
+ * @param {string} text - Text to search
+ * @param {string[]} terms - Ordered terms to find as phrase
+ * @returns {boolean} True if phrase found
+ */
+function containsPhrase(text, terms) {
+  if (terms.length === 0) return false;
+  if (terms.length === 1) return text.toLowerCase().includes(terms[0].toLowerCase());
+
+  // Build regex that matches terms in order with optional words between
+  // Allow 0-3 words between each term
+  const pattern = terms
+    .map(t => escapeRegex(t))
+    .join('\\W+(?:\\w+\\W+){0,3}');
+
+  const regex = new RegExp(pattern, 'i');
+  return regex.test(text);
+}
+
+/**
  * Extract best sentence and apply smart highlighting
- * - Finds the sentence with most keyword matches
- * - Highlights only non-stop-words
- * - Wraps sentence in highlight span
+ * Scoring priority:
+ * 1. Exact phrase match (all words in order) - highest
+ * 2. All terms present with high proximity - high
+ * 3. All terms present (scattered) - medium
+ * 4. Most terms present - low (fallback)
  *
  * @param {Object} hit - Meilisearch hit with text
  * @param {string} query - Original search query
@@ -936,16 +998,40 @@ export function highlightBestSentence(hit, query) {
     return { excerpt: truncated, highlightedExcerpt: truncated };
   }
 
-  // Find the sentence with most keyword matches
+  // Score each sentence
   let bestSentence = null;
-  let bestScore = 0;
+  let bestScore = -1;
 
   for (const sentence of sentences) {
     const lowerSentence = sentence.text.toLowerCase();
-    let score = 0;
+
+    // Count how many terms are present
+    let termsFound = 0;
     for (const term of termsToMatch) {
-      if (lowerSentence.includes(term)) score++;
+      if (lowerSentence.includes(term)) termsFound++;
     }
+
+    // Calculate score with priority:
+    // - Base: number of terms found * 100
+    // - Bonus: +10000 if ALL terms present
+    // - Bonus: +50000 if exact phrase found
+    // - Bonus: proximity score (0-1000) for close terms
+
+    let score = termsFound * 100;
+
+    // All terms present bonus
+    if (termsFound === termsToMatch.length) {
+      score += 10000;
+
+      // Exact phrase bonus (words in query order)
+      if (containsPhrase(sentence.text, termsToMatch)) {
+        score += 50000;
+      }
+
+      // Proximity bonus
+      score += calculateProximityScore(sentence.text, termsToMatch);
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestSentence = sentence;
