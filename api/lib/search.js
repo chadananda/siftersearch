@@ -267,10 +267,58 @@ export async function hybridSearch(query, options = {}) {
 }
 
 /**
+ * Check if text contains all query terms (prefix matching allowed)
+ * @param {string} text - Text to search
+ * @param {string[]} terms - Query terms (min 2 chars, non-stop-words)
+ * @returns {boolean} True if all terms found
+ */
+function textContainsAllTerms(text, terms) {
+  const lowerText = text.toLowerCase();
+  return terms.every(term => {
+    // Match word boundary + term (prefix matching allowed)
+    const regex = new RegExp(`\\b${escapeRegex(term)}`, 'i');
+    return regex.test(lowerText);
+  });
+}
+
+/**
  * Keyword-only search (faster, no embedding needed)
+ * Filters results to ensure ALL query terms appear (prefix matching allowed)
  */
 export async function keywordSearch(query, options = {}) {
-  return hybridSearch(query, { ...options, semanticRatio: 0 });
+  const { limit = 20, ...restOptions } = options;
+
+  // Request more results than needed so we can filter
+  const results = await hybridSearch(query, {
+    ...restOptions,
+    limit: Math.min(limit * 3, 100), // Request 3x to account for filtering
+    semanticRatio: 0
+  });
+
+  // Extract query terms for filtering (min 2 chars, filter stop words)
+  const queryTerms = query.toLowerCase()
+    .split(/\s+/)
+    .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
+
+  // If only stop words or single short word, return unfiltered
+  if (queryTerms.length === 0) {
+    return {
+      ...results,
+      hits: results.hits.slice(0, limit)
+    };
+  }
+
+  // Filter to only results containing ALL query terms
+  const filteredHits = results.hits.filter(hit => {
+    const text = hit.text || '';
+    return textContainsAllTerms(text, queryTerms);
+  });
+
+  return {
+    ...results,
+    hits: filteredHits.slice(0, limit),
+    estimatedTotalHits: filteredHits.length
+  };
 }
 
 /**
