@@ -31,11 +31,10 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 cd "$ROOT_DIR"
 
 # Check if this is an amend (don't bump version on amends)
-if git rev-parse -q --verify ORIG_HEAD > /dev/null 2>&1; then
-  if [ "$(git rev-parse HEAD)" = "$(git rev-parse ORIG_HEAD)" ]; then
-    echo -e "${YELLOW}[pre-commit]${NC} Amend detected, skipping deployment"
-    exit 0
-  fi
+# GIT_AUTHOR_DATE is set when amending to preserve original date
+if [ -n "$GIT_AUTHOR_DATE" ]; then
+  echo -e "${YELLOW}[pre-commit]${NC} Amend detected, skipping deployment"
+  exit 0
 fi
 
 # Check if there are actual code changes (not just version files)
