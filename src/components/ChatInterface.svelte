@@ -1391,27 +1391,22 @@
             {@const language = result.language || 'en'}
             {@const isRTL = ['ar', 'fa', 'he', 'ur'].includes(language)}
 
-            <div class="source-card expanded" role="article" animate:flip={{ duration: 250 }} in:fade={{ duration: 150 }} out:fade={{ duration: 100 }}>
+            <button class="source-card-btn" onclick={() => openReaderFromSearch(result)} role="article" animate:flip={{ duration: 250 }} in:fade={{ duration: 150 }} out:fade={{ duration: 100 }}>
               <!-- Paper-like text area -->
-              <div class="source-paper p-3 sm:p-4 sm:px-5" class:rtl={isRTL}>
-                <span class="para-num">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
+              <div class="source-paper-compact" class:rtl={isRTL}>
+                <span class="para-num-compact">{result.paragraph_index != null ? result.paragraph_index + 1 : ''}</span>
                 <p class="source-text" dir={isRTL ? 'rtl' : 'ltr'}>{@html formatText(text)}</p>
               </div>
 
-              <!-- Citation bar -->
-              <div class="citation-bar px-3 py-2 gap-2 sm:px-4 sm:gap-4">
-                <div class="citation-path">
-                  <span class="source-num-inline">{i + 1}</span>
-                  {#if religion}<span class="citation-segment">{religion}</span>{/if}
-                  {#if collection}<span class="citation-sep">›</span><span class="citation-segment">{collection}</span>{/if}
-                  {#if author && !rawCollection.includes(author)}<span class="citation-sep">›</span><span class="citation-segment">{author}</span>{/if}
-                  <span class="citation-sep">›</span><span class="citation-segment citation-title">{title}</span>
-                </div>
-                <button class="read-more-btn" onclick={() => openReaderFromSearch(result)}>
-                  Read More
-                </button>
+              <!-- Compact citation line -->
+              <div class="citation-line">
+                <span class="citation-num">{i + 1}.</span>
+                <span class="citation-meta">
+                  {#if author}{author} — {/if}{title}
+                </span>
+                <svg class="citation-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
               </div>
-            </div>
+            </button>
           {/each}
         {:else}
           <div class="text-muted text-center py-8">No results found</div>
@@ -2906,6 +2901,86 @@
   }
   .source-card.collapsed:hover {
     background-color: var(--surface-2);
+  }
+
+  /* Compact clickable source card for quick search */
+  .source-card-btn {
+    width: 100%;
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+    display: flex;
+    flex-direction: column;
+  }
+  .source-card-btn:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 2px 8px light-dark(rgba(0,0,0,0.08), rgba(0,0,0,0.2));
+    transform: translateY(-1px);
+  }
+  .source-card-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Compact paper area */
+  .source-paper-compact {
+    padding: 0.625rem 0.75rem;
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .source-paper-compact.rtl {
+    direction: rtl;
+  }
+
+  .para-num-compact {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 1.25rem;
+    text-align: right;
+    padding-top: 0.1em;
+  }
+
+  /* Compact citation line */
+  .citation-line {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--surface-2);
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .citation-num {
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .citation-meta {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .citation-arrow {
+    flex-shrink: 0;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--text-muted);
+    transition: transform 0.15s, color 0.15s;
+  }
+  .source-card-btn:hover .citation-arrow {
+    color: var(--accent-primary);
+    transform: translateX(2px);
   }
 
   /* Collapsed summary header */
