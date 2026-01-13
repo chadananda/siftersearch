@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T17:55:17.749Z",
+  "generated": "2026-01-13T17:58:11.580Z",
   "entries": [
+    {
+      "hash": "eb85a32",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Add edit button for admins on read more screen",
+      "scope": null
+    },
     {
       "hash": "22966b9",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Version bump to trigger server restart",
       "scope": null
-    },
-    {
-      "hash": "ddf4666",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "eb85a32",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Add edit button for admins on read more screen",
+        "scope": null
+      },
       {
         "hash": "22966b9",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Chore",
         "description": "Version bump to trigger server restart",
-        "scope": null
-      },
-      {
-        "hash": "ddf4666",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
         "scope": null
       }
     ]
