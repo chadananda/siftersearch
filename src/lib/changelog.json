@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T16:53:50.353Z",
+  "generated": "2026-01-13T16:55:07.573Z",
   "entries": [
+    {
+      "hash": "9518d02",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Increase spacing and remove background from changelog",
+      "scope": null
+    },
     {
       "hash": "43d0186",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add granular server management API controls",
       "scope": null
-    },
-    {
-      "hash": "05045cd",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Require authentication for auto-update trigger",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "9518d02",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Increase spacing and remove background from changelog",
+        "scope": null
+      },
       {
         "hash": "43d0186",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add granular server management API controls",
-        "scope": null
-      },
-      {
-        "hash": "05045cd",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Require authentication for auto-update trigger",
         "scope": null
       }
     ]

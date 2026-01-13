@@ -72,12 +72,12 @@ function formatDate(dateStr: string): string {
 
   <main class="min-h-screen pt-16 pb-12 px-4">
     <div class="max-w-3xl mx-auto">
-      <header class="mb-8 text-center">
-        <h1 class="text-2xl font-bold text-primary mb-2">Release History</h1>
-        <p class="text-secondary">
-          Current version: <span class="font-mono text-accent font-semibold">{APP_VERSION}</span>
+      <header class="mb-12 text-center pt-8">
+        <h1 class="text-4xl font-bold text-primary mb-4">Release History</h1>
+        <p class="text-xl text-secondary">
+          Current version: <span class="font-mono text-accent font-bold">{APP_VERSION}</span>
         </p>
-        <p class="text-muted text-sm mt-1">
+        <p class="text-secondary text-base mt-2">
           {changelog.entries.length} releases across {sortedMonths.length} months
         </p>
       </header>
