@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T15:52:43.026Z",
+  "generated": "2026-01-13T16:03:23.059Z",
   "entries": [
+    {
+      "hash": "234b9df",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Restore text visibility in search results",
+      "scope": null
+    },
     {
       "hash": "93b4576",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use search.quick endpoint for lightning search mode",
       "scope": null
-    },
-    {
-      "hash": "bed1f8a",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Improve search input visibility and move lightning button inside",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "234b9df",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Restore text visibility in search results",
+        "scope": null
+      },
       {
         "hash": "93b4576",
         "date": "2026-01-13",
@@ -699,13 +706,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Use search.quick endpoint for lightning search mode",
-        "scope": null
-      },
-      {
-        "hash": "bed1f8a",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Improve search input visibility and move lightning button inside",
         "scope": null
       }
     ]

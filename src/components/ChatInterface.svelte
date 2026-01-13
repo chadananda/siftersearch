@@ -2917,15 +2917,15 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.375rem 0.75rem;
-    background-color: var(--surface-2);
+    background-color: #f0ece3; /* Slightly darker than card cream #faf8f3 */
     font-size: 0.75rem;
-    color: var(--text-primary);
-    border-top: 1px solid var(--border-subtle);
+    color: #4a4a4a; /* Dark readable text on light background */
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .citation-num {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #6b6b6b; /* Dark text on light attribution bar */
   }
 
   .citation-meta {
@@ -2940,7 +2940,7 @@
     flex-shrink: 0;
     width: 0.875rem;
     height: 0.875rem;
-    color: var(--text-muted);
+    color: #9ca3af; /* Muted arrow on light attribution bar */
     transition: transform 0.15s, color 0.15s;
   }
   .source-card.clickable:hover .citation-arrow {
@@ -3073,7 +3073,7 @@
     line-height: 1.65;
     color: #1a1a1a; /* Always dark - displays on light cream background */
     margin: 0;
-    margin-left: 1rem; /* Space for paragraph number */
+    margin-left: 2rem; /* Space for paragraph number */
     user-select: text;
     -webkit-user-select: text;
     cursor: text;
