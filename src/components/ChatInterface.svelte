@@ -1914,21 +1914,6 @@
         {/if}
       </div>
     </form>
-
-    <!-- Clear button on the right -->
-    {#if input || messages.length > 0}
-      <button
-        type="button"
-        onclick={clearSearch}
-        class="clear-btn"
-        aria-label="Clear search and return to library"
-        title="Clear search"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    {/if}
   </div>
 </div>
 
@@ -3542,25 +3527,6 @@
     background-color: var(--surface-3);
     color: var(--text-muted);
     cursor: not-allowed;
-  }
-
-  /* Clear button on the right */
-  .clear-btn {
-    padding: 0.5rem;
-    background-color: var(--surface-2);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .clear-btn:hover {
-    background-color: var(--surface-3);
-    color: var(--text-primary);
   }
 
   /* Utilities */

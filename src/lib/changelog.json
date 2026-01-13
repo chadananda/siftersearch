@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T14:59:07.381Z",
+  "generated": "2026-01-13T15:02:37.045Z",
   "entries": [
+    {
+      "hash": "70db628",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Compact clickable search result cards",
+      "scope": null
+    },
     {
       "hash": "b5ab2cd",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make .para-text CSS work standalone for library previews",
       "scope": null
-    },
-    {
-      "hash": "2f1b870",
-      "date": "2026-01-10",
-      "type": "Fixed",
-      "description": "Add preview field to /api/library/documents endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "70db628",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Compact clickable search result cards",
+        "scope": null
+      },
       {
         "hash": "b5ab2cd",
         "date": "2026-01-13",
@@ -701,13 +708,6 @@
         "date": "2026-01-10",
         "type": "Fixed",
         "description": "Make .para-text CSS work standalone for library previews",
-        "scope": null
-      },
-      {
-        "hash": "2f1b870",
-        "date": "2026-01-10",
-        "type": "Fixed",
-        "description": "Add preview field to /api/library/documents endpoint",
         "scope": null
       }
     ]
