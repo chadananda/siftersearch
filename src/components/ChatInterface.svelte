@@ -63,17 +63,31 @@
     if (!text) return text;
     let result = text;
 
-    // Apply keyPhrase highlighting with <mark>
-    if (keyPhrase) {
-      const phraseWords = keyPhrase.split(/\s+/).filter(w => w.length > 0);
-      if (phraseWords.length > 0) {
-        // Build flexible pattern allowing punctuation/whitespace between words
-        const pattern = phraseWords
-          .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-          .join('[\\s\\-.,;:!?\'"]*');
+    // Find the sentence containing the most coreTerms and highlight it
+    if (coreTerms?.length > 0) {
+      // Split into sentences
+      const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+      let bestSentence = null;
+      let bestScore = 0;
+
+      for (const sentence of sentences) {
+        const lowerSentence = sentence.toLowerCase();
+        let score = 0;
+        for (const term of coreTerms) {
+          if (lowerSentence.includes(term.toLowerCase())) score++;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestSentence = sentence;
+        }
+      }
+
+      // Wrap best sentence in sentence-hit span (yellow background)
+      if (bestSentence && bestScore > 0) {
+        const escaped = bestSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         try {
-          const regex = new RegExp(`(${pattern})`, 'gi');
-          result = result.replace(regex, '<mark>$1</mark>');
+          const regex = new RegExp(`(${escaped})`, 'g');
+          result = result.replace(regex, '<span class="sentence-hit">$1</span>');
         } catch (e) {
           // Skip on regex error
         }
@@ -322,6 +336,10 @@
   }
   async function openReaderFromSearch(result) {
     const docId = result.document_id || result.doc_id;
+    const searchQuery = input.trim();
+    // Extract non-stop-word terms for bold highlighting
+    const stopWords = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'it', 'its', 'this', 'that', 'these', 'those', 'he', 'she', 'they', 'them', 'his', 'her', 'their', 'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why']);
+    const coreTerms = searchQuery.toLowerCase().split(/\s+/).filter(t => t.length >= 2 && !stopWords.has(t));
     await openReader({
       document_id: docId,
       paragraph_index: result.paragraph_index,
@@ -330,8 +348,10 @@
       religion: result.religion,
       collection: result.collection,
       language: result.language,
-      text: result.text
-    }, input.trim());
+      text: result.text,
+      keyPhrase: searchQuery,
+      coreTerms: coreTerms
+    });
   }
   const auth = getAuthState();
 
@@ -1312,7 +1332,7 @@
             {totalHits.toLocaleString()} results in {searchTime}ms
           </div>
           {#each searchResults as result, i ((result.doc_id || result.document_id) + '-' + result.paragraph_index)}
-            {@const text = result.highlightedExcerpt || result._formatted?.text || result.text || ''}
+            {@const text = result.excerpt || result.text || ''}
             {@const title = result.title || 'Untitled'}
             {@const author = result.author}
             {@const religion = result.religion || ''}
