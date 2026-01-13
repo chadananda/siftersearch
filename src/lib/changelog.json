@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T14:11:29.178Z",
+  "generated": "2026-01-13T14:13:12.955Z",
   "entries": [
+    {
+      "hash": "de24aea",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Remove sentence wrapper from search results, only bold keywords",
+      "scope": null
+    },
     {
       "hash": "782a2d0",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Apply text color only to RTL content in BilingualView",
       "scope": null
-    },
-    {
-      "hash": "580019c",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add inline styles to BilingualView paper container to ensure visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "de24aea",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Remove sentence wrapper from search results, only bold keywords",
+        "scope": null
+      },
       {
         "hash": "782a2d0",
         "date": "2026-01-13",
@@ -703,13 +710,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Apply text color only to RTL content in BilingualView",
-        "scope": null
-      },
-      {
-        "hash": "580019c",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add inline styles to BilingualView paper container to ensure visibility",
         "scope": null
       }
     ]

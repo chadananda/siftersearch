@@ -1535,7 +1535,7 @@
         <div class="suggestions">
           {#each displayedSuggestions as suggestion}
             <button
-              onclick={() => { input = suggestion; sendMessage(); }}
+              onclick={() => { input = suggestion; searchMode ? performQuickSearch() : sendMessage(); }}
               class="suggestion-btn"
               disabled={!libraryConnected}
             >
