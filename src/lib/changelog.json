@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T17:58:11.580Z",
+  "generated": "2026-01-13T18:30:37.302Z",
   "entries": [
+    {
+      "hash": "a9ea579",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Increase edit button icon size to 24px",
+      "scope": null
+    },
     {
       "hash": "eb85a32",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Reduce Baha'i star size to match other religion symbols",
       "scope": null
-    },
-    {
-      "hash": "2aaae56",
-      "date": "2025-12-28",
-      "type": "Chore",
-      "description": "Version bump to trigger server restart",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "a9ea579",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Increase edit button icon size to 24px",
+        "scope": null
+      },
       {
         "hash": "eb85a32",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Reduce Baha'i star size to match other religion symbols",
-        "scope": null
-      },
-      {
-        "hash": "2aaae56",
-        "date": "2025-12-28",
-        "type": "Chore",
-        "description": "Version bump to trigger server restart",
         "scope": null
       }
     ]

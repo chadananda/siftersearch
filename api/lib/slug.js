@@ -118,9 +118,17 @@ export function slugifyPath(name) {
   return generateSlug(name);
 }
 
+// Slug length limits (Fastify default maxParamLength is 100)
+const MAX_AUTHOR_LENGTH = 20;   // Max chars for author portion
+const MAX_TOTAL_LENGTH = 95;    // Max total slug length (leaves room for _xx language suffix)
+
 /**
  * Generate a document slug from author, title/filename, and language
  * Format: author_title_lang (underscore separates parts, hyphen within parts)
+ *
+ * Limits:
+ * - Author portion: max 20 chars
+ * - Total slug: max 95 chars (to stay under Fastify's 100 char param limit)
  *
  * @param {object} doc - Document object with author, title, filename, language
  * @returns {string} URL-safe slug
@@ -139,8 +147,14 @@ export function generateDocSlug(doc) {
   const parts = [];
 
   // Add author if available and not "Unknown"
+  // Truncate author slug to MAX_AUTHOR_LENGTH chars
   if (doc.author && doc.author !== 'Unknown') {
-    parts.push(generateSlug(doc.author));
+    let authorSlug = generateSlug(doc.author);
+    if (authorSlug.length > MAX_AUTHOR_LENGTH) {
+      // Truncate at word boundary if possible
+      authorSlug = authorSlug.slice(0, MAX_AUTHOR_LENGTH).replace(/-[^-]*$/, '') || authorSlug.slice(0, MAX_AUTHOR_LENGTH);
+    }
+    parts.push(authorSlug);
   }
 
   // Use title if available, otherwise use filename without extension
@@ -160,6 +174,12 @@ export function generateDocSlug(doc) {
   // Add language suffix for non-English documents
   if (doc.language && doc.language !== 'en') {
     slug = `${slug}_${doc.language}`;
+  }
+
+  // Enforce maximum total length
+  if (slug.length > MAX_TOTAL_LENGTH) {
+    // Truncate at word/segment boundary
+    slug = slug.slice(0, MAX_TOTAL_LENGTH).replace(/-[^-_]*$/, '') || slug.slice(0, MAX_TOTAL_LENGTH);
   }
 
   return slug;
