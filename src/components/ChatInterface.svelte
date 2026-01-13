@@ -1839,13 +1839,13 @@
     <a href={getReferralUrl(getUserId())} class="qr-link" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
       <img src={qrCodeUrl || '/qr-siftersearch.svg'} alt="QR code for sharing siftersearch.com" class="qr-code" />
     </a>
-    <!-- Input form with lightning toggle and search button inside -->
+    <!-- Input form with chat toggle and search button inside -->
     <form onsubmit={(e) => { e.preventDefault(); if (!searchMode) sendMessage(); }} class="input-form" aria-label="Search form">
       <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
       <div class="input-wrapper">
-        <!-- Lightning toggle for quick search mode -->
-        <button type="button" class="lightning-btn {searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'AI Search Mode' : 'Quick Search Mode'}>
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <!-- Chat toggle for AI chat mode -->
+        <button type="button" class="chat-toggle-btn {!searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'Switch to AI Chat' : 'Switch to Quick Search'}>
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         </button>
         <input
           id="search-input"
@@ -3352,8 +3352,8 @@
     box-shadow: 0 2px 12px rgba(7, 89, 133, 0.2);
   }
 
-  /* Lightning button inside input */
-  .lightning-btn {
+  /* Chat toggle button inside input */
+  .chat-toggle-btn {
     padding: 0.5rem 0.625rem;
     margin-left: 0.25rem;
     color: var(--text-secondary);
@@ -3367,11 +3367,11 @@
     justify-content: center;
     flex-shrink: 0;
   }
-  .lightning-btn:hover {
+  .chat-toggle-btn:hover {
     color: var(--accent-primary);
     background-color: light-dark(rgba(7, 89, 133, 0.1), rgba(14, 165, 233, 0.15));
   }
-  .lightning-btn.active {
+  .chat-toggle-btn.active {
     color: white;
     background-color: var(--accent-primary);
   }

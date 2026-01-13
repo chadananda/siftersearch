@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T14:13:12.955Z",
+  "generated": "2026-01-13T14:32:06.987Z",
   "entries": [
+    {
+      "hash": "6e796f1",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Make suggestion shortcuts respect current search mode (quick vs AI)",
+      "scope": null
+    },
     {
       "hash": "de24aea",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Proper RTL styling for BilingualView preview",
       "scope": null
-    },
-    {
-      "hash": "63dd0eb",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Apply text color only to RTL content in BilingualView",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "6e796f1",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Make suggestion shortcuts respect current search mode (quick vs AI)",
+        "scope": null
+      },
       {
         "hash": "de24aea",
         "date": "2026-01-13",
@@ -703,13 +710,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Proper RTL styling for BilingualView preview",
-        "scope": null
-      },
-      {
-        "hash": "63dd0eb",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Apply text color only to RTL content in BilingualView",
         "scope": null
       }
     ]
