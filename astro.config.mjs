@@ -103,11 +103,14 @@ export default defineConfig({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 3600 // 1 hour fallback cache
+              },
+              cacheableResponse: {
+                statuses: [0, 200] // Only cache successful responses
               }
             }
           },
           {
-            // Cache other API responses
+            // Cache other API responses - but ONLY successful ones
             urlPattern: /^https:\/\/api\.siftersearch\.com\/api\//,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -115,6 +118,9 @@ export default defineConfig({
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 86400 // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200] // Only cache successful responses
               }
             }
           },
