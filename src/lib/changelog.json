@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T14:32:06.987Z",
+  "generated": "2026-01-13T14:33:42.322Z",
   "entries": [
+    {
+      "hash": "6350a42",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Change search/chat toggle from lightning to chat bubble",
+      "scope": null
+    },
     {
       "hash": "6e796f1",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use single paper-content path for all preview languages",
       "scope": null
-    },
-    {
-      "hash": "c4bc674",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Proper RTL styling for BilingualView preview",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "6350a42",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Change search/chat toggle from lightning to chat bubble",
+        "scope": null
+      },
       {
         "hash": "6e796f1",
         "date": "2026-01-13",
@@ -701,15 +708,6 @@
         "date": "2026-01-10",
         "type": "Fixed",
         "description": "Use single paper-content path for all preview languages",
-        "scope": null
-      }
-    ],
-    "2026-01-09": [
-      {
-        "hash": "c4bc674",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Proper RTL styling for BilingualView preview",
         "scope": null
       }
     ]

@@ -3357,8 +3357,8 @@
     padding: 0.5rem 0.625rem;
     margin-left: 0.25rem;
     color: var(--text-secondary);
-    background: transparent;
-    border: none;
+    background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
+    border: 1px solid light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15));
     border-radius: 0.375rem;
     cursor: pointer;
     transition: all 0.15s;
@@ -3370,10 +3370,12 @@
   .chat-toggle-btn:hover {
     color: var(--accent-primary);
     background-color: light-dark(rgba(7, 89, 133, 0.1), rgba(14, 165, 233, 0.15));
+    border-color: var(--accent-primary);
   }
   .chat-toggle-btn.active {
     color: white;
     background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
   }
 
   .search-input {
