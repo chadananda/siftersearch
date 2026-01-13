@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T17:53:13.838Z",
+  "generated": "2026-01-13T17:55:17.749Z",
   "entries": [
+    {
+      "hash": "22966b9",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Use Amiri font for hit card text",
+      "scope": null
+    },
     {
       "hash": "859ee97",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
       "scope": null
-    },
-    {
-      "hash": "f648734",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Add v14 migration to fix content table schema",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "22966b9",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Use Amiri font for hit card text",
+        "scope": null
+      },
       {
         "hash": "859ee97",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Make v14 migration more defensive - add columns individually with graceful error handling",
-        "scope": null
-      },
-      {
-        "hash": "f648734",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Add v14 migration to fix content table schema",
         "scope": null
       }
     ]

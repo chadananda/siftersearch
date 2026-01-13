@@ -1382,6 +1382,20 @@
               </svg>
             </button>
           {/if}
+          <!-- Edit button (admin only) -->
+          {#if auth.isAuthenticated && ['admin', 'superadmin', 'editor'].includes(auth.user?.tier) && readerDocument?.id}
+            <a
+              href="/admin/edit?id={readerDocument.id}"
+              class="reader-action-btn"
+              title="Edit document"
+              aria-label="Edit document"
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </a>
+          {/if}
           <button class="reader-close-btn" onclick={closeReader} aria-label="Close reader">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 18L18 6M6 6l12 12" />
