@@ -3209,7 +3209,7 @@
 
   .source-text {
     font-family: 'Amiri', Georgia, 'Times New Roman', serif;
-    font-size: 1.0625rem;
+    font-size: 1.25rem;
     line-height: 1.65;
     color: #1a1a1a; /* Always dark - displays on light cream background */
     margin: 0;
@@ -4109,6 +4109,7 @@
     margin-left: 0;
     margin-right: 1.5rem;
     text-align: right;
+    line-height: 1.5;
   }
 
   /* Inline agent badges for Meet the Team section */
