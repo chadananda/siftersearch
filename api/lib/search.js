@@ -1196,16 +1196,13 @@ export function highlightBestSentence(hit, query) {
     bestSentence = sentences[0];
   }
 
-  // Highlight keywords (non-stop-words) within the sentence
+  // Highlight keywords (non-stop-words) within the sentence - just bold, no sentence wrapper
   let highlighted = bestSentence.text;
   for (const term of termsToMatch) {
     // Match word boundaries, also capture word extensions (e.g., "constitution" matches "constitutional")
     const regex = new RegExp(`\\b(${escapeRegex(term)}\\w*)`, 'gi');
     highlighted = highlighted.replace(regex, '<strong>$1</strong>');
   }
-
-  // Wrap entire sentence in highlight span
-  highlighted = `<span class="sentence-hit">${highlighted}</span>`;
 
   return {
     excerpt: bestSentence.text,

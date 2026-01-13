@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T13:48:59.046Z",
+  "generated": "2026-01-13T14:11:29.178Z",
   "entries": [
+    {
+      "hash": "782a2d0",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Restore highlighting in search results, rename Chat to Search in navbar",
+      "scope": null
+    },
     {
       "hash": "64f8480",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Add inline styles to BilingualView paper container to ensure visibility",
       "scope": null
-    },
-    {
-      "hash": "a3fa5e7",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "782a2d0",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Restore highlighting in search results, rename Chat to Search in navbar",
+        "scope": null
+      },
       {
         "hash": "64f8480",
         "date": "2026-01-13",
@@ -703,13 +710,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Add inline styles to BilingualView paper container to ensure visibility",
-        "scope": null
-      },
-      {
-        "hash": "a3fa5e7",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
         "scope": null
       }
     ]
