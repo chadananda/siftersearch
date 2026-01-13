@@ -282,16 +282,64 @@ function textContainsAllTerms(text, terms) {
 }
 
 /**
+ * Calculate phrase match score for ranking
+ * Higher score = better match (exact phrase > proximity > scattered)
+ * @param {string} text - Text to score
+ * @param {string} query - Original query (with stop words)
+ * @param {string[]} terms - Query terms (without stop words)
+ * @returns {number} Score (0-100)
+ */
+function calculatePhraseScore(text, query, terms) {
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+
+  // Exact phrase match (highest priority) - score 100
+  if (lowerText.includes(lowerQuery)) {
+    return 100;
+  }
+
+  // Check for terms appearing close together (within ~50 chars)
+  // Build a regex that allows words between terms
+  if (terms.length >= 2) {
+    // Try to find all terms within a 100-char window
+    const positions = terms.map(term => {
+      const regex = new RegExp(`\\b${escapeRegex(term)}`, 'gi');
+      const match = regex.exec(lowerText);
+      return match ? match.index : -1;
+    }).filter(p => p >= 0);
+
+    if (positions.length === terms.length) {
+      const minPos = Math.min(...positions);
+      const maxPos = Math.max(...positions);
+      const spread = maxPos - minPos;
+
+      // Close proximity (within 100 chars) - score 50-80
+      if (spread < 100) {
+        return 80 - Math.floor(spread / 5); // 80 for adjacent, down to 60 for 100 chars apart
+      }
+      // Medium proximity (100-300 chars) - score 30-50
+      if (spread < 300) {
+        return 50 - Math.floor((spread - 100) / 10);
+      }
+    }
+  }
+
+  // All terms present but scattered - score 10
+  return 10;
+}
+
+/**
  * Keyword-only search (faster, no embedding needed)
  * Filters results to ensure ALL query terms appear (prefix matching allowed)
+ * Boosts exact phrase matches to the top
  */
 export async function keywordSearch(query, options = {}) {
   const { limit = 20, ...restOptions } = options;
 
-  // Request more results than needed so we can filter
+  // Request more results than needed so we can filter and re-rank
   const results = await hybridSearch(query, {
     ...restOptions,
-    limit: Math.min(limit * 3, 100), // Request 3x to account for filtering
+    limit: Math.min(limit * 5, 150), // Request 5x to account for filtering + re-ranking
     semanticRatio: 0
   });
 
@@ -314,9 +362,21 @@ export async function keywordSearch(query, options = {}) {
     return textContainsAllTerms(text, queryTerms);
   });
 
+  // Re-rank by phrase score (exact phrase matches first)
+  const rankedHits = filteredHits.map(hit => ({
+    ...hit,
+    _phraseScore: calculatePhraseScore(hit.text || '', query, queryTerms)
+  })).sort((a, b) => {
+    // Sort by phrase score first, then by original ranking score
+    if (b._phraseScore !== a._phraseScore) {
+      return b._phraseScore - a._phraseScore;
+    }
+    return (b._rankingScore || 0) - (a._rankingScore || 0);
+  });
+
   return {
     ...results,
-    hits: filteredHits.slice(0, limit),
+    hits: rankedHits.slice(0, limit),
     estimatedTotalHits: filteredHits.length
   };
 }
