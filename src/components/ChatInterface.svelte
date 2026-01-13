@@ -121,21 +121,26 @@
 
   // Initialize library stats from cache for instant display
   const STATS_CACHE_KEY = 'sifter_library_stats';
+  const isBrowser = typeof window !== 'undefined';
+
   function getCachedStats() {
+    if (!isBrowser) return null;
     try {
       const cached = localStorage.getItem(STATS_CACHE_KEY);
       return cached ? JSON.parse(cached) : null;
     } catch { return null; }
   }
   function setCachedStats(stats) {
+    if (!isBrowser) return;
     try {
       localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(stats));
     } catch { /* ignore storage errors */ }
   }
 
-  const cachedStats = getCachedStats();
-  let libraryStats = $state(cachedStats);
-  let statsLoading = $state(cachedStats === null); // Only show loading if no cache
+  // Load from cache immediately if in browser
+  const initialCache = isBrowser ? getCachedStats() : null;
+  let libraryStats = $state(initialCache);
+  let statsLoading = $state(initialCache === null); // Only show loading if no cache
   let expandedResults = $state({}); // Track which results are expanded
   let qrCodeUrl = $state(null); // Dynamic QR code with referral URL
   let inputEl;

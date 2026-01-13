@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T17:00:17.759Z",
+  "generated": "2026-01-13T17:09:48.258Z",
   "entries": [
+    {
+      "hash": "b999699",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Increase changelog item size and horizontal padding",
+      "scope": null
+    },
     {
       "hash": "8657fe7",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Allow internal API key auth for server management routes",
       "scope": null
-    },
-    {
-      "hash": "ac842d9",
-      "date": "2025-12-28",
-      "type": "Docs",
-      "description": "Add comprehensive API and scripts documentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "b999699",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Increase changelog item size and horizontal padding",
+        "scope": null
+      },
       {
         "hash": "8657fe7",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Allow internal API key auth for server management routes",
-        "scope": null
-      },
-      {
-        "hash": "ac842d9",
-        "date": "2025-12-28",
-        "type": "Docs",
-        "description": "Add comprehensive API and scripts documentation",
         "scope": null
       }
     ]
