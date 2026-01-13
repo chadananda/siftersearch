@@ -267,17 +267,55 @@ export async function hybridSearch(query, options = {}) {
 }
 
 /**
- * Check if text contains all query terms (prefix matching allowed)
- * @param {string} text - Text to search
- * @param {string[]} terms - Query terms (min 2 chars, non-stop-words)
- * @returns {boolean} True if all terms found
+ * Check if a matched string fuzzy-matches a query term
+ * Allows for typos (1 char diff per 4 chars) and prefix matching
+ * @param {string} matched - The matched text from Meilisearch
+ * @param {string} term - The query term to check
+ * @returns {boolean} True if fuzzy match
  */
-function textContainsAllTerms(text, terms) {
-  const lowerText = text.toLowerCase();
+function fuzzyMatch(matched, term) {
+  const m = matched.toLowerCase();
+  const t = term.toLowerCase();
+
+  // Exact match or prefix match
+  if (m === t || m.startsWith(t) || t.startsWith(m)) {
+    return true;
+  }
+
+  // Allow typos: max 1 diff per 4 chars (like Meilisearch default)
+  const maxTypos = Math.max(1, Math.floor(Math.min(m.length, t.length) / 4));
+  let diffs = 0;
+  const shorter = m.length < t.length ? m : t;
+  const longer = m.length < t.length ? t : m;
+
+  for (let i = 0; i < shorter.length && diffs <= maxTypos; i++) {
+    if (shorter[i] !== longer[i]) diffs++;
+  }
+  // Account for length difference as additional "typos"
+  diffs += longer.length - shorter.length;
+
+  return diffs <= maxTypos;
+}
+
+/**
+ * Check if Meilisearch found matches for all query terms
+ * Uses _matchesPosition to extract actual matched strings and fuzzy-compare
+ * @param {Object} hit - Meilisearch hit with text and _matchesPosition
+ * @param {string[]} terms - Query terms (min 2 chars, non-stop-words)
+ * @returns {boolean} True if all terms have matches
+ */
+function hasAllTermMatches(hit, terms) {
+  const text = hit.text || '';
+  const positions = hit._matchesPosition?.text || [];
+
+  // Extract matched strings from text
+  const matchedStrings = positions.map(pos => {
+    return text.slice(pos.start, pos.start + pos.length);
+  }).filter(s => s.length >= 2); // Ignore very short matches (stop words)
+
+  // Check each query term has a fuzzy match
   return terms.every(term => {
-    // Match word boundary + term (prefix matching allowed)
-    const regex = new RegExp(`\\b${escapeRegex(term)}`, 'i');
-    return regex.test(lowerText);
+    return matchedStrings.some(matched => fuzzyMatch(matched, term));
   });
 }
 
@@ -356,10 +394,9 @@ export async function keywordSearch(query, options = {}) {
     };
   }
 
-  // Filter to only results containing ALL query terms
+  // Filter to only results where Meilisearch found ALL query terms (with fuzzy matching)
   const filteredHits = results.hits.filter(hit => {
-    const text = hit.text || '';
-    return textContainsAllTerms(text, queryTerms);
+    return hasAllTermMatches(hit, queryTerms);
   });
 
   // Re-rank by phrase score (exact phrase matches first)

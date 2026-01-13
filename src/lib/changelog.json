@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T04:53:52.705Z",
+  "generated": "2026-01-13T12:42:21.169Z",
   "entries": [
+    {
+      "hash": "2b89f15",
+      "date": "2026-01-12",
+      "type": "New",
+      "description": "Boost exact phrase matches to top of search results",
+      "scope": null
+    },
     {
       "hash": "4658d43",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
       "scope": null
-    },
-    {
-      "hash": "c294f1c",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "2b89f15",
+        "date": "2026-01-12",
+        "type": "New",
+        "description": "Boost exact phrase matches to top of search results",
+        "scope": null
+      },
       {
         "hash": "4658d43",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
-        "scope": null
-      },
-      {
-        "hash": "c294f1c",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
         "scope": null
       }
     ]
