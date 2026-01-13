@@ -288,9 +288,14 @@ mark {
   -webkit-box-decoration-break: clone;
 }
 
-/* Dark mode - muted yellow for phrase highlight */
+/* Dark mode - muted yellow for phrase highlight (for dark backgrounds) */
 :root.dark .phrase-hit {
   background-color: rgba(255, 243, 205, 0.12);
+}
+
+/* But keep phrase-hit visible on light backgrounds like source-paper */
+.source-paper .phrase-hit {
+  background-color: rgba(255, 243, 205, 0.8);
 }
 
 /* Keywords within phrase highlight - bold */
