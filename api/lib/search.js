@@ -267,56 +267,64 @@ export async function hybridSearch(query, options = {}) {
 }
 
 /**
- * Check if a matched string fuzzy-matches a query term
- * Allows for typos (1 char diff per 4 chars) and prefix matching
- * @param {string} matched - The matched text from Meilisearch
- * @param {string} term - The query term to check
- * @returns {boolean} True if fuzzy match
+ * Simple Levenshtein distance for short strings
  */
-function fuzzyMatch(matched, term) {
-  const m = matched.toLowerCase();
-  const t = term.toLowerCase();
+function levenshtein(a, b) {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
 
-  // Exact match or prefix match
-  if (m === t || m.startsWith(t) || t.startsWith(m)) {
-    return true;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      matrix[i][j] = b[i-1] === a[j-1]
+        ? matrix[i-1][j-1]
+        : Math.min(matrix[i-1][j-1] + 1, matrix[i][j-1] + 1, matrix[i-1][j] + 1);
+    }
   }
-
-  // Allow typos: max 1 diff per 4 chars (like Meilisearch default)
-  const maxTypos = Math.max(1, Math.floor(Math.min(m.length, t.length) / 4));
-  let diffs = 0;
-  const shorter = m.length < t.length ? m : t;
-  const longer = m.length < t.length ? t : m;
-
-  for (let i = 0; i < shorter.length && diffs <= maxTypos; i++) {
-    if (shorter[i] !== longer[i]) diffs++;
-  }
-  // Account for length difference as additional "typos"
-  diffs += longer.length - shorter.length;
-
-  return diffs <= maxTypos;
+  return matrix[b.length][a.length];
 }
 
 /**
- * Check if Meilisearch found matches for all query terms
- * Uses _matchesPosition to extract actual matched strings and fuzzy-compare
- * @param {Object} hit - Meilisearch hit with text and _matchesPosition
+ * Check if text contains a fuzzy match for a term
+ * Allows typos based on Meilisearch rules: 1 typo for 5+ chars, 2 for 9+ chars
+ * @param {string} text - Text to search in
+ * @param {string} term - Term to find
+ * @returns {boolean} True if fuzzy match found
+ */
+function textContainsFuzzy(text, term) {
+  const lowerText = text.toLowerCase();
+  const lowerTerm = term.toLowerCase();
+
+  // Exact or prefix match (fast path)
+  const prefixRegex = new RegExp(`\\b${escapeRegex(lowerTerm)}`, 'i');
+  if (prefixRegex.test(lowerText)) return true;
+
+  // Fuzzy match: extract words and check Levenshtein distance
+  // Meilisearch: 1 typo for 5-8 chars, 2 typos for 9+ chars
+  const maxTypos = lowerTerm.length >= 9 ? 2 : (lowerTerm.length >= 5 ? 1 : 0);
+  if (maxTypos === 0) return false; // No typo tolerance for short terms
+
+  // Extract words of similar length from text
+  const words = lowerText.match(/\b\w+\b/g) || [];
+  return words.some(word => {
+    // Only compare words of similar length (within 2 chars)
+    if (Math.abs(word.length - lowerTerm.length) > 2) return false;
+    return levenshtein(word, lowerTerm) <= maxTypos;
+  });
+}
+
+/**
+ * Check if text contains all query terms (with fuzzy/typo tolerance)
+ * @param {Object} hit - Meilisearch hit with text
  * @param {string[]} terms - Query terms (min 2 chars, non-stop-words)
  * @returns {boolean} True if all terms have matches
  */
 function hasAllTermMatches(hit, terms) {
   const text = hit.text || '';
-  const positions = hit._matchesPosition?.text || [];
-
-  // Extract matched strings from text
-  const matchedStrings = positions.map(pos => {
-    return text.slice(pos.start, pos.start + pos.length);
-  }).filter(s => s.length >= 2); // Ignore very short matches (stop words)
-
-  // Check each query term has a fuzzy match
-  return terms.every(term => {
-    return matchedStrings.some(matched => fuzzyMatch(matched, term));
-  });
+  return terms.every(term => textContainsFuzzy(text, term));
 }
 
 /**

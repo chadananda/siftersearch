@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T12:42:21.169Z",
+  "generated": "2026-01-13T12:44:55.944Z",
   "entries": [
+    {
+      "hash": "4b47287",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use Meilisearch match positions for fuzzy all-terms filter",
+      "scope": null
+    },
     {
       "hash": "2b89f15",
       "date": "2026-01-12",
@@ -343,16 +350,18 @@
       "type": "Fixed",
       "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
       "scope": null
-    },
-    {
-      "hash": "348ed87",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-13": [
+      {
+        "hash": "4b47287",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use Meilisearch match positions for fuzzy all-terms filter",
+        "scope": null
+      }
+    ],
     "2026-01-12": [
       {
         "hash": "2b89f15",
@@ -701,13 +710,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
-        "scope": null
-      },
-      {
-        "hash": "348ed87",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
         "scope": null
       }
     ]
