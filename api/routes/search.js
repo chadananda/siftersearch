@@ -7,7 +7,7 @@
  * GET /api/search/health - Search health check
  */
 
-import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck } from '../lib/search.js';
+import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
@@ -260,19 +260,25 @@ export default async function searchRoutes(fastify) {
     const results = await keywordSearch(q, { limit });
 
     return {
-      hits: results.hits.map(hit => ({
-        id: hit.id,
-        document_id: hit.doc_id,
-        paragraph_index: hit.paragraph_index,
-        text: hit.text,
-        _formatted: hit._formatted,
-        title: hit.title,
-        author: hit.author,
-        religion: hit.religion,
-        collection: hit.collection,
-        language: hit.language,
-        score: hit._rankingScore
-      })),
+      hits: results.hits.map(hit => {
+        // Extract best sentence with smart highlighting (stop words filtered)
+        const { excerpt, highlightedExcerpt } = highlightBestSentence(hit, q);
+        return {
+          id: hit.id,
+          document_id: hit.doc_id,
+          paragraph_index: hit.paragraph_index,
+          text: hit.text,
+          excerpt,                    // Plain text excerpt (best sentence)
+          highlightedExcerpt,         // Smart highlighting with sentence-hit span
+          _formatted: hit._formatted, // Keep original for fallback
+          title: hit.title,
+          author: hit.author,
+          religion: hit.religion,
+          collection: hit.collection,
+          language: hit.language,
+          score: hit._rankingScore
+        };
+      }),
       query: q,
       estimatedTotalHits: results.estimatedTotalHits,
       processingTimeMs: results.processingTimeMs

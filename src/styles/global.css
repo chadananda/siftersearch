@@ -259,6 +259,26 @@ mark {
   font-weight: 500;
 }
 
+/* Quick Search - Sentence-level highlighting with yellow background */
+.sentence-hit {
+  background-color: #fff3cd;
+  padding: 0.15em 0.1em;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Dark mode - muted yellow */
+:root.dark .sentence-hit {
+  background-color: rgba(255, 243, 205, 0.15);
+}
+
+/* Keyword highlighting within sentence - bold */
+.sentence-hit strong {
+  font-weight: 700;
+  color: inherit;
+}
+
 /* ============================================
    SBS Translation Column Line-Height Fix
    Force English translation to single-spaced

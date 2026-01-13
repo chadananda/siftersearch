@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-12T20:55:40.251Z",
+  "generated": "2026-01-13T01:59:23.807Z",
   "entries": [
+    {
+      "hash": "936f951",
+      "date": "2026-01-12",
+      "type": "Fixed",
+      "description": "Exclude .backup.md files from library indexing",
+      "scope": null
+    },
     {
       "hash": "9f795ab",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Make paragraph headings full-width to prevent side-by-side layout",
       "scope": null
-    },
-    {
-      "hash": "c67d69a",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Render paragraph headings through markdown to handle links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "936f951",
+        "date": "2026-01-12",
+        "type": "Fixed",
+        "description": "Exclude .backup.md files from library indexing",
+        "scope": null
+      },
       {
         "hash": "9f795ab",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Make paragraph headings full-width to prevent side-by-side layout",
-        "scope": null
-      },
-      {
-        "hash": "c67d69a",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Render paragraph headings through markdown to handle links",
         "scope": null
       }
     ]

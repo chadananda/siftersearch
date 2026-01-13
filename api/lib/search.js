@@ -826,6 +826,154 @@ function extractSentenceAtPosition(text, position, contextSentences = 1) {
   };
 }
 
+// =============================================================================
+// SMART HIGHLIGHTING WITH STOP WORDS FILTER
+// =============================================================================
+
+/**
+ * Common English stop words that should not be highlighted in search results
+ */
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+  'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+  'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+  'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need',
+  'it', 'its', 'this', 'that', 'these', 'those', 'he', 'she', 'they',
+  'them', 'his', 'her', 'their', 'what', 'which', 'who', 'whom', 'how',
+  'when', 'where', 'why', 'all', 'each', 'every', 'both', 'few', 'more',
+  'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same',
+  'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there'
+]);
+
+/**
+ * Check if a word is a stop word
+ */
+function isStopWord(word) {
+  return STOP_WORDS.has(word.toLowerCase());
+}
+
+/**
+ * Escape special regex characters in a string
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Split text into sentences
+ * @param {string} text - Text to split
+ * @returns {Array<{text: string, start: number, end: number}>} Array of sentence objects
+ */
+function splitIntoSentences(text) {
+  const sentences = [];
+  let start = 0;
+
+  // Match sentence-ending punctuation followed by space or end
+  const sentenceEndPattern = /[.!?](?:\s|$|["'])/g;
+  let match;
+
+  while ((match = sentenceEndPattern.exec(text)) !== null) {
+    const end = match.index + 1; // Include the punctuation
+    const sentenceText = text.slice(start, end).trim();
+    if (sentenceText.length > 0) {
+      sentences.push({
+        text: sentenceText,
+        start,
+        end
+      });
+    }
+    start = match.index + match[0].length;
+  }
+
+  // Handle remaining text (no ending punctuation)
+  if (start < text.length) {
+    const remaining = text.slice(start).trim();
+    if (remaining.length > 0) {
+      sentences.push({
+        text: remaining,
+        start,
+        end: text.length
+      });
+    }
+  }
+
+  return sentences;
+}
+
+/**
+ * Extract best sentence and apply smart highlighting
+ * - Finds the sentence with most keyword matches
+ * - Highlights only non-stop-words
+ * - Wraps sentence in highlight span
+ *
+ * @param {Object} hit - Meilisearch hit with text
+ * @param {string} query - Original search query
+ * @returns {Object} { excerpt, highlightedExcerpt }
+ */
+export function highlightBestSentence(hit, query) {
+  const text = hit.text || '';
+
+  if (!text) {
+    return { excerpt: '', highlightedExcerpt: '' };
+  }
+
+  // Extract query terms (non-stop-words, min 2 chars)
+  const queryTerms = query.toLowerCase()
+    .split(/\s+/)
+    .filter(t => t.length > 1 && !isStopWord(t));
+
+  // If all terms are stop words, use full query terms
+  const termsToMatch = queryTerms.length > 0
+    ? queryTerms
+    : query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+
+  // Split into sentences
+  const sentences = splitIntoSentences(text);
+
+  if (sentences.length === 0) {
+    // No sentences found, return truncated text
+    const truncated = text.slice(0, 300);
+    return { excerpt: truncated, highlightedExcerpt: truncated };
+  }
+
+  // Find the sentence with most keyword matches
+  let bestSentence = null;
+  let bestScore = 0;
+
+  for (const sentence of sentences) {
+    const lowerSentence = sentence.text.toLowerCase();
+    let score = 0;
+    for (const term of termsToMatch) {
+      if (lowerSentence.includes(term)) score++;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestSentence = sentence;
+    }
+  }
+
+  // If no sentence matched any term, use the first sentence
+  if (!bestSentence) {
+    bestSentence = sentences[0];
+  }
+
+  // Highlight keywords (non-stop-words) within the sentence
+  let highlighted = bestSentence.text;
+  for (const term of termsToMatch) {
+    // Match word boundaries, also capture word extensions (e.g., "constitution" matches "constitutional")
+    const regex = new RegExp(`\\b(${escapeRegex(term)}\\w*)`, 'gi');
+    highlighted = highlighted.replace(regex, '<strong>$1</strong>');
+  }
+
+  // Wrap entire sentence in highlight span
+  highlighted = `<span class="sentence-hit">${highlighted}</span>`;
+
+  return {
+    excerpt: bestSentence.text,
+    highlightedExcerpt: highlighted
+  };
+}
+
 /**
  * Process search hits to extract relevant sentences
  * Returns hits with added `excerpt` and `highlightedText` fields
@@ -864,6 +1012,7 @@ export const search = {
   healthCheck,
   extractMatchingSentences,
   enrichHitsWithExcerpts,
+  highlightBestSentence,
   INDEXES
 };
 
