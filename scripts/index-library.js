@@ -36,6 +36,7 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
+import { queryOne } from '../api/lib/db.js';
 import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
 import { startImportBatch, updateImportProgress, clearImportBatch } from '../api/services/progress.js';
@@ -46,8 +47,8 @@ const args = process.argv.slice(2);
 const cliPath = args.find(arg => !arg.startsWith('--'));
 const libraryPaths = cliPath ? [cliPath] : config.library.paths;
 const dryRun = args.includes('--dry-run');
-const skipExisting = args.includes('--skip-existing');
 const watchMode = args.includes('--watch');
+const skipExisting = watchMode || args.includes('--skip-existing'); // Default true in watch mode
 const clearIndex = args.includes('--clear');
 const limitArg = args.find(arg => arg.startsWith('--limit='));
 // Allow INDEX_LIMIT env var as default, CLI arg overrides
@@ -275,11 +276,14 @@ async function findMarkdownFiles(dir, basePath = dir) {
 }
 
 // Check if document exists in index
-async function documentExists(id) {
+async function documentExists(filePath) {
+  // Check SQLite docs table by file_path (not Meilisearch)
+  // SQLite stores relative paths, so convert absolute to relative
+  const canonicalBase = config.library.basePath;
+  const relativePath = path.relative(canonicalBase, filePath);
   try {
-    const meili = getMeili();
-    await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    return true;
+    const doc = await queryOne("SELECT id FROM docs WHERE file_path = ?", [relativePath]);
+    return !!doc;
   } catch {
     return false;
   }
@@ -324,7 +328,7 @@ async function indexFile(filePath, basePath, force = false) {
     }
 
     // If document exists, remove it first (re-indexing)
-    const exists = await documentExists(metadata.id);
+    const exists = await documentExists(filePath);
     if (exists) {
       await removeDocument(metadata.id);
     }
@@ -344,7 +348,7 @@ async function handleFileDelete(filePath, basePath) {
   const metadata = extractMetadataFromPath(filePath, basePath);
 
   try {
-    const exists = await documentExists(metadata.id);
+    const exists = await documentExists(filePath);
     if (exists) {
       await removeDocument(metadata.id);
       fileHashes.delete(filePath);
@@ -533,7 +537,7 @@ async function indexLibrary() {
     try {
       // Check if already indexed
       if (skipExisting && !dryRun) {
-        const exists = await documentExists(file.metadata.id);
+        const exists = await documentExists(file.path);
         if (exists) {
           // Store hash for watch mode
           const hash = await getFileHash(file.path);
