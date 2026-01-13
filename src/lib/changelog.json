@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T17:09:48.258Z",
+  "generated": "2026-01-13T17:19:43.254Z",
   "entries": [
+    {
+      "hash": "3775150",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Check for browser before accessing localStorage for stats cache",
+      "scope": null
+    },
     {
       "hash": "b999699",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add v13 migration to rename legacy table names",
       "scope": null
-    },
-    {
-      "hash": "813600e",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Allow internal API key auth for server management routes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "3775150",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Check for browser before accessing localStorage for stats cache",
+        "scope": null
+      },
       {
         "hash": "b999699",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Add v13 migration to rename legacy table names",
-        "scope": null
-      },
-      {
-        "hash": "813600e",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Allow internal API key auth for server management routes",
         "scope": null
       }
     ]

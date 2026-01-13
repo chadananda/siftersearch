@@ -137,10 +137,25 @@
     } catch { /* ignore storage errors */ }
   }
 
+  // Default stats for immediate display (prevents layout shift)
+  const defaultStats = {
+    religions: 0,
+    collections: 0,
+    totalDocuments: 0,
+    totalPassages: 0,
+    religionCounts: {},
+    lastUpdated: null,
+    serverVersion: null
+  };
+
   // Load from cache immediately if in browser
   const initialCache = isBrowser ? getCachedStats() : null;
   let libraryStats = $state(initialCache);
-  let statsLoading = $state(initialCache === null); // Only show loading if no cache
+  let statsLoading = $state(true); // Track if we're still fetching
+  let serverOffline = $state(false); // Track if server is unreachable
+
+  // Display stats: use fetched data, cached data, or defaults (never null)
+  let displayStats = $derived(libraryStats || initialCache || defaultStats);
   let expandedResults = $state({}); // Track which results are expanded
   let qrCodeUrl = $state(null); // Dynamic QR code with referral URL
   let inputEl;
@@ -530,6 +545,9 @@
         libraryStats.totalDocuments !== stats.totalDocuments ||
         libraryStats.totalPassages !== stats.totalPassages;
 
+      // Mark server as connected
+      serverOffline = false;
+
       if (hasChanged) {
         libraryStats = stats;
         setCachedStats(stats); // Cache for instant display on next visit
@@ -625,8 +643,8 @@
       startRefreshPolling(stats.indexing || stats.translating);
     } catch (err) {
       console.error('Failed to load library stats:', err);
-      // Always clear stats on disconnect - don't show stale data
-      libraryStats = null;
+      // Mark server offline but keep showing cached data
+      serverOffline = true;
       // Start retry polling if not already
       startRetryPolling();
       // Stop refresh polling on disconnect
@@ -1525,56 +1543,47 @@
     {:else if messages.length === 0}
       <div class="welcome-screen">
         <img src="/ocean.svg" alt="Ocean Library" class="welcome-logo" />
-        <h2 class="welcome-title"><a href="https://oceanlibrary.com" target="_blank" rel="noopener" class="ocean-link">Ocean 2.0 Library</a> Agentic Research Engine</h2>
+        <h2 class="welcome-title"><a href="https://oceanlibrary.com" target="_blank" rel="noopener" class="ocean-link">Ocean 2.0 Library</a> Manager with AI Research</h2>
         <p class="welcome-desc">
           {APP_DESCRIPTION}
         </p>
 
-        <!-- Library Stats -->
+        <!-- Library Stats - always show with cached or default values -->
         <div class="stats-container">
-          {#if statsLoading}
-            <div class="stats-loading">
-              <svg class="spinner" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Loading library...</span>
-            </div>
-          {:else if libraryStats}
-            <div class="stats-card">
-              <h3 class="stats-title">Library Contents</h3>
-              <!-- Row 1: Key metrics -->
-              <div class="stats-grid">
-                <div class="stat">
-                  <span class="stat-label">Religions</span>
-                  <span class="stat-value">{libraryStats.religions || 0}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Collections</span>
-                  <span class="stat-value">{libraryStats.collections || 0}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Documents</span>
-                  <span class="stat-value">{formatNumber(libraryStats.totalDocuments)}</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-label">Paragraphs</span>
-                  <span class="stat-value">{formatNumber(libraryStats.totalPassages)}</span>
-                </div>
+          <div class="stats-card">
+            <h3 class="stats-title">Library Contents</h3>
+            <!-- Row 1: Key metrics -->
+            <div class="stats-grid">
+              <div class="stat">
+                <span class="stat-label">Religions</span>
+                <span class="stat-value">{displayStats.religions || 0}</span>
               </div>
-              <!-- Religion tags with document counts -->
-              {#if libraryStats.religionCounts && Object.keys(libraryStats.religionCounts).length > 0}
-                <div class="religion-tags">
-                  {#each Object.entries(libraryStats.religionCounts) as [religion, count]}
-                    <span class="religion-tag">
-                      {religion}
-                      <span class="tag-count">{count}</span>
-                    </span>
-                  {/each}
-                </div>
-              {/if}
+              <div class="stat">
+                <span class="stat-label">Collections</span>
+                <span class="stat-value">{displayStats.collections || 0}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Documents</span>
+                <span class="stat-value">{formatNumber(displayStats.totalDocuments)}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Paragraphs</span>
+                <span class="stat-value">{formatNumber(displayStats.totalPassages)}</span>
+              </div>
+            </div>
+            <!-- Religion tags with document counts -->
+            {#if displayStats.religionCounts && Object.keys(displayStats.religionCounts).length > 0}
+              <div class="religion-tags">
+                {#each Object.entries(displayStats.religionCounts) as [religion, count]}
+                  <span class="religion-tag">
+                    {religion}
+                    <span class="tag-count">{count}</span>
+                  </span>
+                {/each}
+              </div>
+            {/if}
               <!-- Import progress (current batch) -->
-              {#if libraryStats.importProgress}
+              {#if libraryStats?.importProgress}
                 <div class="ingestion-progress importing">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Importing documents</span>
@@ -1592,7 +1601,7 @@
                 </div>
               {/if}
               <!-- Ingestion progress (docs parsed vs total) -->
-              {#if libraryStats.ingestionProgress && libraryStats.ingestionProgress.percentComplete < 100}
+              {#if libraryStats?.ingestionProgress && libraryStats.ingestionProgress.percentComplete < 100}
                 <div class="ingestion-progress ingesting">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Content parsed</span>
@@ -1610,7 +1619,7 @@
                 </div>
               {/if}
               <!-- Meilisearch indexing progress - show when actively indexing -->
-              {#if libraryStats.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.percentComplete < 100 && libraryStats.indexingProgress.totalWithContent > 0}
+              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.percentComplete < 100 && libraryStats.indexingProgress.totalWithContent > 0}
                 <div class="ingestion-progress indexing">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Indexed in search</span>
@@ -1624,15 +1633,19 @@
                   </div>
                 </div>
               {/if}
-              <div class="stats-footer">
-                {#if libraryStats.lastUpdated}
-                  <span>Last indexed: {new Date(libraryStats.lastUpdated).toLocaleDateString()}</span>
+            <div class="stats-footer" class:offline={serverOffline}>
+              {#if serverOffline}
+                <span class="offline-status">Server offline - showing cached data</span>
+              {:else if displayStats.lastUpdated}
+                <span>Last indexed: {new Date(displayStats.lastUpdated).toLocaleDateString()}</span>
+                {#if displayStats.serverVersion}
+                  <span class="server-version">Server v{displayStats.serverVersion}</span>
                 {/if}
-                {#if libraryStats.serverVersion}
-                  <span class="server-version">Server v{libraryStats.serverVersion}</span>
-                {/if}
-              </div>
-              {#if libraryStats.indexingProgress && libraryStats.indexingProgress.pending > 0}
+              {:else if statsLoading}
+                <span>Connecting...</span>
+              {/if}
+            </div>
+              {#if libraryStats?.indexingProgress && libraryStats.indexingProgress.pending > 0}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
@@ -1646,7 +1659,7 @@
                   </div>
                 </div>
               {/if}
-              {#if libraryStats.translationProgress && (libraryStats.translationProgress.processing > 0 || libraryStats.translationProgress.pending > 0)}
+              {#if libraryStats?.translationProgress && (libraryStats.translationProgress.processing > 0 || libraryStats.translationProgress.pending > 0)}
                 <div class="indexing-indicator translating">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
@@ -1667,24 +1680,7 @@
                   </div>
                 </div>
               {/if}
-            </div>
-          {:else}
-            <div class="stats-unavailable">
-              <div class="disconnected-icon">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                  <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-                  <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-                  <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
-                  <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
-                </svg>
-              </div>
-              <span class="disconnected-text">Server Disconnected</span>
-              <span class="disconnected-hint">Retrying connection...</span>
-            </div>
-          {/if}
+          </div>
         </div>
 
         <div class="suggestions">
@@ -2505,12 +2501,20 @@
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-default);
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     text-align: center;
     display: flex;
     justify-content: center;
     gap: 1rem;
     flex-wrap: wrap;
+  }
+
+  .stats-footer.offline {
+    color: var(--error);
+  }
+
+  .stats-footer .offline-status {
+    color: var(--error);
   }
 
   .server-version {
