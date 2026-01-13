@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T12:58:56.293Z",
+  "generated": "2026-01-13T13:48:59.046Z",
   "entries": [
+    {
+      "hash": "64f8480",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Show plain excerpt in search list, apply highlighting in reader view",
+      "scope": null
+    },
     {
       "hash": "417d990",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
       "scope": null
-    },
-    {
-      "hash": "6ed1421",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "64f8480",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Show plain excerpt in search list, apply highlighting in reader view",
+        "scope": null
+      },
       {
         "hash": "417d990",
         "date": "2026-01-13",
@@ -703,13 +710,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
-        "scope": null
-      },
-      {
-        "hash": "6ed1421",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
         "scope": null
       }
     ]

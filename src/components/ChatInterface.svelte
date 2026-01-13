@@ -1332,7 +1332,7 @@
             {totalHits.toLocaleString()} results in {searchTime}ms
           </div>
           {#each searchResults as result, i ((result.doc_id || result.document_id) + '-' + result.paragraph_index)}
-            {@const text = result.excerpt || result.text || ''}
+            {@const text = result.highlightedExcerpt || result.excerpt || result.text || ''}
             {@const title = result.title || 'Untitled'}
             {@const author = result.author}
             {@const religion = result.religion || ''}

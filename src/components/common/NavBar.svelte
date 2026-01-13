@@ -127,12 +127,12 @@
     <div class="navbar-right">
       <!-- Nav links that progressively appear as space allows -->
       <nav class="navbar-nav" aria-label="Main navigation">
-        <!-- Chat is always visible -->
+        <!-- Search is always visible -->
         <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
-          <span class="nav-label">Chat</span>
+          <span class="nav-label">Search</span>
         </a>
         <!-- Library and Community require authentication -->
         {#if auth.isAuthenticated}
@@ -185,12 +185,12 @@
         <!-- Dropdown for collapsed nav items -->
         {#if showNavMenu}
           <div class="nav-dropdown" role="menu">
-            <!-- Chat is always visible in dropdown -->
+            <!-- Search is always visible in dropdown -->
             <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              Chat
+              Search
             </a>
             <!-- Library and Community require authentication -->
             {#if auth.isAuthenticated}
