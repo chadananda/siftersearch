@@ -22,11 +22,11 @@
   --surface-1-alpha: light-dark(rgba(248, 250, 252, 0.65), rgba(30, 41, 59, 0.65));
   --surface-2-alpha: light-dark(rgba(241, 245, 249, 0.5), rgba(51, 65, 85, 0.5));
 
-  /* Text colors */
+  /* Text colors - improved dark mode contrast for accessibility */
   --text-primary: light-dark(#0f172a, #f1f5f9);
-  --text-secondary: light-dark(#475569, #94a3b8);
-  --text-tertiary: light-dark(#64748b, #64748b);
-  --text-muted: light-dark(#94a3b8, #475569);
+  --text-secondary: light-dark(#475569, #cbd5e1); /* Lighter in dark mode for better contrast */
+  --text-tertiary: light-dark(#64748b, #94a3b8); /* Lighter in dark mode */
+  --text-muted: light-dark(#94a3b8, #64748b); /* Improved dark mode contrast */
   --text-inverted: light-dark(#f8fafc, #0f172a);
 
   /* Border colors */
