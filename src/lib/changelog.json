@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T04:20:56.424Z",
+  "generated": "2026-01-13T04:22:41.824Z",
   "entries": [
+    {
+      "hash": "a2a51f3",
+      "date": "2026-01-12",
+      "type": "Updated",
+      "description": "Use info level for filter logs",
+      "scope": null
+    },
     {
       "hash": "483ea78",
       "date": "2026-01-12",
@@ -343,17 +350,17 @@
       "type": "Fixed",
       "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
       "scope": null
-    },
-    {
-      "hash": "7b589dc",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-12": [
+      {
+        "hash": "a2a51f3",
+        "date": "2026-01-12",
+        "type": "Updated",
+        "description": "Use info level for filter logs",
+        "scope": null
+      },
       {
         "hash": "483ea78",
         "date": "2026-01-12",
@@ -701,13 +708,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
-        "scope": null
-      },
-      {
-        "hash": "7b589dc",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
         "scope": null
       }
     ]

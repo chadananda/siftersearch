@@ -300,8 +300,6 @@ export async function keywordSearch(query, options = {}) {
     .split(/\s+/)
     .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 
-  logger.info({ query, queryTerms, rawHitCount: results.hits.length }, 'keywordSearch filtering');
-
   // If only stop words or single short word, return unfiltered
   if (queryTerms.length === 0) {
     return {
@@ -313,14 +311,8 @@ export async function keywordSearch(query, options = {}) {
   // Filter to only results containing ALL query terms
   const filteredHits = results.hits.filter(hit => {
     const text = hit.text || '';
-    const matches = textContainsAllTerms(text, queryTerms);
-    if (!matches) {
-      logger.info({ hitId: hit.id, textPreview: text.slice(0, 100), queryTerms }, 'Filtering out hit - missing terms');
-    }
-    return matches;
+    return textContainsAllTerms(text, queryTerms);
   });
-
-  logger.info({ rawCount: results.hits.length, filteredCount: filteredHits.length, queryTerms }, 'keywordSearch filter results');
 
   return {
     ...results,
