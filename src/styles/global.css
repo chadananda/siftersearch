@@ -279,6 +279,26 @@ mark {
   color: inherit;
 }
 
+/* Phrase-level highlighting - subtle background for search term clusters */
+.phrase-hit {
+  background-color: rgba(255, 243, 205, 0.6);
+  padding: 0.1em 0.15em;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Dark mode - muted yellow for phrase highlight */
+:root.dark .phrase-hit {
+  background-color: rgba(255, 243, 205, 0.12);
+}
+
+/* Keywords within phrase highlight - bold */
+.phrase-hit strong {
+  font-weight: 700;
+  color: inherit;
+}
+
 /* ============================================
    SBS Translation Column Line-Height Fix
    Force English translation to single-spaced

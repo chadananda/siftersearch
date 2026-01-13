@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-13T14:35:54.815Z",
+  "generated": "2026-01-13T14:48:54.431Z",
   "entries": [
+    {
+      "hash": "ea23756",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Separate suggestions for search vs chat mode",
+      "scope": null
+    },
     {
       "hash": "6350a42",
       "date": "2026-01-13",
@@ -343,17 +350,17 @@
       "type": "New",
       "description": "Instant accordion preview for library documents",
       "scope": null
-    },
-    {
-      "hash": "8722eee",
-      "date": "2026-01-10",
-      "type": "Fixed",
-      "description": "Use single paper-content path for all preview languages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "ea23756",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Separate suggestions for search vs chat mode",
+        "scope": null
+      },
       {
         "hash": "6350a42",
         "date": "2026-01-13",
@@ -701,13 +708,6 @@
         "date": "2026-01-10",
         "type": "New",
         "description": "Instant accordion preview for library documents",
-        "scope": null
-      },
-      {
-        "hash": "8722eee",
-        "date": "2026-01-10",
-        "type": "Fixed",
-        "description": "Use single paper-content path for all preview languages",
         "scope": null
       }
     ]

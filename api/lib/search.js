@@ -1196,18 +1196,120 @@ export function highlightBestSentence(hit, query) {
     bestSentence = sentences[0];
   }
 
-  // Highlight keywords (non-stop-words) within the sentence - just bold, no sentence wrapper
+  // Find the best phrase span - where query terms cluster together
+  const phraseSpan = findBestPhraseSpan(bestSentence.text, termsToMatch);
+
   let highlighted = bestSentence.text;
-  for (const term of termsToMatch) {
-    // Match word boundaries, also capture word extensions (e.g., "constitution" matches "constitutional")
-    const regex = new RegExp(`\\b(${escapeRegex(term)}\\w*)`, 'gi');
-    highlighted = highlighted.replace(regex, '<strong>$1</strong>');
+
+  if (phraseSpan) {
+    // Extract before, phrase, and after parts
+    const before = highlighted.slice(0, phraseSpan.start);
+    const phrase = highlighted.slice(phraseSpan.start, phraseSpan.end);
+    const after = highlighted.slice(phraseSpan.end);
+
+    // Bold keywords within the phrase
+    let boldedPhrase = phrase;
+    for (const term of termsToMatch) {
+      const regex = new RegExp(`\\b(${escapeRegex(term)}\\w*)`, 'gi');
+      boldedPhrase = boldedPhrase.replace(regex, '<strong>$1</strong>');
+    }
+
+    // Wrap phrase in highlight span
+    highlighted = `${before}<span class="phrase-hit">${boldedPhrase}</span>${after}`;
+  } else {
+    // No phrase span found, just bold keywords
+    for (const term of termsToMatch) {
+      const regex = new RegExp(`\\b(${escapeRegex(term)}\\w*)`, 'gi');
+      highlighted = highlighted.replace(regex, '<strong>$1</strong>');
+    }
   }
 
   return {
     excerpt: bestSentence.text,
     highlightedExcerpt: highlighted
   };
+}
+
+/**
+ * Find the best phrase span where query terms cluster together
+ * Returns { start, end } character positions or null
+ */
+function findBestPhraseSpan(text, terms) {
+  if (!terms || terms.length === 0) return null;
+
+  const lowerText = text.toLowerCase();
+
+  // Find all positions of each term
+  const termPositions = [];
+  for (const term of terms) {
+    const regex = new RegExp(`\\b${escapeRegex(term)}\\w*`, 'gi');
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      termPositions.push({
+        term,
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[0]
+      });
+    }
+  }
+
+  if (termPositions.length === 0) return null;
+
+  // Sort by position
+  termPositions.sort((a, b) => a.start - b.start);
+
+  // If only one term match, return it with some context
+  if (termPositions.length === 1) {
+    const pos = termPositions[0];
+    // Expand to word boundaries on either side (up to ~30 chars each side)
+    let start = Math.max(0, pos.start - 30);
+    let end = Math.min(text.length, pos.end + 30);
+
+    // Snap to word boundaries
+    while (start > 0 && !/\s/.test(text[start - 1])) start--;
+    while (end < text.length && !/\s/.test(text[end])) end++;
+
+    return { start, end };
+  }
+
+  // Find the tightest cluster containing the most unique terms
+  let bestSpan = null;
+  let bestScore = -1;
+
+  for (let i = 0; i < termPositions.length; i++) {
+    for (let j = i; j < termPositions.length; j++) {
+      const spanStart = termPositions[i].start;
+      const spanEnd = termPositions[j].end;
+      const spanLength = spanEnd - spanStart;
+
+      // Get unique terms in this span
+      const uniqueTerms = new Set();
+      for (let k = i; k <= j; k++) {
+        uniqueTerms.add(termPositions[k].term.toLowerCase());
+      }
+
+      // Score: prefer more unique terms, then shorter spans
+      // More terms = higher priority, so weight heavily
+      const score = (uniqueTerms.size * 10000) - spanLength;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestSpan = { start: spanStart, end: spanEnd, uniqueTerms: uniqueTerms.size };
+      }
+    }
+  }
+
+  if (!bestSpan) return null;
+
+  // Expand slightly to include surrounding words for context
+  let { start, end } = bestSpan;
+
+  // Expand to include partial words at boundaries
+  while (start > 0 && !/\s/.test(text[start - 1])) start--;
+  while (end < text.length && !/\s/.test(text[end])) end++;
+
+  return { start, end };
 }
 
 /**
