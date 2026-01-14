@@ -695,7 +695,27 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         oldPath: movedDoc.file_path,
         newPath: relativePath,
         title: movedDoc.title
-      }, 'File moved detected by hash - will update path and metadata');
+      }, 'File moved detected by file_hash - will update path and metadata');
+    }
+  }
+
+  // PRIORITY 4: Look up by body_hash if file_hash didn't match (handles renames with frontmatter changes)
+  // Body content unchanged but frontmatter or path changed - find by body hash
+  if (!existingDoc && relativePath && bodyHash) {
+    const movedDoc = await queryOne(
+      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE body_hash = ?`,
+      [bodyHash]
+    );
+
+    if (movedDoc) {
+      // Body content matches! File was moved/renamed with possible frontmatter changes
+      existingDoc = movedDoc;
+      logger.info({
+        documentId: movedDoc.id,
+        oldPath: movedDoc.file_path,
+        newPath: relativePath,
+        title: movedDoc.title
+      }, 'File moved detected by body_hash - will update path and metadata');
     }
   }
 

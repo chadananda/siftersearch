@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T02:39:06.685Z",
+  "generated": "2026-01-14T03:21:04.131Z",
   "entries": [
+    {
+      "hash": "1503d8a",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use project db module in hash migration script",
+      "scope": null
+    },
     {
       "hash": "47d47e8",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
       "scope": "admin"
-    },
-    {
-      "hash": "61171d1",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Update BOTH documents and paragraphs indexes for RTL languages",
-      "scope": "language"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "1503d8a",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use project db module in hash migration script",
+        "scope": null
+      },
       {
         "hash": "47d47e8",
         "date": "2026-01-13",
@@ -7028,13 +7035,6 @@
         "type": "New",
         "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
         "scope": "admin"
-      },
-      {
-        "hash": "61171d1",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Update BOTH documents and paragraphs indexes for RTL languages",
-        "scope": "language"
       }
     ]
   }
