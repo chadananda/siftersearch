@@ -7,7 +7,8 @@
  *
  * This enables proper rename detection across all documents.
  *
- * Usage: node scripts/fix-hash-algorithm.js [--dry-run]
+ * Usage: node scripts/fix-hash-algorithm.js [--dry-run] [--force]
+ *   --force: Re-compute body_hash for ALL documents (use after changing hash algorithm)
  */
 
 import { readFile } from 'fs/promises';
@@ -17,21 +18,25 @@ import { config } from '../api/lib/config.js';
 import { hashContent, parseMarkdownFrontmatter } from '../api/services/ingester.js';
 
 const dryRun = process.argv.includes('--dry-run');
+const forceAll = process.argv.includes('--force');
 const libraryBasePath = config.library.basePath;
 
 async function main() {
   console.log('Fix Hash Algorithm Migration');
   console.log('============================');
   console.log(`Library: ${libraryBasePath}`);
-  console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
+  console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}${forceAll ? ' (FORCE ALL)' : ''}`);
   console.log('');
 
-  // Find docs with MD5 hashes (32 chars) or missing body_hash
+  // Find docs to update
+  const whereClause = forceAll
+    ? 'WHERE file_path IS NOT NULL'  // All docs with file_path
+    : 'WHERE file_path IS NOT NULL AND (length(file_hash) = 32 OR body_hash IS NULL)';
+
   const docsToFix = await queryAll(`
     SELECT id, file_path, file_hash, body_hash
     FROM docs
-    WHERE file_path IS NOT NULL
-      AND (length(file_hash) = 32 OR body_hash IS NULL)
+    ${whereClause}
   `);
 
   console.log(`Found ${docsToFix.length} documents to update`);
@@ -53,11 +58,11 @@ async function main() {
       const { content } = parseMarkdownFrontmatter(text);
       const bodyHash = hashContent(content);
 
-      // Check if hashes changed
+      // Check if hashes changed (always update if --force)
       const hashChanged = doc.file_hash !== fileHash;
-      const bodyHashMissing = !doc.body_hash;
+      const bodyHashChanged = doc.body_hash !== bodyHash;
 
-      if (!hashChanged && !bodyHashMissing) {
+      if (!forceAll && !hashChanged && !bodyHashChanged) {
         skipped++;
         continue;
       }

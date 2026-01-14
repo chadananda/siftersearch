@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T04:00:40.747Z",
+  "generated": "2026-01-14T04:05:28.399Z",
   "entries": [
+    {
+      "hash": "2af4ac3",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Improve move detection across batch boundaries",
+      "scope": null
+    },
     {
       "hash": "7009d23",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add PM2 control endpoint to stop/start library watcher",
       "scope": "admin"
-    },
-    {
-      "hash": "ca286d8",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add author to filterable attributes in Meilisearch paragraphs index",
-      "scope": "search"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "2af4ac3",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Improve move detection across batch boundaries",
+        "scope": null
+      },
       {
         "hash": "7009d23",
         "date": "2026-01-13",
@@ -7028,13 +7035,6 @@
         "type": "New",
         "description": "Add PM2 control endpoint to stop/start library watcher",
         "scope": "admin"
-      },
-      {
-        "hash": "ca286d8",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add author to filterable attributes in Meilisearch paragraphs index",
-        "scope": "search"
       }
     ]
   }
