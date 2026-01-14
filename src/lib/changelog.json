@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T04:12:25.522Z",
+  "generated": "2026-01-14T04:35:27.044Z",
   "entries": [
+    {
+      "hash": "3da20dc",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use getMovedDocumentByBodyHash to exclude current path",
+      "scope": "library-watcher"
+    },
     {
       "hash": "3164a9c",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use correct meili.tasks.cancelTasks method",
       "scope": "admin"
-    },
-    {
-      "hash": "baa8688",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add meili-cancel endpoint to cancel old queued tasks",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "3da20dc",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use getMovedDocumentByBodyHash to exclude current path",
+        "scope": "library-watcher"
+      },
       {
         "hash": "3164a9c",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Use correct meili.tasks.cancelTasks method",
-        "scope": "admin"
-      },
-      {
-        "hash": "baa8688",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add meili-cancel endpoint to cancel old queued tasks",
         "scope": "admin"
       }
     ]

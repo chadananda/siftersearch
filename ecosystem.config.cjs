@@ -68,12 +68,14 @@ module.exports = {
     },
 
     // Library Watcher (indexes new/changed documents automatically)
+    // MUST be fork mode - cluster mode causes multiple watchers processing same events!
     {
       name: 'siftersearch-library-watcher',
       script: 'scripts/index-library.js',
       cwd: PROJECT_ROOT,
       args: '--watch',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       // Production is the default in config.js (DEV_MODE defaults to false)

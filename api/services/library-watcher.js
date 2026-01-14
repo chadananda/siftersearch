@@ -17,7 +17,7 @@ import { config } from '../lib/config.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
-const BATCH_WINDOW_MS = 2000;  // Collect events for 2s before processing
+const BATCH_WINDOW_MS = 10000;  // Collect events for 10s before processing (handles Dropbox sync delays)
 const IGNORED_PATTERNS = [
   /(^|[/\\])\../,  // dotfiles
   /node_modules/,
