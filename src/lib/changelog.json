@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T04:57:47.285Z",
+  "generated": "2026-01-14T05:18:47.013Z",
   "entries": [
+    {
+      "hash": "8bca04c",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use library-watcher service for proper move detection",
+      "scope": "index-library"
+    },
     {
       "hash": "f1480b5",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add revoked_at column to refresh_tokens table",
       "scope": null
-    },
-    {
-      "hash": "f3a055d",
-      "date": "2025-12-29",
-      "type": "Chore",
-      "description": "Bump version to 0.1.198 - sync client and server",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "8bca04c",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use library-watcher service for proper move detection",
+        "scope": "index-library"
+      },
       {
         "hash": "f1480b5",
         "date": "2026-01-13",
@@ -7025,13 +7032,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add revoked_at column to refresh_tokens table",
-        "scope": null
-      },
-      {
-        "hash": "f3a055d",
-        "date": "2025-12-29",
-        "type": "Chore",
-        "description": "Bump version to 0.1.198 - sync client and server",
         "scope": null
       }
     ]

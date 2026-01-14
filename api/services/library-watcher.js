@@ -4,8 +4,13 @@
  * Background service that watches library directories for file changes
  * and automatically triggers document ingestion/removal.
  *
- * Uses batch processing: collect events, process ADDs first (to detect moves),
- * then process DELETEs (skip if content moved to new location).
+ * Move Detection Strategy:
+ * - ADDs are processed immediately (with body_hash lookup to detect moves)
+ * - DELETEs are held in a pending queue for DELETE_DELAY_MS
+ * - If an ADD arrives with matching body_hash, the pending delete is cancelled
+ * - After the delay, remaining deletes are processed
+ *
+ * This handles Dropbox sync where DELETE and ADD events can be 30+ seconds apart.
  */
 
 import { watch } from 'chokidar';
@@ -17,7 +22,8 @@ import { config } from '../lib/config.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
-const BATCH_WINDOW_MS = 10000;  // Collect events for 10s before processing (handles Dropbox sync delays)
+const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
+const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
 const IGNORED_PATTERNS = [
   /(^|[/\\])\../,  // dotfiles
   /node_modules/,
@@ -36,13 +42,13 @@ let watcherStats = {
   lastEvent: null
 };
 
-// Event queue for batch processing
-const eventQueue = {
-  adds: new Map(),      // path -> { filePath, eventType }
-  deletes: new Map(),   // path -> { filePath }
-  processing: false
-};
-let batchTimer = null;
+// Pending ADD events (short batch window)
+const pendingAdds = new Map();  // relativePath -> { filePath, eventType }
+let addBatchTimer = null;
+
+// Pending DELETE events (long delay for move detection)
+// bodyHash -> { relativePath, filePath, docId, timestamp, timerId }
+const pendingDeletes = new Map();
 
 /**
  * Convert absolute file path to relative path from library basePath
@@ -52,92 +58,155 @@ function toRelativePath(absolutePath) {
 }
 
 /**
- * Queue an add/change event for batch processing
+ * Queue an ADD event - processed quickly in batches
  */
 function queueAddEvent(filePath, eventType) {
   if (!filePath.endsWith('.md')) return;
 
   const relativePath = toRelativePath(filePath);
-
-  // Add to queue (overwrites if already queued)
-  eventQueue.adds.set(relativePath, { filePath, eventType });
-
-  // Remove from deletes if present (file reappeared)
-  eventQueue.deletes.delete(relativePath);
+  pendingAdds.set(relativePath, { filePath, eventType });
 
   watcherStats.lastEvent = { type: eventType, path: filePath, at: new Date().toISOString() };
 
-  scheduleBatchProcessing();
+  // Schedule batch processing
+  if (addBatchTimer) clearTimeout(addBatchTimer);
+  addBatchTimer = setTimeout(processAddBatch, ADD_BATCH_MS);
 }
 
 /**
- * Queue a delete event for batch processing
+ * Queue a DELETE event - held for longer to detect moves
  */
-function queueDeleteEvent(filePath) {
+async function queueDeleteEvent(filePath) {
   if (!filePath.endsWith('.md')) return;
 
   const relativePath = toRelativePath(filePath);
 
-  // Only queue delete if there's no pending add for same path
-  if (!eventQueue.adds.has(relativePath)) {
-    eventQueue.deletes.set(relativePath, { filePath });
+  // If there's a pending add for the same path, ignore the delete
+  if (pendingAdds.has(relativePath)) {
+    logger.debug({ filePath }, 'Delete ignored: pending add for same path');
+    return;
   }
 
   watcherStats.lastEvent = { type: 'unlink', path: filePath, at: new Date().toISOString() };
 
-  scheduleBatchProcessing();
+  // Get document info before it might be removed
+  try {
+    const doc = await getDocumentByPath(relativePath);
+    if (!doc) {
+      logger.debug({ filePath }, 'Delete: document not found in database');
+      return;
+    }
+
+    if (!doc.body_hash) {
+      // No body_hash, can't detect moves - delete immediately
+      logger.info({ filePath, docId: doc.id }, 'Delete: no body_hash, removing immediately');
+      await removeDocument(doc.id);
+      watcherStats.filesRemoved++;
+      return;
+    }
+
+    // Check if we already have a pending delete for this body_hash
+    if (pendingDeletes.has(doc.body_hash)) {
+      logger.debug({ filePath, bodyHash: doc.body_hash }, 'Delete already pending for this content');
+      return;
+    }
+
+    // Queue the delete with a delay
+    const timerId = setTimeout(() => processPendingDelete(doc.body_hash), DELETE_DELAY_MS);
+
+    pendingDeletes.set(doc.body_hash, {
+      relativePath,
+      filePath,
+      docId: doc.id,
+      timestamp: Date.now(),
+      timerId
+    });
+
+    logger.info({
+      filePath,
+      docId: doc.id,
+      bodyHash: doc.body_hash.substring(0, 16) + '...',
+      delayMs: DELETE_DELAY_MS
+    }, 'Delete queued - waiting for possible move');
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message, filePath }, 'Failed to queue delete');
+  }
 }
 
 /**
- * Schedule batch processing after quiet period
+ * Process a pending delete after the delay
  */
-function scheduleBatchProcessing() {
-  if (batchTimer) {
-    clearTimeout(batchTimer);
-  }
+async function processPendingDelete(bodyHash) {
+  const pending = pendingDeletes.get(bodyHash);
+  if (!pending) return;
 
-  batchTimer = setTimeout(processBatch, BATCH_WINDOW_MS);
+  pendingDeletes.delete(bodyHash);
+
+  try {
+    // Final check: does this content exist at a different path now?
+    const movedDoc = await getMovedDocumentByBodyHash(bodyHash, pending.relativePath);
+    if (movedDoc) {
+      watcherStats.filesMoved++;
+      logger.info({
+        oldPath: pending.relativePath,
+        newPath: movedDoc.file_path,
+        documentId: movedDoc.id
+      }, 'Delete cancelled: content found at new path (move detected)');
+      return;
+    }
+
+    // Content truly deleted - remove it
+    await removeDocument(pending.docId);
+    watcherStats.filesRemoved++;
+    logger.info({
+      filePath: pending.filePath,
+      documentId: pending.docId
+    }, 'File removed after delay, document deleted');
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message, filePath: pending.filePath }, 'Failed to process pending delete');
+  }
 }
 
 /**
- * Process queued events: ADDs first (detect moves), then DELETEs
+ * Process batch of ADD events
  */
-async function processBatch() {
-  if (eventQueue.processing) {
-    // Already processing, reschedule
-    scheduleBatchProcessing();
-    return;
-  }
+async function processAddBatch() {
+  addBatchTimer = null;
 
-  eventQueue.processing = true;
-  batchTimer = null;
+  const adds = new Map(pendingAdds);
+  pendingAdds.clear();
 
-  // Snapshot current queues and clear them
-  const adds = new Map(eventQueue.adds);
-  const deletes = new Map(eventQueue.deletes);
-  eventQueue.adds.clear();
-  eventQueue.deletes.clear();
+  if (adds.size === 0) return;
 
-  const totalEvents = adds.size + deletes.size;
-  if (totalEvents === 0) {
-    eventQueue.processing = false;
-    return;
-  }
+  logger.info({ count: adds.size }, 'Processing ADD batch');
 
-  logger.info({ adds: adds.size, deletes: deletes.size }, 'Processing file event batch');
-
-  // Track body hashes of added files (to detect moves)
-  const addedBodyHashes = new Set();
-
-  // PHASE 1: Process ADDs first (this handles moves via body_hash lookup in ingester)
   for (const [relativePath, { filePath, eventType }] of adds) {
     try {
       const content = await readFile(filePath, 'utf-8');
 
-      // Compute body hash to track for move detection
+      // Compute body hash to check for pending deletes
       const { content: bodyContent } = parseMarkdownFrontmatter(content);
       const bodyHash = hashContent(bodyContent);
-      addedBodyHashes.add(bodyHash);
+
+      // Check if there's a pending delete with this body_hash - it's a MOVE!
+      const pendingDelete = pendingDeletes.get(bodyHash);
+      if (pendingDelete) {
+        // Cancel the pending delete
+        clearTimeout(pendingDelete.timerId);
+        pendingDeletes.delete(bodyHash);
+
+        watcherStats.filesMoved++;
+        logger.info({
+          oldPath: pendingDelete.relativePath,
+          newPath: relativePath,
+          documentId: pendingDelete.docId,
+          bodyHash: bodyHash.substring(0, 16) + '...'
+        }, 'Move detected via pending delete - cancelling delete');
+      }
 
       // Ingest document (will find existing by body_hash if moved)
       const result = await ingestDocument(content, {}, relativePath);
@@ -152,7 +221,7 @@ async function processBatch() {
           documentId: result.documentId,
           oldPath: result.oldPath,
           newPath: result.newPath
-        }, 'File moved');
+        }, 'File moved (detected by ingester)');
       } else {
         watcherStats.filesIngested++;
         logger.info({
@@ -166,49 +235,6 @@ async function processBatch() {
       watcherStats.errors++;
       logger.error({ err: err.message, filePath, eventType }, 'Failed to process file');
     }
-  }
-
-  // PHASE 2: Process DELETEs (skip if content exists elsewhere - was moved)
-  for (const [relativePath, { filePath }] of deletes) {
-    try {
-      const doc = await getDocumentByPath(relativePath);
-
-      if (!doc) {
-        // Document not found at old path - likely already updated by move
-        logger.debug({ filePath }, 'Delete: no document at path (likely moved)');
-        continue;
-      }
-
-      // Check if this content exists at ANY other path in the database
-      // This catches moves even across batch boundaries or from different processes
-      if (doc.body_hash) {
-        const movedDoc = await getMovedDocumentByBodyHash(doc.body_hash, relativePath);
-        if (movedDoc) {
-          logger.info({
-            filePath,
-            newPath: movedDoc.file_path,
-            documentId: movedDoc.id
-          }, 'Delete skipped: content exists at different path (moved)');
-          continue;
-        }
-      }
-
-      // Content truly deleted - remove document
-      await removeDocument(doc.id);
-      watcherStats.filesRemoved++;
-      logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
-
-    } catch (err) {
-      watcherStats.errors++;
-      logger.error({ err: err.message, filePath }, 'Failed to process file deletion');
-    }
-  }
-
-  eventQueue.processing = false;
-
-  // Check if more events queued during processing
-  if (eventQueue.adds.size > 0 || eventQueue.deletes.size > 0) {
-    scheduleBatchProcessing();
   }
 }
 
@@ -266,13 +292,18 @@ export async function stopLibraryWatcher() {
     watcher = null;
     isEnabled = false;
 
-    // Clear any pending batch
-    if (batchTimer) {
-      clearTimeout(batchTimer);
-      batchTimer = null;
+    // Clear pending timers
+    if (addBatchTimer) {
+      clearTimeout(addBatchTimer);
+      addBatchTimer = null;
     }
-    eventQueue.adds.clear();
-    eventQueue.deletes.clear();
+
+    // Clear pending deletes and their timers
+    for (const [, pending] of pendingDeletes) {
+      clearTimeout(pending.timerId);
+    }
+    pendingDeletes.clear();
+    pendingAdds.clear();
 
     logger.info('Library watcher stopped');
   }
@@ -284,8 +315,8 @@ export async function stopLibraryWatcher() {
 export function getWatcherStats() {
   return {
     enabled: isEnabled,
-    pendingAdds: eventQueue.adds.size,
-    pendingDeletes: eventQueue.deletes.size,
+    pendingAdds: pendingAdds.size,
+    pendingDeletes: pendingDeletes.size,
     ...watcherStats
   };
 }
