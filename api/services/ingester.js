@@ -1301,6 +1301,19 @@ export async function getDocumentByBodyHash(bodyHash) {
   );
 }
 
+/**
+ * Check if body_hash exists at a different path (content was moved)
+ * @param {string} bodyHash - The body hash to check
+ * @param {string} excludePath - The path to exclude from the search
+ * @returns {Object|null} - The document at the new location, or null
+ */
+export async function getMovedDocumentByBodyHash(bodyHash, excludePath) {
+  return queryOne(
+    'SELECT * FROM docs WHERE body_hash = ? AND file_path != ?',
+    [bodyHash, excludePath]
+  );
+}
+
 export const ingester = {
   hashContent,
   hashContentWords,
@@ -1314,7 +1327,8 @@ export const ingester = {
   getUnprocessedDocuments,
   isFileIngested,
   getDocumentByPath,
-  getDocumentByBodyHash
+  getDocumentByBodyHash,
+  getMovedDocumentByBodyHash
 };
 
 export default ingester;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T04:05:28.399Z",
+  "generated": "2026-01-14T04:12:25.522Z",
   "entries": [
+    {
+      "hash": "3164a9c",
+      "date": "2026-01-13",
+      "type": "New",
+      "description": "Add --force flag to migration script",
+      "scope": null
+    },
     {
       "hash": "2af4ac3",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add meili-cancel endpoint to cancel old queued tasks",
       "scope": "admin"
-    },
-    {
-      "hash": "b79b1a0",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add PM2 control endpoint to stop/start library watcher",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "3164a9c",
+        "date": "2026-01-13",
+        "type": "New",
+        "description": "Add --force flag to migration script",
+        "scope": null
+      },
       {
         "hash": "2af4ac3",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add meili-cancel endpoint to cancel old queued tasks",
-        "scope": "admin"
-      },
-      {
-        "hash": "b79b1a0",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add PM2 control endpoint to stop/start library watcher",
         "scope": "admin"
       }
     ]

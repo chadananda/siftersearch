@@ -11,7 +11,7 @@
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
 import { relative } from 'path';
-import { ingestDocument, removeDocument, getDocumentByPath, getDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
+import { ingestDocument, removeDocument, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 
@@ -182,8 +182,8 @@ async function processBatch() {
       // Check if this content exists at ANY other path in the database
       // This catches moves even across batch boundaries or from different processes
       if (doc.body_hash) {
-        const movedDoc = await getDocumentByBodyHash(doc.body_hash);
-        if (movedDoc && movedDoc.file_path !== relativePath) {
+        const movedDoc = await getMovedDocumentByBodyHash(doc.body_hash, relativePath);
+        if (movedDoc) {
           logger.info({
             filePath,
             newPath: movedDoc.file_path,
