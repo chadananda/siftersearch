@@ -24,7 +24,6 @@ dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
 import fs from 'fs/promises';
-import { watch } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -40,6 +39,7 @@ import { queryOne } from '../api/lib/db.js';
 import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
 import { startImportBatch, updateImportProgress, clearImportBatch } from '../api/services/progress.js';
+import { startLibraryWatcher, stopLibraryWatcher } from '../api/services/library-watcher.js';
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -58,15 +58,8 @@ const religionArg = args.find(arg => arg.startsWith('--religion='));
 const religionFilter = religionArg ? religionArg.split('=')[1] : null;
 const authorArg = args.find(arg => arg.startsWith('--author='));
 const authorFilter = authorArg ? authorArg.split('=')[1] : null;
-const debounceArg = args.find(arg => arg.startsWith('--debounce='));
-const debounceMs = debounceArg ? parseInt(debounceArg.split('=')[1], 10) : 1000;
-
-// Store file hashes to detect actual changes
+// Store file hashes to detect actual changes (used during initial indexing)
 const fileHashes = new Map();
-
-// Pending changes for debouncing
-const pendingChanges = new Map();
-let debounceTimer = null;
 
 // Helper to compute file content hash
 async function getFileHash(filePath) {
@@ -343,90 +336,24 @@ async function indexFile(filePath, basePath, force = false) {
   }
 }
 
-// Handle file deletion
-async function handleFileDelete(filePath, basePath) {
-  const metadata = extractMetadataFromPath(filePath, basePath);
-
-  try {
-    const exists = await documentExists(filePath);
-    if (exists) {
-      await removeDocument(metadata.id);
-      fileHashes.delete(filePath);
-      console.log(`🗑️  Removed from index: ${metadata.title}`);
-      return { success: true, removed: true };
-    }
-    return { success: true, removed: false };
-  } catch (err) {
-    console.error(`❌ Failed to remove: ${err.message}`);
-    return { success: false, error: err.message };
-  }
-}
-
-// Process pending changes (debounced)
-async function processPendingChanges(basePath) {
-  const changes = new Map(pendingChanges);
-  pendingChanges.clear();
-
-  for (const [filePath, eventType] of changes) {
-    if (eventType === 'delete') {
-      await handleFileDelete(filePath, basePath);
-    } else {
-      console.log(`📝 ${eventType === 'add' ? 'Indexing new' : 'Re-indexing'}: ${path.basename(filePath)}`);
-      const result = await indexFile(filePath, basePath);
-      if (result.success && !result.skipped) {
-        console.log(`   ✅ Indexed ${result.chunks} chunks`);
-      } else if (result.error) {
-        console.error(`   ❌ Error: ${result.error}`);
-      }
-    }
-  }
-}
-
-// Setup file watcher
+// Setup file watcher using library-watcher service
+// This provides proper batch processing: ADDs first (detect moves), then DELETEs
 function setupWatcher(basePath) {
   console.log('');
   console.log('👀 Watching for changes...');
   console.log('   Press Ctrl+C to stop');
   console.log('');
 
-  // Recursively watch directories
-  const watchers = [];
-
-  async function watchDir(dir) {
-    try {
-      const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
-        if (!filename || !filename.endsWith('.md') || filename.endsWith('.backup.md')) return;
-
-        const fullPath = path.join(dir, filename);
-
-        // Determine change type
-        fs.access(fullPath)
-          .then(() => {
-            const previousHash = fileHashes.get(fullPath);
-            pendingChanges.set(fullPath, previousHash ? 'change' : 'add');
-          })
-          .catch(() => {
-            pendingChanges.set(fullPath, 'delete');
-          });
-
-        // Debounce processing
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => processPendingChanges(basePath), debounceMs);
-      });
-
-      watchers.push(watcher);
-    } catch (err) {
-      console.error(`Failed to watch ${dir}: ${err.message}`);
-    }
-  }
-
-  watchDir(basePath);
+  // Use the library-watcher service which has proper move detection
+  // It batches events for 10s, processes ADDs first (body_hash lookup for moves),
+  // then processes DELETEs (skips if content moved to new location)
+  startLibraryWatcher(basePath);
 
   // Handle graceful shutdown
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     console.log('');
     console.log('🛑 Stopping watcher...');
-    watchers.forEach(w => w.close());
+    await stopLibraryWatcher();
     process.exit(0);
   });
 }

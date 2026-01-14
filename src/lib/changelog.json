@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T04:35:27.044Z",
+  "generated": "2026-01-14T04:57:47.285Z",
   "entries": [
+    {
+      "hash": "f1480b5",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Force fork mode and increase batch window",
+      "scope": "library-watcher"
+    },
     {
       "hash": "3da20dc",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.198 - sync client and server",
       "scope": null
-    },
-    {
-      "hash": "d9113a2",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Use correct meili.tasks.cancelTasks method",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "f1480b5",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Force fork mode and increase batch window",
+        "scope": "library-watcher"
+      },
       {
         "hash": "3da20dc",
         "date": "2026-01-13",
@@ -7026,15 +7033,6 @@
         "type": "Chore",
         "description": "Bump version to 0.1.198 - sync client and server",
         "scope": null
-      }
-    ],
-    "2025-12-28": [
-      {
-        "hash": "d9113a2",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Use correct meili.tasks.cancelTasks method",
-        "scope": "admin"
       }
     ]
   }
