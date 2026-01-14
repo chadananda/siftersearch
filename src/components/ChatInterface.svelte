@@ -1666,10 +1666,10 @@
                       <circle cx="4" cy="4" r="3" />
                     </svg>
                     <span>Indexing for search</span>
+                    <span class="indexing-percent">{libraryStats.indexingProgress.percentComplete}%</span>
                   </div>
-                  <div class="indexing-status">
-                    <span class="status-item processing">{libraryStats.indexingProgress.indexed.toLocaleString()} of {libraryStats.indexingProgress.totalWithContent.toLocaleString()} documents</span>
-                    <span class="status-item pending">{libraryStats.indexingProgress.percentComplete}% complete</span>
+                  <div class="indexing-bar">
+                    <div class="indexing-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
                   </div>
                 </div>
               {/if}
@@ -2556,29 +2556,25 @@
     animation: pulse 1.5s ease-in-out infinite;
   }
 
-  .indexing-status {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 0.375rem;
+  .indexing-percent {
+    margin-left: auto;
     font-size: 0.6875rem;
-  }
-
-  .status-item {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .status-item.processing {
-    color: var(--warning);
-  }
-
-  .status-item.pending {
     color: var(--text-muted);
   }
 
-  .status-item.progress {
-    color: var(--accent);
+  .indexing-bar {
+    height: 4px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+
+  .indexing-fill {
+    height: 100%;
+    background: var(--warning);
+    border-radius: 2px;
+    transition: width 0.3s ease;
   }
 
   .indexing-indicator.translating {
