@@ -1291,6 +1291,16 @@ export async function getDocumentByPath(filePath) {
   );
 }
 
+/**
+ * Get document by body hash (content without frontmatter)
+ */
+export async function getDocumentByBodyHash(bodyHash) {
+  return queryOne(
+    'SELECT * FROM docs WHERE body_hash = ?',
+    [bodyHash]
+  );
+}
+
 export const ingester = {
   hashContent,
   hashContentWords,
@@ -1303,7 +1313,8 @@ export const ingester = {
   getIngestionStats,
   getUnprocessedDocuments,
   isFileIngested,
-  getDocumentByPath
+  getDocumentByPath,
+  getDocumentByBodyHash
 };
 
 export default ingester;

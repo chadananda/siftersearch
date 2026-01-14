@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T03:21:04.131Z",
+  "generated": "2026-01-14T03:27:07.031Z",
   "entries": [
+    {
+      "hash": "55ec6c5",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Add body_hash lookup for rename detection in ingester",
+      "scope": null
+    },
     {
       "hash": "1503d8a",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
       "scope": "admin"
-    },
-    {
-      "hash": "58f3d8b",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "55ec6c5",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Add body_hash lookup for rename detection in ingester",
+        "scope": null
+      },
       {
         "hash": "1503d8a",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "Fixed",
         "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
-        "scope": "admin"
-      },
-      {
-        "hash": "58f3d8b",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add meili-tasks endpoint for debugging Meilisearch task queue",
         "scope": "admin"
       }
     ]

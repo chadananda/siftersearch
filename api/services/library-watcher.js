@@ -10,7 +10,7 @@
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
 import { relative } from 'path';
-import { ingestDocument, removeDocument, getDocumentByPath } from './ingester.js';
+import { ingestDocument, removeDocument, getDocumentByPath, getDocumentByBodyHash } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 
@@ -108,17 +108,26 @@ async function handleFileDelete(filePath) {
       const doc = await getDocumentByPath(relativePath);
 
       if (doc) {
-        // Double-check: if doc exists but path doesn't match, it was moved
-        if (doc.file_path !== relativePath) {
-          logger.debug({ filePath, docPath: doc.file_path }, 'File moved during grace period, skipping delete');
-          return;
+        // Check if this content exists at a different path (file was moved, not deleted)
+        // This handles the case where add event updated the doc's path before delete fires
+        if (doc.body_hash) {
+          const movedDoc = await getDocumentByBodyHash(doc.body_hash);
+          if (movedDoc && movedDoc.file_path !== relativePath) {
+            logger.info({
+              filePath,
+              newPath: movedDoc.file_path,
+              documentId: movedDoc.id
+            }, 'File moved to new location, skipping delete');
+            return;
+          }
         }
 
         await removeDocument(doc.id);
         watcherStats.filesRemoved++;
         logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
       } else {
-        logger.debug({ filePath }, 'File removed but no matching document found');
+        // No doc with old path - check if it was moved by body_hash (ingester already updated path)
+        logger.debug({ filePath }, 'File removed but no matching document found (possibly moved)');
       }
     } catch (err) {
       watcherStats.errors++;
