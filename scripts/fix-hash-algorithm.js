@@ -10,46 +10,14 @@
  * Usage: node scripts/fix-hash-algorithm.js [--dry-run]
  */
 
-import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { queryAll, query } from '../api/lib/db.js';
 import { config } from '../api/lib/config.js';
+import { hashContent, parseMarkdownFrontmatter } from '../api/services/ingester.js';
 
 const dryRun = process.argv.includes('--dry-run');
 const libraryBasePath = config.library.basePath;
-
-// SHA-256 hash function (same as ingester.js)
-function hashContent(text) {
-  return createHash('sha256').update(text).digest('hex');
-}
-
-// Parse markdown frontmatter
-function parseMarkdownFrontmatter(text) {
-  if (!text.startsWith('---')) {
-    return { metadata: {}, content: text };
-  }
-
-  const endIndex = text.indexOf('\n---', 3);
-  if (endIndex === -1) {
-    return { metadata: {}, content: text };
-  }
-
-  const frontmatter = text.substring(4, endIndex);
-  const content = text.substring(endIndex + 4).trim();
-
-  const metadata = {};
-  for (const line of frontmatter.split('\n')) {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.substring(0, colonIndex).trim();
-      const value = line.substring(colonIndex + 1).trim();
-      metadata[key] = value.replace(/^["']|["']$/g, '');
-    }
-  }
-
-  return { metadata, content };
-}
 
 async function main() {
   console.log('Fix Hash Algorithm Migration');

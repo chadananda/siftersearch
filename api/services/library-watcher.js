@@ -11,7 +11,7 @@
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
 import { relative } from 'path';
-import { ingestDocument, removeDocument, getDocumentByPath, hashContent, parseMarkdownFrontmatter } from './ingester.js';
+import { ingestDocument, removeDocument, getDocumentByPath, getDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 
@@ -168,7 +168,7 @@ async function processBatch() {
     }
   }
 
-  // PHASE 2: Process DELETEs (skip if content was moved to new location)
+  // PHASE 2: Process DELETEs (skip if content exists elsewhere - was moved)
   for (const [relativePath, { filePath }] of deletes) {
     try {
       const doc = await getDocumentByPath(relativePath);
@@ -179,10 +179,18 @@ async function processBatch() {
         continue;
       }
 
-      // Check if this content was added at a new location
-      if (doc.body_hash && addedBodyHashes.has(doc.body_hash)) {
-        logger.info({ filePath, documentId: doc.id }, 'Delete skipped: content moved to new location');
-        continue;
+      // Check if this content exists at ANY other path in the database
+      // This catches moves even across batch boundaries or from different processes
+      if (doc.body_hash) {
+        const movedDoc = await getDocumentByBodyHash(doc.body_hash);
+        if (movedDoc && movedDoc.file_path !== relativePath) {
+          logger.info({
+            filePath,
+            newPath: movedDoc.file_path,
+            documentId: movedDoc.id
+          }, 'Delete skipped: content exists at different path (moved)');
+          continue;
+        }
       }
 
       // Content truly deleted - remove document

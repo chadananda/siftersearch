@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T03:31:44.351Z",
+  "generated": "2026-01-14T04:00:40.747Z",
   "entries": [
+    {
+      "hash": "7009d23",
+      "date": "2026-01-13",
+      "type": "Refactor",
+      "description": "Batch-based file watcher with proper move detection",
+      "scope": null
+    },
     {
       "hash": "27031e9",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add author to filterable attributes in Meilisearch paragraphs index",
       "scope": "search"
-    },
-    {
-      "hash": "db8745a",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add status filter and limit param to meili-tasks endpoint",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "7009d23",
+        "date": "2026-01-13",
+        "type": "Refactor",
+        "description": "Batch-based file watcher with proper move detection",
+        "scope": null
+      },
       {
         "hash": "27031e9",
         "date": "2026-01-13",
@@ -7028,13 +7035,6 @@
         "type": "New",
         "description": "Add author to filterable attributes in Meilisearch paragraphs index",
         "scope": "search"
-      },
-      {
-        "hash": "db8745a",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add status filter and limit param to meili-tasks endpoint",
-        "scope": "admin"
       }
     ]
   }
