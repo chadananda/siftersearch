@@ -21,6 +21,10 @@ import { getAuthority } from '../lib/authority.js';
 import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } from '../lib/db.js';
 import { detectLanguageFeatures } from './segmenter.js';
 import { config } from '../lib/config.js';
+import { hashContent, parseMarkdownFrontmatter } from './ingester.js';
+
+// Re-export for backwards compatibility (tests import from indexer.js)
+export { parseMarkdownFrontmatter };
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -75,19 +79,19 @@ function computeContentHash(text, context = '') {
  * Get cached embeddings from libsql for paragraphs that haven't changed
  * @param {string} filePath - Document file_path for lookup
  * @param {Array<{text: string, hash: string}>} paragraphs - Paragraphs with hashes
- * @param {string} [fileHash] - Optional file_hash for lookup if file was renamed
+ * @param {string} [bodyHash] - Optional body_hash for lookup if file was renamed
  * @returns {Promise<Map<number, Float32Array>>} Map of paragraph_index to embedding
  */
-async function getCachedEmbeddings(filePath, paragraphs, fileHash = null) {
+async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
   const cached = new Map();
 
   try {
-    // Look up doc_id: first by file_path, then by file_hash (handles renames)
+    // Look up doc_id: first by file_path, then by body_hash (handles renames)
     let doc = await queryOne('SELECT id FROM docs WHERE file_path = ?', [filePath]);
 
-    // If not found by path but we have a file_hash, try that (file may have been renamed)
-    if (!doc && fileHash) {
-      doc = await queryOne('SELECT id FROM docs WHERE file_hash = ? AND file_hash IS NOT NULL', [fileHash]);
+    // If not found by path but we have a body_hash, try that (file may have been renamed)
+    if (!doc && bodyHash) {
+      doc = await queryOne('SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL', [bodyHash]);
     }
 
     if (!doc) {
@@ -128,7 +132,7 @@ async function getCachedEmbeddings(filePath, paragraphs, fileHash = null) {
 
 /**
  * Store document and content in libsql
- * @param {Object} document - Document metadata (must include file_path and file_hash)
+ * @param {Object} document - Document metadata (must include file_path, file_hash, body_hash)
  * @param {Array<Object>} paragraphs - Paragraphs with text, hash, embedding
  * @returns {{ docId: number, paragraphIds: number[] }} Generated integer IDs
  */
@@ -139,20 +143,22 @@ async function storeInLibsql(document, paragraphs) {
   try {
     let docId;
 
-    // Strategy: First try to find existing doc by file_hash (content unchanged, file may have been renamed)
-    // This preserves the document record even if the file path changes
-    if (document.file_hash) {
+    // Strategy: First try to find existing doc by body_hash (body content unchanged, file may have been renamed)
+    // Using body_hash instead of file_hash allows metadata/frontmatter changes without triggering re-index
+    if (document.body_hash) {
       const existingByHash = await queryOne(
-        'SELECT id FROM docs WHERE file_hash = ? AND file_hash IS NOT NULL',
-        [document.file_hash]
+        'SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL',
+        [document.body_hash]
       );
 
       if (existingByHash) {
-        // Found by content hash - update with new path and metadata
+        // Found by body hash - update with new path and metadata
         docId = existingByHash.id;
         await query(`
           UPDATE docs SET
             file_path = ?,
+            file_hash = ?,
+            body_hash = ?,
             title = ?,
             author = ?,
             religion = ?,
@@ -165,6 +171,8 @@ async function storeInLibsql(document, paragraphs) {
           WHERE id = ?
         `, [
           document.file_path,
+          document.file_hash,
+          document.body_hash,
           document.title,
           document.author,
           document.religion,
@@ -176,17 +184,18 @@ async function storeInLibsql(document, paragraphs) {
           now,
           docId
         ]);
-        logger.debug({ docId, file_path: document.file_path }, 'Updated existing doc found by file_hash');
+        logger.debug({ docId, file_path: document.file_path }, 'Updated existing doc found by body_hash');
       }
     }
 
-    // If not found by hash, try upsert by file_path
+    // If not found by body_hash, try upsert by file_path
     if (!docId) {
       const docResult = await query(`
-        INSERT INTO docs (file_path, file_hash, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO docs (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(file_path) DO UPDATE SET
           file_hash = excluded.file_hash,
+          body_hash = excluded.body_hash,
           title = excluded.title,
           author = excluded.author,
           religion = excluded.religion,
@@ -200,6 +209,7 @@ async function storeInLibsql(document, paragraphs) {
       `, [
         document.file_path,
         document.file_hash || null,
+        document.body_hash || null,
         document.title,
         document.author,
         document.religion,
@@ -250,7 +260,7 @@ async function storeInLibsql(document, paragraphs) {
     logger.debug({ docId, paragraphs: paragraphs.length }, 'Stored in libsql');
     return { docId, paragraphIds: insertedIds };
   } catch (err) {
-    logger.error({ err: err.message, docId: document.id }, 'Failed to store in libsql');
+    logger.error({ err: err.message, file_path: document.file_path }, 'Failed to store in libsql');
     throw err;
   }
 }
@@ -341,32 +351,6 @@ export function parseDocument(text, options = {}) {
 }
 
 /**
- * Extract metadata from markdown frontmatter
- */
-export function parseMarkdownFrontmatter(text) {
-  const frontmatterMatch = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-
-  if (!frontmatterMatch) {
-    return { metadata: {}, content: text };
-  }
-
-  const [, frontmatter, content] = frontmatterMatch;
-  const metadata = {};
-
-  // Parse YAML-like frontmatter (simple key: value pairs)
-  for (const line of frontmatter.split('\n')) {
-    const match = line.match(/^(\w+):\s*(.+)$/);
-    if (match) {
-      const [, key, value] = match;
-      // Remove quotes if present
-      metadata[key] = value.replace(/^["']|["']$/g, '');
-    }
-  }
-
-  return { metadata, content };
-}
-
-/**
  * Index a document from raw text
  * Uses embedding cache in libsql to avoid regenerating unchanged paragraphs
  */
@@ -431,11 +415,12 @@ export async function indexDocumentFromText(text, metadata = {}) {
     hash: computeContentHash(text)
   }));
 
-  // Compute file_hash from content for document deduplication
-  const fileHash = computeContentHash(content);
+  // Compute hashes for document deduplication and rename detection (SHA-256 for consistency with ingester)
+  const fileHash = hashContent(text);     // Full file including frontmatter
+  const bodyHash = hashContent(content);  // Body only - use for rename detection
 
-  // Check for cached embeddings in libsql (using file_path for lookup, fallback to file_hash for renames)
-  const cachedEmbeddings = await getCachedEmbeddings(filePath, chunksWithHashes, fileHash);
+  // Check for cached embeddings in libsql (using file_path for lookup, fallback to body_hash for renames)
+  const cachedEmbeddings = await getCachedEmbeddings(filePath, chunksWithHashes, bodyHash);
   const cachedCount = cachedEmbeddings.size;
 
   // Find chunks that need new embeddings
@@ -481,6 +466,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   const document = {
     file_path: filePath,
     file_hash: fileHash,
+    body_hash: bodyHash,  // Body only - used for rename detection
     title: finalMeta.title,
     author: finalMeta.author,
     religion: finalMeta.religion,
