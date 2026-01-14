@@ -30,13 +30,6 @@ echo -e "${YELLOW}[pre-commit]${NC} Running pre-commit hooks..."
 ROOT_DIR=$(git rev-parse --show-toplevel)
 cd "$ROOT_DIR"
 
-# Check if this is an amend (don't bump version on amends)
-# GIT_AUTHOR_DATE is set when amending to preserve original date
-if [ -n "$GIT_AUTHOR_DATE" ]; then
-  echo -e "${YELLOW}[pre-commit]${NC} Amend detected, skipping deployment"
-  exit 0
-fi
-
 # Check if there are actual code changes (not just version files)
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -v 'package.json\|changelog.json' || true)
 if [ -z "$STAGED_FILES" ]; then

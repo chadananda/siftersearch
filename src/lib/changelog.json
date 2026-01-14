@@ -1,6 +1,48 @@
 {
-  "generated": "2026-01-13T20:28:37.579Z",
+  "generated": "2026-01-14T02:24:20.050Z",
   "entries": [
+    {
+      "hash": "bf54fdc",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Replace indexing text with progress bar",
+      "scope": null
+    },
+    {
+      "hash": "9a937d4",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Improve amend detection in pre-commit hook",
+      "scope": null
+    },
+    {
+      "hash": "1426fc5",
+      "date": "2026-01-13",
+      "type": "Chore",
+      "description": "Bump version to 0.1.739",
+      "scope": null
+    },
+    {
+      "hash": "02bbb1a",
+      "date": "2026-01-13",
+      "type": "Style",
+      "description": "Increase search hit font size and reduce RTL line-height",
+      "scope": null
+    },
+    {
+      "hash": "640a82e",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Check SQLite by file_path instead of Meilisearch by ID",
+      "scope": "library-watcher"
+    },
+    {
+      "hash": "30d59ca",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Update indexer to use INTEGER doc ids with file_path/file_hash lookup",
+      "scope": null
+    },
     {
       "hash": "7da43ff",
       "date": "2026-01-13",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Correctly detect Arabic/Persian language for documents",
       "scope": "indexer"
-    },
-    {
-      "hash": "8c4be44",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add content-type aware translation styles",
-      "scope": "translation"
-    },
-    {
-      "hash": "48699be",
-      "date": "2025-12-28",
-      "type": "Chore",
-      "description": "Bump version to trigger server restart",
-      "scope": null
-    },
-    {
-      "hash": "b2bc28d",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
-      "scope": null
-    },
-    {
-      "hash": "fbc817a",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Handle both doc_id and document_id columns in migration",
-      "scope": null
-    },
-    {
-      "hash": "c23d897",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "Add background task for embedding migration from Meilisearch to libsql",
-      "scope": null
-    },
-    {
-      "hash": "15a59cc",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Correct getSearchStats property names in admin endpoints",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "bf54fdc",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Replace indexing text with progress bar",
+        "scope": null
+      },
+      {
+        "hash": "9a937d4",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Improve amend detection in pre-commit hook",
+        "scope": null
+      },
+      {
+        "hash": "1426fc5",
+        "date": "2026-01-13",
+        "type": "Chore",
+        "description": "Bump version to 0.1.739",
+        "scope": null
+      },
+      {
+        "hash": "02bbb1a",
+        "date": "2026-01-13",
+        "type": "Style",
+        "description": "Increase search hit font size and reduce RTL line-height",
+        "scope": null
+      },
+      {
+        "hash": "640a82e",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Check SQLite by file_path instead of Meilisearch by ID",
+        "scope": "library-watcher"
+      },
+      {
+        "hash": "30d59ca",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Update indexer to use INTEGER doc ids with file_path/file_hash lookup",
+        "scope": null
+      },
       {
         "hash": "7da43ff",
         "date": "2026-01-13",
@@ -6993,48 +7035,6 @@
         "type": "Fixed",
         "description": "Correctly detect Arabic/Persian language for documents",
         "scope": "indexer"
-      },
-      {
-        "hash": "8c4be44",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add content-type aware translation styles",
-        "scope": "translation"
-      },
-      {
-        "hash": "48699be",
-        "date": "2025-12-28",
-        "type": "Chore",
-        "description": "Bump version to trigger server restart",
-        "scope": null
-      },
-      {
-        "hash": "b2bc28d",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Add retry logic with exponential backoff for SQLITE_BUSY errors in migration",
-        "scope": null
-      },
-      {
-        "hash": "fbc817a",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Handle both doc_id and document_id columns in migration",
-        "scope": null
-      },
-      {
-        "hash": "c23d897",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "Add background task for embedding migration from Meilisearch to libsql",
-        "scope": null
-      },
-      {
-        "hash": "15a59cc",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Correct getSearchStats property names in admin endpoints",
-        "scope": null
       }
     ]
   }
