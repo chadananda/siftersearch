@@ -13,11 +13,10 @@
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import Database from 'better-sqlite3';
+import { queryAll, query } from '../api/lib/db.js';
 import { config } from '../api/lib/config.js';
 
 const dryRun = process.argv.includes('--dry-run');
-const dbPath = join(process.cwd(), 'data', 'sifter.db');
 const libraryBasePath = config.library.basePath;
 
 // SHA-256 hash function (same as ingester.js)
@@ -55,20 +54,17 @@ function parseMarkdownFrontmatter(text) {
 async function main() {
   console.log('Fix Hash Algorithm Migration');
   console.log('============================');
-  console.log(`Database: ${dbPath}`);
   console.log(`Library: ${libraryBasePath}`);
   console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
   console.log('');
 
-  const db = new Database(dbPath);
-
   // Find docs with MD5 hashes (32 chars) or missing body_hash
-  const docsToFix = db.prepare(`
+  const docsToFix = await queryAll(`
     SELECT id, file_path, file_hash, body_hash
     FROM docs
     WHERE file_path IS NOT NULL
       AND (length(file_hash) = 32 OR body_hash IS NULL)
-  `).all();
+  `);
 
   console.log(`Found ${docsToFix.length} documents to update`);
   console.log('');
@@ -103,10 +99,10 @@ async function main() {
       console.log(`  body_hash: ${doc.body_hash?.substring(0, 16) || 'NULL'}... → ${bodyHash.substring(0, 16)}...`);
 
       if (!dryRun) {
-        db.prepare(`
+        await query(`
           UPDATE docs SET file_hash = ?, body_hash = ?, updated_at = datetime('now')
           WHERE id = ?
-        `).run(fileHash, bodyHash, doc.id);
+        `, [fileHash, bodyHash, doc.id]);
       }
 
       updated++;
@@ -121,8 +117,6 @@ async function main() {
     }
   }
 
-  db.close();
-
   console.log('');
   console.log('Summary');
   console.log('-------');
@@ -134,6 +128,12 @@ async function main() {
     console.log('');
     console.log('This was a dry run. Run without --dry-run to apply changes.');
   }
+
+  // Exit cleanly (libsql may have hanging connections)
+  process.exit(0);
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

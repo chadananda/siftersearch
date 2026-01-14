@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T02:36:50.736Z",
+  "generated": "2026-01-14T02:39:06.685Z",
   "entries": [
+    {
+      "hash": "47d47e8",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Use SHA-256 body_hash for file rename detection",
+      "scope": null
+    },
     {
       "hash": "c9c4396",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update BOTH documents and paragraphs indexes for RTL languages",
       "scope": "language"
-    },
-    {
-      "hash": "7e6ecc2",
-      "date": "2025-12-28",
-      "type": "New",
-      "description": "AI-based semantic paragraph splitting for Arabic/Persian",
-      "scope": "segmentation"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "47d47e8",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Use SHA-256 body_hash for file rename detection",
+        "scope": null
+      },
       {
         "hash": "c9c4396",
         "date": "2026-01-13",
@@ -7028,13 +7035,6 @@
         "type": "Fixed",
         "description": "Update BOTH documents and paragraphs indexes for RTL languages",
         "scope": "language"
-      },
-      {
-        "hash": "7e6ecc2",
-        "date": "2025-12-28",
-        "type": "New",
-        "description": "AI-based semantic paragraph splitting for Arabic/Persian",
-        "scope": "segmentation"
       }
     ]
   }
