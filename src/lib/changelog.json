@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-14T03:27:07.031Z",
+  "generated": "2026-01-14T03:31:44.351Z",
   "entries": [
+    {
+      "hash": "27031e9",
+      "date": "2026-01-13",
+      "type": "Fixed",
+      "description": "Smarter delete handling - check body_hash before removing",
+      "scope": null
+    },
     {
       "hash": "55ec6c5",
       "date": "2026-01-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add status filter and limit param to meili-tasks endpoint",
       "scope": "admin"
-    },
-    {
-      "hash": "0f69c92",
-      "date": "2025-12-28",
-      "type": "Fixed",
-      "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-01-13": [
+      {
+        "hash": "27031e9",
+        "date": "2026-01-13",
+        "type": "Fixed",
+        "description": "Smarter delete handling - check body_hash before removing",
+        "scope": null
+      },
       {
         "hash": "55ec6c5",
         "date": "2026-01-13",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-28",
         "type": "New",
         "description": "Add status filter and limit param to meili-tasks endpoint",
-        "scope": "admin"
-      },
-      {
-        "hash": "0f69c92",
-        "date": "2025-12-28",
-        "type": "Fixed",
-        "description": "Use correct Meilisearch tasks API (meili.tasks.getTasks)",
         "scope": "admin"
       }
     ]

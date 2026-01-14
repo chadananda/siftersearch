@@ -4,18 +4,20 @@
  * Background service that watches library directories for file changes
  * and automatically triggers document ingestion/removal.
  *
- * Integrated with API server - starts automatically on server startup.
+ * Uses batch processing: collect events, process ADDs first (to detect moves),
+ * then process DELETEs (skip if content moved to new location).
  */
 
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
 import { relative } from 'path';
-import { ingestDocument, removeDocument, getDocumentByPath, getDocumentByBodyHash } from './ingester.js';
+import { ingestDocument, removeDocument, getDocumentByPath, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
+const BATCH_WINDOW_MS = 2000;  // Collect events for 2s before processing
 const IGNORED_PATTERNS = [
   /(^|[/\\])\../,  // dotfiles
   /node_modules/,
@@ -29,9 +31,18 @@ let watcherStats = {
   startedAt: null,
   filesIngested: 0,
   filesRemoved: 0,
+  filesMoved: 0,
   errors: 0,
   lastEvent: null
 };
+
+// Event queue for batch processing
+const eventQueue = {
+  adds: new Map(),      // path -> { filePath, eventType }
+  deletes: new Map(),   // path -> { filePath }
+  processing: false
+};
+let batchTimer = null;
 
 /**
  * Convert absolute file path to relative path from library basePath
@@ -41,116 +52,156 @@ function toRelativePath(absolutePath) {
 }
 
 /**
- * Handle file add or change event
+ * Queue an add/change event for batch processing
  */
-async function handleFileChange(filePath, eventType) {
-  // Only process markdown files
-  if (!filePath.endsWith('.md')) {
-    return;
-  }
+function queueAddEvent(filePath, eventType) {
+  if (!filePath.endsWith('.md')) return;
+
+  const relativePath = toRelativePath(filePath);
+
+  // Add to queue (overwrites if already queued)
+  eventQueue.adds.set(relativePath, { filePath, eventType });
+
+  // Remove from deletes if present (file reappeared)
+  eventQueue.deletes.delete(relativePath);
 
   watcherStats.lastEvent = { type: eventType, path: filePath, at: new Date().toISOString() };
 
-  // Convert path early to check for pending deletes
-  const relativePath = toRelativePath(filePath);
-
-  // Cancel any pending delete for this path (file reappeared)
-  cancelPendingDelete(relativePath);
-
-  try {
-    // Read file content
-    const content = await readFile(filePath, 'utf-8');
-
-    // Ingest document (will handle both new and updated files)
-    const result = await ingestDocument(content, {}, relativePath);
-
-    if (result.skipped) {
-      logger.debug({ filePath, eventType }, 'File unchanged, skipped');
-    } else {
-      watcherStats.filesIngested++;
-      logger.info({
-        filePath,
-        eventType,
-        documentId: result.documentId,
-        paragraphs: result.paragraphCount
-      }, 'File ingested');
-    }
-  } catch (err) {
-    watcherStats.errors++;
-    logger.error({ err: err.message, filePath, eventType }, 'Failed to process file change');
-  }
+  scheduleBatchProcessing();
 }
 
-// Pending deletes - allows cancellation if file was actually moved
-const pendingDeletes = new Map();
-const DELETE_GRACE_PERIOD_MS = 2000;  // Wait 2s before deleting (allows move detection)
-
 /**
- * Handle file delete event
- * Uses a grace period to avoid deleting files that are being moved
+ * Queue a delete event for batch processing
  */
-async function handleFileDelete(filePath) {
-  // Only process markdown files
-  if (!filePath.endsWith('.md')) {
-    return;
+function queueDeleteEvent(filePath) {
+  if (!filePath.endsWith('.md')) return;
+
+  const relativePath = toRelativePath(filePath);
+
+  // Only queue delete if there's no pending add for same path
+  if (!eventQueue.adds.has(relativePath)) {
+    eventQueue.deletes.set(relativePath, { filePath });
   }
 
   watcherStats.lastEvent = { type: 'unlink', path: filePath, at: new Date().toISOString() };
-  const relativePath = toRelativePath(filePath);
 
-  // Schedule deletion after grace period
-  // If the file reappears (add event), cancel the pending delete
-  const timeoutId = setTimeout(async () => {
-    pendingDeletes.delete(relativePath);
+  scheduleBatchProcessing();
+}
 
+/**
+ * Schedule batch processing after quiet period
+ */
+function scheduleBatchProcessing() {
+  if (batchTimer) {
+    clearTimeout(batchTimer);
+  }
+
+  batchTimer = setTimeout(processBatch, BATCH_WINDOW_MS);
+}
+
+/**
+ * Process queued events: ADDs first (detect moves), then DELETEs
+ */
+async function processBatch() {
+  if (eventQueue.processing) {
+    // Already processing, reschedule
+    scheduleBatchProcessing();
+    return;
+  }
+
+  eventQueue.processing = true;
+  batchTimer = null;
+
+  // Snapshot current queues and clear them
+  const adds = new Map(eventQueue.adds);
+  const deletes = new Map(eventQueue.deletes);
+  eventQueue.adds.clear();
+  eventQueue.deletes.clear();
+
+  const totalEvents = adds.size + deletes.size;
+  if (totalEvents === 0) {
+    eventQueue.processing = false;
+    return;
+  }
+
+  logger.info({ adds: adds.size, deletes: deletes.size }, 'Processing file event batch');
+
+  // Track body hashes of added files (to detect moves)
+  const addedBodyHashes = new Set();
+
+  // PHASE 1: Process ADDs first (this handles moves via body_hash lookup in ingester)
+  for (const [relativePath, { filePath, eventType }] of adds) {
     try {
-      // Re-fetch document to ensure it wasn't moved during grace period
+      const content = await readFile(filePath, 'utf-8');
+
+      // Compute body hash to track for move detection
+      const { content: bodyContent } = parseMarkdownFrontmatter(content);
+      const bodyHash = hashContent(bodyContent);
+      addedBodyHashes.add(bodyHash);
+
+      // Ingest document (will find existing by body_hash if moved)
+      const result = await ingestDocument(content, {}, relativePath);
+
+      if (result.skipped) {
+        logger.debug({ filePath, eventType }, 'File unchanged, skipped');
+      } else if (result.status === 'moved') {
+        watcherStats.filesMoved++;
+        logger.info({
+          filePath,
+          eventType,
+          documentId: result.documentId,
+          oldPath: result.oldPath,
+          newPath: result.newPath
+        }, 'File moved');
+      } else {
+        watcherStats.filesIngested++;
+        logger.info({
+          filePath,
+          eventType,
+          documentId: result.documentId,
+          paragraphs: result.paragraphCount
+        }, 'File ingested');
+      }
+    } catch (err) {
+      watcherStats.errors++;
+      logger.error({ err: err.message, filePath, eventType }, 'Failed to process file');
+    }
+  }
+
+  // PHASE 2: Process DELETEs (skip if content was moved to new location)
+  for (const [relativePath, { filePath }] of deletes) {
+    try {
       const doc = await getDocumentByPath(relativePath);
 
-      if (doc) {
-        // Check if this content exists at a different path (file was moved, not deleted)
-        // This handles the case where add event updated the doc's path before delete fires
-        if (doc.body_hash) {
-          const movedDoc = await getDocumentByBodyHash(doc.body_hash);
-          if (movedDoc && movedDoc.file_path !== relativePath) {
-            logger.info({
-              filePath,
-              newPath: movedDoc.file_path,
-              documentId: movedDoc.id
-            }, 'File moved to new location, skipping delete');
-            return;
-          }
-        }
-
-        await removeDocument(doc.id);
-        watcherStats.filesRemoved++;
-        logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
-      } else {
-        // No doc with old path - check if it was moved by body_hash (ingester already updated path)
-        logger.debug({ filePath }, 'File removed but no matching document found (possibly moved)');
+      if (!doc) {
+        // Document not found at old path - likely already updated by move
+        logger.debug({ filePath }, 'Delete: no document at path (likely moved)');
+        continue;
       }
+
+      // Check if this content was added at a new location
+      if (doc.body_hash && addedBodyHashes.has(doc.body_hash)) {
+        logger.info({ filePath, documentId: doc.id }, 'Delete skipped: content moved to new location');
+        continue;
+      }
+
+      // Content truly deleted - remove document
+      await removeDocument(doc.id);
+      watcherStats.filesRemoved++;
+      logger.info({ filePath, documentId: doc.id }, 'File removed, document deleted');
+
     } catch (err) {
       watcherStats.errors++;
       logger.error({ err: err.message, filePath }, 'Failed to process file deletion');
     }
-  }, DELETE_GRACE_PERIOD_MS);
-
-  pendingDeletes.set(relativePath, timeoutId);
-  logger.debug({ filePath }, 'File delete scheduled (grace period)');
-}
-
-/**
- * Cancel pending delete (called when file reappears at same path)
- */
-function cancelPendingDelete(relativePath) {
-  const timeoutId = pendingDeletes.get(relativePath);
-  if (timeoutId) {
-    clearTimeout(timeoutId);
-    pendingDeletes.delete(relativePath);
-    logger.debug({ relativePath }, 'Pending delete cancelled (file reappeared)');
-    return true;
   }
-  return false;
+
+  eventQueue.processing = false;
+
+  // Check if more events queued during processing
+  if (eventQueue.adds.size > 0 || eventQueue.deletes.size > 0) {
+    scheduleBatchProcessing();
+  }
 }
 
 /**
@@ -184,9 +235,9 @@ export function startLibraryWatcher(libraryPaths) {
   });
 
   watcher
-    .on('add', path => handleFileChange(path, 'add'))
-    .on('change', path => handleFileChange(path, 'change'))
-    .on('unlink', path => handleFileDelete(path))
+    .on('add', path => queueAddEvent(path, 'add'))
+    .on('change', path => queueAddEvent(path, 'change'))
+    .on('unlink', path => queueDeleteEvent(path))
     .on('error', err => {
       watcherStats.errors++;
       logger.error({ err: err.message }, 'Library watcher error');
@@ -206,6 +257,15 @@ export async function stopLibraryWatcher() {
     await watcher.close();
     watcher = null;
     isEnabled = false;
+
+    // Clear any pending batch
+    if (batchTimer) {
+      clearTimeout(batchTimer);
+      batchTimer = null;
+    }
+    eventQueue.adds.clear();
+    eventQueue.deletes.clear();
+
     logger.info('Library watcher stopped');
   }
 }
@@ -216,6 +276,8 @@ export async function stopLibraryWatcher() {
 export function getWatcherStats() {
   return {
     enabled: isEnabled,
+    pendingAdds: eventQueue.adds.size,
+    pendingDeletes: eventQueue.deletes.size,
     ...watcherStats
   };
 }
