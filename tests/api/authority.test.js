@@ -3,39 +3,79 @@
  *
  * BDD tests for the doctrinal authority system that weights
  * search results based on author, collection, and religion.
+ *
+ * Authority is now read from library meta.yaml files:
+ * - .religion/meta.yaml - religion-level defaults
+ * - .collection/meta.yaml - collection-level defaults
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock the YAML config loading
+// Mock the config module
+vi.mock('../../api/lib/config.js', () => ({
+  config: {
+    library: {
+      basePath: '/mock/library'
+    }
+  }
+}));
+
+// Mock fs to simulate library structure
 vi.mock('fs', async () => {
   const actual = await vi.importActual('fs');
+
+  // Simulated meta.yaml contents
+  const mockMetaFiles = {
+    '/mock/library/Bahai Faith/.religion/meta.yaml': `
+title: "Baha'i Faith"
+authority: 6
+description: "The Baha'i Faith"
+`,
+    '/mock/library/Bahai Faith/Core Tablets/.collection/meta.yaml': `
+title: Core Tablets
+authority: 10
+`,
+    '/mock/library/Bahai Faith/Core Publications/.collection/meta.yaml': `
+title: Core Publications
+authority: 10
+`,
+    '/mock/library/Bahai Faith/Pilgrim Notes/.collection/meta.yaml': `
+title: Pilgrim Notes
+authority: 1
+`,
+    '/mock/library/Bahai Faith/Studies Papers/.collection/meta.yaml': `
+title: Studies Papers
+authority: 3
+`,
+    '/mock/library/Islam/.religion/meta.yaml': `
+title: Islam
+authority: 6
+`,
+  };
+
   return {
     ...actual,
-    readFileSync: vi.fn((path) => {
-      if (path.includes('authority-config.yml')) {
-        return `
-default_authority: 5
-
-religions:
-  Baha'i: 6
-  Islam: 6
-
-collections:
-  Baha'i:
-    Core Tablets: 10
-    Core Publications: 10
-    Pilgrim Notes: 1
-    Studies Papers: 3
-
-authors:
-  Bahá'u'lláh: 10
-  The Báb: 10
-  Shoghi Effendi: 9
-`;
+    readFileSync: vi.fn((path, encoding) => {
+      if (mockMetaFiles[path]) {
+        return mockMetaFiles[path];
       }
-      return actual.readFileSync(path);
-    })
+      throw new Error(`ENOENT: no such file: ${path}`);
+    }),
+    readdirSync: vi.fn((path) => {
+      if (path === '/mock/library') {
+        return ['Bahai Faith', 'Islam', '.DS_Store'];
+      }
+      if (path === '/mock/library/Bahai Faith') {
+        return ['Core Tablets', 'Core Publications', 'Pilgrim Notes', 'Studies Papers', '.religion'];
+      }
+      if (path === '/mock/library/Islam') {
+        return ['.religion'];
+      }
+      return [];
+    }),
+    statSync: vi.fn((path) => ({
+      isDirectory: () => !path.includes('.DS_Store') && !path.endsWith('.yaml')
+    }))
   };
 });
 
@@ -53,7 +93,7 @@ describe('Authority System', () => {
       it('should return 10 for Bahá\'u\'lláh (Central Figure)', () => {
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'General'
         });
         expect(authority).toBe(10);
@@ -62,7 +102,7 @@ describe('Authority System', () => {
       it('should return 10 for The Báb (Central Figure)', () => {
         const authority = getAuthority({
           author: 'The Báb',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'General'
         });
         expect(authority).toBe(10);
@@ -71,7 +111,7 @@ describe('Authority System', () => {
       it('should return 9 for Shoghi Effendi (Authoritative interpretation)', () => {
         const authority = getAuthority({
           author: 'Shoghi Effendi',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'General'
         });
         expect(authority).toBe(9);
@@ -80,7 +120,7 @@ describe('Authority System', () => {
       it('should match author by substring', () => {
         const authority = getAuthority({
           author: 'Tablets of Bahá\'u\'lláh revealed after the Kitáb-i-Aqdas',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'General'
         });
         expect(authority).toBe(10);
@@ -91,7 +131,7 @@ describe('Authority System', () => {
       it('should return 10 for Core Publications collection', () => {
         const authority = getAuthority({
           author: 'Unknown',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Core Publications'
         });
         expect(authority).toBe(10);
@@ -100,7 +140,7 @@ describe('Authority System', () => {
       it('should return 10 for Core Tablets collection', () => {
         const authority = getAuthority({
           author: 'Unknown',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Core Tablets'
         });
         expect(authority).toBe(10);
@@ -109,7 +149,7 @@ describe('Authority System', () => {
       it('should return 1 for Pilgrim Notes (lowest authority)', () => {
         const authority = getAuthority({
           author: 'Unknown',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Pilgrim Notes'
         });
         expect(authority).toBe(1);
@@ -118,7 +158,7 @@ describe('Authority System', () => {
       it('should return 3 for Studies Papers', () => {
         const authority = getAuthority({
           author: 'Unknown',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Studies Papers'
         });
         expect(authority).toBe(3);
@@ -126,10 +166,10 @@ describe('Authority System', () => {
     });
 
     describe('religion-based authority', () => {
-      it('should return 6 for Baha\'i religion with unknown collection', () => {
+      it('should return 6 for Bahai Faith religion with unknown collection', () => {
         const authority = getAuthority({
           author: 'Unknown',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Some Unknown Collection'
         });
         expect(authority).toBe(6);
@@ -165,7 +205,7 @@ describe('Authority System', () => {
       it('should use explicit authority when provided', () => {
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Core Tablets',
           authority: 7
         });
@@ -188,7 +228,7 @@ describe('Authority System', () => {
         // Bahá'u'lláh (author = 10) should beat Pilgrim Notes (collection = 1)
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Pilgrim Notes'
         });
         expect(authority).toBe(10);
@@ -198,7 +238,7 @@ describe('Authority System', () => {
         // Core Tablets (10) should beat religion default (6)
         const authority = getAuthority({
           author: 'Unknown Author',
-          religion: 'Baha\'i',
+          religion: 'Bahai Faith',
           collection: 'Core Tablets'
         });
         expect(authority).toBe(10);
@@ -251,8 +291,8 @@ describe('Authority System', () => {
   describe('getAuthorityBatch function', () => {
     it('should return a Map with authority for each document', () => {
       const docs = [
-        { id: 'doc1', author: 'Bahá\'u\'lláh', religion: 'Baha\'i', collection: 'General' },
-        { id: 'doc2', author: 'Unknown', religion: 'Baha\'i', collection: 'Pilgrim Notes' },
+        { id: 'doc1', author: 'Bahá\'u\'lláh', religion: 'Bahai Faith', collection: 'General' },
+        { id: 'doc2', author: 'Unknown', religion: 'Bahai Faith', collection: 'Pilgrim Notes' },
         { id: 'doc3', author: 'Unknown', religion: 'Unknown', collection: 'Unknown' }
       ];
 
@@ -272,17 +312,21 @@ describe('Authority System', () => {
 });
 
 describe('Authority Ranking in Search', () => {
+  beforeEach(() => {
+    reloadConfig();
+  });
+
   it('should rank Sacred Text (10) higher than Published (5)', () => {
     const sacredAuthority = getAuthority({
       author: 'Bahá\'u\'lláh',
-      religion: 'Baha\'i',
+      religion: 'Bahai Faith',
       collection: 'Core Tablets'
     });
 
     const publishedAuthority = getAuthority({
       author: 'Paul Lample',
-      religion: 'Baha\'i',
-      collection: 'Baha\'i Books'
+      religion: 'Bahai Faith',
+      collection: 'Bahai Books'
     });
 
     expect(sacredAuthority).toBeGreaterThan(publishedAuthority);
@@ -291,13 +335,13 @@ describe('Authority Ranking in Search', () => {
   it('should rank Core Publications (10) higher than Pilgrim Notes (1)', () => {
     const coreAuthority = getAuthority({
       author: 'Unknown',
-      religion: 'Baha\'i',
+      religion: 'Bahai Faith',
       collection: 'Core Publications'
     });
 
     const pilgrimAuthority = getAuthority({
       author: 'Unknown',
-      religion: 'Baha\'i',
+      religion: 'Bahai Faith',
       collection: 'Pilgrim Notes'
     });
 

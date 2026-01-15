@@ -1,43 +1,118 @@
 /**
- * Authority Configuration Loader and Utilities
+ * Authority Configuration from Library Metadata
  *
- * Provides doctrinal weight values for documents based on:
- * 1. Author (highest priority)
- * 2. Collection within Religion
- * 3. Religion default
- * 4. Global default
+ * Reads doctrinal weight values from the library's meta.yaml files:
+ * - .religion/meta.yaml - Religion-level defaults
+ * - .collection/meta.yaml - Collection-level defaults
+ *
+ * Priority order:
+ * 1. Document's explicit `authority` field (frontmatter override)
+ * 2. Author-based authority (Central Figures, etc.)
+ * 3. Collection's meta.yaml authority
+ * 4. Religion's meta.yaml authority
+ * 5. Global default (5)
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync, statSync } from 'fs';
 import { parse as parseYaml } from 'yaml';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
+import { config } from './config.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const CONFIG_PATH = resolve(__dirname, '../../data/authority-config.yml');
+// Cache for authority values from library meta.yaml files
+let libraryAuthority = null;
+let lastLoadTime = 0;
+const CACHE_TTL_MS = 60000; // Reload every 60 seconds
 
-let authorityConfig = null;
+// Author-based authority overrides (Central Figures, institutions)
+const AUTHOR_AUTHORITY = {
+  "Bahá'u'lláh": 10,
+  "Baha'u'llah": 10,
+  "The Báb": 10,
+  "The Bab": 10,
+  "'Abdu'l-Bahá": 9,
+  "Abdu'l-Baha": 9,
+  "Abdul-Baha": 9,
+  "Shoghi Effendi": 9,
+  "Universal House of Justice": 8,
+};
+
+const DEFAULT_AUTHORITY = 5;
 
 /**
- * Load and cache the authority configuration
+ * Load authority values from library's meta.yaml files
  */
-function loadConfig() {
-  if (authorityConfig) return authorityConfig;
-
-  try {
-    const content = readFileSync(CONFIG_PATH, 'utf-8');
-    authorityConfig = parseYaml(content);
-  } catch (err) {
-    console.warn('Failed to load authority config, using defaults:', err.message);
-    authorityConfig = {
-      default_authority: 5,
-      religions: {},
-      collections: {},
-      authors: {}
-    };
+function loadLibraryAuthority() {
+  const now = Date.now();
+  if (libraryAuthority && (now - lastLoadTime) < CACHE_TTL_MS) {
+    return libraryAuthority;
   }
 
-  return authorityConfig;
+  libraryAuthority = {
+    religions: {},      // religion -> authority
+    collections: {},    // religion -> { collection -> authority }
+    religionMeta: {},   // religion -> full meta object
+    collectionMeta: {}, // religion -> { collection -> full meta object }
+  };
+
+  const basePath = config.library.basePath;
+  if (!basePath) {
+    console.warn('No library basePath configured');
+    return libraryAuthority;
+  }
+
+  try {
+    // Scan religion directories
+    const religions = readdirSync(basePath).filter(item => {
+      const fullPath = join(basePath, item);
+      try {
+        return statSync(fullPath).isDirectory() && !item.startsWith('.');
+      } catch { return false; }
+    });
+
+    for (const religion of religions) {
+      const religionPath = join(basePath, religion);
+
+      // Check for .religion/meta.yaml
+      const religionMetaPath = join(religionPath, '.religion', 'meta.yaml');
+      try {
+        const content = readFileSync(religionMetaPath, 'utf-8');
+        const meta = parseYaml(content);
+        libraryAuthority.religionMeta[religion] = meta;
+        if (meta.authority !== undefined) {
+          libraryAuthority.religions[religion] = meta.authority;
+        }
+      } catch { /* No religion meta */ }
+
+      // Scan collection directories
+      libraryAuthority.collections[religion] = {};
+      libraryAuthority.collectionMeta[religion] = {};
+
+      const collections = readdirSync(religionPath).filter(item => {
+        const fullPath = join(religionPath, item);
+        try {
+          return statSync(fullPath).isDirectory() && !item.startsWith('.');
+        } catch { return false; }
+      });
+
+      for (const collection of collections) {
+        const collectionMetaPath = join(religionPath, collection, '.collection', 'meta.yaml');
+        try {
+          const content = readFileSync(collectionMetaPath, 'utf-8');
+          const meta = parseYaml(content);
+          libraryAuthority.collectionMeta[religion][collection] = meta;
+          if (meta.authority !== undefined) {
+            libraryAuthority.collections[religion][collection] = meta.authority;
+          }
+        } catch { /* No collection meta */ }
+      }
+    }
+
+    lastLoadTime = now;
+  } catch (err) {
+    console.error('Failed to load library authority:', err.message);
+  }
+
+  return libraryAuthority;
 }
 
 /**
@@ -51,38 +126,35 @@ function loadConfig() {
  * @returns {number} Authority value (1-10)
  */
 export function getAuthority(doc) {
-  // If document has explicit authority set, use it
+  // 1. If document has explicit authority set, use it
   if (doc.authority !== null && doc.authority !== undefined) {
-    return Math.min(10, Math.max(1, doc.authority));
+    return Math.min(10, Math.max(1, Number(doc.authority)));
   }
 
-  const config = loadConfig();
-  const { author, religion, collection } = doc;
-
-  // Check author-based authority first (highest priority)
-  if (author && config.authors) {
-    for (const [authorPattern, authorityValue] of Object.entries(config.authors)) {
-      if (author.includes(authorPattern)) {
+  // 2. Check author-based authority (Central Figures)
+  if (doc.author) {
+    for (const [authorPattern, authorityValue] of Object.entries(AUTHOR_AUTHORITY)) {
+      if (doc.author.includes(authorPattern)) {
         return authorityValue;
       }
     }
   }
 
-  // Check collection-specific authority
-  if (religion && collection && config.collections?.[religion]) {
-    const collectionAuthority = config.collections[religion][collection];
-    if (collectionAuthority !== undefined) {
-      return collectionAuthority;
-    }
+  const libAuth = loadLibraryAuthority();
+  const { religion, collection } = doc;
+
+  // 3. Check collection-specific authority from meta.yaml
+  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
+    return libAuth.collections[religion][collection];
   }
 
-  // Check religion default
-  if (religion && config.religions?.[religion]) {
-    return config.religions[religion];
+  // 4. Check religion default from meta.yaml
+  if (religion && libAuth.religions[religion] !== undefined) {
+    return libAuth.religions[religion];
   }
 
-  // Return global default
-  return config.default_authority || 5;
+  // 5. Return global default
+  return DEFAULT_AUTHORITY;
 }
 
 /**
@@ -100,20 +172,52 @@ export function getAuthorityBatch(docs) {
 }
 
 /**
- * Get the authority configuration for display purposes
+ * Get metadata for a religion from its .religion/meta.yaml
  *
- * @returns {Object} The full authority configuration
+ * @param {string} religion - Religion name
+ * @returns {Object|null} Religion metadata or null
  */
-export function getAuthorityConfig() {
-  return loadConfig();
+export function getReligionMeta(religion) {
+  const libAuth = loadLibraryAuthority();
+  return libAuth.religionMeta[religion] || null;
 }
 
 /**
- * Reload the authority configuration (for hot-reloading)
+ * Get metadata for a collection from its .collection/meta.yaml
+ *
+ * @param {string} religion - Religion name
+ * @param {string} collection - Collection name
+ * @returns {Object|null} Collection metadata or null
+ */
+export function getCollectionMeta(religion, collection) {
+  const libAuth = loadLibraryAuthority();
+  return libAuth.collectionMeta[religion]?.[collection] || null;
+}
+
+/**
+ * Get all loaded authority data (for debugging/display)
+ *
+ * @returns {Object} The full authority data from library
+ */
+export function getAuthorityConfig() {
+  return loadLibraryAuthority();
+}
+
+/**
+ * Force reload of authority configuration from library
  */
 export function reloadConfig() {
-  authorityConfig = null;
-  return loadConfig();
+  libraryAuthority = null;
+  lastLoadTime = 0;
+  return loadLibraryAuthority();
+}
+
+/**
+ * Invalidate the cache (call when meta.yaml files change)
+ */
+export function invalidateCache() {
+  libraryAuthority = null;
+  lastLoadTime = 0;
 }
 
 /**

@@ -15,10 +15,13 @@
 
 import { watch } from 'chokidar';
 import { readFile } from 'fs/promises';
-import { relative } from 'path';
+import { relative, dirname, basename } from 'path';
 import { ingestDocument, removeDocument, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
+import { getDb } from '../lib/db.js';
+import { getMeili, INDEXES } from '../lib/search.js';
+import { invalidateCache, getAuthority } from '../lib/authority.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
@@ -45,6 +48,7 @@ let watcherStats = {
   filesIngested: 0,
   filesRemoved: 0,
   filesMoved: 0,
+  metaYamlUpdates: 0,
   errors: 0,
   lastEvent: null
 };
@@ -246,6 +250,159 @@ async function processAddBatch() {
 }
 
 /**
+ * Handle meta.yaml changes - update authority for all docs in that religion/collection
+ * @param {string} filePath - Absolute path to the changed meta.yaml
+ */
+async function handleMetaYamlChange(filePath) {
+  const relativePath = toRelativePath(filePath);
+
+  // Parse path to determine if this is .religion or .collection meta.yaml
+  // Examples:
+  //   Bahai Faith/.religion/meta.yaml -> religion: "Bahai Faith"
+  //   Bahai Faith/Writings of Abdu'l-Baha/.collection/meta.yaml -> religion: "Bahai Faith", collection: "Writings of Abdu'l-Baha"
+
+  const parts = relativePath.split('/');
+  const metaFolderIndex = parts.findIndex(p => p === '.religion' || p === '.collection');
+
+  if (metaFolderIndex < 0) {
+    logger.debug({ filePath }, 'meta.yaml path does not contain .religion or .collection');
+    return;
+  }
+
+  const metaFolder = parts[metaFolderIndex];
+  const religion = parts[0];
+  const collection = metaFolder === '.collection' ? parts[metaFolderIndex - 1] : null;
+
+  logger.info({ religion, collection, metaFolder }, 'meta.yaml changed - updating document authorities');
+
+  // Invalidate authority cache so new values are loaded
+  invalidateCache();
+
+  try {
+    const db = await getDb();
+    const meili = getMeili();
+
+    // Build query based on scope (religion-wide or collection-specific)
+    let query, params;
+    if (collection) {
+      // Collection meta.yaml changed - update docs in this collection
+      query = `SELECT id, file_path, author, religion, collection, authority FROM docs WHERE religion = ? AND collection = ?`;
+      params = [religion, collection];
+    } else {
+      // Religion meta.yaml changed - update all docs in this religion that inherit from religion default
+      // (docs with explicit collection authority won't be affected)
+      query = `SELECT id, file_path, author, religion, collection, authority FROM docs WHERE religion = ?`;
+      params = [religion];
+    }
+
+    const result = await db.execute({ sql: query, args: params });
+    const docs = result.rows;
+
+    if (docs.length === 0) {
+      logger.info({ religion, collection }, 'No documents found to update');
+      return;
+    }
+
+    logger.info({ religion, collection, docCount: docs.length }, 'Recalculating authority for documents');
+
+    // Batch updates for SQLite and Meilisearch
+    const sqliteUpdates = [];
+    const meiliDocUpdates = [];
+    const meiliParaUpdates = [];
+
+    for (const doc of docs) {
+      // Check if document has explicit authority override in frontmatter
+      // If so, skip it - explicit overrides should not be affected by meta.yaml changes
+      try {
+        const docFilePath = `${config.library.basePath}/${doc.file_path}`;
+        const content = await readFile(docFilePath, 'utf-8');
+        const { metadata } = parseMarkdownFrontmatter(content);
+
+        // Skip if document has explicit authority override
+        if (metadata.authority !== undefined && metadata.authority !== null) {
+          logger.debug({ docId: doc.id, explicitAuthority: metadata.authority }, 'Skipping doc with explicit authority');
+          continue;
+        }
+      } catch (err) {
+        // File not readable, skip this document
+        logger.debug({ docId: doc.id, err: err.message }, 'Could not read doc file, skipping');
+        continue;
+      }
+
+      // Calculate new authority using the refreshed cache
+      const newAuthority = getAuthority({
+        author: doc.author,
+        religion: doc.religion,
+        collection: doc.collection,
+        authority: null  // Pass null to get calculated value (not explicit override)
+      });
+
+      // Only update if authority has changed
+      if (doc.authority !== newAuthority) {
+        sqliteUpdates.push({ id: doc.id, authority: newAuthority });
+        meiliDocUpdates.push({ id: doc.id, authority: newAuthority });
+      }
+    }
+
+    if (sqliteUpdates.length === 0) {
+      logger.info({ religion, collection }, 'No authority changes needed');
+      return;
+    }
+
+    // Update SQLite (batch with transaction)
+    const updateStmt = `UPDATE docs SET authority = ?, updated_at = ? WHERE id = ?`;
+    const now = new Date().toISOString();
+
+    for (const update of sqliteUpdates) {
+      await db.execute({ sql: updateStmt, args: [update.authority, now, update.id] });
+    }
+
+    // Update Meilisearch documents
+    if (meiliDocUpdates.length > 0) {
+      await meili.index(INDEXES.DOCUMENTS).updateDocuments(meiliDocUpdates);
+    }
+
+    // Update Meilisearch paragraphs (they also have authority field)
+    for (const update of sqliteUpdates) {
+      const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: `doc_id = ${update.id}`,
+        limit: 10000,
+        attributesToRetrieve: ['id']
+      });
+
+      if (parasResult.hits.length > 0) {
+        const paraUpdates = parasResult.hits.map(p => ({
+          id: p.id,
+          authority: update.authority
+        }));
+        meiliParaUpdates.push(...paraUpdates);
+      }
+    }
+
+    // Batch update paragraphs in chunks of 1000
+    const CHUNK_SIZE = 1000;
+    for (let i = 0; i < meiliParaUpdates.length; i += CHUNK_SIZE) {
+      const chunk = meiliParaUpdates.slice(i, i + CHUNK_SIZE);
+      await meili.index(INDEXES.PARAGRAPHS).updateDocuments(chunk);
+    }
+
+    watcherStats.metaYamlUpdates++;
+    watcherStats.lastEvent = { type: 'meta.yaml', path: filePath, at: new Date().toISOString() };
+
+    logger.info({
+      religion,
+      collection,
+      docsUpdated: sqliteUpdates.length,
+      paragraphsUpdated: meiliParaUpdates.length
+    }, 'Authority updated from meta.yaml change');
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message, filePath, religion, collection }, 'Failed to handle meta.yaml change');
+  }
+}
+
+/**
  * Start the library watcher
  * @param {string|string[]} libraryPaths - Path(s) to watch
  */
@@ -276,8 +433,20 @@ export function startLibraryWatcher(libraryPaths) {
   });
 
   watcher
-    .on('add', path => queueAddEvent(path, 'add'))
-    .on('change', path => queueAddEvent(path, 'change'))
+    .on('add', path => {
+      if (path.endsWith('meta.yaml')) {
+        handleMetaYamlChange(path);
+      } else {
+        queueAddEvent(path, 'add');
+      }
+    })
+    .on('change', path => {
+      if (path.endsWith('meta.yaml')) {
+        handleMetaYamlChange(path);
+      } else {
+        queueAddEvent(path, 'change');
+      }
+    })
     .on('unlink', path => queueDeleteEvent(path))
     .on('error', err => {
       watcherStats.errors++;

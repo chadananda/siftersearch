@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-15T13:44:01.226Z",
+  "generated": "2026-01-15T17:10:11.394Z",
   "entries": [
+    {
+      "hash": "9993f35",
+      "date": "2026-01-15",
+      "type": "Fixed",
+      "description": "Allow .religion and .collection metadata folders",
+      "scope": "library-watcher"
+    },
     {
       "hash": "02e845e",
       "date": "2026-01-13",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
       "scope": null
-    },
-    {
-      "hash": "4f8c512",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add schema debug endpoint to diagnose auth refresh error",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-15": [
+      {
+        "hash": "9993f35",
+        "date": "2026-01-15",
+        "type": "Fixed",
+        "description": "Allow .religion and .collection metadata folders",
+        "scope": "library-watcher"
+      }
+    ],
     "2026-01-13": [
       {
         "hash": "02e845e",
@@ -7025,13 +7034,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4f8c512",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add schema debug endpoint to diagnose auth refresh error",
         "scope": null
       }
     ]
