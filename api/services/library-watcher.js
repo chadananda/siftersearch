@@ -25,7 +25,14 @@ const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
 const IGNORED_PATTERNS = [
-  /(^|[/\\])\../,  // dotfiles
+  // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
+  (path) => {
+    // Allow .religion and .collection folders
+    if (/[/\\]\.religion([/\\]|$)/.test(path)) return false;
+    if (/[/\\]\.collection([/\\]|$)/.test(path)) return false;
+    // Ignore other dotfiles/dotfolders
+    return /(^|[/\\])\./.test(path);
+  },
   /node_modules/,
   /\.git/,
   /\.DS_Store/
