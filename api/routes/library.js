@@ -1028,10 +1028,16 @@ Return ONLY the description text, no quotes or formatting.`;
     const { includeParagraphs = true, paragraphLimit = 100, paragraphOffset = 0 } = request.query;
 
     // Get document metadata from libsql (source of truth for library management)
-    const document = await queryOne(`
-      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at
+    const docRow = await queryOne(`
+      SELECT id, title, author, religion, collection, language, year, description, paragraph_count, metadata, created_at, updated_at
       FROM docs WHERE id = ?
     `, [id]);
+
+    // Parse metadata JSON if present
+    const document = docRow ? {
+      ...docRow,
+      metadata: docRow.metadata ? JSON.parse(docRow.metadata) : null
+    } : null;
 
     if (!document) {
       throw ApiError.notFound('Document not found');

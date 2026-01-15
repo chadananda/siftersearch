@@ -789,6 +789,16 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const newReligion = pathParts.length >= 1 ? pathParts[0] : existingDoc.religion;
     const newCollection = pathParts.length >= 2 ? pathParts[1] : existingDoc.collection;
 
+    // Build metadata JSON from frontmatter extras
+    const metaExtras = {};
+    if (frontmatterMeta.translator) metaExtras.translator = frontmatterMeta.translator;
+    if (frontmatterMeta.subtitle) metaExtras.subtitle = frontmatterMeta.subtitle;
+    if (frontmatterMeta.publisher) metaExtras.publisher = frontmatterMeta.publisher;
+    if (frontmatterMeta.sourceUrl) metaExtras.sourceUrl = frontmatterMeta.sourceUrl;
+    if (frontmatterMeta.publicationName) metaExtras.publicationName = frontmatterMeta.publicationName;
+    if (frontmatterMeta.documentType) metaExtras.documentType = frontmatterMeta.documentType;
+    const metaJson = Object.keys(metaExtras).length > 0 ? JSON.stringify(metaExtras) : null;
+
     await query(`
       UPDATE docs SET
         file_path = ?,
@@ -800,6 +810,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         language = ?,
         year = ?,
         description = ?,
+        metadata = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [
@@ -812,6 +823,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       frontmatterMeta.language || existingDoc.language || null,
       safeParseYear(frontmatterMeta.year) ?? existingDoc.year ?? null,
       frontmatterMeta.description || existingDoc.description || null,
+      metaJson,
       existingDoc.id
     ]);
 
@@ -881,6 +893,16 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     year: extractedMeta.year || metadata.year || null,
     description: extractedMeta.description || metadata.description || ''
   };
+
+  // Extra metadata fields stored as JSON (translator, subtitle, publisher, sourceUrl, etc.)
+  const extraMeta = {};
+  if (extractedMeta.translator) extraMeta.translator = extractedMeta.translator;
+  if (extractedMeta.subtitle) extraMeta.subtitle = extractedMeta.subtitle;
+  if (extractedMeta.publisher) extraMeta.publisher = extractedMeta.publisher;
+  if (extractedMeta.sourceUrl) extraMeta.sourceUrl = extractedMeta.sourceUrl;
+  if (extractedMeta.publicationName) extraMeta.publicationName = extractedMeta.publicationName;
+  if (extractedMeta.documentType) extraMeta.documentType = extractedMeta.documentType;
+  const metadataJson = Object.keys(extraMeta).length > 0 ? JSON.stringify(extraMeta) : null;
 
   // Validate required fields - error out rather than using fake defaults
   if (!finalMeta.religion || !finalMeta.collection) {
@@ -1015,6 +1037,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         paragraph_count = ?,
         slug = ?,
         auto_segmented = ?,
+        metadata = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [
@@ -1031,14 +1054,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       chunks.length,
       finalSlug,
       autoSegmented ? 1 : 0,
+      metadataJson,
       finalDocId
     ]);
   } else {
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
@@ -1052,7 +1076,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       finalMeta.description,
       chunks.length,
       finalSlug,
-      autoSegmented ? 1 : 0
+      autoSegmented ? 1 : 0,
+      metadataJson
     ]);
     // Get the auto-generated INTEGER id
     finalDocId = Number(result.lastInsertRowid);

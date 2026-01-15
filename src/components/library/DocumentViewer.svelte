@@ -45,10 +45,18 @@
       document = data.document || data;
       paragraphs = data.paragraphs || [];
 
-      // Update page title
+      // Update page title and meta description for SEO
       if (document.title) {
         window.document.title = `${document.title} - SifterSearch`;
       }
+      // Set meta description
+      let metaDesc = window.document.querySelector('meta[name="description"]');
+      if (!metaDesc) {
+        metaDesc = window.document.createElement('meta');
+        metaDesc.name = 'description';
+        window.document.head.appendChild(metaDesc);
+      }
+      metaDesc.content = document.description || `${document.title} by ${document.author || 'Unknown'}`;
     } catch (err) {
       error = err.message;
     } finally {
@@ -205,6 +213,29 @@
       dir={getLanguageDirection(document.language)}
       class:rtl={getLanguageDirection(document.language) === 'rtl'}
     >
+      <!-- Document header -->
+      <header class="doc-info-header">
+        <h1 class="doc-title">{document.title}</h1>
+        {#if document.metadata?.subtitle}
+          <h2 class="doc-subtitle">{document.metadata.subtitle}</h2>
+        {/if}
+        {#if document.author || document.metadata?.translator || document.metadata?.publisher}
+          <h3 class="doc-author">
+            {#if document.author}{document.author}{/if}
+            {#if document.metadata?.translator}
+              <span class="translator">translated by {document.metadata.translator}</span>
+            {/if}
+            {#if document.metadata?.publisher}
+              <span class="publisher">{document.metadata.publisher}</span>
+            {/if}
+            {#if document.year}, {document.year}{/if}
+          </h3>
+        {/if}
+        {#if document.description}
+          <p class="abstract i">{document.description}</p>
+        {/if}
+      </header>
+
       {#if paragraphs.length === 0}
         <div class="empty-content">
           <p>No content available for this document.</p>
@@ -439,6 +470,74 @@
     max-width: 48rem;
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Document info header */
+  .doc-info-header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .doc-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .doc-subtitle {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .doc-author {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .doc-author .translator {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .doc-author .publisher {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .abstract {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .abstract.i {
+    font-style: italic;
+  }
+
+  .rtl .doc-title {
+    font-size: 2rem;
+  }
+
+  .rtl .doc-author {
+    font-size: 1.125rem;
+  }
+
+  .rtl .abstract {
+    font-size: 1.125rem;
+    line-height: 1.8;
   }
 
   .document-content.rtl {

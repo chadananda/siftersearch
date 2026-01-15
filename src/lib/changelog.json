@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-15T21:38:50.968Z",
+  "generated": "2026-01-15T22:18:57.793Z",
   "entries": [
+    {
+      "hash": "003cec2",
+      "date": "2026-01-15",
+      "type": "Fixed",
+      "description": "Handle null values in metadata-only update query",
+      "scope": null
+    },
     {
       "hash": "d8252a6",
       "date": "2026-01-15",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Convert collection display from pills to vertical list",
       "scope": "TreeView"
-    },
-    {
-      "hash": "deca725",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Fall back to standard content when bilingual returns no paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-15": [
+      {
+        "hash": "003cec2",
+        "date": "2026-01-15",
+        "type": "Fixed",
+        "description": "Handle null values in metadata-only update query",
+        "scope": null
+      },
       {
         "hash": "d8252a6",
         "date": "2026-01-15",
@@ -7028,13 +7035,6 @@
         "type": "Refactor",
         "description": "Convert collection display from pills to vertical list",
         "scope": "TreeView"
-      },
-      {
-        "hash": "deca725",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Fall back to standard content when bilingual returns no paragraphs",
-        "scope": null
       }
     ]
   }
