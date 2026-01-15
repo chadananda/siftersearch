@@ -805,13 +805,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     `, [
       relativePath || existingDoc.file_path,
       fileHash,
-      frontmatterMeta.title || existingDoc.title,
-      frontmatterMeta.author || existingDoc.author,
-      newReligion,
-      newCollection,
-      frontmatterMeta.language || existingDoc.language,
-      safeParseYear(frontmatterMeta.year) || existingDoc.year,
-      frontmatterMeta.description || existingDoc.description,
+      frontmatterMeta.title || existingDoc.title || null,
+      frontmatterMeta.author || existingDoc.author || null,
+      newReligion || null,
+      newCollection || null,
+      frontmatterMeta.language || existingDoc.language || null,
+      safeParseYear(frontmatterMeta.year) ?? existingDoc.year ?? null,
+      frontmatterMeta.description || existingDoc.description || null,
       existingDoc.id
     ]);
 
