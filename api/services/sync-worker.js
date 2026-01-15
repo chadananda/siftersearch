@@ -75,33 +75,8 @@ async function getDocumentMeta(docId) {
   `, [docId]);
 }
 
-/**
- * Calculate authority score for a document
- */
-function calculateAuthority(doc) {
-  // Primary source authors get highest authority (8-10)
-  const primaryAuthors = ["baha'u'llah", "bahaullah", "abdu'l-baha", "the bab", "shoghi effendi"];
-  const authorLower = (doc.author || '').toLowerCase();
-
-  for (const primary of primaryAuthors) {
-    if (authorLower.includes(primary)) {
-      return 10;
-    }
-  }
-
-  // Core texts get high authority
-  const coreCollections = ['core texts', 'tablets', 'prayers'];
-  const collectionLower = (doc.collection || '').toLowerCase();
-
-  for (const core of coreCollections) {
-    if (collectionLower.includes(core)) {
-      return 8;
-    }
-  }
-
-  // Default authority
-  return 5;
-}
+// Authority is now calculated from library meta.yaml files
+import { getAuthority } from '../lib/authority.js';
 
 /**
  * Convert embedding blob to float array for Meilisearch
@@ -141,7 +116,7 @@ async function syncDocument(docId) {
     return { success: true, synced: 0 };
   }
 
-  const authority = calculateAuthority(doc);
+  const authority = getAuthority(doc);
 
   // Build Meilisearch document
   const meiliDoc = {

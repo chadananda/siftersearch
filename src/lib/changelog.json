@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-15T17:10:11.394Z",
+  "generated": "2026-01-15T17:15:29.338Z",
   "entries": [
+    {
+      "hash": "7f56f2f",
+      "date": "2026-01-15",
+      "type": "New",
+      "description": "Read authority from library meta.yaml files",
+      "scope": null
+    },
     {
       "hash": "9993f35",
       "date": "2026-01-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
       "scope": null
-    },
-    {
-      "hash": "844950a",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-15": [
+      {
+        "hash": "7f56f2f",
+        "date": "2026-01-15",
+        "type": "New",
+        "description": "Read authority from library meta.yaml files",
+        "scope": null
+      },
       {
         "hash": "9993f35",
         "date": "2026-01-15",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
-        "scope": null
-      },
-      {
-        "hash": "844950a",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add error logging to refresh endpoint and PM2 logs endpoint",
         "scope": null
       }
     ]

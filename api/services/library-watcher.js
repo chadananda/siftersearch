@@ -283,15 +283,14 @@ async function handleMetaYamlChange(filePath) {
     const meili = getMeili();
 
     // Build query based on scope (religion-wide or collection-specific)
+    // Note: SQLite doesn't store authority - it's calculated from meta.yaml
+    // We only need to update Meilisearch where authority is indexed for search ranking
     let query, params;
     if (collection) {
-      // Collection meta.yaml changed - update docs in this collection
-      query = `SELECT id, file_path, author, religion, collection, authority FROM docs WHERE religion = ? AND collection = ?`;
+      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND collection = ?`;
       params = [religion, collection];
     } else {
-      // Religion meta.yaml changed - update all docs in this religion that inherit from religion default
-      // (docs with explicit collection authority won't be affected)
-      query = `SELECT id, file_path, author, religion, collection, authority FROM docs WHERE religion = ?`;
+      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ?`;
       params = [religion];
     }
 
@@ -305,8 +304,7 @@ async function handleMetaYamlChange(filePath) {
 
     logger.info({ religion, collection, docCount: docs.length }, 'Recalculating authority for documents');
 
-    // Batch updates for SQLite and Meilisearch
-    const sqliteUpdates = [];
+    // Batch updates for Meilisearch only (SQLite doesn't store authority)
     const meiliDocUpdates = [];
     const meiliParaUpdates = [];
 
@@ -337,33 +335,19 @@ async function handleMetaYamlChange(filePath) {
         authority: null  // Pass null to get calculated value (not explicit override)
       });
 
-      // Only update if authority has changed
-      if (doc.authority !== newAuthority) {
-        sqliteUpdates.push({ id: doc.id, authority: newAuthority });
-        meiliDocUpdates.push({ id: doc.id, authority: newAuthority });
-      }
+      meiliDocUpdates.push({ id: doc.id, authority: newAuthority });
     }
 
-    if (sqliteUpdates.length === 0) {
-      logger.info({ religion, collection }, 'No authority changes needed');
+    if (meiliDocUpdates.length === 0) {
+      logger.info({ religion, collection }, 'No documents to update in Meilisearch');
       return;
     }
 
-    // Update SQLite (batch with transaction)
-    const updateStmt = `UPDATE docs SET authority = ?, updated_at = ? WHERE id = ?`;
-    const now = new Date().toISOString();
-
-    for (const update of sqliteUpdates) {
-      await db.execute({ sql: updateStmt, args: [update.authority, now, update.id] });
-    }
-
     // Update Meilisearch documents
-    if (meiliDocUpdates.length > 0) {
-      await meili.index(INDEXES.DOCUMENTS).updateDocuments(meiliDocUpdates);
-    }
+    await meili.index(INDEXES.DOCUMENTS).updateDocuments(meiliDocUpdates);
 
     // Update Meilisearch paragraphs (they also have authority field)
-    for (const update of sqliteUpdates) {
+    for (const update of meiliDocUpdates) {
       const parasResult = await meili.index(INDEXES.PARAGRAPHS).search('', {
         filter: `doc_id = ${update.id}`,
         limit: 10000,
@@ -392,9 +376,9 @@ async function handleMetaYamlChange(filePath) {
     logger.info({
       religion,
       collection,
-      docsUpdated: sqliteUpdates.length,
+      docsUpdated: meiliDocUpdates.length,
       paragraphsUpdated: meiliParaUpdates.length
-    }, 'Authority updated from meta.yaml change');
+    }, 'Authority updated in Meilisearch from meta.yaml change');
 
   } catch (err) {
     watcherStats.errors++;
