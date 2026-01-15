@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-15T17:15:29.338Z",
+  "generated": "2026-01-15T17:17:38.915Z",
   "entries": [
+    {
+      "hash": "898317a",
+      "date": "2026-01-15",
+      "type": "Fixed",
+      "description": "Use getAuthority from meta.yaml in sync-worker",
+      "scope": null
+    },
     {
       "hash": "7f56f2f",
       "date": "2026-01-15",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Send empty JSON body on logout to fix 400 error",
       "scope": null
-    },
-    {
-      "hash": "48711fb",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-15": [
+      {
+        "hash": "898317a",
+        "date": "2026-01-15",
+        "type": "Fixed",
+        "description": "Use getAuthority from meta.yaml in sync-worker",
+        "scope": null
+      },
       {
         "hash": "7f56f2f",
         "date": "2026-01-15",
@@ -7027,13 +7034,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Send empty JSON body on logout to fix 400 error",
-        "scope": null
-      },
-      {
-        "hash": "48711fb",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Replace datetime('now') with JS ISO strings for libsql compatibility",
         "scope": null
       }
     ]
