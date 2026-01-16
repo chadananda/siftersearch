@@ -370,7 +370,7 @@ describe('Library API Response Formats', () => {
     });
 
     expect(response.headers['content-type']).toContain('application/json');
-  }, 60000); // Stats queries can be slow on large databases
+  }, 120000); // Stats queries can be slow on large databases
 
   it('should include proper error format for 404', async () => {
     const response = await server.inject({

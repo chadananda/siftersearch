@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T16:24:47.424Z",
+  "generated": "2026-01-16T18:07:27.822Z",
   "entries": [
+    {
+      "hash": "d81a0cc",
+      "date": "2026-01-16",
+      "type": "Refactor",
+      "description": "Use SQLite for library stats, Meilisearch for indexing only",
+      "scope": null
+    },
     {
       "hash": "64a1b01",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Move tools to title row, eliminate toolbar line",
       "scope": "library"
-    },
-    {
-      "hash": "38cc20a",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Increase contrast on version badge",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "d81a0cc",
+        "date": "2026-01-16",
+        "type": "Refactor",
+        "description": "Use SQLite for library stats, Meilisearch for indexing only",
+        "scope": null
+      },
       {
         "hash": "64a1b01",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Move tools to title row, eliminate toolbar line",
         "scope": "library"
-      },
-      {
-        "hash": "38cc20a",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Increase contrast on version badge",
-        "scope": "ui"
       }
     ]
   }

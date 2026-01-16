@@ -27,6 +27,7 @@ import { invalidateCache, getAuthority } from '../lib/authority.js';
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
+const REINGEST_DELAY_MS = 30 * 60 * 1000;  // 30 minutes - debounce for re-ingestion during active editing
 const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
 const IGNORED_PATTERNS = [
   // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
@@ -52,9 +53,11 @@ let watcherStats = {
   filesMoved: 0,
   orphansRemoved: 0,
   metaYamlUpdates: 0,
+  reingests: 0,
   errors: 0,
   lastEvent: null,
-  lastOrphanCleanup: null
+  lastOrphanCleanup: null,
+  scheduledReingests: 0  // Currently pending re-ingestions
 };
 
 // Pending ADD events (short batch window)
@@ -64,6 +67,10 @@ let addBatchTimer = null;
 // Pending DELETE events (long delay for move detection)
 // bodyHash -> { relativePath, filePath, docId, timestamp, timerId }
 const pendingDeletes = new Map();
+
+// Scheduled re-ingestion events (30-minute debounce for documents being actively edited)
+// relativePath -> { filePath, scheduledAt, timerId }
+const scheduledReingests = new Map();
 
 /**
  * Convert absolute file path to relative path from library basePath
@@ -187,6 +194,77 @@ async function processPendingDelete(bodyHash) {
 }
 
 /**
+ * Schedule a document for re-ingestion with 30-minute debounce.
+ * If the document changes again within 30 minutes, the timer resets.
+ * This prevents constant re-ingestion during active editing sessions.
+ */
+function scheduleReingest(relativePath, filePath) {
+  // Cancel any existing scheduled re-ingest for this document
+  const existing = scheduledReingests.get(relativePath);
+  if (existing) {
+    clearTimeout(existing.timerId);
+    logger.debug({ relativePath }, 'Re-ingest rescheduled (document changed again)');
+  }
+
+  // Schedule new re-ingest
+  const timerId = setTimeout(() => processScheduledReingest(relativePath), REINGEST_DELAY_MS);
+
+  scheduledReingests.set(relativePath, {
+    filePath,
+    scheduledAt: Date.now(),
+    timerId
+  });
+
+  watcherStats.scheduledReingests = scheduledReingests.size;
+
+  const delayMinutes = Math.round(REINGEST_DELAY_MS / 60000);
+  logger.info({
+    relativePath,
+    delayMinutes,
+    scheduledCount: scheduledReingests.size
+  }, `Re-ingest scheduled for ${delayMinutes} minutes from now`);
+}
+
+/**
+ * Process a scheduled re-ingest after the debounce delay
+ */
+async function processScheduledReingest(relativePath) {
+  const scheduled = scheduledReingests.get(relativePath);
+  if (!scheduled) return;
+
+  scheduledReingests.delete(relativePath);
+  watcherStats.scheduledReingests = scheduledReingests.size;
+
+  try {
+    // Verify file still exists
+    const exists = await fileExists(scheduled.filePath);
+    if (!exists) {
+      logger.info({ relativePath }, 'Scheduled re-ingest cancelled: file no longer exists');
+      return;
+    }
+
+    // Read and ingest the document
+    const content = await readFile(scheduled.filePath, 'utf-8');
+    const result = await ingestDocument(content, {}, relativePath);
+
+    if (result.skipped) {
+      logger.debug({ relativePath }, 'Scheduled re-ingest: file unchanged, skipped');
+    } else {
+      watcherStats.reingests++;
+      logger.info({
+        relativePath,
+        documentId: result.documentId,
+        paragraphs: result.totalParagraphs
+      }, 'Scheduled re-ingest completed');
+    }
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message, relativePath }, 'Failed to process scheduled re-ingest');
+  }
+}
+
+/**
  * Check if a file exists on the filesystem
  */
 async function fileExists(filePath) {
@@ -284,6 +362,9 @@ async function cleanupOrphanedDocuments() {
 
 /**
  * Process batch of ADD events
+ * - NEW documents: ingest immediately
+ * - MOVED documents: ingest immediately (just updating path)
+ * - UPDATED documents: schedule for 30-minute debounce (avoid re-ingesting during active editing)
  */
 async function processAddBatch() {
   addBatchTimer = null;
@@ -317,9 +398,36 @@ async function processAddBatch() {
           documentId: pendingDelete.docId,
           bodyHash: bodyHash.substring(0, 16) + '...'
         }, 'Move detected via pending delete - cancelling delete');
+
+        // Process move immediately (just updating the path reference)
+        const result = await ingestDocument(content, {}, relativePath);
+        if (result.status === 'moved') {
+          logger.info({
+            documentId: result.documentId,
+            oldPath: result.oldPath,
+            newPath: result.newPath
+          }, 'Document path updated');
+        }
+        continue;
       }
 
-      // Ingest document (will find existing by body_hash if moved)
+      // Check if document already exists at this path
+      const existingDoc = await getDocumentByPath(relativePath);
+
+      if (existingDoc) {
+        // EXISTING document - check if content actually changed
+        if (existingDoc.body_hash === bodyHash) {
+          logger.debug({ filePath, eventType }, 'File unchanged (same body_hash), skipped');
+          continue;
+        }
+
+        // Content changed - schedule for debounced re-ingestion
+        // This prevents constant re-ingestion during active editing sessions
+        scheduleReingest(relativePath, filePath);
+        continue;
+      }
+
+      // NEW document - ingest immediately
       const result = await ingestDocument(content, {}, relativePath);
 
       if (result.skipped) {
@@ -340,7 +448,7 @@ async function processAddBatch() {
           eventType,
           documentId: result.documentId,
           paragraphs: result.paragraphCount
-        }, 'File ingested');
+        }, 'New file ingested');
       }
     } catch (err) {
       watcherStats.errors++;
@@ -591,10 +699,25 @@ export async function stopLibraryWatcher() {
  * Get watcher status and stats
  */
 export function getWatcherStats() {
+  // Build list of scheduled reingests with time remaining
+  const scheduledList = [];
+  const now = Date.now();
+  for (const [path, info] of scheduledReingests) {
+    const elapsedMs = now - info.scheduledAt;
+    const remainingMs = Math.max(0, REINGEST_DELAY_MS - elapsedMs);
+    scheduledList.push({
+      path,
+      scheduledAt: new Date(info.scheduledAt).toISOString(),
+      remainingMinutes: Math.round(remainingMs / 60000)
+    });
+  }
+
   return {
     enabled: isEnabled,
     pendingAdds: pendingAdds.size,
     pendingDeletes: pendingDeletes.size,
+    scheduledReingests: scheduledList,
+    reingestDelayMinutes: Math.round(REINGEST_DELAY_MS / 60000),
     ...watcherStats
   };
 }
