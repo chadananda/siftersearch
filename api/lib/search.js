@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
-import { queryOne } from './db.js';
+import { queryOne, queryAll } from './db.js';
 import { getImportProgress, getIngestionProgress, getIndexingProgress } from '../services/progress.js';
 
 let client = null;
@@ -546,140 +546,134 @@ export async function deleteDocument(documentId) {
 }
 
 /**
- * Get index statistics
+ * Get library statistics from SQLite (source of truth)
+ * Meilisearch is only used for indexing progress status
  */
 export async function getStats() {
   // Get progress from progress service
-  // - importProgress: current batch being imported (null if no active import)
-  // - ingestionProgress: docs with content vs total docs in library
-  // - indexingProgress: docs in Meilisearch vs docs with content in SQLite
   const [importProgress, ingestionProgress, indexingProgress] = await Promise.all([
     Promise.resolve(getImportProgress()),
     getIngestionProgress(),
     getIndexingProgress()
   ]);
 
-  if (!config.search.enabled) {
+  try {
+    // Get all stats from SQLite (source of truth) - exclude soft-deleted
+    const [
+      docCountResult,
+      contentCountResult,
+      religionRows,
+      collectionRows
+    ] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+      queryAll(`
+        SELECT religion, COUNT(*) as count
+        FROM docs
+        WHERE deleted_at IS NULL AND religion IS NOT NULL
+        GROUP BY religion
+      `),
+      queryAll(`
+        SELECT collection, COUNT(*) as count
+        FROM docs
+        WHERE deleted_at IS NULL AND collection IS NOT NULL
+        GROUP BY collection
+      `)
+    ]);
+
+    const totalDocuments = docCountResult?.count || 0;
+    const totalPassages = contentCountResult?.count || 0;
+
+    // Build religion and collection count maps
+    const religionCounts = {};
+    for (const row of religionRows) {
+      religionCounts[row.religion] = row.count;
+    }
+
+    const collectionCounts = {};
+    for (const row of collectionRows) {
+      collectionCounts[row.collection] = row.count;
+    }
+
+    // Estimate total words (~100 words per paragraph average)
+    const totalWords = totalPassages * 100;
+
+    // Check Meilisearch indexing status (only if enabled)
+    let meilisearchIndexing = false;
+    let meiliTaskProgress = null;
+
+    if (config.search.enabled) {
+      try {
+        const meili = getMeili();
+        const [docStats, paraStats] = await Promise.all([
+          meili.index(INDEXES.DOCUMENTS).getStats(),
+          meili.index(INDEXES.PARAGRAPHS).getStats()
+        ]);
+
+        meilisearchIndexing = docStats.isIndexing || paraStats.isIndexing;
+
+        // Check pending/processing tasks
+        const pendingTasks = await meili.tasks.getTasks({
+          statuses: ['enqueued', 'processing'],
+          limit: 10
+        });
+
+        if (pendingTasks.results.length > 0) {
+          meilisearchIndexing = true;
+          const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
+          const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
+          meiliTaskProgress = {
+            pending: enqueuedCount,
+            processing: processingCount,
+            total: pendingTasks.total || enqueuedCount + processingCount
+          };
+        } else {
+          // Check if tasks completed recently (within 60 seconds)
+          const recentTasks = await meili.tasks.getTasks({
+            statuses: ['succeeded'],
+            types: ['documentAdditionOrUpdate'],
+            limit: 1
+          });
+
+          if (recentTasks.results.length > 0) {
+            const lastTask = recentTasks.results[0];
+            const finishedAt = new Date(lastTask.finishedAt);
+            const secondsAgo = (Date.now() - finishedAt.getTime()) / 1000;
+
+            if (secondsAgo < 60) {
+              meilisearchIndexing = true;
+              meiliTaskProgress = {
+                pending: 0,
+                processing: 0,
+                recentlyCompleted: true,
+                lastTaskSecondsAgo: Math.round(secondsAgo)
+              };
+            }
+          }
+        }
+      } catch {
+        // Meilisearch not available - stats still valid from SQLite
+      }
+    }
+
     return {
-      totalDocuments: 0,
-      totalPassages: 0,
-      religions: 0,
-      religionCounts: {},
-      collections: 0,
-      collectionCounts: {},
-      totalWords: 0,
-      meilisearchEnabled: false,
+      totalDocuments,
+      totalPassages,
+      totalWords,
+      religions: Object.keys(religionCounts).length,
+      religionCounts,
+      collections: Object.keys(collectionCounts).length,
+      collectionCounts,
+      meilisearchEnabled: config.search.enabled,
+      meilisearchIndexing,
+      meiliTaskProgress,
       importProgress,
-      ingestionProgress,   // Docs with content vs total docs
+      ingestionProgress,
       indexingProgress,
       lastUpdated: new Date().toISOString()
     };
-  }
-  const meili = getMeili();
-
-  try {
-    const [docStats, paraStats] = await Promise.all([
-      meili.index(INDEXES.DOCUMENTS).getStats(),
-      meili.index(INDEXES.PARAGRAPHS).getStats()
-    ]);
-
-    // Get facet distributions for religions and collections
-    // Use DOCUMENTS index for religion counts (documents per religion, not paragraphs)
-    // Use PARAGRAPHS index for collection counts
-    let religions = {};
-    let collections = {};
-    let totalWords = 0;
-
-    try {
-      // Get document counts per religion from DOCUMENTS index
-      const docFacetResults = await meili.index(INDEXES.DOCUMENTS).search('', {
-        limit: 0,
-        facets: ['religion']
-      });
-      religions = docFacetResults.facetDistribution?.religion || {};
-
-      // Get collection counts from PARAGRAPHS (for passage-level detail)
-      const paraFacetResults = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        limit: 0,
-        facets: ['collection']
-      });
-      collections = paraFacetResults.facetDistribution?.collection || {};
-    } catch {
-      // Facets may not be available
-    }
-
-    // Estimate total words (rough calculation based on average words per paragraph)
-    // Average paragraph has ~100 words, so multiply passages by 100
-    totalWords = paraStats.numberOfDocuments * 100;
-
-    // Detect Meilisearch indexing activity
-    // Meilisearch's isIndexing flag clears quickly between documents,
-    // so also check if recent tasks completed (within last 60 seconds)
-    let isMeiliIndexing = docStats.isIndexing || paraStats.isIndexing;
-    let meiliTaskProgress = null;
-
-    try {
-      // Check pending/processing tasks
-      const pendingTasks = await meili.tasks.getTasks({
-        statuses: ['enqueued', 'processing'],
-        limit: 10
-      });
-
-      if (pendingTasks.results.length > 0) {
-        isMeiliIndexing = true;
-        const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
-        const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
-        meiliTaskProgress = {
-          pending: enqueuedCount,
-          processing: processingCount,
-          total: pendingTasks.total || enqueuedCount + processingCount
-        };
-      } else {
-        // No pending tasks - check if tasks completed recently
-        const recentTasks = await meili.tasks.getTasks({
-          statuses: ['succeeded'],
-          types: ['documentAdditionOrUpdate'],
-          limit: 1
-        });
-
-        if (recentTasks.results.length > 0) {
-          const lastTask = recentTasks.results[0];
-          const finishedAt = new Date(lastTask.finishedAt);
-          const secondsAgo = (Date.now() - finishedAt.getTime()) / 1000;
-
-          // If a document was indexed within last 60 seconds, likely still indexing
-          if (secondsAgo < 60) {
-            isMeiliIndexing = true;
-            meiliTaskProgress = {
-              pending: 0,
-              processing: 0,
-              recentlyCompleted: true,
-              lastTaskSecondsAgo: Math.round(secondsAgo)
-            };
-          }
-        }
-      }
-    } catch {
-      // Tasks API may not be available
-    }
-
-    return {
-      totalDocuments: docStats.numberOfDocuments,
-      totalPassages: paraStats.numberOfDocuments,
-      totalWords,
-      religions: Object.keys(religions).length,
-      religionCounts: religions,
-      collections: Object.keys(collections).length,
-      collectionCounts: collections,
-      meilisearchIndexing: isMeiliIndexing,
-      meiliTaskProgress,
-      importProgress,      // Current batch import (null if no active import)
-      ingestionProgress,   // Docs with content vs total docs
-      indexingProgress,    // Docs with content vs indexed in Meilisearch
-      lastUpdated: new Date().toISOString()
-    };
   } catch (err) {
-    logger.warn({ err }, 'Failed to get search stats');
+    logger.warn({ err }, 'Failed to get library stats');
     return {
       totalDocuments: 0,
       totalPassages: 0,
@@ -688,6 +682,7 @@ export async function getStats() {
       religionCounts: {},
       collections: 0,
       collectionCounts: {},
+      meilisearchEnabled: config.search.enabled,
       meilisearchIndexing: false,
       meiliTaskProgress: null,
       importProgress,

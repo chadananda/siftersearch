@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T16:16:56.838Z",
+  "generated": "2026-01-16T16:24:47.424Z",
   "entries": [
+    {
+      "hash": "64a1b01",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Exclude soft-deleted docs from Meilisearch cleanup check",
+      "scope": null
+    },
     {
       "hash": "9969ff0",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Increase contrast on version badge",
       "scope": "ui"
-    },
-    {
-      "hash": "184159b",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Add fullscreen reader and translate button",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "64a1b01",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Exclude soft-deleted docs from Meilisearch cleanup check",
+        "scope": null
+      },
       {
         "hash": "9969ff0",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Increase contrast on version badge",
         "scope": "ui"
-      },
-      {
-        "hash": "184159b",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Add fullscreen reader and translate button",
-        "scope": "library"
       }
     ]
   }
