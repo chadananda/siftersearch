@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 31;
+const CURRENT_VERSION = 32;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1370,6 +1370,30 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_hash_embedding ON content(content_hash, embedding_model) WHERE embedding IS NOT NULL');
 
     logger.info('Migration 31 complete: Soft-delete columns added for embedding retention');
+  },
+
+  // Version 32: Add normalized_hash for embedding deduplication
+  // Enables sharing embeddings across documents with identical content
+  // (same paragraph quoted in 50 docs = 1 embedding generation)
+  32: async () => {
+    logger.info('Starting migration 32: Add normalized_hash for embedding deduplication');
+
+    // Add normalized_hash column to content table
+    try {
+      await query('ALTER TABLE content ADD COLUMN normalized_hash TEXT');
+      logger.info('Added normalized_hash column to content table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+      logger.info('normalized_hash column already exists in content table');
+    }
+
+    // Create index for fast embedding lookup by normalized_hash
+    // This is the key index for embedding deduplication
+    await query('CREATE INDEX IF NOT EXISTS idx_content_normalized_hash ON content(normalized_hash, embedding_model) WHERE embedding IS NOT NULL');
+
+    logger.info('Migration 32 complete: normalized_hash column added for embedding deduplication');
   },
 };
 

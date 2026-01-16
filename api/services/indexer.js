@@ -76,11 +76,38 @@ function computeContentHash(text, context = '') {
 }
 
 /**
+ * Normalize text for embedding lookup
+ * Strips everything irrelevant to semantic meaning so identical content
+ * can be matched even with formatting differences (quotes in 50 docs = 1 embedding)
+ * @param {string} text - The paragraph text
+ * @returns {string} Normalized text
+ */
+function normalizeForEmbedding(text) {
+  return text
+    .replace(/<[^>]+>/g, '')           // Remove HTML tags
+    .replace(/\s+/g, ' ')              // Collapse whitespace
+    .replace(/[^\p{L}\p{N}\s]/gu, '')  // Remove punctuation (keep letters, numbers, spaces)
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Compute normalized hash for embedding deduplication
+ * Same semantic content across documents will have same normalized_hash
+ * @param {string} text - The paragraph text
+ * @returns {string} MD5 hash of normalized text
+ */
+function computeNormalizedHash(text) {
+  const normalized = normalizeForEmbedding(text);
+  return crypto.createHash('md5').update(normalized).digest('hex');
+}
+
+/**
  * Get cached embeddings from libsql for paragraphs that haven't changed
  * Two-phase lookup:
- * 1. Same document: Looks up by file_path/body_hash, matches by paragraph_index
- * 2. Global: For uncached paragraphs, looks up ANY content with same content_hash
- *    (includes soft-deleted content to reuse expensive embeddings)
+ * 1. Same document: Looks up by file_path/body_hash, matches by paragraph_index + content_hash
+ * 2. Global: For uncached paragraphs, looks up ANY content with same normalized_hash
+ *    (normalized_hash strips formatting so "Hello World!" matches "hello world")
  * @param {string} filePath - Document file_path for lookup
  * @param {Array<{text: string, hash: string}>} paragraphs - Paragraphs with hashes
  * @param {string} [bodyHash] - Optional body_hash for lookup if file was renamed
@@ -90,7 +117,7 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
   const cached = new Map();
 
   try {
-    // Phase 1: Look up from same document (most efficient)
+    // Phase 1: Look up from same document (most efficient - exact content_hash match)
     let doc = await queryOne('SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL', [filePath]);
 
     // If not found by path but we have a body_hash, try that (file may have been renamed)
@@ -120,42 +147,46 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
       }
     }
 
-    // Phase 2: Global lookup for uncached paragraphs by content_hash
-    // This finds embeddings from ANY document (including soft-deleted) with matching content
+    // Phase 2: Global lookup for uncached paragraphs by normalized_hash
+    // This finds embeddings from ANY document with semantically identical content
+    // (same quote in 50 documents = 1 embedding generation, 49 lookups)
     const uncachedIndices = paragraphs
       .map((_, i) => i)
       .filter(i => !cached.has(i));
 
     if (uncachedIndices.length > 0) {
-      // Build content_hash lookup for uncached paragraphs
-      const uncachedHashes = uncachedIndices.map(i => paragraphs[i].hash);
-      const placeholders = uncachedHashes.map(() => '?').join(',');
+      // Compute normalized_hash for each uncached paragraph
+      const uncachedNormalizedHashes = uncachedIndices.map(i =>
+        computeNormalizedHash(paragraphs[i].text)
+      );
+      const placeholders = uncachedNormalizedHashes.map(() => '?').join(',');
 
-      // Global lookup: find ANY content row with matching hash and valid embedding
-      // Includes soft-deleted content (deleted_at is not filtered) to maximize embedding reuse
+      // Global lookup by normalized_hash: finds ANY content with matching normalized text
+      // Includes all content (even soft-deleted) to maximize embedding reuse
       const globalMatches = await queryAll(
-        `SELECT content_hash, embedding, embedding_model
+        `SELECT normalized_hash, embedding, embedding_model
          FROM content
-         WHERE content_hash IN (${placeholders})
+         WHERE normalized_hash IN (${placeholders})
            AND embedding IS NOT NULL
            AND embedding_model = ?
-         GROUP BY content_hash`,
-        [...uncachedHashes, EMBEDDING_MODEL]
+         GROUP BY normalized_hash`,
+        [...uncachedNormalizedHashes, EMBEDDING_MODEL]
       );
 
-      // Build hash -> embedding map from global matches
+      // Build normalized_hash -> embedding map from global matches
       const globalEmbeddings = new Map();
       for (const row of globalMatches) {
         if (row.embedding && row.embedding.length > 0) {
-          globalEmbeddings.set(row.content_hash, new Float32Array(row.embedding.buffer || row.embedding));
+          globalEmbeddings.set(row.normalized_hash, new Float32Array(row.embedding.buffer || row.embedding));
         }
       }
 
       // Apply global matches to uncached paragraphs
-      for (const idx of uncachedIndices) {
-        const hash = paragraphs[idx].hash;
-        if (globalEmbeddings.has(hash)) {
-          cached.set(idx, globalEmbeddings.get(hash));
+      for (let i = 0; i < uncachedIndices.length; i++) {
+        const idx = uncachedIndices[i];
+        const normalizedHash = uncachedNormalizedHashes[i];
+        if (globalEmbeddings.has(normalizedHash)) {
+          cached.set(idx, globalEmbeddings.get(normalizedHash));
         }
       }
 
@@ -164,7 +195,7 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
           filePath,
           globalHits: globalMatches.length,
           uncachedCount: uncachedIndices.length
-        }, 'Global embedding cache hits from content_hash lookup');
+        }, 'Global embedding cache hits from normalized_hash lookup');
       }
     }
 
@@ -282,15 +313,19 @@ async function storeInLibsql(document, paragraphs) {
         ? Buffer.from(para.embedding.buffer || para.embedding)
         : null;
 
+      // Compute normalized hash for embedding deduplication (same content across docs)
+      const normalizedHash = computeNormalizedHash(para.text);
+
       // Let SQLite auto-generate INTEGER id
       const result = await query(`
-        INSERT INTO content (doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+        INSERT INTO content (doc_id, paragraph_index, text, content_hash, normalized_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
       `, [
         docId,  // INTEGER doc id from above
         para.paragraph_index,
         para.text,
         para.content_hash,
+        normalizedHash,
         para.heading || null,
         para.blocktype || 'paragraph',
         embeddingBlob,

@@ -25,7 +25,7 @@ describe('CORS Configuration', () => {
     const { createServer } = await import('../../api/server.js');
     server = await createServer({ logger: false });
     await server.ready();
-  });
+  }, 30000); // Server startup can be slow
 
   afterAll(async () => {
     if (server) {

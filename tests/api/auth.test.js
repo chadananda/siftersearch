@@ -17,7 +17,7 @@ describe('Auth API', () => {
       expect(hash).not.toBe(password);
       expect(await verifyPassword(password, hash)).toBe(true);
       expect(await verifyPassword('wrongPassword', hash)).toBe(false);
-    });
+    }, 15000); // argon2 hashing can be slow
   });
 
   describe('JWT Tokens', () => {
