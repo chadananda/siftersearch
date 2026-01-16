@@ -89,39 +89,40 @@ describe('Authority System', () => {
   });
 
   describe('getAuthority function', () => {
-    describe('author-based authority', () => {
-      it('should return 10 for Bahá\'u\'lláh (Central Figure)', () => {
+    describe('author-based authority (fallback)', () => {
+      // Author-based authority only applies when no collection/religion authority exists
+      it('should return 10 for Bahá\'u\'lláh when no collection/religion match', () => {
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
-          religion: 'Bahai Faith',
-          collection: 'General'
+          religion: 'Unknown Religion',
+          collection: 'Unknown Collection'
         });
         expect(authority).toBe(10);
       });
 
-      it('should return 10 for The Báb (Central Figure)', () => {
+      it('should return 10 for The Báb when no collection/religion match', () => {
         const authority = getAuthority({
           author: 'The Báb',
-          religion: 'Bahai Faith',
-          collection: 'General'
+          religion: 'Unknown Religion',
+          collection: 'Unknown Collection'
         });
         expect(authority).toBe(10);
       });
 
-      it('should return 9 for Shoghi Effendi (Authoritative interpretation)', () => {
+      it('should return 9 for Shoghi Effendi when no collection/religion match', () => {
         const authority = getAuthority({
           author: 'Shoghi Effendi',
-          religion: 'Bahai Faith',
-          collection: 'General'
+          religion: 'Unknown Religion',
+          collection: 'Unknown Collection'
         });
         expect(authority).toBe(9);
       });
 
-      it('should match author by substring', () => {
+      it('should match author by substring when no collection/religion match', () => {
         const authority = getAuthority({
           author: 'Tablets of Bahá\'u\'lláh revealed after the Kitáb-i-Aqdas',
-          religion: 'Bahai Faith',
-          collection: 'General'
+          religion: 'Unknown Religion',
+          collection: 'Unknown Collection'
         });
         expect(authority).toBe(10);
       });
@@ -224,14 +225,15 @@ describe('Authority System', () => {
     });
 
     describe('priority order', () => {
-      it('should prioritize author over collection', () => {
-        // Bahá'u'lláh (author = 10) should beat Pilgrim Notes (collection = 1)
+      it('should prioritize collection over author', () => {
+        // Pilgrim Notes (collection = 1) should beat Bahá'u'lláh (author = 10)
+        // because collection authority takes precedence
         const authority = getAuthority({
           author: 'Bahá\'u\'lláh',
           religion: 'Bahai Faith',
           collection: 'Pilgrim Notes'
         });
-        expect(authority).toBe(10);
+        expect(authority).toBe(1);
       });
 
       it('should prioritize collection over religion default', () => {
@@ -242,6 +244,18 @@ describe('Authority System', () => {
           collection: 'Core Tablets'
         });
         expect(authority).toBe(10);
+      });
+
+      it('should use author-based only as fallback when no collection match', () => {
+        // Religion default (6) should beat author (10) because collection check happens first
+        // But when collection doesn't exist, religion default applies, then author fallback
+        const authority = getAuthority({
+          author: 'Bahá\'u\'lláh',
+          religion: 'Bahai Faith',
+          collection: 'Some Unknown Collection'
+        });
+        // Religion default (6) takes precedence over author fallback
+        expect(authority).toBe(6);
       });
     });
   });
@@ -291,7 +305,7 @@ describe('Authority System', () => {
   describe('getAuthorityBatch function', () => {
     it('should return a Map with authority for each document', () => {
       const docs = [
-        { id: 'doc1', author: 'Bahá\'u\'lláh', religion: 'Bahai Faith', collection: 'General' },
+        { id: 'doc1', author: 'Bahá\'u\'lláh', religion: 'Bahai Faith', collection: 'Core Tablets' },
         { id: 'doc2', author: 'Unknown', religion: 'Bahai Faith', collection: 'Pilgrim Notes' },
         { id: 'doc3', author: 'Unknown', religion: 'Unknown', collection: 'Unknown' }
       ];
@@ -299,8 +313,8 @@ describe('Authority System', () => {
       const result = getAuthorityBatch(docs);
 
       expect(result).toBeInstanceOf(Map);
-      expect(result.get('doc1')).toBe(10); // Central Figure
-      expect(result.get('doc2')).toBe(1);  // Pilgrim Notes
+      expect(result.get('doc1')).toBe(10); // Core Tablets collection
+      expect(result.get('doc2')).toBe(1);  // Pilgrim Notes collection
       expect(result.get('doc3')).toBe(5);  // Default
     });
 

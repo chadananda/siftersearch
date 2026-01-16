@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T21:40:29.292Z",
+  "generated": "2026-01-16T22:37:23.499Z",
   "entries": [
+    {
+      "hash": "41dbb0d",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Deduplicate search results by doc_id + paragraph_index",
+      "scope": null
+    },
     {
       "hash": "8fb32b8",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove Meilisearch fallback - fix data at source instead",
       "scope": null
-    },
-    {
-      "hash": "9a01493",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Fallback to Meilisearch when SQLite has no content",
-      "scope": "bilingual"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "41dbb0d",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Deduplicate search results by doc_id + paragraph_index",
+        "scope": null
+      },
       {
         "hash": "8fb32b8",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Other",
         "description": "Remove Meilisearch fallback - fix data at source instead",
         "scope": null
-      },
-      {
-        "hash": "9a01493",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Fallback to Meilisearch when SQLite has no content",
-        "scope": "bilingual"
       }
     ]
   }

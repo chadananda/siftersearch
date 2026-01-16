@@ -7,9 +7,9 @@
  *
  * Priority order:
  * 1. Document's explicit `authority` field (frontmatter override)
- * 2. Author-based authority (Central Figures, etc.)
- * 3. Collection's meta.yaml authority
- * 4. Religion's meta.yaml authority
+ * 2. Collection's meta.yaml authority (primary source)
+ * 3. Religion's meta.yaml authority
+ * 4. Author-based authority (Central Figures fallback)
  * 5. Global default (5)
  */
 
@@ -131,26 +131,26 @@ export function getAuthority(doc) {
     return Math.min(10, Math.max(1, Number(doc.authority)));
   }
 
-  // 2. Check author-based authority (Central Figures)
+  const libAuth = loadLibraryAuthority();
+  const { religion, collection } = doc;
+
+  // 2. Check collection-specific authority from meta.yaml (primary source)
+  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
+    return libAuth.collections[religion][collection];
+  }
+
+  // 3. Check religion default from meta.yaml
+  if (religion && libAuth.religions[religion] !== undefined) {
+    return libAuth.religions[religion];
+  }
+
+  // 4. Fallback to author-based authority (Central Figures)
   if (doc.author) {
     for (const [authorPattern, authorityValue] of Object.entries(AUTHOR_AUTHORITY)) {
       if (doc.author.includes(authorPattern)) {
         return authorityValue;
       }
     }
-  }
-
-  const libAuth = loadLibraryAuthority();
-  const { religion, collection } = doc;
-
-  // 3. Check collection-specific authority from meta.yaml
-  if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
-    return libAuth.collections[religion][collection];
-  }
-
-  // 4. Check religion default from meta.yaml
-  if (religion && libAuth.religions[religion] !== undefined) {
-    return libAuth.religions[religion];
   }
 
   // 5. Return global default
