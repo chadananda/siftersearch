@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T20:22:19.792Z",
+  "generated": "2026-01-16T21:40:29.292Z",
   "entries": [
+    {
+      "hash": "8fb32b8",
+      "date": "2026-01-16",
+      "type": "Other",
+      "description": "Add key uniqueness logging to detect duplicate key rendering issue",
+      "scope": null
+    },
     {
       "hash": "f8ba5b4",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Fallback to Meilisearch when SQLite has no content",
       "scope": "bilingual"
-    },
-    {
-      "hash": "40124ea",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "8fb32b8",
+        "date": "2026-01-16",
+        "type": "Other",
+        "description": "Add key uniqueness logging to detect duplicate key rendering issue",
+        "scope": null
+      },
       {
         "hash": "f8ba5b4",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Fallback to Meilisearch when SQLite has no content",
         "scope": "bilingual"
-      },
-      {
-        "hash": "40124ea",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
-        "scope": "translation"
       }
     ]
   }

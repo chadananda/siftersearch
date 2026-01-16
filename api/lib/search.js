@@ -520,6 +520,23 @@ export async function keywordSearch(query, options = {}) {
 
   logger.info({ query, filteredCount: rankedHits.length }, 'keywordSearch: after filtering');
 
+  // Deduplicate by doc_id + paragraph_index (keep first occurrence, which has highest rank)
+  const seen = new Set();
+  const deduplicatedHits = [];
+  for (const hit of rankedHits) {
+    const key = `${hit.doc_id || hit.document_id}-${hit.paragraph_index}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicatedHits.push(hit);
+    }
+  }
+
+  if (deduplicatedHits.length !== rankedHits.length) {
+    logger.info({ query, before: rankedHits.length, after: deduplicatedHits.length, removed: rankedHits.length - deduplicatedHits.length }, 'keywordSearch: removed duplicates');
+  }
+
+  rankedHits = deduplicatedHits;
+
   // Cache the full ranked result set
   setCachedSearch(query, rankedHits, rankedHits.length);
 

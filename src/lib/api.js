@@ -299,11 +299,6 @@ export const search = {
     const data = await request(url);
 
     return data;
-    if (offset === 0) {
-      setClientCachedSearch(q, data);
-    }
-
-    return { ...data, clientCached: false };
   },
 
   /**
