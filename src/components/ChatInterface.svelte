@@ -488,7 +488,7 @@
     loadingMore = true;
     try {
       const offset = searchResults.length;
-      const data = await search.quick(currentSearchQuery, 10, offset, false);
+      const data = await search.quick(currentSearchQuery, 10, offset);
       // Only update if query hasn't changed during fetch
       if (currentSearchQuery === input?.trim() && data) {
         searchResults = [...searchResults, ...(data.hits || [])];
