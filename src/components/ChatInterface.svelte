@@ -468,11 +468,18 @@
       const data = await search.quick(q, 10, 0);
       console.debug('[Quick Search]', { q, data: { hits: data?.hits?.length, estimatedTotalHits: data?.estimatedTotalHits, hasMore: data?.hasMore, cached: data?.cached } });
       // Only update if query hasn't changed during fetch
-      if (input?.trim() === q && data) {
+      const currentInput = input?.trim();
+      console.debug('[Quick Search] Check:', { currentInput, capturedQ: q, matches: currentInput === q });
+      if (currentInput === q && data) {
         searchResults = data.hits || [];
         totalHits = data.estimatedTotalHits || searchResults.length;
         hasMoreResults = data.hasMore ?? false;
         searchTime = Math.round(performance.now() - start);
+        // Log result keys to check for duplicates
+        const keys = searchResults.map(r => `${r.doc_id || r.document_id}-${r.paragraph_index}`);
+        console.debug('[Quick Search] Applied:', { totalHits, resultsLength: searchResults.length, hasMore: hasMoreResults, uniqueKeys: new Set(keys).size, keys });
+      } else {
+        console.debug('[Quick Search] Skipped: query changed');
       }
     } catch (err) {
       console.error('Quick search error:', err);
