@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T20:18:03.488Z",
+  "generated": "2026-01-16T20:20:27.433Z",
   "entries": [
+    {
+      "hash": "0664aad",
+      "date": "2026-01-16",
+      "type": "Other",
+      "description": "Add detailed client-side search logging",
+      "scope": null
+    },
     {
       "hash": "4a40fd6",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add real-time translation progress with batch API",
       "scope": "translation"
-    },
-    {
-      "hash": "0d3f6bd",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Fix translate button visibility logic",
-      "scope": "reader"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "0664aad",
+        "date": "2026-01-16",
+        "type": "Other",
+        "description": "Add detailed client-side search logging",
+        "scope": null
+      },
       {
         "hash": "4a40fd6",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "New",
         "description": "Add real-time translation progress with batch API",
         "scope": "translation"
-      },
-      {
-        "hash": "0d3f6bd",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Fix translate button visibility logic",
-        "scope": "reader"
       }
     ]
   }

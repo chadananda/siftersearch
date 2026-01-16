@@ -492,7 +492,7 @@ export async function keywordSearch(query, options = {}) {
     .split(/\s+/)
     .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 
-  logger.debug({ query, queryTerms, meiliHits: results.hits.length, meiliEstimate: results.estimatedTotalHits }, 'keywordSearch: before filtering');
+  logger.info({ query, queryTerms, meiliHits: results.hits.length, meiliEstimate: results.estimatedTotalHits }, 'keywordSearch: before filtering');
 
   let rankedHits;
 
@@ -518,7 +518,7 @@ export async function keywordSearch(query, options = {}) {
     });
   }
 
-  logger.debug({ query, filteredCount: rankedHits.length }, 'keywordSearch: after filtering');
+  logger.info({ query, filteredCount: rankedHits.length }, 'keywordSearch: after filtering');
 
   // Cache the full ranked result set
   setCachedSearch(query, rankedHits, rankedHits.length);

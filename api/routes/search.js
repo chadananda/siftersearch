@@ -261,7 +261,7 @@ export default async function searchRoutes(fastify) {
 
     const results = await keywordSearch(q, { limit, offset });
 
-    logger.debug({ q, limit, offset, hitsReturned: results.hits.length, estimatedTotalHits: results.estimatedTotalHits, cached: results.cached }, '/quick response');
+    logger.info({ q, limit, offset, hitsReturned: results.hits.length, estimatedTotalHits: results.estimatedTotalHits, cached: results.cached }, '/quick response');
 
     return {
       hits: results.hits.map(hit => {
