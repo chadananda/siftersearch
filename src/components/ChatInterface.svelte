@@ -458,7 +458,7 @@
   }
 
   async function performQuickSearch() {
-    const q = input.trim();
+    const q = input?.trim();
     if (!q) return;
     searchLoading = true;
     currentSearchQuery = q;
@@ -466,13 +466,20 @@
     try {
       // Initial search: limit 10, offset 0
       const data = await search.quick(q, 10, 0);
-      if (input.trim() === q) {
+      // Only update if query hasn't changed during fetch
+      if (input?.trim() === q && data) {
         searchResults = data.hits || [];
         totalHits = data.estimatedTotalHits || searchResults.length;
-        hasMoreResults = data.hasMore || false;
+        hasMoreResults = data.hasMore ?? false;
         searchTime = Math.round(performance.now() - start);
       }
-    } catch (err) { console.error('Quick search error:', err); }
+    } catch (err) {
+      console.error('Quick search error:', err);
+      // Reset state on error
+      searchResults = [];
+      totalHits = 0;
+      hasMoreResults = false;
+    }
     finally { searchLoading = false; }
   }
 
@@ -482,13 +489,15 @@
     try {
       const offset = searchResults.length;
       const data = await search.quick(currentSearchQuery, 10, offset, false);
-      if (currentSearchQuery === input.trim()) {
-        // Append new results
+      // Only update if query hasn't changed during fetch
+      if (currentSearchQuery === input?.trim() && data) {
         searchResults = [...searchResults, ...(data.hits || [])];
-        hasMoreResults = data.hasMore || false;
+        hasMoreResults = data.hasMore ?? false;
         totalHits = data.estimatedTotalHits || searchResults.length;
       }
-    } catch (err) { console.error('Load more error:', err); }
+    } catch (err) {
+      console.error('Load more error:', err);
+    }
     finally { loadingMore = false; }
   }
   async function openReaderFromSearch(result) {

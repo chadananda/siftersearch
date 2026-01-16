@@ -25,9 +25,11 @@ const searchCache = new Map();
  * Get cached search results (client-side)
  */
 function getClientCachedSearch(query) {
+  if (!query) return null;
   const key = query.toLowerCase().trim();
-  const cached = searchCache.get(key);
+  if (!key) return null;
 
+  const cached = searchCache.get(key);
   if (!cached) return null;
 
   // Check TTL
@@ -47,7 +49,9 @@ function getClientCachedSearch(query) {
  * Store search results in client cache
  */
 function setClientCachedSearch(query, data) {
+  if (!query || !data) return;
   const key = query.toLowerCase().trim();
+  if (!key) return;
 
   // Evict oldest if at capacity
   while (searchCache.size >= SEARCH_CACHE_MAX_SIZE) {
@@ -342,9 +346,19 @@ export const search = {
    * @param {boolean} useCache - Whether to check client cache first (default true)
    */
   async quick(q, limit = 10, offset = 0, useCache = true) {
+    // Validate query
+    if (!q || typeof q !== 'string') {
+      return { hits: [], estimatedTotalHits: 0, hasMore: false, query: q };
+    }
+
+    const trimmedQ = q.trim();
+    if (!trimmedQ) {
+      return { hits: [], estimatedTotalHits: 0, hasMore: false, query: q };
+    }
+
     // For offset=0 requests, check client cache first
     if (useCache && offset === 0) {
-      const cached = getClientCachedSearch(q);
+      const cached = getClientCachedSearch(trimmedQ);
       if (cached) {
         return {
           ...cached,
@@ -354,7 +368,7 @@ export const search = {
     }
 
     // Fetch from server
-    const url = `/api/search/quick?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`;
+    const url = `/api/search/quick?q=${encodeURIComponent(trimmedQ)}&limit=${limit}&offset=${offset}`;
     const data = await request(url);
 
     // Cache offset=0 results on client
