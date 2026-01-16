@@ -9,13 +9,14 @@
  * with new 3072-dimension embeddings for cross-lingual semantic search.
  *
  * Usage:
- *   node scripts/regenerate-embeddings.js [--dry-run] [--batch-size=50] [--limit=1000] [--language=ar]
+ *   node scripts/regenerate-embeddings.js [--dry-run] [--batch-size=50] [--limit=1000] [--language=ar] [--doc-id=123]
  *
  * Options:
  *   --dry-run      Show what would be done without making changes
  *   --batch-size   Number of texts to embed in one API call (default: 50)
  *   --limit        Maximum paragraphs to process (default: all)
  *   --language     Only process specific language (e.g., ar, fa)
+ *   --doc-id       Only process specific document by ID
  *   --force        Regenerate even if model matches (for dimension fix)
  *   --include-missing  Also generate embeddings for paragraphs without any
  */
@@ -49,6 +50,7 @@ function getArgValue(name, defaultValue) {
 const batchSize = parseInt(getArgValue('batch-size', '50'), 10);
 const limit = getArgValue('limit', null);
 const language = getArgValue('language', null);
+const docId = getArgValue('doc-id', null);
 
 const TARGET_MODEL = config.ai.embeddings.model; // text-embedding-3-large
 const TARGET_DIMENSIONS = config.ai.embeddings.dimensions; // 3072
@@ -63,6 +65,7 @@ async function main() {
   console.log(`Batch size: ${batchSize}`);
   console.log(`Limit: ${limit || 'all'}`);
   console.log(`Language filter: ${language || 'all'}`);
+  console.log(`Document filter: ${docId || 'all'}`);
   console.log(`Force regenerate: ${force}`);
   console.log(`Include missing: ${includeMissing}`);
   console.log('');
@@ -79,9 +82,13 @@ async function main() {
   if (language) {
     countWrongQuery += ` AND doc_id IN (SELECT id FROM docs WHERE language = ?)`;
   }
+  if (docId) {
+    countWrongQuery += ` AND doc_id = ?`;
+  }
   const countWrongParams = [];
   if (!force) countWrongParams.push(TARGET_MODEL);
   if (language) countWrongParams.push(language);
+  if (docId) countWrongParams.push(docId);
   const { count: needsRegeneration } = await queryOne(countWrongQuery, countWrongParams);
 
   // Count paragraphs without any embedding
@@ -89,7 +96,12 @@ async function main() {
   if (language) {
     countMissingQuery += ` AND doc_id IN (SELECT id FROM docs WHERE language = ?)`;
   }
-  const countMissingParams = language ? [language] : [];
+  if (docId) {
+    countMissingQuery += ` AND doc_id = ?`;
+  }
+  const countMissingParams = [];
+  if (language) countMissingParams.push(language);
+  if (docId) countMissingParams.push(docId);
   const { count: noEmbedding } = await queryOne(countMissingQuery, countMissingParams);
 
   // Count paragraphs with correct model
@@ -174,6 +186,11 @@ async function main() {
     if (language) {
       fetchQuery += ` AND d.language = ?`;
       fetchParams.push(language);
+    }
+
+    if (docId) {
+      fetchQuery += ` AND c.doc_id = ?`;
+      fetchParams.push(docId);
     }
 
     fetchQuery += ` LIMIT ?`;
