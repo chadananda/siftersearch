@@ -14,6 +14,83 @@ import { getImportProgress, getIngestionProgress, getIndexingProgress } from '..
 
 let client = null;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Search Results Cache (LRU with TTL)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SEARCH_CACHE_MAX_SIZE = 100;  // Max cached queries
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minute TTL
+
+// Map<cacheKey, { hits, estimatedTotalHits, timestamp }>
+const searchCache = new Map();
+
+/**
+ * Generate cache key from query (normalized)
+ */
+function getCacheKey(query) {
+  return query.toLowerCase().trim();
+}
+
+/**
+ * Get cached search results if still valid
+ */
+function getCachedSearch(query) {
+  const key = getCacheKey(query);
+  const cached = searchCache.get(key);
+
+  if (!cached) return null;
+
+  // Check TTL
+  if (Date.now() - cached.timestamp > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(key);
+    return null;
+  }
+
+  // Move to end (LRU behavior)
+  searchCache.delete(key);
+  searchCache.set(key, cached);
+
+  return cached;
+}
+
+/**
+ * Store search results in cache
+ */
+function setCachedSearch(query, hits, estimatedTotalHits) {
+  const key = getCacheKey(query);
+
+  // Evict oldest entries if at capacity
+  while (searchCache.size >= SEARCH_CACHE_MAX_SIZE) {
+    const oldestKey = searchCache.keys().next().value;
+    searchCache.delete(oldestKey);
+  }
+
+  searchCache.set(key, {
+    hits,
+    estimatedTotalHits,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Clear search cache (for testing or manual refresh)
+ */
+export function clearSearchCache() {
+  searchCache.clear();
+  logger.debug('Search cache cleared');
+}
+
+/**
+ * Get search cache stats
+ */
+export function getSearchCacheStats() {
+  return {
+    size: searchCache.size,
+    maxSize: SEARCH_CACHE_MAX_SIZE,
+    ttlMs: SEARCH_CACHE_TTL_MS
+  };
+}
+
 /**
  * Check if Meilisearch is enabled
  */
@@ -380,14 +457,33 @@ function calculatePhraseScore(text, query, terms) {
  * Keyword-only search (faster, no embedding needed)
  * Filters results to ensure ALL query terms appear (prefix matching allowed)
  * Boosts exact phrase matches to the top
+ *
+ * Supports pagination via offset parameter.
+ * Results are cached for 5 minutes to enable fast pagination.
  */
 export async function keywordSearch(query, options = {}) {
-  const { limit = 20, ...restOptions } = options;
+  const { limit = 10, offset = 0, ...restOptions } = options;
 
-  // Request more results than needed so we can filter and re-rank
+  // Check cache first
+  const cached = getCachedSearch(query);
+
+  if (cached) {
+    // Return slice from cached results
+    const hits = cached.hits.slice(offset, offset + limit);
+    return {
+      hits,
+      estimatedTotalHits: cached.estimatedTotalHits,
+      processingTimeMs: 0,  // Cached, no processing
+      cached: true,
+      hasMore: offset + limit < cached.estimatedTotalHits
+    };
+  }
+
+  // Not cached - compute full result set
+  // Request more results than typical pagination needs (150 max)
   const results = await hybridSearch(query, {
     ...restOptions,
-    limit: Math.min(limit * 5, 150), // Request 5x to account for filtering + re-ranking
+    limit: 150,  // Fetch max for caching
     semanticRatio: 0
   });
 
@@ -396,35 +492,42 @@ export async function keywordSearch(query, options = {}) {
     .split(/\s+/)
     .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 
+  let rankedHits;
+
   // If only stop words or single short word, return unfiltered
   if (queryTerms.length === 0) {
-    return {
-      ...results,
-      hits: results.hits.slice(0, limit)
-    };
+    rankedHits = results.hits;
+  } else {
+    // Filter to only results where Meilisearch found ALL query terms (with fuzzy matching)
+    const filteredHits = results.hits.filter(hit => {
+      return hasAllTermMatches(hit, queryTerms);
+    });
+
+    // Re-rank by phrase score (exact phrase matches first)
+    rankedHits = filteredHits.map(hit => ({
+      ...hit,
+      _phraseScore: calculatePhraseScore(hit.text || '', query, queryTerms)
+    })).sort((a, b) => {
+      // Sort by phrase score first, then by original ranking score
+      if (b._phraseScore !== a._phraseScore) {
+        return b._phraseScore - a._phraseScore;
+      }
+      return (b._rankingScore || 0) - (a._rankingScore || 0);
+    });
   }
 
-  // Filter to only results where Meilisearch found ALL query terms (with fuzzy matching)
-  const filteredHits = results.hits.filter(hit => {
-    return hasAllTermMatches(hit, queryTerms);
-  });
+  // Cache the full ranked result set
+  setCachedSearch(query, rankedHits, rankedHits.length);
 
-  // Re-rank by phrase score (exact phrase matches first)
-  const rankedHits = filteredHits.map(hit => ({
-    ...hit,
-    _phraseScore: calculatePhraseScore(hit.text || '', query, queryTerms)
-  })).sort((a, b) => {
-    // Sort by phrase score first, then by original ranking score
-    if (b._phraseScore !== a._phraseScore) {
-      return b._phraseScore - a._phraseScore;
-    }
-    return (b._rankingScore || 0) - (a._rankingScore || 0);
-  });
+  // Return requested slice
+  const hits = rankedHits.slice(offset, offset + limit);
 
   return {
-    ...results,
-    hits: rankedHits.slice(0, limit),
-    estimatedTotalHits: filteredHits.length
+    hits,
+    estimatedTotalHits: rankedHits.length,
+    processingTimeMs: results.processingTimeMs,
+    cached: false,
+    hasMore: offset + limit < rankedHits.length
   };
 }
 

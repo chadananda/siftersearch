@@ -243,6 +243,7 @@ export default async function searchRoutes(fastify) {
   });
 
   // Fast keyword-only search (no auth required, rate limited)
+  // Supports pagination via offset parameter. Results are cached server-side.
   fastify.get('/quick', {
     schema: {
       querystring: {
@@ -250,14 +251,15 @@ export default async function searchRoutes(fastify) {
         required: ['q'],
         properties: {
           q: { type: 'string', minLength: 1, maxLength: 200 },
-          limit: { type: 'integer', minimum: 1, maximum: 20, default: 10 }
+          limit: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
+          offset: { type: 'integer', minimum: 0, maximum: 140, default: 0 }
         }
       }
     }
   }, async (request) => {
-    const { q, limit = 10 } = request.query;
+    const { q, limit = 10, offset = 0 } = request.query;
 
-    const results = await keywordSearch(q, { limit });
+    const results = await keywordSearch(q, { limit, offset });
 
     return {
       hits: results.hits.map(hit => {
@@ -280,7 +282,11 @@ export default async function searchRoutes(fastify) {
         };
       }),
       query: q,
+      offset,
+      limit,
       estimatedTotalHits: results.estimatedTotalHits,
+      hasMore: results.hasMore,
+      cached: results.cached,
       processingTimeMs: results.processingTimeMs
     };
   });

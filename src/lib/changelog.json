@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T18:07:27.822Z",
+  "generated": "2026-01-16T18:24:45.859Z",
   "entries": [
+    {
+      "hash": "fe93b95",
+      "date": "2026-01-16",
+      "type": "New",
+      "description": "30-minute debounce for document re-ingestion during editing",
+      "scope": null
+    },
     {
       "hash": "d81a0cc",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Simplify title row, move authority to content overlay",
       "scope": "library"
-    },
-    {
-      "hash": "0c4615e",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Move tools to title row, eliminate toolbar line",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "fe93b95",
+        "date": "2026-01-16",
+        "type": "New",
+        "description": "30-minute debounce for document re-ingestion during editing",
+        "scope": null
+      },
       {
         "hash": "d81a0cc",
         "date": "2026-01-16",
@@ -7029,13 +7036,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Simplify title row, move authority to content overlay",
-        "scope": "library"
-      },
-      {
-        "hash": "0c4615e",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Move tools to title row, eliminate toolbar line",
         "scope": "library"
       }
     ]

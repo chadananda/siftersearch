@@ -11,6 +11,63 @@ const SESSION_KEY = 'sifter_session_id'; // Keep for backwards compatibility
 let accessToken = null;
 let userId = null;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Client-side Search Cache
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SEARCH_CACHE_MAX_SIZE = 50;
+const SEARCH_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minute TTL (shorter than server)
+
+// Map<query, { hits, estimatedTotalHits, hasMore, timestamp }>
+const searchCache = new Map();
+
+/**
+ * Get cached search results (client-side)
+ */
+function getClientCachedSearch(query) {
+  const key = query.toLowerCase().trim();
+  const cached = searchCache.get(key);
+
+  if (!cached) return null;
+
+  // Check TTL
+  if (Date.now() - cached.timestamp > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(key);
+    return null;
+  }
+
+  // LRU: move to end
+  searchCache.delete(key);
+  searchCache.set(key, cached);
+
+  return cached;
+}
+
+/**
+ * Store search results in client cache
+ */
+function setClientCachedSearch(query, data) {
+  const key = query.toLowerCase().trim();
+
+  // Evict oldest if at capacity
+  while (searchCache.size >= SEARCH_CACHE_MAX_SIZE) {
+    const oldestKey = searchCache.keys().next().value;
+    searchCache.delete(oldestKey);
+  }
+
+  searchCache.set(key, {
+    ...data,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Clear client search cache
+ */
+export function clearClientSearchCache() {
+  searchCache.clear();
+}
+
 /**
  * Get or create a persistent user ID for anonymous user tracking.
  * This ID persists across sessions and is used to store preferences,
@@ -276,10 +333,44 @@ export const search = {
   },
 
   /**
-   * Quick keyword-only search
+   * Quick keyword-only search with pagination support
+   * Results are cached client-side for instant subsequent queries
+   *
+   * @param {string} q - Search query
+   * @param {number} limit - Results per page (default 10)
+   * @param {number} offset - Starting position for pagination (default 0)
+   * @param {boolean} useCache - Whether to check client cache first (default true)
    */
-  async quick(q, limit = 10) {
-    return request(`/api/search/quick?q=${encodeURIComponent(q)}&limit=${limit}`);
+  async quick(q, limit = 10, offset = 0, useCache = true) {
+    // For offset=0 requests, check client cache first
+    if (useCache && offset === 0) {
+      const cached = getClientCachedSearch(q);
+      if (cached) {
+        return {
+          ...cached,
+          clientCached: true
+        };
+      }
+    }
+
+    // Fetch from server
+    const url = `/api/search/quick?q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}`;
+    const data = await request(url);
+
+    // Cache offset=0 results on client
+    if (offset === 0) {
+      setClientCachedSearch(q, data);
+    }
+
+    return { ...data, clientCached: false };
+  },
+
+  /**
+   * Load more results for an existing search query
+   * Appends to existing results
+   */
+  async quickLoadMore(q, currentCount, limit = 10) {
+    return this.quick(q, limit, currentCount, false);
   },
 
   /**

@@ -182,6 +182,9 @@
   let searchLoading = $state(false);
   let searchTime = $state(null);
   let totalHits = $state(0);
+  let hasMoreResults = $state(false);
+  let loadingMore = $state(false);
+  let currentSearchQuery = $state('');  // Track query for pagination
   let debounceTimer = null;
   // Preloaded document cache: Map<document_id, { segments: [], total: number }>
   const documentCache = new Map();
@@ -443,23 +446,50 @@
   }
   function handleSearchInput() {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (!input.trim()) { searchResults = []; totalHits = 0; searchTime = null; return; }
+    if (!input.trim()) {
+      searchResults = [];
+      totalHits = 0;
+      searchTime = null;
+      hasMoreResults = false;
+      currentSearchQuery = '';
+      return;
+    }
     debounceTimer = setTimeout(performQuickSearch, 30);
   }
+
   async function performQuickSearch() {
     const q = input.trim();
     if (!q) return;
     searchLoading = true;
+    currentSearchQuery = q;
     const start = performance.now();
     try {
-      const data = await search.quick(q, 20);
+      // Initial search: limit 10, offset 0
+      const data = await search.quick(q, 10, 0);
       if (input.trim() === q) {
         searchResults = data.hits || [];
         totalHits = data.estimatedTotalHits || searchResults.length;
+        hasMoreResults = data.hasMore || false;
         searchTime = Math.round(performance.now() - start);
       }
     } catch (err) { console.error('Quick search error:', err); }
     finally { searchLoading = false; }
+  }
+
+  async function loadMoreResults() {
+    if (loadingMore || !hasMoreResults || !currentSearchQuery) return;
+    loadingMore = true;
+    try {
+      const offset = searchResults.length;
+      const data = await search.quick(currentSearchQuery, 10, offset, false);
+      if (currentSearchQuery === input.trim()) {
+        // Append new results
+        searchResults = [...searchResults, ...(data.hits || [])];
+        hasMoreResults = data.hasMore || false;
+        totalHits = data.estimatedTotalHits || searchResults.length;
+      }
+    } catch (err) { console.error('Load more error:', err); }
+    finally { loadingMore = false; }
   }
   async function openReaderFromSearch(result) {
     const docId = result.document_id || result.doc_id;
@@ -1550,6 +1580,22 @@
               </div>
             </div>
           {/each}
+
+          <!-- Load More button -->
+          {#if hasMoreResults}
+            <button
+              class="load-more-btn"
+              onclick={loadMoreResults}
+              disabled={loadingMore}
+            >
+              {#if loadingMore}
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                Loading...
+              {:else}
+                Load more ({totalHits - searchResults.length} remaining)
+              {/if}
+            </button>
+          {/if}
         {:else}
           <div class="text-muted text-center py-8">No results found</div>
         {/if}
@@ -3024,6 +3070,32 @@
   }
   .source-card.clickable:active {
     transform: translateY(0);
+  }
+
+  /* Load More Button */
+  .load-more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .load-more-btn:hover:not(:disabled) {
+    background-color: var(--surface-3);
+    border-color: var(--border-strong, var(--border-default));
+  }
+  .load-more-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 
   /* Compact citation line - floated right */
