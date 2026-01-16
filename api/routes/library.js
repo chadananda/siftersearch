@@ -115,11 +115,11 @@ export default async function libraryRoutes(fastify) {
       // library_nodes table doesn't exist - continue without authority sorting
     }
 
-    // Get religion and collection counts from docs table
+    // Get religion and collection counts from docs table (exclude soft-deleted)
     const stats = await queryAll(`
       SELECT religion, collection, COUNT(*) as count
       FROM docs
-      WHERE religion IS NOT NULL
+      WHERE religion IS NOT NULL AND deleted_at IS NULL
       GROUP BY religion, collection
       ORDER BY religion, collection
     `);
@@ -164,10 +164,11 @@ export default async function libraryRoutes(fastify) {
    */
   fastify.get('/stats', async () => {
     // Get document and paragraph counts from libsql + Meilisearch indexing progress
+    // Exclude soft-deleted content (deleted_at IS NULL)
     const [docCount, paraCount, docsWithContent, facetStats, meiliProgress] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs'),
-      queryOne('SELECT COUNT(*) as count FROM content'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content'),
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
       queryAll(`
         SELECT
           religion,
@@ -175,6 +176,7 @@ export default async function libraryRoutes(fastify) {
           language,
           COUNT(*) as count
         FROM docs
+        WHERE deleted_at IS NULL
         GROUP BY religion, collection, language
       `),
       getIndexingProgress()
@@ -446,28 +448,28 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Religion not found');
     }
 
-    // Get document count from docs table
+    // Get document count from docs table (exclude soft-deleted)
     const countResult = await queryOne(
-      'SELECT COUNT(*) as count FROM docs WHERE religion = ?',
+      'SELECT COUNT(*) as count FROM docs WHERE religion = ? AND deleted_at IS NULL',
       [node.name]
     );
 
-    // Get children (collections) with document counts
+    // Get children (collections) with document counts (exclude soft-deleted)
     const children = await queryAll(`
       SELECT ln.id, ln.name, ln.slug, ln.description, ln.cover_image_url, ln.authority_default,
-             (SELECT COUNT(*) FROM docs d WHERE d.religion = ? AND d.collection = ln.name) as document_count
+             (SELECT COUNT(*) FROM docs d WHERE d.religion = ? AND d.collection = ln.name AND d.deleted_at IS NULL) as document_count
       FROM library_nodes ln
       WHERE ln.parent_id = ?
       ORDER BY ln.display_order, ln.name
     `, [node.name, node.id]);
 
-    // Get all documents for this religion (for listing) with preview paragraphs
+    // Get all documents for this religion (for listing) with preview paragraphs (exclude soft-deleted)
     const rawDocuments = await queryAll(`
       SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.paragraph_count, d.filename, d.slug,
         (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-         FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview_json
+         FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
       FROM docs d
-      WHERE d.religion = ?
+      WHERE d.religion = ? AND d.deleted_at IS NULL
       ORDER BY d.collection, d.title
       LIMIT 500
     `, [node.name]);
@@ -524,7 +526,7 @@ export default async function libraryRoutes(fastify) {
     const parsedOffset = parseInt(offset);
     const searchTerm = search.trim();
 
-    // Build query with optional search filter (use d. prefix for aliased query)
+    // Build query with optional search filter (use d. prefix for aliased query, exclude soft-deleted)
     let params = [religion.name, node.name];
     let searchCondition = '';
     if (searchTerm) {
@@ -536,13 +538,13 @@ export default async function libraryRoutes(fastify) {
       queryAll(`
         SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
           (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-           FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id ORDER BY paragraph_index LIMIT 3)) as preview_json
+           FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs d
-        WHERE d.religion = ? AND d.collection = ?${searchCondition}
+        WHERE d.religion = ? AND d.collection = ? AND d.deleted_at IS NULL${searchCondition}
         ORDER BY d.title ASC
         LIMIT ? OFFSET ?
       `, [...params, parsedLimit, parsedOffset]),
-      queryOne(`SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ?${searchTerm ? ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)' : ''}`, params)
+      queryOne(`SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ? AND deleted_at IS NULL${searchTerm ? ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)' : ''}`, params)
     ]);
 
     // Parse preview JSON
@@ -901,8 +903,8 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Pure listing - use libsql for browsing (source of truth)
-    // Build SQL WHERE clauses
-    const conditions = [];
+    // Build SQL WHERE clauses (always exclude soft-deleted)
+    const conditions = ['deleted_at IS NULL'];
     const params = [];
 
     if (religion) {
@@ -930,7 +932,7 @@ Return ONLY the description text, no quotes or formatting.`;
       params.push(yearTo);
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     // Build ORDER BY clause
     let orderBy = 'title ASC';
@@ -944,13 +946,13 @@ Return ONLY the description text, no quotes or formatting.`;
       orderBy = `title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
     }
 
-    // Get documents and total count (include preview paragraphs for instant accordion)
+    // Get documents and total count (include preview paragraphs for instant accordion, exclude soft-deleted)
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
                paragraph_count, created_at, updated_at, cover_url, encumbered, filename,
                (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = docs.id ORDER BY paragraph_index LIMIT 3)) as preview_json
+                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = docs.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs
         ${whereClause}
         ORDER BY ${orderBy}

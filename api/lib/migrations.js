@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 30;
+const CURRENT_VERSION = 31;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1330,6 +1330,46 @@ const migrations = {
     }
 
     logger.info('Migration 30 complete: content.id is now INTEGER PRIMARY KEY AUTOINCREMENT');
+  },
+
+  // Version 31: Add soft-delete support for embedding retention
+  // Documents and content are soft-deleted (deleted_at set) instead of hard-deleted
+  // This preserves embeddings for 30 days to avoid regenerating expensive embeddings
+  // when re-importing similar content
+  31: async () => {
+    logger.info('Starting migration 31: Add soft-delete columns for embedding retention');
+
+    // Add deleted_at to docs table
+    try {
+      await query('ALTER TABLE docs ADD COLUMN deleted_at TEXT');
+      logger.info('Added deleted_at column to docs table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+      logger.info('deleted_at column already exists in docs table');
+    }
+
+    // Add deleted_at to content table
+    try {
+      await query('ALTER TABLE content ADD COLUMN deleted_at TEXT');
+      logger.info('Added deleted_at column to content table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+      logger.info('deleted_at column already exists in content table');
+    }
+
+    // Create index on deleted_at for efficient filtering
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_deleted_at ON docs(deleted_at)');
+    await query('CREATE INDEX IF NOT EXISTS idx_content_deleted_at ON content(deleted_at)');
+
+    // Create composite index for embedding lookup by content_hash (includes deleted content)
+    // This enables fast embedding reuse across all content including soft-deleted
+    await query('CREATE INDEX IF NOT EXISTS idx_content_hash_embedding ON content(content_hash, embedding_model) WHERE embedding IS NOT NULL');
+
+    logger.info('Migration 31 complete: Soft-delete columns added for embedding retention');
   },
 };
 

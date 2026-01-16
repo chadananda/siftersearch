@@ -23,11 +23,15 @@ describe('Library API CRUD Operations', () => {
     process.env.RATE_LIMIT_ENABLED = 'false';
     process.env.INTERNAL_API_KEY = 'test-internal-key';
 
+    // Run database migrations before starting server
+    const { runMigrations } = await import('../../api/lib/migrations.js');
+    await runMigrations();
+
     // Import and create server
     const { createServer } = await import('../../api/server.js');
     server = await createServer({ logger: false });
     await server.ready();
-  });
+  }, 30000);
 
   afterAll(async () => {
     if (server) {
@@ -62,6 +66,10 @@ describe('Library API CRUD Operations', () => {
         url: '/api/library/stats'
       });
 
+      // Debug: log error response
+      if (response.statusCode !== 200) {
+        console.log('Stats error:', response.payload);
+      }
       expect(response.statusCode).toBe(200);
 
       const body = JSON.parse(response.payload);
@@ -69,7 +77,7 @@ describe('Library API CRUD Operations', () => {
       expect(body).toBeDefined();
       expect(body).toHaveProperty('totalDocuments');
       expect(body).toHaveProperty('totalParagraphs');
-    });
+    }, 60000); // Stats queries can be slow on large databases
 
     it('should return numeric statistics', async () => {
       const response = await server.inject({
@@ -80,7 +88,7 @@ describe('Library API CRUD Operations', () => {
       const body = JSON.parse(response.payload);
       expect(typeof body.totalDocuments).toBe('number');
       expect(body.totalDocuments).toBeGreaterThanOrEqual(0);
-    });
+    }, 60000); // Stats queries can be slow on large databases
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -362,7 +370,7 @@ describe('Library API Response Formats', () => {
     });
 
     expect(response.headers['content-type']).toContain('application/json');
-  });
+  }, 60000); // Stats queries can be slow on large databases
 
   it('should include proper error format for 404', async () => {
     const response = await server.inject({

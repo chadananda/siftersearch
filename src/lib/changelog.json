@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-15T22:18:57.793Z",
+  "generated": "2026-01-16T14:52:48.665Z",
   "entries": [
+    {
+      "hash": "1aaa14c",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Increase Meilisearch waitForTask timeout to 60s",
+      "scope": null
+    },
+    {
+      "hash": "8aea951",
+      "date": "2026-01-16",
+      "type": "New",
+      "description": "Automatic orphan cleanup for deleted files/folders",
+      "scope": null
+    },
+    {
+      "hash": "ba1b96f",
+      "date": "2026-01-15",
+      "type": "New",
+      "description": "Show document description and metadata in view mode",
+      "scope": null
+    },
     {
       "hash": "003cec2",
       "date": "2026-01-15",
@@ -3479,31 +3500,33 @@
       "type": "Fixed",
       "description": "Unify header styles and fix width/overflow issues",
       "scope": "library"
-    },
-    {
-      "hash": "7f8a405",
-      "date": "2025-12-29",
-      "type": "Refactor",
-      "description": "Replace custom CSS with Tailwind classes",
-      "scope": "CollectionDetail"
-    },
-    {
-      "hash": "0f65e3f",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add proper spacing between header and content sections",
-      "scope": "CollectionDetail"
-    },
-    {
-      "hash": "6313638",
-      "date": "2025-12-29",
-      "type": "Refactor",
-      "description": "Convert collection display from pills to vertical list",
-      "scope": "TreeView"
     }
   ],
   "grouped": {
+    "2026-01-16": [
+      {
+        "hash": "1aaa14c",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Increase Meilisearch waitForTask timeout to 60s",
+        "scope": null
+      },
+      {
+        "hash": "8aea951",
+        "date": "2026-01-16",
+        "type": "New",
+        "description": "Automatic orphan cleanup for deleted files/folders",
+        "scope": null
+      }
+    ],
     "2026-01-15": [
+      {
+        "hash": "ba1b96f",
+        "date": "2026-01-15",
+        "type": "New",
+        "description": "Show document description and metadata in view mode",
+        "scope": null
+      },
       {
         "hash": "003cec2",
         "date": "2026-01-15",
@@ -7014,27 +7037,6 @@
         "type": "Fixed",
         "description": "Unify header styles and fix width/overflow issues",
         "scope": "library"
-      },
-      {
-        "hash": "7f8a405",
-        "date": "2025-12-29",
-        "type": "Refactor",
-        "description": "Replace custom CSS with Tailwind classes",
-        "scope": "CollectionDetail"
-      },
-      {
-        "hash": "0f65e3f",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add proper spacing between header and content sections",
-        "scope": "CollectionDetail"
-      },
-      {
-        "hash": "6313638",
-        "date": "2025-12-29",
-        "type": "Refactor",
-        "description": "Convert collection display from pills to vertical list",
-        "scope": "TreeView"
       }
     ]
   }

@@ -16,7 +16,7 @@
 import { watch } from 'chokidar';
 import { readFile, access } from 'fs/promises';
 import { relative, dirname, basename, join } from 'path';
-import { ingestDocument, removeDocument, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
+import { ingestDocument, removeDocument, purgeOldDeletedContent, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 import { getDb } from '../lib/db.js';
@@ -202,6 +202,7 @@ async function fileExists(filePath) {
  * Periodic cleanup of orphaned documents
  * Removes DB entries for files that no longer exist on the filesystem
  * This catches deletions that weren't detected by file events (e.g., folder deletes via Dropbox)
+ * Also purges soft-deleted content older than 30 days
  */
 async function cleanupOrphanedDocuments() {
   if (!isEnabled) return;
@@ -213,8 +214,8 @@ async function cleanupOrphanedDocuments() {
     const db = await getDb();
     const basePath = config.library.basePath;
 
-    // Get all documents from DB
-    const result = await db.execute('SELECT id, file_path, title FROM docs');
+    // Get all ACTIVE documents from DB (exclude already soft-deleted)
+    const result = await db.execute('SELECT id, file_path, title FROM docs WHERE deleted_at IS NULL');
     const docs = result.rows;
 
     let orphansFound = 0;
@@ -236,7 +237,7 @@ async function cleanupOrphanedDocuments() {
       }
     }
 
-    // Remove orphaned documents
+    // Soft-delete orphaned documents (preserves embeddings for 30 days)
     if (orphanIds.length > 0) {
       for (const docId of orphanIds) {
         try {
@@ -257,6 +258,20 @@ async function cleanupOrphanedDocuments() {
         docsChecked: docs.length,
         durationMs: Date.now() - startTime
       }, 'Orphan cleanup complete - no orphans found');
+    }
+
+    // Purge soft-deleted content older than 30 days (hard delete)
+    // This frees up disk space while still allowing embedding reuse for recently deleted content
+    try {
+      const purgeResult = await purgeOldDeletedContent(30);
+      if (purgeResult.contentDeleted > 0 || purgeResult.docsDeleted > 0) {
+        logger.info({
+          contentDeleted: purgeResult.contentDeleted,
+          docsDeleted: purgeResult.docsDeleted
+        }, 'Purged old soft-deleted content (30+ days old)');
+      }
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to purge old deleted content');
     }
 
     watcherStats.lastOrphanCleanup = new Date().toISOString();

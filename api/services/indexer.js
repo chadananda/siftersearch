@@ -77,6 +77,10 @@ function computeContentHash(text, context = '') {
 
 /**
  * Get cached embeddings from libsql for paragraphs that haven't changed
+ * Two-phase lookup:
+ * 1. Same document: Looks up by file_path/body_hash, matches by paragraph_index
+ * 2. Global: For uncached paragraphs, looks up ANY content with same content_hash
+ *    (includes soft-deleted content to reuse expensive embeddings)
  * @param {string} filePath - Document file_path for lookup
  * @param {Array<{text: string, hash: string}>} paragraphs - Paragraphs with hashes
  * @param {string} [bodyHash] - Optional body_hash for lookup if file was renamed
@@ -86,43 +90,85 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
   const cached = new Map();
 
   try {
-    // Look up doc_id: first by file_path, then by body_hash (handles renames)
-    let doc = await queryOne('SELECT id FROM docs WHERE file_path = ?', [filePath]);
+    // Phase 1: Look up from same document (most efficient)
+    let doc = await queryOne('SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL', [filePath]);
 
     // If not found by path but we have a body_hash, try that (file may have been renamed)
     if (!doc && bodyHash) {
-      doc = await queryOne('SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL', [bodyHash]);
+      doc = await queryOne('SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL AND deleted_at IS NULL', [bodyHash]);
     }
 
-    if (!doc) {
-      return cached;  // No existing document, nothing to cache
-    }
+    if (doc) {
+      const existing = await queryAll(
+        `SELECT paragraph_index, content_hash, embedding, embedding_model
+         FROM content WHERE doc_id = ? AND deleted_at IS NULL`,
+        [doc.id]
+      );
 
-    const docId = doc.id;
-
-    // Get existing content rows for this document
-    const existing = await queryAll(
-      `SELECT paragraph_index, content_hash, embedding, embedding_model
-       FROM content WHERE doc_id = ?`,
-      [docId]
-    );
-
-    for (const row of existing) {
-      const para = paragraphs[row.paragraph_index];
-      // Check if hash matches AND we have an embedding with current model
-      if (para &&
-          row.content_hash === para.hash &&
-          row.embedding &&
-          row.embedding_model === EMBEDDING_MODEL) {
-        // Convert BLOB back to Float32Array
-        const buffer = row.embedding;
-        if (buffer && buffer.length > 0) {
-          cached.set(row.paragraph_index, new Float32Array(buffer.buffer || buffer));
+      for (const row of existing) {
+        const para = paragraphs[row.paragraph_index];
+        // Check if hash matches AND we have an embedding with current model
+        if (para &&
+            row.content_hash === para.hash &&
+            row.embedding &&
+            row.embedding_model === EMBEDDING_MODEL) {
+          const buffer = row.embedding;
+          if (buffer && buffer.length > 0) {
+            cached.set(row.paragraph_index, new Float32Array(buffer.buffer || buffer));
+          }
         }
       }
     }
 
-    logger.debug({ filePath, cached: cached.size, total: paragraphs.length }, 'Embedding cache hits');
+    // Phase 2: Global lookup for uncached paragraphs by content_hash
+    // This finds embeddings from ANY document (including soft-deleted) with matching content
+    const uncachedIndices = paragraphs
+      .map((_, i) => i)
+      .filter(i => !cached.has(i));
+
+    if (uncachedIndices.length > 0) {
+      // Build content_hash lookup for uncached paragraphs
+      const uncachedHashes = uncachedIndices.map(i => paragraphs[i].hash);
+      const placeholders = uncachedHashes.map(() => '?').join(',');
+
+      // Global lookup: find ANY content row with matching hash and valid embedding
+      // Includes soft-deleted content (deleted_at is not filtered) to maximize embedding reuse
+      const globalMatches = await queryAll(
+        `SELECT content_hash, embedding, embedding_model
+         FROM content
+         WHERE content_hash IN (${placeholders})
+           AND embedding IS NOT NULL
+           AND embedding_model = ?
+         GROUP BY content_hash`,
+        [...uncachedHashes, EMBEDDING_MODEL]
+      );
+
+      // Build hash -> embedding map from global matches
+      const globalEmbeddings = new Map();
+      for (const row of globalMatches) {
+        if (row.embedding && row.embedding.length > 0) {
+          globalEmbeddings.set(row.content_hash, new Float32Array(row.embedding.buffer || row.embedding));
+        }
+      }
+
+      // Apply global matches to uncached paragraphs
+      for (const idx of uncachedIndices) {
+        const hash = paragraphs[idx].hash;
+        if (globalEmbeddings.has(hash)) {
+          cached.set(idx, globalEmbeddings.get(hash));
+        }
+      }
+
+      if (globalMatches.length > 0) {
+        logger.debug({
+          filePath,
+          globalHits: globalMatches.length,
+          uncachedCount: uncachedIndices.length
+        }, 'Global embedding cache hits from content_hash lookup');
+      }
+    }
+
+    logger.debug({ filePath, cached: cached.size, total: paragraphs.length }, 'Total embedding cache hits');
   } catch (err) {
     logger.warn({ err: err.message, filePath }, 'Failed to get cached embeddings');
   }

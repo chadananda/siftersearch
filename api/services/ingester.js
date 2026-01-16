@@ -15,6 +15,7 @@ import { parseMarkdownBlocks, BLOCK_TYPES } from './block-parser.js';
 import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDocument } from './segmenter.js';
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
+import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
 
 // Chunking configuration
 const CHUNK_CONFIG = {
@@ -1244,15 +1245,62 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 }
 
 /**
- * Remove a document and all its content
+ * Soft-delete a document and all its content
+ * Preserves embeddings for 30 days to avoid regenerating when re-importing similar content.
+ * Content is immediately removed from Meilisearch search index.
  */
 export async function removeDocument(documentId) {
-  // Delete content first (foreign key constraint), then doc
-  await query('DELETE FROM content WHERE doc_id = ?', [documentId]);
-  await query('DELETE FROM docs WHERE id = ?', [documentId]);
+  const now = new Date().toISOString();
 
-  logger.info({ documentId }, 'Document removed from SQLite');
-  return { documentId, removed: true };
+  // Soft-delete: set deleted_at timestamp instead of DELETE
+  // This preserves embeddings for potential reuse
+  await query('UPDATE content SET deleted_at = ? WHERE doc_id = ?', [now, documentId]);
+  await query('UPDATE docs SET deleted_at = ? WHERE id = ?', [now, documentId]);
+
+  // Remove from Meilisearch immediately (exclude from search)
+  try {
+    await deleteFromMeilisearch(documentId);
+  } catch (err) {
+    // Log but don't fail - Meilisearch might not have this document
+    logger.warn({ err: err.message, documentId }, 'Failed to remove from Meilisearch (may not exist)');
+  }
+
+  logger.info({ documentId }, 'Document soft-deleted (embeddings retained for 30 days)');
+  return { documentId, removed: true, softDeleted: true };
+}
+
+/**
+ * Hard-delete documents that have been soft-deleted for more than 30 days
+ * Called periodically to clean up old embeddings
+ */
+export async function purgeOldDeletedContent(retentionDays = 30) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  const cutoffStr = cutoff.toISOString();
+
+  // Delete content first (foreign key), then docs
+  const contentResult = await query(
+    'DELETE FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ?',
+    [cutoffStr]
+  );
+  const docsResult = await query(
+    'DELETE FROM docs WHERE deleted_at IS NOT NULL AND deleted_at < ?',
+    [cutoffStr]
+  );
+
+  const contentDeleted = contentResult?.changes || 0;
+  const docsDeleted = docsResult?.changes || 0;
+
+  if (contentDeleted > 0 || docsDeleted > 0) {
+    logger.info({
+      contentDeleted,
+      docsDeleted,
+      retentionDays,
+      cutoff: cutoffStr
+    }, 'Purged old soft-deleted content');
+  }
+
+  return { contentDeleted, docsDeleted };
 }
 
 /**
@@ -1348,6 +1396,7 @@ export const ingester = {
   parseMarkdownFrontmatter,
   ingestDocument,
   removeDocument,
+  purgeOldDeletedContent,
   getIngestionStats,
   getUnprocessedDocuments,
   isFileIngested,
