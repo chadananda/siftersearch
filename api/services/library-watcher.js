@@ -14,8 +14,8 @@
  */
 
 import { watch } from 'chokidar';
-import { readFile } from 'fs/promises';
-import { relative, dirname, basename } from 'path';
+import { readFile, access } from 'fs/promises';
+import { relative, dirname, basename, join } from 'path';
 import { ingestDocument, removeDocument, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
@@ -27,6 +27,7 @@ import { invalidateCache, getAuthority } from '../lib/authority.js';
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
+const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
 const IGNORED_PATTERNS = [
   // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
   (path) => {
@@ -43,14 +44,17 @@ const IGNORED_PATTERNS = [
 
 let watcher = null;
 let isEnabled = false;
+let orphanCleanupTimer = null;
 let watcherStats = {
   startedAt: null,
   filesIngested: 0,
   filesRemoved: 0,
   filesMoved: 0,
+  orphansRemoved: 0,
   metaYamlUpdates: 0,
   errors: 0,
-  lastEvent: null
+  lastEvent: null,
+  lastOrphanCleanup: null
 };
 
 // Pending ADD events (short batch window)
@@ -179,6 +183,87 @@ async function processPendingDelete(bodyHash) {
   } catch (err) {
     watcherStats.errors++;
     logger.error({ err: err.message, filePath: pending.filePath }, 'Failed to process pending delete');
+  }
+}
+
+/**
+ * Check if a file exists on the filesystem
+ */
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Periodic cleanup of orphaned documents
+ * Removes DB entries for files that no longer exist on the filesystem
+ * This catches deletions that weren't detected by file events (e.g., folder deletes via Dropbox)
+ */
+async function cleanupOrphanedDocuments() {
+  if (!isEnabled) return;
+
+  logger.debug('Starting orphan cleanup scan');
+  const startTime = Date.now();
+
+  try {
+    const db = await getDb();
+    const basePath = config.library.basePath;
+
+    // Get all documents from DB
+    const result = await db.execute('SELECT id, file_path, title FROM docs');
+    const docs = result.rows;
+
+    let orphansFound = 0;
+    const orphanIds = [];
+
+    // Check each document's file existence
+    for (const doc of docs) {
+      const absolutePath = join(basePath, doc.file_path);
+      const exists = await fileExists(absolutePath);
+
+      if (!exists) {
+        orphansFound++;
+        orphanIds.push(doc.id);
+        logger.info({
+          docId: doc.id,
+          filePath: doc.file_path,
+          title: doc.title
+        }, 'Orphaned document found - file does not exist');
+      }
+    }
+
+    // Remove orphaned documents
+    if (orphanIds.length > 0) {
+      for (const docId of orphanIds) {
+        try {
+          await removeDocument(docId);
+          watcherStats.orphansRemoved++;
+        } catch (err) {
+          logger.error({ err: err.message, docId }, 'Failed to remove orphaned document');
+        }
+      }
+
+      logger.info({
+        orphansFound,
+        orphansRemoved: orphanIds.length,
+        durationMs: Date.now() - startTime
+      }, 'Orphan cleanup complete');
+    } else {
+      logger.debug({
+        docsChecked: docs.length,
+        durationMs: Date.now() - startTime
+      }, 'Orphan cleanup complete - no orphans found');
+    }
+
+    watcherStats.lastOrphanCleanup = new Date().toISOString();
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message }, 'Orphan cleanup failed');
   }
 }
 
@@ -432,6 +517,13 @@ export function startLibraryWatcher(libraryPaths) {
       }
     })
     .on('unlink', path => queueDeleteEvent(path))
+    .on('unlinkDir', async (path) => {
+      // Directory deleted - trigger immediate orphan cleanup for that path
+      const relativePath = toRelativePath(path);
+      logger.info({ path: relativePath }, 'Directory deleted - triggering orphan cleanup');
+      // Small delay to let any pending file events settle
+      setTimeout(() => cleanupOrphanedDocuments(), 5000);
+    })
     .on('error', err => {
       watcherStats.errors++;
       logger.error({ err: err.message }, 'Library watcher error');
@@ -440,6 +532,11 @@ export function startLibraryWatcher(libraryPaths) {
       isEnabled = true;
       watcherStats.startedAt = new Date().toISOString();
       logger.info({ paths }, 'Library watcher ready');
+
+      // Start periodic orphan cleanup
+      orphanCleanupTimer = setInterval(cleanupOrphanedDocuments, ORPHAN_CLEANUP_INTERVAL_MS);
+      // Run initial cleanup after a short delay
+      setTimeout(cleanupOrphanedDocuments, 10000);
     });
 }
 
@@ -456,6 +553,12 @@ export async function stopLibraryWatcher() {
     if (addBatchTimer) {
       clearTimeout(addBatchTimer);
       addBatchTimer = null;
+    }
+
+    // Clear orphan cleanup timer
+    if (orphanCleanupTimer) {
+      clearInterval(orphanCleanupTimer);
+      orphanCleanupTimer = null;
     }
 
     // Clear pending deletes and their timers
@@ -486,4 +589,14 @@ export function getWatcherStats() {
  */
 export function isWatcherRunning() {
   return watcher !== null && isEnabled;
+}
+
+/**
+ * Manually trigger orphan cleanup
+ * Useful for admin/maintenance
+ */
+export async function triggerOrphanCleanup() {
+  logger.info('Manual orphan cleanup triggered');
+  await cleanupOrphanedDocuments();
+  return { success: true, lastCleanup: watcherStats.lastOrphanCleanup, orphansRemoved: watcherStats.orphansRemoved };
 }
