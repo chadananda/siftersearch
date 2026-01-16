@@ -133,7 +133,8 @@ export async function initializeIndexes() {
     }
   });
   // Wait for settings update to complete (Meilisearch updates are async)
-  await meili.tasks.waitForTask(paragraphsTask.taskUid);
+  // Use longer timeout (60s) since Meilisearch may be processing other tasks
+  await meili.tasks.waitForTask(paragraphsTask.taskUid, { timeOutMs: 60000 });
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
@@ -166,7 +167,8 @@ export async function initializeIndexes() {
     }
   });
   // Wait for settings update to complete
-  await meili.tasks.waitForTask(documentsTask.taskUid);
+  // Use longer timeout (60s) since Meilisearch may be processing other tasks
+  await meili.tasks.waitForTask(documentsTask.taskUid, { timeOutMs: 60000 });
 
   logger.info('Search indexes initialized');
 }
