@@ -466,6 +466,7 @@
     try {
       // Initial search: limit 10, offset 0
       const data = await search.quick(q, 10, 0);
+      console.debug('[Quick Search]', { q, data: { hits: data?.hits?.length, estimatedTotalHits: data?.estimatedTotalHits, hasMore: data?.hasMore, cached: data?.cached } });
       // Only update if query hasn't changed during fetch
       if (input?.trim() === q && data) {
         searchResults = data.hits || [];
