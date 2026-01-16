@@ -579,6 +579,89 @@ export default async function adminRoutes(fastify) {
   });
 
   /**
+   * Backfill normalized_hash for existing content
+   * This is a long-running operation (400k+ rows) - runs in background
+   * POST /api/admin/server/backfill-normalized-hash
+   */
+  fastify.post('/server/backfill-normalized-hash', {
+    preHandler: requireInternal,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          batchSize: { type: 'number', default: 1000 }
+        }
+      }
+    }
+  }, async (request) => {
+    const { batchSize = 1000 } = request.body || {};
+    const crypto = await import('crypto');
+
+    // Check how many need processing
+    const countResult = await queryOne('SELECT COUNT(*) as count FROM content WHERE normalized_hash IS NULL AND text IS NOT NULL');
+    const totalRows = countResult?.count || 0;
+
+    if (totalRows === 0) {
+      return { success: true, message: 'All content already has normalized_hash', totalRows: 0, updated: 0 };
+    }
+
+    // Normalization function (same as in indexer.js)
+    function normalizeForEmbedding(text) {
+      return text
+        .replace(/<[^>]+>/g, '')           // Remove HTML tags
+        .replace(/\s+/g, ' ')              // Collapse whitespace
+        .replace(/[^\p{L}\p{N}\s]/gu, '')  // Remove punctuation
+        .toLowerCase()
+        .trim();
+    }
+
+    function computeNormalizedHash(text) {
+      const normalized = normalizeForEmbedding(text);
+      return crypto.createHash('md5').update(normalized).digest('hex');
+    }
+
+    // Process in batches
+    let totalUpdated = 0;
+    const startTime = Date.now();
+
+    while (true) {
+      const rows = await queryAll(
+        `SELECT id, text FROM content
+         WHERE normalized_hash IS NULL AND text IS NOT NULL
+         LIMIT ?`,
+        [batchSize]
+      );
+
+      if (rows.length === 0) break;
+
+      for (const row of rows) {
+        const hash = computeNormalizedHash(row.text);
+        await query('UPDATE content SET normalized_hash = ? WHERE id = ?', [hash, row.id]);
+      }
+
+      totalUpdated += rows.length;
+
+      // Log progress every 10 batches
+      if ((totalUpdated / batchSize) % 10 === 0) {
+        const pct = Math.round((totalUpdated / totalRows) * 100);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        logger.info({ totalUpdated, totalRows, pct: `${pct}%`, elapsed: `${elapsed}s` }, 'Backfill progress');
+      }
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    logger.info({ totalUpdated, elapsed: `${elapsed}s` }, 'Backfill complete');
+
+    return {
+      success: true,
+      message: `Backfilled normalized_hash for ${totalUpdated} rows`,
+      totalRows,
+      updated: totalUpdated,
+      elapsedSeconds: parseFloat(elapsed)
+    };
+  });
+
+  /**
    * Helper to run a script as a background task
    */
   function runBackgroundTask(taskId, scriptPath, args = []) {

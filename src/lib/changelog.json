@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T15:12:41.395Z",
+  "generated": "2026-01-16T15:58:40.478Z",
   "entries": [
+    {
+      "hash": "de5a5f3",
+      "date": "2026-01-16",
+      "type": "New",
+      "description": "Add normalized_hash for embedding deduplication",
+      "scope": null
+    },
     {
       "hash": "8a45ca3",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve document view UI and scroll behavior",
       "scope": "library"
-    },
-    {
-      "hash": "e5f9d4c",
-      "date": "2025-12-29",
-      "type": "Chore",
-      "description": "Bump version to 0.1.211",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "de5a5f3",
+        "date": "2026-01-16",
+        "type": "New",
+        "description": "Add normalized_hash for embedding deduplication",
+        "scope": null
+      },
       {
         "hash": "8a45ca3",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Improve document view UI and scroll behavior",
         "scope": "library"
-      },
-      {
-        "hash": "e5f9d4c",
-        "date": "2025-12-29",
-        "type": "Chore",
-        "description": "Bump version to 0.1.211",
-        "scope": null
       }
     ]
   }

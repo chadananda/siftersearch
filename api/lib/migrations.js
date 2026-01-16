@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 32;
+const CURRENT_VERSION = 33;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1394,6 +1394,23 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_normalized_hash ON content(normalized_hash, embedding_model) WHERE embedding IS NOT NULL');
 
     logger.info('Migration 32 complete: normalized_hash column added for embedding deduplication');
+  },
+
+  // Version 33: Mark that normalized_hash backfill is needed
+  // The actual backfill is done via admin endpoint since it's a long-running operation (400k+ rows)
+  // New content will have normalized_hash computed on insert automatically
+  33: async () => {
+    logger.info('Migration 33: normalized_hash backfill marker');
+
+    // Check how many need processing
+    const countResult = await queryOne('SELECT COUNT(*) as count FROM content WHERE normalized_hash IS NULL AND text IS NOT NULL');
+    const totalRows = countResult?.count || 0;
+
+    if (totalRows === 0) {
+      logger.info('Migration 33: All content already has normalized_hash');
+    } else {
+      logger.warn({ totalRows }, 'Migration 33: Content rows need normalized_hash backfill - run POST /api/admin/backfill-normalized-hash');
+    }
   },
 };
 
