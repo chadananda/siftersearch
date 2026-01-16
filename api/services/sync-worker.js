@@ -270,11 +270,11 @@ async function runCleanupCycle() {
       return;
     }
 
-    // Get all document IDs from libsql
-    const dbDocs = await queryAll('SELECT id FROM docs');
+    // Get all ACTIVE document IDs from libsql (exclude soft-deleted)
+    const dbDocs = await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL');
     const dbIdSet = new Set(dbDocs.map(d => d.id));
 
-    // Find stale documents (in Meili but not in DB)
+    // Find stale documents (in Meili but not in active DB docs)
     const staleIds = meiliDocs.results
       .filter(d => !dbIdSet.has(d.id))
       .map(d => d.id);
@@ -329,8 +329,8 @@ async function runFullSyncCheck() {
       return;
     }
 
-    // Get all document IDs from libsql
-    const dbDocs = await queryAll('SELECT id FROM docs');
+    // Get all ACTIVE document IDs from libsql (exclude soft-deleted)
+    const dbDocs = await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL');
     const dbIdSet = new Set(dbDocs.map(d => d.id));
 
     // Get all document IDs from Meilisearch
