@@ -261,7 +261,10 @@ export default async function searchRoutes(fastify) {
 
     const results = await keywordSearch(q, { limit, offset });
 
-    logger.info({ q, limit, offset, hitsReturned: results.hits.length, estimatedTotalHits: results.estimatedTotalHits, cached: results.cached }, '/quick response');
+    // Log keys to detect duplicate key issues
+    const resultKeys = results.hits.map(hit => `${hit.doc_id}-${hit.paragraph_index}`);
+    const uniqueKeys = new Set(resultKeys).size;
+    logger.info({ q, limit, offset, hitsReturned: results.hits.length, estimatedTotalHits: results.estimatedTotalHits, cached: results.cached, uniqueKeys, duplicateKeys: results.hits.length !== uniqueKeys }, '/quick response');
 
     return {
       hits: results.hits.map(hit => {

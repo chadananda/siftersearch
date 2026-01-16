@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-16T20:20:27.433Z",
+  "generated": "2026-01-16T20:22:19.792Z",
   "entries": [
+    {
+      "hash": "f8ba5b4",
+      "date": "2026-01-16",
+      "type": "Other",
+      "description": "Change search logs to info level for production visibility",
+      "scope": null
+    },
     {
       "hash": "0664aad",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
       "scope": "translation"
-    },
-    {
-      "hash": "168f852",
-      "date": "2025-12-29",
-      "type": "New",
-      "description": "Add real-time translation progress with batch API",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "f8ba5b4",
+        "date": "2026-01-16",
+        "type": "Other",
+        "description": "Change search logs to info level for production visibility",
+        "scope": null
+      },
       {
         "hash": "0664aad",
         "date": "2026-01-16",
@@ -7029,13 +7036,6 @@
         "date": "2025-12-29",
         "type": "Fixed",
         "description": "Add paragraph IDs to bilingual endpoint and fix reactivity",
-        "scope": "translation"
-      },
-      {
-        "hash": "168f852",
-        "date": "2025-12-29",
-        "type": "New",
-        "description": "Add real-time translation progress with batch API",
         "scope": "translation"
       }
     ]
