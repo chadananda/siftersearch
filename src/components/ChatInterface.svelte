@@ -1784,10 +1784,10 @@
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
                       {@const uniqueNeeded = libraryStats.pipelineStatus.uniqueEmbeddingsNeeded || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
-                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 50)}
-                      {@const minutes = Math.floor(estimatedSeconds / 60)}
-                      {@const seconds = estimatedSeconds % 60}
-                      {@const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`}
+                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 10)}
+                      {@const hours = Math.floor(estimatedSeconds / 3600)}
+                      {@const minutes = Math.floor((estimatedSeconds % 3600) / 60)}
+                      {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔢</span>
                         <span class="pipeline-label">Embeddings:</span>

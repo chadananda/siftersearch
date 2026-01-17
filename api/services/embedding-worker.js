@@ -13,12 +13,12 @@ import { logger } from '../lib/logger.js';
 import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
 
-// Configuration - throttled to prevent blocking health checks
-const EMBEDDING_INTERVAL_MS = 30000;  // Poll every 30 seconds (was 10)
-const BATCH_SIZE = 20;                // Texts per OpenAI batch (was 50, reduced for CPU)
+// Configuration - tuned for throughput while yielding event loop
+const EMBEDDING_INTERVAL_MS = 5000;   // Poll every 5 seconds (batch takes ~2-3s)
+const BATCH_SIZE = 50;                // Texts per OpenAI batch (API supports up to 2048)
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
-const DB_WRITE_DELAY_MS = 50;         // Small delay between DB writes to yield event loop
+const DB_WRITE_DELAY_MS = 10;         // Small delay between DB writes to yield event loop
 
 let embeddingInterval = null;
 let isRunning = false;

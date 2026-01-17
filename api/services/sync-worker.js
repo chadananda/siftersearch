@@ -12,13 +12,13 @@ import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, initializeIndexes } from '../lib/search.js';
 
-// Configuration - throttled to prevent blocking health checks
-const SYNC_INTERVAL_MS = 20000;  // Poll every 20 seconds (was 10)
+// Configuration - tuned for throughput while yielding event loop
+const SYNC_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Cleanup stale Meili docs every 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // Full sync check every hour
-const BATCH_SIZE = 50;           // Paragraphs per batch (was 100)
+const BATCH_SIZE = 100;          // Paragraphs per batch (Meili handles this easily)
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
-const YIELD_DELAY_MS = 10;       // Small delay to yield event loop
+const YIELD_DELAY_MS = 5;        // Small delay to yield event loop
 
 let syncInterval = null;
 let cleanupInterval = null;
