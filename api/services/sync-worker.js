@@ -25,6 +25,7 @@ let fullSyncInterval = null;
 let isRunning = false;
 let isCleanupRunning = false;
 let isFullSyncRunning = false;
+let indexesInitialized = false;
 let syncStats = {
   lastRun: null,
   lastSuccess: null,
@@ -203,8 +204,11 @@ async function runSyncCycle() {
   syncStats.lastRun = new Date().toISOString();
 
   try {
-    // Initialize Meilisearch indexes if needed
-    await initializeIndexes();
+    // Initialize Meilisearch indexes only once (not every cycle)
+    if (!indexesInitialized) {
+      await initializeIndexes();
+      indexesInitialized = true;
+    }
 
     // Get documents with unsynced content
     const docs = await getUnsyncedDocuments();
