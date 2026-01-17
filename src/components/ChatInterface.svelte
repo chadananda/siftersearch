@@ -1772,14 +1772,14 @@
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔢</span>
                         <span class="pipeline-label">Embeddings:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} paragraphs need generation</span>
+                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsNeedingEmbeddings.toLocaleString()} paragraphs need generation</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔍</span>
                         <span class="pipeline-label">Search Index:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsPendingSync)} paragraphs pending sync</span>
+                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsPendingSync.toLocaleString()} paragraphs pending sync</span>
                       </div>
                     {/if}
                   </div>
