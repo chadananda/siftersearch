@@ -245,15 +245,15 @@ export default async function libraryRoutes(fastify) {
     }
 
     // Get pipeline status - paragraphs needing embeddings and pending sync
-    // Skip content > 50000 chars (likely broken ingestion, handled separately)
-    const SKIP_THRESHOLD = 50000;
+    // Skip content > 6000 chars (must be re-segmented, not truncated)
+    const MAX_CHARS = 6000;
     let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
     try {
       const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) >= ?`, [SKIP_THRESHOLD])
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
       ]);
       pipelineStatus = {
         ingestionQueuePending: indexingStats.pending + indexingStats.processing,
@@ -2817,6 +2817,127 @@ Provide only the translation, no explanations.`;
 
     logger.info({ redirectId: id }, 'Redirect deleted');
     return { success: true, deleted: id };
+  });
+
+  // ============================================
+  // Oversized Paragraphs Routes (Admin)
+  // ============================================
+
+  const MAX_PARAGRAPH_CHARS = 6000;  // Must match embedding-worker.js MAX_CHARS
+
+  /**
+   * Get documents with oversized paragraphs that need re-segmentation
+   * Sorted by authority (highest first) so admins can fix important docs first
+   * GET /api/library/oversized-paragraphs
+   */
+  fastify.get('/oversized-paragraphs', {
+    preHandler: [requireInternal]
+  }, async () => {
+    // Get documents with oversized paragraphs, sorted by authority
+    const results = await queryAll(`
+      SELECT
+        d.id as doc_id,
+        d.title,
+        d.source_path,
+        d.language,
+        d.authority,
+        COUNT(c.id) as oversized_count,
+        MAX(LENGTH(c.text)) as max_length,
+        MIN(LENGTH(c.text)) as min_length
+      FROM content c
+      JOIN docs d ON c.doc_id = d.id
+      WHERE c.embedding IS NULL
+        AND c.deleted_at IS NULL
+        AND LENGTH(c.text) > ?
+      GROUP BY d.id
+      ORDER BY d.authority DESC, oversized_count DESC
+    `, [MAX_PARAGRAPH_CHARS]);
+
+    // Get total counts
+    const totals = await queryOne(`
+      SELECT
+        COUNT(DISTINCT c.doc_id) as total_docs,
+        COUNT(*) as total_paragraphs
+      FROM content c
+      WHERE c.embedding IS NULL
+        AND c.deleted_at IS NULL
+        AND LENGTH(c.text) > ?
+    `, [MAX_PARAGRAPH_CHARS]);
+
+    return {
+      documents: results,
+      totals: {
+        documents: totals?.total_docs || 0,
+        paragraphs: totals?.total_paragraphs || 0
+      },
+      maxChars: MAX_PARAGRAPH_CHARS
+    };
+  });
+
+  /**
+   * Delete all oversized paragraphs for a specific document
+   * POST /api/library/oversized-paragraphs/:docId/delete
+   */
+  fastify.post('/oversized-paragraphs/:docId/delete', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          docId: { type: 'string' }
+        },
+        required: ['docId']
+      }
+    }
+  }, async (request) => {
+    const { docId } = request.params;
+
+    // Soft delete oversized paragraphs for this document
+    const result = await query(`
+      UPDATE content
+      SET deleted_at = datetime('now'),
+          synced = 0
+      WHERE doc_id = ?
+        AND embedding IS NULL
+        AND deleted_at IS NULL
+        AND LENGTH(text) > ?
+    `, [docId, MAX_PARAGRAPH_CHARS]);
+
+    logger.info({ docId, deleted: result.changes }, 'Deleted oversized paragraphs for document');
+    return { success: true, deleted: result.changes || 0 };
+  });
+
+  /**
+   * Delete ALL oversized paragraphs across all documents
+   * POST /api/library/oversized-paragraphs/delete-all
+   */
+  fastify.post('/oversized-paragraphs/delete-all', {
+    preHandler: [requireInternal]
+  }, async () => {
+    // Get count first
+    const count = await queryOne(`
+      SELECT COUNT(*) as total FROM content
+      WHERE embedding IS NULL
+        AND deleted_at IS NULL
+        AND LENGTH(text) > ?
+    `, [MAX_PARAGRAPH_CHARS]);
+
+    if (!count?.total) {
+      return { success: true, deleted: 0 };
+    }
+
+    // Soft delete all oversized paragraphs
+    const result = await query(`
+      UPDATE content
+      SET deleted_at = datetime('now'),
+          synced = 0
+      WHERE embedding IS NULL
+        AND deleted_at IS NULL
+        AND LENGTH(text) > ?
+    `, [MAX_PARAGRAPH_CHARS]);
+
+    logger.warn({ deleted: result.changes || count.total }, 'Deleted ALL oversized paragraphs');
+    return { success: true, deleted: result.changes || count.total };
   });
 
   // ============================================

@@ -16,9 +16,8 @@ import { config } from '../lib/config.js';
 // Configuration
 const EMBEDDING_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const BATCH_SIZE = 50;                // Texts per OpenAI batch (rate limit safe)
-const MAX_TOKENS = 8191;              // Max tokens for text-embedding-3-large
-const MAX_CHARS = 6000;               // Very conservative limit for any language (Arabic can be 1 char = 4 tokens)
-const SKIP_THRESHOLD = 50000;         // Skip content longer than this (likely broken ingestion)
+const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
+                                      // Content over this MUST be re-segmented, not truncated
 
 let embeddingInterval = null;
 let isRunning = false;
@@ -34,12 +33,12 @@ let embeddingStats = {
 /**
  * Get content rows that need embeddings
  * Groups by normalized_hash to avoid generating duplicate embeddings
- * Skips excessively long content (likely broken ingestion)
+ * Skips content over MAX_CHARS (must be re-segmented, not truncated)
  */
 async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
   // Get unique normalized_hash values that need embeddings
   // This avoids generating duplicates when same content exists in multiple docs
-  // Skip content longer than SKIP_THRESHOLD (likely broken ingestion)
+  // Skip content longer than MAX_CHARS (must be properly segmented first)
   const results = await queryAll(`
     SELECT id, text, normalized_hash
     FROM content
@@ -47,10 +46,10 @@ async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
       AND deleted_at IS NULL
       AND text IS NOT NULL
       AND text != ''
-      AND LENGTH(text) < ?
+      AND LENGTH(text) <= ?
     GROUP BY normalized_hash
     LIMIT ?
-  `, [SKIP_THRESHOLD, limit]);
+  `, [MAX_CHARS, limit]);
   return results;
 }
 
@@ -107,16 +106,8 @@ async function runEmbeddingCycle() {
 
     logger.info({ count: rows.length }, 'Generating embeddings for content batch');
 
-    // Prepare texts for embedding (truncate if needed)
-    const texts = rows.map(row => {
-      let text = row.text || '';
-      // Truncate very long texts to avoid token limit issues
-      if (text.length > MAX_CHARS) {
-        text = text.substring(0, MAX_CHARS);
-        logger.debug({ id: row.id, originalLength: row.text.length, truncatedTo: MAX_CHARS }, 'Truncated long text for embedding');
-      }
-      return text;
-    });
+    // Texts are pre-filtered by query to be <= MAX_CHARS, no truncation needed
+    const texts = rows.map(row => row.text || '');
 
     // Generate embeddings via OpenAI
     const result = await createEmbeddings(texts, {
@@ -198,7 +189,7 @@ export async function forceEmbeddingNow() {
 }
 
 /**
- * Get count of content needing embeddings
+ * Get count of content needing embeddings (within size limit)
  */
 export async function getUnembeddedCount() {
   const result = await queryOne(`
@@ -208,8 +199,8 @@ export async function getUnembeddedCount() {
     FROM content
     WHERE embedding IS NULL
       AND deleted_at IS NULL
-      AND LENGTH(text) < ?
-  `, [SKIP_THRESHOLD]);
+      AND LENGTH(text) <= ?
+  `, [MAX_CHARS]);
   return result || { total: 0, unique_hashes: 0 };
 }
 
@@ -224,7 +215,35 @@ export async function getOversizedCount() {
     FROM content
     WHERE embedding IS NULL
       AND deleted_at IS NULL
-      AND LENGTH(text) >= ?
-  `, [SKIP_THRESHOLD]);
+      AND LENGTH(text) > ?
+  `, [MAX_CHARS]);
   return result || { total: 0, unique_hashes: 0 };
+}
+
+/**
+ * Delete all oversized content rows (must be re-ingested with proper segmentation)
+ */
+export async function deleteOversizedContent() {
+  // First get the count for logging
+  const count = await getOversizedCount();
+
+  if (count.total === 0) {
+    logger.info('No oversized content to delete');
+    return { deleted: 0 };
+  }
+
+  logger.warn({ total: count.total, unique: count.unique_hashes }, 'Deleting oversized content that needs re-ingestion');
+
+  // Soft delete by setting deleted_at
+  const result = await query(`
+    UPDATE content
+    SET deleted_at = datetime('now'),
+        synced = 0
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND LENGTH(text) > ?
+  `, [MAX_CHARS]);
+
+  logger.info({ deleted: result.changes || count.total }, 'Oversized content deleted - documents must be re-ingested');
+  return { deleted: result.changes || count.total };
 }

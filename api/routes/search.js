@@ -302,16 +302,16 @@ export default async function searchRoutes(fastify) {
     const stats = await getStats();
 
     // Get pipeline status - paragraphs needing embeddings and pending sync
-    // Skip content > 50000 chars (likely broken ingestion, handled separately)
-    const SKIP_THRESHOLD = 50000;
+    // Skip content > 6000 chars (must be re-segmented, not truncated)
+    const MAX_CHARS = 6000;
     let pipelineStatus = null;
     try {
       const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
         // Unique normalized_hash values that need embedding (for accurate time estimate)
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) >= ?`, [SKIP_THRESHOLD])
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
       ]);
       pipelineStatus = {
         ingestionQueuePending: 0, // Not tracked in search stats
