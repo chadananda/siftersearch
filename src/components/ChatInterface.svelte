@@ -711,10 +711,14 @@
     try {
       const status = await admin.getAIUsageStatus();
       const summary = await admin.getAIUsageSummary();
+      // Find top caller by cost
+      const topCaller = summary?.byCaller?.length > 0
+        ? summary.byCaller.reduce((max, c) => (c.cost > max.cost ? c : max), summary.byCaller[0])
+        : null;
       aiUsageStatus = {
         ...status,
         today: summary?.today,
-        week: summary?.week
+        topCaller
       };
     } catch (err) {
       console.error('Failed to load AI usage status:', err);
@@ -1764,16 +1768,17 @@
                     </a>
                   {:else}
                     <a href="/admin/ai-usage" class="ai-cost-ticker">
-                      <span class="ticker-label">AI Costs:</span>
+                      <span class="ticker-label">AI 24h:</span>
                       <span class="ticker-item">
-                        <span class="ticker-period">Today</span>
                         <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
                       </span>
-                      <span class="ticker-divider">|</span>
-                      <span class="ticker-item">
-                        <span class="ticker-period">Week</span>
-                        <span class="ticker-value">${(aiUsageStatus.week?.cost || 0).toFixed(2)}</span>
-                      </span>
+                      {#if aiUsageStatus.topCaller}
+                        <span class="ticker-divider">|</span>
+                        <span class="ticker-item">
+                          <span class="ticker-caller">{aiUsageStatus.topCaller.caller}</span>
+                          <span class="ticker-value">${(aiUsageStatus.topCaller.cost || 0).toFixed(2)}</span>
+                        </span>
+                      {/if}
                     </a>
                   {/if}
                 </div>
@@ -2730,6 +2735,15 @@
 
   .ticker-period {
     color: var(--text-muted);
+  }
+
+  .ticker-caller {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ticker-value {
