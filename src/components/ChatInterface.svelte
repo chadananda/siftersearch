@@ -1662,6 +1662,9 @@
         <!-- Library Stats - always show with cached or default values -->
         <div class="stats-container">
           <div class="stats-card">
+            {#if displayStats.serverVersion}
+              <span class="version-pill">v{displayStats.serverVersion}</span>
+            {/if}
             <h3 class="stats-title">Library Contents</h3>
             <!-- Row 1: Key metrics -->
             <div class="stats-grid">
@@ -1744,45 +1747,11 @@
                   </div>
                 </div>
               {/if}
-            <div class="stats-footer" class:offline={serverOffline}>
-              {#if serverOffline}
+            {#if serverOffline}
+              <div class="stats-footer offline">
                 <span class="offline-status">Server offline - showing cached data</span>
-              {:else if displayStats.lastUpdated}
-                <span>Last indexed: {new Date(displayStats.lastUpdated).toLocaleDateString()}</span>
-                {#if displayStats.serverVersion}
-                  <span class="server-version">Server v{displayStats.serverVersion}</span>
-                {/if}
-              {:else if statsLoading}
-                <span>Connecting...</span>
-              {/if}
-            </div>
-              <!-- Admin-only AI Usage Ticker -->
-              {#if isAdmin && aiUsageStatus}
-                <div class="admin-ai-ticker">
-                  {#if aiUsageStatus.paused}
-                    <a href="/admin/ai-usage" class="ai-paused-alert">
-                      <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <span>AI Paused - ${aiUsageStatus.dailyLimit} limit exceeded</span>
-                    </a>
-                  {:else}
-                    <a href="/admin/ai-usage" class="ai-cost-ticker">
-                      <span class="ticker-label">AI 24h:</span>
-                      <span class="ticker-item">
-                        <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
-                      </span>
-                      {#if aiUsageStatus.topCaller}
-                        <span class="ticker-divider">|</span>
-                        <span class="ticker-item">
-                          <span class="ticker-caller">{aiUsageStatus.topCaller.caller}</span>
-                          <span class="ticker-value">${(aiUsageStatus.topCaller.cost || 0).toFixed(2)}</span>
-                        </span>
-                      {/if}
-                    </a>
-                  {/if}
-                </div>
-              {/if}
+              </div>
+            {/if}
               {#if libraryStats?.meiliTaskProgress && (libraryStats.meiliTaskProgress.pending > 0 || libraryStats.meiliTaskProgress.processing > 0)}
                 {@const completed = libraryStats.meiliTaskProgress.completed || 0}
                 {@const percent = libraryStats.meiliTaskProgress.total > 0 ? Math.round((completed / libraryStats.meiliTaskProgress.total) * 100) : 0}
@@ -1821,6 +1790,29 @@
                       <span class="status-item progress">{libraryStats.translationProgress.totalProgress}/{libraryStats.translationProgress.totalItems} paragraphs</span>
                     {/if}
                   </div>
+                </div>
+              {/if}
+              <!-- Admin-only AI Usage Ticker (bottom of stats box) -->
+              {#if isAdmin && aiUsageStatus}
+                <div class="admin-ai-ticker">
+                  {#if aiUsageStatus.paused}
+                    <a href="/admin/ai-usage" class="ai-paused-alert">
+                      <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span>AI Paused - ${aiUsageStatus.dailyLimit} limit exceeded</span>
+                    </a>
+                  {:else}
+                    <a href="/admin/ai-usage" class="ai-cost-ticker">
+                      <span class="ticker-label">AI 24h:</span>
+                      <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
+                      {#if aiUsageStatus.topCaller}
+                        <span class="ticker-divider">|</span>
+                        <span class="ticker-caller">{aiUsageStatus.topCaller.caller}</span>
+                        <span class="ticker-value">${(aiUsageStatus.topCaller.cost || 0).toFixed(2)}</span>
+                      {/if}
+                    </a>
+                  {/if}
                 </div>
               {/if}
           </div>
@@ -2515,12 +2507,27 @@
   }
 
   .stats-card {
+    position: relative;
     background-color: light-dark(rgba(255, 255, 255, 0.35), rgba(30, 41, 59, 0.35));
     border-radius: 0.75rem;
     padding: 0.75rem 1rem;
     border: 1px solid var(--border-default);
     backdrop-filter: blur(12px);
     box-shadow: 0 4px 12px light-dark(rgba(0,0,0,0.06), rgba(0,0,0,0.2));
+  }
+
+  .version-pill {
+    position: absolute;
+    top: -0.4rem;
+    right: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface-1);
+    border: 1px solid var(--border-default);
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.35rem;
+    font-family: monospace;
   }
 
   @media (min-width: 640px) {
@@ -2706,20 +2713,15 @@
   .ai-cost-ticker {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border-default);
-    border-radius: 0.5rem;
-    color: var(--text-secondary);
+    gap: 0.35rem;
+    color: var(--text-muted);
     font-size: 0.75rem;
     text-decoration: none;
     justify-content: center;
   }
 
   .ai-cost-ticker:hover {
-    background: var(--surface-3);
-    border-color: var(--border-subtle);
+    color: var(--text-secondary);
   }
 
   .ticker-label {
