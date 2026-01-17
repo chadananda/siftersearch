@@ -2812,4 +2812,300 @@ Provide only the translation, no explanations.`;
     logger.info({ redirectId: id }, 'Redirect deleted');
     return { success: true, deleted: id };
   });
+
+  // ============================================
+  // Document Failures Routes (Admin)
+  // ============================================
+
+  /**
+   * List document failures with pagination and filtering
+   * GET /api/library/failures?resolved=0&limit=20&offset=0&errorType=oversized_paragraph
+   */
+  fastify.get('/failures', {
+    preHandler: [requireInternal],
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          resolved: { type: 'string', enum: ['0', '1', 'all'], default: '0' },
+          errorType: { type: 'string' },
+          limit: { type: 'string', default: '20' },
+          offset: { type: 'string', default: '0' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { resolved = '0', errorType, limit: limitStr = '20', offset: offsetStr = '0' } = request.query;
+    const limit = Math.min(parseInt(limitStr, 10) || 20, 100);
+    const offset = parseInt(offsetStr, 10) || 0;
+
+    // Build WHERE clause
+    const conditions = [];
+    const params = [];
+
+    if (resolved !== 'all') {
+      conditions.push('resolved = ?');
+      params.push(resolved === '1' ? 1 : 0);
+    }
+
+    if (errorType) {
+      conditions.push('error_type = ?');
+      params.push(errorType);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Get total count
+    const countResult = await queryOne(
+      `SELECT COUNT(*) as total FROM document_failures ${whereClause}`,
+      params
+    );
+
+    // Get failures with pagination
+    const failures = await queryAll(`
+      SELECT
+        id,
+        file_path,
+        file_name,
+        error_type,
+        error_message,
+        details,
+        resolved,
+        resolved_at,
+        created_at
+      FROM document_failures
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+
+    // Parse JSON details
+    const parsedFailures = failures.map(f => ({
+      ...f,
+      details: f.details ? JSON.parse(f.details) : null
+    }));
+
+    return {
+      failures: parsedFailures,
+      total: countResult?.total || 0,
+      limit,
+      offset
+    };
+  });
+
+  /**
+   * Get document failure counts by type
+   * GET /api/library/failures/summary
+   */
+  fastify.get('/failures/summary', {
+    preHandler: [requireInternal]
+  }, async () => {
+    // Get counts by error type and resolved status
+    const summary = await queryAll(`
+      SELECT
+        error_type,
+        resolved,
+        COUNT(*) as count
+      FROM document_failures
+      GROUP BY error_type, resolved
+      ORDER BY error_type, resolved
+    `);
+
+    // Get total unresolved
+    const unresolvedCount = await queryOne(`
+      SELECT COUNT(*) as count FROM document_failures WHERE resolved = 0
+    `);
+
+    // Format into structured summary
+    const byType = {};
+    for (const row of summary) {
+      if (!byType[row.error_type]) {
+        byType[row.error_type] = { unresolved: 0, resolved: 0 };
+      }
+      if (row.resolved === 0) {
+        byType[row.error_type].unresolved = row.count;
+      } else {
+        byType[row.error_type].resolved = row.count;
+      }
+    }
+
+    return {
+      totalUnresolved: unresolvedCount?.count || 0,
+      byType
+    };
+  });
+
+  /**
+   * Get single document failure by ID
+   * GET /api/library/failures/:id
+   */
+  fastify.get('/failures/:id', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    const failure = await queryOne(`
+      SELECT * FROM document_failures WHERE id = ?
+    `, [id]);
+
+    if (!failure) {
+      throw ApiError.notFound('Document failure not found');
+    }
+
+    return {
+      ...failure,
+      details: failure.details ? JSON.parse(failure.details) : null
+    };
+  });
+
+  /**
+   * Mark a failure as resolved (admin only)
+   * PUT /api/library/failures/:id/resolve
+   */
+  fastify.put('/failures/:id/resolve', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    const result = await query(`
+      UPDATE document_failures
+      SET resolved = 1, resolved_at = datetime('now')
+      WHERE id = ?
+    `, [id]);
+
+    if (!result.changes) {
+      throw ApiError.notFound('Document failure not found');
+    }
+
+    logger.info({ failureId: id }, 'Document failure marked as resolved');
+    return { success: true, resolved: true };
+  });
+
+  /**
+   * Delete/dismiss a failure (admin only)
+   * DELETE /api/library/failures/:id
+   */
+  fastify.delete('/failures/:id', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    const result = await query('DELETE FROM document_failures WHERE id = ?', [id]);
+
+    if (!result.changes) {
+      throw ApiError.notFound('Document failure not found');
+    }
+
+    logger.info({ failureId: id }, 'Document failure deleted');
+    return { success: true, deleted: id };
+  });
+
+  /**
+   * Retry ingestion for a failed document (admin only)
+   * POST /api/library/failures/:id/retry
+   */
+  fastify.post('/failures/:id/retry', {
+    preHandler: [requireInternal],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Get the failure record
+    const failure = await queryOne(`
+      SELECT * FROM document_failures WHERE id = ?
+    `, [id]);
+
+    if (!failure) {
+      throw ApiError.notFound('Document failure not found');
+    }
+
+    if (!failure.file_path) {
+      throw ApiError.badRequest('Cannot retry - no file path recorded');
+    }
+
+    // Try to read the file and re-ingest
+    const { config } = await import('../lib/config.js');
+    const basePath = config.library?.paths?.[0];
+
+    if (!basePath) {
+      throw ApiError.badRequest('Library path not configured');
+    }
+
+    const fullPath = join(basePath, failure.file_path);
+
+    // Check if file exists
+    try {
+      await access(fullPath, fsConstants.R_OK);
+    } catch {
+      throw ApiError.notFound(`File not found: ${failure.file_path}`);
+    }
+
+    // Read and re-ingest
+    const content = await readFile(fullPath, 'utf-8');
+
+    try {
+      const result = await ingestDocument(content, {}, failure.file_path);
+
+      if (result.status === 'error') {
+        // Still failing - update the failure record with new error
+        await query(`
+          UPDATE document_failures
+          SET error_message = ?, created_at = datetime('now')
+          WHERE id = ?
+        `, [result.error, id]);
+
+        return {
+          success: false,
+          error: result.error,
+          status: 'still_failing'
+        };
+      }
+
+      // Success! Mark as resolved
+      await query(`
+        UPDATE document_failures
+        SET resolved = 1, resolved_at = datetime('now')
+        WHERE id = ?
+      `, [id]);
+
+      logger.info({ failureId: id, documentId: result.documentId }, 'Document failure resolved via retry');
+
+      return {
+        success: true,
+        documentId: result.documentId,
+        paragraphCount: result.paragraphCount,
+        status: result.status
+      };
+    } catch (err) {
+      logger.error({ err: err.message, failureId: id }, 'Retry ingestion failed');
+      throw ApiError.internal(`Retry failed: ${err.message}`);
+    }
+  });
 }

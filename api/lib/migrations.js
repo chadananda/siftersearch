@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 33;
+const CURRENT_VERSION = 34;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1411,6 +1411,35 @@ const migrations = {
     } else {
       logger.warn({ totalRows }, 'Migration 33: Content rows need normalized_hash backfill - run POST /api/admin/backfill-normalized-hash');
     }
+  },
+
+  // Version 34: Add document_failures table for tracking ingestion failures
+  // Documents with oversized paragraphs or other validation errors are logged here
+  // instead of being silently accepted with bad data
+  34: async () => {
+    logger.info('Starting migration 34: Create document_failures table');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS document_failures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_path TEXT,
+        file_name TEXT,
+        error_type TEXT NOT NULL,
+        error_message TEXT NOT NULL,
+        details TEXT,
+        resolved INTEGER DEFAULT 0,
+        resolved_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for efficient querying
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_failures_resolved ON document_failures(resolved)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_failures_error_type ON document_failures(error_type)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_failures_file_path ON document_failures(file_path)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_failures_created ON document_failures(created_at DESC)');
+
+    logger.info('Migration 34 complete: document_failures table created');
   },
 };
 

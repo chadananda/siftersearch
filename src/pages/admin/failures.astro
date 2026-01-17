@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import DocumentFailures from '../../components/admin/DocumentFailures.svelte';
+---
+
+<AdminLayout title="Document Failures">
+  <DocumentFailures client:only="svelte" />
+</AdminLayout>

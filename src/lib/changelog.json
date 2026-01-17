@@ -1,6 +1,34 @@
 {
-  "generated": "2026-01-17T18:10:45.416Z",
+  "generated": "2026-01-17T18:34:38.550Z",
   "entries": [
+    {
+      "hash": "b7f1e9d",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
+      "scope": null
+    },
+    {
+      "hash": "435084c",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use conservative truncation for embedding token limit",
+      "scope": null
+    },
+    {
+      "hash": "1ce1720",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Increase pipeline status size and contrast",
+      "scope": "ui"
+    },
+    {
+      "hash": "4dc33d9",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Show embedding count with time estimate",
+      "scope": "ui"
+    },
     {
       "hash": "c33afb7",
       "date": "2026-01-17",
@@ -3472,38 +3500,38 @@
       "type": "Docs",
       "description": "Add sync architecture documentation and watcher status endpoint",
       "scope": null
-    },
-    {
-      "hash": "e818d42",
-      "date": "2025-12-31",
-      "type": "New",
-      "description": "Complete sync architecture with multi-layer protection",
-      "scope": null
-    },
-    {
-      "hash": "74ca0d9",
-      "date": "2025-12-31",
-      "type": "Refactor",
-      "description": "Use libsql as source of truth for library management",
-      "scope": null
-    },
-    {
-      "hash": "f0af752",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Sync script inserts docs and marks content as synced",
-      "scope": null
-    },
-    {
-      "hash": "a4df923",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Increase translation pill contrast with solid backgrounds",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "b7f1e9d",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
+        "scope": null
+      },
+      {
+        "hash": "435084c",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use conservative truncation for embedding token limit",
+        "scope": null
+      },
+      {
+        "hash": "1ce1720",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Increase pipeline status size and contrast",
+        "scope": "ui"
+      },
+      {
+        "hash": "4dc33d9",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Show embedding count with time estimate",
+        "scope": "ui"
+      },
       {
         "hash": "c33afb7",
         "date": "2026-01-17",
@@ -7006,34 +7034,6 @@
         "date": "2025-12-31",
         "type": "Docs",
         "description": "Add sync architecture documentation and watcher status endpoint",
-        "scope": null
-      },
-      {
-        "hash": "e818d42",
-        "date": "2025-12-31",
-        "type": "New",
-        "description": "Complete sync architecture with multi-layer protection",
-        "scope": null
-      },
-      {
-        "hash": "74ca0d9",
-        "date": "2025-12-31",
-        "type": "Refactor",
-        "description": "Use libsql as source of truth for library management",
-        "scope": null
-      },
-      {
-        "hash": "f0af752",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Sync script inserts docs and marks content as synced",
-        "scope": null
-      },
-      {
-        "hash": "a4df923",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Increase translation pill contrast with solid backgrounds",
         "scope": null
       }
     ]

@@ -809,6 +809,65 @@ export const librarian = {
 };
 
 // ============================================
+// Document Failures API
+// ============================================
+
+export const failures = {
+  /**
+   * Get failures summary (counts by type)
+   */
+  async getSummary() {
+    return request('/api/library/failures/summary');
+  },
+
+  /**
+   * List failures with pagination
+   */
+  async getList(options = {}) {
+    const params = new URLSearchParams();
+    if (options.resolved !== undefined) params.set('resolved', options.resolved);
+    if (options.errorType) params.set('errorType', options.errorType);
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    return request(`/api/library/failures?${params.toString()}`);
+  },
+
+  /**
+   * Get single failure detail
+   */
+  async get(id) {
+    return request(`/api/library/failures/${id}`);
+  },
+
+  /**
+   * Mark failure as resolved
+   */
+  async resolve(id) {
+    return request(`/api/library/failures/${id}/resolve`, {
+      method: 'PUT'
+    });
+  },
+
+  /**
+   * Delete/dismiss failure
+   */
+  async dismiss(id) {
+    return request(`/api/library/failures/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Retry ingestion for failed document
+   */
+  async retry(id) {
+    return request(`/api/library/failures/${id}/retry`, {
+      method: 'POST'
+    });
+  }
+};
+
+// ============================================
 // Health API
 // ============================================
 
@@ -1087,6 +1146,7 @@ export default {
   user,
   admin,
   librarian,
+  failures,
   services,
   forum,
   donations,

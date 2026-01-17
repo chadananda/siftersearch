@@ -26,6 +26,40 @@ const CHUNK_CONFIG = {
   paragraphDelimiters: /\n\n+/
 };
 
+// Maximum allowed paragraph length (chars) - reject documents with longer paragraphs
+// Based on 2x longest paragraph in well-formatted documents (God Passes By: ~1500 chars)
+// This ensures all content fits within embedding model token limits (8192 tokens)
+const MAX_PARAGRAPH_LENGTH = 3000;
+
+/**
+ * Log a document failure to the database
+ * Used for oversized paragraphs and other validation errors that prevent ingestion
+ */
+async function logDocumentFailure({
+  filePath,
+  fileName,
+  errorType,
+  errorMessage,
+  details
+}) {
+  try {
+    await query(`
+      INSERT INTO document_failures (file_path, file_name, error_type, error_message, details)
+      VALUES (?, ?, ?, ?, ?)
+    `, [
+      filePath || null,
+      fileName || null,
+      errorType,
+      errorMessage,
+      details ? JSON.stringify(details) : null
+    ]);
+    logger.warn({ filePath, errorType, errorMessage }, 'Document failure logged');
+  } catch (err) {
+    // Don't let failure logging break the flow - just log and continue
+    logger.error({ err: err.message, filePath, errorType }, 'Failed to log document failure');
+  }
+}
+
 /**
  * Generate SHA256 hash of content for change detection
  */
@@ -932,6 +966,57 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       status: 'empty',
       error: 'No content to index'
     };
+  }
+
+  // Validate paragraph lengths for non-RTL languages only
+  // RTL languages (Arabic, Farsi, Hebrew, Urdu) use AI segmentation which handles long text
+  // English and other LTR languages must have properly-segmented paragraphs in advance
+  const AI_SEGMENTED_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+  const languageUsesAISegmentation = AI_SEGMENTED_LANGUAGES.includes(finalMeta.language);
+
+  if (!languageUsesAISegmentation) {
+    const oversizedChunks = chunks
+      .map((chunk, idx) => ({ idx, length: chunk.text?.length || 0, preview: chunk.text?.substring(0, 100) }))
+      .filter(c => c.length > MAX_PARAGRAPH_LENGTH);
+
+    if (oversizedChunks.length > 0) {
+      const errorMessage = `Document has ${oversizedChunks.length} paragraph(s) exceeding ${MAX_PARAGRAPH_LENGTH} characters. ` +
+                           `Longest: ${Math.max(...oversizedChunks.map(c => c.length))} chars at paragraph ${oversizedChunks[0].idx + 1}. ` +
+                           `Please split long paragraphs manually.`;
+
+      // Log to document_failures table
+      await logDocumentFailure({
+        filePath: relativePath,
+        fileName: relativePath?.split('/').pop(),
+        errorType: 'oversized_paragraph',
+        errorMessage,
+        details: {
+          oversizedCount: oversizedChunks.length,
+          maxLength: MAX_PARAGRAPH_LENGTH,
+          language: finalMeta.language,
+          paragraphs: oversizedChunks.map(c => ({
+            index: c.idx,
+            length: c.length,
+            preview: c.preview
+          }))
+        }
+      });
+
+      logger.error({
+        relativePath,
+        language: finalMeta.language,
+        oversizedCount: oversizedChunks.length,
+        maxAllowed: MAX_PARAGRAPH_LENGTH,
+        longest: Math.max(...oversizedChunks.map(c => c.length))
+      }, 'Document rejected: oversized paragraphs');
+
+      return {
+        documentId: existingDoc?.id ?? null,
+        paragraphCount: 0,
+        status: 'error',
+        error: errorMessage
+      };
+    }
   }
 
   // Add sentence markers to paragraphs that don't already have them
