@@ -43,6 +43,7 @@ async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
   // Get unique normalized_hash values that need embeddings
   // This avoids generating duplicates when same content exists in multiple docs
   // Skip content longer than MAX_CHARS (must be properly segmented first)
+  // Use IFNULL to handle NULL normalized_hash (falls back to id for uniqueness)
   const results = await queryAll(`
     SELECT id, text, normalized_hash
     FROM content
@@ -51,7 +52,7 @@ async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
       AND text IS NOT NULL
       AND text != ''
       AND LENGTH(text) <= ?
-    GROUP BY normalized_hash
+    GROUP BY IFNULL(normalized_hash, CAST(id AS TEXT))
     LIMIT ?
   `, [MAX_CHARS, limit]);
   return results;
@@ -73,18 +74,32 @@ async function storeEmbeddings(rows, embeddings) {
     // Convert embedding array to Buffer for SQLite BLOB storage
     const embeddingBuffer = Buffer.from(new Float32Array(embedding).buffer);
 
-    // Update this row and ALL rows with same normalized_hash
-    // This propagates the embedding to duplicate content across documents
-    await query(`
-      UPDATE content
-      SET embedding = ?,
-          embedding_model = ?,
-          synced = 0,
-          updated_at = datetime('now')
-      WHERE normalized_hash = ?
-        AND embedding IS NULL
-        AND deleted_at IS NULL
-    `, [embeddingBuffer, model, row.normalized_hash]);
+    if (row.normalized_hash) {
+      // Update this row and ALL rows with same normalized_hash
+      // This propagates the embedding to duplicate content across documents
+      await query(`
+        UPDATE content
+        SET embedding = ?,
+            embedding_model = ?,
+            synced = 0,
+            updated_at = datetime('now')
+        WHERE normalized_hash = ?
+          AND embedding IS NULL
+          AND deleted_at IS NULL
+      `, [embeddingBuffer, model, row.normalized_hash]);
+    } else {
+      // No normalized_hash - update only this specific row by id
+      await query(`
+        UPDATE content
+        SET embedding = ?,
+            embedding_model = ?,
+            synced = 0,
+            updated_at = datetime('now')
+        WHERE id = ?
+          AND embedding IS NULL
+          AND deleted_at IS NULL
+      `, [embeddingBuffer, model, row.id]);
+    }
 
     // Yield event loop to allow health checks to respond
     if (DB_WRITE_DELAY_MS > 0) {
