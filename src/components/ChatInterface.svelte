@@ -1769,10 +1769,15 @@
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
+                      {@const uniqueNeeded = libraryStats.pipelineStatus.uniqueEmbeddingsNeeded || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
+                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 50)}
+                      {@const minutes = Math.floor(estimatedSeconds / 60)}
+                      {@const seconds = estimatedSeconds % 60}
+                      {@const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`}
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔢</span>
                         <span class="pipeline-label">Embeddings:</span>
-                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsNeedingEmbeddings.toLocaleString()} paragraphs need generation</span>
+                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsNeedingEmbeddings.toLocaleString()} embeddings needed, ~{timeStr} remaining</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}

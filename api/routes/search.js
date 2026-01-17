@@ -304,13 +304,16 @@ export default async function searchRoutes(fastify) {
     // Get pipeline status - paragraphs needing embeddings and pending sync
     let pipelineStatus = null;
     try {
-      const [embeddingCount, syncCount] = await Promise.all([
+      const [embeddingCount, uniqueEmbeddingCount, syncCount] = await Promise.all([
         queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL`),
+        // Unique normalized_hash values that need embedding (for accurate time estimate)
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL`),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`)
       ]);
       pipelineStatus = {
         ingestionQueuePending: 0, // Not tracked in search stats
         paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+        uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
         paragraphsPendingSync: syncCount?.count || 0
       };
     } catch {
