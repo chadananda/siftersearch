@@ -17,6 +17,32 @@ import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
 
+/**
+ * Normalize text for embedding deduplication
+ * Removes formatting/punctuation so semantically identical content matches
+ * @param {string} text - The paragraph text
+ * @returns {string} Normalized text
+ */
+function normalizeForEmbedding(text) {
+  return text
+    .replace(/<[^>]+>/g, '')           // Remove HTML tags
+    .replace(/\s+/g, ' ')              // Collapse whitespace
+    .replace(/[^\p{L}\p{N}\s]/gu, '')  // Remove punctuation (keep letters, numbers, spaces)
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Compute normalized hash for embedding deduplication
+ * Same semantic content across documents will have same normalized_hash
+ * @param {string} text - The paragraph text
+ * @returns {string} MD5 hash of normalized text
+ */
+function computeNormalizedHash(text) {
+  const normalized = normalizeForEmbedding(text);
+  return createHash('md5').update(normalized).digest('hex');
+}
+
 // Chunking configuration
 const CHUNK_CONFIG = {
   maxChunkSize: 1500,      // Max characters per chunk - triggers AI segmentation if exceeded
@@ -1268,14 +1294,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       insertStatements.push({
         sql: `
           INSERT INTO content
-          (doc_id, paragraph_index, text, content_hash, heading, blocktype)
-          VALUES (?, ?, ?, ?, ?, ?)
+          (doc_id, paragraph_index, text, content_hash, normalized_hash, heading, blocktype)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
           finalDocId,
           index,
           chunkText,
           contentHash,
+          computeNormalizedHash(chunkText),
           extractHeading(content, chunkText),
           blocktype
         ]
