@@ -170,12 +170,16 @@ async function syncDocument(docId) {
       await paragraphsIndex.addDocuments(batch);
     }
 
-    // Mark paragraphs as synced
+    // Mark paragraphs as synced (batch to avoid SQLite variable limit)
     const ids = paragraphs.map(p => p.id);
-    await query(`
-      UPDATE content SET synced = 1, updated_at = datetime('now')
-      WHERE id IN (${ids.map(() => '?').join(',')})
-    `, ids);
+    const UPDATE_BATCH_SIZE = 500;  // SQLite safe limit
+    for (let i = 0; i < ids.length; i += UPDATE_BATCH_SIZE) {
+      const batchIds = ids.slice(i, i + UPDATE_BATCH_SIZE);
+      await query(`
+        UPDATE content SET synced = 1, updated_at = datetime('now')
+        WHERE id IN (${batchIds.map(() => '?').join(',')})
+      `, batchIds);
+    }
 
     logger.info({ docId, paragraphs: paragraphs.length }, 'Document synced to Meilisearch');
     return { success: true, synced: paragraphs.length };
