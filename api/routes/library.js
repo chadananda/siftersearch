@@ -244,6 +244,22 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
+    // Get pipeline status - paragraphs needing embeddings and pending sync
+    let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0 };
+    try {
+      const [embeddingCount, syncCount] = await Promise.all([
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL`),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`)
+      ]);
+      pipelineStatus = {
+        ingestionQueuePending: indexingStats.pending + indexingStats.processing,
+        paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+        paragraphsPendingSync: syncCount?.count || 0
+      };
+    } catch {
+      // Columns may not exist yet
+    }
+
     // Calculate ingestion progress
     const totalDocs = docCount?.count || 0;
     const withContent = docsWithContent?.count || 0;
@@ -269,7 +285,8 @@ export default async function libraryRoutes(fastify) {
         docsWithContent: withContent,
         docsPending: pendingDocs,
         percentComplete
-      }
+      },
+      pipelineStatus
     };
   });
 

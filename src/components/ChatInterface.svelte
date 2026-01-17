@@ -711,14 +711,14 @@
     try {
       const status = await admin.getAIUsageStatus();
       const summary = await admin.getAIUsageSummary();
-      // Find top caller by cost
-      const topCaller = summary?.byCaller?.length > 0
-        ? summary.byCaller.reduce((max, c) => (c.cost > max.cost ? c : max), summary.byCaller[0])
-        : null;
+      // Get top 2 callers by cost from 24-hour data (sorted descending)
+      const topCallers = summary?.byCallerToday?.length > 0
+        ? [...summary.byCallerToday].sort((a, b) => b.cost - a.cost).slice(0, 2)
+        : [];
       aiUsageStatus = {
         ...status,
         today: summary?.today,
-        topCaller
+        topCallers
       };
     } catch (err) {
       console.error('Failed to load AI usage status:', err);
@@ -1752,22 +1752,36 @@
                 <span class="offline-status">Server offline - showing cached data</span>
               </div>
             {/if}
-              {#if libraryStats?.meiliTaskProgress && (libraryStats.meiliTaskProgress.pending > 0 || libraryStats.meiliTaskProgress.processing > 0)}
-                {@const completed = libraryStats.meiliTaskProgress.completed || 0}
-                {@const percent = libraryStats.meiliTaskProgress.total > 0 ? Math.round((completed / libraryStats.meiliTaskProgress.total) * 100) : 0}
-                <div class="indexing-indicator">
-                  <div class="indexing-header">
-                    <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
+              {#if libraryStats?.pipelineStatus && (libraryStats.pipelineStatus.ingestionQueuePending > 0 || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0 || libraryStats.pipelineStatus.paragraphsPendingSync > 0)}
+                <div class="pipeline-status">
+                  <div class="pipeline-header">
+                    <svg class="pipeline-dot" fill="currentColor" viewBox="0 0 8 8">
                       <circle cx="4" cy="4" r="3" />
                     </svg>
-                    <span>Indexing for search</span>
-                    <span class="indexing-percent">{percent}%</span>
+                    <span>Processing Pipeline</span>
                   </div>
-                  <div class="indexing-bar">
-                    <div class="indexing-fill" style="width: {percent}%"></div>
-                  </div>
-                  <div class="indexing-status">
-                    <span class="status-item">{completed} of {libraryStats.meiliTaskProgress.total} tasks indexed</span>
+                  <div class="pipeline-items">
+                    {#if libraryStats.pipelineStatus.ingestionQueuePending > 0}
+                      <div class="pipeline-item">
+                        <span class="pipeline-icon">📥</span>
+                        <span class="pipeline-label">Ingestion Queue:</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.ingestionQueuePending)} pending</span>
+                      </div>
+                    {/if}
+                    {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
+                      <div class="pipeline-item">
+                        <span class="pipeline-icon">🔢</span>
+                        <span class="pipeline-label">Embeddings:</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} paragraphs need generation</span>
+                      </div>
+                    {/if}
+                    {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}
+                      <div class="pipeline-item">
+                        <span class="pipeline-icon">🔍</span>
+                        <span class="pipeline-label">Search Index:</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsPendingSync)} paragraphs pending sync</span>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/if}
@@ -1806,10 +1820,12 @@
                     <a href="/admin/ai-usage" class="ai-cost-ticker">
                       <span class="ticker-label">AI 24h:</span>
                       <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
-                      {#if aiUsageStatus.topCaller}
-                        <span class="ticker-divider">|</span>
-                        <span class="ticker-caller">{aiUsageStatus.topCaller.caller}</span>
-                        <span class="ticker-value">${(aiUsageStatus.topCaller.cost || 0).toFixed(2)}</span>
+                      {#if aiUsageStatus.topCallers?.length > 0}
+                        {#each aiUsageStatus.topCallers as caller, i}
+                          <span class="ticker-divider">|</span>
+                          <span class="ticker-caller">{caller.caller}</span>
+                          <span class="ticker-value">${(caller.cost || 0).toFixed(2)}</span>
+                        {/each}
                       {/if}
                     </a>
                   {/if}
@@ -2801,6 +2817,57 @@
 
   .indexing-indicator.translating {
     color: var(--accent);
+  }
+
+  /* Pipeline status display */
+  .pipeline-status {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-default);
+    font-size: 0.75rem;
+  }
+
+  .pipeline-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .pipeline-dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    color: var(--warning);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .pipeline-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 0.125rem;
+  }
+
+  .pipeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--text-muted);
+  }
+
+  .pipeline-icon {
+    font-size: 0.625rem;
+    width: 1rem;
+    text-align: center;
+  }
+
+  .pipeline-label {
+    color: var(--text-secondary);
+  }
+
+  .pipeline-count {
+    color: var(--text-muted);
   }
 
   /* Ingestion progress bar */

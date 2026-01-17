@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T16:36:20.288Z",
+  "generated": "2026-01-17T17:03:26.599Z",
   "entries": [
+    {
+      "hash": "34a43ca",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add floating version pill, simplify AI ticker",
+      "scope": "ui"
+    },
     {
       "hash": "90e68a1",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Server-side translation queue with priority",
       "scope": "translation"
-    },
-    {
-      "hash": "161cb03",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Translation reactivity and auto-populate content table from Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "34a43ca",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add floating version pill, simplify AI ticker",
+        "scope": "ui"
+      },
       {
         "hash": "90e68a1",
         "date": "2026-01-17",
@@ -7028,13 +7035,6 @@
         "type": "New",
         "description": "Server-side translation queue with priority",
         "scope": "translation"
-      },
-      {
-        "hash": "161cb03",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Translation reactivity and auto-populate content table from Meilisearch",
-        "scope": null
       }
     ]
   }

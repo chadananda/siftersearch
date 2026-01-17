@@ -3065,7 +3065,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     const monthStart = new Date();
     monthStart.setDate(monthStart.getDate() - 30);
 
-    const [today, week, month, byModel, byProvider, byCaller, failures] = await Promise.all([
+    const [today, week, month, byModel, byProvider, byCaller, byCallerToday, failures] = await Promise.all([
       // Today's stats
       queryOne(`
         SELECT
@@ -3135,6 +3135,19 @@ Collection: ${paragraph.collection || 'Unknown'}
         ORDER BY cost DESC
       `, [monthStart.toISOString()]),
 
+      // By caller (last 24 hours) - for ticker display
+      queryAll(`
+        SELECT
+          COALESCE(caller, 'unknown') as caller,
+          COUNT(*) as calls,
+          COALESCE(SUM(total_tokens), 0) as tokens,
+          COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage
+        WHERE timestamp >= ?
+        GROUP BY caller
+        ORDER BY cost DESC
+      `, [todayStart.toISOString()]),
+
       // Failed calls (last 7 days)
       queryOne(`
         SELECT COUNT(*) as count
@@ -3150,7 +3163,8 @@ Collection: ${paragraph.collection || 'Unknown'}
       failedCalls: failures?.count || 0,
       byModel: byModel || [],
       byProvider: byProvider || [],
-      byCaller: byCaller || []
+      byCaller: byCaller || [],
+      byCallerToday: byCallerToday || []
     };
   });
 

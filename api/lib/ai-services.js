@@ -217,7 +217,7 @@ export async function initAIProcessingState() {
  * Log AI usage to database for cost tracking
  * Silently fails to avoid breaking AI calls
  */
-async function logAIUsage({
+export async function logAIUsage({
   provider,
   model,
   serviceType,

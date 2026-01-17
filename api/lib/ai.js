@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Ollama } from 'ollama';
 import { config } from './config.js';
 import { logger } from './logger.js';
+import { logAIUsage } from './ai-services.js';
 
 // Lazy-initialized clients
 let openaiClient = null;
@@ -165,7 +166,8 @@ async function chatOllama(messages, { model, temperature, maxTokens, stream }) {
 export async function createEmbedding(text, options = {}) {
   const {
     model = config.ai.embeddings.model,
-    dimensions = config.ai.embeddings.dimensions
+    dimensions = config.ai.embeddings.dimensions,
+    caller = 'embedding'
   } = options;
 
   const openai = getOpenAI();
@@ -176,10 +178,23 @@ export async function createEmbedding(text, options = {}) {
     dimensions
   });
 
+  const totalTokens = response.usage?.total_tokens || 0;
+
+  // Log embedding usage for cost tracking
+  logAIUsage({
+    provider: 'openai',
+    model,
+    serviceType: 'embedding',
+    caller,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens
+  });
+
   return {
     embedding: response.data[0].embedding,
     usage: {
-      totalTokens: response.usage?.total_tokens
+      totalTokens
     }
   };
 }
@@ -190,7 +205,8 @@ export async function createEmbedding(text, options = {}) {
 export async function createEmbeddings(texts, options = {}) {
   const {
     model = config.ai.embeddings.model,
-    dimensions = config.ai.embeddings.dimensions
+    dimensions = config.ai.embeddings.dimensions,
+    caller = 'embedding-batch'
   } = options;
 
   const openai = getOpenAI();
@@ -201,10 +217,23 @@ export async function createEmbeddings(texts, options = {}) {
     dimensions
   });
 
+  const totalTokens = response.usage?.total_tokens || 0;
+
+  // Log embedding usage for cost tracking
+  logAIUsage({
+    provider: 'openai',
+    model,
+    serviceType: 'embedding',
+    caller,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens
+  });
+
   return {
     embeddings: response.data.map(d => d.embedding),
     usage: {
-      totalTokens: response.usage?.total_tokens
+      totalTokens
     }
   };
 }
