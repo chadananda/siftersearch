@@ -1737,7 +1737,7 @@
                     <div class="indexing-fill" style="width: {percent}%"></div>
                   </div>
                   <div class="indexing-status">
-                    <span class="status-item">{libraryStats.meiliTaskProgress.processing} processing, {libraryStats.meiliTaskProgress.pending} pending</span>
+                    <span class="status-item">{completed} of {libraryStats.meiliTaskProgress.total} tasks indexed</span>
                   </div>
                 </div>
               {/if}

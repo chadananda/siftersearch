@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T00:41:44.501Z",
+  "generated": "2026-01-17T00:48:11.414Z",
   "entries": [
+    {
+      "hash": "936f4db",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Show actual Meilisearch task progress in indexing indicator",
+      "scope": null
+    },
     {
       "hash": "ba4462f",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Gracefully fall back to Meilisearch when libsql is busy",
       "scope": "library"
-    },
-    {
-      "hash": "c6172bc",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Use correct content schema with document_id as primary column",
-      "scope": "migration"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "936f4db",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Show actual Meilisearch task progress in indexing indicator",
+        "scope": null
+      },
       {
         "hash": "ba4462f",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Gracefully fall back to Meilisearch when libsql is busy",
         "scope": "library"
-      },
-      {
-        "hash": "c6172bc",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Use correct content schema with document_id as primary column",
-        "scope": "migration"
       }
     ]
   }
