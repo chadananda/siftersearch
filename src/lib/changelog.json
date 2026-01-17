@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T16:00:45.420Z",
+  "generated": "2026-01-17T16:10:02.932Z",
   "entries": [
+    {
+      "hash": "5ddec03",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add admin AI cost ticker to home page Library status box",
+      "scope": null
+    },
     {
       "hash": "c1e3100",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use api module token instead of localStorage",
       "scope": null
-    },
-    {
-      "hash": "b523417",
-      "date": "2025-12-30",
-      "type": "Fixed",
-      "description": "PWA auto-update and auth header for translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "5ddec03",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add admin AI cost ticker to home page Library status box",
+        "scope": null
+      },
       {
         "hash": "c1e3100",
         "date": "2026-01-17",
@@ -7029,13 +7036,6 @@
         "date": "2025-12-30",
         "type": "Fixed",
         "description": "Use api module token instead of localStorage",
-        "scope": null
-      },
-      {
-        "hash": "b523417",
-        "date": "2025-12-30",
-        "type": "Fixed",
-        "description": "PWA auto-update and auth header for translation",
         "scope": null
       }
     ]
