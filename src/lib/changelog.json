@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T16:10:02.932Z",
+  "generated": "2026-01-17T16:13:20.518Z",
   "entries": [
+    {
+      "hash": "557b0ad",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Add app_config table migration",
+      "scope": null
+    },
     {
       "hash": "5ddec03",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add logging to translate-batch when no paragraphs found",
       "scope": null
-    },
-    {
-      "hash": "279da81",
-      "date": "2025-12-30",
-      "type": "Fixed",
-      "description": "Use api module token instead of localStorage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "557b0ad",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Add app_config table migration",
+        "scope": null
+      },
       {
         "hash": "5ddec03",
         "date": "2026-01-17",
@@ -7029,13 +7036,6 @@
         "date": "2025-12-30",
         "type": "Other",
         "description": "Add logging to translate-batch when no paragraphs found",
-        "scope": null
-      },
-      {
-        "hash": "279da81",
-        "date": "2025-12-30",
-        "type": "Fixed",
-        "description": "Use api module token instead of localStorage",
         "scope": null
       }
     ]

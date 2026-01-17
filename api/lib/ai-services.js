@@ -233,7 +233,9 @@ async function logAIUsage({
 }) {
   try {
     const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
-    const cost = (promptTokens * pricing.input + completionTokens * pricing.output) / 1000;
+    // For embeddings, all tokens are input tokens. Use totalTokens when promptTokens is 0.
+    const inputTokens = promptTokens || totalTokens;
+    const cost = (inputTokens * pricing.input + completionTokens * pricing.output) / 1000;
 
     await query(
       `INSERT INTO ai_usage (
