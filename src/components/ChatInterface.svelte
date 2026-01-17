@@ -2829,20 +2829,21 @@
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-default);
-    font-size: 0.75rem;
+    font-size: 0.9375rem;  /* 25% larger than 0.75rem */
   }
 
   .pipeline-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    font-weight: 500;
     margin-bottom: 0.5rem;
   }
 
   .pipeline-dot {
-    width: 0.625rem;
-    height: 0.625rem;
+    width: 0.75rem;
+    height: 0.75rem;
     color: var(--warning);
     animation: pulse 1.5s ease-in-out infinite;
   }
@@ -2850,7 +2851,7 @@
   .pipeline-items {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.375rem;
     padding-left: 0.125rem;
   }
 
@@ -2858,21 +2859,22 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
 
   .pipeline-icon {
-    font-size: 0.625rem;
-    width: 1rem;
+    font-size: 0.875rem;
+    width: 1.25rem;
     text-align: center;
   }
 
   .pipeline-label {
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    font-weight: 500;
   }
 
   .pipeline-count {
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
 
   /* Ingestion progress bar */
