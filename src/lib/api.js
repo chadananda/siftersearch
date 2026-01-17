@@ -647,6 +647,22 @@ export const admin = {
    */
   async getAIUsageFilters() {
     return request('/api/admin/ai-usage/filters');
+  },
+
+  /**
+   * Get AI processing status (paused state, daily spending by service)
+   */
+  async getAIUsageStatus() {
+    return request('/api/admin/ai-usage/status');
+  },
+
+  /**
+   * Resume AI processing after budget pause
+   */
+  async resumeAIProcessing() {
+    return request('/api/admin/ai-usage/resume', {
+      method: 'POST'
+    });
   }
 };
 

@@ -12,9 +12,11 @@
   let summary = $state(null);
   let recentCalls = $state([]);
   let filters = $state({ models: [], callers: [] });
+  let aiStatus = $state(null);
   let loading = $state(true);
   let authReady = $state(false);
   let error = $state(null);
+  let resuming = $state(false);
 
   // Filter state
   let filterModel = $state('');
@@ -39,18 +41,35 @@
     error = null;
 
     try {
-      const [summaryData, recentData, filtersData] = await Promise.all([
+      const [summaryData, recentData, filtersData, statusData] = await Promise.all([
         admin.getAIUsageSummary(),
         admin.getAIUsageRecent({ limit: pageSize }),
-        admin.getAIUsageFilters()
+        admin.getAIUsageFilters(),
+        admin.getAIUsageStatus()
       ]);
       summary = summaryData;
       recentCalls = recentData.calls || [];
       filters = filtersData;
+      aiStatus = statusData;
     } catch (err) {
       error = err.message || 'Failed to load AI usage data';
     } finally {
       loading = false;
+    }
+  }
+
+  async function handleResumeProcessing() {
+    if (resuming) return;
+    resuming = true;
+    try {
+      await admin.resumeAIProcessing();
+      // Refresh status
+      aiStatus = await admin.getAIUsageStatus();
+    } catch (err) {
+      console.error('Failed to resume AI processing:', err);
+      error = err.message || 'Failed to resume AI processing';
+    } finally {
+      resuming = false;
     }
   }
 
@@ -121,6 +140,45 @@
       <h1>AI Usage & Costs</h1>
       <p class="subtitle">Monitor API usage and optimize costs</p>
     </header>
+
+    <!-- AI Processing Paused Alert -->
+    {#if aiStatus?.paused}
+      <div class="alert-banner alert-error">
+        <div class="alert-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="alert-content">
+          <strong>AI Processing Paused</strong>
+          <p>
+            Daily spending limit (${aiStatus.dailyLimit}) exceeded for <strong>{aiStatus.reason}</strong>.
+            {#if aiStatus.pausedAt}
+              Paused at {new Date(aiStatus.pausedAt).toLocaleString()}.
+            {/if}
+          </p>
+          {#if aiStatus.dailySpending}
+            <p class="spending-breakdown">
+              Today's spending:
+              {#each Object.entries(aiStatus.dailySpending) as [service, amount]}
+                <span class="spending-item">{service}: ${amount.toFixed(2)}</span>
+              {/each}
+            </p>
+          {/if}
+        </div>
+        <button
+          class="btn-resume"
+          onclick={handleResumeProcessing}
+          disabled={resuming}
+        >
+          {#if resuming}
+            Resuming...
+          {:else}
+            Continue AI Processing
+          {/if}
+        </button>
+      </div>
+    {/if}
 
     <!-- Summary Stats -->
     <div class="stats-grid">
@@ -629,5 +687,91 @@
     text-decoration: none;
     font-size: 0.875rem;
     cursor: pointer;
+  }
+
+  /* Alert Banner Styles */
+  .alert-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .alert-banner.alert-error {
+    background: color-mix(in srgb, var(--error) 10%, transparent);
+    border: 1px solid var(--error);
+  }
+
+  .alert-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--error) 20%, transparent);
+    color: var(--error);
+  }
+
+  .alert-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .alert-content {
+    flex: 1;
+  }
+
+  .alert-content strong {
+    display: block;
+    color: var(--error);
+    font-size: 1.125rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .alert-content p {
+    margin: 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+  }
+
+  .spending-breakdown {
+    margin-top: 0.5rem !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .spending-item {
+    display: inline-block;
+    margin-right: 1rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--surface-2);
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+
+  .btn-resume {
+    flex-shrink: 0;
+    padding: 0.75rem 1.5rem;
+    background: var(--error);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-resume:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--error) 85%, black);
+    transform: translateY(-1px);
+  }
+
+  .btn-resume:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 </style>

@@ -28,6 +28,7 @@ import { runMigrations } from './lib/migrations.js';
 import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
 import { startLibraryWatcher, stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
+import { initAIProcessingState } from './lib/ai-services.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -75,6 +76,13 @@ const start = async () => {
       }
     } catch (err) {
       logger.warn({ err }, 'Failed to seed admin user');
+    }
+
+    // Restore AI processing pause state from database
+    try {
+      await initAIProcessingState();
+    } catch (err) {
+      logger.warn({ err }, 'Failed to restore AI processing state');
     }
 
     // Start background content sync worker (keeps Content Table → Meilisearch in sync)

@@ -56,6 +56,7 @@ import { getSyncStats, forceSyncNow, getUnsyncedCount } from '../services/sync-w
 import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.js';
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
+import { isAIProcessingPaused, resumeAIProcessing, getAllDailySpending } from '../lib/ai-services.js';
 
 // Track background tasks
 const backgroundTasks = new Map();
@@ -3251,5 +3252,30 @@ Collection: ${paragraph.collection || 'Unknown'}
       models: models?.map(r => r.model) || [],
       callers: callers?.map(r => r.caller) || []
     };
+  });
+
+  // ==========================================================================
+  // AI Processing Control (spending limits)
+  // ==========================================================================
+
+  // Get AI processing status (paused state, daily spending by service)
+  fastify.get('/ai-usage/status', { preHandler: requireTier('admin') }, async () => {
+    const [pauseState, spending] = await Promise.all([
+      Promise.resolve(isAIProcessingPaused()),
+      getAllDailySpending()
+    ]);
+
+    return {
+      ...pauseState,
+      dailySpending: spending,
+      dailyLimit: 100  // USD per service
+    };
+  });
+
+  // Resume AI processing (admin action after budget review)
+  fastify.post('/ai-usage/resume', { preHandler: requireTier('admin') }, async () => {
+    const result = await resumeAIProcessing();
+    logger.info('Admin resumed AI processing');
+    return result;
   });
 }

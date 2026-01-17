@@ -45,6 +45,171 @@ const MODEL_PRICING = {
 };
 
 // =============================================================================
+// SPENDING LIMITS & SAFEGUARDS
+// =============================================================================
+
+const DAILY_SPENDING_LIMIT_USD = 100;  // Per-service daily limit
+
+// In-memory state (persisted to DB for recovery)
+let aiProcessingPaused = false;
+let pausedReason = null;
+let pausedAt = null;
+
+/**
+ * Custom error for budget exceeded - allows UI to show specific message
+ */
+export class AIBudgetExceededError extends Error {
+  constructor(service, dailySpend, limit) {
+    super(`AI processing paused: ${service} exceeded daily limit ($${dailySpend.toFixed(2)} / $${limit})`);
+    this.name = 'AIBudgetExceededError';
+    this.service = service;
+    this.dailySpend = dailySpend;
+    this.limit = limit;
+    this.isPaused = true;
+  }
+}
+
+/**
+ * Check if AI processing is paused
+ */
+export function isAIProcessingPaused() {
+  return {
+    paused: aiProcessingPaused,
+    reason: pausedReason,
+    pausedAt
+  };
+}
+
+/**
+ * Get daily spending for a service type
+ */
+async function getDailySpending(serviceType) {
+  try {
+    const result = await query(
+      `SELECT SUM(estimated_cost_usd) as total
+       FROM ai_usage
+       WHERE service_type = ?
+       AND date(timestamp) = date('now')`,
+      [serviceType]
+    );
+    return result.rows?.[0]?.total || 0;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to check daily spending');
+    return 0;  // Don't block on error
+  }
+}
+
+/**
+ * Get all daily spending by service
+ */
+export async function getAllDailySpending() {
+  try {
+    const result = await query(
+      `SELECT service_type, SUM(estimated_cost_usd) as total
+       FROM ai_usage
+       WHERE date(timestamp) = date('now')
+       GROUP BY service_type`
+    );
+    const spending = {};
+    for (const row of result.rows || []) {
+      spending[row.service_type] = row.total || 0;
+    }
+    return spending;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to get all daily spending');
+    return {};
+  }
+}
+
+/**
+ * Check spending and pause if over limit
+ * Returns true if processing should continue, throws if paused
+ */
+async function checkSpendingLimit(serviceType) {
+  // If already paused, throw immediately
+  if (aiProcessingPaused) {
+    throw new AIBudgetExceededError(pausedReason, 0, DAILY_SPENDING_LIMIT_USD);
+  }
+
+  const dailySpend = await getDailySpending(serviceType);
+
+  if (dailySpend >= DAILY_SPENDING_LIMIT_USD) {
+    // Pause all AI processing
+    aiProcessingPaused = true;
+    pausedReason = serviceType;
+    pausedAt = new Date().toISOString();
+
+    logger.error({
+      serviceType,
+      dailySpend,
+      limit: DAILY_SPENDING_LIMIT_USD
+    }, '🚨 AI PROCESSING PAUSED - Daily spending limit exceeded');
+
+    // Persist pause state to DB for recovery after restart
+    try {
+      await query(
+        `INSERT OR REPLACE INTO app_config (key, value, updated_at)
+         VALUES ('ai_processing_paused', ?, datetime('now'))`,
+        [JSON.stringify({ paused: true, reason: serviceType, pausedAt })]
+      );
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Failed to persist pause state');
+    }
+
+    throw new AIBudgetExceededError(serviceType, dailySpend, DAILY_SPENDING_LIMIT_USD);
+  }
+
+  return true;
+}
+
+/**
+ * Resume AI processing (admin action)
+ */
+export async function resumeAIProcessing() {
+  aiProcessingPaused = false;
+  pausedReason = null;
+  pausedAt = null;
+
+  logger.info('✅ AI processing resumed by admin');
+
+  // Clear persisted pause state
+  try {
+    await query(
+      `INSERT OR REPLACE INTO app_config (key, value, updated_at)
+       VALUES ('ai_processing_paused', ?, datetime('now'))`,
+      [JSON.stringify({ paused: false })]
+    );
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to clear pause state');
+  }
+
+  return { success: true, message: 'AI processing resumed' };
+}
+
+/**
+ * Initialize pause state from DB (call on startup)
+ */
+export async function initAIProcessingState() {
+  try {
+    const result = await query(
+      `SELECT value FROM app_config WHERE key = 'ai_processing_paused'`
+    );
+    if (result.rows?.[0]?.value) {
+      const state = JSON.parse(result.rows[0].value);
+      if (state.paused) {
+        aiProcessingPaused = true;
+        pausedReason = state.reason;
+        pausedAt = state.pausedAt;
+        logger.warn({ reason: pausedReason, pausedAt }, 'AI processing is paused (restored from DB)');
+      }
+    }
+  } catch (err) {
+    // Table might not exist yet, that's fine
+    logger.debug({ err: err.message }, 'Could not restore AI pause state');
+  }
+}
+
+// =============================================================================
 // USAGE LOGGING
 // =============================================================================
 
@@ -433,6 +598,11 @@ export function aiService(serviceType, options = {}) {
       const startTime = Date.now();
       const { caller, userId, jobId, documentId } = overrides;
 
+      // Check spending limit before making AI call (skip for local/free models)
+      if (opts.provider !== 'ollama') {
+        await checkSpendingLimit(serviceType);
+      }
+
       logger.debug({
         service: serviceName,
         provider: opts.provider,
@@ -508,6 +678,11 @@ export function aiService(serviceType, options = {}) {
     async embed(text, options = {}) {
       if (serviceType !== 'embedding') {
         throw new Error(`embed() only available on 'embedding' service, not '${serviceType}'`);
+      }
+
+      // Check spending limit before making AI call (skip for local/free models)
+      if (svcConfig.provider !== 'ollama') {
+        await checkSpendingLimit(serviceType);
       }
 
       const startTime = Date.now();
