@@ -16,7 +16,9 @@ import { config } from '../lib/config.js';
 // Configuration
 const EMBEDDING_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const BATCH_SIZE = 50;                // Texts per OpenAI batch (rate limit safe)
-const MAX_TEXT_LENGTH = 8191;         // Max tokens for text-embedding-3-large
+const MAX_TOKENS = 8191;              // Max tokens for text-embedding-3-large
+const CHARS_PER_TOKEN = 2.5;          // Conservative estimate for religious/technical text
+const MAX_CHARS = Math.floor(MAX_TOKENS * CHARS_PER_TOKEN);  // ~20,477 chars
 
 let embeddingInterval = null;
 let isRunning = false;
@@ -106,8 +108,9 @@ async function runEmbeddingCycle() {
     const texts = rows.map(row => {
       let text = row.text || '';
       // Truncate very long texts to avoid token limit issues
-      if (text.length > MAX_TEXT_LENGTH * 4) {  // rough char-to-token estimate
-        text = text.substring(0, MAX_TEXT_LENGTH * 4);
+      if (text.length > MAX_CHARS) {
+        text = text.substring(0, MAX_CHARS);
+        logger.debug({ id: row.id, originalLength: row.text.length, truncatedTo: MAX_CHARS }, 'Truncated long text for embedding');
       }
       return text;
     });
