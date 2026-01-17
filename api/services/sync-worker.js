@@ -35,8 +35,55 @@ let syncStats = {
   lastCleanup: null,
   documentsDeleted: 0,
   lastFullSync: null,
-  fullSyncMarked: 0
+  fullSyncMarked: 0,
+  embeddingsPropagated: 0
 };
+
+/**
+ * Propagate existing embeddings to rows with matching normalized_hash
+ * This avoids expensive re-generation for duplicate content across documents
+ * (e.g., same quote in 50 documents = 1 embedding, 49 copies)
+ */
+async function propagateExistingEmbeddings() {
+  try {
+    // Find rows that need embeddings but have a matching normalized_hash with existing embedding
+    const result = await query(`
+      UPDATE content
+      SET embedding = (
+        SELECT c2.embedding FROM content c2
+        WHERE c2.normalized_hash = content.normalized_hash
+          AND c2.embedding IS NOT NULL
+        LIMIT 1
+      ),
+      embedding_model = (
+        SELECT c2.embedding_model FROM content c2
+        WHERE c2.normalized_hash = content.normalized_hash
+          AND c2.embedding IS NOT NULL
+        LIMIT 1
+      ),
+      synced = 0,
+      updated_at = datetime('now')
+      WHERE embedding IS NULL
+        AND deleted_at IS NULL
+        AND normalized_hash IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM content c2
+          WHERE c2.normalized_hash = content.normalized_hash
+            AND c2.embedding IS NOT NULL
+        )
+    `);
+
+    const propagated = result?.changes || 0;
+    if (propagated > 0) {
+      syncStats.embeddingsPropagated += propagated;
+      logger.info({ propagated }, 'Propagated existing embeddings to matching content');
+    }
+    return propagated;
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to propagate embeddings');
+    return 0;
+  }
+}
 
 /**
  * Get unsynced documents (those with synced=0 paragraphs)
@@ -209,6 +256,10 @@ async function runSyncCycle() {
       await initializeIndexes();
       indexesInitialized = true;
     }
+
+    // Propagate existing embeddings to rows with matching normalized_hash
+    // This ensures "paragraphs needing embeddings" count is accurate
+    await propagateExistingEmbeddings();
 
     // Get documents with unsynced content
     const docs = await getUnsyncedDocuments();
