@@ -1722,17 +1722,22 @@
                 <span>Connecting...</span>
               {/if}
             </div>
-              {#if libraryStats?.indexingProgress && libraryStats.indexingProgress.pending > 0}
+              {#if libraryStats?.meiliTaskProgress && (libraryStats.meiliTaskProgress.pending > 0 || libraryStats.meiliTaskProgress.processing > 0)}
+                {@const completed = libraryStats.meiliTaskProgress.total - libraryStats.meiliTaskProgress.pending - libraryStats.meiliTaskProgress.processing}
+                {@const percent = libraryStats.meiliTaskProgress.total > 0 ? Math.round((completed / libraryStats.meiliTaskProgress.total) * 100) : 0}
                 <div class="indexing-indicator">
                   <div class="indexing-header">
                     <svg class="indexing-dot" fill="currentColor" viewBox="0 0 8 8">
                       <circle cx="4" cy="4" r="3" />
                     </svg>
                     <span>Indexing for search</span>
-                    <span class="indexing-percent">{libraryStats.indexingProgress.percentComplete}%</span>
+                    <span class="indexing-percent">{percent}%</span>
                   </div>
                   <div class="indexing-bar">
-                    <div class="indexing-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
+                    <div class="indexing-fill" style="width: {percent}%"></div>
+                  </div>
+                  <div class="indexing-status">
+                    <span class="status-item">{libraryStats.meiliTaskProgress.processing} processing, {libraryStats.meiliTaskProgress.pending} pending</span>
                   </div>
                 </div>
               {/if}

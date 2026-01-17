@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T00:31:59.742Z",
+  "generated": "2026-01-17T00:41:44.501Z",
   "entries": [
+    {
+      "hash": "ba4462f",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
+      "scope": null
+    },
     {
       "hash": "f410166",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use correct content schema with document_id as primary column",
       "scope": "migration"
-    },
-    {
-      "hash": "f0c7d3c",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Separate connections for auth vs batch operations",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "ba4462f",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
+        "scope": null
+      },
       {
         "hash": "f410166",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Use correct content schema with document_id as primary column",
         "scope": "migration"
-      },
-      {
-        "hash": "f0c7d3c",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Separate connections for auth vs batch operations",
-        "scope": "db"
       }
     ]
   }
