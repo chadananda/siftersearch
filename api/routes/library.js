@@ -2843,9 +2843,8 @@ Provide only the translation, no explanations.`;
       SELECT
         d.id as doc_id,
         d.title,
-        d.source_path,
+        d.file_path,
         d.language,
-        d.authority,
         COUNT(c.id) as oversized_count,
         MAX(LENGTH(c.text)) as max_length,
         MIN(LENGTH(c.text)) as min_length
@@ -2854,7 +2853,7 @@ Provide only the translation, no explanations.`;
       WHERE c.deleted_at IS NOT NULL
         AND LENGTH(c.text) > ?
       GROUP BY d.id
-      ORDER BY oversized_count DESC, d.authority DESC
+      ORDER BY oversized_count DESC
     `, [MAX_PARAGRAPH_CHARS]);
 
     // Get total counts
