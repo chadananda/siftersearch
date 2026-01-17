@@ -868,6 +868,38 @@ export const failures = {
 };
 
 // ============================================
+// Oversized Paragraphs API
+// ============================================
+
+export const oversizedParagraphs = {
+  /**
+   * Get list of documents with oversized paragraphs
+   * Sorted by authority (most important first)
+   */
+  async getList() {
+    return request('/api/library/oversized-paragraphs');
+  },
+
+  /**
+   * Delete oversized paragraphs for a specific document
+   */
+  async deleteForDoc(docId) {
+    return request(`/api/library/oversized-paragraphs/${docId}/delete`, {
+      method: 'POST'
+    });
+  },
+
+  /**
+   * Delete all oversized paragraphs across all documents
+   */
+  async deleteAll() {
+    return request('/api/library/oversized-paragraphs/delete-all', {
+      method: 'POST'
+    });
+  }
+};
+
+// ============================================
 // Health API
 // ============================================
 

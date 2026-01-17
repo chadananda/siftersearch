@@ -2,13 +2,18 @@
   /**
    * DocumentFailures Component
    * Admin view for reviewing and managing document ingestion failures
+   * Also shows documents with oversized paragraphs that need re-ingestion
    */
   import { onMount } from 'svelte';
-  import { failures } from '../../lib/api.js';
+  import { failures, oversizedParagraphs } from '../../lib/api.js';
   import { getAuthState, initAuth } from '../../lib/auth.svelte.js';
 
   const auth = getAuthState();
 
+  // Tab state
+  let activeTab = $state('failures'); // 'failures' or 'oversized'
+
+  // Failures state
   let items = $state([]);
   let summary = $state(null);
   let loading = $state(true);
@@ -22,6 +27,13 @@
   const limit = 20;
   let total = $state(0);
 
+  // Oversized paragraphs state
+  let oversizedDocs = $state([]);
+  let oversizedLoading = $state(false);
+  let oversizedError = $state(null);
+  let oversizedTotal = $state(0);
+  let oversizedParagraphsTotal = $state(0);
+
   // Selected failure for detail view
   let selectedFailure = $state(null);
 
@@ -32,7 +44,7 @@
 
     // Only load data if authenticated admin
     if (auth.isAuthenticated && ['admin', 'superadmin', 'editor'].includes(auth.user?.tier)) {
-      await Promise.all([loadFailures(), loadSummary()]);
+      await Promise.all([loadFailures(), loadSummary(), loadOversized()]);
     } else {
       loading = false;
     }
@@ -125,6 +137,62 @@
     if (!str) return '';
     return str.length > maxLen ? str.substring(0, maxLen) + '...' : str;
   }
+
+  // Oversized paragraphs functions
+  async function loadOversized() {
+    oversizedLoading = true;
+    oversizedError = null;
+
+    try {
+      const data = await oversizedParagraphs.getList();
+      oversizedDocs = data.documents || [];
+      oversizedTotal = data.totalDocuments || 0;
+      oversizedParagraphsTotal = data.totalParagraphs || 0;
+    } catch (err) {
+      oversizedError = err.message || 'Failed to load oversized paragraphs';
+    } finally {
+      oversizedLoading = false;
+    }
+  }
+
+  async function handleDeleteOversizedForDoc(docId, title) {
+    if (!confirm(`Delete all oversized paragraphs from "${title}"? The document will need to be re-ingested with proper segmentation.`)) return;
+
+    actionLoading = `oversized-${docId}`;
+    try {
+      const result = await oversizedParagraphs.deleteForDoc(docId);
+      if (result.deleted > 0) {
+        alert(`Deleted ${result.deleted} oversized paragraph(s). Re-ingest the document to fix.`);
+      }
+      await loadOversized();
+    } catch (err) {
+      alert(err.message || 'Failed to delete oversized paragraphs');
+    } finally {
+      actionLoading = null;
+    }
+  }
+
+  async function handleDeleteAllOversized() {
+    if (!confirm(`Delete ALL oversized paragraphs across ${oversizedTotal} document(s)? These documents will need to be re-ingested with proper segmentation.`)) return;
+
+    actionLoading = 'delete-all-oversized';
+    try {
+      const result = await oversizedParagraphs.deleteAll();
+      alert(`Deleted ${result.deleted} oversized paragraph(s) across all documents.`);
+      await loadOversized();
+    } catch (err) {
+      alert(err.message || 'Failed to delete oversized paragraphs');
+    } finally {
+      actionLoading = null;
+    }
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    if (tab === 'oversized' && oversizedDocs.length === 0 && !oversizedLoading) {
+      loadOversized();
+    }
+  }
 </script>
 
 {#if !authReady}
@@ -133,34 +201,57 @@
   <div class="error">You must be an admin to view this page.</div>
 {:else}
   <div class="failures-container">
-    <!-- Summary Stats -->
-    {#if summary}
-      <div class="summary-box">
-        <div class="summary-stat main">
-          <span class="stat-value">{summary.totalUnresolved}</span>
-          <span class="stat-label">Unresolved Failures</span>
-        </div>
-        {#if summary.byType && Object.keys(summary.byType).length > 0}
-          <div class="summary-types">
-            {#each Object.entries(summary.byType) as [type, counts]}
-              <div class="type-badge">
-                <span class="type-name">{type.replace(/_/g, ' ')}</span>
-                <span class="type-count">{counts.unresolved}</span>
-              </div>
-            {/each}
-          </div>
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button
+        class="tab {activeTab === 'failures' ? 'active' : ''}"
+        onclick={() => switchTab('failures')}
+      >
+        Ingestion Failures
+        {#if summary?.totalUnresolved > 0}
+          <span class="tab-badge">{summary.totalUnresolved}</span>
         {/if}
-      </div>
-    {/if}
-
-    <!-- Filters -->
-    <div class="filters">
-      <select bind:value={resolvedFilter} onchange={handleFilterChange}>
-        <option value="0">Unresolved</option>
-        <option value="1">Resolved</option>
-        <option value="all">All</option>
-      </select>
+      </button>
+      <button
+        class="tab {activeTab === 'oversized' ? 'active' : ''}"
+        onclick={() => switchTab('oversized')}
+      >
+        Oversized Paragraphs
+        {#if oversizedTotal > 0}
+          <span class="tab-badge warning">{oversizedTotal}</span>
+        {/if}
+      </button>
     </div>
+
+    {#if activeTab === 'failures'}
+      <!-- Summary Stats -->
+      {#if summary}
+        <div class="summary-box">
+          <div class="summary-stat main">
+            <span class="stat-value">{summary.totalUnresolved}</span>
+            <span class="stat-label">Unresolved Failures</span>
+          </div>
+          {#if summary.byType && Object.keys(summary.byType).length > 0}
+            <div class="summary-types">
+              {#each Object.entries(summary.byType) as [type, counts]}
+                <div class="type-badge">
+                  <span class="type-name">{type.replace(/_/g, ' ')}</span>
+                  <span class="type-count">{counts.unresolved}</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Filters -->
+      <div class="filters">
+        <select bind:value={resolvedFilter} onchange={handleFilterChange}>
+          <option value="0">Unresolved</option>
+          <option value="1">Resolved</option>
+          <option value="all">All</option>
+        </select>
+      </div>
 
     <!-- Error display -->
     {#if error}
@@ -251,6 +342,84 @@
           >
             Next
           </button>
+        </div>
+      {/if}
+    {/if}
+    {:else if activeTab === 'oversized'}
+      <!-- Oversized Paragraphs Tab -->
+      <div class="summary-box">
+        <div class="summary-stat main">
+          <span class="stat-value warning-text">{oversizedTotal}</span>
+          <span class="stat-label">Documents with Oversized Paragraphs</span>
+        </div>
+        <div class="summary-stat">
+          <span class="stat-value">{oversizedParagraphsTotal}</span>
+          <span class="stat-label">Total Paragraphs</span>
+        </div>
+        {#if oversizedTotal > 0}
+          <button
+            class="btn btn-danger"
+            onclick={handleDeleteAllOversized}
+            disabled={actionLoading === 'delete-all-oversized'}
+          >
+            {actionLoading === 'delete-all-oversized' ? 'Deleting...' : 'Delete All Oversized'}
+          </button>
+        {/if}
+      </div>
+
+      <p class="help-text">
+        These documents have paragraphs exceeding 6,000 characters which cannot be embedded.
+        Edit the source documents to add proper paragraph breaks, then re-ingest.
+        Documents are sorted by authority (most important first).
+      </p>
+
+      {#if oversizedError}
+        <div class="error-banner">{oversizedError}</div>
+      {/if}
+
+      {#if oversizedLoading}
+        <div class="loading">Loading oversized paragraphs...</div>
+      {:else if oversizedDocs.length === 0}
+        <div class="empty-state">
+          <p>No documents with oversized paragraphs found.</p>
+        </div>
+      {:else}
+        <div class="oversized-list">
+          {#each oversizedDocs as doc (doc.doc_id)}
+            <div class="oversized-card">
+              <div class="oversized-header">
+                <span class="authority-badge" title="Authority score">
+                  {doc.authority || 0}
+                </span>
+                <span class="doc-title">{doc.title || 'Untitled'}</span>
+                <span class="oversized-count">{doc.oversized_count} oversized</span>
+              </div>
+              <div class="doc-details">
+                {#if doc.source_path}
+                  <span class="file-path">{doc.source_path}</span>
+                {/if}
+                <span class="max-length">Max length: {doc.max_length?.toLocaleString()} chars</span>
+                {#if doc.language}
+                  <span class="language">{doc.language}</span>
+                {/if}
+              </div>
+              <div class="oversized-actions">
+                <a
+                  href="/admin/edit?id={doc.doc_id}"
+                  class="btn btn-primary"
+                >
+                  Edit Document
+                </a>
+                <button
+                  class="btn btn-danger"
+                  onclick={() => handleDeleteOversizedForDoc(doc.doc_id, doc.title)}
+                  disabled={actionLoading === `oversized-${doc.doc_id}`}
+                >
+                  {actionLoading === `oversized-${doc.doc_id}` ? 'Deleting...' : 'Delete Oversized'}
+                </button>
+              </div>
+            </div>
+          {/each}
         </div>
       {/if}
     {/if}
@@ -511,5 +680,147 @@
   .pagination span {
     color: var(--text-secondary);
     font-size: 0.875rem;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tab:hover {
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+
+  .tab.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .tab-badge {
+    background: var(--error);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    font-weight: bold;
+  }
+
+  .tab-badge.warning {
+    background: var(--warning, #f59e0b);
+  }
+
+  /* Oversized Paragraphs */
+  .help-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .warning-text {
+    color: var(--warning, #f59e0b) !important;
+  }
+
+  .oversized-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .oversized-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .oversized-card:hover {
+    border-color: var(--border-hover, var(--accent));
+  }
+
+  .oversized-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .authority-badge {
+    background: var(--accent);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 2rem;
+    text-align: center;
+  }
+
+  .doc-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .oversized-count {
+    background: var(--warning, #f59e0b);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .doc-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .max-length {
+    color: var(--warning, #f59e0b);
+  }
+
+  .language {
+    background: var(--surface-2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .oversized-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Button as link styling */
+  a.btn {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
 </style>
