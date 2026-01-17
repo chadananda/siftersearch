@@ -954,8 +954,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       totalSentences += matches ? matches.length : 0;
     }
     logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Using pre-existing sentence markers');
-  } else if (isRTLText) {
-    // Add sentence markers ONLY for RTL texts (for per-sentence translations)
+  } else if (isRTLText && !existingDoc) {
+    // ONLY add sentence markers for NEW RTL documents (not updates)
+    // For updates, we'll reuse existing markers from DB paragraphs
+    // This avoids expensive GPT-4o calls for re-ingestion of unchanged paragraphs
     try {
       const paragraphsToMark = chunks.map((chunk, idx) => ({
         id: String(idx),
@@ -972,11 +974,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           totalSentences += result.sentenceCount;
         }
       }
-      logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers for RTL text');
+      logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers for NEW RTL document');
     } catch (err) {
       // If batch marking fails completely, log but keep original text
       logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
     }
+  } else if (isRTLText && existingDoc) {
+    // For RTL document UPDATES, markers will be preserved from existing DB paragraphs
+    // via the paragraph matching logic below (reusedParagraphs preserve their text)
+    logger.debug({ paragraphs: chunks.length, documentId: existingDoc.id }, 'Skipping sentence detection for RTL document update - will reuse existing markers');
   } else {
     // LTR texts (English, etc.) - no sentence markers needed
     logger.debug({ paragraphs: chunks.length, language: finalMeta.language }, 'Skipping sentence markers for LTR text');
@@ -1146,20 +1152,24 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const existing = existingParagraphs.get(wordHash);
 
     if (existing) {
-      // Same words found - update paragraph with new markers (preserves embeddings!)
-      // This allows re-segmentation to shift sentence/phrase boundaries without losing embeddings
+      // Same words found - REUSE existing text with markers (preserves embeddings AND markers!)
+      // This avoids regenerating sentence markers via expensive GPT-4o calls
+      // Only update position and sync flag if they differ
       reusedCount++;
+      const reuseText = existing.text;  // Use DB text with existing markers
+      const reuseHash = existing.content_hash;  // Keep existing hash
+
+      // Only mark as needing sync if position changed
+      const positionChanged = existing.paragraph_index !== index;
       updateStatements.push({
         sql: `
           UPDATE content
-          SET paragraph_index = ?, text = ?, content_hash = ?, heading = ?, blocktype = ?, synced = 0
+          SET paragraph_index = ?, heading = ?, blocktype = ?${positionChanged ? ', synced = 0' : ''}
           WHERE id = ?
         `,
         args: [
           index,
-          chunkText,  // New text with updated markers
-          contentHash,  // New full hash
-          extractHeading(content, chunkText),
+          extractHeading(content, reuseText),
           blocktype,
           existing.id
         ]
@@ -1185,6 +1195,33 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           blocktype
         ]
       });
+    }
+  }
+
+  // For RTL document UPDATES with NEW paragraphs, add sentence markers only to new ones
+  // This is the cost-efficient path: reuse existing markers, only process truly new content
+  if (isRTLText && existingDoc && insertStatements.length > 0) {
+    try {
+      // Extract new paragraph texts for sentence detection
+      const newParagraphs = insertStatements.map((stmt, idx) => ({
+        id: String(idx),
+        text: stmt.args[2]  // text is at index 2 in args
+      }));
+
+      logger.info({ count: newParagraphs.length }, 'Adding sentence markers to NEW paragraphs only (RTL update)');
+      const markedResults = await batchAddSentenceMarkers(newParagraphs, finalMeta.language);
+
+      // Update INSERT statements with marked text and recalculated hash
+      for (const result of markedResults) {
+        const idx = parseInt(result.id, 10);
+        if (idx >= 0 && idx < insertStatements.length) {
+          insertStatements[idx].args[2] = result.text;  // Update text
+          insertStatements[idx].args[3] = hashContent(result.text);  // Update content_hash
+          totalSentences += result.sentenceCount;
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Failed to add sentence markers to new paragraphs');
     }
   }
 

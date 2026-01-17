@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T00:58:00.614Z",
+  "generated": "2026-01-17T02:21:09.479Z",
   "entries": [
+    {
+      "hash": "0706630",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Track completed tasks for accurate indexing progress",
+      "scope": null
+    },
     {
       "hash": "d0c6104",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add auth header and support both doc_id/document_id columns",
       "scope": "translation"
-    },
-    {
-      "hash": "dd763c3",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Enable SQLite WAL mode for concurrent access",
-      "scope": "db"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "0706630",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Track completed tasks for accurate indexing progress",
+        "scope": null
+      },
       {
         "hash": "d0c6104",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Add auth header and support both doc_id/document_id columns",
         "scope": "translation"
-      },
-      {
-        "hash": "dd763c3",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Enable SQLite WAL mode for concurrent access",
-        "scope": "db"
       }
     ]
   }
