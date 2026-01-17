@@ -560,6 +560,11 @@
   let aiUsageStatus = $state(null);
   let isAdmin = $derived(auth.isAuthenticated && auth.user?.tier === 'admin');
 
+  // Load AI usage when user becomes admin (e.g., after login)
+  $effect(() => {
+    if (isAdmin) loadAIUsageStatus();
+  });
+
   // Check if user can access AI-powered research (approved+ only)
   let canUseResearcher = $derived(
     auth.isAuthenticated &&
