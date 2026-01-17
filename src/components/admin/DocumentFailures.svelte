@@ -388,15 +388,12 @@
           {#each oversizedDocs as doc (doc.doc_id)}
             <div class="oversized-card">
               <div class="oversized-header">
-                <span class="authority-badge" title="Authority score">
-                  {doc.authority || 0}
-                </span>
                 <span class="doc-title">{doc.title || 'Untitled'}</span>
                 <span class="oversized-count">{doc.oversized_count} oversized</span>
               </div>
               <div class="doc-details">
-                {#if doc.source_path}
-                  <span class="file-path">{doc.source_path}</span>
+                {#if doc.file_path}
+                  <span class="file-path" title="Click to copy" onclick={() => navigator.clipboard.writeText(doc.file_path)}>{doc.file_path}</span>
                 {/if}
                 <span class="max-length">Max length: {doc.max_length?.toLocaleString()} chars</span>
                 {#if doc.language}
