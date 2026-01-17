@@ -641,33 +641,23 @@
               if (cooldownExpired) {
                 // Store timestamp for cooldown (not boolean - allows retry after cooldown)
                 sessionStorage.setItem(reloadKey, Date.now().toString());
-                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), updating PWA...`);
+                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), triggering PWA update...`);
 
-                // Unregister service worker and clear all caches before reloading
-                (async () => {
-                  try {
-                    // Unregister all service workers
-                    if ('serviceWorker' in navigator) {
-                      const registrations = await navigator.serviceWorker.getRegistrations();
-                      await Promise.all(registrations.map(r => r.unregister()));
-                      console.log('[Deploy] Service workers unregistered');
-                    }
-                    // Clear all caches
-                    if ('caches' in window) {
-                      const names = await caches.keys();
-                      await Promise.all(names.map(name => caches.delete(name)));
-                      console.log('[Deploy] Caches cleared');
-                    }
-                  } catch (e) {
-                    console.error('[Deploy] Error clearing PWA state:', e);
-                  }
-                  // Small delay to ensure cache clearing completes
-                  await new Promise(r => setTimeout(r, 100));
-                  // Reload with cache-busting query param to bypass CDN/browser cache
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('_v', stats.serverVersion);
-                  window.location.replace(url.toString());
-                })();
+                // Let the PWA plugin handle the update properly:
+                // 1. Call r.update() on service worker registration
+                // 2. New SW downloads and installs (skipWaiting makes it activate immediately)
+                // 3. controllerchange event in pwa.svelte.js triggers reload
+                // Don't manually clear caches - that breaks PWA lifecycle
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.ready.then(registration => {
+                    console.log('[Deploy] Checking for service worker update...');
+                    registration.update();
+                  });
+                } else {
+                  // No service worker active - just reload
+                  console.log('[Deploy] No service worker, reloading...');
+                  window.location.reload();
+                }
               } else {
                 const secondsLeft = Math.ceil((parseInt(lastAttempt, 10) + cooldownMs - Date.now()) / 1000);
                 console.log(`[Deploy] Update cooldown active (${secondsLeft}s remaining), waiting for CDN propagation...`);
