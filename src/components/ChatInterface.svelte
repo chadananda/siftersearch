@@ -558,9 +558,13 @@
 
   // Admin AI usage status (only loaded for admins)
   let aiUsageStatus = $state(null);
-  let isAdmin = $derived(auth.isAuthenticated && auth.user?.tier === 'admin');
+  // Use server-side isAdmin from libraryStats (immediate) OR client-side auth (delayed)
+  let isAdmin = $derived(
+    libraryStats?.isAdmin ||
+    (auth.isAuthenticated && auth.user?.tier === 'admin')
+  );
 
-  // Load AI usage when user becomes admin (e.g., after login)
+  // Load AI usage when user becomes admin (e.g., after login or stats load)
   $effect(() => {
     if (isAdmin) loadAIUsageStatus();
   });

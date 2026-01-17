@@ -1,6 +1,125 @@
 {
-  "generated": "2026-01-17T18:34:38.550Z",
+  "generated": "2026-01-17T20:42:07.700Z",
   "entries": [
+    {
+      "hash": "e4548ca",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.793",
+      "scope": null
+    },
+    {
+      "hash": "83aecac",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Reload AI usage ticker immediately when user logs in as admin",
+      "scope": null
+    },
+    {
+      "hash": "857e8a3",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.792",
+      "scope": null
+    },
+    {
+      "hash": "caa1393",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
+      "scope": null
+    },
+    {
+      "hash": "d295a02",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.791",
+      "scope": null
+    },
+    {
+      "hash": "3faf39a",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use proper PWA update lifecycle instead of aggressive cache clearing",
+      "scope": null
+    },
+    {
+      "hash": "d140cc0",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.790",
+      "scope": null
+    },
+    {
+      "hash": "2c5461a",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add Rejected Documents link to admin dashboard",
+      "scope": null
+    },
+    {
+      "hash": "14fba5b",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Hydration mismatch from toLocaleString",
+      "scope": null
+    },
+    {
+      "hash": "d234dec",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.789",
+      "scope": null
+    },
+    {
+      "hash": "9947328",
+      "date": "2026-01-17",
+      "type": "Performance",
+      "description": "Increase embedding/sync worker throughput",
+      "scope": null
+    },
+    {
+      "hash": "fd832a2",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Combine embedding costs under single 'embeddings' label",
+      "scope": "ui"
+    },
+    {
+      "hash": "97ec2b9",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add oversized paragraphs tab to Doc Failures page",
+      "scope": "admin"
+    },
+    {
+      "hash": "5c1f8e9",
+      "date": "2026-01-17",
+      "type": "Performance",
+      "description": "Throttle workers and add index for embeddings",
+      "scope": null
+    },
+    {
+      "hash": "a72ca9a",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add oversized paragraphs management",
+      "scope": "admin"
+    },
+    {
+      "hash": "a242592",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Skip oversized content, add pipeline status",
+      "scope": "embedding-worker"
+    },
+    {
+      "hash": "3f5ee32",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add document failures tracking and validation",
+      "scope": "ingestion"
+    },
     {
       "hash": "b7f1e9d",
       "date": "2026-01-17",
@@ -3381,129 +3500,129 @@
       "type": "Other",
       "description": "Add verbose job logging to trace undefined document_id",
       "scope": null
-    },
-    {
-      "hash": "eed1a69",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Look up admin user for system API jobs instead of using id=0",
-      "scope": null
-    },
-    {
-      "hash": "ba9e1b1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add system user for API/automation jobs",
-      "scope": null
-    },
-    {
-      "hash": "53fc622",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add priority column migration and use 0 for system user jobs",
-      "scope": null
-    },
-    {
-      "hash": "e6e5a10",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use correct job.document_id in processInAppTranslation",
-      "scope": null
-    },
-    {
-      "hash": "f83b738",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Handle system users with string IDs in queue-translation",
-      "scope": null
-    },
-    {
-      "hash": "49bae7a",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add /admin/update endpoint for manual server updates",
-      "scope": null
-    },
-    {
-      "hash": "1d3338f",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add DEPLOY_SECRET authentication for API calls",
-      "scope": null
-    },
-    {
-      "hash": "f0bbe17",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Correct chatCompletion call signature in batch translation",
-      "scope": null
-    },
-    {
-      "hash": "b3e3bc5",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use snake_case document_id from jobs table in translation processor",
-      "scope": null
-    },
-    {
-      "hash": "a0e8c72",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add job processor to PM2 ecosystem",
-      "scope": null
-    },
-    {
-      "hash": "7b19e64",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add translation progress polling and remove size labels",
-      "scope": null
-    },
-    {
-      "hash": "c933bcd",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use request.user.sub instead of request.user.id in queue-translation",
-      "scope": null
-    },
-    {
-      "hash": "d1273ab",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use document_id column consistently across all API code",
-      "scope": null
-    },
-    {
-      "hash": "0174fe7",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use document_id in orphaned endpoint queries",
-      "scope": null
-    },
-    {
-      "hash": "467512f",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use document_id column (not doc_id) in populate-content endpoint",
-      "scope": null
-    },
-    {
-      "hash": "5668e06",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Add endpoint to populate missing content from Meilisearch",
-      "scope": null
-    },
-    {
-      "hash": "ac73905",
-      "date": "2025-12-31",
-      "type": "Docs",
-      "description": "Add sync architecture documentation and watcher status endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "e4548ca",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.793",
+        "scope": null
+      },
+      {
+        "hash": "83aecac",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Reload AI usage ticker immediately when user logs in as admin",
+        "scope": null
+      },
+      {
+        "hash": "857e8a3",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.792",
+        "scope": null
+      },
+      {
+        "hash": "caa1393",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
+        "scope": null
+      },
+      {
+        "hash": "d295a02",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.791",
+        "scope": null
+      },
+      {
+        "hash": "3faf39a",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use proper PWA update lifecycle instead of aggressive cache clearing",
+        "scope": null
+      },
+      {
+        "hash": "d140cc0",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.790",
+        "scope": null
+      },
+      {
+        "hash": "2c5461a",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add Rejected Documents link to admin dashboard",
+        "scope": null
+      },
+      {
+        "hash": "14fba5b",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Hydration mismatch from toLocaleString",
+        "scope": null
+      },
+      {
+        "hash": "d234dec",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.789",
+        "scope": null
+      },
+      {
+        "hash": "9947328",
+        "date": "2026-01-17",
+        "type": "Performance",
+        "description": "Increase embedding/sync worker throughput",
+        "scope": null
+      },
+      {
+        "hash": "fd832a2",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Combine embedding costs under single 'embeddings' label",
+        "scope": "ui"
+      },
+      {
+        "hash": "97ec2b9",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add oversized paragraphs tab to Doc Failures page",
+        "scope": "admin"
+      },
+      {
+        "hash": "5c1f8e9",
+        "date": "2026-01-17",
+        "type": "Performance",
+        "description": "Throttle workers and add index for embeddings",
+        "scope": null
+      },
+      {
+        "hash": "a72ca9a",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add oversized paragraphs management",
+        "scope": "admin"
+      },
+      {
+        "hash": "a242592",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Skip oversized content, add pipeline status",
+        "scope": "embedding-worker"
+      },
+      {
+        "hash": "3f5ee32",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add document failures tracking and validation",
+        "scope": "ingestion"
+      },
       {
         "hash": "b7f1e9d",
         "date": "2026-01-17",
@@ -6913,127 +7032,6 @@
         "date": "2026-01-01",
         "type": "Other",
         "description": "Add verbose job logging to trace undefined document_id",
-        "scope": null
-      },
-      {
-        "hash": "eed1a69",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Look up admin user for system API jobs instead of using id=0",
-        "scope": null
-      },
-      {
-        "hash": "ba9e1b1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add system user for API/automation jobs",
-        "scope": null
-      },
-      {
-        "hash": "53fc622",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add priority column migration and use 0 for system user jobs",
-        "scope": null
-      },
-      {
-        "hash": "e6e5a10",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use correct job.document_id in processInAppTranslation",
-        "scope": null
-      },
-      {
-        "hash": "f83b738",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Handle system users with string IDs in queue-translation",
-        "scope": null
-      },
-      {
-        "hash": "49bae7a",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add /admin/update endpoint for manual server updates",
-        "scope": null
-      },
-      {
-        "hash": "1d3338f",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add DEPLOY_SECRET authentication for API calls",
-        "scope": null
-      },
-      {
-        "hash": "f0bbe17",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Correct chatCompletion call signature in batch translation",
-        "scope": null
-      },
-      {
-        "hash": "b3e3bc5",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use snake_case document_id from jobs table in translation processor",
-        "scope": null
-      },
-      {
-        "hash": "a0e8c72",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add job processor to PM2 ecosystem",
-        "scope": null
-      },
-      {
-        "hash": "7b19e64",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add translation progress polling and remove size labels",
-        "scope": null
-      },
-      {
-        "hash": "c933bcd",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use request.user.sub instead of request.user.id in queue-translation",
-        "scope": null
-      }
-    ],
-    "2025-12-31": [
-      {
-        "hash": "d1273ab",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use document_id column consistently across all API code",
-        "scope": null
-      },
-      {
-        "hash": "0174fe7",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use document_id in orphaned endpoint queries",
-        "scope": null
-      },
-      {
-        "hash": "467512f",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use document_id column (not doc_id) in populate-content endpoint",
-        "scope": null
-      },
-      {
-        "hash": "5668e06",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Add endpoint to populate missing content from Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "ac73905",
-        "date": "2025-12-31",
-        "type": "Docs",
-        "description": "Add sync architecture documentation and watcher status endpoint",
         "scope": null
       }
     ]

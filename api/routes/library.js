@@ -162,7 +162,9 @@ export default async function libraryRoutes(fastify) {
    * Get library statistics
    * Uses libsql as source of truth for counts
    */
-  fastify.get('/stats', async () => {
+  fastify.get('/stats', { preHandler: optionalAuthenticate }, async (request) => {
+    // Check if authenticated user is admin
+    const isAdmin = request.user?.tier === 'admin';
     // Get document and paragraph counts from libsql + Meilisearch indexing progress
     // Exclude soft-deleted content (deleted_at IS NULL)
     const [docCount, paraCount, docsWithContent, facetStats, meiliProgress] = await Promise.all([
@@ -273,6 +275,7 @@ export default async function libraryRoutes(fastify) {
     const percentComplete = totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0;
 
     return {
+      isAdmin,  // Include admin status for client-side conditional rendering
       totalDocuments: totalDocs,
       totalParagraphs: paraCount?.count || 0,
       religions: Object.keys(religionCounts).length,
