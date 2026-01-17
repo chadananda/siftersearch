@@ -12,17 +12,21 @@ import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, initializeIndexes } from '../lib/search.js';
 
-// Configuration
-const SYNC_INTERVAL_MS = 10000;  // Poll every 10 seconds
+// Configuration - throttled to prevent blocking health checks
+const SYNC_INTERVAL_MS = 20000;  // Poll every 20 seconds (was 10)
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Cleanup stale Meili docs every 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // Full sync check every hour
-const BATCH_SIZE = 100;          // Paragraphs per batch
+const BATCH_SIZE = 50;           // Paragraphs per batch (was 100)
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
+const YIELD_DELAY_MS = 10;       // Small delay to yield event loop
 
 let syncInterval = null;
 let cleanupInterval = null;
 let fullSyncInterval = null;
 let isRunning = false;
+
+// Small delay to yield event loop and prevent blocking health checks
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 let isCleanupRunning = false;
 let isFullSyncRunning = false;
 let indexesInitialized = false;
@@ -280,6 +284,8 @@ async function syncDocument(docId) {
     for (let i = 0; i < meiliParagraphs.length; i += BATCH_SIZE) {
       const batch = meiliParagraphs.slice(i, i + BATCH_SIZE);
       await paragraphsIndex.addDocuments(batch);
+      // Yield event loop between batches to allow health checks
+      if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
     }
 
     // Mark paragraphs as synced (batch to avoid SQLite variable limit)
@@ -291,6 +297,8 @@ async function syncDocument(docId) {
         UPDATE content SET synced = 1, updated_at = datetime('now')
         WHERE id IN (${batchIds.map(() => '?').join(',')})
       `, batchIds);
+      // Yield event loop between batches
+      if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
     }
 
     logger.info({ docId, paragraphs: paragraphs.length }, 'Document synced to Meilisearch');

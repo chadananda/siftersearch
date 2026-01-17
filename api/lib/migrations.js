@@ -1441,6 +1441,19 @@ const migrations = {
 
     logger.info('Migration 34 complete: document_failures table created');
   },
+
+  // Version 35: Add index for embedding worker queries
+  // The existing idx_content_normalized_hash only covers rows WITH embeddings
+  // We need a partial index for rows NEEDING embeddings (embedding IS NULL)
+  35: async () => {
+    logger.info('Starting migration 35: Add index for embedding worker');
+
+    // This index optimizes the embedding worker's main query:
+    // SELECT ... FROM content WHERE embedding IS NULL AND deleted_at IS NULL
+    await query('CREATE INDEX IF NOT EXISTS idx_content_needs_embedding ON content(deleted_at, normalized_hash) WHERE embedding IS NULL');
+
+    logger.info('Migration 35 complete: embedding worker index added');
+  },
 };
 
 /**

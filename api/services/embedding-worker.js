@@ -13,14 +13,18 @@ import { logger } from '../lib/logger.js';
 import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
 
-// Configuration
-const EMBEDDING_INTERVAL_MS = 10000;  // Poll every 10 seconds
-const BATCH_SIZE = 50;                // Texts per OpenAI batch (rate limit safe)
+// Configuration - throttled to prevent blocking health checks
+const EMBEDDING_INTERVAL_MS = 30000;  // Poll every 30 seconds (was 10)
+const BATCH_SIZE = 20;                // Texts per OpenAI batch (was 50, reduced for CPU)
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
+const DB_WRITE_DELAY_MS = 50;         // Small delay between DB writes to yield event loop
 
 let embeddingInterval = null;
 let isRunning = false;
+
+// Small delay to yield event loop and prevent blocking health checks
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 let embeddingStats = {
   lastRun: null,
   lastSuccess: null,
@@ -81,6 +85,11 @@ async function storeEmbeddings(rows, embeddings) {
         AND embedding IS NULL
         AND deleted_at IS NULL
     `, [embeddingBuffer, model, row.normalized_hash]);
+
+    // Yield event loop to allow health checks to respond
+    if (DB_WRITE_DELAY_MS > 0) {
+      await delay(DB_WRITE_DELAY_MS);
+    }
   }
 }
 
