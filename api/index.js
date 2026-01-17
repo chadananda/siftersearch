@@ -26,6 +26,7 @@ import { ensureServicesRunning, cleanupServices, getServicesStatus } from './lib
 import { seedAdminUser } from './lib/auth.js';
 import { runMigrations } from './lib/migrations.js';
 import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
+import { startEmbeddingWorker, stopEmbeddingWorker } from './services/embedding-worker.js';
 import { startLibraryWatcher, stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
@@ -94,6 +95,14 @@ const start = async () => {
       } catch (err) {
         logger.warn({ err }, 'Failed to start sync worker');
       }
+
+      // Start embedding worker (generates embeddings for content missing them)
+      try {
+        startEmbeddingWorker();
+        logger.info('Embedding worker started');
+      } catch (err) {
+        logger.warn({ err }, 'Failed to start embedding worker');
+      }
     } else {
       logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), sync worker not started');
     }
@@ -145,6 +154,7 @@ const start = async () => {
 const shutdown = async (signal) => {
   logger.info({ signal }, 'Shutting down');
   stopSyncWorker();
+  stopEmbeddingWorker();
   await stopLibraryWatcher();
   cleanupServices();
   process.exit(0);

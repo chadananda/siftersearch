@@ -1,6 +1,48 @@
 {
-  "generated": "2026-01-17T17:03:26.599Z",
+  "generated": "2026-01-17T18:05:45.811Z",
   "entries": [
+    {
+      "hash": "c0319c4",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Final embedding lookup during document sync",
+      "scope": "sync"
+    },
+    {
+      "hash": "42b0857",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Propagate existing embeddings via normalized_hash",
+      "scope": "sync"
+    },
+    {
+      "hash": "7fdf75e",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show exact pipeline counts instead of abbreviated",
+      "scope": "ui"
+    },
+    {
+      "hash": "f5d3385",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Fix date format for AI usage queries",
+      "scope": "admin"
+    },
+    {
+      "hash": "9c80f3f",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Add pipelineStatus to /api/search/stats endpoint",
+      "scope": "stats"
+    },
+    {
+      "hash": "5fbef8b",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Improve library stats display & fix embedding tracking",
+      "scope": null
+    },
     {
       "hash": "34a43ca",
       "date": "2026-01-17",
@@ -3458,52 +3500,52 @@
       "type": "New",
       "description": "Add translation UI pill and content sync worker",
       "scope": null
-    },
-    {
-      "hash": "2514f16",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Remove Meilisearch fallback for translation - content table is source of truth",
-      "scope": null
-    },
-    {
-      "hash": "c6a8fa5",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Use correct column name paragraph_index in content table insert",
-      "scope": null
-    },
-    {
-      "hash": "d20f4e1",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Auto-populate content table from Meilisearch when queueing translation",
-      "scope": null
-    },
-    {
-      "hash": "ae8a35b",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "Add empty JSON body to queue-translation POST request",
-      "scope": null
-    },
-    {
-      "hash": "43eee68",
-      "date": "2025-12-31",
-      "type": "Fixed",
-      "description": "ReferenceError isIndexing not defined in startRefreshPolling",
-      "scope": null
-    },
-    {
-      "hash": "362def3",
-      "date": "2025-12-31",
-      "type": "New",
-      "description": "Server-side translation queue with priority",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "c0319c4",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Final embedding lookup during document sync",
+        "scope": "sync"
+      },
+      {
+        "hash": "42b0857",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Propagate existing embeddings via normalized_hash",
+        "scope": "sync"
+      },
+      {
+        "hash": "7fdf75e",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show exact pipeline counts instead of abbreviated",
+        "scope": "ui"
+      },
+      {
+        "hash": "f5d3385",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Fix date format for AI usage queries",
+        "scope": "admin"
+      },
+      {
+        "hash": "9c80f3f",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Add pipelineStatus to /api/search/stats endpoint",
+        "scope": "stats"
+      },
+      {
+        "hash": "5fbef8b",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Improve library stats display & fix embedding tracking",
+        "scope": null
+      },
       {
         "hash": "34a43ca",
         "date": "2026-01-17",
@@ -6993,48 +7035,6 @@
         "type": "New",
         "description": "Add translation UI pill and content sync worker",
         "scope": null
-      },
-      {
-        "hash": "2514f16",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Remove Meilisearch fallback for translation - content table is source of truth",
-        "scope": null
-      },
-      {
-        "hash": "c6a8fa5",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Use correct column name paragraph_index in content table insert",
-        "scope": null
-      },
-      {
-        "hash": "d20f4e1",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Auto-populate content table from Meilisearch when queueing translation",
-        "scope": null
-      },
-      {
-        "hash": "ae8a35b",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "Add empty JSON body to queue-translation POST request",
-        "scope": null
-      },
-      {
-        "hash": "43eee68",
-        "date": "2025-12-31",
-        "type": "Fixed",
-        "description": "ReferenceError isIndexing not defined in startRefreshPolling",
-        "scope": null
-      },
-      {
-        "hash": "362def3",
-        "date": "2025-12-31",
-        "type": "New",
-        "description": "Server-side translation queue with priority",
-        "scope": "translation"
       }
     ]
   }
