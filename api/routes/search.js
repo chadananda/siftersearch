@@ -8,6 +8,7 @@
  */
 
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
+import { queryOne } from '../lib/db.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
@@ -299,9 +300,27 @@ export default async function searchRoutes(fastify) {
   // Index statistics
   fastify.get('/stats', async () => {
     const stats = await getStats();
+
+    // Get pipeline status - paragraphs needing embeddings and pending sync
+    let pipelineStatus = null;
+    try {
+      const [embeddingCount, syncCount] = await Promise.all([
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL`),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`)
+      ]);
+      pipelineStatus = {
+        ingestionQueuePending: 0, // Not tracked in search stats
+        paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+        paragraphsPendingSync: syncCount?.count || 0
+      };
+    } catch {
+      // Columns may not exist yet
+    }
+
     return {
       ...stats,
-      serverVersion
+      serverVersion,
+      pipelineStatus
     };
   });
 
