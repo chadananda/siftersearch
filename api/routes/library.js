@@ -2832,11 +2832,13 @@ Provide only the translation, no explanations.`;
    * Get documents with oversized paragraphs that need re-segmentation
    * Sorted by authority (highest first) so admins can fix important docs first
    * GET /api/library/oversized-paragraphs
+   * Returns documents with oversized paragraphs that need re-ingestion
+   * (soft-deleted paragraphs indicate content was removed and document needs re-chunking)
    */
   fastify.get('/oversized-paragraphs', {
     preHandler: [requireInternal]
   }, async () => {
-    // Get documents with oversized paragraphs, sorted by authority
+    // Get documents with SOFT-DELETED oversized paragraphs (need re-ingestion)
     const results = await queryAll(`
       SELECT
         d.id as doc_id,
@@ -2849,11 +2851,10 @@ Provide only the translation, no explanations.`;
         MIN(LENGTH(c.text)) as min_length
       FROM content c
       JOIN docs d ON c.doc_id = d.id
-      WHERE c.embedding IS NULL
-        AND c.deleted_at IS NULL
+      WHERE c.deleted_at IS NOT NULL
         AND LENGTH(c.text) > ?
       GROUP BY d.id
-      ORDER BY d.authority DESC, oversized_count DESC
+      ORDER BY oversized_count DESC, d.authority DESC
     `, [MAX_PARAGRAPH_CHARS]);
 
     // Get total counts
@@ -2862,8 +2863,7 @@ Provide only the translation, no explanations.`;
         COUNT(DISTINCT c.doc_id) as total_docs,
         COUNT(*) as total_paragraphs
       FROM content c
-      WHERE c.embedding IS NULL
-        AND c.deleted_at IS NULL
+      WHERE c.deleted_at IS NOT NULL
         AND LENGTH(c.text) > ?
     `, [MAX_PARAGRAPH_CHARS]);
 
@@ -2873,7 +2873,8 @@ Provide only the translation, no explanations.`;
         documents: totals?.total_docs || 0,
         paragraphs: totals?.total_paragraphs || 0
       },
-      maxChars: MAX_PARAGRAPH_CHARS
+      maxChars: MAX_PARAGRAPH_CHARS,
+      description: 'Documents with soft-deleted oversized paragraphs that need re-ingestion with better chunking'
     };
   });
 
