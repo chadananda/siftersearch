@@ -1166,6 +1166,11 @@
     return String(num ?? 0);
   }
 
+  // Format number with commas (no abbreviation) - for countdowns
+  function formatWithCommas(num) {
+    return (num ?? 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
   function toggleResult(messageId, resultIndex) {
     const key = `${messageId}-${resultIndex}`;
     const currentState = isExpanded(messageId, resultIndex);
@@ -1769,7 +1774,7 @@
                       <div class="pipeline-item">
                         <span class="pipeline-icon">📥</span>
                         <span class="pipeline-label">Ingestion Queue:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.ingestionQueuePending)} pending</span>
+                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.ingestionQueuePending)} pending</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
@@ -1781,21 +1786,21 @@
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔢</span>
                         <span class="pipeline-label">Embeddings:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} needed, ~{timeStr} remaining</span>
+                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} needed, ~{timeStr} remaining</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔍</span>
                         <span class="pipeline-label">Search Index:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsPendingSync)} pending sync</span>
+                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.paragraphsPendingSync)} pending sync</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.oversizedSkipped > 0}
                       <div class="pipeline-item warning">
                         <span class="pipeline-icon">⚠️</span>
                         <span class="pipeline-label">Oversized:</span>
-                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.oversizedSkipped)} skipped (need re-ingestion)</span>
+                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.oversizedSkipped)} skipped (need re-ingestion)</span>
                       </div>
                     {/if}
                   </div>
