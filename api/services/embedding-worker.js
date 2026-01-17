@@ -17,8 +17,8 @@ import { config } from '../lib/config.js';
 const EMBEDDING_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const BATCH_SIZE = 50;                // Texts per OpenAI batch (rate limit safe)
 const MAX_TOKENS = 8191;              // Max tokens for text-embedding-3-large
-const CHARS_PER_TOKEN = 2.5;          // Conservative estimate for religious/technical text
-const MAX_CHARS = Math.floor(MAX_TOKENS * CHARS_PER_TOKEN);  // ~20,477 chars
+const CHARS_PER_TOKEN = 2;            // Safe ratio (some texts have high token density)
+const MAX_CHARS = Math.floor(MAX_TOKENS * CHARS_PER_TOKEN);  // ~16,382 chars
 
 let embeddingInterval = null;
 let isRunning = false;
