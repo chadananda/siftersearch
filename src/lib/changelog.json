@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T02:21:09.479Z",
+  "generated": "2026-01-17T02:33:27.820Z",
   "entries": [
+    {
+      "hash": "8968fba",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Only run GPT-4o sentence detection on NEW paragraphs",
+      "scope": null
+    },
     {
       "hash": "0706630",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Increase limit from 200 to 500 for full document loading",
       "scope": "bilingual"
-    },
-    {
-      "hash": "29641dd",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Add auth header and support both doc_id/document_id columns",
-      "scope": "translation"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "8968fba",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Only run GPT-4o sentence detection on NEW paragraphs",
+        "scope": null
+      },
       {
         "hash": "0706630",
         "date": "2026-01-16",
@@ -7028,15 +7035,6 @@
         "type": "Fixed",
         "description": "Increase limit from 200 to 500 for full document loading",
         "scope": "bilingual"
-      }
-    ],
-    "2025-12-29": [
-      {
-        "hash": "29641dd",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Add auth header and support both doc_id/document_id columns",
-        "scope": "translation"
       }
     ]
   }

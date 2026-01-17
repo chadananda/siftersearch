@@ -28,6 +28,7 @@ const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
 const REINGEST_DELAY_MS = 30 * 60 * 1000;  // 30 minutes - debounce for re-ingestion during active editing
+const REINGEST_COOLDOWN_MS = 24 * 60 * 60 * 1000;  // 24 hours - minimum time between re-ingestions of same document
 const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
 const IGNORED_PATTERNS = [
   // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
@@ -421,7 +422,24 @@ async function processAddBatch() {
           continue;
         }
 
-        // Content changed - schedule for debounced re-ingestion
+        // Check 24-hour cooldown - don't re-ingest documents updated recently
+        // This prevents runaway re-ingestion during active editing/syncing
+        if (existingDoc.updated_at) {
+          const lastUpdate = new Date(existingDoc.updated_at).getTime();
+          const timeSinceUpdate = Date.now() - lastUpdate;
+          if (timeSinceUpdate < REINGEST_COOLDOWN_MS) {
+            const hoursRemaining = Math.round((REINGEST_COOLDOWN_MS - timeSinceUpdate) / (60 * 60 * 1000));
+            logger.info({
+              filePath,
+              documentId: existingDoc.id,
+              hoursRemaining,
+              lastUpdate: existingDoc.updated_at
+            }, 'Skipping re-ingest: 24-hour cooldown active');
+            continue;
+          }
+        }
+
+        // Content changed and cooldown expired - schedule for debounced re-ingestion
         // This prevents constant re-ingestion during active editing sessions
         scheduleReingest(relativePath, filePath);
         continue;
