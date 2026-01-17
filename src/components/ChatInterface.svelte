@@ -1173,7 +1173,7 @@
   function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num?.toLocaleString() || '0';
+    return String(num ?? 0);
   }
 
   function toggleResult(messageId, resultIndex) {
@@ -1596,7 +1596,7 @@
             {#if searchLoading}
               <svg class="w-3 h-3 animate-spin opacity-60" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
             {/if}
-            {totalHits.toLocaleString()} results in {searchTime}ms
+            {formatNumber(totalHits)} results in {searchTime}ms
           </div>
           {#each searchResults as result, i ((result.doc_id || result.document_id) + '-' + result.paragraph_index)}
             {@const text = result.highlightedExcerpt || result.excerpt || result.text || ''}
@@ -1791,21 +1791,21 @@
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔢</span>
                         <span class="pipeline-label">Embeddings:</span>
-                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsNeedingEmbeddings.toLocaleString()} embeddings needed, ~{timeStr} remaining</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} needed, ~{timeStr} remaining</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}
                       <div class="pipeline-item">
                         <span class="pipeline-icon">🔍</span>
                         <span class="pipeline-label">Search Index:</span>
-                        <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsPendingSync.toLocaleString()} paragraphs pending sync</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.paragraphsPendingSync)} pending sync</span>
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.oversizedSkipped > 0}
                       <div class="pipeline-item warning">
                         <span class="pipeline-icon">⚠️</span>
                         <span class="pipeline-label">Oversized:</span>
-                        <span class="pipeline-count">{libraryStats.pipelineStatus.oversizedSkipped.toLocaleString()} paragraphs skipped (need re-ingestion)</span>
+                        <span class="pipeline-count">{formatNumber(libraryStats.pipelineStatus.oversizedSkipped)} skipped (need re-ingestion)</span>
                       </div>
                     {/if}
                   </div>
