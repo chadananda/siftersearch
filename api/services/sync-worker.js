@@ -43,10 +43,14 @@ let syncStats = {
  * Propagate existing embeddings to rows with matching normalized_hash
  * This avoids expensive re-generation for duplicate content across documents
  * (e.g., same quote in 50 documents = 1 embedding, 49 copies)
+ *
+ * Note: We include soft-deleted content as sources because embeddings are
+ * expensive - soft-deleted records are kept specifically to preserve embeddings.
  */
 async function propagateExistingEmbeddings() {
   try {
     // Find rows that need embeddings but have a matching normalized_hash with existing embedding
+    // Source includes ALL content (even soft-deleted) to maximize embedding reuse
     const result = await query(`
       UPDATE content
       SET embedding = (
@@ -106,11 +110,52 @@ async function getUnsyncedDocuments() {
 async function getUnsyncedParagraphs(docId) {
   // After migration 30, content.id is INTEGER PRIMARY KEY (same as rowid)
   return queryAll(`
-    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, content_hash, translation, translation_segments
+    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, embedding_model, content_hash, normalized_hash, translation, translation_segments
     FROM content
     WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index
   `, [docId]);
+}
+
+/**
+ * Find embeddings by normalized_hash for paragraphs missing them
+ * Returns a map of id -> { embedding, embedding_model }
+ *
+ * Note: Includes soft-deleted content as sources - embeddings are expensive
+ * and soft-deleted records are kept specifically to preserve embeddings.
+ */
+async function findEmbeddingsByNormalizedHash(paragraphs) {
+  // Filter to paragraphs missing embeddings
+  const missing = paragraphs.filter(p => !p.embedding && p.normalized_hash);
+  if (missing.length === 0) return new Map();
+
+  const hashes = missing.map(p => p.normalized_hash);
+  const placeholders = hashes.map(() => '?').join(',');
+
+  // Search ALL content (including soft-deleted) to maximize embedding reuse
+  const matches = await queryAll(`
+    SELECT normalized_hash, embedding, embedding_model
+    FROM content
+    WHERE normalized_hash IN (${placeholders})
+      AND embedding IS NOT NULL
+    GROUP BY normalized_hash
+  `, hashes);
+
+  // Build hash -> embedding map
+  const hashMap = new Map();
+  for (const m of matches) {
+    hashMap.set(m.normalized_hash, { embedding: m.embedding, embedding_model: m.embedding_model });
+  }
+
+  // Map paragraph id -> embedding for those that match
+  const result = new Map();
+  for (const p of missing) {
+    const match = hashMap.get(p.normalized_hash);
+    if (match) {
+      result.set(p.id, match);
+    }
+  }
+  return result;
 }
 
 /**
@@ -164,6 +209,21 @@ async function syncDocument(docId) {
     return { success: true, synced: 0 };
   }
 
+  // Final attempt: find embeddings for any paragraphs still missing them
+  // This catches any that weren't found during the batch propagation
+  const foundEmbeddings = await findEmbeddingsByNormalizedHash(paragraphs);
+
+  // Persist found embeddings to content table (so they're not looked up again)
+  if (foundEmbeddings.size > 0) {
+    for (const [contentId, { embedding, embedding_model }] of foundEmbeddings) {
+      await query(`
+        UPDATE content SET embedding = ?, embedding_model = ?, updated_at = datetime('now')
+        WHERE id = ?
+      `, [embedding, embedding_model, contentId]);
+    }
+    logger.debug({ docId, found: foundEmbeddings.size }, 'Found embeddings via normalized_hash during sync');
+  }
+
   const authority = getAuthority(doc);
 
   // Build Meilisearch document
@@ -183,7 +243,11 @@ async function syncDocument(docId) {
 
   // Build paragraph records for Meilisearch
   const meiliParagraphs = paragraphs.map(p => {
-    const embedding = blobToFloatArray(p.embedding);
+    // Use found embedding if paragraph was missing one, otherwise use existing
+    const found = foundEmbeddings.get(p.id);
+    const embeddingBlob = found ? found.embedding : p.embedding;
+    const embedding = blobToFloatArray(embeddingBlob);
+
     return {
       id: p.id,  // INTEGER id (same as rowid after migration 30)
       doc_id: p.doc_id,  // INTEGER from SQLite docs.id
