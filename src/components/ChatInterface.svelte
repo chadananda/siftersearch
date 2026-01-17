@@ -1723,7 +1723,7 @@
               {/if}
             </div>
               {#if libraryStats?.meiliTaskProgress && (libraryStats.meiliTaskProgress.pending > 0 || libraryStats.meiliTaskProgress.processing > 0)}
-                {@const completed = libraryStats.meiliTaskProgress.total - libraryStats.meiliTaskProgress.pending - libraryStats.meiliTaskProgress.processing}
+                {@const completed = libraryStats.meiliTaskProgress.completed || 0}
                 {@const percent = libraryStats.meiliTaskProgress.total > 0 ? Math.round((completed / libraryStats.meiliTaskProgress.total) * 100) : 0}
                 <div class="indexing-indicator">
                   <div class="indexing-header">

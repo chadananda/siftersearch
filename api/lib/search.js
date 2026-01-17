@@ -735,44 +735,33 @@ export async function getStats() {
 
         meilisearchIndexing = docStats.isIndexing || paraStats.isIndexing;
 
-        // Check pending/processing tasks
-        const pendingTasks = await meili.tasks.getTasks({
-          statuses: ['enqueued', 'processing'],
-          limit: 10
-        });
+        // Check pending/processing tasks and recently completed tasks
+        const [pendingTasks, recentSucceeded] = await Promise.all([
+          meili.tasks.getTasks({
+            statuses: ['enqueued', 'processing'],
+            limit: 100
+          }),
+          meili.tasks.getTasks({
+            statuses: ['succeeded'],
+            types: ['documentAdditionOrUpdate'],
+            afterEnqueuedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // Last 5 minutes
+            limit: 100
+          })
+        ]);
 
-        if (pendingTasks.results.length > 0) {
-          meilisearchIndexing = true;
-          const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
-          const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
+        const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
+        const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
+        const completedCount = recentSucceeded.results.length;
+        const hasActiveTasks = enqueuedCount > 0 || processingCount > 0;
+
+        if (hasActiveTasks || completedCount > 0) {
+          meilisearchIndexing = hasActiveTasks;
           meiliTaskProgress = {
             pending: enqueuedCount,
             processing: processingCount,
-            total: pendingTasks.total || enqueuedCount + processingCount
+            completed: completedCount,
+            total: enqueuedCount + processingCount + completedCount
           };
-        } else {
-          // Check if tasks completed recently (within 60 seconds)
-          const recentTasks = await meili.tasks.getTasks({
-            statuses: ['succeeded'],
-            types: ['documentAdditionOrUpdate'],
-            limit: 1
-          });
-
-          if (recentTasks.results.length > 0) {
-            const lastTask = recentTasks.results[0];
-            const finishedAt = new Date(lastTask.finishedAt);
-            const secondsAgo = (Date.now() - finishedAt.getTime()) / 1000;
-
-            if (secondsAgo < 60) {
-              meilisearchIndexing = true;
-              meiliTaskProgress = {
-                pending: 0,
-                processing: 0,
-                recentlyCompleted: true,
-                lastTaskSecondsAgo: Math.round(secondsAgo)
-              };
-            }
-          }
         }
       } catch {
         // Meilisearch not available - stats still valid from SQLite

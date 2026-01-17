@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T00:48:11.414Z",
+  "generated": "2026-01-17T00:58:00.614Z",
   "entries": [
+    {
+      "hash": "d0c6104",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Clarify indexing progress to show 'X of Y tasks indexed'",
+      "scope": null
+    },
     {
       "hash": "936f4db",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Enable SQLite WAL mode for concurrent access",
       "scope": "db"
-    },
-    {
-      "hash": "fd6a1b5",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Gracefully fall back to Meilisearch when libsql is busy",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "d0c6104",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Clarify indexing progress to show 'X of Y tasks indexed'",
+        "scope": null
+      },
       {
         "hash": "936f4db",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Enable SQLite WAL mode for concurrent access",
         "scope": "db"
-      },
-      {
-        "hash": "fd6a1b5",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Gracefully fall back to Meilisearch when libsql is busy",
-        "scope": "library"
       }
     ]
   }
