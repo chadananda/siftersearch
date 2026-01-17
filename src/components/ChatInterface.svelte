@@ -1788,7 +1788,7 @@
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
                       {@const uniqueNeeded = libraryStats.pipelineStatus.uniqueEmbeddingsNeeded || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
-                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 10)}
+                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 6)}
                       {@const hours = Math.floor(estimatedSeconds / 3600)}
                       {@const minutes = Math.floor((estimatedSeconds % 3600) / 60)}
                       {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
