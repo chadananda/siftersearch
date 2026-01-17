@@ -2868,12 +2868,9 @@ Provide only the translation, no explanations.`;
 
     return {
       documents: results,
-      totals: {
-        documents: totals?.total_docs || 0,
-        paragraphs: totals?.total_paragraphs || 0
-      },
-      maxChars: MAX_PARAGRAPH_CHARS,
-      description: 'Documents with soft-deleted oversized paragraphs that need re-ingestion with better chunking'
+      totalDocuments: totals?.total_docs || 0,
+      totalParagraphs: totals?.total_paragraphs || 0,
+      maxChars: MAX_PARAGRAPH_CHARS
     };
   });
 
