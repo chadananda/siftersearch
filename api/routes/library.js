@@ -245,16 +245,22 @@ export default async function libraryRoutes(fastify) {
     }
 
     // Get pipeline status - paragraphs needing embeddings and pending sync
-    let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0 };
+    // Skip content > 50000 chars (likely broken ingestion, handled separately)
+    const SKIP_THRESHOLD = 50000;
+    let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
     try {
-      const [embeddingCount, syncCount] = await Promise.all([
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL`),
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`)
+      const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) < ?`, [SKIP_THRESHOLD]),
+        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
+        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) >= ?`, [SKIP_THRESHOLD])
       ]);
       pipelineStatus = {
         ingestionQueuePending: indexingStats.pending + indexingStats.processing,
         paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-        paragraphsPendingSync: syncCount?.count || 0
+        uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
+        paragraphsPendingSync: syncCount?.count || 0,
+        oversizedSkipped: oversizedCount?.count || 0
       };
     } catch {
       // Columns may not exist yet

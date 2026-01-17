@@ -17,8 +17,8 @@ import { config } from '../lib/config.js';
 const EMBEDDING_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const BATCH_SIZE = 50;                // Texts per OpenAI batch (rate limit safe)
 const MAX_TOKENS = 8191;              // Max tokens for text-embedding-3-large
-const CHARS_PER_TOKEN = 1.5;          // Conservative ratio for non-Latin text (Arabic, Farsi, etc.)
-const MAX_CHARS = Math.floor(MAX_TOKENS * CHARS_PER_TOKEN);  // ~12,286 chars
+const MAX_CHARS = 6000;               // Very conservative limit for any language (Arabic can be 1 char = 4 tokens)
+const SKIP_THRESHOLD = 50000;         // Skip content longer than this (likely broken ingestion)
 
 let embeddingInterval = null;
 let isRunning = false;
@@ -34,10 +34,12 @@ let embeddingStats = {
 /**
  * Get content rows that need embeddings
  * Groups by normalized_hash to avoid generating duplicate embeddings
+ * Skips excessively long content (likely broken ingestion)
  */
 async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
   // Get unique normalized_hash values that need embeddings
   // This avoids generating duplicates when same content exists in multiple docs
+  // Skip content longer than SKIP_THRESHOLD (likely broken ingestion)
   const results = await queryAll(`
     SELECT id, text, normalized_hash
     FROM content
@@ -45,9 +47,10 @@ async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
       AND deleted_at IS NULL
       AND text IS NOT NULL
       AND text != ''
+      AND LENGTH(text) < ?
     GROUP BY normalized_hash
     LIMIT ?
-  `, [limit]);
+  `, [SKIP_THRESHOLD, limit]);
   return results;
 }
 
@@ -205,6 +208,23 @@ export async function getUnembeddedCount() {
     FROM content
     WHERE embedding IS NULL
       AND deleted_at IS NULL
-  `);
+      AND LENGTH(text) < ?
+  `, [SKIP_THRESHOLD]);
+  return result || { total: 0, unique_hashes: 0 };
+}
+
+/**
+ * Get count of oversized content that's being skipped
+ */
+export async function getOversizedCount() {
+  const result = await queryOne(`
+    SELECT
+      COUNT(*) as total,
+      COUNT(DISTINCT normalized_hash) as unique_hashes
+    FROM content
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND LENGTH(text) >= ?
+  `, [SKIP_THRESHOLD]);
   return result || { total: 0, unique_hashes: 0 };
 }

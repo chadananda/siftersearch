@@ -1787,6 +1787,13 @@
                         <span class="pipeline-count">{libraryStats.pipelineStatus.paragraphsPendingSync.toLocaleString()} paragraphs pending sync</span>
                       </div>
                     {/if}
+                    {#if libraryStats.pipelineStatus.oversizedSkipped > 0}
+                      <div class="pipeline-item warning">
+                        <span class="pipeline-icon">⚠️</span>
+                        <span class="pipeline-label">Oversized:</span>
+                        <span class="pipeline-count">{libraryStats.pipelineStatus.oversizedSkipped.toLocaleString()} paragraphs skipped (need re-ingestion)</span>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/if}
@@ -2860,6 +2867,10 @@
     align-items: center;
     gap: 0.375rem;
     color: var(--text-secondary);
+  }
+
+  .pipeline-item.warning {
+    color: var(--warning);
   }
 
   .pipeline-icon {
