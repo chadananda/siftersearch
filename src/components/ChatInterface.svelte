@@ -711,9 +711,23 @@
     try {
       const status = await admin.getAIUsageStatus();
       const summary = await admin.getAIUsageSummary();
+      // Combine embedding-related callers into single "embeddings" entry
+      // (embedding, embedding-worker, embedding-batch all become "embeddings")
+      let callerData = summary?.byCallerToday || [];
+      if (callerData.length > 0) {
+        const embeddingCost = callerData
+          .filter(c => c.caller?.startsWith('embedding'))
+          .reduce((sum, c) => sum + (c.cost || 0), 0);
+        const nonEmbedding = callerData.filter(c => !c.caller?.startsWith('embedding'));
+        if (embeddingCost > 0) {
+          callerData = [...nonEmbedding, { caller: 'embeddings', cost: embeddingCost }];
+        } else {
+          callerData = nonEmbedding;
+        }
+      }
       // Get top 2 callers by cost from 24-hour data (sorted descending)
-      const topCallers = summary?.byCallerToday?.length > 0
-        ? [...summary.byCallerToday].sort((a, b) => b.cost - a.cost).slice(0, 2)
+      const topCallers = callerData.length > 0
+        ? [...callerData].sort((a, b) => b.cost - a.cost).slice(0, 2)
         : [];
       aiUsageStatus = {
         ...status,
