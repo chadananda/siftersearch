@@ -3057,7 +3057,9 @@ Collection: ${paragraph.collection || 'Unknown'}
 
   // Get AI usage summary (today, week, month, by model, by caller)
   fastify.get('/ai-usage/summary', { preHandler: requireTier('admin') }, async () => {
-    const now = new Date().toISOString();
+    // Format date for SQLite comparison (DB stores 'YYYY-MM-DD HH:MM:SS' format)
+    const formatDate = (d) => d.toISOString().replace('T', ' ').slice(0, 19);
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const weekStart = new Date();
@@ -3074,7 +3076,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           COALESCE(SUM(estimated_cost_usd), 0) as cost
         FROM ai_usage
         WHERE timestamp >= ?
-      `, [todayStart.toISOString()]),
+      `, [formatDate(todayStart)]),
 
       // Week's stats
       queryOne(`
@@ -3084,7 +3086,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           COALESCE(SUM(estimated_cost_usd), 0) as cost
         FROM ai_usage
         WHERE timestamp >= ?
-      `, [weekStart.toISOString()]),
+      `, [formatDate(weekStart)]),
 
       // Month's stats
       queryOne(`
@@ -3094,7 +3096,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           COALESCE(SUM(estimated_cost_usd), 0) as cost
         FROM ai_usage
         WHERE timestamp >= ?
-      `, [monthStart.toISOString()]),
+      `, [formatDate(monthStart)]),
 
       // By model (last 30 days)
       queryAll(`
@@ -3107,7 +3109,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         WHERE timestamp >= ?
         GROUP BY model
         ORDER BY cost DESC
-      `, [monthStart.toISOString()]),
+      `, [formatDate(monthStart)]),
 
       // By provider (last 30 days)
       queryAll(`
@@ -3120,7 +3122,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         WHERE timestamp >= ?
         GROUP BY provider
         ORDER BY cost DESC
-      `, [monthStart.toISOString()]),
+      `, [formatDate(monthStart)]),
 
       // By caller (last 30 days)
       queryAll(`
@@ -3133,7 +3135,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         WHERE timestamp >= ?
         GROUP BY caller
         ORDER BY cost DESC
-      `, [monthStart.toISOString()]),
+      `, [formatDate(monthStart)]),
 
       // By caller (last 24 hours) - for ticker display
       queryAll(`
@@ -3146,14 +3148,14 @@ Collection: ${paragraph.collection || 'Unknown'}
         WHERE timestamp >= ?
         GROUP BY caller
         ORDER BY cost DESC
-      `, [todayStart.toISOString()]),
+      `, [formatDate(todayStart)]),
 
       // Failed calls (last 7 days)
       queryOne(`
         SELECT COUNT(*) as count
         FROM ai_usage
         WHERE success = 0 AND timestamp >= ?
-      `, [weekStart.toISOString()])
+      `, [formatDate(weekStart)])
     ]);
 
     return {
