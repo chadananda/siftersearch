@@ -187,6 +187,21 @@
     }
   }
 
+  async function handleReindex(docId, title) {
+    if (!confirm(`Re-ingest "${title}"? This will reprocess the document from the source file.`)) return;
+
+    actionLoading = `reindex-${docId}`;
+    try {
+      await oversizedParagraphs.reindex(docId);
+      alert(`Document "${title}" queued for re-ingestion.`);
+      await loadOversized();
+    } catch (err) {
+      alert(err.message || 'Failed to queue document for re-ingestion');
+    } finally {
+      actionLoading = null;
+    }
+  }
+
   function switchTab(tab) {
     activeTab = tab;
     if (tab === 'oversized' && oversizedDocs.length === 0 && !oversizedLoading) {
@@ -407,6 +422,13 @@
                 >
                   Edit Document
                 </a>
+                <button
+                  class="btn btn-secondary"
+                  onclick={() => handleReindex(doc.doc_id, doc.title)}
+                  disabled={actionLoading === `reindex-${doc.doc_id}`}
+                >
+                  {actionLoading === `reindex-${doc.doc_id}` ? 'Queuing...' : 'Re-ingest'}
+                </button>
                 <button
                   class="btn btn-danger"
                   onclick={() => handleDeleteOversizedForDoc(doc.doc_id, doc.title)}

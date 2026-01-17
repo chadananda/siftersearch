@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-17T21:56:58.032Z",
+  "generated": "2026-01-17T22:01:13.724Z",
   "entries": [
+    {
+      "hash": "55deaac",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show file_path in oversized docs, remove authority field",
+      "scope": null
+    },
+    {
+      "hash": "6b757ff",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Match API response field names to frontend expectations",
+      "scope": null
+    },
+    {
+      "hash": "0a768df",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Update changelog and lockfile",
+      "scope": null
+    },
     {
       "hash": "3240f79",
       "date": "2026-01-17",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
       "scope": null
-    },
-    {
-      "hash": "cc0e5ef",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
-      "scope": null
-    },
-    {
-      "hash": "ff2a8f5",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Prevent AI from copying example summary in analyzer prompt",
-      "scope": null
-    },
-    {
-      "hash": "c01c129",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Require actual answers in summaries, not meta-commentary",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "55deaac",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show file_path in oversized docs, remove authority field",
+        "scope": null
+      },
+      {
+        "hash": "6b757ff",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Match API response field names to frontend expectations",
+        "scope": null
+      },
+      {
+        "hash": "0a768df",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Update changelog and lockfile",
+        "scope": null
+      },
       {
         "hash": "3240f79",
         "date": "2026-01-17",
@@ -7011,27 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
-        "scope": null
-      },
-      {
-        "hash": "cc0e5ef",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Apply authority boost to analyzer scoring - primary sources ranked higher",
-        "scope": null
-      },
-      {
-        "hash": "ff2a8f5",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Prevent AI from copying example summary in analyzer prompt",
-        "scope": null
-      },
-      {
-        "hash": "c01c129",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Require actual answers in summaries, not meta-commentary",
         "scope": null
       }
     ]

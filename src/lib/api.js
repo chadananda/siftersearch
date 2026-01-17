@@ -896,6 +896,15 @@ export const oversizedParagraphs = {
     return request('/api/library/oversized-paragraphs/delete-all', {
       method: 'POST'
     });
+  },
+
+  /**
+   * Re-ingest a document (queue for reprocessing)
+   */
+  async reindex(docId) {
+    return request(`/api/library/documents/${docId}/reindex`, {
+      method: 'POST'
+    });
   }
 };
 
