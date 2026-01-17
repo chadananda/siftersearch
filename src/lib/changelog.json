@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T00:27:25.805Z",
+  "generated": "2026-01-17T00:31:59.742Z",
   "entries": [
+    {
+      "hash": "f410166",
+      "date": "2026-01-16",
+      "type": "Fixed",
+      "description": "Only initialize Meilisearch indexes once per worker lifecycle",
+      "scope": null
+    },
     {
       "hash": "87abd0c",
       "date": "2026-01-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Separate connections for auth vs batch operations",
       "scope": "db"
-    },
-    {
-      "hash": "ec95183",
-      "date": "2025-12-29",
-      "type": "Fixed",
-      "description": "Remove auth requirement from version-triggered updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-16": [
+      {
+        "hash": "f410166",
+        "date": "2026-01-16",
+        "type": "Fixed",
+        "description": "Only initialize Meilisearch indexes once per worker lifecycle",
+        "scope": null
+      },
       {
         "hash": "87abd0c",
         "date": "2026-01-16",
@@ -7030,13 +7037,6 @@
         "type": "Fixed",
         "description": "Separate connections for auth vs batch operations",
         "scope": "db"
-      },
-      {
-        "hash": "ec95183",
-        "date": "2025-12-29",
-        "type": "Fixed",
-        "description": "Remove auth requirement from version-triggered updates",
-        "scope": null
       }
     ]
   }

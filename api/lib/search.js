@@ -209,9 +209,9 @@ export async function initializeIndexes() {
       }
     }
   });
-  // Wait for settings update to complete (Meilisearch updates are async)
-  // Use longer timeout (60s) since Meilisearch may be processing other tasks
-  await meili.tasks.waitForTask(paragraphsTask.taskUid, { timeOutMs: 60000 });
+  // Don't wait for settings task - it's idempotent and will complete in background
+  // Waiting causes timeout issues when Meilisearch is busy processing documents
+  logger.debug({ taskUid: paragraphsTask.taskUid }, 'Paragraphs index settings update queued');
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
@@ -243,9 +243,8 @@ export async function initializeIndexes() {
       maxTotalHits: 50000
     }
   });
-  // Wait for settings update to complete
-  // Use longer timeout (60s) since Meilisearch may be processing other tasks
-  await meili.tasks.waitForTask(documentsTask.taskUid, { timeOutMs: 60000 });
+  // Don't wait for settings task - it's idempotent and will complete in background
+  logger.debug({ taskUid: documentsTask.taskUid }, 'Documents index settings update queued');
 
   logger.info('Search indexes initialized');
 }
