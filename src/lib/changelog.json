@@ -1,6 +1,48 @@
 {
-  "generated": "2026-01-17T21:27:18.329Z",
+  "generated": "2026-01-17T21:56:58.032Z",
   "entries": [
+    {
+      "hash": "3240f79",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.800",
+      "scope": null
+    },
+    {
+      "hash": "154c36e",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use correct column name file_path in oversized-paragraphs query",
+      "scope": null
+    },
+    {
+      "hash": "a9c71a0",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Adjust embedding time estimate to 6/sec (was 10/sec)",
+      "scope": null
+    },
+    {
+      "hash": "147a50e",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show documents needing re-ingestion in oversized-paragraphs endpoint",
+      "scope": null
+    },
+    {
+      "hash": "64c57b2",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Add normalized_hash to ingester + backfill script",
+      "scope": null
+    },
+    {
+      "hash": "374690a",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Embedding worker NULL normalized_hash causing batch size of 1",
+      "scope": null
+    },
     {
       "hash": "51472c2",
       "date": "2026-01-17",
@@ -3458,52 +3500,52 @@
       "type": "Fixed",
       "description": "Require actual answers in summaries, not meta-commentary",
       "scope": null
-    },
-    {
-      "hash": "eb5557f",
-      "date": "2026-01-01",
-      "type": "Refactor",
-      "description": "Remove search mode toggle - always use ResearcherAgent",
-      "scope": null
-    },
-    {
-      "hash": "ee0f091",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Default to research mode for approved users",
-      "scope": null
-    },
-    {
-      "hash": "951abde",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Increase RTL font size in bilingual view for better readability",
-      "scope": null
-    },
-    {
-      "hash": "78297e1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add siftersearch-jobs to allowed PM2 restart processes",
-      "scope": null
-    },
-    {
-      "hash": "d8f67f9",
-      "date": "2026-01-01",
-      "type": "Other",
-      "description": "Add siftersearch-jobs to allowed log processes",
-      "scope": null
-    },
-    {
-      "hash": "21f107b",
-      "date": "2026-01-01",
-      "type": "Other",
-      "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "3240f79",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.800",
+        "scope": null
+      },
+      {
+        "hash": "154c36e",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use correct column name file_path in oversized-paragraphs query",
+        "scope": null
+      },
+      {
+        "hash": "a9c71a0",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Adjust embedding time estimate to 6/sec (was 10/sec)",
+        "scope": null
+      },
+      {
+        "hash": "147a50e",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show documents needing re-ingestion in oversized-paragraphs endpoint",
+        "scope": null
+      },
+      {
+        "hash": "64c57b2",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Add normalized_hash to ingester + backfill script",
+        "scope": null
+      },
+      {
+        "hash": "374690a",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Embedding worker NULL normalized_hash causing batch size of 1",
+        "scope": null
+      },
       {
         "hash": "51472c2",
         "date": "2026-01-17",
@@ -6990,48 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Require actual answers in summaries, not meta-commentary",
-        "scope": null
-      },
-      {
-        "hash": "eb5557f",
-        "date": "2026-01-01",
-        "type": "Refactor",
-        "description": "Remove search mode toggle - always use ResearcherAgent",
-        "scope": null
-      },
-      {
-        "hash": "ee0f091",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Default to research mode for approved users",
-        "scope": null
-      },
-      {
-        "hash": "951abde",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Increase RTL font size in bilingual view for better readability",
-        "scope": null
-      },
-      {
-        "hash": "78297e1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add siftersearch-jobs to allowed PM2 restart processes",
-        "scope": null
-      },
-      {
-        "hash": "d8f67f9",
-        "date": "2026-01-01",
-        "type": "Other",
-        "description": "Add siftersearch-jobs to allowed log processes",
-        "scope": null
-      },
-      {
-        "hash": "21f107b",
-        "date": "2026-01-01",
-        "type": "Other",
-        "description": "Add /server/jobs/:jobId endpoint to inspect raw job data",
         "scope": null
       }
     ]
