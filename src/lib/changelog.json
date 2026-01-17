@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T15:55:17.465Z",
+  "generated": "2026-01-17T16:00:45.420Z",
   "entries": [
+    {
+      "hash": "c1e3100",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add AI spending limit safeguard with admin override",
+      "scope": null
+    },
     {
       "hash": "8022934",
       "date": "2026-01-16",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "PWA auto-update and auth header for translation",
       "scope": null
-    },
-    {
-      "hash": "59d1e7f",
-      "date": "2025-12-30",
-      "type": "Fixed",
-      "description": "Add auth header to DocumentList translate call",
-      "scope": "translation"
     }
   ],
   "grouped": {
+    "2026-01-17": [
+      {
+        "hash": "c1e3100",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add AI spending limit safeguard with admin override",
+        "scope": null
+      }
+    ],
     "2026-01-16": [
       {
         "hash": "8022934",
@@ -7028,13 +7037,6 @@
         "type": "Fixed",
         "description": "PWA auto-update and auth header for translation",
         "scope": null
-      },
-      {
-        "hash": "59d1e7f",
-        "date": "2025-12-30",
-        "type": "Fixed",
-        "description": "Add auth header to DocumentList translate call",
-        "scope": "translation"
       }
     ]
   }

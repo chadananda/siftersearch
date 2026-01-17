@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
   import { marked } from 'marked';
-  import { search, session, documents, triggerServerUpdate, authenticatedFetch } from '../lib/api.js';
+  import { search, session, documents, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
 
   // Client version - baked in at build time
   const CLIENT_VERSION = __APP_VERSION__;
@@ -556,6 +556,10 @@
 
   const auth = getAuthState();
 
+  // Admin AI usage status (only loaded for admins)
+  let aiUsageStatus = $state(null);
+  let isAdmin = $derived(auth.isAuthenticated && auth.user?.tier === 'admin');
+
   // Check if user can access AI-powered research (approved+ only)
   let canUseResearcher = $derived(
     auth.isAuthenticated &&
@@ -698,6 +702,22 @@
       stopRefreshPolling();
     } finally {
       if (!silent) statsLoading = false;
+    }
+  }
+
+  // Load AI usage status for admins (called on mount and periodically)
+  async function loadAIUsageStatus() {
+    if (!isAdmin) return;
+    try {
+      const status = await admin.getAIUsageStatus();
+      const summary = await admin.getAIUsageSummary();
+      aiUsageStatus = {
+        ...status,
+        today: summary?.today,
+        week: summary?.week
+      };
+    } catch (err) {
+      console.error('Failed to load AI usage status:', err);
     }
   }
 
@@ -1266,6 +1286,16 @@
     initPWA();
     loadLibraryStats();
 
+    // Load AI usage for admins (after short delay to ensure auth is ready)
+    setTimeout(() => {
+      loadAIUsageStatus();
+    }, 1000);
+
+    // Refresh AI usage status every 60 seconds for admins
+    const aiUsageInterval = setInterval(() => {
+      if (isAdmin) loadAIUsageStatus();
+    }, 60_000);
+
     // Dedicated version check every 10 seconds (separate from stats polling which backs off)
     const versionCheckInterval = setInterval(async () => {
       try {
@@ -1722,6 +1752,32 @@
                 <span>Connecting...</span>
               {/if}
             </div>
+              <!-- Admin-only AI Usage Ticker -->
+              {#if isAdmin && aiUsageStatus}
+                <div class="admin-ai-ticker">
+                  {#if aiUsageStatus.paused}
+                    <a href="/admin/ai-usage" class="ai-paused-alert">
+                      <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span>AI Paused - ${aiUsageStatus.dailyLimit} limit exceeded</span>
+                    </a>
+                  {:else}
+                    <a href="/admin/ai-usage" class="ai-cost-ticker">
+                      <span class="ticker-label">AI Costs:</span>
+                      <span class="ticker-item">
+                        <span class="ticker-period">Today</span>
+                        <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
+                      </span>
+                      <span class="ticker-divider">|</span>
+                      <span class="ticker-item">
+                        <span class="ticker-period">Week</span>
+                        <span class="ticker-value">${(aiUsageStatus.week?.cost || 0).toFixed(2)}</span>
+                      </span>
+                    </a>
+                  {/if}
+                </div>
+              {/if}
               {#if libraryStats?.meiliTaskProgress && (libraryStats.meiliTaskProgress.pending > 0 || libraryStats.meiliTaskProgress.processing > 0)}
                 {@const completed = libraryStats.meiliTaskProgress.completed || 0}
                 {@const percent = libraryStats.meiliTaskProgress.total > 0 ? Math.round((completed / libraryStats.meiliTaskProgress.total) * 100) : 0}
@@ -2602,6 +2658,88 @@
   .server-version {
     color: var(--text-secondary);
     font-weight: 500;
+  }
+
+  /* Admin AI Usage Ticker */
+  .admin-ai-ticker {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-default);
+  }
+
+  .ai-paused-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: color-mix(in srgb, var(--error) 15%, transparent);
+    border: 1px solid var(--error);
+    border-radius: 0.5rem;
+    color: var(--error);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    justify-content: center;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  .ai-paused-alert:hover {
+    background: color-mix(in srgb, var(--error) 25%, transparent);
+  }
+
+  .ai-paused-alert .alert-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--error); }
+    50% { border-color: color-mix(in srgb, var(--error) 50%, transparent); }
+  }
+
+  .ai-cost-ticker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-decoration: none;
+    justify-content: center;
+  }
+
+  .ai-cost-ticker:hover {
+    background: var(--surface-3);
+    border-color: var(--border-subtle);
+  }
+
+  .ticker-label {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .ticker-item {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .ticker-period {
+    color: var(--text-muted);
+  }
+
+  .ticker-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: monospace;
+  }
+
+  .ticker-divider {
+    color: var(--border-default);
   }
 
   .indexing-indicator {
