@@ -1,0 +1,30 @@
+---
+/**
+ * Recent Documents View
+ *
+ * Shows recently added/modified documents
+ * Supports: /library/recent, /library/recent?type=added, etc.
+ */
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import LibraryBrowser from '../../components/library/LibraryBrowser.svelte';
+
+export const prerender = false;
+
+// Get type filter from query params
+const type = Astro.url.searchParams.get('type') || 'all';
+const days = Astro.url.searchParams.get('days') || '30';
+---
+
+<Layout
+  title="Recent Documents - SifterSearch Library"
+  description="View recently added and modified documents in the SifterSearch interfaith library."
+>
+  <NavBar client:load currentPage="library" />
+  <LibraryBrowser
+    client:load
+    initialView="recent"
+    initialRecentType={type}
+    initialRecentDays={parseInt(days)}
+  />
+</Layout>

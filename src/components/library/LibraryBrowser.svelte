@@ -10,6 +10,15 @@
   import LibraryHeader from './LibraryHeader.svelte';
   import NodeEditModal from './NodeEditModal.svelte';
 
+  // Props for SSR initial state (passed from Astro pages)
+  let {
+    initialView = null,        // 'documents' | 'recent' - from SSR route
+    initialReligion = null,    // Religion filter from SSR route
+    initialCollection = null,  // Collection filter from SSR route
+    initialRecentType = null,  // 'all' | 'added' | 'modified' | 'pending'
+    initialRecentDays = null   // Number of days for recent filter
+  } = $props();
+
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const auth = getAuthState();
 
@@ -375,34 +384,42 @@
   let urlSyncEnabled = false; // Prevent URL updates during initial load
 
   /**
-   * Parse URL params and set initial state
+   * Parse URL params and props to set initial state
+   * Props from SSR take precedence over URL params
    */
   function parseUrlParams() {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
 
-    // Check for view mode (recent, pending, etc)
-    const view = params.get('view');
-    if (view === 'recent') {
+    // Props from SSR take precedence
+    if (initialView === 'recent') {
       viewMode = 'recent';
-      const type = params.get('type');
-      if (type && ['all', 'added', 'modified', 'pending'].includes(type)) {
-        recentType = type;
-      }
-      const days = params.get('days');
-      if (days && !isNaN(parseInt(days))) {
-        recentDays = parseInt(days);
-      }
-    } else {
+      recentType = initialRecentType || 'all';
+      recentDays = initialRecentDays || 30;
+    } else if (initialView === 'documents' || initialReligion) {
       viewMode = 'documents';
-      // Check for religion/collection filters
-      const religion = params.get('religion');
-      const collection = params.get('collection');
-      if (religion) {
-        filters.religion = religion;
-      }
-      if (collection) {
-        filters.collection = collection;
+      if (initialReligion) filters.religion = initialReligion;
+      if (initialCollection) filters.collection = initialCollection;
+    } else {
+      // Fall back to URL params (for /library with query strings)
+      const view = params.get('view');
+      if (view === 'recent') {
+        viewMode = 'recent';
+        const type = params.get('type');
+        if (type && ['all', 'added', 'modified', 'pending'].includes(type)) {
+          recentType = type;
+        }
+        const days = params.get('days');
+        if (days && !isNaN(parseInt(days))) {
+          recentDays = parseInt(days);
+        }
+      } else {
+        viewMode = 'documents';
+        // Check for religion/collection filters from URL
+        const religion = params.get('religion');
+        const collection = params.get('collection');
+        if (religion) filters.religion = religion;
+        if (collection) filters.collection = collection;
       }
     }
   }
