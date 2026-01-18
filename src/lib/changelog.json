@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T03:28:18.099Z",
+  "generated": "2026-01-18T03:31:23.213Z",
   "entries": [
+    {
+      "hash": "05da0a6",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Astro SSR routes for library + performance indexes",
+      "scope": null
+    },
     {
       "hash": "df3c91f",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add translatable-docs endpoint for debugging",
       "scope": null
-    },
-    {
-      "hash": "7c6b9c9",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add API endpoints for translation management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "05da0a6",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Astro SSR routes for library + performance indexes",
+        "scope": null
+      },
       {
         "hash": "df3c91f",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add translatable-docs endpoint for debugging",
-        "scope": null
-      },
-      {
-        "hash": "7c6b9c9",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add API endpoints for translation management",
         "scope": null
       }
     ]

@@ -665,10 +665,11 @@ export default async function libraryRoutes(fastify) {
       // Table doesn't exist yet - will fall back to docs table
     }
 
-    // Get document counts from docs table
+    // Get document counts from docs table (exclude soft-deleted)
     const docCounts = await queryAll(`
       SELECT religion, collection, COUNT(*) as count
       FROM docs
+      WHERE deleted_at IS NULL
       GROUP BY religion, collection
     `);
 
@@ -716,6 +717,8 @@ export default async function libraryRoutes(fastify) {
     const tree = religionNodes.map(religion => {
       const children = collectionNodes
         .filter(c => c.parent_id === religion.id)
+        // Filter out collections with 0 documents (orphaned nodes)
+        .filter(c => (collectionCounts[religion.name]?.[c.name] || 0) > 0)
         .sort((a, b) => (b.authority_default || 5) - (a.authority_default || 5) || a.name.localeCompare(b.name))
         .map(c => ({
           id: c.id,
