@@ -506,12 +506,21 @@ export default async function libraryRoutes(fastify) {
     // Enrich ALL pending files with fresh frontmatter data from the actual file
     // (For modified files, the database may have stale data - show what's actually in the file)
     const enrichedFiles = await Promise.all(pendingFiles.map(async (file) => {
+      const filename = file.file_path.split('/').pop().replace('.md', '');
       try {
         const content = await readFile(file.absolute_path, 'utf-8');
         const { data } = matter(content);
+        // Validate title - must be a string that looks like an actual title, not a URL or other metadata
+        const rawTitle = data.title;
+        const isValidTitle = typeof rawTitle === 'string' &&
+          rawTitle.length > 0 &&
+          rawTitle.length < 500 &&
+          !rawTitle.startsWith('http://') &&
+          !rawTitle.startsWith('https://') &&
+          !rawTitle.includes('sourceUrl');
         return {
           ...file,
-          title: data.title || file.file_path.split('/').pop().replace('.md', ''),
+          title: isValidTitle ? rawTitle : filename,
           author: data.author || null,
           religion: data.religion || file.file_path.split('/')[0] || null,
           collection: data.collection || file.file_path.split('/')[1] || null
@@ -519,7 +528,7 @@ export default async function libraryRoutes(fastify) {
       } catch {
         return {
           ...file,
-          title: file.title || file.file_path.split('/').pop().replace('.md', '')
+          title: file.title || filename
         };
       }
     }));
