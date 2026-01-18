@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T04:28:12.362Z",
+  "generated": "2026-01-18T04:29:40.950Z",
   "entries": [
+    {
+      "hash": "f0ef95c",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Populate filename column during ingestion",
+      "scope": null
+    },
     {
       "hash": "2cc17ec",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Allow internal key auth for test-segment-translation endpoint",
       "scope": null
-    },
-    {
-      "hash": "0c8455e",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add test-segment-translation endpoint for verifying phrase alignment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "f0ef95c",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Populate filename column during ingestion",
+        "scope": null
+      },
       {
         "hash": "2cc17ec",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Allow internal key auth for test-segment-translation endpoint",
-        "scope": null
-      },
-      {
-        "hash": "0c8455e",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add test-segment-translation endpoint for verifying phrase alignment",
         "scope": null
       }
     ]

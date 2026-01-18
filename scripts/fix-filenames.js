@@ -4,17 +4,15 @@
  * Extracts filename from file_path: "Baha'i/Core/Author - Title.md" -> "Author - Title"
  */
 
-import { getDb } from '../api/lib/db.js';
+import { query, queryAll } from '../api/lib/db.js';
 
 async function fixFilenames() {
-  const db = getDb();
-
-  // Get all docs with file_path but missing filename
-  const docs = await db.prepare(`
+  // Get all docs with file_path but missing or wrong filename
+  const docs = await queryAll(`
     SELECT id, file_path, filename
     FROM docs
     WHERE file_path IS NOT NULL
-  `).all();
+  `);
 
   console.log(`Found ${docs.length} documents to check`);
 
@@ -27,7 +25,7 @@ async function fixFilenames() {
       ?.replace(/\.md$/i, '') || null;
 
     if (filename && filename !== doc.filename) {
-      await db.prepare(`UPDATE docs SET filename = ? WHERE id = ?`).run(filename, doc.id);
+      await query(`UPDATE docs SET filename = ? WHERE id = ?`, [filename, doc.id]);
       fixed++;
       if (fixed % 100 === 0) {
         console.log(`Fixed ${fixed} documents...`);
@@ -36,6 +34,10 @@ async function fixFilenames() {
   }
 
   console.log(`\nDone! Fixed ${fixed} documents`);
+  process.exit(0);
 }
 
-fixFilenames().catch(console.error);
+fixFilenames().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
