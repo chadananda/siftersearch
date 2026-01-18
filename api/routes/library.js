@@ -25,7 +25,7 @@ import { requireAuth, requireAdmin, requireInternal, optionalAuthenticate } from
 import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
-import { ingestDocument } from '../services/ingester.js';
+import { ingestDocument, hashContent } from '../services/ingester.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { readFile, writeFile, rename, access, stat, readdir } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
@@ -404,7 +404,11 @@ export default async function libraryRoutes(fastify) {
 
   /**
    * Get documents pending ingestion (within 24-hour cooldown window)
-   * These are files that have been modified recently and are waiting to be processed
+   *
+   * NEW files: Files modified in the last 24h that aren't in the database yet
+   * MODIFIED files: Files in the database where the content hash has changed
+   *   (regardless of mtime - this handles bulk sync operations correctly)
+   *
    * Admin only
    */
   fastify.get('/pending', {
@@ -419,6 +423,13 @@ export default async function libraryRoutes(fastify) {
     const cooldownThreshold = now - COOLDOWN_MS;
     const pendingFiles = [];
 
+    // Get all existing docs with their file hashes for comparison
+    const existingDocs = await queryAll(
+      `SELECT file_path, file_hash, id, title, author, religion, collection
+       FROM docs WHERE deleted_at IS NULL`
+    );
+    const existingDocsMap = new Map(existingDocs.map(d => [d.file_path, d]));
+
     // Recursively scan for markdown files
     async function scanDir(dirPath) {
       try {
@@ -429,21 +440,45 @@ export default async function libraryRoutes(fastify) {
             await scanDir(fullPath);
           } else if (entry.isFile() && entry.name.endsWith('.md')) {
             try {
+              const relativePath = relative(basePath, fullPath);
+              const existingDoc = existingDocsMap.get(relativePath);
               const fileStat = await stat(fullPath);
-              // File is pending if modified within cooldown window
-              if (fileStat.mtimeMs > cooldownThreshold) {
-                const relativePath = relative(basePath, fullPath);
-                const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
-                pendingFiles.push({
-                  file_path: relativePath,
-                  absolute_path: fullPath,
-                  mtime: new Date(fileStat.mtimeMs).toISOString(),
-                  hours_remaining: hoursRemaining,
-                  size_bytes: fileStat.size
-                });
+
+              if (existingDoc) {
+                // File exists in database - check if content has changed
+                const content = await readFile(fullPath, 'utf-8');
+                const currentHash = hashContent(content);
+
+                if (currentHash !== existingDoc.file_hash) {
+                  // Content has actually changed - mark as modified
+                  const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
+                  pendingFiles.push({
+                    file_path: relativePath,
+                    absolute_path: fullPath,
+                    mtime: new Date(fileStat.mtimeMs).toISOString(),
+                    hours_remaining: hoursRemaining,
+                    size_bytes: fileStat.size,
+                    ...existingDoc,
+                    status: 'modified'
+                  });
+                }
+                // If hashes match, skip - file hasn't actually changed
+              } else {
+                // New file - apply cooldown window
+                if (fileStat.mtimeMs > cooldownThreshold) {
+                  const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
+                  pendingFiles.push({
+                    file_path: relativePath,
+                    absolute_path: fullPath,
+                    mtime: new Date(fileStat.mtimeMs).toISOString(),
+                    hours_remaining: hoursRemaining,
+                    size_bytes: fileStat.size,
+                    status: 'new'
+                  });
+                }
               }
             } catch (err) {
-              logger.debug({ err: err.message, path: fullPath }, 'Failed to stat file');
+              logger.debug({ err: err.message, path: fullPath }, 'Failed to process file');
             }
           }
         }
@@ -457,17 +492,12 @@ export default async function libraryRoutes(fastify) {
     // Sort by hours remaining (closest to ready first)
     pendingFiles.sort((a, b) => a.hours_remaining - b.hours_remaining);
 
-    // Try to match with existing docs to get titles
+    // Enrich new files with frontmatter data
     const enrichedFiles = await Promise.all(pendingFiles.map(async (file) => {
+      if (file.status !== 'new') {
+        return file; // Already has doc data for modified files
+      }
       try {
-        const doc = await queryOne(
-          `SELECT id, title, author, religion, collection FROM docs WHERE file_path = ?`,
-          [file.file_path]
-        );
-        if (doc) {
-          return { ...file, ...doc, status: 'modified' };
-        }
-        // Try to extract title from frontmatter
         const content = await readFile(file.absolute_path, 'utf-8');
         const { data } = matter(content);
         return {
@@ -475,14 +505,12 @@ export default async function libraryRoutes(fastify) {
           title: data.title || file.file_path.split('/').pop().replace('.md', ''),
           author: data.author || null,
           religion: data.religion || file.file_path.split('/')[0] || null,
-          collection: data.collection || file.file_path.split('/')[1] || null,
-          status: 'new'
+          collection: data.collection || file.file_path.split('/')[1] || null
         };
       } catch {
         return {
           ...file,
-          title: file.file_path.split('/').pop().replace('.md', ''),
-          status: 'unknown'
+          title: file.file_path.split('/').pop().replace('.md', '')
         };
       }
     }));
