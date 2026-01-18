@@ -864,8 +864,8 @@ export default async function libraryRoutes(fastify) {
       // Fix title if it equals author name (data quality issue from bad ingestion)
       // Extract proper title from file_path: "Author - Title.md" → "Title"
       let title = rest.title;
-      const normalizedTitle = title?.toLowerCase().replace(/[''`']/g, "'");
-      const normalizedAuthor = rest.author?.toLowerCase().replace(/[''`']/g, "'");
+      const normalizedTitle = title?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
+      const normalizedAuthor = rest.author?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       if (title && rest.author && normalizedTitle === normalizedAuthor && rest.file_path) {
         const filename = rest.file_path.split('/').pop()?.replace('.md', '') || '';
         // Extract title after " - " separator (format: "Author - Title")
@@ -954,8 +954,8 @@ export default async function libraryRoutes(fastify) {
       // Fix title if it equals author name (data quality issue from bad ingestion)
       // Extract proper title from file_path: "Author - Title.md" → "Title"
       let title = rest.title;
-      const normalizedTitle = title?.toLowerCase().replace(/[''`']/g, "'");
-      const normalizedAuthor = rest.author?.toLowerCase().replace(/[''`']/g, "'");
+      const normalizedTitle = title?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
+      const normalizedAuthor = rest.author?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       if (title && rest.author && normalizedTitle === normalizedAuthor && rest.file_path) {
         const filename = rest.file_path.split('/').pop()?.replace('.md', '') || '';
         // Extract title after " - " separator (format: "Author - Title")
