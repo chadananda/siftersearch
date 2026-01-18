@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-18T00:24:28.123Z",
+  "generated": "2026-01-18T01:02:47.882Z",
   "entries": [
+    {
+      "hash": "64d5591",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add hourly cron-based scanner for stable files",
+      "scope": "library"
+    },
+    {
+      "hash": "ee3dac1",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Add caller labels to AI calls for better cost tracking",
+      "scope": null
+    },
     {
       "hash": "8cae560",
       "date": "2026-01-17",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Add search filter support to collection detail view",
       "scope": null
-    },
-    {
-      "hash": "8fa5233",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Hide translate button for docs with 'in English' in title",
-      "scope": null
-    },
-    {
-      "hash": "21537af",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "64d5591",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add hourly cron-based scanner for stable files",
+        "scope": "library"
+      },
+      {
+        "hash": "ee3dac1",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Add caller labels to AI calls for better cost tracking",
+        "scope": null
+      },
       {
         "hash": "8cae560",
         "date": "2026-01-17",
@@ -7018,20 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Add search filter support to collection detail view",
-        "scope": null
-      },
-      {
-        "hash": "8fa5233",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Hide translate button for docs with 'in English' in title",
-        "scope": null
-      },
-      {
-        "hash": "21537af",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
         "scope": null
       }
     ]

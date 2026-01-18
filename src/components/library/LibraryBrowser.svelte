@@ -30,6 +30,15 @@
   let editingNode = $state(null);
   const LIMIT = 100;
 
+  // Recent activity view state
+  let viewMode = $state('documents'); // 'documents' | 'recent'
+  let recentDocuments = $state([]);
+  let recentLoading = $state(false);
+  let recentTotal = $state(0);
+  let recentOffset = $state(0);
+  let recentType = $state('all'); // 'all' | 'added' | 'modified'
+  let recentDays = $state(30);
+
   // Filters
   let filters = $state({
     search: '',
@@ -146,9 +155,45 @@
     } catch {}
   }
 
+  async function fetchRecentDocuments(reset = false) {
+    if (reset) { recentOffset = 0; recentDocuments = []; }
+    recentLoading = true;
+    try {
+      const params = new URLSearchParams({
+        type: recentType,
+        days: recentDays,
+        limit: LIMIT,
+        offset: recentOffset
+      });
+      const res = await authenticatedFetch(`${API_BASE}/api/library/recent?${params}`);
+      if (!res.ok) throw new Error('Failed to load recent documents');
+      const data = await res.json();
+      recentDocuments = reset ? data.documents || [] : [...recentDocuments, ...(data.documents || [])];
+      recentTotal = data.total || 0;
+    } catch (err) {
+      error = err.message;
+    } finally {
+      recentLoading = false;
+    }
+  }
+
+  function switchToRecentView() {
+    viewMode = 'recent';
+    selectedNode = null;
+    selectedReligionNode = null;
+    if (recentDocuments.length === 0) {
+      fetchRecentDocuments(true);
+    }
+  }
+
+  function switchToDocumentsView() {
+    viewMode = 'documents';
+  }
+
   function handleTreeSelect(event) {
     const { religion, collection, node } = event.detail;
     filters = { ...filters, religion: religion || null, collection: collection || null };
+    viewMode = 'documents'; // Switch back to documents view when tree node selected
 
     if (node?.node_type === 'collection') {
       selectedNode = node;
@@ -221,7 +266,7 @@
     <div class="p-4 border-b border-border flex items-center justify-between gap-2">
       <button
         class="flex items-center gap-2 text-lg font-semibold text-primary hover:text-accent transition-colors cursor-pointer bg-transparent border-none p-0"
-        onclick={clearFilters}
+        onclick={() => { clearFilters(); switchToDocumentsView(); }}
         title="View all documents"
       >
         <img src="/ocean-noback.svg" alt="" class="w-5 h-5" />
@@ -233,6 +278,17 @@
         </span>
       {/if}
     </div>
+    <!-- Recent Activity button -->
+    <button
+      class="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors
+             {viewMode === 'recent' ? 'bg-accent text-white' : 'bg-surface-2 text-secondary hover:bg-surface-3 hover:text-primary'}"
+      onclick={switchToRecentView}
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Recent Activity
+    </button>
     <TreeView
       religions={treeData}
       selectedReligion={filters.religion}
@@ -243,7 +299,106 @@
 
   <!-- Main content -->
   <main class="flex-1 flex flex-col overflow-hidden min-w-0">
-    {#if showCollectionDetail}
+    {#if viewMode === 'recent'}
+      <!-- Recent Activity View -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-primary mb-2">Recent Activity</h1>
+          <p class="text-muted">Track recently added and edited documents in the library</p>
+        </div>
+
+        <!-- Recent activity filters -->
+        <div class="mb-4 flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-1 bg-surface-1 rounded-lg p-1">
+            <button
+              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+                     {recentType === 'all' ? 'bg-accent text-white' : 'text-secondary hover:bg-surface-2'}"
+              onclick={() => { recentType = 'all'; fetchRecentDocuments(true); }}
+            >All</button>
+            <button
+              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+                     {recentType === 'added' ? 'bg-success text-white' : 'text-secondary hover:bg-surface-2'}"
+              onclick={() => { recentType = 'added'; fetchRecentDocuments(true); }}
+            >Added</button>
+            <button
+              class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+                     {recentType === 'modified' ? 'bg-warning text-white' : 'text-secondary hover:bg-surface-2'}"
+              onclick={() => { recentType = 'modified'; fetchRecentDocuments(true); }}
+            >Modified</button>
+          </div>
+
+          <select
+            class="px-3 py-2 text-sm border border-border rounded-lg bg-surface-0 text-primary"
+            bind:value={recentDays}
+            onchange={() => fetchRecentDocuments(true)}
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last year</option>
+          </select>
+
+          <span class="ml-auto text-sm text-muted">{recentTotal.toLocaleString()} documents</span>
+        </div>
+
+        {#if recentLoading && recentDocuments.length === 0}
+          <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
+            <svg class="w-8 h-8 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            <span>Loading recent activity...</span>
+          </div>
+        {:else if recentDocuments.length === 0}
+          <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>No recent activity found</span>
+          </div>
+        {:else}
+          <div class="space-y-2">
+            {#each recentDocuments as doc}
+              <a
+                href="/library/document/{doc.slug}"
+                class="block p-4 bg-surface-1 rounded-lg border border-border hover:border-accent hover:bg-surface-2 transition-colors"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-medium text-primary truncate">{doc.title}</span>
+                      <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
+                                   {doc.activity_type === 'added' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
+                        {doc.activity_type === 'added' ? 'Added' : 'Modified'}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-muted">
+                      {#if doc.author}
+                        <span>{doc.author}</span>
+                      {/if}
+                      {#if doc.religion}
+                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
+                      {/if}
+                      <span class="ml-auto">
+                        {new Date(doc.activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            {/each}
+          </div>
+          {#if recentDocuments.length < recentTotal}
+            <div class="flex justify-center py-4">
+              <button
+                class="px-4 py-2 text-sm font-medium text-accent border border-accent rounded-lg hover:bg-accent/10 disabled:opacity-50"
+                onclick={() => { recentOffset += LIMIT; fetchRecentDocuments(false); }}
+                disabled={recentLoading}
+              >
+                {recentLoading ? 'Loading...' : 'Load more'}
+              </button>
+            </div>
+          {/if}
+        {/if}
+      </div>
+    {:else if showCollectionDetail}
       <CollectionDetail
         religionSlug={selectedNode.religionSlug}
         collectionSlug={selectedNode.slug}

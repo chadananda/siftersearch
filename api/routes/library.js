@@ -299,6 +299,105 @@ export default async function libraryRoutes(fastify) {
     };
   });
 
+  /**
+   * Get recently added or modified documents
+   * Useful for librarians to track changes
+   */
+  fastify.get('/recent', {
+    preHandler: optionalAuthenticate,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['all', 'added', 'modified'], default: 'all' },
+          days: { type: 'integer', default: 30, minimum: 1, maximum: 365 },
+          limit: { type: 'integer', default: 50, maximum: 200 },
+          offset: { type: 'integer', default: 0 }
+        }
+      }
+    }
+  }, async (request) => {
+    const {
+      type = 'all',
+      days = 30,
+      limit = 50,
+      offset = 0
+    } = request.query;
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffISO = cutoffDate.toISOString();
+
+    let conditions = ['deleted_at IS NULL'];
+    const params = [];
+
+    if (type === 'added') {
+      // Documents created within the period
+      conditions.push('created_at >= ?');
+      params.push(cutoffISO);
+    } else if (type === 'modified') {
+      // Documents updated but not created within the period
+      // (i.e., existing docs that were edited)
+      conditions.push('updated_at >= ?');
+      conditions.push('created_at < ?');
+      params.push(cutoffISO);
+      params.push(cutoffISO);
+    } else {
+      // All recent activity (created or updated)
+      conditions.push('(created_at >= ? OR updated_at >= ?)');
+      params.push(cutoffISO);
+      params.push(cutoffISO);
+    }
+
+    // Get documents with activity timestamp
+    const sql = `
+      SELECT
+        id, title, author, religion, collection, language, year,
+        description, paragraph_count, cover_url, slug,
+        created_at, updated_at,
+        CASE
+          WHEN created_at >= ? THEN 'added'
+          ELSE 'modified'
+        END as activity_type,
+        CASE
+          WHEN created_at >= ? THEN created_at
+          ELSE updated_at
+        END as activity_at
+      FROM docs
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY
+        CASE
+          WHEN created_at >= ? THEN created_at
+          ELSE updated_at
+        END DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    // Add the cutoff dates for the CASE expressions
+    const queryParams = [cutoffISO, cutoffISO, cutoffISO, ...params, limit, offset];
+
+    const documents = await queryAll(sql, queryParams);
+
+    // Get total count
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM docs
+      WHERE ${conditions.join(' AND ')}
+    `;
+    const countResult = await queryOne(countSql, params);
+    const total = countResult?.total || 0;
+
+    return {
+      documents,
+      total,
+      limit,
+      offset,
+      days,
+      type,
+      cutoffDate: cutoffISO
+    };
+  });
+
   // ============================================
   // Library Nodes (Religions & Collections)
   // ============================================
