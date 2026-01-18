@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T04:42:00.152Z",
+  "generated": "2026-01-18T04:53:10.807Z",
   "entries": [
+    {
+      "hash": "684a67f",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add script to fix titles from frontmatter",
+      "scope": null
+    },
     {
       "hash": "5774030",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Separate user database from content database",
       "scope": null
-    },
-    {
-      "hash": "dcfeffa",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Remove duplicate route registrations causing server crash",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "684a67f",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add script to fix titles from frontmatter",
+        "scope": null
+      },
       {
         "hash": "5774030",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Separate user database from content database",
-        "scope": null
-      },
-      {
-        "hash": "dcfeffa",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Remove duplicate route registrations causing server crash",
         "scope": null
       }
     ]
