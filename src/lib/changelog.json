@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-18T03:31:23.213Z",
+  "generated": "2026-01-18T03:48:45.539Z",
   "entries": [
+    {
+      "hash": "58bc8d8",
+      "date": "2026-01-17",
+      "type": "Chore",
+      "description": "Bump version to 0.1.817",
+      "scope": null
+    },
+    {
+      "hash": "e611f63",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Filter out empty collections from library tree",
+      "scope": null
+    },
     {
       "hash": "05da0a6",
       "date": "2026-01-17",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Standardize on doc_id column, remove document_id references",
       "scope": null
-    },
-    {
-      "hash": "62205b5",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use doc_id column in populate-content endpoint",
-      "scope": null
-    },
-    {
-      "hash": "d1bb49b",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add translatable-docs endpoint for debugging",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "58bc8d8",
+        "date": "2026-01-17",
+        "type": "Chore",
+        "description": "Bump version to 0.1.817",
+        "scope": null
+      },
+      {
+        "hash": "e611f63",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Filter out empty collections from library tree",
+        "scope": null
+      },
       {
         "hash": "05da0a6",
         "date": "2026-01-17",
@@ -7018,20 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Standardize on doc_id column, remove document_id references",
-        "scope": null
-      },
-      {
-        "hash": "62205b5",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use doc_id column in populate-content endpoint",
-        "scope": null
-      },
-      {
-        "hash": "d1bb49b",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add translatable-docs endpoint for debugging",
         "scope": null
       }
     ]
