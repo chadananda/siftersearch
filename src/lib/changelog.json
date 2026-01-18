@@ -1,6 +1,20 @@
 {
-  "generated": "2026-01-18T04:17:34.467Z",
+  "generated": "2026-01-18T04:24:18.506Z",
   "entries": [
+    {
+      "hash": "0638208",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use filename instead of file_path for title extraction",
+      "scope": null
+    },
+    {
+      "hash": "565db1e",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Normalize diacritics when comparing title to author",
+      "scope": null
+    },
     {
       "hash": "4df333d",
       "date": "2026-01-17",
@@ -3486,24 +3500,24 @@
       "type": "New",
       "description": "Add test-segment-translation endpoint for verifying phrase alignment",
       "scope": null
-    },
-    {
-      "hash": "2ee69ee",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add DELETE endpoint to clear document translations for re-translation",
-      "scope": null
-    },
-    {
-      "hash": "21c62f9",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "0638208",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use filename instead of file_path for title extraction",
+        "scope": null
+      },
+      {
+        "hash": "565db1e",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Normalize diacritics when comparing title to author",
+        "scope": null
+      },
       {
         "hash": "4df333d",
         "date": "2026-01-17",
@@ -7018,20 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add test-segment-translation endpoint for verifying phrase alignment",
-        "scope": null
-      },
-      {
-        "hash": "2ee69ee",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add DELETE endpoint to clear document translations for re-translation",
-        "scope": null
-      },
-      {
-        "hash": "21c62f9",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Use segment-aware translation in batch endpoint for phrase-level alignment",
         "scope": null
       }
     ]
