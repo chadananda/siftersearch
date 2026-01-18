@@ -27,10 +27,14 @@ import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument } from '../services/ingester.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
-import { readFile, writeFile, rename, access } from 'fs/promises';
+import { readFile, writeFile, rename, access, stat, readdir } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, relative } from 'path';
 import matter from 'gray-matter';
+import config from '../lib/config.js';
+
+// 24-hour cooldown period for file stability before ingestion
+const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Parse translation field from paragraph
@@ -396,6 +400,154 @@ export default async function libraryRoutes(fastify) {
       type,
       cutoffDate: cutoffISO
     };
+  });
+
+  /**
+   * Get documents pending ingestion (within 24-hour cooldown window)
+   * These are files that have been modified recently and are waiting to be processed
+   * Admin only
+   */
+  fastify.get('/pending', {
+    preHandler: requireAdmin
+  }, async () => {
+    const basePath = config.library?.basePath;
+    if (!basePath) {
+      return { documents: [], total: 0, cooldownHours: 24 };
+    }
+
+    const now = Date.now();
+    const cooldownThreshold = now - COOLDOWN_MS;
+    const pendingFiles = [];
+
+    // Recursively scan for markdown files
+    async function scanDir(dirPath) {
+      try {
+        const entries = await readdir(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = join(dirPath, entry.name);
+          if (entry.isDirectory() && !entry.name.startsWith('.')) {
+            await scanDir(fullPath);
+          } else if (entry.isFile() && entry.name.endsWith('.md')) {
+            try {
+              const fileStat = await stat(fullPath);
+              // File is pending if modified within cooldown window
+              if (fileStat.mtimeMs > cooldownThreshold) {
+                const relativePath = relative(basePath, fullPath);
+                const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
+                pendingFiles.push({
+                  file_path: relativePath,
+                  absolute_path: fullPath,
+                  mtime: new Date(fileStat.mtimeMs).toISOString(),
+                  hours_remaining: hoursRemaining,
+                  size_bytes: fileStat.size
+                });
+              }
+            } catch (err) {
+              logger.debug({ err: err.message, path: fullPath }, 'Failed to stat file');
+            }
+          }
+        }
+      } catch (err) {
+        logger.debug({ err: err.message, path: dirPath }, 'Failed to read directory');
+      }
+    }
+
+    await scanDir(basePath);
+
+    // Sort by hours remaining (closest to ready first)
+    pendingFiles.sort((a, b) => a.hours_remaining - b.hours_remaining);
+
+    // Try to match with existing docs to get titles
+    const enrichedFiles = await Promise.all(pendingFiles.map(async (file) => {
+      try {
+        const doc = await queryOne(
+          `SELECT id, title, author, religion, collection FROM docs WHERE file_path = ?`,
+          [file.file_path]
+        );
+        if (doc) {
+          return { ...file, ...doc, status: 'modified' };
+        }
+        // Try to extract title from frontmatter
+        const content = await readFile(file.absolute_path, 'utf-8');
+        const { data } = matter(content);
+        return {
+          ...file,
+          title: data.title || file.file_path.split('/').pop().replace('.md', ''),
+          author: data.author || null,
+          religion: data.religion || file.file_path.split('/')[0] || null,
+          collection: data.collection || file.file_path.split('/')[1] || null,
+          status: 'new'
+        };
+      } catch {
+        return {
+          ...file,
+          title: file.file_path.split('/').pop().replace('.md', ''),
+          status: 'unknown'
+        };
+      }
+    }));
+
+    return {
+      documents: enrichedFiles,
+      total: enrichedFiles.length,
+      cooldownHours: 24
+    };
+  });
+
+  /**
+   * Force ingest a pending document (bypass 24-hour cooldown)
+   * Admin only
+   */
+  fastify.post('/pending/ingest', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['file_path'],
+        properties: {
+          file_path: { type: 'string' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { file_path } = request.body;
+    const basePath = config.library?.basePath;
+
+    if (!basePath) {
+      throw ApiError.badRequest('Library base path not configured');
+    }
+
+    const absolutePath = join(basePath, file_path);
+
+    // Verify file exists
+    try {
+      await access(absolutePath, fsConstants.R_OK);
+    } catch {
+      throw ApiError.notFound(`File not found: ${file_path}`);
+    }
+
+    // Read and ingest the file
+    try {
+      const content = await readFile(absolutePath, 'utf-8');
+      const result = await ingestDocument(content, {}, file_path);
+
+      logger.info({
+        filePath: file_path,
+        paragraphCount: result.paragraphCount
+      }, 'Document force-ingested (bypassed cooldown)');
+
+      return {
+        success: true,
+        message: 'Document ingested successfully',
+        file_path,
+        doc_id: result.docId,
+        paragraph_count: result.paragraphCount,
+        status: result.status
+      };
+    } catch (err) {
+      logger.error({ err, filePath: file_path }, 'Failed to force-ingest document');
+      throw ApiError.internal('Failed to ingest document: ' + err.message);
+    }
   });
 
   // ============================================

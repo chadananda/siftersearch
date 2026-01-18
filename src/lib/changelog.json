@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T01:02:47.882Z",
+  "generated": "2026-01-18T01:25:04.069Z",
   "entries": [
+    {
+      "hash": "472139f",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add Recent Activity view for tracking document changes",
+      "scope": "library"
+    },
     {
       "hash": "64d5591",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add embedding coverage stats to server status endpoint",
       "scope": null
-    },
-    {
-      "hash": "a447dc1",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Add search filter support to collection detail view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "472139f",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add Recent Activity view for tracking document changes",
+        "scope": "library"
+      },
       {
         "hash": "64d5591",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add embedding coverage stats to server status endpoint",
-        "scope": null
-      },
-      {
-        "hash": "a447dc1",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Add search filter support to collection detail view",
         "scope": null
       }
     ]

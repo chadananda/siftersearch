@@ -36,8 +36,14 @@
   let recentLoading = $state(false);
   let recentTotal = $state(0);
   let recentOffset = $state(0);
-  let recentType = $state('all'); // 'all' | 'added' | 'modified'
+  let recentType = $state('all'); // 'all' | 'added' | 'modified' | 'pending'
   let recentDays = $state(30);
+
+  // Pending documents state (admin only)
+  let pendingDocuments = $state([]);
+  let pendingLoading = $state(false);
+  let pendingTotal = $state(0);
+  let ingestingPath = $state(null); // Track which document is being ingested
 
   // Filters
   let filters = $state({
@@ -190,6 +196,47 @@
     viewMode = 'documents';
   }
 
+  async function fetchPendingDocuments() {
+    pendingLoading = true;
+    try {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/pending`);
+      if (!res.ok) throw new Error('Failed to load pending documents');
+      const data = await res.json();
+      pendingDocuments = data.documents || [];
+      pendingTotal = data.total || 0;
+    } catch (err) {
+      error = err.message;
+    } finally {
+      pendingLoading = false;
+    }
+  }
+
+  async function forceIngest(filePath) {
+    ingestingPath = filePath;
+    try {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/pending/ingest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_path: filePath })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to ingest document');
+      }
+      // Remove from pending list
+      pendingDocuments = pendingDocuments.filter(d => d.file_path !== filePath);
+      pendingTotal = pendingDocuments.length;
+      // Refresh recent documents to show the newly ingested doc
+      if (recentType !== 'pending') {
+        fetchRecentDocuments(true);
+      }
+    } catch (err) {
+      error = err.message;
+    } finally {
+      ingestingPath = null;
+    }
+  }
+
   function handleTreeSelect(event) {
     const { religion, collection, node } = event.detail;
     filters = { ...filters, religion: religion || null, collection: collection || null };
@@ -325,23 +372,96 @@
                      {recentType === 'modified' ? 'bg-warning text-white' : 'text-secondary hover:bg-surface-2'}"
               onclick={() => { recentType = 'modified'; fetchRecentDocuments(true); }}
             >Modified</button>
+            {#if isAdmin}
+              <button
+                class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+                       {recentType === 'pending' ? 'bg-info text-white' : 'text-secondary hover:bg-surface-2'}"
+                onclick={() => { recentType = 'pending'; fetchPendingDocuments(); }}
+              >Pending</button>
+            {/if}
           </div>
 
-          <select
-            class="px-3 py-2 text-sm border border-border rounded-lg bg-surface-0 text-primary"
-            bind:value={recentDays}
-            onchange={() => fetchRecentDocuments(true)}
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={365}>Last year</option>
-          </select>
+          {#if recentType !== 'pending'}
+            <select
+              class="px-3 py-2 text-sm border border-border rounded-lg bg-surface-0 text-primary"
+              bind:value={recentDays}
+              onchange={() => fetchRecentDocuments(true)}
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+              <option value={365}>Last year</option>
+            </select>
+          {/if}
 
-          <span class="ml-auto text-sm text-muted">{recentTotal.toLocaleString()} documents</span>
+          <span class="ml-auto text-sm text-muted">
+            {recentType === 'pending' ? pendingTotal.toLocaleString() : recentTotal.toLocaleString()} documents
+          </span>
         </div>
 
-        {#if recentLoading && recentDocuments.length === 0}
+        {#if recentType === 'pending'}
+          <!-- Pending documents view (admin only) -->
+          {#if pendingLoading}
+            <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
+              <svg class="w-8 h-8 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+              <span>Scanning library for pending files...</span>
+            </div>
+          {:else if pendingDocuments.length === 0}
+            <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
+              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>No pending documents - all files have been processed</span>
+            </div>
+          {:else}
+            <div class="mb-3 p-3 bg-info/10 border border-info/30 rounded-lg">
+              <p class="text-sm text-info">
+                <strong>{pendingDocuments.length}</strong> document{pendingDocuments.length !== 1 ? 's' : ''} within 24-hour cooldown window.
+                These files were recently modified and will be automatically ingested once stable.
+              </p>
+            </div>
+            <div class="space-y-2">
+              {#each pendingDocuments as doc}
+                <div class="flex items-center gap-3 p-4 bg-surface-1 rounded-lg border border-border">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-medium text-primary truncate">{doc.title}</span>
+                      <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
+                                   {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
+                        {doc.status === 'new' ? 'New' : 'Modified'}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-muted">
+                      {#if doc.author}
+                        <span>{doc.author}</span>
+                      {/if}
+                      {#if doc.religion}
+                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
+                      {/if}
+                      <span class="text-info font-medium">
+                        {doc.hours_remaining}h until auto-ingest
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    class="flex-shrink-0 px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                    onclick={() => forceIngest(doc.file_path)}
+                    disabled={ingestingPath !== null}
+                  >
+                    {#if ingestingPath === doc.file_path}
+                      <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                        Ingesting...
+                      </span>
+                    {:else}
+                      Ingest Now
+                    {/if}
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        {:else if recentLoading && recentDocuments.length === 0}
           <div class="flex flex-col items-center justify-center gap-4 py-12 text-muted">
             <svg class="w-8 h-8 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
             <span>Loading recent activity...</span>
