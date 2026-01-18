@@ -503,11 +503,9 @@ export default async function libraryRoutes(fastify) {
     // Sort by hours remaining (closest to ready first)
     pendingFiles.sort((a, b) => a.hours_remaining - b.hours_remaining);
 
-    // Enrich new files with frontmatter data
+    // Enrich ALL pending files with fresh frontmatter data from the actual file
+    // (For modified files, the database may have stale data - show what's actually in the file)
     const enrichedFiles = await Promise.all(pendingFiles.map(async (file) => {
-      if (file.status !== 'new') {
-        return file; // Already has doc data for modified files
-      }
       try {
         const content = await readFile(file.absolute_path, 'utf-8');
         const { data } = matter(content);
@@ -521,7 +519,7 @@ export default async function libraryRoutes(fastify) {
       } catch {
         return {
           ...file,
-          title: file.file_path.split('/').pop().replace('.md', '')
+          title: file.title || file.file_path.split('/').pop().replace('.md', '')
         };
       }
     }));

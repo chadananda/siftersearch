@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T03:48:45.539Z",
+  "generated": "2026-01-18T03:57:16.996Z",
   "entries": [
+    {
+      "hash": "d11773c",
+      "date": "2026-01-17",
+      "type": "Performance",
+      "description": "Add expression indexes for content stats queries",
+      "scope": null
+    },
     {
       "hash": "58bc8d8",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Standardize content table on doc_id, remove document_id column",
       "scope": null
-    },
-    {
-      "hash": "dcd7408",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Standardize on doc_id column, remove document_id references",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "d11773c",
+        "date": "2026-01-17",
+        "type": "Performance",
+        "description": "Add expression indexes for content stats queries",
+        "scope": null
+      },
       {
         "hash": "58bc8d8",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Standardize content table on doc_id, remove document_id column",
-        "scope": null
-      },
-      {
-        "hash": "dcd7408",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Standardize on doc_id column, remove document_id references",
         "scope": null
       }
     ]
