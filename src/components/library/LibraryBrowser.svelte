@@ -13,6 +13,65 @@
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   const auth = getAuthState();
 
+  /**
+   * Generate a URL-safe slug from a string (for religion/collection paths)
+   */
+  function slugifyPath(str) {
+    if (!str) return '';
+    const diacritics = {
+      'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ā': 'a',
+      'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e', 'ē': 'e',
+      'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i', 'ī': 'i',
+      'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'ō': 'o',
+      'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u', 'ū': 'u',
+      'ñ': 'n', 'ç': 'c'
+    };
+    return str
+      .toLowerCase()
+      .split('').map(c => diacritics[c] || c).join('')
+      .replace(/[''`']/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-+/g, '-');
+  }
+
+  /**
+   * Generate a document slug from title + language
+   */
+  function generateDocSlug(doc) {
+    let base = doc.title;
+    if (!base && doc.filename) {
+      base = doc.filename.replace(/\.[^.]+$/, '');
+    }
+    if (!base) return '';
+    const slug = slugifyPath(base);
+    if (doc.language && doc.language !== 'en') {
+      return `${slug}_${doc.language}`;
+    }
+    return slug;
+  }
+
+  /**
+   * Get the semantic URL for a document
+   */
+  function getDocumentUrl(doc) {
+    const docSlug = generateDocSlug(doc);
+    if (!docSlug || !doc.religion || !doc.collection) {
+      return `/library/view?doc=${doc.id}`;
+    }
+    return `/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${docSlug}`;
+  }
+
+  /**
+   * Format file size in human-readable form
+   */
+  function formatFileSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   // State
   let treeData = $state([]);
   let documents = $state([]);
@@ -422,41 +481,65 @@
             </div>
             <div class="space-y-2">
               {#each pendingDocuments as doc}
-                <div class="flex items-center gap-3 p-4 bg-surface-1 rounded-lg border border-border">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-sm font-medium text-primary truncate">{doc.title}</span>
-                      <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
-                                   {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
-                        {doc.status === 'new' ? 'New' : 'Modified'}
-                      </span>
+                {@const filename = doc.file_path?.split('/').pop() || 'Unknown'}
+                <div class="p-4 bg-surface-1 rounded-lg border border-border">
+                  <div class="flex items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-sm font-medium text-primary" title={doc.title}>{filename.replace('.md', '')}</span>
+                        <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
+                                     {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
+                          {doc.status === 'new' ? 'New' : 'Modified'}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-3 text-xs text-muted mb-2">
+                        {#if doc.religion}
+                          <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
+                        {/if}
+                        {#if doc.collection}
+                          <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.collection}</span>
+                        {/if}
+                        {#if doc.size_bytes}
+                          <span>{formatFileSize(doc.size_bytes)}</span>
+                        {/if}
+                      </div>
+                      <div class="flex items-center gap-4 text-xs">
+                        <span class="text-info font-medium">
+                          {doc.hours_remaining}h until auto-ingest
+                        </span>
+                        <span class="truncate text-muted/60 font-mono text-[0.7rem]" title={doc.file_path}>{doc.file_path}</span>
+                      </div>
                     </div>
-                    <div class="flex items-center gap-3 text-xs text-muted">
-                      {#if doc.author}
-                        <span>{doc.author}</span>
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                      {#if doc.id}
+                        <a
+                          href="/admin/edit?id={doc.id}"
+                          class="px-3 py-1.5 text-sm font-medium text-secondary border border-border rounded-lg hover:bg-surface-2 hover:text-primary"
+                          title="Edit document"
+                        >
+                          Edit
+                        </a>
+                      {:else}
+                        <span class="px-3 py-1.5 text-xs text-muted italic" title="Edit available after ingestion">
+                          New file
+                        </span>
                       {/if}
-                      {#if doc.religion}
-                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
-                      {/if}
-                      <span class="text-info font-medium">
-                        {doc.hours_remaining}h until auto-ingest
-                      </span>
+                      <button
+                        class="px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                        onclick={() => forceIngest(doc.file_path)}
+                        disabled={ingestingPath !== null}
+                      >
+                        {#if ingestingPath === doc.file_path}
+                          <span class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                            Ingesting...
+                          </span>
+                        {:else}
+                          Ingest Now
+                        {/if}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    class="flex-shrink-0 px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                    onclick={() => forceIngest(doc.file_path)}
-                    disabled={ingestingPath !== null}
-                  >
-                    {#if ingestingPath === doc.file_path}
-                      <span class="flex items-center gap-1.5">
-                        <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                        Ingesting...
-                      </span>
-                    {:else}
-                      Ingest Now
-                    {/if}
-                  </button>
                 </div>
               {/each}
             </div>
@@ -477,7 +560,7 @@
           <div class="space-y-2">
             {#each recentDocuments as doc}
               <a
-                href="/library/document/{doc.slug}"
+                href={getDocumentUrl(doc)}
                 class="block p-4 bg-surface-1 rounded-lg border border-border hover:border-accent hover:bg-surface-2 transition-colors"
               >
                 <div class="flex items-start gap-3">
@@ -495,6 +578,9 @@
                       {/if}
                       {#if doc.religion}
                         <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
+                      {/if}
+                      {#if doc.collection}
+                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.collection}</span>
                       {/if}
                       <span class="ml-auto">
                         {new Date(doc.activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
