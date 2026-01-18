@@ -430,8 +430,8 @@ async function scanLibraryForIngestion() {
           continue;
         }
 
-        // Ingest the document
-        const result = await ingestDocument(content, {}, file.relativePath);
+        // Ingest the document with file mtime for accurate "added" vs "modified" tracking
+        const result = await ingestDocument(content, { file_mtime: new Date(file.mtime).toISOString() }, file.relativePath);
 
         if (result.skipped) {
           skippedCount++;
@@ -532,7 +532,7 @@ async function processAddBatch() {
         }, 'Move detected via pending delete - cancelling delete');
 
         // Process move immediately (just updating the path reference)
-        const result = await ingestDocument(content, {}, relativePath);
+        const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
         if (result.status === 'moved') {
           logger.info({
             documentId: result.documentId,
@@ -561,7 +561,7 @@ async function processAddBatch() {
       }
 
       // NEW or UPDATED document - ingest (file already passed 24h mtime check)
-      const result = await ingestDocument(content, {}, relativePath);
+      const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
 
       if (result.skipped) {
         logger.debug({ filePath, eventType }, 'File unchanged, skipped');

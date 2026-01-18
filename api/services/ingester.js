@@ -1138,6 +1138,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   }
 
   // Insert or update document record
+  // file_mtime tracks when the source file was last modified (for accurate "added" vs "modified" filtering)
+  const fileMtime = metadata.file_mtime || null;
+
   if (existingDoc) {
     // UPDATE existing document
     await query(`
@@ -1156,6 +1159,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         slug = ?,
         auto_segmented = ?,
         metadata = ?,
+        file_mtime = COALESCE(?, file_mtime),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [
@@ -1173,14 +1177,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       finalSlug,
       autoSegmented ? 1 : 0,
       metadataJson,
+      fileMtime,
       finalDocId
     ]);
   } else {
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
@@ -1195,7 +1200,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       chunks.length,
       finalSlug,
       autoSegmented ? 1 : 0,
-      metadataJson
+      metadataJson,
+      fileMtime
     ]);
     // Get the auto-generated INTEGER id
     finalDocId = Number(result.lastInsertRowid);

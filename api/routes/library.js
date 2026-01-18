@@ -305,7 +305,8 @@ export default async function libraryRoutes(fastify) {
 
   /**
    * Get recently added or modified documents
-   * Useful for librarians to track changes
+   * Uses file_mtime (when the source file was actually modified) for accurate filtering
+   * This correctly handles bulk re-indexes where created_at is recent but files are old
    */
   fastify.get('/recent', {
     preHandler: optionalAuthenticate,
@@ -335,20 +336,35 @@ export default async function libraryRoutes(fastify) {
     let conditions = ['deleted_at IS NULL'];
     const params = [];
 
+    // Use file_mtime for filtering (falls back to created_at if file_mtime is null)
+    // file_mtime = when the source file was actually last modified by the user
+    // created_at = when the database record was created (can be from bulk re-index)
     if (type === 'added') {
-      // Documents created within the period
-      conditions.push('created_at >= ?');
+      // NEW files: file_mtime is recent AND this is the first ingestion (created_at = updated_at, or close)
+      // For docs without file_mtime, fall back to created_at
+      conditions.push(`(
+        (file_mtime IS NOT NULL AND file_mtime >= ? AND ABS(julianday(updated_at) - julianday(created_at)) < 0.01)
+        OR (file_mtime IS NULL AND created_at >= ?)
+      )`);
+      params.push(cutoffISO);
       params.push(cutoffISO);
     } else if (type === 'modified') {
-      // Documents updated but not created within the period
-      // (i.e., existing docs that were edited)
-      conditions.push('updated_at >= ?');
-      conditions.push('created_at < ?');
+      // MODIFIED files: file_mtime is recent AND this is a re-ingestion (updated_at > created_at)
+      // For docs without file_mtime, fall back to updated_at > created_at
+      conditions.push(`(
+        (file_mtime IS NOT NULL AND file_mtime >= ? AND ABS(julianday(updated_at) - julianday(created_at)) >= 0.01)
+        OR (file_mtime IS NULL AND updated_at >= ? AND created_at < ?)
+      )`);
+      params.push(cutoffISO);
       params.push(cutoffISO);
       params.push(cutoffISO);
     } else {
-      // All recent activity (created or updated)
-      conditions.push('(created_at >= ? OR updated_at >= ?)');
+      // All recent activity based on file_mtime
+      conditions.push(`(
+        (file_mtime IS NOT NULL AND file_mtime >= ?)
+        OR (file_mtime IS NULL AND (created_at >= ? OR updated_at >= ?))
+      )`);
+      params.push(cutoffISO);
       params.push(cutoffISO);
       params.push(cutoffISO);
     }
@@ -357,28 +373,23 @@ export default async function libraryRoutes(fastify) {
     const sql = `
       SELECT
         id, title, author, religion, collection, language, year,
-        description, paragraph_count, cover_url, slug,
+        description, paragraph_count, cover_url, slug, file_mtime,
         created_at, updated_at,
         CASE
-          WHEN created_at >= ? THEN 'added'
+          WHEN ABS(julianday(updated_at) - julianday(created_at)) < 0.01 THEN 'added'
           ELSE 'modified'
         END as activity_type,
-        CASE
-          WHEN created_at >= ? THEN created_at
+        COALESCE(file_mtime, CASE
+          WHEN ABS(julianday(updated_at) - julianday(created_at)) < 0.01 THEN created_at
           ELSE updated_at
-        END as activity_at
+        END) as activity_at
       FROM docs
       WHERE ${conditions.join(' AND ')}
-      ORDER BY
-        CASE
-          WHEN created_at >= ? THEN created_at
-          ELSE updated_at
-        END DESC
+      ORDER BY COALESCE(file_mtime, updated_at) DESC
       LIMIT ? OFFSET ?
     `;
 
-    // Add the cutoff dates for the CASE expressions
-    const queryParams = [cutoffISO, cutoffISO, cutoffISO, ...params, limit, offset];
+    const queryParams = [...params, limit, offset];
 
     const documents = await queryAll(sql, queryParams);
 
@@ -547,17 +558,18 @@ export default async function libraryRoutes(fastify) {
 
     const absolutePath = join(basePath, file_path);
 
-    // Verify file exists
+    // Verify file exists and get mtime
+    let fileStat;
     try {
-      await access(absolutePath, fsConstants.R_OK);
+      fileStat = await stat(absolutePath);
     } catch {
       throw ApiError.notFound(`File not found: ${file_path}`);
     }
 
-    // Read and ingest the file
+    // Read and ingest the file with file_mtime for accurate tracking
     try {
       const content = await readFile(absolutePath, 'utf-8');
-      const result = await ingestDocument(content, {}, file_path);
+      const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, file_path);
 
       logger.info({
         filePath: file_path,
