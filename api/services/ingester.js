@@ -860,10 +860,15 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     if (frontmatterMeta.documentType) metaExtras.documentType = frontmatterMeta.documentType;
     const metaJson = Object.keys(metaExtras).length > 0 ? JSON.stringify(metaExtras) : null;
 
+    // Extract filename from path
+    const effectivePath = relativePath || existingDoc.file_path;
+    const newFilename = effectivePath ? effectivePath.split('/').pop()?.replace(/\.md$/i, '') : null;
+
     await query(`
       UPDATE docs SET
         file_path = ?,
         file_hash = ?,
+        filename = ?,
         title = ?,
         author = ?,
         religion = ?,
@@ -875,8 +880,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [
-      relativePath || existingDoc.file_path,
+      effectivePath,
       fileHash,
+      newFilename,
       frontmatterMeta.title || existingDoc.title || null,
       frontmatterMeta.author || existingDoc.author || null,
       newReligion || null,
@@ -1140,6 +1146,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Insert or update document record
   // file_mtime tracks when the source file was last modified (for accurate "added" vs "modified" filtering)
   const fileMtime = metadata.file_mtime || null;
+  // Extract filename from path (e.g., "Baha'i/Core/Author - Title.md" -> "Author - Title")
+  const filename = relativePath ? relativePath.split('/').pop()?.replace(/\.md$/i, '') : null;
 
   if (existingDoc) {
     // UPDATE existing document
@@ -1148,6 +1156,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         file_path = ?,
         file_hash = ?,
         body_hash = ?,
+        filename = ?,
         title = ?,
         author = ?,
         religion = ?,
@@ -1166,6 +1175,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       relativePath,
       fileHash,
       bodyHash,
+      filename,
       finalMeta.title,
       finalMeta.author,
       finalMeta.religion,
@@ -1184,12 +1194,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
       bodyHash,
+      filename,
       finalMeta.title,
       finalMeta.author,
       finalMeta.religion,
