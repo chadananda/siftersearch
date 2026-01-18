@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T22:01:13.724Z",
+  "generated": "2026-01-17T23:56:05.590Z",
   "entries": [
+    {
+      "hash": "8b0f931",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add Re-ingest button to oversized documents",
+      "scope": null
+    },
     {
       "hash": "55deaac",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Require faithful summaries that accurately represent passage content",
       "scope": null
-    },
-    {
-      "hash": "83544ab",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "8b0f931",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add Re-ingest button to oversized documents",
+        "scope": null
+      },
       {
         "hash": "55deaac",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Require faithful summaries that accurately represent passage content",
-        "scope": null
-      },
-      {
-        "hash": "83544ab",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Move authority to position 2 in Meilisearch ranking for primary source priority",
         "scope": null
       }
     ]

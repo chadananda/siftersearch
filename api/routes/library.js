@@ -2001,30 +2001,47 @@ Provide only the translation, no explanations.`;
   }, async (request) => {
     const { id } = request.params;
 
-    // Add to ingestion queue for reprocessing
-    try {
-      await query(`
-        INSERT INTO ingestion_queue (
-          source_type, source_data, status, target_document_id, created_by
-        ) VALUES (?, ?, ?, ?, ?)
-      `, [
-        'reindex',
-        JSON.stringify({ document_id: id }),
-        'pending',
-        id,
-        request.user?.sub
-      ]);
+    // Get document to find its file path
+    const doc = await queryOne('SELECT id, file_path, title FROM docs WHERE id = ?', [id]);
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
 
-      logger.info({ documentId: id, userId: request.user?.sub }, 'Document queued for re-indexing');
+    if (!doc.file_path) {
+      throw ApiError.badRequest('Document has no source file path');
+    }
+
+    // Read the source file and re-ingest immediately (bypassing 24-hour cooldown)
+    try {
+      const libraryRoot = process.env.LIBRARY_ROOT || './library';
+      const fullPath = join(libraryRoot, doc.file_path);
+
+      // Check file exists
+      try {
+        await access(fullPath, fsConstants.R_OK);
+      } catch {
+        throw ApiError.notFound(`Source file not found: ${doc.file_path}`);
+      }
+
+      const content = await readFile(fullPath, 'utf-8');
+      const result = await ingestDocument(content, {}, doc.file_path);
+
+      logger.info({
+        documentId: id,
+        userId: request.user?.sub,
+        paragraphs: result.paragraphCount
+      }, 'Document re-ingested immediately');
 
       return {
         success: true,
-        message: 'Document queued for re-indexing',
-        documentId: id
+        message: 'Document re-ingested successfully',
+        documentId: id,
+        paragraphCount: result.paragraphCount
       };
     } catch (err) {
-      logger.error({ err, documentId: id }, 'Failed to queue document for re-indexing');
-      throw ApiError.internal('Failed to queue re-index');
+      if (err.statusCode) throw err; // Re-throw ApiErrors
+      logger.error({ err, documentId: id }, 'Failed to re-ingest document');
+      throw ApiError.internal('Failed to re-ingest document: ' + err.message);
     }
   });
 
