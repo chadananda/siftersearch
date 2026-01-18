@@ -862,23 +862,19 @@ export default async function libraryRoutes(fastify) {
       const { preview_json, ...rest } = doc;
 
       // Fix title if it equals author name (data quality issue from bad ingestion)
-      // Extract proper title from slug (format: "author-slug_title-slug") or filename
+      // Extract proper title from filename (format: "Author - Title") or slug
       let title = rest.title;
       const normalizedTitle = title?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       const normalizedAuthor = rest.author?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       if (title && rest.author && normalizedTitle === normalizedAuthor) {
-        // Try slug first (format: "author-name_title-here" -> "title-here" -> "Title Here")
-        if (rest.slug && rest.slug.includes('_')) {
+        // Prefer filename (has proper case/punctuation): "Author - Title" -> "Title"
+        if (rest.filename && rest.filename.includes(' - ')) {
+          const dashIndex = rest.filename.indexOf(' - ');
+          title = rest.filename.substring(dashIndex + 3).trim();
+        } else if (rest.slug && rest.slug.includes('_')) {
+          // Fallback to slug: "author-name_title-here" -> "Title Here"
           const titleSlug = rest.slug.split('_').slice(1).join('_');
           title = titleSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        } else if (rest.filename) {
-          // Fallback to filename (format: "Author - Title")
-          const dashIndex = rest.filename.indexOf(' - ');
-          if (dashIndex > 0) {
-            title = rest.filename.substring(dashIndex + 3).trim();
-          } else {
-            title = rest.filename;
-          }
         }
       }
 
@@ -957,23 +953,19 @@ export default async function libraryRoutes(fastify) {
       const { preview_json, ...rest } = doc;
 
       // Fix title if it equals author name (data quality issue from bad ingestion)
-      // Extract proper title from slug (format: "author-slug_title-slug") or filename
+      // Extract proper title from filename (format: "Author - Title") or slug
       let title = rest.title;
       const normalizedTitle = title?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       const normalizedAuthor = rest.author?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[''`']/g, "'");
       if (title && rest.author && normalizedTitle === normalizedAuthor) {
-        // Try slug first (format: "author-name_title-here" -> "title-here" -> "Title Here")
-        if (rest.slug && rest.slug.includes('_')) {
+        // Prefer filename (has proper case/punctuation): "Author - Title" -> "Title"
+        if (rest.filename && rest.filename.includes(' - ')) {
+          const dashIndex = rest.filename.indexOf(' - ');
+          title = rest.filename.substring(dashIndex + 3).trim();
+        } else if (rest.slug && rest.slug.includes('_')) {
+          // Fallback to slug: "author-name_title-here" -> "Title Here"
           const titleSlug = rest.slug.split('_').slice(1).join('_');
           title = titleSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        } else if (rest.filename) {
-          // Fallback to filename (format: "Author - Title")
-          const dashIndex = rest.filename.indexOf(' - ');
-          if (dashIndex > 0) {
-            title = rest.filename.substring(dashIndex + 3).trim();
-          } else {
-            title = rest.filename;
-          }
         }
       }
 

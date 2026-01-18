@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T04:29:40.950Z",
+  "generated": "2026-01-18T04:33:37.659Z",
   "entries": [
+    {
+      "hash": "6e60272",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Use correct db interface in fix-filenames script",
+      "scope": null
+    },
     {
       "hash": "f0ef95c",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add bulk translation management endpoints",
       "scope": null
-    },
-    {
-      "hash": "bd2dd6c",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Allow internal key auth for test-segment-translation endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "6e60272",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Use correct db interface in fix-filenames script",
+        "scope": null
+      },
       {
         "hash": "f0ef95c",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "New",
         "description": "Add bulk translation management endpoints",
-        "scope": null
-      },
-      {
-        "hash": "bd2dd6c",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Allow internal key auth for test-segment-translation endpoint",
         "scope": null
       }
     ]
