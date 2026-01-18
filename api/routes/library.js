@@ -853,14 +853,31 @@ export default async function libraryRoutes(fastify) {
       LIMIT 500
     `, [node.name]);
 
-    // Parse preview JSON
+    // Parse preview JSON and fix title if it equals author (data quality issue)
     const documents = rawDocuments.map(doc => {
       let previewParagraphs = [];
       if (doc.preview_json) {
         try { previewParagraphs = JSON.parse(doc.preview_json); } catch { /* ignore */ }
       }
       const { preview_json, ...rest } = doc;
-      return { ...rest, previewParagraphs };
+
+      // Fix title if it equals author name (data quality issue from bad ingestion)
+      // Extract proper title from file_path: "Author - Title.md" → "Title"
+      let title = rest.title;
+      const normalizedTitle = title?.toLowerCase().replace(/[''`']/g, "'");
+      const normalizedAuthor = rest.author?.toLowerCase().replace(/[''`']/g, "'");
+      if (title && rest.author && normalizedTitle === normalizedAuthor && rest.file_path) {
+        const filename = rest.file_path.split('/').pop()?.replace('.md', '') || '';
+        // Extract title after " - " separator (format: "Author - Title")
+        const dashIndex = filename.indexOf(' - ');
+        if (dashIndex > 0) {
+          title = filename.substring(dashIndex + 3).trim();
+        } else {
+          title = filename;
+        }
+      }
+
+      return { ...rest, title, previewParagraphs };
     });
 
     return {
@@ -926,14 +943,31 @@ export default async function libraryRoutes(fastify) {
       queryOne(`SELECT COUNT(*) as count FROM docs WHERE religion = ? AND collection = ? AND deleted_at IS NULL${searchTerm ? ' AND (title LIKE ? OR author LIKE ? OR description LIKE ?)' : ''}`, params)
     ]);
 
-    // Parse preview JSON
+    // Parse preview JSON and fix title if it equals author (data quality issue)
     const documents = rawDocuments.map(doc => {
       let previewParagraphs = [];
       if (doc.preview_json) {
         try { previewParagraphs = JSON.parse(doc.preview_json); } catch { /* ignore */ }
       }
       const { preview_json, ...rest } = doc;
-      return { ...rest, previewParagraphs };
+
+      // Fix title if it equals author name (data quality issue from bad ingestion)
+      // Extract proper title from file_path: "Author - Title.md" → "Title"
+      let title = rest.title;
+      const normalizedTitle = title?.toLowerCase().replace(/[''`']/g, "'");
+      const normalizedAuthor = rest.author?.toLowerCase().replace(/[''`']/g, "'");
+      if (title && rest.author && normalizedTitle === normalizedAuthor && rest.file_path) {
+        const filename = rest.file_path.split('/').pop()?.replace('.md', '') || '';
+        // Extract title after " - " separator (format: "Author - Title")
+        const dashIndex = filename.indexOf(' - ');
+        if (dashIndex > 0) {
+          title = filename.substring(dashIndex + 3).trim();
+        } else {
+          title = filename;
+        }
+      }
+
+      return { ...rest, title, previewParagraphs };
     });
 
     return {

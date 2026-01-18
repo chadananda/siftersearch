@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T04:05:03.729Z",
+  "generated": "2026-01-18T04:15:11.032Z",
   "entries": [
+    {
+      "hash": "990f415",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Validate title field to prevent URLs from displaying as titles",
+      "scope": null
+    },
     {
       "hash": "e18a502",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use aiService instead of chatCompletion for proper model resolution",
       "scope": null
-    },
-    {
-      "hash": "fde5219",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Include translation_segments in document endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "990f415",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Validate title field to prevent URLs from displaying as titles",
+        "scope": null
+      },
       {
         "hash": "e18a502",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Use aiService instead of chatCompletion for proper model resolution",
-        "scope": null
-      },
-      {
-        "hash": "fde5219",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Include translation_segments in document endpoint",
         "scope": null
       }
     ]
