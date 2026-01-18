@@ -1215,7 +1215,8 @@ async function translateCombined({
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.min(Math.max(text.length * 6, 1500), 16000) // Cap at model limit
+      maxTokens: Math.min(Math.max(text.length * 6, 1500), 16000), // Cap at model limit
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateCombined'
@@ -1356,7 +1357,8 @@ Return ONLY TOON format. Every sentence MUST include MANY [[sN.segments]] blocks
       { role: 'user', content: sentenceList }
     ], {
       temperature: 0.3,
-      maxTokens: Math.min(Math.max(text.length * 8, 4000), 16000)  // Cap at 16000 for model limit
+      maxTokens: Math.min(Math.max(text.length * 8, 4000), 16000),  // Cap at 16000 for model limit
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateCombinedMarked'
@@ -1557,7 +1559,8 @@ Return ONLY TOON format for ALL ${paragraphs.length} paragraphs. Every paragraph
     ], {
       temperature: 0.3,
       // More tokens for batch output
-      maxTokens: Math.min(Math.max(paragraphs.reduce((sum, p) => sum + p.text.length, 0) * 5, 3000), 16000)
+      maxTokens: Math.min(Math.max(paragraphs.reduce((sum, p) => sum + p.text.length, 0) * 5, 3000), 16000),
+      caller: 'translator'
     }),
     API_TIMEOUT_MS * 2, // Double timeout for batch
     'translateBatchCombined'
@@ -1924,7 +1927,8 @@ async function translateText(text, sourceLang, targetLang, quality = 'standard',
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 3, 500) // Allow for expansion in translation
+      maxTokens: Math.max(text.length * 3, 500), // Allow for expansion in translation
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateText'
@@ -2016,7 +2020,8 @@ async function translateTextWithSegments(text, sourceLang, targetLang, contentTy
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 4, 800) // Allow for JSON overhead
+      maxTokens: Math.max(text.length * 4, 800), // Allow for JSON overhead
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateTextWithSegments'
@@ -2295,7 +2300,8 @@ async function translateForStudy(text, sourceLang, targetLang, contentType, cont
       { role: 'user', content: text }
     ], {
       temperature: 0.2, // Lower temperature for more consistent literal translations
-      maxTokens: Math.min(Math.max(text.length * 5, 1000), 16000) // Cap at model limit
+      maxTokens: Math.min(Math.max(text.length * 5, 1000), 16000), // Cap at model limit
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateForStudy'
@@ -2382,7 +2388,8 @@ async function translateTextWithContext(text, sourceLang, targetLang, contentTyp
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 3, 500)
+      maxTokens: Math.max(text.length * 3, 500),
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateTextWithContext'
@@ -2413,7 +2420,8 @@ async function translateTextWithSegmentsAndContext(text, sourceLang, targetLang,
       { role: 'user', content: text }
     ], {
       temperature: 0.3,
-      maxTokens: Math.max(text.length * 4, 800)
+      maxTokens: Math.max(text.length * 4, 800),
+      caller: 'translator'
     }),
     API_TIMEOUT_MS,
     'translateTextWithSegmentsAndContext'

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-17T23:56:05.590Z",
+  "generated": "2026-01-18T00:24:28.123Z",
   "entries": [
+    {
+      "hash": "8cae560",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Re-ingest button now calls ingester directly, bypassing 24h cooldown",
+      "scope": null
+    },
     {
       "hash": "8b0f931",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
       "scope": null
-    },
-    {
-      "hash": "740c6ee",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Require faithful summaries that accurately represent passage content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "8cae560",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Re-ingest button now calls ingester directly, bypassing 24h cooldown",
+        "scope": null
+      },
       {
         "hash": "8b0f931",
         "date": "2026-01-17",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-01",
         "type": "Fixed",
         "description": "Wait for Meilisearch settings tasks and double authority boost to 10%",
-        "scope": null
-      },
-      {
-        "hash": "740c6ee",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Require faithful summaries that accurately represent passage content",
         "scope": null
       }
     ]

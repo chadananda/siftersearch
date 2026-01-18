@@ -232,7 +232,8 @@ IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coheren
       { role: 'user', content: userPrompt }
     ], {
       temperature: 0.2, // Low temperature for consistent results
-      max_tokens: 1000
+      max_tokens: 1000,
+      caller: 'segmenter'
     });
 
     // Parse JSON response
@@ -904,7 +905,8 @@ CRITICAL: Copy each sentence EXACTLY as it appears. Do not modify, trim, or "cle
       { role: 'user', content: userPrompt }
     ], {
       temperature: 0.1,
-      max_tokens: 4000
+      max_tokens: 4000,
+      caller: 'segmenter'
     });
 
     const content = response.content || response;
@@ -1265,7 +1267,8 @@ Return JSON with the EXACT last 3-4 words of each sentence:
         { role: 'user', content: userPrompt }
       ], {
         temperature: 0.1 + (attempt - 1) * 0.1,  // Slightly increase temp on retries
-        max_tokens: 8000
+        max_tokens: 8000,
+        caller: 'segmenter'
       });
 
       const content = response.content || response;
@@ -1894,7 +1897,7 @@ Example:
   try {
     const response = await aiService('quality', { forceRemote: true }).chat([
       { role: 'user', content: prompt }
-    ], { temperature: 0.1, maxTokens: 2000 });
+    ], { temperature: 0.1, maxTokens: 2000, caller: 'segmenter' });
 
     const content = response.choices?.[0]?.message?.content || response.content || '';
 
@@ -1982,7 +1985,7 @@ ${numberedText}`;
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 2000 });
+  ], { temperature: 0.1, maxTokens: 2000, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
 
@@ -2047,7 +2050,7 @@ Example: 3, 7, 12, 18, ${phrases.length}`;
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 1000 });
+  ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
   const endIds = content.match(/\d+/g)?.map(n => parseInt(n, 10)) || [];
@@ -2120,7 +2123,7 @@ With ${sentences.length} sentences, expect roughly ${Math.ceil(sentences.length 
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 500 });
+  ], { temperature: 0.1, maxTokens: 500, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
   const ids = content.match(/\d+/g)?.map(n => parseInt(n, 10)) || [];
@@ -2384,7 +2387,7 @@ ${text}`;
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 4000 });
+  ], { temperature: 0.1, maxTokens: 4000, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
   const endings = content.trim().split('\n').map(l => l.trim()).filter(l => l.length >= 3);
@@ -2467,7 +2470,7 @@ Nothing else - just the numbers.`;
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 1000 });
+  ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
 
@@ -2523,7 +2526,7 @@ Nothing else - just the numbers.`;
 
   const response = await aiService('quality', { forceRemote: true }).chat([
     { role: 'user', content: prompt }
-  ], { temperature: 0.1, maxTokens: 500 });
+  ], { temperature: 0.1, maxTokens: 500, caller: 'segmenter' });
 
   const content = response.choices?.[0]?.message?.content || response.content || '';
 
@@ -2695,7 +2698,8 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
         { role: 'user', content: makeUserPrompt(attempt) }
       ], {
         temperature: 0.1 + (attempt - 1) * 0.1,
-        max_tokens: 16000  // Increased for long documents with many sentences
+        max_tokens: 16000,  // Increased for long documents with many sentences
+        caller: 'segmenter'
       });
 
       // Handle various AI response formats
@@ -3181,7 +3185,8 @@ CRITICAL: Only split if you're confident. Classical religious texts sometimes ha
     { role: 'user', content: prompt }
   ], {
     temperature: 0.1,
-    max_tokens: 2000
+    max_tokens: 2000,
+    caller: 'segmenter'
   });
 
   // Handle response
@@ -3340,7 +3345,7 @@ Nothing else - just the numbers.`;
   try {
     const response = await aiService('quality', { forceRemote: true }).chat([
       { role: 'user', content: prompt }
-    ], { temperature: 0.1, maxTokens: 1000 });
+    ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
     const content = response.choices?.[0]?.message?.content || response.content || '';
 

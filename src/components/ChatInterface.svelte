@@ -509,6 +509,7 @@
     finally { loadingMore = false; }
   }
   async function openReaderFromSearch(result) {
+    console.debug('[openReaderFromSearch] paragraph_index:', result.paragraph_index, 'doc_id:', result.document_id || result.doc_id);
     const docId = result.document_id || result.doc_id;
     const searchQuery = input.trim();
     // Extract non-stop-word terms for bold highlighting
@@ -872,6 +873,7 @@
     }
 
     const targetIndex = result.paragraph_index || 0;
+    console.debug('[openReader] document_id:', result.document_id, 'result.paragraph_index:', result.paragraph_index, 'targetIndex:', targetIndex);
 
     // Check cache first - if preloaded, open instantly without loading state
     const cached = documentCache.get(result.document_id);
@@ -904,16 +906,22 @@
           readerContainerEl.style.scrollBehavior = 'auto';
 
           const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+          console.debug('[Reader Scroll] Target index:', targetIndex, 'Element found:', !!paragraphEl, 'Paragraphs in DOM:', readerContainerEl.querySelectorAll('[data-paragraph-index]').length);
           if (paragraphEl) {
             const containerHeight = readerContainerEl.clientHeight;
             const paragraphTop = paragraphEl.offsetTop;
             const paragraphHeight = paragraphEl.offsetHeight;
             const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+            console.debug('[Reader Scroll] containerHeight:', containerHeight, 'paragraphTop:', paragraphTop, 'scrollTop:', scrollTop);
             readerContainerEl.scrollTop = Math.max(0, scrollTop);
+          } else {
+            console.warn('[Reader Scroll] Paragraph element not found for index:', targetIndex);
           }
 
           // Re-enable smooth scroll for user navigation
           readerContainerEl.style.scrollBehavior = 'smooth';
+        } else {
+          console.warn('[Reader Scroll] Container not available');
         }
 
         // End animation after CSS transition
@@ -957,14 +965,20 @@
         if (readerContainerEl) {
           readerContainerEl.style.scrollBehavior = 'auto';
           const paragraphEl = readerContainerEl.querySelector(`[data-paragraph-index="${targetIndex}"]`);
+          console.debug('[Reader Scroll Uncached] Target index:', targetIndex, 'Element found:', !!paragraphEl, 'Paragraphs in DOM:', readerContainerEl.querySelectorAll('[data-paragraph-index]').length);
           if (paragraphEl) {
             const containerHeight = readerContainerEl.clientHeight;
             const paragraphTop = paragraphEl.offsetTop;
             const paragraphHeight = paragraphEl.offsetHeight;
             const scrollTop = paragraphTop - (containerHeight / 2) + (paragraphHeight / 2);
+            console.debug('[Reader Scroll Uncached] containerHeight:', containerHeight, 'paragraphTop:', paragraphTop, 'scrollTop:', scrollTop);
             readerContainerEl.scrollTop = Math.max(0, scrollTop);
+          } else {
+            console.warn('[Reader Scroll Uncached] Paragraph element not found for index:', targetIndex);
           }
           readerContainerEl.style.scrollBehavior = 'smooth';
+        } else {
+          console.warn('[Reader Scroll Uncached] Container not available');
         }
       });
     } catch (err) {
