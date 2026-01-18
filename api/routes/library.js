@@ -590,6 +590,58 @@ export default async function libraryRoutes(fastify) {
     }
   });
 
+  /**
+   * Get frontmatter and preview for a pending file
+   * Admin only
+   */
+  fastify.get('/pending/preview', {
+    preHandler: requireAdmin,
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['path'],
+        properties: {
+          path: { type: 'string' }
+        }
+      }
+    }
+  }, async (request) => {
+    const { path: filePath } = request.query;
+    const basePath = config.library?.basePath;
+
+    if (!basePath) {
+      throw ApiError.badRequest('Library base path not configured');
+    }
+
+    const absolutePath = join(basePath, filePath);
+
+    // Security: ensure path is within library
+    if (!absolutePath.startsWith(basePath)) {
+      throw ApiError.badRequest('Invalid file path');
+    }
+
+    try {
+      const content = await readFile(absolutePath, 'utf-8');
+      const { data: frontmatter, content: body } = matter(content);
+
+      // Get first few paragraphs as preview
+      const paragraphs = body.split(/\n\n+/).filter(p => p.trim() && !p.startsWith('#'));
+      const preview = paragraphs.slice(0, 3).join('\n\n').substring(0, 500);
+
+      return {
+        file_path: filePath,
+        frontmatter,
+        preview: preview + (preview.length >= 500 ? '...' : ''),
+        body_length: body.length
+      };
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        throw ApiError.notFound('File not found');
+      }
+      throw ApiError.internal('Failed to read file: ' + err.message);
+    }
+  });
+
   // ============================================
   // Library Nodes (Religions & Collections)
   // ============================================

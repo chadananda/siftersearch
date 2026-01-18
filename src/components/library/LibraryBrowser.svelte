@@ -103,6 +103,9 @@
   let pendingLoading = $state(false);
   let pendingTotal = $state(0);
   let ingestingPath = $state(null); // Track which document is being ingested
+  let expandedPendingPath = $state(null); // Track which pending doc is expanded
+  let pendingPreview = $state(null); // Frontmatter preview data
+  let previewLoading = $state(false);
 
   // Filters
   let filters = $state({
@@ -296,6 +299,30 @@
     }
   }
 
+  async function togglePendingPreview(filePath) {
+    if (expandedPendingPath === filePath) {
+      // Collapse
+      expandedPendingPath = null;
+      pendingPreview = null;
+      return;
+    }
+
+    // Expand and fetch preview
+    expandedPendingPath = filePath;
+    previewLoading = true;
+    pendingPreview = null;
+
+    try {
+      const res = await authenticatedFetch(`${API_BASE}/api/library/pending/preview?path=${encodeURIComponent(filePath)}`);
+      if (!res.ok) throw new Error('Failed to load preview');
+      pendingPreview = await res.json();
+    } catch (err) {
+      pendingPreview = { error: err.message };
+    } finally {
+      previewLoading = false;
+    }
+  }
+
   function handleTreeSelect(event) {
     const { religion, collection, node } = event.detail;
     filters = { ...filters, religion: religion || null, collection: collection || null };
@@ -482,64 +509,104 @@
             <div class="space-y-2">
               {#each pendingDocuments as doc}
                 {@const filename = doc.file_path?.split('/').pop() || 'Unknown'}
-                <div class="p-4 bg-surface-1 rounded-lg border border-border">
-                  <div class="flex items-start gap-3">
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="text-sm font-medium text-primary" title={doc.title}>{filename.replace('.md', '')}</span>
-                        <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
-                                     {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
-                          {doc.status === 'new' ? 'New' : 'Modified'}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-3 text-xs text-muted mb-2">
-                        {#if doc.religion}
-                          <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
-                        {/if}
-                        {#if doc.collection}
-                          <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.collection}</span>
-                        {/if}
-                        {#if doc.size_bytes}
-                          <span>{formatFileSize(doc.size_bytes)}</span>
-                        {/if}
-                      </div>
-                      <div class="flex items-center gap-4 text-xs">
-                        <span class="text-info font-medium">
-                          {doc.hours_remaining}h until auto-ingest
-                        </span>
-                        <span class="truncate text-muted/60 font-mono text-[0.7rem]" title={doc.file_path}>{doc.file_path}</span>
-                      </div>
-                    </div>
-                    <div class="flex-shrink-0 flex items-center gap-2">
-                      {#if doc.id}
-                        <a
-                          href="/admin/edit?id={doc.id}"
-                          class="px-3 py-1.5 text-sm font-medium text-secondary border border-border rounded-lg hover:bg-surface-2 hover:text-primary"
-                          title="Edit document"
-                        >
-                          Edit
-                        </a>
-                      {:else}
-                        <span class="px-3 py-1.5 text-xs text-muted italic" title="Edit available after ingestion">
-                          New file
-                        </span>
-                      {/if}
-                      <button
-                        class="px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                        onclick={() => forceIngest(doc.file_path)}
-                        disabled={ingestingPath !== null}
-                      >
-                        {#if ingestingPath === doc.file_path}
-                          <span class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
-                            Ingesting...
+                {@const isExpanded = expandedPendingPath === doc.file_path}
+                <div class="bg-surface-1 rounded-lg border border-border overflow-hidden">
+                  <!-- Clickable header -->
+                  <button
+                    class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors"
+                    onclick={() => togglePendingPreview(doc.file_path)}
+                  >
+                    <div class="flex items-start gap-3">
+                      <!-- Expand/collapse icon -->
+                      <svg class="w-4 h-4 mt-0.5 text-muted flex-shrink-0 transition-transform {isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                      <div class="flex-1 min-w-0">
+                        <!-- Full filepath -->
+                        <div class="font-mono text-sm text-primary mb-1 break-all">{doc.file_path}</div>
+                        <div class="flex items-center gap-2 mb-2">
+                          <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
+                                       {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
+                            {doc.status === 'new' ? 'New' : 'Modified'}
                           </span>
-                        {:else}
-                          Ingest Now
+                          {#if doc.size_bytes}
+                            <span class="text-xs text-muted">{formatFileSize(doc.size_bytes)}</span>
+                          {/if}
+                          <span class="text-xs text-info font-medium">
+                            {doc.hours_remaining}h until auto-ingest
+                          </span>
+                        </div>
+                      </div>
+                      <div class="flex-shrink-0 flex items-center gap-2" onclick={(e) => e.stopPropagation()}>
+                        {#if doc.id}
+                          <a
+                            href="/admin/edit?id={doc.id}"
+                            class="px-3 py-1.5 text-sm font-medium text-secondary border border-border rounded-lg hover:bg-surface-2 hover:text-primary"
+                            title="Edit document"
+                          >
+                            Edit
+                          </a>
                         {/if}
-                      </button>
+                        <button
+                          class="px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                          onclick={() => forceIngest(doc.file_path)}
+                          disabled={ingestingPath !== null}
+                        >
+                          {#if ingestingPath === doc.file_path}
+                            <span class="flex items-center gap-1.5">
+                              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                              Ingesting...
+                            </span>
+                          {:else}
+                            Ingest Now
+                          {/if}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </button>
+
+                  <!-- Expandable frontmatter preview -->
+                  {#if isExpanded}
+                    <div class="border-t border-border bg-surface-0 p-4">
+                      {#if previewLoading}
+                        <div class="flex items-center gap-2 text-muted">
+                          <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                          Loading frontmatter...
+                        </div>
+                      {:else if pendingPreview?.error}
+                        <div class="text-error text-sm">{pendingPreview.error}</div>
+                      {:else if pendingPreview?.frontmatter}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <!-- Frontmatter -->
+                          <div>
+                            <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Frontmatter</h4>
+                            <div class="bg-surface-2 rounded-lg p-3 font-mono text-xs space-y-1 max-h-64 overflow-auto">
+                              {#each Object.entries(pendingPreview.frontmatter) as [key, value]}
+                                <div class="flex gap-2">
+                                  <span class="text-accent font-medium">{key}:</span>
+                                  <span class="text-primary break-all">{typeof value === 'object' ? JSON.stringify(value) : value}</span>
+                                </div>
+                              {/each}
+                            </div>
+                          </div>
+                          <!-- Content preview -->
+                          <div>
+                            <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Content Preview</h4>
+                            <div class="bg-surface-2 rounded-lg p-3 text-xs text-secondary max-h-64 overflow-auto whitespace-pre-wrap">
+                              {pendingPreview.preview || '(empty)'}
+                            </div>
+                          </div>
+                        </div>
+                        <!-- Edit link for new files -->
+                        {#if !doc.id}
+                          <div class="mt-3 pt-3 border-t border-border">
+                            <p class="text-xs text-muted mb-2">To edit this file, ingest it first or edit the source file directly:</p>
+                            <code class="text-xs font-mono bg-surface-2 px-2 py-1 rounded text-primary">{doc.file_path}</code>
+                          </div>
+                        {/if}
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
               {/each}
             </div>
