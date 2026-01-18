@@ -1,25 +1,31 @@
 /**
  * Library Watcher Service
  *
- * Background service that watches library directories for file changes
- * and automatically triggers document ingestion/removal.
+ * Background service that manages library document ingestion with two mechanisms:
  *
- * Move Detection Strategy:
- * - ADDs are processed immediately (with body_hash lookup to detect moves)
- * - DELETEs are held in a pending queue for DELETE_DELAY_MS
- * - If an ADD arrives with matching body_hash, the pending delete is cancelled
- * - After the delay, remaining deletes are processed
+ * 1. HOURLY SCAN (Primary Ingestion):
+ *    - Scans library every hour for stable files
+ *    - Files must be at least 24 hours old (not actively edited)
+ *    - Files must be newer than the last scan (not already processed)
+ *    - This prevents database thrashing during active editing/syncing
  *
- * This handles Dropbox sync where DELETE and ADD events can be 30+ seconds apart.
+ * 2. FILE WATCHER (Delete/Move Detection):
+ *    - Watches for real-time file delete events
+ *    - Detects file moves via body_hash matching
+ *    - DELETEs are held for 60s to detect ADD with matching content (move)
+ *    - ADD events also checked against 24h cooldown for immediate ingestion
+ *
+ * This architecture is stable for Dropbox sync where edits can trigger
+ * multiple file events over hours/days.
  */
 
 import { watch } from 'chokidar';
-import { readFile, access } from 'fs/promises';
+import { readFile, access, stat, readdir } from 'fs/promises';
 import { relative, dirname, basename, join } from 'path';
 import { ingestDocument, removeDocument, purgeOldDeletedContent, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
-import { getDb } from '../lib/db.js';
+import { getDb, query, queryOne } from '../lib/db.js';
 import { getMeili, INDEXES } from '../lib/search.js';
 import { invalidateCache, getAuthority } from '../lib/authority.js';
 
@@ -27,9 +33,9 @@ import { invalidateCache, getAuthority } from '../lib/authority.js';
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
-const REINGEST_DELAY_MS = 30 * 60 * 1000;  // 30 minutes - debounce for re-ingestion during active editing
-const REINGEST_COOLDOWN_MS = 24 * 60 * 60 * 1000;  // 24 hours - minimum time between re-ingestions of same document
+const REINGEST_COOLDOWN_MS = 24 * 60 * 60 * 1000;  // 24 hours - files must be stable this long before ingestion
 const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
+const LIBRARY_SCAN_INTERVAL_MS = 60 * 60 * 1000;  // Scan library for stable files every hour
 const IGNORED_PATTERNS = [
   // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
   (path) => {
@@ -47,6 +53,7 @@ const IGNORED_PATTERNS = [
 let watcher = null;
 let isEnabled = false;
 let orphanCleanupTimer = null;
+let libraryScanTimer = null;
 let watcherStats = {
   startedAt: null,
   filesIngested: 0,
@@ -58,7 +65,9 @@ let watcherStats = {
   errors: 0,
   lastEvent: null,
   lastOrphanCleanup: null,
-  scheduledReingests: 0  // Currently pending re-ingestions
+  lastLibraryScan: null,
+  lastScanFilesFound: 0,
+  lastScanFilesIngested: 0
 };
 
 // Pending ADD events (short batch window)
@@ -69,9 +78,6 @@ let addBatchTimer = null;
 // bodyHash -> { relativePath, filePath, docId, timestamp, timerId }
 const pendingDeletes = new Map();
 
-// Scheduled re-ingestion events (30-minute debounce for documents being actively edited)
-// relativePath -> { filePath, scheduledAt, timerId }
-const scheduledReingests = new Map();
 
 /**
  * Convert absolute file path to relative path from library basePath
@@ -195,77 +201,6 @@ async function processPendingDelete(bodyHash) {
 }
 
 /**
- * Schedule a document for re-ingestion with 30-minute debounce.
- * If the document changes again within 30 minutes, the timer resets.
- * This prevents constant re-ingestion during active editing sessions.
- */
-function scheduleReingest(relativePath, filePath) {
-  // Cancel any existing scheduled re-ingest for this document
-  const existing = scheduledReingests.get(relativePath);
-  if (existing) {
-    clearTimeout(existing.timerId);
-    logger.debug({ relativePath }, 'Re-ingest rescheduled (document changed again)');
-  }
-
-  // Schedule new re-ingest
-  const timerId = setTimeout(() => processScheduledReingest(relativePath), REINGEST_DELAY_MS);
-
-  scheduledReingests.set(relativePath, {
-    filePath,
-    scheduledAt: Date.now(),
-    timerId
-  });
-
-  watcherStats.scheduledReingests = scheduledReingests.size;
-
-  const delayMinutes = Math.round(REINGEST_DELAY_MS / 60000);
-  logger.info({
-    relativePath,
-    delayMinutes,
-    scheduledCount: scheduledReingests.size
-  }, `Re-ingest scheduled for ${delayMinutes} minutes from now`);
-}
-
-/**
- * Process a scheduled re-ingest after the debounce delay
- */
-async function processScheduledReingest(relativePath) {
-  const scheduled = scheduledReingests.get(relativePath);
-  if (!scheduled) return;
-
-  scheduledReingests.delete(relativePath);
-  watcherStats.scheduledReingests = scheduledReingests.size;
-
-  try {
-    // Verify file still exists
-    const exists = await fileExists(scheduled.filePath);
-    if (!exists) {
-      logger.info({ relativePath }, 'Scheduled re-ingest cancelled: file no longer exists');
-      return;
-    }
-
-    // Read and ingest the document
-    const content = await readFile(scheduled.filePath, 'utf-8');
-    const result = await ingestDocument(content, {}, relativePath);
-
-    if (result.skipped) {
-      logger.debug({ relativePath }, 'Scheduled re-ingest: file unchanged, skipped');
-    } else {
-      watcherStats.reingests++;
-      logger.info({
-        relativePath,
-        documentId: result.documentId,
-        paragraphs: result.totalParagraphs
-      }, 'Scheduled re-ingest completed');
-    }
-
-  } catch (err) {
-    watcherStats.errors++;
-    logger.error({ err: err.message, relativePath }, 'Failed to process scheduled re-ingest');
-  }
-}
-
-/**
  * Check if a file exists on the filesystem
  */
 async function fileExists(filePath) {
@@ -362,10 +297,192 @@ async function cleanupOrphanedDocuments() {
 }
 
 /**
+ * Get the timestamp of the last successful library scan from app_config
+ */
+async function getLastScanTimestamp() {
+  try {
+    const result = await queryOne(
+      `SELECT value FROM app_config WHERE key = 'library_last_scan'`
+    );
+    if (result?.value) {
+      return new Date(result.value).getTime();
+    }
+  } catch (err) {
+    logger.debug({ err: err.message }, 'No last scan timestamp found');
+  }
+  return 0; // Return 0 to process all stable files on first run
+}
+
+/**
+ * Save the timestamp of the last successful library scan to app_config
+ */
+async function setLastScanTimestamp(timestamp) {
+  const isoString = new Date(timestamp).toISOString();
+  await query(
+    `INSERT OR REPLACE INTO app_config (key, value, updated_at)
+     VALUES ('library_last_scan', ?, datetime('now'))`,
+    [isoString]
+  );
+}
+
+/**
+ * Recursively scan a directory for .md files
+ * Returns array of { absolutePath, relativePath, mtime }
+ */
+async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = join(dirPath, entry.name);
+
+      // Check if path should be ignored
+      const shouldIgnore = IGNORED_PATTERNS.some(pattern => {
+        if (typeof pattern === 'function') return pattern(fullPath);
+        return pattern.test(fullPath);
+      });
+
+      if (shouldIgnore) continue;
+
+      if (entry.isDirectory()) {
+        // Recurse into subdirectory
+        await scanDirectoryForMarkdown(fullPath, basePath, results);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        try {
+          const fileStat = await stat(fullPath);
+          results.push({
+            absolutePath: fullPath,
+            relativePath: relative(basePath, fullPath),
+            mtime: fileStat.mtimeMs
+          });
+        } catch (statErr) {
+          logger.debug({ path: fullPath, err: statErr.message }, 'Failed to stat file');
+        }
+      }
+    }
+  } catch (err) {
+    logger.debug({ path: dirPath, err: err.message }, 'Failed to read directory');
+  }
+
+  return results;
+}
+
+/**
+ * Hourly library scan - finds stable files (>24h old) that need ingestion
+ *
+ * This is the primary ingestion mechanism. Files must be:
+ * 1. At least 24 hours old (stable, not being actively edited)
+ * 2. Modified since the last scan (new or changed)
+ */
+async function scanLibraryForIngestion() {
+  const scanStartTime = Date.now();
+  logger.info('Starting hourly library scan for stable files');
+
+  try {
+    const basePath = config.library.basePath;
+    if (!basePath) {
+      logger.warn('No library basePath configured, skipping scan');
+      return;
+    }
+
+    // Get timestamp of last successful scan
+    const lastScanTimestamp = await getLastScanTimestamp();
+    const stableThreshold = scanStartTime - REINGEST_COOLDOWN_MS;
+
+    logger.debug({
+      lastScan: lastScanTimestamp ? new Date(lastScanTimestamp).toISOString() : 'never',
+      stableThreshold: new Date(stableThreshold).toISOString()
+    }, 'Scan parameters');
+
+    // Scan all .md files in the library
+    const allFiles = await scanDirectoryForMarkdown(basePath, basePath);
+    watcherStats.lastScanFilesFound = allFiles.length;
+
+    // Filter to files that:
+    // 1. Are stable (mtime > 24h ago)
+    // 2. Were modified after the last scan
+    const filesToProcess = allFiles.filter(file => {
+      const isStable = file.mtime < stableThreshold;
+      const isNew = file.mtime > lastScanTimestamp;
+      return isStable && isNew;
+    });
+
+    logger.info({
+      totalFiles: allFiles.length,
+      stableAndNew: filesToProcess.length,
+      lastScan: lastScanTimestamp ? new Date(lastScanTimestamp).toISOString() : 'never'
+    }, 'Library scan found files to process');
+
+    let ingestedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+
+    for (const file of filesToProcess) {
+      try {
+        const content = await readFile(file.absolutePath, 'utf-8');
+        const { content: bodyContent } = parseMarkdownFrontmatter(content);
+        const bodyHash = hashContent(bodyContent);
+
+        // Check if document exists and content changed
+        const existingDoc = await getDocumentByPath(file.relativePath);
+        if (existingDoc && existingDoc.body_hash === bodyHash) {
+          skippedCount++;
+          continue;
+        }
+
+        // Ingest the document
+        const result = await ingestDocument(content, {}, file.relativePath);
+
+        if (result.skipped) {
+          skippedCount++;
+        } else {
+          ingestedCount++;
+          watcherStats.filesIngested++;
+          logger.info({
+            filePath: file.relativePath,
+            documentId: result.documentId,
+            status: existingDoc ? 're-ingested' : 'new'
+          }, 'Library scan: document ingested');
+        }
+
+      } catch (err) {
+        errorCount++;
+        watcherStats.errors++;
+        logger.error({
+          err: err.message,
+          filePath: file.relativePath
+        }, 'Library scan: failed to ingest file');
+      }
+    }
+
+    // Update last scan timestamp to the start time of this scan
+    // This ensures files modified during the scan are picked up next time
+    await setLastScanTimestamp(scanStartTime);
+
+    watcherStats.lastLibraryScan = new Date().toISOString();
+    watcherStats.lastScanFilesIngested = ingestedCount;
+
+    const durationMs = Date.now() - scanStartTime;
+    logger.info({
+      durationMs,
+      totalFiles: allFiles.length,
+      processed: filesToProcess.length,
+      ingested: ingestedCount,
+      skipped: skippedCount,
+      errors: errorCount
+    }, 'Library scan complete');
+
+  } catch (err) {
+    watcherStats.errors++;
+    logger.error({ err: err.message }, 'Library scan failed');
+  }
+}
+
+/**
  * Process batch of ADD events
- * - NEW documents: ingest immediately
- * - MOVED documents: ingest immediately (just updating path)
- * - UPDATED documents: schedule for 30-minute debounce (avoid re-ingesting during active editing)
+ * - ALL documents: Check file mtime - skip if modified less than 24 hours ago (debounce editing)
+ * - MOVED documents: ingest immediately (just updating path reference)
+ * - NEW/UPDATED documents: Only ingest if file is at least 24 hours old
  */
 async function processAddBatch() {
   addBatchTimer = null;
@@ -379,6 +496,20 @@ async function processAddBatch() {
 
   for (const [relativePath, { filePath, eventType }] of adds) {
     try {
+      // Check file modification time - skip if modified less than 24 hours ago
+      // This prevents thrashing during active editing/syncing sessions
+      const fileStat = await stat(filePath);
+      const timeSinceModification = Date.now() - fileStat.mtimeMs;
+      if (timeSinceModification < REINGEST_COOLDOWN_MS) {
+        const hoursRemaining = Math.round((REINGEST_COOLDOWN_MS - timeSinceModification) / (60 * 60 * 1000));
+        logger.info({
+          filePath: relativePath,
+          hoursRemaining,
+          lastModified: fileStat.mtime.toISOString()
+        }, 'Skipping ingestion: file modified within 24 hours');
+        continue;
+      }
+
       const content = await readFile(filePath, 'utf-8');
 
       // Compute body hash to check for pending deletes
@@ -422,30 +553,14 @@ async function processAddBatch() {
           continue;
         }
 
-        // Check 24-hour cooldown - don't re-ingest documents updated recently
-        // This prevents runaway re-ingestion during active editing/syncing
-        if (existingDoc.updated_at) {
-          const lastUpdate = new Date(existingDoc.updated_at).getTime();
-          const timeSinceUpdate = Date.now() - lastUpdate;
-          if (timeSinceUpdate < REINGEST_COOLDOWN_MS) {
-            const hoursRemaining = Math.round((REINGEST_COOLDOWN_MS - timeSinceUpdate) / (60 * 60 * 1000));
-            logger.info({
-              filePath,
-              documentId: existingDoc.id,
-              hoursRemaining,
-              lastUpdate: existingDoc.updated_at
-            }, 'Skipping re-ingest: 24-hour cooldown active');
-            continue;
-          }
-        }
-
-        // Content changed and cooldown expired - schedule for debounced re-ingestion
-        // This prevents constant re-ingestion during active editing sessions
-        scheduleReingest(relativePath, filePath);
-        continue;
+        // Content changed and file is stable (passed 24h mtime check above) - re-ingest
+        logger.info({
+          filePath: relativePath,
+          documentId: existingDoc.id
+        }, 'Re-ingesting document (content changed, file stable for 24h)');
       }
 
-      // NEW document - ingest immediately
+      // NEW or UPDATED document - ingest (file already passed 24h mtime check)
       const result = await ingestDocument(content, {}, relativePath);
 
       if (result.skipped) {
@@ -678,6 +793,11 @@ export function startLibraryWatcher(libraryPaths) {
       orphanCleanupTimer = setInterval(cleanupOrphanedDocuments, ORPHAN_CLEANUP_INTERVAL_MS);
       // Run initial cleanup after a short delay
       setTimeout(cleanupOrphanedDocuments, 10000);
+
+      // Start hourly library scan for stable files
+      libraryScanTimer = setInterval(scanLibraryForIngestion, LIBRARY_SCAN_INTERVAL_MS);
+      // Run initial scan after 30 seconds (let system stabilize)
+      setTimeout(scanLibraryForIngestion, 30000);
     });
 }
 
@@ -702,6 +822,12 @@ export async function stopLibraryWatcher() {
       orphanCleanupTimer = null;
     }
 
+    // Clear library scan timer
+    if (libraryScanTimer) {
+      clearInterval(libraryScanTimer);
+      libraryScanTimer = null;
+    }
+
     // Clear pending deletes and their timers
     for (const [, pending] of pendingDeletes) {
       clearTimeout(pending.timerId);
@@ -717,25 +843,12 @@ export async function stopLibraryWatcher() {
  * Get watcher status and stats
  */
 export function getWatcherStats() {
-  // Build list of scheduled reingests with time remaining
-  const scheduledList = [];
-  const now = Date.now();
-  for (const [path, info] of scheduledReingests) {
-    const elapsedMs = now - info.scheduledAt;
-    const remainingMs = Math.max(0, REINGEST_DELAY_MS - elapsedMs);
-    scheduledList.push({
-      path,
-      scheduledAt: new Date(info.scheduledAt).toISOString(),
-      remainingMinutes: Math.round(remainingMs / 60000)
-    });
-  }
-
   return {
     enabled: isEnabled,
     pendingAdds: pendingAdds.size,
     pendingDeletes: pendingDeletes.size,
-    scheduledReingests: scheduledList,
-    reingestDelayMinutes: Math.round(REINGEST_DELAY_MS / 60000),
+    cooldownHours: Math.round(REINGEST_COOLDOWN_MS / (60 * 60 * 1000)),
+    scanIntervalMinutes: Math.round(LIBRARY_SCAN_INTERVAL_MS / (60 * 1000)),
     ...watcherStats
   };
 }
@@ -755,4 +868,19 @@ export async function triggerOrphanCleanup() {
   logger.info('Manual orphan cleanup triggered');
   await cleanupOrphanedDocuments();
   return { success: true, lastCleanup: watcherStats.lastOrphanCleanup, orphansRemoved: watcherStats.orphansRemoved };
+}
+
+/**
+ * Manually trigger library scan for stable files
+ * Useful for admin/maintenance
+ */
+export async function triggerLibraryScan() {
+  logger.info('Manual library scan triggered');
+  await scanLibraryForIngestion();
+  return {
+    success: true,
+    lastScan: watcherStats.lastLibraryScan,
+    filesFound: watcherStats.lastScanFilesFound,
+    filesIngested: watcherStats.lastScanFilesIngested
+  };
 }
