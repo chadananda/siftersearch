@@ -5,11 +5,10 @@
   import { marked } from 'marked';
   import { search, session, documents, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
 
-  // Client version - baked in at build time
-  const CLIENT_VERSION = __APP_VERSION__;
+  // App description - baked in at build time
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
   import { initAuth, getAuthState } from '../lib/auth.svelte.js';
-  import { initPWA, getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
+  import { getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import NavBar from './common/NavBar.svelte';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import { updateUsage } from '../lib/usage.svelte.js';
@@ -587,9 +586,6 @@
   const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
   const BACKOFF_MULTIPLIER = 1.5; // Increase interval by 50% each time stats unchanged
 
-  // Track if we've already triggered an update this session
-  let updateTriggered = $state(false);
-
   // Backoff state for reducing polling when idle
   let currentBackoffInterval = $state(MIN_REFRESH_INTERVAL);
   let lastUserActivity = $state(Date.now());
@@ -629,60 +625,7 @@
         }
       }
 
-      // Check for version mismatch
-      if (stats.serverVersion && CLIENT_VERSION) {
-        if (stats.serverVersion !== CLIENT_VERSION && !updateTriggered) {
-          // Compare versions to determine who needs updating
-          const clientParts = CLIENT_VERSION.split('.').map(Number);
-          const serverParts = stats.serverVersion.split('.').map(Number);
-          const serverNewer = serverParts[0] > clientParts[0] ||
-            (serverParts[0] === clientParts[0] && serverParts[1] > clientParts[1]) ||
-            (serverParts[0] === clientParts[0] && serverParts[1] === clientParts[1] && serverParts[2] > clientParts[2]);
-
-          if (serverNewer) {
-            // Server is newer - client needs to reload (only if no active conversation)
-            if (messages.length === 0) {
-              // Check if we recently tried reloading (with 30-second cooldown to allow CDN propagation)
-              const reloadKey = `reload_attempted_${stats.serverVersion}`;
-              const lastAttempt = sessionStorage.getItem(reloadKey);
-              const cooldownMs = 30 * 1000; // 30 seconds
-              const cooldownExpired = !lastAttempt || (Date.now() - parseInt(lastAttempt, 10)) > cooldownMs;
-
-              if (cooldownExpired) {
-                // Store timestamp for cooldown (not boolean - allows retry after cooldown)
-                sessionStorage.setItem(reloadKey, Date.now().toString());
-                console.log(`[Deploy] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), triggering PWA update...`);
-
-                // Let the PWA plugin handle the update properly:
-                // 1. Call r.update() on service worker registration
-                // 2. New SW downloads and installs (skipWaiting makes it activate immediately)
-                // 3. controllerchange event in pwa.svelte.js triggers reload
-                // Don't manually clear caches - that breaks PWA lifecycle
-                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                  navigator.serviceWorker.ready.then(registration => {
-                    console.log('[Deploy] Checking for service worker update...');
-                    registration.update();
-                  });
-                } else {
-                  // No service worker active - just reload
-                  console.log('[Deploy] No service worker, reloading...');
-                  window.location.reload();
-                }
-              } else {
-                const secondsLeft = Math.ceil((parseInt(lastAttempt, 10) + cooldownMs - Date.now()) / 1000);
-                console.log(`[Deploy] Update cooldown active (${secondsLeft}s remaining), waiting for CDN propagation...`);
-              }
-            } else {
-              console.log(`[Deploy] Server newer but conversation active, skipping reload`);
-            }
-          } else {
-            // Client is newer - trigger server update
-            console.log(`[Deploy] Version mismatch: client=${CLIENT_VERSION}, server=${stats.serverVersion}`);
-            updateTriggered = true;
-            triggerServerUpdate(CLIENT_VERSION);
-          }
-        }
-      }
+      // Version checking is now handled by VersionChecker component
 
       // Connected - stop retry polling if running
       if (retryInterval) {
@@ -1316,10 +1259,8 @@
 
   onMount(async () => {
     initAuth();
-    // Register conversation checker before initializing PWA
-    // This allows PWA to auto-update only when no conversation is active
+    // Register conversation checker for PWA - allows auto-update only when no conversation is active
     setConversationChecker(() => messages.length > 0);
-    initPWA();
     loadLibraryStats();
 
     // Load AI usage for admins (after short delay to ensure auth is ready)
@@ -1332,16 +1273,7 @@
       if (isAdmin) loadAIUsageStatus();
     }, 60_000);
 
-    // Dedicated version check every 10 seconds (separate from stats polling which backs off)
-    const versionCheckInterval = setInterval(async () => {
-      try {
-        const stats = await search.stats();
-        if (stats?.serverVersion && stats.serverVersion !== CLIENT_VERSION) {
-          // Version mismatch detected - trigger the full version check logic
-          loadLibraryStats(true);
-        }
-      } catch (e) { /* silent fail - will retry on next poll */ }
-    }, 10_000);
+    // Version checking is now handled by VersionChecker component
 
     initSession();
     inputEl?.focus();

@@ -1,6 +1,41 @@
 {
-  "generated": "2026-01-18T01:31:27.629Z",
+  "generated": "2026-01-18T03:14:38.821Z",
   "entries": [
+    {
+      "hash": "2e596d1",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show frontmatter title/author in pending list",
+      "scope": "library"
+    },
+    {
+      "hash": "d03e830",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add expandable frontmatter preview for pending docs",
+      "scope": "library"
+    },
+    {
+      "hash": "37f260f",
+      "date": "2026-01-17",
+      "type": "New",
+      "description": "Add file_mtime tracking for accurate recent docs",
+      "scope": "library"
+    },
+    {
+      "hash": "a5bb31f",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Pending endpoint now compares content hashes",
+      "scope": "library"
+    },
+    {
+      "hash": "58a4816",
+      "date": "2026-01-17",
+      "type": "Fixed",
+      "description": "Show actual filename for pending documents",
+      "scope": "library"
+    },
     {
       "hash": "67bbc1c",
       "date": "2026-01-17",
@@ -3465,45 +3500,45 @@
       "type": "Chore",
       "description": "Add production translation test script",
       "scope": null
-    },
-    {
-      "hash": "71eaa84",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Resolve print view bugs and add translation script",
-      "scope": null
-    },
-    {
-      "hash": "9155580",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add print views with phrase-level alignment",
-      "scope": null
-    },
-    {
-      "hash": "577c6d4",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add translation field to Meilisearch for side-by-side results",
-      "scope": null
-    },
-    {
-      "hash": "3e03a2a",
-      "date": "2026-01-01",
-      "type": "Fixed",
-      "description": "Correct column names and Meilisearch SDK API usage",
-      "scope": null
-    },
-    {
-      "hash": "3d6e34d",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Add embedding dimension diagnostics and fix model config",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "2e596d1",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show frontmatter title/author in pending list",
+        "scope": "library"
+      },
+      {
+        "hash": "d03e830",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add expandable frontmatter preview for pending docs",
+        "scope": "library"
+      },
+      {
+        "hash": "37f260f",
+        "date": "2026-01-17",
+        "type": "New",
+        "description": "Add file_mtime tracking for accurate recent docs",
+        "scope": "library"
+      },
+      {
+        "hash": "a5bb31f",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Pending endpoint now compares content hashes",
+        "scope": "library"
+      },
+      {
+        "hash": "58a4816",
+        "date": "2026-01-17",
+        "type": "Fixed",
+        "description": "Show actual filename for pending documents",
+        "scope": "library"
+      },
       {
         "hash": "67bbc1c",
         "date": "2026-01-17",
@@ -6997,41 +7032,6 @@
         "date": "2026-01-01",
         "type": "Chore",
         "description": "Add production translation test script",
-        "scope": null
-      },
-      {
-        "hash": "71eaa84",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Resolve print view bugs and add translation script",
-        "scope": null
-      },
-      {
-        "hash": "9155580",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add print views with phrase-level alignment",
-        "scope": null
-      },
-      {
-        "hash": "577c6d4",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add translation field to Meilisearch for side-by-side results",
-        "scope": null
-      },
-      {
-        "hash": "3e03a2a",
-        "date": "2026-01-01",
-        "type": "Fixed",
-        "description": "Correct column names and Meilisearch SDK API usage",
-        "scope": null
-      },
-      {
-        "hash": "3d6e34d",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Add embedding dimension diagnostics and fix model config",
         "scope": null
       }
     ]

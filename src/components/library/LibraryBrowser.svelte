@@ -366,13 +366,96 @@
     filters = { search: '', religion: null, collection: null, language: null, author: null, yearFrom: null, yearTo: null, status: 'all' };
     selectedNode = null;
     selectedReligionNode = null;
+    viewMode = 'documents';
     fetchDocuments(true);
+    // URL will be updated by the $effect
+  }
+
+  // URL routing helpers
+  let urlSyncEnabled = false; // Prevent URL updates during initial load
+
+  /**
+   * Parse URL params and set initial state
+   */
+  function parseUrlParams() {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+
+    // Check for view mode (recent, pending, etc)
+    const view = params.get('view');
+    if (view === 'recent') {
+      viewMode = 'recent';
+      const type = params.get('type');
+      if (type && ['all', 'added', 'modified', 'pending'].includes(type)) {
+        recentType = type;
+      }
+      const days = params.get('days');
+      if (days && !isNaN(parseInt(days))) {
+        recentDays = parseInt(days);
+      }
+    } else {
+      viewMode = 'documents';
+      // Check for religion/collection filters
+      const religion = params.get('religion');
+      const collection = params.get('collection');
+      if (religion) {
+        filters.religion = religion;
+      }
+      if (collection) {
+        filters.collection = collection;
+      }
+    }
+  }
+
+  /**
+   * Update URL to reflect current state (without reloading)
+   */
+  function updateUrl() {
+    if (!urlSyncEnabled || typeof window === 'undefined') return;
+
+    const params = new URLSearchParams();
+
+    if (viewMode === 'recent') {
+      params.set('view', 'recent');
+      if (recentType !== 'all') {
+        params.set('type', recentType);
+      }
+      if (recentDays !== 30) {
+        params.set('days', recentDays.toString());
+      }
+    } else {
+      // Documents view
+      if (filters.religion) {
+        params.set('religion', filters.religion);
+      }
+      if (filters.collection) {
+        params.set('collection', filters.collection);
+      }
+    }
+
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+
+    // Only update if URL actually changed
+    if (window.location.pathname + window.location.search !== newUrl) {
+      window.history.replaceState({}, '', newUrl);
+    }
   }
 
   onMount(() => {
+    // Parse URL params first to set initial state
+    parseUrlParams();
     fetchTree();
-    fetchDocuments(true);
     fetchStats();
+
+    // Load appropriate view based on URL params
+    if (viewMode === 'recent') {
+      fetchRecent(true);
+    } else {
+      fetchDocuments(true);
+    }
+
     observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loading && documents.length < totalDocuments) {
@@ -382,7 +465,23 @@
       },
       { rootMargin: '200px' }
     );
+
+    // Enable URL sync after initial load
+    setTimeout(() => { urlSyncEnabled = true; }, 100);
+
     return () => observer?.disconnect();
+  });
+
+  // Sync URL when filters or view mode changes
+  $effect(() => {
+    // Track these dependencies
+    const _viewMode = viewMode;
+    const _recentType = recentType;
+    const _recentDays = recentDays;
+    const _religion = filters.religion;
+    const _collection = filters.collection;
+
+    updateUrl();
   });
 
   $effect(() => {
@@ -511,10 +610,13 @@
                 {@const filename = doc.file_path?.split('/').pop()?.replace('.md', '') || 'Unknown'}
                 {@const isExpanded = expandedPendingPath === doc.file_path}
                 <div class="bg-surface-1 rounded-lg border border-border overflow-hidden">
-                  <!-- Clickable header -->
-                  <button
-                    class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors"
+                  <!-- Clickable header (using div with role=button to avoid nested buttons) -->
+                  <div
+                    class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors cursor-pointer"
+                    role="button"
+                    tabindex="0"
                     onclick={() => togglePendingPreview(doc.file_path)}
+                    onkeydown={(e) => e.key === 'Enter' && togglePendingPreview(doc.file_path)}
                   >
                     <div class="flex items-start gap-3">
                       <!-- Expand/collapse icon -->
@@ -574,7 +676,7 @@
                         </button>
                       </div>
                     </div>
-                  </button>
+                  </div>
 
                   <!-- Expandable frontmatter preview -->
                   {#if isExpanded}
