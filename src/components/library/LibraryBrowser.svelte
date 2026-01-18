@@ -508,7 +508,7 @@
             </div>
             <div class="space-y-2">
               {#each pendingDocuments as doc}
-                {@const filename = doc.file_path?.split('/').pop() || 'Unknown'}
+                {@const filename = doc.file_path?.split('/').pop()?.replace('.md', '') || 'Unknown'}
                 {@const isExpanded = expandedPendingPath === doc.file_path}
                 <div class="bg-surface-1 rounded-lg border border-border overflow-hidden">
                   <!-- Clickable header -->
@@ -518,17 +518,28 @@
                   >
                     <div class="flex items-start gap-3">
                       <!-- Expand/collapse icon -->
-                      <svg class="w-4 h-4 mt-0.5 text-muted flex-shrink-0 transition-transform {isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <svg class="w-4 h-4 mt-1 text-muted flex-shrink-0 transition-transform {isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="9 18 15 12 9 6"/>
                       </svg>
                       <div class="flex-1 min-w-0">
-                        <!-- Full filepath -->
-                        <div class="font-mono text-sm text-primary mb-1 break-all">{doc.file_path}</div>
-                        <div class="flex items-center gap-2 mb-2">
+                        <!-- Frontmatter title + author -->
+                        <div class="text-base font-medium text-primary mb-0.5">{doc.title || filename}</div>
+                        {#if doc.author}
+                          <div class="text-sm text-secondary mb-1">by {doc.author}</div>
+                        {/if}
+                        <!-- Filepath -->
+                        <div class="font-mono text-xs text-muted/70 mb-2 break-all">{doc.file_path}</div>
+                        <div class="flex items-center gap-2 flex-wrap">
                           <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
                                        {doc.status === 'new' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
                             {doc.status === 'new' ? 'New' : 'Modified'}
                           </span>
+                          {#if doc.religion}
+                            <span class="px-1.5 py-0.5 text-xs bg-surface-2 rounded text-muted">{doc.religion}</span>
+                          {/if}
+                          {#if doc.collection}
+                            <span class="px-1.5 py-0.5 text-xs bg-surface-2 rounded text-muted">{doc.collection}</span>
+                          {/if}
                           {#if doc.size_bytes}
                             <span class="text-xs text-muted">{formatFileSize(doc.size_bytes)}</span>
                           {/if}
