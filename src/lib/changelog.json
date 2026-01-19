@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:02:37.135Z",
+  "generated": "2026-01-19T14:09:54.960Z",
   "entries": [
+    {
+      "hash": "bec971f",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
+      "scope": null
+    },
     {
       "hash": "4eb961b",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Concept-based paragraph segmentation",
       "scope": null
-    },
-    {
-      "hash": "c3b86f0",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add segmentation integrity check to prevent text modification",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "bec971f",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
+        "scope": null
+      },
       {
         "hash": "4eb961b",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Concept-based paragraph segmentation",
-        "scope": null
-      },
-      {
-        "hash": "c3b86f0",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add segmentation integrity check to prevent text modification",
         "scope": null
       }
     ]

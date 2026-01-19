@@ -65,6 +65,38 @@ async function run(command, options = {}) {
 }
 
 /**
+ * Check if critical dependencies are available
+ * Returns true if node_modules needs repair
+ */
+async function checkDependencies() {
+  // Try to resolve critical packages that must exist
+  const criticalPackages = ['dotenv', 'fastify', 'better-sqlite3'];
+
+  for (const pkg of criticalPackages) {
+    const checkResult = await run(`node -e "require.resolve('${pkg}')"`, { silent: true });
+    if (!checkResult.success) {
+      log('warn', `Missing critical dependency: ${pkg}`);
+      return true;  // needs repair
+    }
+  }
+  return false;  // all good
+}
+
+/**
+ * Repair node_modules by running npm install
+ */
+async function repairDependencies() {
+  log('info', 'Repairing node_modules...');
+  const npmResult = await run('npm install');
+  if (!npmResult.success) {
+    log('error', `Failed to repair dependencies: ${npmResult.error}`);
+    return false;
+  }
+  log('info', 'Dependencies repaired successfully');
+  return true;
+}
+
+/**
  * Check if PM2 is running the correct version
  */
 async function checkPm2Version() {
@@ -254,6 +286,21 @@ async function reloadPm2Only() {
  */
 async function runOnce() {
   const versionBefore = getCurrentVersion();
+
+  // First, check if node_modules needs repair (critical packages missing)
+  const needsRepair = await checkDependencies();
+  if (needsRepair) {
+    log('warn', 'Critical dependencies missing - repairing node_modules');
+    const repaired = await repairDependencies();
+    if (repaired) {
+      // Reload PM2 after repair
+      log('info', 'Reloading PM2 after dependency repair...');
+      await run('pm2 reload ecosystem.config.cjs --update-env');
+    } else {
+      log('error', 'Failed to repair dependencies');
+      return false;
+    }
+  }
 
   // Check for updates
   const updateCheck = await checkForUpdates();
