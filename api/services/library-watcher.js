@@ -547,17 +547,25 @@ async function processAddBatch() {
       const existingDoc = await getDocumentByPath(relativePath);
 
       if (existingDoc) {
-        // EXISTING document - check if content actually changed
-        if (existingDoc.body_hash === bodyHash) {
-          logger.debug({ filePath, eventType }, 'File unchanged (same body_hash), skipped');
+        // Compute file_hash (full content including frontmatter)
+        const fileHash = hashContent(content);
+
+        // Check if BOTH body and file are unchanged - truly skip
+        if (existingDoc.body_hash === bodyHash && existingDoc.file_hash === fileHash) {
+          logger.debug({ filePath, eventType }, 'File unchanged (same body_hash and file_hash), skipped');
           continue;
         }
 
-        // Content changed and file is stable (passed 4h mtime check above) - re-ingest
+        // If body unchanged but file changed → frontmatter-only update (call ingester, it handles this)
+        // If body changed → full re-ingest
+        const changeType = existingDoc.body_hash === bodyHash ? 'frontmatter-only' : 'content';
         logger.info({
           filePath: relativePath,
-          documentId: existingDoc.id
-        }, 'Re-ingesting document (content changed, file stable for 4h)');
+          documentId: existingDoc.id,
+          changeType
+        }, changeType === 'frontmatter-only'
+          ? 'Re-ingesting document (frontmatter changed, file stable for 4h)'
+          : 'Re-ingesting document (content changed, file stable for 4h)');
       }
 
       // NEW or UPDATED document - ingest (file already passed 4h mtime check)

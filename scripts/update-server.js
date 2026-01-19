@@ -52,12 +52,12 @@ function log(level, message) {
  * Run a command in the project directory
  */
 async function run(command, options = {}) {
-  const { silent = false } = options;
+  const { silent = false, maxBuffer = 10 * 1024 * 1024 } = options; // 10MB default
   if (VERBOSE && !silent) {
     log('debug', `Running: ${command}`);
   }
   try {
-    const { stdout, stderr } = await execAsync(command, { cwd: PROJECT_ROOT });
+    const { stdout, stderr } = await execAsync(command, { cwd: PROJECT_ROOT, maxBuffer });
     return { success: true, stdout: stdout.trim(), stderr: stderr.trim() };
   } catch (err) {
     return { success: false, error: err.message, stderr: err.stderr?.trim() };

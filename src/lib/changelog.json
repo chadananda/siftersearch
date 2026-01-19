@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:18:43.460Z",
+  "generated": "2026-01-19T14:22:33.065Z",
   "entries": [
+    {
+      "hash": "be5656d",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Correct fetchRecent typo in LibraryBrowser",
+      "scope": null
+    },
     {
       "hash": "c174e94",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add /server/reingest-document API endpoint",
       "scope": null
-    },
-    {
-      "hash": "4a3ab70",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add API endpoints for source file linking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "be5656d",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Correct fetchRecent typo in LibraryBrowser",
+        "scope": null
+      },
       {
         "hash": "c174e94",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add /server/reingest-document API endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4a3ab70",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add API endpoints for source file linking",
         "scope": null
       }
     ]
