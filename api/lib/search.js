@@ -136,6 +136,38 @@ export async function prewarmCache(queries) {
 }
 
 /**
+ * Popular queries to pre-warm on startup
+ * Core spiritual concepts that users frequently search for
+ */
+export const POPULAR_QUERIES = [
+  // Core concepts
+  'prayer',
+  'love',
+  'God',
+  'faith',
+  'peace',
+  'unity',
+  'justice',
+  'truth',
+  'soul',
+  'spirit',
+  // Common phrases
+  'divine unity',
+  'spiritual growth',
+  'world peace',
+  'inner peace',
+  'purpose of life',
+  // Central figures
+  "Bahá'u'lláh",
+  "Abdu'l-Baha",
+  'Shoghi Effendi',
+  // Practices
+  'meditation',
+  'fasting',
+  'pilgrimage'
+];
+
+/**
  * Check if Meilisearch is enabled
  */
 export function isMeiliEnabled() {
@@ -1507,7 +1539,8 @@ export const search = {
   prewarmCache,
   getSearchCacheStats,
   clearSearchCache,
-  INDEXES
+  INDEXES,
+  POPULAR_QUERIES
 };
 
 export default search;

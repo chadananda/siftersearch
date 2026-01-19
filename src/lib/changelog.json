@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:23:09.067Z",
+  "generated": "2026-01-19T05:30:07.203Z",
   "entries": [
+    {
+      "hash": "2de2ce8",
+      "date": "2026-01-18",
+      "type": "Fixed",
+      "description": "Expose authority field in quick search API response",
+      "scope": null
+    },
     {
       "hash": "1bcdffe",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent Arabic segmentation from splitting prepositional phrases",
       "scope": null
-    },
-    {
-      "hash": "b25daa1",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add admin document editor with CodeMirror 6",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "2de2ce8",
+        "date": "2026-01-18",
+        "type": "Fixed",
+        "description": "Expose authority field in quick search API response",
+        "scope": null
+      },
       {
         "hash": "1bcdffe",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Prevent Arabic segmentation from splitting prepositional phrases",
-        "scope": null
-      },
-      {
-        "hash": "b25daa1",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add admin document editor with CodeMirror 6",
         "scope": null
       }
     ]

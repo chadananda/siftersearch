@@ -30,6 +30,7 @@ import { startEmbeddingWorker, stopEmbeddingWorker } from './services/embedding-
 import { startLibraryWatcher, stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
+import { prewarmCache, POPULAR_QUERIES } from './lib/search.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -103,6 +104,17 @@ const start = async () => {
       } catch (err) {
         logger.warn({ err }, 'Failed to start embedding worker');
       }
+
+      // Pre-warm search cache with popular queries (background, non-blocking)
+      // Delayed by 5s to let Meilisearch finish any pending tasks first
+      setTimeout(async () => {
+        try {
+          const result = await prewarmCache(POPULAR_QUERIES);
+          logger.info({ warmed: result.warmed, elapsedMs: result.elapsedMs }, 'Search cache pre-warmed');
+        } catch (err) {
+          logger.warn({ err }, 'Failed to pre-warm search cache');
+        }
+      }, 5000);
     } else {
       logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), sync worker not started');
     }
