@@ -16,10 +16,11 @@ let client = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Search Results Cache (LRU with TTL)
+// Increased from 100/5min to 500/15min for better cache hit rate
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SEARCH_CACHE_MAX_SIZE = 100;  // Max cached queries
-const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minute TTL
+const SEARCH_CACHE_MAX_SIZE = 500;  // Max cached queries (increased from 100)
+const SEARCH_CACHE_TTL_MS = 15 * 60 * 1000;  // 15 minute TTL (increased from 5min)
 
 // Map<cacheKey, { hits, estimatedTotalHits, timestamp }>
 const searchCache = new Map();
@@ -33,16 +34,22 @@ function getCacheKey(query) {
 
 /**
  * Get cached search results if still valid
+ * @param {string} query - Search query
+ * @param {boolean} trackStats - Whether to increment hit/miss counters (default true)
  */
-function getCachedSearch(query) {
+function getCachedSearch(query, trackStats = true) {
   const key = getCacheKey(query);
   const cached = searchCache.get(key);
 
-  if (!cached) return null;
+  if (!cached) {
+    if (trackStats) cacheMisses++;
+    return null;
+  }
 
   // Check TTL
   if (Date.now() - cached.timestamp > SEARCH_CACHE_TTL_MS) {
     searchCache.delete(key);
+    if (trackStats) cacheMisses++;
     return null;
   }
 
@@ -50,6 +57,7 @@ function getCachedSearch(query) {
   searchCache.delete(key);
   searchCache.set(key, cached);
 
+  if (trackStats) cacheHits++;
   return cached;
 }
 
@@ -80,15 +88,51 @@ export function clearSearchCache() {
   logger.debug('Search cache cleared');
 }
 
+// Track cache hits/misses for performance monitoring
+let cacheHits = 0;
+let cacheMisses = 0;
+
 /**
- * Get search cache stats
+ * Get search cache stats with hit rate
  */
 export function getSearchCacheStats() {
+  const total = cacheHits + cacheMisses;
   return {
     size: searchCache.size,
     maxSize: SEARCH_CACHE_MAX_SIZE,
-    ttlMs: SEARCH_CACHE_TTL_MS
+    ttlMs: SEARCH_CACHE_TTL_MS,
+    hits: cacheHits,
+    misses: cacheMisses,
+    hitRate: total > 0 ? (cacheHits / total * 100).toFixed(1) + '%' : 'N/A'
   };
+}
+
+/**
+ * Pre-warm the search cache with common queries
+ * Called during server startup for faster initial responses
+ * @param {string[]} queries - Array of common queries to pre-warm
+ */
+export async function prewarmCache(queries) {
+  logger.info({ queryCount: queries.length }, 'Pre-warming search cache');
+
+  const startTime = Date.now();
+  let warmed = 0;
+
+  for (const query of queries) {
+    try {
+      // Only prewarm if not already cached
+      if (!getCachedSearch(query)) {
+        await keywordSearch(query, { limit: 10 });
+        warmed++;
+      }
+    } catch (err) {
+      logger.warn({ query, err: err.message }, 'Failed to pre-warm cache for query');
+    }
+  }
+
+  const elapsedMs = Date.now() - startTime;
+  logger.info({ warmed, totalQueries: queries.length, elapsedMs }, 'Search cache pre-warmed');
+  return { warmed, elapsedMs };
 }
 
 /**
@@ -1460,6 +1504,9 @@ export const search = {
   extractMatchingSentences,
   enrichHitsWithExcerpts,
   highlightBestSentence,
+  prewarmCache,
+  getSearchCacheStats,
+  clearSearchCache,
   INDEXES
 };
 

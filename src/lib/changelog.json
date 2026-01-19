@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:12:25.618Z",
+  "generated": "2026-01-19T05:19:59.933Z",
   "entries": [
+    {
+      "hash": "93ea684",
+      "date": "2026-01-18",
+      "type": "New",
+      "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
+      "scope": null
+    },
     {
       "hash": "ff30694",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Restore middle number column in SBS bilingual view",
       "scope": null
-    },
-    {
-      "hash": "f04a970",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Prevent collection filter input from clearing on each keystroke",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "93ea684",
+        "date": "2026-01-18",
+        "type": "New",
+        "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
+        "scope": null
+      },
       {
         "hash": "ff30694",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Restore middle number column in SBS bilingual view",
-        "scope": null
-      },
-      {
-        "hash": "f04a970",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Prevent collection filter input from clearing on each keystroke",
         "scope": null
       }
     ]
