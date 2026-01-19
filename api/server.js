@@ -98,7 +98,12 @@ export async function createServer(opts = {}) {
   });
 
   // Disable caching during alpha - ensures fresh data on every request
+  // Exception: /api/search/quick has its own caching headers for performance
   server.addHook('onSend', async (request, reply) => {
+    // Skip no-cache for quick search - it sets its own Cache-Control header
+    if (request.url.startsWith('/api/search/quick')) {
+      return;
+    }
     reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     reply.header('Pragma', 'no-cache');
     reply.header('Expires', '0');

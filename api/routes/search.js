@@ -257,7 +257,7 @@ export default async function searchRoutes(fastify) {
         }
       }
     }
-  }, async (request) => {
+  }, async (request, reply) => {
     const { q, limit = 10, offset = 0 } = request.query;
 
     const results = await keywordSearch(q, { limit, offset });
@@ -266,6 +266,11 @@ export default async function searchRoutes(fastify) {
     const resultKeys = results.hits.map(hit => `${hit.doc_id}-${hit.paragraph_index}`);
     const uniqueKeys = new Set(resultKeys).size;
     logger.info({ q, limit, offset, hitsReturned: results.hits.length, estimatedTotalHits: results.estimatedTotalHits, cached: results.cached, uniqueKeys, duplicateKeys: results.hits.length !== uniqueKeys }, '/quick response');
+
+    // Enable browser caching for quick search (60 seconds)
+    // This overrides the global no-cache headers set in server.js
+    // Reduces network requests for repeated searches within a short window
+    reply.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
 
     return {
       hits: results.hits.map(hit => {

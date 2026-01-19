@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:30:07.203Z",
+  "generated": "2026-01-19T05:35:15.879Z",
   "entries": [
+    {
+      "hash": "27ebb9e",
+      "date": "2026-01-18",
+      "type": "New",
+      "description": "Add search cache pre-warming on server startup",
+      "scope": null
+    },
     {
       "hash": "2de2ce8",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve segmentation with conceptual description instead of rules",
       "scope": null
-    },
-    {
-      "hash": "18c0b5a",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Prevent Arabic segmentation from splitting prepositional phrases",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "27ebb9e",
+        "date": "2026-01-18",
+        "type": "New",
+        "description": "Add search cache pre-warming on server startup",
+        "scope": null
+      },
       {
         "hash": "2de2ce8",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve segmentation with conceptual description instead of rules",
-        "scope": null
-      },
-      {
-        "hash": "18c0b5a",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Prevent Arabic segmentation from splitting prepositional phrases",
         "scope": null
       }
     ]
