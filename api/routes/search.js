@@ -284,6 +284,7 @@ export default async function searchRoutes(fastify) {
           religion: hit.religion,
           collection: hit.collection,
           language: hit.language,
+          authority: hit.authority || parseInt(hit._formatted?.authority) || null,  // Doctrinal weight (1-10)
           score: hit._rankingScore
         };
       }),

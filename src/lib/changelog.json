@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:19:59.933Z",
+  "generated": "2026-01-19T05:23:09.067Z",
   "entries": [
+    {
+      "hash": "1bcdffe",
+      "date": "2026-01-18",
+      "type": "Performance",
+      "description": "Increase search cache size and TTL for better hit rates",
+      "scope": null
+    },
     {
       "hash": "93ea684",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add admin document editor with CodeMirror 6",
       "scope": null
-    },
-    {
-      "hash": "0785af5",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Restore middle number column in SBS bilingual view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "1bcdffe",
+        "date": "2026-01-18",
+        "type": "Performance",
+        "description": "Increase search cache size and TTL for better hit rates",
+        "scope": null
+      },
       {
         "hash": "93ea684",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add admin document editor with CodeMirror 6",
-        "scope": null
-      },
-      {
-        "hash": "0785af5",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Restore middle number column in SBS bilingual view",
         "scope": null
       }
     ]
