@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T17:35:29.648Z",
+  "generated": "2026-01-19T17:48:22.508Z",
   "entries": [
+    {
+      "hash": "425115c",
+      "date": "2026-01-19",
+      "type": "New",
+      "description": "Add script to find bad titles",
+      "scope": null
+    },
     {
       "hash": "8064b5a",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use fixed light background for document presentation container",
       "scope": null
-    },
-    {
-      "hash": "24ee64b",
-      "date": "2026-01-02",
-      "type": "Chore",
-      "description": "Disable Cloudflare caching for library pages during development",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "425115c",
+        "date": "2026-01-19",
+        "type": "New",
+        "description": "Add script to find bad titles",
+        "scope": null
+      },
       {
         "hash": "8064b5a",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Use fixed light background for document presentation container",
-        "scope": null
-      },
-      {
-        "hash": "24ee64b",
-        "date": "2026-01-02",
-        "type": "Chore",
-        "description": "Disable Cloudflare caching for library pages during development",
         "scope": null
       }
     ]
