@@ -702,9 +702,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   }
 
   // PRIORITY 2: Look up by relative path if no explicit ID or ID not found
+  // Exclude soft-deleted documents (deleted_at IS NULL)
   if (!existingDoc && relativePath) {
     existingDoc = await queryOne(
-      'SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_path = ?',
+      'SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_path = ? AND deleted_at IS NULL',
       [relativePath]
     );
     if (existingDoc) {
@@ -718,9 +719,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // PRIORITY 3: Look up by file_hash if file was moved
   // This handles the case where a file is moved to a different folder/collection
   // We recognize it by content hash and update the path-derived metadata
+  // Exclude soft-deleted documents (deleted_at IS NULL)
   if (!existingDoc && relativePath) {
     const movedDoc = await queryOne(
-      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_hash = ?`,
+      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE file_hash = ? AND deleted_at IS NULL`,
       [fileHash]
     );
 
@@ -738,9 +740,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // PRIORITY 4: Look up by body_hash if file_hash didn't match (handles renames with frontmatter changes)
   // Body content unchanged but frontmatter or path changed - find by body hash
+  // Exclude soft-deleted documents (deleted_at IS NULL)
   if (!existingDoc && relativePath && bodyHash) {
     const movedDoc = await queryOne(
-      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE body_hash = ?`,
+      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE body_hash = ? AND deleted_at IS NULL`,
       [bodyHash]
     );
 

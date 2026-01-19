@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:33:58.183Z",
+  "generated": "2026-01-19T16:37:59.190Z",
   "entries": [
+    {
+      "hash": "fcdd73f",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
+      "scope": null
+    },
     {
       "hash": "7e87acd",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove non-existent slug column from docs table queries",
       "scope": null
-    },
-    {
-      "hash": "a53f7ba",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Include filename in document API responses for dynamic slug generation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "fcdd73f",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
+        "scope": null
+      },
       {
         "hash": "7e87acd",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Remove non-existent slug column from docs table queries",
-        "scope": null
-      },
-      {
-        "hash": "a53f7ba",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Include filename in document API responses for dynamic slug generation",
         "scope": null
       }
     ]
