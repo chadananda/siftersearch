@@ -448,9 +448,10 @@ export default async function libraryRoutes(fastify) {
     const cooldownThreshold = now - COOLDOWN_MS;
     const pendingFiles = [];
 
-    // Get all existing docs with their file hashes for comparison
+    // Get all existing docs with their body hashes for comparison
+    // Use body_hash (content only, no frontmatter) to match library-watcher behavior
     const existingDocs = await queryAll(
-      `SELECT file_path, file_hash, id, title, author, religion, collection
+      `SELECT file_path, body_hash, id, title, author, religion, collection
        FROM docs WHERE deleted_at IS NULL`
     );
     const existingDocsMap = new Map(existingDocs.map(d => [d.file_path, d]));
@@ -470,12 +471,15 @@ export default async function libraryRoutes(fastify) {
               const fileStat = await stat(fullPath);
 
               if (existingDoc) {
-                // File exists in database - check if content has changed
+                // File exists in database - check if BODY content has changed
+                // Use body_hash (not file_hash) to match library-watcher behavior
+                // This ignores frontmatter-only changes which don't affect search
                 const content = await readFile(fullPath, 'utf-8');
-                const currentHash = hashContent(content);
+                const { content: bodyContent } = matter(content);
+                const currentBodyHash = hashContent(bodyContent);
 
-                if (currentHash !== existingDoc.file_hash) {
-                  // Content has actually changed - mark as modified
+                if (currentBodyHash !== existingDoc.body_hash) {
+                  // Body content has actually changed - mark as modified
                   const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
                   pendingFiles.push({
                     file_path: relativePath,
@@ -487,7 +491,7 @@ export default async function libraryRoutes(fastify) {
                     status: 'modified'
                   });
                 }
-                // If hashes match, skip - file hasn't actually changed
+                // If body hashes match, skip - content hasn't actually changed (maybe just frontmatter)
               } else {
                 // New file - apply cooldown window
                 if (fileStat.mtimeMs > cooldownThreshold) {
