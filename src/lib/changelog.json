@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:35:15.879Z",
+  "generated": "2026-01-19T12:34:40.084Z",
   "entries": [
+    {
+      "hash": "a7dff7f",
+      "date": "2026-01-18",
+      "type": "Performance",
+      "description": "Add browser caching for quick search (60s max-age)",
+      "scope": null
+    },
     {
       "hash": "27ebb9e",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Segmentation based on concepts, not rules - never split sentences",
       "scope": null
-    },
-    {
-      "hash": "a096001",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Improve segmentation with conceptual description instead of rules",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "a7dff7f",
+        "date": "2026-01-18",
+        "type": "Performance",
+        "description": "Add browser caching for quick search (60s max-age)",
+        "scope": null
+      },
       {
         "hash": "27ebb9e",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Segmentation based on concepts, not rules - never split sentences",
-        "scope": null
-      },
-      {
-        "hash": "a096001",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Improve segmentation with conceptual description instead of rules",
         "scope": null
       }
     ]

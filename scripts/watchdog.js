@@ -39,7 +39,15 @@ const TUNNEL_TIMEOUT = parseInt(process.env.WATCHDOG_TUNNEL_TIMEOUT) || 10000; /
 let apiFailures = 0;
 let meiliFailures = 0;
 let tunnelFailures = 0;
+let libraryWatcherFailures = 0;
+let jobsFailures = 0;
 let isRestarting = false;
+
+// PM2 processes to monitor (no health endpoint, check PM2 status)
+const PM2_PROCESSES = [
+  'siftersearch-library-watcher',
+  'siftersearch-jobs'
+];
 
 /**
  * Log with timestamp
@@ -85,6 +93,61 @@ async function restartProcess(processName) {
   } catch (err) {
     log('error', `Failed to restart ${processName}: ${err.message}`);
     return false;
+  }
+}
+
+/**
+ * Check PM2 process status
+ * Returns 'online', 'stopped', 'errored', 'waiting', or 'unknown'
+ */
+async function getPM2Status(processName) {
+  try {
+    const { stdout } = await execAsync(`pm2 jlist`);
+    const processes = JSON.parse(stdout);
+    const proc = processes.find(p => p.name === processName);
+    if (!proc) {
+      return 'unknown';
+    }
+    return proc.pm2_env?.status || 'unknown';
+  } catch (err) {
+    log('error', `Failed to get PM2 status for ${processName}: ${err.message}`);
+    return 'unknown';
+  }
+}
+
+/**
+ * Monitor PM2 processes that don't have health endpoints
+ */
+async function checkPM2Processes() {
+  for (const processName of PM2_PROCESSES) {
+    const status = await getPM2Status(processName);
+
+    if (status === 'online') {
+      // Reset failure counter if we had previous failures
+      if (processName.includes('library-watcher') && libraryWatcherFailures > 0) {
+        log('info', `${processName} recovered after ${libraryWatcherFailures} failures`);
+        libraryWatcherFailures = 0;
+      }
+      if (processName.includes('jobs') && jobsFailures > 0) {
+        log('info', `${processName} recovered`);
+        jobsFailures = 0;
+      }
+    } else if (status === 'stopped' || status === 'errored' || status === 'waiting restart') {
+      // Process is down - restart it
+      if (processName.includes('library-watcher')) {
+        libraryWatcherFailures++;
+        log('warn', `${processName} is ${status} (failure ${libraryWatcherFailures})`);
+      } else if (processName.includes('jobs')) {
+        jobsFailures++;
+        log('warn', `${processName} is ${status}`);
+      }
+
+      // Immediately restart stopped/errored processes
+      log('warn', `${processName} status is "${status}" - restarting...`);
+      await restartProcess(processName);
+      // Wait a bit for the process to start
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
   }
 }
 
@@ -158,6 +221,10 @@ async function runHealthCheck() {
       }
     }
   }
+
+  // Check PM2 process status for library-watcher, jobs, etc.
+  // These don't have health endpoints but we can check their PM2 status
+  await checkPM2Processes();
 }
 
 /**
@@ -168,6 +235,7 @@ log('info', 'SifterSearch Watchdog starting...');
 log('info', `API Health URL: ${API_HEALTH_URL}`);
 log('info', `Meilisearch Health URL: ${MEILI_HEALTH_URL}`);
 log('info', `Tunnel Health URL: ${TUNNEL_HEALTH_URL}`);
+log('info', `PM2 Processes: ${PM2_PROCESSES.join(', ')}`);
 log('info', `Check interval: ${CHECK_INTERVAL}ms`);
 log('info', `Max failures before restart: ${MAX_FAILURES}`);
 log('info', '='.repeat(50));
