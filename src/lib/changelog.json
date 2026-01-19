@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T12:34:40.084Z",
+  "generated": "2026-01-19T13:48:09.645Z",
   "entries": [
+    {
+      "hash": "4dabb61",
+      "date": "2026-01-19",
+      "type": "New",
+      "description": "Watchdog now monitors library-watcher and jobs processes",
+      "scope": null
+    },
     {
       "hash": "a7dff7f",
       "date": "2026-01-18",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Add test-segmentation script for verifying translation quality",
       "scope": null
-    },
-    {
-      "hash": "780f689",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Segmentation based on concepts, not rules - never split sentences",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-19": [
+      {
+        "hash": "4dabb61",
+        "date": "2026-01-19",
+        "type": "New",
+        "description": "Watchdog now monitors library-watcher and jobs processes",
+        "scope": null
+      }
+    ],
     "2026-01-18": [
       {
         "hash": "a7dff7f",
@@ -7025,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add test-segmentation script for verifying translation quality",
-        "scope": null
-      },
-      {
-        "hash": "780f689",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Segmentation based on concepts, not rules - never split sentences",
         "scope": null
       }
     ]

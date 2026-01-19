@@ -415,9 +415,21 @@ export async function recoverStuckJobs() {
 
 /**
  * Clean up expired jobs
+ * Also removes related email_queue entries to avoid foreign key constraint failures
  */
 export async function cleanupExpiredJobs() {
   const now = new Date().toISOString();
+
+  // First, delete email_queue entries that reference jobs we're about to delete
+  // This avoids SQLITE_CONSTRAINT_FOREIGNKEY errors
+  await query(
+    `DELETE FROM email_queue WHERE job_id IN (
+      SELECT id FROM jobs WHERE expires_at < ? AND status IN ('completed', 'failed')
+    )`,
+    [now]
+  );
+
+  // Now delete the expired jobs
   const result = await query(
     `DELETE FROM jobs WHERE expires_at < ? AND status IN ('completed', 'failed')`,
     [now]

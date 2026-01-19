@@ -167,7 +167,7 @@ async function findEmbeddingsByNormalizedHash(paragraphs) {
  */
 async function getDocumentMeta(docId) {
   return queryOne(`
-    SELECT id, title, author, religion, collection, language, year, description
+    SELECT id, title, author, religion, collection, language, year, description, filename
     FROM docs WHERE id = ?
   `, [docId]);
 }
@@ -177,17 +177,30 @@ import { getAuthority } from '../lib/authority.js';
 
 /**
  * Convert embedding blob to float array for Meilisearch
+ * Validates that all values are finite numbers (no NaN or Infinity)
  */
 function blobToFloatArray(blob) {
   if (!blob) return null;
 
-  // If already an array, return as-is
-  if (Array.isArray(blob)) return blob;
+  let floatArray;
 
-  // Handle Buffer/Uint8Array
-  const buffer = Buffer.isBuffer(blob) ? blob : Buffer.from(blob);
-  const floatArray = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4);
-  return Array.from(floatArray);
+  // If already an array, use it directly
+  if (Array.isArray(blob)) {
+    floatArray = blob;
+  } else {
+    // Handle Buffer/Uint8Array
+    const buffer = Buffer.isBuffer(blob) ? blob : Buffer.from(blob);
+    floatArray = Array.from(new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4));
+  }
+
+  // Validate all values are finite numbers (Meilisearch rejects NaN/Infinity)
+  const hasInvalidValues = floatArray.some(v => !Number.isFinite(v));
+  if (hasInvalidValues) {
+    logger.warn({ invalidCount: floatArray.filter(v => !Number.isFinite(v)).length }, 'Embedding contains NaN/Infinity values, skipping');
+    return null;  // Return null to skip this embedding
+  }
+
+  return floatArray;
 }
 
 /**
@@ -240,6 +253,7 @@ async function syncDocument(docId) {
     language: doc.language,
     year: doc.year ? parseInt(doc.year, 10) : null,
     description: doc.description,
+    filename: doc.filename,
     authority,
     chunk_count: paragraphs.length,
     created_at: new Date().toISOString()
@@ -261,6 +275,7 @@ async function syncDocument(docId) {
       translation_segments: p.translation_segments || null,  // Aligned phrase pairs for highlighting
       title: doc.title,
       author: doc.author,
+      filename: doc.filename,
       religion: doc.religion,
       collection: doc.collection,
       language: doc.language,
