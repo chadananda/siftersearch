@@ -64,7 +64,8 @@
    * Get the semantic URL for a document
    */
   function getDocumentUrl(doc) {
-    const docSlug = generateDocSlug(doc);
+    // Prefer stored slug, fall back to generated slug
+    const docSlug = doc.slug || generateDocSlug(doc);
     if (!docSlug || !doc.religion || !doc.collection) {
       return `/library/view?doc=${doc.id}`;
     }
@@ -113,6 +114,7 @@
   let pendingTotal = $state(0);
   let ingestingPath = $state(null); // Track which document is being ingested
   let expandedPendingPath = $state(null); // Track which pending doc is expanded
+  let expandedRecentId = $state(null); // Track which recent doc is expanded
   let pendingPreview = $state(null); // Frontmatter preview data
   let previewLoading = $state(false);
 
@@ -756,36 +758,141 @@
         {:else}
           <div class="space-y-2">
             {#each recentDocuments as doc}
-              <a
-                href={getDocumentUrl(doc)}
-                class="block p-4 bg-surface-1 rounded-lg border border-border hover:border-accent hover:bg-surface-2 transition-colors"
-              >
-                <div class="flex items-start gap-3">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-sm font-medium text-primary truncate">{doc.title}</span>
-                      <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
-                                   {doc.activity_type === 'added' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
-                        {doc.activity_type === 'added' ? 'Added' : 'Modified'}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-3 text-xs text-muted">
+              {@const isExpanded = expandedRecentId === doc.id}
+              <div class="bg-surface-1 rounded-lg border border-border overflow-hidden">
+                <!-- Clickable header -->
+                <div
+                  class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors cursor-pointer"
+                  role="button"
+                  tabindex="0"
+                  onclick={() => expandedRecentId = isExpanded ? null : doc.id}
+                  onkeydown={(e) => e.key === 'Enter' && (expandedRecentId = isExpanded ? null : doc.id)}
+                >
+                  <div class="flex items-start gap-3">
+                    <!-- Expand/collapse icon -->
+                    <svg class="w-4 h-4 mt-1 text-muted flex-shrink-0 transition-transform {isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                      <!-- Title -->
+                      <div class="text-base font-medium text-primary mb-0.5">{doc.title || 'Untitled'}</div>
                       {#if doc.author}
-                        <span>{doc.author}</span>
+                        <div class="text-sm text-secondary mb-1">by {doc.author}</div>
                       {/if}
-                      {#if doc.religion}
-                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.religion}</span>
+                      <!-- Filepath -->
+                      {#if doc.file_path}
+                        <div class="font-mono text-xs text-muted/70 mb-2 break-all">{doc.file_path}</div>
                       {/if}
-                      {#if doc.collection}
-                        <span class="px-1.5 py-0.5 bg-surface-2 rounded">{doc.collection}</span>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
+                                     {doc.activity_type === 'added' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}">
+                          {doc.activity_type === 'added' ? 'Added' : 'Modified'}
+                        </span>
+                        {#if doc.religion}
+                          <span class="px-1.5 py-0.5 text-xs bg-surface-2 rounded text-muted">{doc.religion}</span>
+                        {/if}
+                        {#if doc.collection}
+                          <span class="px-1.5 py-0.5 text-xs bg-surface-2 rounded text-muted">{doc.collection}</span>
+                        {/if}
+                        <span class="text-xs text-muted">
+                          {new Date(doc.activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex-shrink-0 flex items-center gap-2" onclick={(e) => e.stopPropagation()}>
+                      <a
+                        href={getDocumentUrl(doc)}
+                        class="px-3 py-1.5 text-sm font-medium text-secondary border border-border rounded-lg hover:bg-surface-2 hover:text-primary"
+                        title="View document"
+                      >
+                        View
+                      </a>
+                      {#if isAdmin}
+                        <a
+                          href="/admin/edit?id={doc.id}"
+                          class="px-3 py-1.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-hover"
+                          title="Edit document"
+                        >
+                          Edit
+                        </a>
                       {/if}
-                      <span class="ml-auto">
-                        {new Date(doc.activity_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
                     </div>
                   </div>
                 </div>
-              </a>
+
+                <!-- Expandable preview -->
+                {#if isExpanded}
+                  <div class="border-t border-border bg-surface-0 p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- Metadata -->
+                      <div>
+                        <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Metadata</h4>
+                        <div class="bg-surface-2 rounded-lg p-3 font-mono text-xs space-y-1 max-h-64 overflow-auto">
+                          {#if doc.title}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">title:</span>
+                              <span class="text-primary break-all">{doc.title}</span>
+                            </div>
+                          {/if}
+                          {#if doc.author}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">author:</span>
+                              <span class="text-primary break-all">{doc.author}</span>
+                            </div>
+                          {/if}
+                          {#if doc.language}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">language:</span>
+                              <span class="text-primary">{doc.language}</span>
+                            </div>
+                          {/if}
+                          {#if doc.year}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">year:</span>
+                              <span class="text-primary">{doc.year}</span>
+                            </div>
+                          {/if}
+                          {#if doc.religion}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">religion:</span>
+                              <span class="text-primary">{doc.religion}</span>
+                            </div>
+                          {/if}
+                          {#if doc.collection}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">collection:</span>
+                              <span class="text-primary">{doc.collection}</span>
+                            </div>
+                          {/if}
+                          {#if doc.description}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">description:</span>
+                              <span class="text-primary break-all">{doc.description}</span>
+                            </div>
+                          {/if}
+                          {#if doc.paragraph_count}
+                            <div class="flex gap-2">
+                              <span class="text-accent font-medium">paragraphs:</span>
+                              <span class="text-primary">{doc.paragraph_count}</span>
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                      <!-- Content preview -->
+                      <div>
+                        <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Content Preview</h4>
+                        <div class="bg-surface-2 rounded-lg p-3 text-xs text-secondary max-h-64 overflow-auto whitespace-pre-wrap">
+                          {#if doc.previewParagraphs?.length > 0}
+                            {doc.previewParagraphs.map(p => p.t).join('\n\n')}
+                          {:else}
+                            (no preview available)
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {/if}
+              </div>
             {/each}
           </div>
           {#if recentDocuments.length < recentTotal}

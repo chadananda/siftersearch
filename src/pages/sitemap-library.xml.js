@@ -77,7 +77,8 @@ export async function GET() {
 
     // Filter documents that have all required fields for semantic URLs
     const validDocs = documents.filter(doc => {
-      const docSlug = generateDocSlug(doc);
+      // Prefer stored slug, fall back to generated slug
+      const docSlug = doc.slug || generateDocSlug(doc);
       return docSlug && doc.religion && doc.collection;
     });
 
@@ -85,7 +86,8 @@ export async function GET() {
     const urls = validDocs.map(doc => {
       const religionSlug = slugifyPath(doc.religion);
       const collectionSlug = slugifyPath(doc.collection);
-      const docSlug = generateDocSlug(doc);
+      // Prefer stored slug, fall back to generated slug
+      const docSlug = doc.slug || generateDocSlug(doc);
       const url = `${SITE_URL}/library/${religionSlug}/${collectionSlug}/${docSlug}`;
 
       // Determine priority based on document properties

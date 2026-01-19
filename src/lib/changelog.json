@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T01:45:54.741Z",
+  "generated": "2026-01-19T04:45:14.154Z",
   "entries": [
+    {
+      "hash": "637de76",
+      "date": "2026-01-18",
+      "type": "Fixed",
+      "description": "Disable buggy heading extraction (was causing duplicate headings)",
+      "scope": null
+    },
     {
       "hash": "4431a11",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add Bahá'í transliteration style to translation prompts",
       "scope": null
-    },
-    {
-      "hash": "23f8f13",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Use established religious terminology in translations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "637de76",
+        "date": "2026-01-18",
+        "type": "Fixed",
+        "description": "Disable buggy heading extraction (was causing duplicate headings)",
+        "scope": null
+      },
       {
         "hash": "4431a11",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add Bahá'í transliteration style to translation prompts",
-        "scope": null
-      },
-      {
-        "hash": "23f8f13",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Use established religious terminology in translations",
         "scope": null
       }
     ]

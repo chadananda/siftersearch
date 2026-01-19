@@ -126,7 +126,8 @@
   }
 
   function getDocumentUrl(doc) {
-    const docSlug = generateDocSlug(doc);
+    // Prefer stored slug, fall back to generated slug
+    const docSlug = doc.slug || generateDocSlug(doc);
     if (!docSlug) return `/library/view?doc=${doc.id}`;
     const collSlug = slugifyPath(doc.collection);
     return `/library/${religionSlug}/${collSlug}/${docSlug}`;

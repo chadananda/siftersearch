@@ -59,7 +59,8 @@
    * Get the semantic URL for a document
    */
   function getDocumentUrl(doc) {
-    const docSlug = generateDocSlug(doc);
+    // Prefer stored slug, fall back to generated slug
+    const docSlug = doc.slug || generateDocSlug(doc);
     if (!docSlug || !doc.religion || !doc.collection) {
       // Fallback to query param style if no slug
       return `/library/view?doc=${doc.id}`;
@@ -556,36 +557,63 @@
 
       <!-- Expanded preview - instant, no fetch needed -->
       {#if isExpanded}
-        <div class="paper-content relative">
-          <div class="paper-scroll" class:rtl={isRTL(doc.language)} style="max-height: 150px; overflow-y: auto">
-            {#if doc.previewParagraphs?.length > 0}
-              {#each doc.previewParagraphs as para}
-                <div class="paper-paragraph" class:rtl={isRTL(doc.language)}>
-                  <span class="para-num">{para.i + 1}</span>
-                  <p class="para-text" dir={isRTL(doc.language) ? 'rtl' : 'ltr'}>{stripMarkers(para.t)}</p>
-                </div>
-              {/each}
-            {:else}
-              <p class="empty-text">No preview available</p>
-            {/if}
-          </div>
-          {#if isAdmin && doc.authority}
-            <div class="absolute bottom-1 right-2 text-[0.625rem] px-1.5 py-0.5 rounded bg-black/50 text-white/70" title="Authority score">
-              Authority: {doc.authority}
+        <div class="border-t border-border bg-surface-0 p-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Frontmatter -->
+            <div>
+              <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Metadata</h4>
+              <div class="bg-surface-2 rounded-lg p-3 font-mono text-xs space-y-1 max-h-40 overflow-auto">
+                {#if doc.author}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">author:</span>
+                    <span class="text-primary break-all">{doc.author}</span>
+                  </div>
+                {/if}
+                {#if doc.language}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">language:</span>
+                    <span class="text-primary">{getLangName(doc.language)} ({doc.language})</span>
+                  </div>
+                {/if}
+                {#if doc.religion}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">religion:</span>
+                    <span class="text-primary">{doc.religion}</span>
+                  </div>
+                {/if}
+                {#if doc.collection}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">collection:</span>
+                    <span class="text-primary">{doc.collection}</span>
+                  </div>
+                {/if}
+                {#if isAdmin && doc.authority}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">authority:</span>
+                    <span class="text-primary">{doc.authority}</span>
+                  </div>
+                {/if}
+              </div>
             </div>
-          {/if}
+            <!-- Content preview -->
+            <div>
+              <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Content Preview</h4>
+              <div class="bg-surface-2 rounded-lg p-3 text-xs text-secondary max-h-40 overflow-auto" class:rtl={isRTL(doc.language)}>
+                {#if doc.previewParagraphs?.length > 0}
+                  <div class="space-y-2" dir={isRTL(doc.language) ? 'rtl' : 'ltr'}>
+                    {#each doc.previewParagraphs as para}
+                      <p class="leading-relaxed">{stripMarkers(para.t)}</p>
+                    {/each}
+                  </div>
+                {:else}
+                  <p class="italic text-muted">No preview available</p>
+                {/if}
+              </div>
+            </div>
+          </div>
         </div>
       {/if}
     </div>
   {/each}
 </div>
 
-<style>
-  .empty-text {
-    font-style: italic;
-    color: #888;
-    font-size: 0.875rem;
-    text-align: center;
-    padding: 1rem;
-  }
-</style>

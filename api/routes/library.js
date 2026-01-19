@@ -369,29 +369,43 @@ export default async function libraryRoutes(fastify) {
       params.push(cutoffISO);
     }
 
-    // Get documents with activity timestamp
+    // Get documents with activity timestamp and preview paragraphs
     const sql = `
       SELECT
-        id, title, author, religion, collection, language, year,
-        description, paragraph_count, cover_url, slug, file_mtime,
-        created_at, updated_at,
+        d.id, d.title, d.author, d.religion, d.collection, d.language, d.year,
+        d.description, d.paragraph_count, d.cover_url, d.slug, d.file_path, d.file_mtime,
+        d.created_at, d.updated_at,
         CASE
-          WHEN ABS(julianday(updated_at) - julianday(created_at)) < 0.01 THEN 'added'
+          WHEN ABS(julianday(d.updated_at) - julianday(d.created_at)) < 0.01 THEN 'added'
           ELSE 'modified'
         END as activity_type,
-        COALESCE(file_mtime, CASE
-          WHEN ABS(julianday(updated_at) - julianday(created_at)) < 0.01 THEN created_at
-          ELSE updated_at
-        END) as activity_at
-      FROM docs
-      WHERE ${conditions.join(' AND ')}
-      ORDER BY COALESCE(file_mtime, updated_at) DESC
+        COALESCE(d.file_mtime, CASE
+          WHEN ABS(julianday(d.updated_at) - julianday(d.created_at)) < 0.01 THEN d.created_at
+          ELSE d.updated_at
+        END) as activity_at,
+        (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
+         FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
+      FROM docs d
+      WHERE ${conditions.map(c => c.replace(/\b(deleted_at|file_mtime|updated_at|created_at)\b/g, 'd.$1')).join(' AND ')}
+      ORDER BY COALESCE(d.file_mtime, d.updated_at) DESC
       LIMIT ? OFFSET ?
     `;
 
     const queryParams = [...params, limit, offset];
 
-    const documents = await queryAll(sql, queryParams);
+    const rawDocuments = await queryAll(sql, queryParams);
+
+    // Parse preview JSON
+    const documents = rawDocuments.map(doc => {
+      let previewParagraphs = [];
+      if (doc.preview_json) {
+        try {
+          previewParagraphs = JSON.parse(doc.preview_json);
+        } catch { /* ignore parse errors */ }
+      }
+      const { preview_json, ...rest } = doc;
+      return { ...rest, previewParagraphs };
+    });
 
     // Get total count
     const countSql = `

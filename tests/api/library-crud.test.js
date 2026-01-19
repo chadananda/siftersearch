@@ -307,6 +307,103 @@ describe('Library API CRUD Operations', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Critical Path: Document URL Resolution
+  // These tests verify the complete document URL flow works end-to-end
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('Critical Path: Document URL Resolution', () => {
+    it('should resolve a document by its stored slug via by-path endpoint', async () => {
+      // First, get a real document from the database
+      const docsResponse = await server.inject({
+        method: 'GET',
+        url: '/api/library/documents?limit=1'
+      });
+
+      expect(docsResponse.statusCode).toBe(200);
+      const docsBody = JSON.parse(docsResponse.payload);
+
+      // Skip if no documents in database
+      if (!docsBody.documents || docsBody.documents.length === 0) {
+        console.log('No documents in database, skipping slug resolution test');
+        return;
+      }
+
+      const doc = docsBody.documents[0];
+
+      // Verify document has required fields for URL generation
+      if (!doc.slug || !doc.religion || !doc.collection) {
+        console.log('Document missing slug/religion/collection, skipping test', {
+          id: doc.id,
+          slug: doc.slug,
+          religion: doc.religion,
+          collection: doc.collection
+        });
+        return;
+      }
+
+      // Helper to slugify (matches client-side slugifyPath)
+      const slugify = (str) => {
+        if (!str) return '';
+        return str.toLowerCase()
+          .replace(/[''`']/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .replace(/-+/g, '-');
+      };
+
+      const religionSlug = slugify(doc.religion);
+      const collectionSlug = slugify(doc.collection);
+
+      // Now verify we can fetch this document via by-path
+      const byPathResponse = await server.inject({
+        method: 'GET',
+        url: `/api/library/by-path/${religionSlug}/${collectionSlug}/${doc.slug}`
+      });
+
+      // Should return 200 and the document
+      expect(byPathResponse.statusCode).toBe(200);
+      const byPathBody = JSON.parse(byPathResponse.payload);
+      expect(byPathBody.id).toBe(doc.id);
+    }, 30000);
+
+    it('should return documents with slug field from /recent endpoint', async () => {
+      const response = await server.inject({
+        method: 'GET',
+        url: '/api/library/recent?limit=5&days=365'
+      });
+
+      // Debug: log error response
+      if (response.statusCode !== 200) {
+        console.log('Recent endpoint error:', response.statusCode, response.payload);
+      }
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.payload);
+
+      // Skip if no recent documents
+      if (!body.documents || body.documents.length === 0) {
+        console.log('No recent documents, skipping slug field test');
+        return;
+      }
+
+      // Verify documents have slug field (used for URL generation)
+      const docsWithSlugs = body.documents.filter(d => d.slug);
+      console.log(`Recent docs: ${body.documents.length}, with slugs: ${docsWithSlugs.length}`);
+
+      // At least some documents should have slugs
+      expect(docsWithSlugs.length).toBeGreaterThan(0);
+    }, 30000);
+
+    it('should return 404 for non-existent document slug', async () => {
+      const response = await server.inject({
+        method: 'GET',
+        url: '/api/library/by-path/bahai/writings/nonexistent-document-xyz-123'
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Redirect Management (requires auth)
   // ─────────────────────────────────────────────────────────────────────────
 

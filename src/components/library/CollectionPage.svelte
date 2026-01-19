@@ -161,7 +161,8 @@
   }
 
   function getDocumentUrl(doc) {
-    const docSlug = generateDocSlug(doc);
+    // Prefer stored slug, fall back to generated slug
+    const docSlug = doc.slug || generateDocSlug(doc);
     if (!docSlug) return `/library/view?doc=${doc.id}`;
     return `/library/${religionSlug}/${collectionSlug}/${docSlug}`;
   }

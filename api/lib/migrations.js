@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 34;
+const CURRENT_VERSION = 36;
 const USER_DB_CURRENT_VERSION = 1;
 
 /**
@@ -1453,6 +1453,27 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_needs_embedding ON content(deleted_at, normalized_hash) WHERE embedding IS NULL');
 
     logger.info('Migration 35 complete: embedding worker index added');
+  },
+
+  // Version 36: Add file_mtime column to docs table
+  // Tracks when the source file was last modified for accurate "added" vs "modified" filtering
+  36: async () => {
+    logger.info('Starting migration 36: Add file_mtime column to docs');
+
+    try {
+      await query('ALTER TABLE docs ADD COLUMN file_mtime TEXT');
+      logger.info('Added file_mtime column to docs table');
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) {
+        throw err;
+      }
+      logger.info('file_mtime column already exists in docs table');
+    }
+
+    // Create index for efficient filtering by file modification time
+    await query('CREATE INDEX IF NOT EXISTS idx_docs_file_mtime ON docs(file_mtime)');
+
+    logger.info('Migration 36 complete: file_mtime column added');
   },
 };
 
