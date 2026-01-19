@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T17:01:38.792Z",
+  "generated": "2026-01-19T17:12:25.604Z",
   "entries": [
+    {
+      "hash": "d14b05c",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Clear deleted_at on upsert to restore soft-deleted docs",
+      "scope": null
+    },
     {
       "hash": "c0854ef",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Improve document presentation with paper styling, SBS columns, and print support",
       "scope": null
-    },
-    {
-      "hash": "57ae7c1",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Correct admin edit button URL path and query param",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "d14b05c",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Clear deleted_at on upsert to restore soft-deleted docs",
+        "scope": null
+      },
       {
         "hash": "c0854ef",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Improve document presentation with paper styling, SBS columns, and print support",
-        "scope": null
-      },
-      {
-        "hash": "57ae7c1",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Correct admin edit button URL path and query param",
         "scope": null
       }
     ]
