@@ -485,7 +485,7 @@ async function indexLibrary() {
             // Different hash algorithm, so just check if file content changed via ingestDocument
             // The ingester handles metadata-only vs full re-index internally
             const content = await fs.readFile(file.path, 'utf-8');
-            const result = await ingestDocument(content, { file_mtime: new Date().toISOString() }, file.relativePath);
+            const result = await ingestDocument(content, { file_mtime: new Date().toISOString() }, file.metadata.relativePath);
 
             if (result.skipped || result.status === 'unchanged') {
               console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (unchanged)`);

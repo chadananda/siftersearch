@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:30:22.144Z",
+  "generated": "2026-01-19T14:31:54.271Z",
   "entries": [
+    {
+      "hash": "ef788c1",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Detect content changes during initial scan in index-library.js",
+      "scope": null
+    },
     {
       "hash": "c0c1508",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add generate-embeddings API endpoint for missing paragraphs",
       "scope": null
-    },
-    {
-      "hash": "7737f8b",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add /server/query-documents endpoint for flexible metadata queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "ef788c1",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Detect content changes during initial scan in index-library.js",
+        "scope": null
+      },
       {
         "hash": "c0c1508",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add generate-embeddings API endpoint for missing paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "7737f8b",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add /server/query-documents endpoint for flexible metadata queries",
         "scope": null
       }
     ]
