@@ -620,7 +620,7 @@
           {:else}
             <div class="mb-3 p-3 bg-info/10 border border-info/30 rounded-lg">
               <p class="text-sm text-info">
-                <strong>{pendingDocuments.length}</strong> document{pendingDocuments.length !== 1 ? 's' : ''} within 24-hour cooldown window.
+                <strong>{pendingDocuments.length}</strong> document{pendingDocuments.length !== 1 ? 's' : ''} within 4-hour cooldown window.
                 These files were recently modified and will be automatically ingested once stable.
               </p>
             </div>

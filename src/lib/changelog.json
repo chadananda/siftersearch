@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T04:45:14.154Z",
+  "generated": "2026-01-19T05:03:19.792Z",
   "entries": [
+    {
+      "hash": "690a959",
+      "date": "2026-01-18",
+      "type": "Fixed",
+      "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
+      "scope": null
+    },
     {
       "hash": "637de76",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Show translation status indicator for all users in library list",
       "scope": null
-    },
-    {
-      "hash": "2537829",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add Bahá'í transliteration style to translation prompts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "690a959",
+        "date": "2026-01-18",
+        "type": "Fixed",
+        "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
+        "scope": null
+      },
       {
         "hash": "637de76",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Show translation status indicator for all users in library list",
-        "scope": null
-      },
-      {
-        "hash": "2537829",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add Bahá'í transliteration style to translation prompts",
         "scope": null
       }
     ]

@@ -33,8 +33,8 @@ import { join, dirname, relative } from 'path';
 import matter from 'gray-matter';
 import config from '../lib/config.js';
 
-// 24-hour cooldown period for file stability before ingestion
-const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+// 4-hour cooldown period for file stability before ingestion
+const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 /**
  * Parse translation field from paragraph
@@ -428,9 +428,9 @@ export default async function libraryRoutes(fastify) {
   });
 
   /**
-   * Get documents pending ingestion (within 24-hour cooldown window)
+   * Get documents pending ingestion (within 4-hour cooldown window)
    *
-   * NEW files: Files modified in the last 24h that aren't in the database yet
+   * NEW files: Files modified in the last 4h that aren't in the database yet
    * MODIFIED files: Files in the database where the content hash has changed
    *   (regardless of mtime - this handles bulk sync operations correctly)
    *
@@ -441,7 +441,7 @@ export default async function libraryRoutes(fastify) {
   }, async () => {
     const basePath = config.library?.basePath;
     if (!basePath) {
-      return { documents: [], total: 0, cooldownHours: 24 };
+      return { documents: [], total: 0, cooldownHours: 4 };
     }
 
     const now = Date.now();
@@ -550,12 +550,12 @@ export default async function libraryRoutes(fastify) {
     return {
       documents: enrichedFiles,
       total: enrichedFiles.length,
-      cooldownHours: 24
+      cooldownHours: 4
     };
   });
 
   /**
-   * Force ingest a pending document (bypass 24-hour cooldown)
+   * Force ingest a pending document (bypass 4-hour cooldown)
    * Admin only
    */
   fastify.post('/pending/ingest', {
@@ -2378,7 +2378,7 @@ Provide only the translation, no explanations.`;
       throw ApiError.badRequest('Document has no source file path');
     }
 
-    // Read the source file and re-ingest immediately (bypassing 24-hour cooldown)
+    // Read the source file and re-ingest immediately (bypassing 4-hour cooldown)
     try {
       const libraryRoot = process.env.LIBRARY_ROOT || './library';
       const fullPath = join(libraryRoot, doc.file_path);

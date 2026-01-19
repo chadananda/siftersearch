@@ -5,7 +5,7 @@
  *
  * 1. HOURLY SCAN (Primary Ingestion):
  *    - Scans library every hour for stable files
- *    - Files must be at least 24 hours old (not actively edited)
+ *    - Files must be at least 4 hours old (not actively edited)
  *    - Files must be newer than the last scan (not already processed)
  *    - This prevents database thrashing during active editing/syncing
  *
@@ -13,7 +13,7 @@
  *    - Watches for real-time file delete events
  *    - Detects file moves via body_hash matching
  *    - DELETEs are held for 60s to detect ADD with matching content (move)
- *    - ADD events also checked against 24h cooldown for immediate ingestion
+ *    - ADD events also checked against 4h cooldown for immediate ingestion
  *
  * This architecture is stable for Dropbox sync where edits can trigger
  * multiple file events over hours/days.
@@ -33,7 +33,7 @@ import { invalidateCache, getAuthority } from '../lib/authority.js';
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
 const ADD_BATCH_MS = 2000;  // Batch ADDs for 2s before processing
 const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADDs
-const REINGEST_COOLDOWN_MS = 24 * 60 * 60 * 1000;  // 24 hours - files must be stable this long before ingestion
+const REINGEST_COOLDOWN_MS = 4 * 60 * 60 * 1000;  // 4 hours - files must be stable this long before ingestion
 const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
 const LIBRARY_SCAN_INTERVAL_MS = 60 * 60 * 1000;  // Scan library for stable files every hour
 const IGNORED_PATTERNS = [
@@ -368,10 +368,10 @@ async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
 }
 
 /**
- * Hourly library scan - finds stable files (>24h old) that need ingestion
+ * Hourly library scan - finds stable files (>4h old) that need ingestion
  *
  * This is the primary ingestion mechanism. Files must be:
- * 1. At least 24 hours old (stable, not being actively edited)
+ * 1. At least 4 hours old (stable, not being actively edited)
  * 2. Modified since the last scan (new or changed)
  */
 async function scanLibraryForIngestion() {
@@ -399,7 +399,7 @@ async function scanLibraryForIngestion() {
     watcherStats.lastScanFilesFound = allFiles.length;
 
     // Filter to files that:
-    // 1. Are stable (mtime > 24h ago)
+    // 1. Are stable (mtime > 4h ago)
     // 2. Were modified after the last scan
     const filesToProcess = allFiles.filter(file => {
       const isStable = file.mtime < stableThreshold;
@@ -480,9 +480,9 @@ async function scanLibraryForIngestion() {
 
 /**
  * Process batch of ADD events
- * - ALL documents: Check file mtime - skip if modified less than 24 hours ago (debounce editing)
+ * - ALL documents: Check file mtime - skip if modified less than 4 hours ago (debounce editing)
  * - MOVED documents: ingest immediately (just updating path reference)
- * - NEW/UPDATED documents: Only ingest if file is at least 24 hours old
+ * - NEW/UPDATED documents: Only ingest if file is at least 4 hours old
  */
 async function processAddBatch() {
   addBatchTimer = null;
@@ -496,7 +496,7 @@ async function processAddBatch() {
 
   for (const [relativePath, { filePath, eventType }] of adds) {
     try {
-      // Check file modification time - skip if modified less than 24 hours ago
+      // Check file modification time - skip if modified less than 4 hours ago
       // This prevents thrashing during active editing/syncing sessions
       const fileStat = await stat(filePath);
       const timeSinceModification = Date.now() - fileStat.mtimeMs;
@@ -506,7 +506,7 @@ async function processAddBatch() {
           filePath: relativePath,
           hoursRemaining,
           lastModified: fileStat.mtime.toISOString()
-        }, 'Skipping ingestion: file modified within 24 hours');
+        }, 'Skipping ingestion: file modified within 4 hours');
         continue;
       }
 
@@ -553,14 +553,14 @@ async function processAddBatch() {
           continue;
         }
 
-        // Content changed and file is stable (passed 24h mtime check above) - re-ingest
+        // Content changed and file is stable (passed 4h mtime check above) - re-ingest
         logger.info({
           filePath: relativePath,
           documentId: existingDoc.id
-        }, 'Re-ingesting document (content changed, file stable for 24h)');
+        }, 'Re-ingesting document (content changed, file stable for 4h)');
       }
 
-      // NEW or UPDATED document - ingest (file already passed 24h mtime check)
+      // NEW or UPDATED document - ingest (file already passed 4h mtime check)
       const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
 
       if (result.skipped) {
