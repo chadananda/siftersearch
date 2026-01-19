@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T01:44:27.875Z",
+  "generated": "2026-01-19T01:45:54.741Z",
   "entries": [
+    {
+      "hash": "4431a11",
+      "date": "2026-01-18",
+      "type": "Fixed",
+      "description": "Restore proper line-height (1.75) for document reading view",
+      "scope": null
+    },
     {
       "hash": "b0f7cd0",
       "date": "2026-01-17",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Use established religious terminology in translations",
       "scope": null
-    },
-    {
-      "hash": "7c1e0d6",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add email_queue table migration to unblock job processor",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-18": [
+      {
+        "hash": "4431a11",
+        "date": "2026-01-18",
+        "type": "Fixed",
+        "description": "Restore proper line-height (1.75) for document reading view",
+        "scope": null
+      }
+    ],
     "2026-01-17": [
       {
         "hash": "b0f7cd0",
@@ -7023,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Use established religious terminology in translations",
-        "scope": null
-      },
-      {
-        "hash": "7c1e0d6",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add email_queue table migration to unblock job processor",
         "scope": null
       }
     ]
