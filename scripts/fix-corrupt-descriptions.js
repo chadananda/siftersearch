@@ -25,6 +25,13 @@ const CORRUPT_PATTERNS = [
   /^">"$/,           // ">" as literal string
   /^"\|"$/,          // "|" as literal string
   /^From\s+/i,       // "From path/to/file"
+  /^_?Download:/i,   // "_Download: file.pdf"
+  /^\[?PDF/i,        // "[PDF help]" or "PDF..."
+  /\[PDF help\]/i,   // Contains "[PDF help]"
+  /\.pdf/i,          // Contains ".pdf" - likely a download link
+  /^https?:\/\//i,   // URL instead of description
+  /^\*\*Download/i,  // "**Download..."
+  /^Click here/i,    // "Click here to..."
 ];
 
 function isCorruptDescription(desc) {

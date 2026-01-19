@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T18:00:29.867Z",
+  "generated": "2026-01-19T18:13:32.890Z",
   "entries": [
+    {
+      "hash": "4a6103b",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Add script to fix corrupt YAML descriptions in source files",
+      "scope": null
+    },
     {
       "hash": "6789ac8",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Redesign document presentation with integrated metadata",
       "scope": null
-    },
-    {
-      "hash": "2d5ed70",
-      "date": "2026-01-02",
-      "type": "Chore",
-      "description": "Remove temporary inspection files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "4a6103b",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Add script to fix corrupt YAML descriptions in source files",
+        "scope": null
+      },
       {
         "hash": "6789ac8",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Redesign document presentation with integrated metadata",
-        "scope": null
-      },
-      {
-        "hash": "2d5ed70",
-        "date": "2026-01-02",
-        "type": "Chore",
-        "description": "Remove temporary inspection files",
         "scope": null
       }
     ]
