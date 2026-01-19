@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:31:54.271Z",
+  "generated": "2026-01-19T14:34:01.090Z",
   "entries": [
+    {
+      "hash": "f9d863d",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Use file.metadata.relativePath in index-library.js",
+      "scope": null
+    },
     {
       "hash": "ef788c1",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
       "scope": null
-    },
-    {
-      "hash": "8dc7d6c",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add generate-embeddings API endpoint for missing paragraphs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "f9d863d",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Use file.metadata.relativePath in index-library.js",
+        "scope": null
+      },
       {
         "hash": "ef788c1",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
-        "scope": null
-      },
-      {
-        "hash": "8dc7d6c",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add generate-embeddings API endpoint for missing paragraphs",
         "scope": null
       }
     ]
