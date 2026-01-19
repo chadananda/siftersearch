@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.865",
+  "version": "0.1.866",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -50,6 +50,10 @@
     "index:watch": "node scripts/index-library.js --watch",
     "resegment": "node scripts/resegment-oversized.js",
     "resegment:dry": "node scripts/resegment-oversized.js --dry-run --verbose",
+    "fix:descriptions": "node scripts/fix-corrupt-descriptions.js",
+    "fix:descriptions:dry": "node scripts/fix-corrupt-descriptions.js --dry-run --verbose",
+    "sync:metadata": "node scripts/sync-metadata.js",
+    "sync:meili": "node scripts/sync-meili.js",
     "hooks": "node scripts/deploy-hooks.js",
     "hooks:list": "node scripts/deploy-hooks.js --list",
     "hooks:reset": "node scripts/deploy-hooks.js --reset",

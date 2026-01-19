@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T17:48:22.508Z",
+  "generated": "2026-01-19T18:00:29.867Z",
   "entries": [
+    {
+      "hash": "6789ac8",
+      "date": "2026-01-19",
+      "type": "New",
+      "description": "Add script to sync metadata to Meilisearch",
+      "scope": null
+    },
     {
       "hash": "425115c",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Remove temporary inspection files",
       "scope": null
-    },
-    {
-      "hash": "a2b760e",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Use fixed light background for document presentation container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "6789ac8",
+        "date": "2026-01-19",
+        "type": "New",
+        "description": "Add script to sync metadata to Meilisearch",
+        "scope": null
+      },
       {
         "hash": "425115c",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Chore",
         "description": "Remove temporary inspection files",
-        "scope": null
-      },
-      {
-        "hash": "a2b760e",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Use fixed light background for document presentation container",
         "scope": null
       }
     ]
