@@ -1701,7 +1701,7 @@
                     <div class="ingestion-fill" style="width: {libraryStats.importProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatNumber(libraryStats.importProgress.completed)} / {formatNumber(libraryStats.importProgress.total)} documents
+                    {formatWithCommas(libraryStats.importProgress.completed)} / {formatWithCommas(libraryStats.importProgress.total)} documents
                     {#if libraryStats.importProgress.failed > 0}
                       <span class="failed-count">({libraryStats.importProgress.failed} failed)</span>
                     {/if}
@@ -1719,7 +1719,7 @@
                     <div class="ingestion-fill" style="width: {libraryStats.ingestionProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatNumber(libraryStats.ingestionProgress.docsWithContent)} / {formatNumber(libraryStats.ingestionProgress.totalDocs)} documents
+                    {formatWithCommas(libraryStats.ingestionProgress.docsWithContent)} / {formatWithCommas(libraryStats.ingestionProgress.totalDocs)} documents
                     {#if libraryStats.ingestionProgress.docsPending > 0}
                       <span class="pending-count">({libraryStats.ingestionProgress.docsPending} pending)</span>
                     {/if}
@@ -1737,7 +1737,7 @@
                     <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatNumber(libraryStats.indexingProgress.indexed)} / {formatNumber(libraryStats.indexingProgress.totalWithContent)} documents
+                    {formatWithCommas(libraryStats.indexingProgress.indexed)} / {formatWithCommas(libraryStats.indexingProgress.totalWithContent)} documents
                   </div>
                 </div>
               {/if}
