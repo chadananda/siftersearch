@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T17:30:56.332Z",
+  "generated": "2026-01-19T17:35:29.648Z",
   "entries": [
+    {
+      "hash": "8064b5a",
+      "date": "2026-01-19",
+      "type": "New",
+      "description": "Add sync-metadata script to update docs from frontmatter",
+      "scope": null
+    },
     {
       "hash": "f8228db",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Disable Cloudflare caching for library pages during development",
       "scope": null
-    },
-    {
-      "hash": "ba234b1",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Correct dark mode styling in document presentation page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "8064b5a",
+        "date": "2026-01-19",
+        "type": "New",
+        "description": "Add sync-metadata script to update docs from frontmatter",
+        "scope": null
+      },
       {
         "hash": "f8228db",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Chore",
         "description": "Disable Cloudflare caching for library pages during development",
-        "scope": null
-      },
-      {
-        "hash": "ba234b1",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Correct dark mode styling in document presentation page",
         "scope": null
       }
     ]
