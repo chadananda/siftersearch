@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:43:04.419Z",
+  "generated": "2026-01-19T16:50:16.452Z",
   "entries": [
+    {
+      "hash": "daa50d3",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Add deleted_at filter to ALL doc lookups to prevent orphaned content",
+      "scope": null
+    },
     {
       "hash": "803eed9",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add paragraph anchor linking for document pages",
       "scope": null
-    },
-    {
-      "hash": "0c40137",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Disable PWA navigation fallback that broke SSR routes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "daa50d3",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Add deleted_at filter to ALL doc lookups to prevent orphaned content",
+        "scope": null
+      },
       {
         "hash": "803eed9",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add paragraph anchor linking for document pages",
-        "scope": null
-      },
-      {
-        "hash": "0c40137",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Disable PWA navigation fallback that broke SSR routes",
         "scope": null
       }
     ]

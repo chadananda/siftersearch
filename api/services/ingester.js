@@ -759,6 +759,31 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
+  // PRIORITY 5: Check for SOFT-DELETED document with same file_path
+  // If found, RESTORE it instead of trying to INSERT (which would fail on UNIQUE constraint)
+  // This handles the case where a file was deleted and then re-added at the same path
+  if (!existingDoc && relativePath) {
+    const deletedDoc = await queryOne(
+      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug, deleted_at FROM docs WHERE file_path = ? AND deleted_at IS NOT NULL`,
+      [relativePath]
+    );
+
+    if (deletedDoc) {
+      // Found a soft-deleted doc at this path - restore it!
+      await query(`UPDATE docs SET deleted_at = NULL WHERE id = ?`, [deletedDoc.id]);
+      // Also restore any soft-deleted content rows for this doc
+      await query(`UPDATE content SET deleted_at = NULL WHERE doc_id = ? AND deleted_at IS NOT NULL`, [deletedDoc.id]);
+
+      existingDoc = { ...deletedDoc, deleted_at: null };
+      logger.info({
+        documentId: deletedDoc.id,
+        filePath: relativePath,
+        wasDeleted: deletedDoc.deleted_at,
+        title: deletedDoc.title
+      }, 'Restored soft-deleted document at same file_path - will update content');
+    }
+  }
+
   // Check if document content is unchanged
   if (existingDoc && existingDoc.file_hash === fileHash) {
     // Content unchanged, but check if path-derived metadata changed (file moved)
