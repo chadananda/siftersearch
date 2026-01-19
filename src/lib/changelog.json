@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:22:33.065Z",
+  "generated": "2026-01-19T14:30:22.144Z",
   "entries": [
+    {
+      "hash": "c0c1508",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Update frontmatter-only changes in library watcher",
+      "scope": null
+    },
     {
       "hash": "be5656d",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add /server/query-documents endpoint for flexible metadata queries",
       "scope": null
-    },
-    {
-      "hash": "58471a7",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add /server/reingest-document API endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "c0c1508",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Update frontmatter-only changes in library watcher",
+        "scope": null
+      },
       {
         "hash": "be5656d",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add /server/query-documents endpoint for flexible metadata queries",
-        "scope": null
-      },
-      {
-        "hash": "58471a7",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add /server/reingest-document API endpoint",
         "scope": null
       }
     ]

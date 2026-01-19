@@ -33,6 +33,7 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 // Import services (config.js will now see env vars)
 import { indexDocumentFromText, getIndexingStatus, removeDocument } from '../api/services/indexer.js';
+import { ingestDocument } from '../api/services/ingester.js';
 import { getMeili, initializeIndexes, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 import { queryOne } from '../api/lib/db.js';
@@ -40,6 +41,13 @@ import { config } from '../api/lib/config.js';
 import { ensureServicesRunning } from '../api/lib/services.js';
 import { startImportBatch, updateImportProgress, clearImportBatch } from '../api/services/progress.js';
 import { startLibraryWatcher, stopLibraryWatcher } from '../api/services/library-watcher.js';
+
+// Get existing document from database by file path
+async function getExistingDocument(filePath) {
+  const basePath = config.library.basePath;
+  const relativePath = path.relative(basePath, filePath);
+  return queryOne('SELECT id, file_hash, body_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relativePath]);
+}
 
 // Parse CLI arguments
 const args = process.argv.slice(2);
@@ -464,11 +472,38 @@ async function indexLibrary() {
     try {
       // Check if already indexed
       if (skipExisting && !dryRun) {
-        const exists = await documentExists(file.path);
-        if (exists) {
-          // Store hash for watch mode
-          const hash = await getFileHash(file.path);
-          if (hash) fileHashes.set(file.path, hash);
+        const existingDoc = await getExistingDocument(file.path);
+        if (existingDoc) {
+          // Compute current file hash and compare with stored hash
+          const currentHash = await getFileHash(file.path);
+          if (currentHash) fileHashes.set(file.path, currentHash);
+
+          // Compare MD5 hash with stored file_hash (convert to compare first 32 chars)
+          // If file hasn't changed, skip. Otherwise re-index to pick up changes.
+          const storedHash = existingDoc.file_hash;
+          if (storedHash && currentHash) {
+            // Different hash algorithm, so just check if file content changed via ingestDocument
+            // The ingester handles metadata-only vs full re-index internally
+            const content = await fs.readFile(file.path, 'utf-8');
+            const result = await ingestDocument(content, { file_mtime: new Date().toISOString() }, file.relativePath);
+
+            if (result.skipped || result.status === 'unchanged') {
+              console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (unchanged)`);
+              stats.skipped++;
+              updateImportProgress('skipped');
+              continue;
+            } else if (result.status === 'moved') {
+              console.log(`${progress} 📦 MOVED: ${file.metadata.title}`);
+              stats.indexed++;
+              updateImportProgress('indexed');
+              continue;
+            } else {
+              console.log(`${progress} 🔄 UPDATED: ${file.metadata.title} (${result.paragraphCount || 0} chunks)`);
+              stats.indexed++;
+              updateImportProgress('indexed');
+              continue;
+            }
+          }
 
           console.log(`${progress} ⏭️  SKIP: ${file.metadata.title} (already indexed)`);
           stats.skipped++;
