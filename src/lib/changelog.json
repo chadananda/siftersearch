@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T15:13:24.819Z",
+  "generated": "2026-01-19T15:47:50.003Z",
   "entries": [
+    {
+      "hash": "e3954ba",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Only show modified files within cooldown window as pending",
+      "scope": null
+    },
     {
       "hash": "4fc6dc8",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add document view page at /library/view",
       "scope": null
-    },
-    {
-      "hash": "2b6d15f",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "e3954ba",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Only show modified files within cooldown window as pending",
+        "scope": null
+      },
       {
         "hash": "4fc6dc8",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add document view page at /library/view",
-        "scope": null
-      },
-      {
-        "hash": "2b6d15f",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
         "scope": null
       }
     ]
