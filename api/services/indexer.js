@@ -118,12 +118,11 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
 
   try {
     // Phase 1: Look up from same document (most efficient - exact content_hash match)
-    let doc = await queryOne('SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL', [filePath]);
+    const doc = await queryOne('SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL', [filePath]);
 
-    // If not found by path but we have a body_hash, try that (file may have been renamed)
-    if (!doc && bodyHash) {
-      doc = await queryOne('SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL AND deleted_at IS NULL', [bodyHash]);
-    }
+    // DISABLED: body_hash lookup caused duplicate files to share embeddings incorrectly
+    // Two files with identical body content should NOT share the same doc record
+    // if (!doc && bodyHash) { ... }
 
     if (doc) {
       const existing = await queryAll(
@@ -218,56 +217,12 @@ async function storeInLibsql(document, paragraphs) {
   const insertedIds = [];
 
   try {
-    let docId;
+    // DISABLED: body_hash lookup caused duplicate files to be merged
+    // Two files with identical body content are NOT necessarily the same document.
+    // The upsert by file_path below handles the actual file identity correctly.
 
-    // Strategy: First try to find existing doc by body_hash (body content unchanged, file may have been renamed)
-    // Using body_hash instead of file_hash allows metadata/frontmatter changes without triggering re-index
-    if (document.body_hash) {
-      const existingByHash = await queryOne(
-        'SELECT id FROM docs WHERE body_hash = ? AND body_hash IS NOT NULL',
-        [document.body_hash]
-      );
-
-      if (existingByHash) {
-        // Found by body hash - update with new path and metadata
-        docId = existingByHash.id;
-        await query(`
-          UPDATE docs SET
-            file_path = ?,
-            file_hash = ?,
-            body_hash = ?,
-            title = ?,
-            author = ?,
-            religion = ?,
-            collection = ?,
-            language = ?,
-            year = ?,
-            description = ?,
-            paragraph_count = ?,
-            updated_at = ?
-          WHERE id = ?
-        `, [
-          document.file_path,
-          document.file_hash,
-          document.body_hash,
-          document.title,
-          document.author,
-          document.religion,
-          document.collection,
-          document.language,
-          document.year,
-          document.description,
-          paragraphs.length,
-          now,
-          docId
-        ]);
-        logger.debug({ docId, file_path: document.file_path }, 'Updated existing doc found by body_hash');
-      }
-    }
-
-    // If not found by body_hash, try upsert by file_path
-    if (!docId) {
-      const docResult = await query(`
+    // Upsert by file_path - this is the correct way to identify documents
+    const docResult = await query(`
         INSERT INTO docs (file_path, file_hash, body_hash, title, author, religion, collection, language, year, description, paragraph_count, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(file_path) DO UPDATE SET
@@ -299,9 +254,8 @@ async function storeInLibsql(document, paragraphs) {
         now
       ]);
 
-      // Get the INTEGER doc id (either newly inserted or existing)
-      docId = Number(docResult.rows?.[0]?.id || docResult.lastInsertRowid);
-    }
+    // Get the INTEGER doc id (either newly inserted or existing)
+    const docId = Number(docResult.rows?.[0]?.id || docResult.lastInsertRowid);
 
     // Delete existing paragraphs for this document (simpler than complex upsert)
     await query('DELETE FROM content WHERE doc_id = ?', [docId]);
