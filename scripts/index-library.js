@@ -158,12 +158,12 @@ function extractMetadataFromPath(filePath, basePath) {
       }
     }
   }
-  // Pattern 3: "Title - Author Name"
+  // Pattern 3: "Author Name - Title" (most common format)
   else if (filename.includes(' - ')) {
     const dashParts = filename.split(' - ');
     if (dashParts.length === 2) {
-      title = dashParts[0].trim();
-      author = dashParts[1].trim();
+      author = dashParts[0].trim();
+      title = dashParts[1].trim();
     }
   }
   // Pattern 4: "Author Name, Title" (no year)

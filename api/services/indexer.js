@@ -473,13 +473,14 @@ export async function indexDocumentFromText(text, metadata = {}) {
   const finalLanguage = contentLanguage || extractedMeta.language || metadata.language || language;
 
   const finalMeta = {
-    title: metadata.title || extractedMeta.title || title,
+    // Title: frontmatter takes precedence over path-extracted metadata
+    title: extractedMeta.title || metadata.title || title,
     author: finalAuthor,
     religion: metadata.religion || extractedMeta.religion || religion,
     collection: metadata.collection || extractedMeta.collection || collection,
     language: finalLanguage,
-    year: metadata.year || extractedMeta.year || year,
-    description: metadata.description || extractedMeta.description || description
+    year: extractedMeta.year || metadata.year || year,
+    description: extractedMeta.description || metadata.description || description
   };
 
   // Parse into chunks

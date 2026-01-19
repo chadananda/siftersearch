@@ -470,7 +470,7 @@
 
     // Load appropriate view based on URL params
     if (viewMode === 'recent') {
-      fetchRecent(true);
+      fetchRecentDocuments(true);
     } else {
       fetchDocuments(true);
     }

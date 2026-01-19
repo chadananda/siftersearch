@@ -39,6 +39,28 @@
     return ms >= 1000 ? (ms / 1000).toFixed(2) + 's' : ms + 'ms';
   }
 
+  // Remove diacritics and normalize for comparison using Unicode NFD
+  function normalizeForComparison(str) {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')  // Remove combining diacritical marks
+      .toLowerCase()
+      .replace(/[''`']/g, '')  // Remove apostrophes
+      .replace(/[^a-z0-9\s]/g, ' ')  // Non-alphanumeric to spaces
+      .replace(/\s+/g, ' ')  // Collapse whitespace
+      .trim();
+  }
+
+  // Check if author is contained within the title (normalized comparison)
+  function authorInTitle(author, title) {
+    if (!author || !title) return false;
+    const normAuthor = normalizeForComparison(author);
+    const normTitle = normalizeForComparison(title);
+    // Check if normalized author equals or is contained in normalized title
+    return normAuthor === normTitle || normTitle.includes(normAuthor);
+  }
+
   // Truncate text at sentence boundary for complete thoughts
   function truncateAtSentence(text, maxLength) {
     if (!text || text.length <= maxLength) return text;
@@ -1550,13 +1572,20 @@
           </div>
           {#each searchResults as result, i ((result.doc_id || result.document_id) + '-' + result.paragraph_index)}
             {@const text = result.highlightedExcerpt || result.excerpt || result.text || ''}
-            {@const title = result.title || 'Untitled'}
+            {@const rawTitle = result.title || 'Untitled'}
             {@const author = result.author}
+            {@const filename = result.filename}
+            {@const docId = result.doc_id || result.document_id}
             {@const religion = result.religion || ''}
             {@const rawCollection = result.collection || ''}
             {@const collection = rawCollection.includes(' > ') ? rawCollection.split(' > ')[0] : rawCollection}
             {@const language = result.language || 'en'}
             {@const isRTL = ['ar', 'fa', 'he', 'ur'].includes(language)}
+            <!-- Use filename as title if title equals/is just the author name (normalized comparison) -->
+            {@const titleMatchesAuthor = author && authorInTitle(author, rawTitle)}
+            {@const displayTitle = titleMatchesAuthor && filename ? filename : rawTitle}
+            <!-- Skip showing author if author is already contained in the display title -->
+            {@const showAuthor = author && !authorInTitle(author, displayTitle)}
 
             <div
               class="source-card clickable"
@@ -1590,7 +1619,8 @@
               <!-- Compact citation line - floated right -->
               <div class="citation-line">
                 <span class="citation-meta">
-                  {#if author}{author} — {/if}{title}
+                  {#if showAuthor}{author} — {/if}{displayTitle}
+                  {#if $admin?.isAdmin}<span class="doc-id-debug" title="Document ID">#{docId}</span>{/if}
                 </span>
               </div>
             </div>
@@ -3339,6 +3369,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+  }
+
+  .doc-id-debug {
+    font-size: 0.65rem;
+    opacity: 0.5;
+    margin-left: 0.5rem;
+    font-family: monospace;
   }
 
   /* Keep citation-arrow for AI chat results that still use it */

@@ -143,12 +143,32 @@ const MAX_TOTAL_LENGTH = 95;    // Max total slug length (leaves room for _xx la
  * generateDocSlug({ title: "Tablet", language: "fa" })
  * // "tablet_fa" (no author)
  */
+/**
+ * Check if author is already contained in the title (normalized comparison)
+ * Used to prevent slug duplication like "abdul-baha_abdul-baha-tablet"
+ */
+function authorInTitle(author, title) {
+  if (!author || !title) return false;
+  // Use Unicode NFD normalization to remove diacritics
+  const normalize = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const normAuthor = normalize(author);
+  const normTitle = normalize(title);
+  return normAuthor === normTitle || normTitle.includes(normAuthor);
+}
+
 export function generateDocSlug(doc) {
   const parts = [];
 
-  // Add author if available and not "Unknown"
+  // Use title if available, otherwise use filename without extension
+  let titlePart = doc.title;
+  if (!titlePart && doc.filename) {
+    titlePart = doc.filename.replace(/\.[^.]+$/, ''); // Remove extension
+  }
+
+  // Add author if available, not "Unknown", and not already in the title
+  // This prevents slugs like "abdul-baha_abdul-baha-tablet"
   // Truncate author slug to MAX_AUTHOR_LENGTH chars
-  if (doc.author && doc.author !== 'Unknown') {
+  if (doc.author && doc.author !== 'Unknown' && !authorInTitle(doc.author, titlePart)) {
     let authorSlug = generateSlug(doc.author);
     if (authorSlug.length > MAX_AUTHOR_LENGTH) {
       // Truncate at word boundary if possible
@@ -157,11 +177,6 @@ export function generateDocSlug(doc) {
     parts.push(authorSlug);
   }
 
-  // Use title if available, otherwise use filename without extension
-  let titlePart = doc.title;
-  if (!titlePart && doc.filename) {
-    titlePart = doc.filename.replace(/\.[^.]+$/, ''); // Remove extension
-  }
   if (titlePart) {
     parts.push(generateSlug(titlePart));
   }
