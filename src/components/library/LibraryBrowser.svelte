@@ -470,7 +470,11 @@
 
     // Load appropriate view based on URL params
     if (viewMode === 'recent') {
-      fetchRecentDocuments(true);
+      if (recentType === 'pending') {
+        fetchPendingDocuments();
+      } else {
+        fetchRecentDocuments(true);
+      }
     } else {
       fetchDocuments(true);
     }

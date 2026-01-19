@@ -447,7 +447,6 @@ export default async function libraryRoutes(fastify) {
     const now = Date.now();
     const cooldownThreshold = now - COOLDOWN_MS;
     const pendingFiles = [];
-    let debugStats = { totalFiles: 0, withinCooldown: 0, existingDocs: 0, newFiles: 0, bodyChanged: 0 };
 
     // Get all existing docs with their body hashes for comparison
     // Use body_hash (content only, no frontmatter) to match library-watcher behavior
@@ -467,25 +466,21 @@ export default async function libraryRoutes(fastify) {
             await scanDir(fullPath);
           } else if (entry.isFile() && entry.name.endsWith('.md')) {
             try {
-              debugStats.totalFiles++;
               const relativePath = relative(basePath, fullPath);
               const existingDoc = existingDocsMap.get(relativePath);
               const fileStat = await stat(fullPath);
 
               if (existingDoc) {
-                debugStats.existingDocs++;
                 // File exists in database - check if BODY content has changed
                 // Use body_hash (not file_hash) to match library-watcher behavior
                 // This ignores frontmatter-only changes which don't affect search
                 // Only check files within cooldown window (recently modified)
                 if (fileStat.mtimeMs > cooldownThreshold) {
-                  debugStats.withinCooldown++;
                   const content = await readFile(fullPath, 'utf-8');
                   const { content: bodyContent } = matter(content);
                   const currentBodyHash = hashContent(bodyContent);
 
                   if (currentBodyHash !== existingDoc.body_hash) {
-                    debugStats.bodyChanged++;
                     // Body content has actually changed - mark as modified
                     const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
                     pendingFiles.push({
@@ -503,7 +498,6 @@ export default async function libraryRoutes(fastify) {
               } else {
                 // New file - apply cooldown window
                 if (fileStat.mtimeMs > cooldownThreshold) {
-                  debugStats.newFiles++;
                   const hoursRemaining = Math.max(0, Math.ceil((COOLDOWN_MS - (now - fileStat.mtimeMs)) / (60 * 60 * 1000)));
                   pendingFiles.push({
                     file_path: relativePath,
@@ -560,13 +554,10 @@ export default async function libraryRoutes(fastify) {
       }
     }));
 
-    logger.info({ debugStats, pendingCount: pendingFiles.length }, 'Pending scan complete');
-
     return {
       documents: enrichedFiles,
       total: enrichedFiles.length,
-      cooldownHours: 4,
-      debug: debugStats
+      cooldownHours: 4
     };
   });
 

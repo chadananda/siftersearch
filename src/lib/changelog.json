@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T15:47:50.003Z",
+  "generated": "2026-01-19T16:15:15.718Z",
   "entries": [
+    {
+      "hash": "104a329",
+      "date": "2026-01-19",
+      "type": "Other",
+      "description": "Add stats to pending endpoint to trace issue",
+      "scope": null
+    },
     {
       "hash": "e3954ba",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add semantic URLs for library documents with SEO hierarchy pages",
       "scope": null
-    },
-    {
-      "hash": "d8ae948",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add document view page at /library/view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "104a329",
+        "date": "2026-01-19",
+        "type": "Other",
+        "description": "Add stats to pending endpoint to trace issue",
+        "scope": null
+      },
       {
         "hash": "e3954ba",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add semantic URLs for library documents with SEO hierarchy pages",
-        "scope": null
-      },
-      {
-        "hash": "d8ae948",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add document view page at /library/view",
         "scope": null
       }
     ]
