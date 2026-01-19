@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T05:03:19.792Z",
+  "generated": "2026-01-19T05:12:25.618Z",
   "entries": [
+    {
+      "hash": "ff30694",
+      "date": "2026-01-18",
+      "type": "New",
+      "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
+      "scope": null
+    },
     {
       "hash": "690a959",
       "date": "2026-01-18",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent collection filter input from clearing on each keystroke",
       "scope": null
-    },
-    {
-      "hash": "2f8f4a6",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Show translation status indicator for all users in library list",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-18": [
+      {
+        "hash": "ff30694",
+        "date": "2026-01-18",
+        "type": "New",
+        "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
+        "scope": null
+      },
       {
         "hash": "690a959",
         "date": "2026-01-18",
@@ -7025,13 +7032,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Prevent collection filter input from clearing on each keystroke",
-        "scope": null
-      },
-      {
-        "hash": "2f8f4a6",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Show translation status indicator for all users in library list",
         "scope": null
       }
     ]
