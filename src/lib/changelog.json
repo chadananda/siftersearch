@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:22:06.978Z",
+  "generated": "2026-01-19T16:27:33.507Z",
   "entries": [
+    {
+      "hash": "c7b9658",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Show full numbers with commas in progress bars instead of abbreviated K format",
+      "scope": null
+    },
     {
       "hash": "34bf4ac",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add metadata JSON column and encumbered field for docs",
       "scope": null
-    },
-    {
-      "hash": "a4443d8",
-      "date": "2026-01-02",
-      "type": "Refactor",
-      "description": "Use dynamic slug generation from title/filename + language",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "c7b9658",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Show full numbers with commas in progress bars instead of abbreviated K format",
+        "scope": null
+      },
       {
         "hash": "34bf4ac",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add metadata JSON column and encumbered field for docs",
-        "scope": null
-      },
-      {
-        "hash": "a4443d8",
-        "date": "2026-01-02",
-        "type": "Refactor",
-        "description": "Use dynamic slug generation from title/filename + language",
         "scope": null
       }
     ]

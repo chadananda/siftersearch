@@ -100,10 +100,11 @@ export function getImportProgress() {
  */
 export async function getIngestionProgress() {
   try {
+    // Filter by deleted_at IS NULL to match library.js stats endpoint
     const [totalResult, withContentResult, paragraphResult] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content'),
-      queryOne('SELECT COUNT(*) as count FROM content')
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL')
     ]);
 
     const totalDocs = totalResult?.count || 0;
@@ -135,8 +136,8 @@ export async function getIndexingProgress() {
   }
 
   try {
-    // Get docs with content from SQLite
-    const contentCount = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content');
+    // Get docs with content from SQLite (filter deleted to match library.js stats)
+    const contentCount = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
     const docsWithContent = contentCount?.count || 0;
 
     // Get indexed docs from Meilisearch documents index
