@@ -738,26 +738,12 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
-  // PRIORITY 4: Look up by body_hash if file_hash didn't match (handles renames with frontmatter changes)
-  // Body content unchanged but frontmatter or path changed - find by body hash
-  // Exclude soft-deleted documents (deleted_at IS NULL)
-  if (!existingDoc && relativePath && bodyHash) {
-    const movedDoc = await queryOne(
-      `SELECT id, file_path, file_hash, body_hash, title, filename, religion, collection, language, slug FROM docs WHERE body_hash = ? AND deleted_at IS NULL`,
-      [bodyHash]
-    );
-
-    if (movedDoc) {
-      // Body content matches! File was moved/renamed with possible frontmatter changes
-      existingDoc = movedDoc;
-      logger.info({
-        documentId: movedDoc.id,
-        oldPath: movedDoc.file_path,
-        newPath: relativePath,
-        title: movedDoc.title
-      }, 'File moved detected by body_hash - will update path and metadata');
-    }
-  }
+  // PRIORITY 4: DISABLED - body_hash matching incorrectly merged duplicate files
+  // Two files with identical body content are NOT necessarily the same document.
+  // PRIORITY 3 (file_hash) is sufficient to detect actual file moves.
+  // If someone moves a file AND edits frontmatter, it should be treated as a new document.
+  // This prevents orphaned content when the library has legitimate duplicate files.
+  // if (!existingDoc && relativePath && bodyHash) { ... }
 
   // PRIORITY 5: Check for SOFT-DELETED document with same file_path
   // If found, RESTORE it instead of trying to INSERT (which would fail on UNIQUE constraint)

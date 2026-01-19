@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:50:16.452Z",
+  "generated": "2026-01-19T16:55:05.847Z",
   "entries": [
+    {
+      "hash": "1095647",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Restore soft-deleted docs on re-ingest to prevent UNIQUE constraint failures",
+      "scope": null
+    },
     {
       "hash": "daa50d3",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add encumbered field support to API and test setup",
       "scope": null
-    },
-    {
-      "hash": "31076e1",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add paragraph anchor linking for document pages",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "1095647",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Restore soft-deleted docs on re-ingest to prevent UNIQUE constraint failures",
+        "scope": null
+      },
       {
         "hash": "daa50d3",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add encumbered field support to API and test setup",
-        "scope": null
-      },
-      {
-        "hash": "31076e1",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add paragraph anchor linking for document pages",
         "scope": null
       }
     ]
