@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T17:12:25.604Z",
+  "generated": "2026-01-19T17:30:56.332Z",
   "entries": [
+    {
+      "hash": "f8228db",
+      "date": "2026-01-19",
+      "type": "New",
+      "description": "Add script to fix document descriptions from frontmatter",
+      "scope": null
+    },
     {
       "hash": "d14b05c",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct dark mode styling in document presentation page",
       "scope": null
-    },
-    {
-      "hash": "a95e207",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve document presentation with paper styling, SBS columns, and print support",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "f8228db",
+        "date": "2026-01-19",
+        "type": "New",
+        "description": "Add script to fix document descriptions from frontmatter",
+        "scope": null
+      },
       {
         "hash": "d14b05c",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Correct dark mode styling in document presentation page",
-        "scope": null
-      },
-      {
-        "hash": "a95e207",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve document presentation with paper styling, SBS columns, and print support",
         "scope": null
       }
     ]
