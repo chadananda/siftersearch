@@ -52,11 +52,13 @@ module.exports = {
     },
 
     // Health Watchdog
+    // MUST be fork mode - cluster mode leaves orphaned processes on restart!
     {
       name: 'siftersearch-watchdog',
       script: 'scripts/watchdog.js',
       cwd: PROJECT_ROOT,
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       exp_backoff_restart_delay: 1000,
       max_restarts: 3,
@@ -119,12 +121,14 @@ module.exports = {
     },
 
     // Auto-updater daemon (polls git every 5 minutes)
+    // MUST be fork mode - cluster mode leaves orphaned processes on restart!
     {
       name: 'siftersearch-updater',
       script: 'scripts/update-server.js',
       cwd: PROJECT_ROOT,
       args: '--daemon',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       env: {

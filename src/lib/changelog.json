@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:27:33.507Z",
+  "generated": "2026-01-19T16:33:58.183Z",
   "entries": [
+    {
+      "hash": "7e87acd",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Add deleted_at filter to progress queries for consistent stats",
+      "scope": null
+    },
     {
       "hash": "c7b9658",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Include filename in document API responses for dynamic slug generation",
       "scope": null
-    },
-    {
-      "hash": "fff1f03",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add metadata JSON column and encumbered field for docs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "7e87acd",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Add deleted_at filter to progress queries for consistent stats",
+        "scope": null
+      },
       {
         "hash": "c7b9658",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Include filename in document API responses for dynamic slug generation",
-        "scope": null
-      },
-      {
-        "hash": "fff1f03",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add metadata JSON column and encumbered field for docs",
         "scope": null
       }
     ]
