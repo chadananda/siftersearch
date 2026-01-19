@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T14:34:01.090Z",
+  "generated": "2026-01-19T15:13:24.819Z",
   "entries": [
+    {
+      "hash": "4fc6dc8",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Fallback to computed relativePath if metadata is missing",
+      "scope": null
+    },
     {
       "hash": "f9d863d",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
       "scope": null
-    },
-    {
-      "hash": "4894304",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "4fc6dc8",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Fallback to computed relativePath if metadata is missing",
+        "scope": null
+      },
       {
         "hash": "f9d863d",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add mark-for-sync endpoint to trigger resync after paragraph deletion",
-        "scope": null
-      },
-      {
-        "hash": "4894304",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add endpoint to delete stale paragraphs from Meilisearch after re-ingest",
         "scope": null
       }
     ]
