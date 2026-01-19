@@ -634,12 +634,13 @@ async function handleMetaYamlChange(filePath) {
     // Build query based on scope (religion-wide or collection-specific)
     // Note: SQLite doesn't store authority - it's calculated from meta.yaml
     // We only need to update Meilisearch where authority is indexed for search ranking
+    // Exclude soft-deleted documents
     let query, params;
     if (collection) {
-      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND collection = ?`;
+      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND collection = ? AND deleted_at IS NULL`;
       params = [religion, collection];
     } else {
-      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ?`;
+      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND deleted_at IS NULL`;
       params = [religion];
     }
 

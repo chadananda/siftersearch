@@ -276,14 +276,14 @@ async function findMarkdownFiles(dir, basePath = dir) {
   return files;
 }
 
-// Check if document exists in index
+// Check if document exists in index (excludes soft-deleted documents)
 async function documentExists(filePath) {
   // Check SQLite docs table by file_path (not Meilisearch)
   // SQLite stores relative paths, so convert absolute to relative
   const canonicalBase = config.library.basePath;
   const relativePath = path.relative(canonicalBase, filePath);
   try {
-    const doc = await queryOne("SELECT id FROM docs WHERE file_path = ?", [relativePath]);
+    const doc = await queryOne("SELECT id FROM docs WHERE file_path = ? AND deleted_at IS NULL", [relativePath]);
     return !!doc;
   } catch {
     return false;

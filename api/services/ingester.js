@@ -1490,10 +1490,11 @@ export async function getUnprocessedDocuments(limit = 100) {
 
 /**
  * Check if a file has been ingested (by path)
+ * Excludes soft-deleted documents
  */
 export async function isFileIngested(filePath) {
   const doc = await queryOne(
-    'SELECT id, file_hash FROM docs WHERE file_path = ?',
+    'SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL',
     [filePath]
   );
   return doc !== null;
@@ -1503,31 +1504,34 @@ export async function isFileIngested(filePath) {
  * Get document by file path
  */
 export async function getDocumentByPath(filePath) {
+  // Exclude soft-deleted documents
   return queryOne(
-    'SELECT * FROM docs WHERE file_path = ?',
+    'SELECT * FROM docs WHERE file_path = ? AND deleted_at IS NULL',
     [filePath]
   );
 }
 
 /**
  * Get document by body hash (content without frontmatter)
+ * Excludes soft-deleted documents
  */
 export async function getDocumentByBodyHash(bodyHash) {
   return queryOne(
-    'SELECT * FROM docs WHERE body_hash = ?',
+    'SELECT * FROM docs WHERE body_hash = ? AND deleted_at IS NULL',
     [bodyHash]
   );
 }
 
 /**
  * Check if body_hash exists at a different path (content was moved)
+ * Excludes soft-deleted documents
  * @param {string} bodyHash - The body hash to check
  * @param {string} excludePath - The path to exclude from the search
  * @returns {Object|null} - The document at the new location, or null
  */
 export async function getMovedDocumentByBodyHash(bodyHash, excludePath) {
   return queryOne(
-    'SELECT * FROM docs WHERE body_hash = ? AND file_path != ?',
+    'SELECT * FROM docs WHERE body_hash = ? AND file_path != ? AND deleted_at IS NULL',
     [bodyHash, excludePath]
   );
 }
