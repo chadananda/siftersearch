@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-18T04:53:10.807Z",
+  "generated": "2026-01-19T01:44:27.875Z",
   "entries": [
+    {
+      "hash": "b0f7cd0",
+      "date": "2026-01-17",
+      "type": "Refactor",
+      "description": "Remove title workaround - data is now fixed in DB",
+      "scope": null
+    },
     {
       "hash": "684a67f",
       "date": "2026-01-17",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add email_queue table migration to unblock job processor",
       "scope": null
-    },
-    {
-      "hash": "6aff8b7",
-      "date": "2026-01-01",
-      "type": "New",
-      "description": "Separate user database from content database",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-17": [
+      {
+        "hash": "b0f7cd0",
+        "date": "2026-01-17",
+        "type": "Refactor",
+        "description": "Remove title workaround - data is now fixed in DB",
+        "scope": null
+      },
       {
         "hash": "684a67f",
         "date": "2026-01-17",
@@ -7023,15 +7030,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Add email_queue table migration to unblock job processor",
-        "scope": null
-      }
-    ],
-    "2026-01-01": [
-      {
-        "hash": "6aff8b7",
-        "date": "2026-01-01",
-        "type": "New",
-        "description": "Separate user database from content database",
         "scope": null
       }
     ]

@@ -2244,7 +2244,7 @@
 
   .paragraph-text {
     font-size: 1rem;
-    line-height: 1;
+    line-height: 1.75;
     color: #1a1a1a;
   }
 
