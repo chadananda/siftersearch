@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T16:58:44.165Z",
+  "generated": "2026-01-19T17:01:38.792Z",
   "entries": [
+    {
+      "hash": "c0854ef",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
+      "scope": null
+    },
     {
       "hash": "64e4384",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct admin edit button URL path and query param",
       "scope": null
-    },
-    {
-      "hash": "2c7080a",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Mark Baha'i Books collection as encumbered via migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "c0854ef",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
+        "scope": null
+      },
       {
         "hash": "64e4384",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Correct admin edit button URL path and query param",
-        "scope": null
-      },
-      {
-        "hash": "2c7080a",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Mark Baha'i Books collection as encumbered via migration",
         "scope": null
       }
     ]

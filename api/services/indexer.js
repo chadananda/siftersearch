@@ -236,7 +236,8 @@ async function storeInLibsql(document, paragraphs) {
           year = excluded.year,
           description = excluded.description,
           paragraph_count = excluded.paragraph_count,
-          updated_at = excluded.updated_at
+          updated_at = excluded.updated_at,
+          deleted_at = NULL
         RETURNING id
       `, [
         document.file_path,
