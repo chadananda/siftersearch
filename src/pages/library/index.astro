@@ -1,0 +1,31 @@
+---
+/**
+ * Library Index Page
+ *
+ * Main entry point for the library browser
+ * Supports query params: ?view=recent&type=pending, etc.
+ */
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import LibraryBrowser from '../../components/library/LibraryBrowser.svelte';
+
+export const prerender = false;
+
+// Get view mode and filters from query params
+const view = Astro.url.searchParams.get('view') || 'all';
+const type = Astro.url.searchParams.get('type') || 'all';
+const days = Astro.url.searchParams.get('days') || '30';
+---
+
+<Layout
+  title="Library - SifterSearch"
+  description="Browse the SifterSearch interfaith library of sacred texts, scriptures, and scholarly works."
+>
+  <NavBar client:load currentPage="library" />
+  <LibraryBrowser
+    client:load
+    initialView={view}
+    initialRecentType={type}
+    initialRecentDays={parseInt(days)}
+  />
+</Layout>
