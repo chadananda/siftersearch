@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T02:49:08.528Z",
+  "generated": "2026-01-20T02:52:06.737Z",
   "entries": [
+    {
+      "hash": "c165ff3",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Add library index page to handle query params",
+      "scope": null
+    },
     {
       "hash": "b4c3842",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add fancy document header with decorative logo and integrated branding",
       "scope": null
-    },
-    {
-      "hash": "afdceba",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Print view shows logo and site name, hides nav links/version",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "c165ff3",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Add library index page to handle query params",
+        "scope": null
+      },
       {
         "hash": "b4c3842",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add fancy document header with decorative logo and integrated branding",
-        "scope": null
-      },
-      {
-        "hash": "afdceba",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Print view shows logo and site name, hides nav links/version",
         "scope": null
       }
     ]

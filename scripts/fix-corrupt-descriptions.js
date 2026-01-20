@@ -159,14 +159,8 @@ async function main() {
         continue;
       }
 
-      // Update source file
-      frontmatter.description = newDescription;
-      const newContent = matter.stringify(content.replace(/^---[\s\S]*?---\s*/, ''), frontmatter);
-
+      // Update database ONLY - never modify source files
       if (!dryRun) {
-        await fs.writeFile(filePath, newContent, 'utf-8');
-
-        // Update database
         await query(
           'UPDATE docs SET description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           [newDescription, doc.id]
