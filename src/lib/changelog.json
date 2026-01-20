@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T16:02:18.167Z",
+  "generated": "2026-01-20T16:09:34.183Z",
   "entries": [
+    {
+      "hash": "0893198",
+      "date": "2026-01-20",
+      "type": "New",
+      "description": "Add View Raw YAML button for admins in library browser",
+      "scope": null
+    },
     {
       "hash": "9ac8d99",
       "date": "2026-01-19",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Add hierarchical sentence markers for translations",
       "scope": null
-    },
-    {
-      "hash": "4cf01e6",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Remove page-break-after from print header styles",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-20": [
+      {
+        "hash": "0893198",
+        "date": "2026-01-20",
+        "type": "New",
+        "description": "Add View Raw YAML button for admins in library browser",
+        "scope": null
+      }
+    ],
     "2026-01-19": [
       {
         "hash": "9ac8d99",
@@ -7027,13 +7036,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add hierarchical sentence markers for translations",
-        "scope": null
-      },
-      {
-        "hash": "4cf01e6",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Remove page-break-after from print header styles",
         "scope": null
       }
     ]
