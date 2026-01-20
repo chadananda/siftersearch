@@ -321,6 +321,8 @@
             console.log('[Re-Import] Full output:', status.output);
             alert('Re-import complete!\n\nCheck browser console for details.');
           }
+          // Tell parent to refresh document list
+          dispatch('refresh');
           return;
         }
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T16:11:33.714Z",
+  "generated": "2026-01-20T16:53:49.816Z",
   "entries": [
+    {
+      "hash": "8e2d2f6",
+      "date": "2026-01-20",
+      "type": "Fixed",
+      "description": "Use correct library path for document reindex endpoint",
+      "scope": null
+    },
     {
       "hash": "d2b812d",
       "date": "2026-01-20",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add strict validation for sentence markers",
       "scope": null
-    },
-    {
-      "hash": "e855bbc",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Improve sentence detection accuracy for Arabic text",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-20": [
+      {
+        "hash": "8e2d2f6",
+        "date": "2026-01-20",
+        "type": "Fixed",
+        "description": "Use correct library path for document reindex endpoint",
+        "scope": null
+      },
       {
         "hash": "d2b812d",
         "date": "2026-01-20",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add strict validation for sentence markers",
-        "scope": null
-      },
-      {
-        "hash": "e855bbc",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Improve sentence detection accuracy for Arabic text",
         "scope": null
       }
     ]
