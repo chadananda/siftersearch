@@ -601,6 +601,22 @@ function isCorruptDescription(desc) {
 }
 
 /**
+ * Check if a paragraph looks like metadata/boilerplate rather than content
+ */
+function isBoilerplateParagraph(text) {
+  const trimmed = text.trim().toLowerCase();
+  // Skip download links, bylines, dates, short metadata
+  if (/^_?download:/i.test(trimmed)) return true;
+  if (/\[pdf help\]/i.test(trimmed)) return true;
+  if (/\.pdf/i.test(trimmed) && trimmed.length < 100) return true;
+  if (/^by\s*[/|]\s*(on behalf of)?/i.test(trimmed)) return true;
+  if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(trimmed)) return true;  // Date only
+  if (/^transmitted by email/i.test(trimmed)) return true;
+  if (trimmed.length < 50 && /^(dear|from|to|date|subject)[\s:]/i.test(trimmed)) return true;
+  return false;
+}
+
+/**
  * Extract a description from document content
  */
 function extractDescriptionFromContent(content, maxLength = 300) {
@@ -620,8 +636,11 @@ function extractDescriptionFromContent(content, maxLength = 300) {
     .replace(/\n{2,}/g, '\n\n')              // Normalize newlines
     .trim();
 
-  // Get first meaningful paragraph (at least 30 chars)
-  const paragraphs = text.split(/\n\n+/).filter(p => p.trim().length > 30);
+  // Get paragraphs, filtering out boilerplate and short ones
+  const paragraphs = text.split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 30 && !isBoilerplateParagraph(p));
+
   if (paragraphs.length === 0) return null;
 
   let description = paragraphs[0].replace(/\s+/g, ' ').trim();
