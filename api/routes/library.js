@@ -2387,8 +2387,9 @@ Provide only the translation, no explanations.`;
 
     // Read the source file and re-ingest immediately (bypassing 4-hour cooldown)
     try {
-      const libraryRoot = process.env.LIBRARY_ROOT || './library';
-      const fullPath = join(libraryRoot, doc.file_path);
+      const fullPath = doc.file_path.startsWith('/')
+        ? doc.file_path
+        : join(config.library.basePath, doc.file_path);
 
       // Check file exists
       try {

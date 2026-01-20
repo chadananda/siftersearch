@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T16:09:34.183Z",
+  "generated": "2026-01-20T16:11:33.714Z",
   "entries": [
+    {
+      "hash": "d2b812d",
+      "date": "2026-01-20",
+      "type": "Fixed",
+      "description": "Move Raw YAML button inside expanded card",
+      "scope": null
+    },
     {
       "hash": "0893198",
       "date": "2026-01-20",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve sentence detection accuracy for Arabic text",
       "scope": null
-    },
-    {
-      "hash": "bce19c6",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add hierarchical sentence markers for translations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-20": [
+      {
+        "hash": "d2b812d",
+        "date": "2026-01-20",
+        "type": "Fixed",
+        "description": "Move Raw YAML button inside expanded card",
+        "scope": null
+      },
       {
         "hash": "0893198",
         "date": "2026-01-20",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Improve sentence detection accuracy for Arabic text",
-        "scope": null
-      },
-      {
-        "hash": "bce19c6",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add hierarchical sentence markers for translations",
         "scope": null
       }
     ]
