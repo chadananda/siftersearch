@@ -110,23 +110,17 @@ async function reingestDocument(docId) {
     process.exit(1);
   }
 
-  // DON'T delete existing content - let incremental logic preserve unchanged paragraphs
-  // Reset both hashes to force full re-segmentation (ingester will diff by content_hash)
-  // Note: Re-segmentation creates new paragraph boundaries, so content_hashes will differ.
-  // The incremental logic mainly helps when source content changes slightly.
-  console.log('\n=== Preparing for incremental re-ingestion... ===');
+  // Let incremental logic preserve unchanged content - DON'T reset hashes!
+  // The ingester will:
+  // - Skip entirely if file_hash unchanged
+  // - Update metadata only if body_hash unchanged (frontmatter-only change)
+  // - Re-process content only if body actually changed
+  console.log('\n=== Re-ingesting (incremental - unchanged content will be preserved)... ===');
   const existingParagraphs = await queryOne(
     'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
     [docId]
   );
   console.log(`Existing paragraphs: ${existingParagraphs?.count || 0}`);
-
-  // Reset both hashes to force full re-ingestion pass
-  await query('UPDATE docs SET file_hash = NULL, body_hash = NULL WHERE id = ?', [docId]);
-
-  // Re-ingest with new segmentation
-  console.log('\n=== Re-ingesting with new AI segmentation... ===');
-  console.log('(This may take a moment for AI processing...)\n');
 
   const result = await ingestDocument(fileContent, { id: docId }, doc.file_path);
 
