@@ -601,6 +601,42 @@ function isCorruptDescription(desc) {
 }
 
 /**
+ * Check if a title value appears to be corrupt/invalid
+ */
+function isCorruptTitle(title) {
+  if (!title || typeof title !== 'string') return true;
+  const trimmed = title.trim();
+  if (trimmed.length < 3) return true;
+  // Detect YAML artifacts stored as literal strings
+  const corruptPatterns = [
+    /^>-?$/,              // >- or > alone
+    /^[|>]$/,             // | or > alone
+    /^">-?"$/,            // ">-" as literal string
+    /^">"$/,              // ">" as literal string
+    /^"\|"$/,             // "|" as literal string
+  ];
+  return corruptPatterns.some(p => p.test(trimmed));
+}
+
+/**
+ * Extract title from document content (first heading)
+ */
+function extractTitleFromContent(content) {
+  // Look for first H1 or H2 heading
+  const h1Match = content.match(/^#\s+(.+)$/m);
+  if (h1Match) {
+    return h1Match[1].trim();
+  }
+
+  const h2Match = content.match(/^##\s+(.+)$/m);
+  if (h2Match) {
+    return h2Match[1].trim();
+  }
+
+  return null;
+}
+
+/**
  * Check if a paragraph looks like metadata/boilerplate rather than content
  */
 function isBoilerplateParagraph(text) {
@@ -690,6 +726,15 @@ export function parseMarkdownFrontmatter(text) {
     if (additionalFrontmatter) {
       logger.warn('Stripping additional frontmatter block from content');
       content = additionalFrontmatter[2].trim();
+    }
+
+    // Validate title - if present but corrupt, extract from content
+    if ('title' in parsed.data && isCorruptTitle(metadata.title)) {
+      const extractedTitle = extractTitleFromContent(content);
+      if (extractedTitle) {
+        metadata.title = extractedTitle;
+      }
+      // Don't delete corrupt title - let filename fallback handle it elsewhere
     }
 
     // Validate description - if present but corrupt, extract from content

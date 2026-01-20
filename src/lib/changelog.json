@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T02:52:06.737Z",
+  "generated": "2026-01-20T16:02:18.167Z",
   "entries": [
+    {
+      "hash": "9ac8d99",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Update fix-corrupt-descriptions to only modify database",
+      "scope": null
+    },
     {
       "hash": "c165ff3",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove page-break-after from print header styles",
       "scope": null
-    },
-    {
-      "hash": "726db88",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add fancy document header with decorative logo and integrated branding",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "9ac8d99",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Update fix-corrupt-descriptions to only modify database",
+        "scope": null
+      },
       {
         "hash": "c165ff3",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "Remove page-break-after from print header styles",
-        "scope": null
-      },
-      {
-        "hash": "726db88",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add fancy document header with decorative logo and integrated branding",
         "scope": null
       }
     ]
