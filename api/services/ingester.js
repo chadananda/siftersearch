@@ -581,8 +581,68 @@ export async function parseDocumentWithBlocks(text, options = {}) {
 }
 
 /**
+ * Check if a description value is corrupt/invalid YAML artifact
+ */
+function isCorruptDescription(desc) {
+  if (!desc || typeof desc !== 'string') return true;
+  const trimmed = desc.trim();
+  if (trimmed.length < 10) return true;
+  // Detect YAML artifacts and garbage patterns
+  const corruptPatterns = [
+    /^>-?$/,              // >- or > alone
+    /^[|>]$/,             // | or > alone
+    /^">-?"$/,            // ">-" as literal string
+    /^_?Download:/i,      // "_Download: file.pdf"
+    /\[PDF help\]/i,      // Contains "[PDF help]"
+    /\.pdf["'\]]*$/i,     // Ends with .pdf
+    /^https?:\/\//i,      // URL instead of description
+  ];
+  return corruptPatterns.some(p => p.test(trimmed));
+}
+
+/**
+ * Extract a description from document content
+ */
+function extractDescriptionFromContent(content, maxLength = 300) {
+  // Remove markdown formatting
+  let text = content
+    .replace(/^#+\s+.*$/gm, '')              // Remove headings
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
+    .replace(/!\[.*?\]\(.*?\)/g, '')         // Remove images
+    .replace(/```[\s\S]*?```/g, '')          // Remove code blocks
+    .replace(/`[^`]+`/g, '')                 // Remove inline code
+    .replace(/\*\*([^*]+)\*\*/g, '$1')       // **bold** -> bold
+    .replace(/\*([^*]+)\*/g, '$1')           // *italic* -> italic
+    .replace(/^[-*+]\s+/gm, '')              // Remove list markers
+    .replace(/^\d+\.\s+/gm, '')              // Remove numbered lists
+    .replace(/^>\s+/gm, '')                  // Remove blockquotes
+    .replace(/_([^_]+)_/g, '$1')             // _italic_ -> italic
+    .replace(/\n{2,}/g, '\n\n')              // Normalize newlines
+    .trim();
+
+  // Get first meaningful paragraph (at least 30 chars)
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim().length > 30);
+  if (paragraphs.length === 0) return null;
+
+  let description = paragraphs[0].replace(/\s+/g, ' ').trim();
+
+  // Truncate at word boundary
+  if (description.length > maxLength) {
+    description = description.substring(0, maxLength);
+    const lastSpace = description.lastIndexOf(' ');
+    if (lastSpace > maxLength - 50) {
+      description = description.substring(0, lastSpace);
+    }
+    description += '...';
+  }
+
+  return description;
+}
+
+/**
  * Extract metadata from markdown frontmatter using gray-matter
  * Properly handles YAML parsing including arrays, nested objects, etc.
+ * If description is corrupt/invalid, extracts from content.
  */
 export function parseMarkdownFrontmatter(text) {
   try {
@@ -611,6 +671,17 @@ export function parseMarkdownFrontmatter(text) {
     if (additionalFrontmatter) {
       logger.warn('Stripping additional frontmatter block from content');
       content = additionalFrontmatter[2].trim();
+    }
+
+    // Validate description - if present but corrupt, extract from content
+    // Only do this if frontmatter had a description field (don't add one if missing)
+    if ('description' in parsed.data && isCorruptDescription(metadata.description)) {
+      const extracted = extractDescriptionFromContent(content);
+      if (extracted) {
+        metadata.description = extracted;
+      } else {
+        delete metadata.description;
+      }
     }
 
     return {

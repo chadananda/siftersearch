@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T00:50:27.659Z",
+  "generated": "2026-01-20T00:54:44.186Z",
   "entries": [
+    {
+      "hash": "b831dcd",
+      "date": "2026-01-19",
+      "type": "Test",
+      "description": "Add script to verify YAML frontmatter parsing",
+      "scope": null
+    },
     {
       "hash": "d98ddff",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "RTL paragraph numbers now appear on RIGHT side",
       "scope": null
-    },
-    {
-      "hash": "1f274e3",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add URL redirect tracking and improve document presentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "b831dcd",
+        "date": "2026-01-19",
+        "type": "Test",
+        "description": "Add script to verify YAML frontmatter parsing",
+        "scope": null
+      },
       {
         "hash": "d98ddff",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "Fixed",
         "description": "RTL paragraph numbers now appear on RIGHT side",
-        "scope": null
-      },
-      {
-        "hash": "1f274e3",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add URL redirect tracking and improve document presentation",
         "scope": null
       }
     ]
