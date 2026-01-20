@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-20T17:10:10.618Z",
+  "generated": "2026-01-20T17:31:19.634Z",
   "entries": [
+    {
+      "hash": "e4b0639",
+      "date": "2026-01-20",
+      "type": "Fixed",
+      "description": "Don't reset hashes in reingest - preserve incremental logic",
+      "scope": null
+    },
     {
       "hash": "9c01dbb",
       "date": "2026-01-20",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Batch sentence detection reduces AI calls by 95%",
       "scope": null
-    },
-    {
-      "hash": "0fd159b",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Boundary-based segmentation with strict text integrity",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-20": [
+      {
+        "hash": "e4b0639",
+        "date": "2026-01-20",
+        "type": "Fixed",
+        "description": "Don't reset hashes in reingest - preserve incremental logic",
+        "scope": null
+      },
       {
         "hash": "9c01dbb",
         "date": "2026-01-20",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Batch sentence detection reduces AI calls by 95%",
-        "scope": null
-      },
-      {
-        "hash": "0fd159b",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Boundary-based segmentation with strict text integrity",
         "scope": null
       }
     ]

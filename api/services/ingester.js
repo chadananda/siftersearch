@@ -814,8 +814,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This allows us to detect metadata-only changes vs content changes
   const { content: bodyContent, metadata: frontmatterMeta } = parseMarkdownFrontmatter(text);
 
-  const fileHash = hashContent(text);           // Hash of entire file (detects ANY change)
-  const bodyHash = hashContent(bodyContent);    // Hash of body only (detects CONTENT change)
+  const fileHash = hashContent(text.trim());           // Hash of entire file (detects ANY change)
+  const bodyHash = hashContent(bodyContent.trim());    // Hash of body only (detects CONTENT change)
 
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
