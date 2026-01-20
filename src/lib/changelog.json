@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-19T18:13:32.890Z",
+  "generated": "2026-01-20T00:50:27.659Z",
   "entries": [
+    {
+      "hash": "d98ddff",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
+      "scope": null
+    },
     {
       "hash": "4a6103b",
       "date": "2026-01-19",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add URL redirect tracking and improve document presentation",
       "scope": null
-    },
-    {
-      "hash": "55296fa",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Redesign document presentation with integrated metadata",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-19": [
+      {
+        "hash": "d98ddff",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
+        "scope": null
+      },
       {
         "hash": "4a6103b",
         "date": "2026-01-19",
@@ -7027,13 +7034,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add URL redirect tracking and improve document presentation",
-        "scope": null
-      },
-      {
-        "hash": "55296fa",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Redesign document presentation with integrated metadata",
         "scope": null
       }
     ]
