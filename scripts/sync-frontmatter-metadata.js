@@ -13,6 +13,7 @@
 
 import { query, queryAll, queryOne } from '../api/lib/db.js';
 import { parseMarkdownFrontmatter } from '../api/services/ingester.js';
+import { getMeili, INDEXES } from '../api/lib/search.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import config from '../api/lib/config.js';
@@ -92,9 +93,20 @@ async function main() {
           doc.id
         ]);
 
+        // Update Meilisearch document index directly
+        const meili = getMeili();
+        if (meili) {
+          await meili.index(INDEXES.DOCUMENTS).updateDocuments([{
+            id: doc.id,
+            title: frontmatter.title || doc.title,
+            language: frontmatter.language || doc.language,
+            description: frontmatter.description || doc.description
+          }], { primaryKey: 'id' });
+        }
+
         // Mark content as unsynced so search index gets updated
         await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [doc.id]);
-        console.log(`  ✓ Updated\n`);
+        console.log(`  ✓ Updated (DB + Meilisearch)\n`);
       } else {
         console.log(`  (dry run - no changes made)\n`);
       }
