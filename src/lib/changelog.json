@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T15:37:13.396Z",
+  "generated": "2026-01-23T19:52:36.670Z",
   "entries": [
+    {
+      "hash": "815f213",
+      "date": "2026-01-23",
+      "type": "New",
+      "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
+      "scope": null
+    },
     {
       "hash": "6563ae7",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
       "scope": null
-    },
-    {
-      "hash": "70999b3",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Update translation progress after each paragraph instead of each wave",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "815f213",
+        "date": "2026-01-23",
+        "type": "New",
+        "description": "Add ARIA labels to library stats and fix ingestion progress visibility",
+        "scope": null
+      },
       {
         "hash": "6563ae7",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
-        "scope": null
-      },
-      {
-        "hash": "70999b3",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Update translation progress after each paragraph instead of each wave",
         "scope": null
       }
     ]

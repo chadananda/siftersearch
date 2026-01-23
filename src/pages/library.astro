@@ -8,5 +8,5 @@ export const prerender = true;
 
 <Layout title="Library - SifterSearch" description="Browse the complete document library. Explore sacred texts, scriptures, and scholarly works from world religions.">
   <NavBar client:load currentPage="library" />
-  <LibraryBrowser client:load />
+  <LibraryBrowser client:only="svelte" />
 </Layout>
