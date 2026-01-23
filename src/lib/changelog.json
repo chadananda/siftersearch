@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T12:45:23.699Z",
+  "generated": "2026-01-23T13:09:27.816Z",
   "entries": [
+    {
+      "hash": "d76bbe0",
+      "date": "2026-01-23",
+      "type": "New",
+      "description": "Add comprehensive ARIA attributes for accessibility",
+      "scope": null
+    },
     {
       "hash": "025ca8b",
       "date": "2026-01-22",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Paragraph numbering treats index 0 as falsy",
       "scope": null
-    },
-    {
-      "hash": "4ac7f50",
-      "date": "2026-01-03",
-      "type": "Chore",
-      "description": "Add document slug migration",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-23": [
+      {
+        "hash": "d76bbe0",
+        "date": "2026-01-23",
+        "type": "New",
+        "description": "Add comprehensive ARIA attributes for accessibility",
+        "scope": null
+      }
+    ],
     "2026-01-22": [
       {
         "hash": "025ca8b",
@@ -7029,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Paragraph numbering treats index 0 as falsy",
-        "scope": null
-      },
-      {
-        "hash": "4ac7f50",
-        "date": "2026-01-03",
-        "type": "Chore",
-        "description": "Add document slug migration",
         "scope": null
       }
     ]

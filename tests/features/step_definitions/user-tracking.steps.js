@@ -229,10 +229,7 @@ Given('I am an anonymous user with learned preferences', function () {
   };
 });
 
-Given('I am logged in', function () {
-  userTier = 'approved';
-  this.authToken = 'test_token';
-});
+// Note: "Given('I am logged in'..." is now "Given('I am logged in as an approved user'..." in common.steps.js
 
 When('I login with email {string}', async function (email) {
   // Simulate login with unification
@@ -316,7 +313,9 @@ Given('I am an anonymous user with conversation memories', function () {
   ];
 });
 
-When('I search for {string}', async function (query) {
+// Note: "When I search for {string}" (UI) is defined in common.steps.js
+// This version tests the analyze/stream API for user tracking
+When('I search for {string} using analyze API', async function (query) {
   await this.apiRequest('POST', '/api/search/analyze/stream',
     { query, limit: 10, mode: 'hybrid' },
     { 'X-User-ID': userId }
@@ -368,7 +367,8 @@ Given('I have previous questions about {string}', function (topic) {
   memories.push({ content: `Question about ${topic}`, topics: [topic] });
 });
 
-When('I perform a search', async function () {
+// Renamed to avoid ambiguity with UI version in common.steps.js
+When('I perform a search via the API', async function () {
   await this.apiRequest('POST', '/api/search/analyze/stream',
     { query: 'test query', limit: 10, mode: 'hybrid' },
     { 'X-User-ID': userId }

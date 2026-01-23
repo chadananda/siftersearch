@@ -11,20 +11,9 @@ import { expect } from 'chai';
 // PAGE NAVIGATION - Real Playwright
 // ============================================
 
-When('I navigate to {string}', async function (path) {
-  await this.goto(path);
-});
+// Note: "When('I navigate to {string}'..." is now defined in common.steps.js
 
-Then('the page should load without errors', async function () {
-  // Check HTTP response was successful (if available)
-  if (this.lastResponse) {
-    const status = this.lastResponse.status();
-    expect(status, `Page returned HTTP ${status}`).to.be.lessThan(400);
-  }
-  // Also verify page has content (fallback check)
-  const body = await this.page.$('body');
-  expect(body, 'Page body should exist').to.not.be.null;
-});
+// Note: 'the page should load without errors' is now defined in common.steps.js with ARIA/semantic selectors
 
 Then('the page should have visible content', async function () {
   // Wait for body to have content
@@ -115,9 +104,7 @@ Then('the navigation should contain a {string} link', async function (linkText) 
 // ERROR HANDLING
 // ============================================
 
-When('I navigate to a non-existent page', async function () {
-  await this.goto('/this-page-does-not-exist-12345');
-});
+// Note: "When('I navigate to a non-existent page'..." is now defined in common.steps.js
 
 Then('I should see a {int} error page', async function (statusCode) {
   const status = this.lastResponse?.status();

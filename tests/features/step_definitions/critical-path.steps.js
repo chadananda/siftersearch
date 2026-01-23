@@ -371,17 +371,7 @@ When('I perform a UI search', async function () {
   await this.page.waitForTimeout(1000);
 });
 
-Then('I should see a user-friendly error message', async function () {
-  // If API error was mocked, check for error message
-  // Otherwise, this is a soft pass
-  if (this.mockApiError) {
-    const errorMsg = this.page.locator('[role="alert"], .error, :text("error"), :text("try again")');
-    const isVisible = await errorMsg.first().isVisible().catch(() => false);
-    if (!isVisible) {
-      console.log('Note: Error message not visible - API may not have errored');
-    }
-  }
-});
+// Note: "Then('I should see a user-friendly error message'..." is now defined in common.steps.js
 
 Then('the page should remain functional', async function () {
   // Verify page is still interactive

@@ -24,10 +24,7 @@ Given('I am on the docs page', async function () {
 // Viewport Steps
 // ============================================
 
-Given('my viewport is {int} pixels wide', async function (width) {
-  if (!this.page) await this.launchBrowser();
-  await this.page.setViewportSize({ width, height: 720 });
-});
+// Note: "Given('my viewport is {int} pixels wide'..." is now defined in common.steps.js
 
 // ============================================
 // Navigation Bar Visibility

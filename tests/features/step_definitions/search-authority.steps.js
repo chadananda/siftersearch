@@ -32,7 +32,9 @@ Given('I am an approved user', async function () {
 // Search Actions
 // ============================================
 
-When('I search for {string}', async function (query) {
+// Note: "When I search for {string}" (UI) is defined in common.steps.js
+// This version tests the quick search API directly
+When('I search for {string} using quick search API', async function (query) {
   const startTime = Date.now();
   const res = await fetch(`${API_BASE}/api/search/quick?q=${encodeURIComponent(query)}&limit=50`);
   this.responseTime = Date.now() - startTime;

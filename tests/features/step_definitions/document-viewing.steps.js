@@ -630,10 +630,7 @@ Then('the document should not reload', async function () {
 // ERROR HANDLING
 // ============================================
 
-Then('I should see a user-friendly error message', async function () {
-  const errorMessage = this.page.locator('.error-message, .error, [role="alert"]');
-  await expect(errorMessage).toBeVisible();
-});
+// Note: "Then('I should see a user-friendly error message'..." is now defined in common.steps.js
 
 Then('I should see a link back to the library', async function () {
   const backLink = this.page.locator('a[href*="/library"]:has-text("library"), a:has-text("Back")');

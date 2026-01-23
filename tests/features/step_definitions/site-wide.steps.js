@@ -14,16 +14,14 @@ import { Given, Then } from '@cucumber/cucumber';
 import { expect } from 'chai';
 
 // ============================================
-// Setup - Only unique steps not in other files
+// Setup
 // ============================================
-
-Given('the application is running', async function () {
-  if (!this.page) await this.launchBrowser();
-});
+// Note: "the application is running" is now in common.steps.js
 
 // ============================================
-// Page Visits - Note: "I navigate to {string}" is defined in all-links.steps.js
+// Page Visits
 // ============================================
+// Note: "I navigate to {string}" is defined in common.steps.js
 
 // ============================================
 // Assertions - Only unique ones
@@ -185,13 +183,6 @@ Then('there should be a link back to home', async function () {
 });
 
 // ============================================
-// Auth States (skip when not available)
+// Auth States
 // ============================================
-
-Given('I am logged in as an approved user', async function () {
-  this.skip();
-});
-
-Given('I am logged in as an admin user', async function () {
-  this.skip();
-});
+// Note: Auth steps are defined in common.steps.js

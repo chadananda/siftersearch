@@ -15,15 +15,7 @@ import { expect } from 'chai';
 // Setup & Navigation
 // ============================================
 
-Given('I navigate to the home page', async function () {
-  if (!this.page) await this.launchBrowser();
-  // Navigate without waiting for networkidle (some API calls may fail)
-  // Use environment variable or default to localhost:5173
-  const baseUrl = process.env.BASE_URL || process.env.UI_URL || 'http://localhost:5173';
-  await this.page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  // Wait for the search input to be ready
-  await this.page.locator('input#search-input').waitFor({ state: 'visible', timeout: 15000 });
-});
+// Note: "Given/When('I navigate to the home page'..." is now defined in common.steps.js
 
 Given('quick search mode is enabled', async function () {
   // Wait for lightning button to be ready
@@ -117,12 +109,7 @@ Then('the search placeholder should say {string}', async function (expectedPlace
 // Assertions - Results
 // ============================================
 
-Then('I should see quick search results', async function () {
-  // Look for Read More buttons which indicate result cards
-  const readMoreBtns = this.page.locator('button:has-text("Read More")');
-  const count = await readMoreBtns.count();
-  expect(count, 'Should have at least one quick search result with Read More button').to.be.greaterThan(0);
-});
+// Note: "Then('I should see quick search results'..." is now defined in common.steps.js
 
 Then('the results count should be displayed', async function () {
   const statsText = this.page.locator('.quick-search-results .text-muted').first();
@@ -180,15 +167,5 @@ Then('search results should contain highlighted terms', async function () {
 // Assertions - Document Reader
 // ============================================
 
-Then('the document reader should open', async function () {
-  // Reader overlay should be visible
-  const reader = this.page.locator('.reader-overlay, .reader-container, [role="dialog"]');
-  await reader.first().waitFor({ state: 'visible', timeout: 5000 });
-});
-
-Then('the reader should show document content', async function () {
-  // Reader should have content visible
-  const content = this.page.locator('.reader-container .reader-paragraph, .reader-content p, .reader-body, .reader-text');
-  const count = await content.count();
-  expect(count, 'Reader should show document content').to.be.greaterThan(0);
-});
+// Note: "Then('the document reader should open'..." is now defined in common.steps.js
+// Note: "Then('the reader should show document content'..." is now defined in common.steps.js

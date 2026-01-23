@@ -42,10 +42,7 @@ Given('I am authenticated as approved', async function () {
   this.authHeaders = { 'Authorization': `Bearer ${this.authToken}` };
 });
 
-Given('I am not authenticated', function () {
-  this.authToken = null;
-  this.authHeaders = {};
-});
+// Note: "Given('I am not authenticated'..." is now defined in common.steps.js
 
 Given('a document exists', async function () {
   // Get first document from library
@@ -576,7 +573,4 @@ Then('all requests should succeed', function () {
   expect(successful.length).to.equal(this.requestResults.length);
 });
 
-Then('the error should mention {string}', function (text) {
-  const message = this.responseData.message || this.responseData.error || '';
-  expect(message.toLowerCase()).to.include(text.toLowerCase());
-});
+// Note: "Then('the error should mention {string}'..." is now defined in common.steps.js

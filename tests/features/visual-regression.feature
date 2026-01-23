@@ -78,7 +78,7 @@ Feature: Visual Regression Testing
 
   @critical-path @library
   Scenario: Library browser renders tree view
-    Given I am logged in
+    Given I am logged in as an approved user
     When I navigate to the library page
     Then the religion tree should be visible
     And the document list should be visible
@@ -86,7 +86,7 @@ Feature: Visual Regression Testing
 
   @library
   Scenario: Library collection detail page
-    Given I am logged in
+    Given I am logged in as an approved user
     When I navigate to a collection page
     Then the collection header should be visible
     And the document grid should be displayed
@@ -94,7 +94,7 @@ Feature: Visual Regression Testing
 
   @library
   Scenario: Library document reader
-    Given I am logged in
+    Given I am logged in as an approved user
     When I navigate to a document page
     Then the document title should be visible
     And the document content should be readable
@@ -194,7 +194,7 @@ Feature: Visual Regression Testing
 
   @admin
   Scenario: Admin dashboard displays correctly
-    Given I am logged in as admin
+    Given I am logged in as an approved user as admin
     When I navigate to the admin dashboard
     Then the stats overview should be visible
     And the navigation sidebar should be visible
@@ -202,7 +202,7 @@ Feature: Visual Regression Testing
 
   @admin
   Scenario: Admin user management page
-    Given I am logged in as admin
+    Given I am logged in as an approved user as admin
     When I navigate to the admin users page
     Then the user list should be visible
     And user actions should be available
@@ -210,7 +210,7 @@ Feature: Visual Regression Testing
 
   @admin
   Scenario: Admin library management page
-    Given I am logged in as admin
+    Given I am logged in as an approved user as admin
     When I navigate to the admin library page
     Then the pending documents should be visible
     And the ingestion queue should be visible

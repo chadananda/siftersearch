@@ -25,25 +25,8 @@ Given('I have launched the browser', async function () {
   await mkdir(SCREENSHOT_DIR, { recursive: true }).catch(() => {});
 });
 
-Given('the application is running', async function () {
-  // Check that the app responds
-  try {
-    const response = await fetch(BASE_URL);
-    expect(response.ok, 'Application should be running').to.be.true;
-  } catch (err) {
-    throw new Error(`Application not running at ${BASE_URL}: ${err.message}`);
-  }
-});
-
-Given('I am logged in', async function () {
-  if (!this.page) await this.launchBrowser();
-  await this.page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
-  // Set auth token in localStorage for test
-  await this.page.evaluate(() => {
-    localStorage.setItem('auth_token', 'test_approved_token');
-    localStorage.setItem('user', JSON.stringify({ email: 'test@test.com', tier: 'approved' }));
-  });
-});
+// Note: 'the application is running' is now defined in common.steps.js
+// Note: "Given('I am logged in'..." is now "Given('I am logged in as an approved user'..." in common.steps.js
 
 Given('I am logged in as admin', async function () {
   if (!this.page) await this.launchBrowser();
@@ -79,16 +62,8 @@ Given('I am reading a document', async function () {
 // Navigation Steps
 // ============================================
 
-When('I navigate to the home page', async function () {
-  if (!this.page) await this.launchBrowser();
-  await this.page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await this.page.waitForTimeout(500);
-});
-
-When('I navigate to the library page', async function () {
-  await this.page.goto(`${BASE_URL}/library`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await this.page.waitForTimeout(500);
-});
+// Note: "When('I navigate to the home page'..." is now defined in common.steps.js
+// Note: "When('I navigate to the library page'..." is now defined in common.steps.js
 
 When('I navigate to a collection page', async function () {
   await this.page.goto(`${BASE_URL}/library`, { waitUntil: 'domcontentloaded' });
@@ -134,9 +109,7 @@ When('I navigate to the admin library page', async function () {
   await this.page.goto(`${BASE_URL}/admin/library`, { waitUntil: 'domcontentloaded' });
 });
 
-When('I navigate to a non-existent page', async function () {
-  await this.page.goto(`${BASE_URL}/nonexistent-page-12345`, { waitUntil: 'domcontentloaded' });
-});
+// Note: "When('I navigate to a non-existent page'..." is now defined in common.steps.js
 
 // ============================================
 // Action Steps
@@ -189,11 +162,7 @@ When('I press Tab to navigate', async function () {
   await this.page.waitForTimeout(300);
 });
 
-When('I perform a search', async function () {
-  const searchInput = this.page.locator('input#search-input, input[type="search"]');
-  await searchInput.fill('prayer');
-  await this.page.waitForTimeout(2000);
-});
+// Note: "When('I perform a search'..." is now defined in common.steps.js
 
 When('the search service is unavailable', async function () {
   // Mock unavailable service - this is a placeholder
@@ -205,13 +174,15 @@ When('the search service is unavailable', async function () {
 // Assertion Steps - Elements
 // ============================================
 
-Then('the page should load without errors', async function () {
-  // Check for console errors
+Then('the page should load without console errors', async function () {
+  // Check for JavaScript console errors
   const errors = [];
   this.page.on('pageerror', err => errors.push(err.message));
   await this.page.waitForTimeout(500);
   expect(errors.filter(e => !e.includes('Failed to load resource')).length, 'No JS errors').to.equal(0);
 });
+
+// Note: 'the page should load without errors' (general version) is in common.steps.js
 
 Then('the search input should be visible', async function () {
   const searchInput = this.page.locator('input#search-input, input[type="search"]');
@@ -259,12 +230,7 @@ Then('the hamburger menu should be visible', async function () {
   expect(isVisible, 'Hamburger menu should be visible on mobile').to.be.true;
 });
 
-Then('I should see quick search results', async function () {
-  const results = this.page.locator('.quick-search-results, .search-results, [class*="result"]');
-  await this.page.waitForTimeout(2000);
-  const isVisible = await results.first().isVisible().catch(() => false);
-  // Results may or may not be visible depending on search
-});
+// Note: "Then('I should see quick search results'..." is now defined in common.steps.js
 
 Then('each result should have proper styling', async function () {
   const cards = this.page.locator('.source-card, .result-card, [class*="card"]');
@@ -304,11 +270,7 @@ Then('the religion tree should be visible', async function () {
   expect(isVisible, 'Tree view should be visible').to.be.true;
 });
 
-Then('the document list should be visible', async function () {
-  const list = this.page.locator('.document-list, main');
-  const isVisible = await list.first().isVisible().catch(() => false);
-  expect(isVisible, 'Document list should be visible').to.be.true;
-});
+// Note: "Then('the document list should be visible'..." is now defined in common.steps.js
 
 Then('the collection header should be visible', async function () {
   const header = this.page.locator('h1, .collection-header, [class*="header"]');
@@ -340,19 +302,8 @@ Then('the navigation should be visible', async function () {
   expect(isVisible, 'Navigation should be visible').to.be.true;
 });
 
-Then('the document reader should open', async function () {
-  const reader = this.page.locator('.reader-overlay, .reader-container, [role="dialog"], .modal');
-  await this.page.waitForTimeout(1000);
-  const isVisible = await reader.first().isVisible().catch(() => false);
-  // Reader may or may not open depending on implementation
-});
-
-Then('the reader should show document content', async function () {
-  const content = this.page.locator('.reader-content, .reader-body, .modal-content');
-  await this.page.waitForTimeout(500);
-  const isVisible = await content.first().isVisible().catch(() => false);
-  // Content visibility depends on reader state
-});
+// Note: "Then('the document reader should open'..." is now defined in common.steps.js
+// Note: "Then('the reader should show document content'..." is now defined in common.steps.js
 
 Then('paragraph numbers should be visible', async function () {
   const paraNumbers = this.page.locator('.para-num, [class*="paragraph-number"]');

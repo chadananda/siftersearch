@@ -106,7 +106,7 @@ Feature: Anonymous User Tracking and ID Unification
 
   @implemented @unification
   Scenario: Generate fresh ID on logout
-    Given I am logged in
+    Given I am logged in as an approved user
     When I logout
     Then a new anonymous user ID should be generated
     And the old user ID should be removed from localStorage
@@ -118,14 +118,14 @@ Feature: Anonymous User Tracking and ID Unification
   @implemented @memory
   Scenario: Store conversation in memory
     Given I am a user with ID "user_mem123"
-    When I search for "What is the nature of the soul?"
+    When I search for "What is the nature of the soul?" using analyze API
     Then my query should be stored in conversation_memories
     And the memory should have an embedding for semantic search
 
   @implemented @memory
   Scenario: Recall relevant memories
     Given I have previous conversations about "soul" and "afterlife"
-    When I search for "What happens after death?"
+    When I search for "What happens after death?" using analyze API
     Then relevant memories should be retrieved
     And the memories should be used in context for the response
 
@@ -144,14 +144,14 @@ Feature: Anonymous User Tracking and ID Unification
   Scenario: Inject user profile into search context
     Given I am a user with spiritual background "Baha'i"
     And I have interests in "interfaith dialogue"
-    When I perform a search
+    When I perform a search via the API
     Then my user profile should be included in the analyzer context
     And the response should be personalized to my background
 
   @implemented @context
   Scenario: Include relevant memories in search
     Given I have previous questions about "unity"
-    When I search for "How do religions promote unity?"
+    When I search for "How do religions promote unity?" using analyze API
     Then relevant past conversations should be included in context
     And the response should reference my previous interest
 

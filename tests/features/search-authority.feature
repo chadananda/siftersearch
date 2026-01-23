@@ -14,14 +14,14 @@ Feature: Search Authority Ranking
 
   @critical-path
   Scenario: Search results include authority metadata
-    When I search for "prayer"
+    When I search for "prayer" using quick search API
     Then I should receive search results
     And each result should include an authority level
     And authority levels should be between 1 and 10
 
   @critical-path
   Scenario: High authority documents appear before low authority
-    When I search for "unity of mankind"
+    When I search for "unity of mankind" using quick search API
     Then results with authority 10 should appear before authority 5
     And results with authority 9 should appear before authority 4
     And the ranking should follow authority descending order
@@ -39,7 +39,7 @@ Feature: Search Authority Ranking
 
   @implemented
   Scenario: Writings of the Báb appear with highest authority
-    When I search for "the Báb"
+    When I search for "the Báb" using quick search API
     Then results authored by "The Báb" should have authority 10
     And they should rank higher than pilgrim notes
 
@@ -55,7 +55,7 @@ Feature: Search Authority Ranking
 
   @implemented
   Scenario: Universal House of Justice messages ranked high
-    When I search for "Universal House of Justice"
+    When I search for "Universal House of Justice" using quick search API
     Then results from "Universal House of Justice" should have authority 8
     And they should be labeled as "Institutional"
     And they should appear before pilgrim notes
@@ -66,19 +66,19 @@ Feature: Search Authority Ranking
 
   @implemented
   Scenario: Sacred texts outrank secondary sources
-    When I search for "divine civilization"
+    When I search for "divine civilization" using quick search API
     Then results by "Bahá'u'lláh" should appear before results by other authors
     And results by "'Abdu'l-Bahá" should appear before historical accounts
 
   @implemented
   Scenario: Authoritative writings outrank commentary
-    When I search for "Kitáb-i-Aqdas"
+    When I search for "Kitáb-i-Aqdas" using quick search API
     Then results from the Kitáb-i-Aqdas text itself should appear first
     And commentaries about the Aqdas should appear later
 
   @implemented
   Scenario: Mixed religion search respects authority within each tradition
-    When I search for "meditation"
+    When I search for "meditation" using quick search API
     Then within each religion group, results should be ordered by authority
     And sacred texts should precede academic sources
 
@@ -103,7 +103,7 @@ Feature: Search Authority Ranking
 
   @performance @implemented
   Scenario: Search returns results within acceptable time
-    When I search for "prayer"
+    When I search for "prayer" using quick search API
     Then response time should be under 500 milliseconds
     And results should include timing metadata
 

@@ -38,11 +38,7 @@ Given('the library contains indexed documents', async function () {
 // Navigation Steps
 // ============================================
 
-When('I navigate to the library page', async function () {
-  await this.goto('/library');
-  // Wait for the library to load
-  await this.page.waitForSelector('aside', { timeout: 10000 });
-});
+// Note: "When('I navigate to the library page'..." is now defined in common.steps.js
 
 // ============================================
 // Library Interface Visibility Steps
@@ -348,9 +344,7 @@ Then('I should see all document metadata fields', async function () {
   await this.page.waitForTimeout(300);
 });
 
-Then('I should see the document content', async function () {
-  await this.page.waitForTimeout(300);
-});
+// Note: "Then('I should see the document content'..." is now defined in common.steps.js
 
 Then('I should see the paragraph count', async function () {
   await this.page.waitForTimeout(300);
@@ -370,9 +364,7 @@ Then('the detail panel should close', async function () {
   expect(this.page.url()).to.include('/library');
 });
 
-Then('the document list should be visible', async function () {
-  await this.page.waitForSelector('main', { timeout: 5000 });
-});
+// Note: "Then('the document list should be visible'..." is now defined in common.steps.js
 
 // ============================================
 // Pagination Steps
@@ -475,9 +467,7 @@ Then('I should see only Bahá\'í documents containing {string}', async function
 // Responsive Design Steps
 // ============================================
 
-Given('my viewport is {int} pixels wide', async function (width) {
-  await this.page.setViewportSize({ width, height: 800 });
-});
+// Note: "Given('my viewport is {int} pixels wide'..." is now defined in common.steps.js
 
 Then('the tree view should be collapsible', async function () {
   await this.page.waitForTimeout(300);
