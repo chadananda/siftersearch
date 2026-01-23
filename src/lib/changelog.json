@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T05:12:40.053Z",
+  "generated": "2026-01-23T05:18:04.538Z",
   "entries": [
+    {
+      "hash": "fd83ece",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Improve document presentation display",
+      "scope": null
+    },
     {
       "hash": "da59c9f",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct Fastify 5 redirect argument order",
       "scope": null
-    },
-    {
-      "hash": "19579fa",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Allow internal API key for document updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "fd83ece",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Improve document presentation display",
+        "scope": null
+      },
       {
         "hash": "da59c9f",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Correct Fastify 5 redirect argument order",
-        "scope": null
-      },
-      {
-        "hash": "19579fa",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Allow internal API key for document updates",
         "scope": null
       }
     ]

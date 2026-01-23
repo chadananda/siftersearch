@@ -500,9 +500,15 @@
     window.history.replaceState({}, '', url.toString());
   }
 
-  // Watch for viewMode changes and update URL
+  // Watch for viewMode changes and update URL + QR code
   $effect(() => {
     updateViewModeUrl(viewMode);
+    // Regenerate QR code with updated URL
+    if (typeof window !== 'undefined') {
+      generateQRCodeUrl(window.location.href, { width: 120 }).then(url => {
+        qrCodeUrl = url;
+      });
+    }
   });
 
   // Translation queue state
@@ -2025,20 +2031,17 @@
   /* Abstract block */
   .doc-abstract {
     margin: 1.5rem auto 0;
-    padding: 1.25rem 1.5rem;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(59, 130, 246, 0.02) 100%);
-    border-left: 3px solid rgba(59, 130, 246, 0.3);
-    border-radius: 0 0.5rem 0.5rem 0;
-    max-width: 36rem;
-    position: relative;
-    z-index: 1;
+    padding: 0;
+    width: 80%;
+    max-width: 80%;
+    text-align: center;
   }
 
   .doc-abstract p {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 1.15rem;
     color: #444;
-    line-height: 1.7;
+    line-height: 1.5;
     font-style: italic;
   }
 
