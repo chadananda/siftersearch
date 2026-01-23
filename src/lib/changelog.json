@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T14:57:33.120Z",
+  "generated": "2026-01-23T15:21:33.181Z",
   "entries": [
+    {
+      "hash": "b6fb4b4",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Add specific aria-label to auth modal submit button",
+      "scope": null
+    },
     {
       "hash": "48db9c3",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add JWT auth middleware + translation job polling",
       "scope": null
-    },
-    {
-      "hash": "f8551d9",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Use JWT Authorization header for translation API call",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "b6fb4b4",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Add specific aria-label to auth modal submit button",
+        "scope": null
+      },
       {
         "hash": "48db9c3",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add JWT auth middleware + translation job polling",
-        "scope": null
-      },
-      {
-        "hash": "f8551d9",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Use JWT Authorization header for translation API call",
         "scope": null
       }
     ]

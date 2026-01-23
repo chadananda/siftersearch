@@ -172,13 +172,16 @@ Given('the current theme is {string}', async function (theme) {
 });
 
 When('I click the theme toggle button', async function () {
-  const themeToggle = this.getByRole('button', { name: /theme|dark|light/i });
+  // Theme button cycles through: "System theme", "Light mode", "Dark mode"
+  // Find whichever one is currently displayed
+  const themeToggle = this.page.locator('button[aria-label="System theme"], button[aria-label="Light mode"], button[aria-label="Dark mode"]').first();
   await themeToggle.click();
   await this.page.waitForTimeout(100);
 });
 
 When('I click the theme toggle button again', async function () {
-  const themeToggle = this.getByRole('button', { name: /theme|dark|light/i });
+  // Theme button cycles through: "System theme", "Light mode", "Dark mode"
+  const themeToggle = this.page.locator('button[aria-label="System theme"], button[aria-label="Light mode"], button[aria-label="Dark mode"]').first();
   await themeToggle.click();
   await this.page.waitForTimeout(100);
 });
