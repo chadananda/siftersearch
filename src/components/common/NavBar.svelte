@@ -126,29 +126,27 @@
     <div class="navbar-right">
       <!-- Nav links that progressively appear as space allows -->
       <nav class="navbar-nav" aria-label="Main navigation">
-        <!-- Search is always visible -->
+        <!-- Chat/Search is always visible -->
         <a href="/" class="nav-link show-sm" class:active={currentPage === 'chat' || currentPage === 'search'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
-          <span class="nav-label">Search</span>
+          <span class="nav-label">Chat</span>
         </a>
-        <!-- Library and Community require authentication -->
-        {#if auth.isAuthenticated}
-          <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            </svg>
-            <span class="nav-label">Library</span>
-          </a>
-          <a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span class="nav-label">Discuss</span>
-          </a>
-        {/if}
+        <!-- Library and Community are public -->
+        <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span class="nav-label">Library</span>
+        </a>
+        <a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span class="nav-label">Community</span>
+        </a>
         <a href="/docs" class="nav-link show-lg" class:active={currentPage === 'docs'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -169,8 +167,9 @@
         <button
           class="hamburger-btn"
           onclick={() => showNavMenu = !showNavMenu}
-          aria-label="More navigation"
+          aria-label="Navigation menu"
           aria-expanded={showNavMenu}
+          aria-haspopup="true"
         >
           <svg class="hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {#if showNavMenu}
@@ -183,29 +182,27 @@
 
         <!-- Dropdown for collapsed nav items -->
         {#if showNavMenu}
-          <div class="nav-dropdown" role="menu">
-            <!-- Search is always visible in dropdown -->
+          <div class="nav-dropdown" role="menu" aria-label="Navigation menu">
+            <!-- Chat is always visible in dropdown -->
             <a href="/" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'chat' || currentPage === 'search'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              Search
+              Chat
             </a>
-            <!-- Library and Community require authentication -->
-            {#if auth.isAuthenticated}
-              <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-                Library
-              </a>
-              <a href="/community" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'community'} role="menuitem" onclick={closeNavMenu}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                </svg>
-                Discuss
-              </a>
-            {/if}
+            <!-- Library and Community are public -->
+            <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              Library
+            </a>
+            <a href="/community" class="nav-dropdown-item hide-above-md" class:active={currentPage === 'community'} role="menuitem" onclick={closeNavMenu}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              </svg>
+              Community
+            </a>
             <a href="/docs" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'docs'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>

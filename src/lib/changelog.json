@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T14:11:46.222Z",
+  "generated": "2026-01-23T14:16:08.924Z",
   "entries": [
+    {
+      "hash": "54c8860",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Disambiguate sign in button ARIA labels",
+      "scope": null
+    },
     {
       "hash": "3667632",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Store translations as single JSON field",
       "scope": null
-    },
-    {
-      "hash": "0f67cc2",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Generate both reading and study translations simultaneously",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "54c8860",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Disambiguate sign in button ARIA labels",
+        "scope": null
+      },
       {
         "hash": "3667632",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Refactor",
         "description": "Store translations as single JSON field",
-        "scope": null
-      },
-      {
-        "hash": "0f67cc2",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Generate both reading and study translations simultaneously",
         "scope": null
       }
     ]
