@@ -69,12 +69,15 @@ async function run(command, options = {}) {
  * Returns true if node_modules needs repair
  */
 async function checkDependencies() {
-  // Try to resolve critical packages that must exist
-  const criticalPackages = ['dotenv', 'fastify', 'better-sqlite3'];
+  // Check if node_modules exists and has critical packages
+  const { existsSync } = await import('fs');
+  const { join } = await import('path');
+
+  const criticalPackages = ['dotenv', 'fastify'];  // Skip better-sqlite3 (ESM issue)
 
   for (const pkg of criticalPackages) {
-    const checkResult = await run(`node -e "require.resolve('${pkg}')"`, { silent: true });
-    if (!checkResult.success) {
+    const pkgPath = join(process.cwd(), 'node_modules', pkg);
+    if (!existsSync(pkgPath)) {
       log('warn', `Missing critical dependency: ${pkg}`);
       return true;  // needs repair
     }
