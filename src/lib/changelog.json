@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T20:04:58.082Z",
+  "generated": "2026-01-23T23:40:29.107Z",
   "entries": [
+    {
+      "hash": "75ad0ff",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Use SSR for dynamic pages, remove unnecessary prerender",
+      "scope": null
+    },
     {
       "hash": "8035289",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Center utility bar buttons in right margin",
       "scope": null
-    },
-    {
-      "hash": "8146562",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Responsive right margin for utility bar - prevent content overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "75ad0ff",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Use SSR for dynamic pages, remove unnecessary prerender",
+        "scope": null
+      },
       {
         "hash": "8035289",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Center utility bar buttons in right margin",
-        "scope": null
-      },
-      {
-        "hash": "8146562",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Responsive right margin for utility bar - prevent content overlap",
         "scope": null
       }
     ]
