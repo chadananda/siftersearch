@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T05:56:55.800Z",
+  "generated": "2026-01-23T12:45:23.699Z",
   "entries": [
+    {
+      "hash": "025ca8b",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Add comprehensive document viewing tests",
+      "scope": null
+    },
     {
       "hash": "902b15b",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Add document slug migration",
       "scope": null
-    },
-    {
-      "hash": "92f78b1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add unique slug storage to prevent URL collisions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "025ca8b",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Add comprehensive document viewing tests",
+        "scope": null
+      },
       {
         "hash": "902b15b",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "Chore",
         "description": "Add document slug migration",
-        "scope": null
-      },
-      {
-        "hash": "92f78b1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add unique slug storage to prevent URL collisions",
         "scope": null
       }
     ]

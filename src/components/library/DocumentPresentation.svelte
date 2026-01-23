@@ -797,16 +797,20 @@
           </svg>
         </button>
         {#if showViewMenu}
-          <div class="mobile-menu-dropdown">
+          <div class="mobile-menu-dropdown" role="menu" aria-label="Document actions menu">
             <!-- View modes (if non-English) -->
             {#if isNonEnglish}
-              <div class="menu-section-label">View Mode</div>
+              <div class="menu-section-label" role="presentation">View Mode</div>
               <button
                 class="menu-item"
                 class:active={viewMode === 'default'}
                 onclick={() => { viewMode = 'default'; showViewMenu = false; }}
+                role="menuitemradio"
+                aria-checked={viewMode === 'default'}
+                aria-label="Base view mode"
+                data-mode="default"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M4 6h16M4 12h16M4 18h10"/>
                 </svg>
                 <span>Base</span>
@@ -816,8 +820,13 @@
                 class:active={viewMode === 'sbs'}
                 class:disabled={!hasTranslations}
                 onclick={() => { if (hasTranslations) { viewMode = 'sbs'; showViewMenu = false; } }}
+                role="menuitemradio"
+                aria-checked={viewMode === 'sbs'}
+                aria-disabled={!hasTranslations}
+                aria-label="Side-by-side view mode"
+                data-mode="sbs"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <rect x="3" y="3" width="7" height="18" rx="1"/>
                   <rect x="14" y="3" width="7" height="18" rx="1"/>
                 </svg>
@@ -828,8 +837,13 @@
                 class:active={viewMode === 'study'}
                 class:disabled={!hasStudyTranslations}
                 onclick={() => { if (hasStudyTranslations) { viewMode = 'study'; showViewMenu = false; } }}
+                role="menuitemradio"
+                aria-checked={viewMode === 'study'}
+                aria-disabled={!hasStudyTranslations}
+                aria-label="Study view mode"
+                data-mode="study"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                   <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                 </svg>
@@ -839,9 +853,9 @@
             {/if}
 
             <!-- Share actions -->
-            <div class="menu-section-label">Share</div>
-            <button class="menu-item" onclick={() => { showQRCode(); showViewMenu = false; }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="menu-section-label" role="presentation">Share</div>
+            <button class="menu-item" onclick={() => { showQRCode(); showViewMenu = false; }} role="menuitem" aria-label="Show QR code for sharing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="3" y="3" width="7" height="7"/>
                 <rect x="14" y="3" width="7" height="7"/>
                 <rect x="3" y="14" width="7" height="7"/>
@@ -849,15 +863,15 @@
               </svg>
               <span>QR Code</span>
             </button>
-            <button class="menu-item" onclick={() => { copyShareLink(); showViewMenu = false; }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="menu-item" onclick={() => { copyShareLink(); showViewMenu = false; }} role="menuitem" aria-label={linkCopied ? 'Link copied to clipboard' : 'Copy share link'}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
               <span>{linkCopied ? 'Copied!' : 'Copy Link'}</span>
             </button>
-            <button class="menu-item" onclick={() => { openPrintView(); showViewMenu = false; }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="menu-item" onclick={() => { openPrintView(); showViewMenu = false; }} role="menuitem" aria-label="Print document">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
@@ -922,14 +936,17 @@
         <!-- View mode group for non-English docs -->
         {#if isNonEnglish}
           <div class="util-divider"></div>
-          <div class="view-mode-group">
+          <div class="view-mode-group" role="group" aria-label="View mode options">
             <button
               class="mode-btn"
               class:active={viewMode === 'default'}
               onclick={() => viewMode = 'default'}
               title="Original text only"
+              aria-label="Base view mode"
+              aria-pressed={viewMode === 'default'}
+              data-mode="default"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M4 6h16M4 12h16M4 18h10"/>
               </svg>
               <span class="mode-label">Base</span>
@@ -940,8 +957,12 @@
               class:disabled={!hasTranslations}
               onclick={() => hasTranslations && (viewMode = 'sbs')}
               title={hasTranslations ? 'Side-by-side translation' : 'No translations available yet'}
+              aria-label="Side-by-side view mode"
+              aria-pressed={viewMode === 'sbs'}
+              aria-disabled={!hasTranslations}
+              data-mode="sbs"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="3" y="3" width="7" height="18" rx="1"/>
                 <rect x="14" y="3" width="7" height="18" rx="1"/>
               </svg>
@@ -953,8 +974,12 @@
               class:disabled={!hasStudyTranslations}
               onclick={() => hasStudyTranslations && (viewMode = 'study')}
               title={hasStudyTranslations ? 'Study mode with notes' : 'Study translations not available'}
+              aria-label="Study view mode"
+              aria-pressed={viewMode === 'study'}
+              aria-disabled={!hasStudyTranslations}
+              data-mode="study"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
               </svg>
@@ -1095,8 +1120,8 @@
       </a>
 
       {#if qrCodeUrl}
-        <button class="corner-icon corner-right" onclick={showQRCode} title="Share this document">
-          <img src={qrCodeUrl} alt="QR" class="url-qr-img" />
+        <button class="corner-icon corner-right" onclick={showQRCode} title="Share this document" aria-label="Show QR code for sharing">
+          <img src={qrCodeUrl} alt="QR code for sharing this document" class="url-qr-img" />
         </button>
       {/if}
 
@@ -1161,7 +1186,7 @@
 
         <!-- Abstract section - show description -->
         {#if document.description}
-          <div class="doc-abstract">
+          <div class="doc-abstract" role="complementary" aria-label="Document description">
             <p>{document.description}</p>
           </div>
         {/if}

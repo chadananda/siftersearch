@@ -75,8 +75,10 @@ Then('I should see document tags \\(language, category)', async function () {
 });
 
 Then('I should see the document description as an abstract', async function () {
-  const abstract = this.page.locator('.doc-abstract');
-  await expect(abstract).toBeVisible();
+  // Use ARIA to find abstract
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"]');
+  const isVisible = await abstract.isVisible();
+  expect(isVisible).to.be.true;
 
   // Check styling
   const styles = await abstract.evaluate(el => {
@@ -144,19 +146,19 @@ When('I open a document with a description', async function () {
 });
 
 Then('the abstract should be centered', async function () {
-  const abstract = this.page.locator('.doc-abstract');
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"]');
   const textAlign = await abstract.evaluate(el => window.getComputedStyle(el).textAlign);
   expect(textAlign).toBe('center');
 });
 
 Then('the abstract should be italic', async function () {
-  const abstract = this.page.locator('.doc-abstract p');
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"] p');
   const fontStyle = await abstract.evaluate(el => window.getComputedStyle(el).fontStyle);
   expect(fontStyle).toBe('italic');
 });
 
 Then('the abstract should be {int}% width', async function (percentage) {
-  const abstract = this.page.locator('.doc-abstract');
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"]');
   const width = await abstract.evaluate(el => window.getComputedStyle(el).width);
   const parentWidth = await abstract.evaluate(el => window.getComputedStyle(el.parentElement).width);
 
@@ -165,7 +167,7 @@ Then('the abstract should be {int}% width', async function (percentage) {
 });
 
 Then('the abstract should have readable font size', async function () {
-  const abstract = this.page.locator('.doc-abstract p');
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"] p');
   const fontSize = await abstract.evaluate(el => window.getComputedStyle(el).fontSize);
 
   // Should be at least 1rem (typically 16px)
@@ -174,7 +176,7 @@ Then('the abstract should have readable font size', async function () {
 });
 
 Then('the abstract should not have a background color', async function () {
-  const abstract = this.page.locator('.doc-abstract');
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"]');
   const bgColor = await abstract.evaluate(el => window.getComputedStyle(el).backgroundColor);
 
   // Should be transparent or match body background
@@ -189,8 +191,9 @@ When('I open a document without a description', async function () {
 });
 
 Then('I should not see an abstract section', async function () {
-  const abstract = this.page.locator('.doc-abstract');
-  await expect(abstract).not.toBeVisible();
+  const abstract = this.page.locator('[role="complementary"][aria-label="Document description"]');
+  const count = await abstract.count();
+  expect(count).to.equal(0);
 });
 
 // ============================================
@@ -204,8 +207,16 @@ Given('I have opened a document with translation', async function () {
 });
 
 When('I click the {string} view mode button', async function (viewMode) {
-  const buttonText = viewMode.toLowerCase().replace('-', '');
-  const button = this.page.locator(`button:has-text("${viewMode}"), button[data-mode*="${buttonText}"]`).first();
+  // Map view mode names to data-mode values
+  const modeMap = {
+    'Side-by-Side': 'sbs',
+    'Study': 'study',
+    'Base': 'default'
+  };
+  const mode = modeMap[viewMode] || viewMode.toLowerCase();
+
+  // Use ARIA selector for accessibility
+  const button = this.page.locator(`button[data-mode="${mode}"][aria-label*="view mode"]`).first();
   await button.click();
   await this.page.waitForTimeout(500); // Allow view to update
 });
@@ -218,6 +229,11 @@ Then('the view mode should change to {string}', async function (mode) {
   } else {
     expect(url).toContain(`view=${mode}`);
   }
+
+  // Also verify via ARIA pressed state
+  const button = this.page.locator(`button[data-mode="${mode}"][aria-pressed="true"]`).first();
+  const isVisible = await button.isVisible({ timeout: 2000 }).catch(() => false);
+  expect(isVisible).to.be.true;
 });
 
 Then('I should see original text on the right', async function () {
@@ -361,13 +377,15 @@ Then('the URL should be the canonical document URL', async function () {
 });
 
 When('I switch to SBS mode', async function () {
-  const sbsButton = this.page.locator('button:has-text("Side-by-Side"), button[data-mode="sbs"]').first();
+  // Use ARIA selector for accessibility
+  const sbsButton = this.page.locator('button[data-mode="sbs"][aria-label*="view mode"]').first();
   await sbsButton.click();
   await this.page.waitForTimeout(300);
 });
 
 When('I switch to study mode', async function () {
-  const studyButton = this.page.locator('button:has-text("Study"), button[data-mode="study"]').first();
+  // Use ARIA selector for accessibility
+  const studyButton = this.page.locator('button[data-mode="study"][aria-label*="view mode"]').first();
   await studyButton.click();
   await this.page.waitForTimeout(300);
 });
@@ -429,17 +447,20 @@ Then('the URL should be cleaned to remove invalid parameter', async function () 
 // ============================================
 
 Then('I should see a QR code', async function () {
-  const qrCode = this.page.locator('img[alt*="QR"], .qr-code, canvas.qr-code');
-  await expect(qrCode).toBeVisible();
+  // Use ARIA label to find QR code
+  const qrCode = this.page.locator('img[alt*="QR code for sharing"]').first();
+  const isVisible = await qrCode.isVisible({ timeout: 3000 });
+  expect(isVisible).to.be.true;
 });
 
 Then('the QR code should be visible', async function () {
-  const qrCode = this.page.locator('img[alt*="QR"], .qr-code');
-  await expect(qrCode).toBeVisible();
+  const qrCode = this.page.locator('img[alt*="QR code for sharing"]');
+  const isVisible = await qrCode.isVisible();
+  expect(isVisible).to.be.true;
 });
 
 Then('the QR code should be scannable', async function () {
-  const qrCode = this.page.locator('img[alt*="QR"], .qr-code');
+  const qrCode = this.page.locator('img[alt*="QR code for sharing"]');
   const src = await qrCode.getAttribute('src');
 
   // Should have data URL or valid src
