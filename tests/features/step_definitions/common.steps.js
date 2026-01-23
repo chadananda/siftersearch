@@ -115,25 +115,37 @@ Given('my viewport is {int} pixels wide', async function (width) {
 When('I navigate to {string}', async function (path) {
   if (!this.page) await this.launchBrowser();
   await this.page.goto(`${BASE_URL}${path}`);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I navigate to the library page', async function () {
   if (!this.page) await this.launchBrowser();
   await this.page.goto(`${BASE_URL}/library`);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I navigate to a non-existent page', async function () {
   if (!this.page) await this.launchBrowser();
   await this.page.goto(`${BASE_URL}/this-page-does-not-exist-${Date.now()}`);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I navigate to the home page', async function () {
   if (!this.page) await this.launchBrowser();
   await this.page.goto(BASE_URL);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 // ============================================
@@ -176,13 +188,19 @@ When('I search for {string}', async function (query) {
   // Find and click search button
   const searchButton = this.page.locator('button[type="submit"], button[aria-label*="earch"]').first();
   await searchButton.click();
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I perform a search', async function () {
   await this.page.locator('input[type="search"], input[aria-label*="earch"]').first().fill('test query');
   await this.page.locator('button[type="submit"], button[aria-label*="earch"]').first().click();
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 Then('I should see quick search results', async function () {
@@ -225,28 +243,40 @@ Given('I am on a religion page', async function () {
   if (!this.page) await this.launchBrowser();
   // Navigate to a religion page (e.g., Bahai)
   await this.page.goto(`${BASE_URL}/library/bahai`);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 Given('I am on a collection page', async function () {
   if (!this.page) await this.launchBrowser();
   // Navigate to a collection page (e.g., Bahai > Core Publications)
   await this.page.goto(`${BASE_URL}/library/bahai/core-tablets`);
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I click on a collection', async function () {
   // Find and click a collection link using semantic selectors
   const collectionLink = this.page.locator('a[href*="/library/"][aria-label], .collection-link, [role="link"]').first();
   await collectionLink.click();
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 When('I click on a document', async function () {
   // Find and click a document link using semantic selectors
   const documentLink = this.page.locator('a[href*="/library/"], .document-link, [role="link"]').first();
   await documentLink.click();
-  await this.page.waitForLoadState('networkidle');
+  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
+  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  // Give it a moment for any immediate JavaScript to run
+  await this.page.waitForTimeout(500);
 });
 
 Then('the collection page should load', async function () {

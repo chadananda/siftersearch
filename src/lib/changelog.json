@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T13:09:27.816Z",
+  "generated": "2026-01-23T13:41:37.906Z",
   "entries": [
+    {
+      "hash": "65e6c55",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Consolidate duplicate step definitions with ARIA selectors",
+      "scope": null
+    },
     {
       "hash": "d76bbe0",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add SBS and Study translation modes with admin buttons",
       "scope": null
-    },
-    {
-      "hash": "26e3dd1",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Paragraph numbering treats index 0 as falsy",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "65e6c55",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Consolidate duplicate step definitions with ARIA selectors",
+        "scope": null
+      },
       {
         "hash": "d76bbe0",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add SBS and Study translation modes with admin buttons",
-        "scope": null
-      },
-      {
-        "hash": "26e3dd1",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Paragraph numbering treats index 0 as falsy",
         "scope": null
       }
     ]
