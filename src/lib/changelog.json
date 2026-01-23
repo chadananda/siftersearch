@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T23:54:16.921Z",
+  "generated": "2026-01-23T23:58:38.489Z",
   "entries": [
+    {
+      "hash": "b7fff8e",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Use client:only for components with client state to prevent hydration mismatch",
+      "scope": null
+    },
     {
       "hash": "4e16a1c",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
       "scope": null
-    },
-    {
-      "hash": "455e1c5",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Collapse all utility buttons to hamburger menu on mobile",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "b7fff8e",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Use client:only for components with client state to prevent hydration mismatch",
+        "scope": null
+      },
       {
         "hash": "4e16a1c",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "SBS styling - English left-aligned, Arabic 1.25x larger, fix segment highlighting IDs",
-        "scope": null
-      },
-      {
-        "hash": "455e1c5",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Collapse all utility buttons to hamburger menu on mobile",
         "scope": null
       }
     ]

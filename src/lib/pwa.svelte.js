@@ -34,6 +34,22 @@ function saveState() {
 export async function initPWA() {
   if (typeof window === 'undefined') return;
 
+  // Check for stale service worker and force unregister if needed
+  if (navigator.serviceWorker?.controller) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      const currentVersion = import.meta.env.PUBLIC_APP_VERSION;
+
+      // Force check for updates on every page load
+      for (const registration of registrations) {
+        console.log('[PWA] Checking for service worker updates...');
+        await registration.update();
+      }
+    } catch (e) {
+      console.warn('[PWA] Could not check for updates:', e);
+    }
+  }
+
   // Listen for controller change (new SW took over)
   // With skipWaiting:true, this fires when new SW activates
   // Always reload to get fresh content - save state first
@@ -57,15 +73,27 @@ export async function initPWA() {
         console.log(`[PWA] Service worker registered: ${swUrl}`);
         // Check for updates periodically
         if (r) {
-          // Initial check after 2 seconds
+          // Immediate update check
           setTimeout(() => {
             console.log('[PWA] Initial update check...');
             r.update();
-          }, 2000);
+          }, 100);
 
-          // Backup polling (60s) - primary version check is via /api/search/stats (10s)
-          setInterval(() => {
+          // Frequent polling (every 10s) for the first minute
+          let checkCount = 0;
+          const earlyInterval = setInterval(() => {
             r.update();
+            checkCount++;
+            if (checkCount >= 6) { // Stop after 1 minute
+              clearInterval(earlyInterval);
+            }
+          }, 10 * 1000);
+
+          // Then backup polling (60s) after that
+          setTimeout(() => {
+            setInterval(() => {
+              r.update();
+            }, 60 * 1000);
           }, 60 * 1000);
         }
       },
