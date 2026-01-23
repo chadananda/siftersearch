@@ -18,23 +18,20 @@ import { expect } from 'chai';
 // Note: "Given/When('I navigate to the home page'..." is now defined in common.steps.js
 
 Given('quick search mode is enabled', async function () {
-  // Wait for lightning button to be ready
-  const lightningBtn = this.page.locator('.lightning-btn');
-  await lightningBtn.waitFor({ state: 'visible', timeout: 10000 });
+  // Chat toggle button - in quick search mode, it shows "Switch to AI Chat mode"
+  // If we see "Switch to Quick Search mode", we need to click it
+  const chatModeBtn = this.page.locator('button[aria-label="Switch to Quick Search mode"]');
+  const isInChatMode = await chatModeBtn.count() > 0;
 
-  // Click to enable quick search if not already active
-  const isActive = await lightningBtn.evaluate(el => el.classList.contains('active'));
-  if (!isActive) {
-    await lightningBtn.click({ force: true });
+  if (isInChatMode) {
+    // Currently in AI chat mode, switch to quick search
+    await chatModeBtn.click();
     await this.page.waitForTimeout(500);
-    // Verify it's now active
-    const nowActive = await lightningBtn.evaluate(el => el.classList.contains('active'));
-    if (!nowActive) {
-      // Try clicking again
-      await lightningBtn.click({ force: true });
-      await this.page.waitForTimeout(500);
-    }
   }
+
+  // Verify we're in quick search mode
+  const quickSearchBtn = this.page.locator('button[aria-label="Switch to AI Chat mode"]');
+  await quickSearchBtn.waitFor({ state: 'visible', timeout: 5000 });
 });
 
 // ============================================
@@ -42,9 +39,10 @@ Given('quick search mode is enabled', async function () {
 // ============================================
 
 When('I click the lightning button', async function () {
-  const lightningBtn = this.page.locator('.lightning-btn');
-  // Use force:true because button may be partially covered by input styling
-  await lightningBtn.click({ force: true });
+  // Toggle between quick search and AI chat modes
+  // Find whichever button is currently displayed
+  const toggleBtn = this.page.locator('button[aria-label="Switch to AI Chat mode"], button[aria-label="Switch to Quick Search mode"]').first();
+  await toggleBtn.click();
   await this.page.waitForTimeout(300);
 });
 

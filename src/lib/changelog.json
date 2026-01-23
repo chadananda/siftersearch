@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T15:24:14.073Z",
+  "generated": "2026-01-23T15:26:55.595Z",
   "entries": [
+    {
+      "hash": "fb4f551",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Properly authenticate test user and use specific ARIA label for user menu",
+      "scope": null
+    },
     {
       "hash": "9eeb652",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Reorganize utility bar with mobile hamburger menu",
       "scope": null
-    },
-    {
-      "hash": "7216d9c",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add labeled view mode buttons with circular progress indicator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "fb4f551",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Properly authenticate test user and use specific ARIA label for user menu",
+        "scope": null
+      },
       {
         "hash": "9eeb652",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Refactor",
         "description": "Reorganize utility bar with mobile hamburger menu",
-        "scope": null
-      },
-      {
-        "hash": "7216d9c",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add labeled view mode buttons with circular progress indicator",
         "scope": null
       }
     ]
