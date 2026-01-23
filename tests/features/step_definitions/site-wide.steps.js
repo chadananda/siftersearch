@@ -10,7 +10,7 @@
  * - quick-search.steps.js: Quick search related steps
  */
 
-import { Given, Then } from '@cucumber/cucumber';
+import { Given, When, Then } from '@cucumber/cucumber';
 import { expect } from 'chai';
 
 // ============================================
@@ -180,6 +180,35 @@ Then('there should be a link back to home', async function () {
   const homeLink = this.page.locator('a[href="/"], a:has-text("Home"), a:has-text("home")');
   const count = await homeLink.count();
   expect(count, 'Should have link back to home').to.be.greaterThan(0);
+});
+
+// ============================================
+// Religion/Collection Steps
+// ============================================
+
+When('I click on a religion category', async function () {
+  // Click on first religion link in the library tree
+  const religionLink = this.page.locator('a[href*="/library/"]').first();
+  await religionLink.click();
+  await this.page.waitForTimeout(1000);
+});
+
+Then('the religion page should load', async function () {
+  // Check that URL has changed to a religion page
+  const url = this.page.url();
+  expect(url).to.match(/\/library\/[a-z-]+$/i);
+
+  // Check for main content
+  const mainContent = this.page.locator('main, [role="main"]');
+  const isVisible = await mainContent.isVisible();
+  expect(isVisible).to.be.true;
+});
+
+Then('I should see collections for that religion', async function () {
+  // Look for collection links or cards
+  const collections = this.page.locator('a[href*="/library/"], .collection, [class*="collection"]');
+  const count = await collections.count();
+  expect(count, 'Should see collections for the religion').to.be.greaterThan(0);
 });
 
 // ============================================

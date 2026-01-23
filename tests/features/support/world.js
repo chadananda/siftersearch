@@ -45,7 +45,8 @@ class SifterSearchWorld extends World {
   // ============================================
 
   async launchBrowser() {
-    if (!this.browser) {
+    // Check if browser is still connected
+    if (!this.browser || !this.browser.isConnected()) {
       this.browser = await chromium.launch({
         headless: this.headless,
         slowMo: this.slowMo

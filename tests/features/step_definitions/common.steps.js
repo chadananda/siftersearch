@@ -42,6 +42,12 @@ Given('I am logged in as a {string} user', async function (tier) {
   this.authToken = `test_${tier}_token`;
 });
 
+// Explicit aliases for common patterns
+Given('I am logged in as an admin user', async function () {
+  this.testUser = { email: 'admin@test.com', tier: 'admin', id: 'user_admin' };
+  this.authToken = 'test_admin_token';
+});
+
 // ============================================
 // Common Response Assertions
 // ============================================
