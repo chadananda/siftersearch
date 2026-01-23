@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T05:00:00.801Z",
+  "generated": "2026-01-23T05:12:40.053Z",
   "entries": [
+    {
+      "hash": "da59c9f",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Add shareable links for document view modes (regular, sbs, study)",
+      "scope": null
+    },
     {
       "hash": "bed8f12",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Allow internal API key for document updates",
       "scope": null
-    },
-    {
-      "hash": "8991268",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Include author in document URL slugs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "da59c9f",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Add shareable links for document view modes (regular, sbs, study)",
+        "scope": null
+      },
       {
         "hash": "bed8f12",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Allow internal API key for document updates",
-        "scope": null
-      },
-      {
-        "hash": "8991268",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Include author in document URL slugs",
         "scope": null
       }
     ]

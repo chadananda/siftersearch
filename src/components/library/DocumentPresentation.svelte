@@ -350,6 +350,19 @@
     return text.replace(/⁅\/?[sp]\d+⁆/g, '');
   }
 
+  /**
+   * Convert straight quotes to curly/smart quotes
+   * Handles both single and double quotes
+   */
+  function toCurlyQuotes(text) {
+    if (!text) return text;
+    return text
+      .replace(/"/g, '\u201c')  // Opening double quote
+      .replace(/"/g, '\u201d')  // Closing double quote
+      .replace(/'/g, '\u2019')  // Apostrophe/closing single quote
+      .replace(/'/g, '\u2018'); // Opening single quote
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
     // Strip sentence markers before rendering
@@ -1114,7 +1127,7 @@
         </nav>
 
         <!-- Title and metadata -->
-        <h1 class="doc-title">{document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled'}</h1>
+        <h1 class="doc-title">{toCurlyQuotes(document.title || document.filename?.replace(/\.[^.]+$/, '') || 'Untitled')}</h1>
 
         {#if document.author}
           <p class="doc-author">by {document.author}</p>
@@ -1140,10 +1153,10 @@
           {/if}
         </div>
 
-        <!-- Abstract section - only show if there's an actual abstract (not just path description) -->
-        {#if document.abstract}
+        <!-- Abstract section - show description -->
+        {#if document.description}
           <div class="doc-abstract">
-            <p>{document.abstract}</p>
+            <p>{document.description}</p>
           </div>
         {/if}
       </header>
