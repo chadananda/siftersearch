@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T14:55:53.914Z",
+  "generated": "2026-01-23T14:57:33.120Z",
   "entries": [
+    {
+      "hash": "48db9c3",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Change unauthenticated user button aria-label to avoid regex collision",
+      "scope": null
+    },
     {
       "hash": "cdf1037",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use JWT Authorization header for translation API call",
       "scope": null
-    },
-    {
-      "hash": "8e37130",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Remove translation confirmation popup, queue directly",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "48db9c3",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Change unauthenticated user button aria-label to avoid regex collision",
+        "scope": null
+      },
       {
         "hash": "cdf1037",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Use JWT Authorization header for translation API call",
-        "scope": null
-      },
-      {
-        "hash": "8e37130",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Remove translation confirmation popup, queue directly",
         "scope": null
       }
     ]

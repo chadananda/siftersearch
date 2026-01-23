@@ -157,6 +157,7 @@
           type="submit"
           disabled={loading}
           class="submit-btn"
+          aria-label={mode === 'login' ? 'Submit sign in form' : 'Submit registration form'}
         >
           {#if loading}
             <span class="loading-content">

@@ -157,8 +157,8 @@ When('I enter valid test credentials', async function () {
 });
 
 When('I submit the sign in form', async function () {
-  // Click submit button in form
-  const submitButton = this.getByRole('button', { name: /sign in|log in|submit/i });
+  // Click submit button with specific aria-label (no regex)
+  const submitButton = this.getByRole('button', { name: 'Submit sign in form' });
   await submitButton.click();
   await this.page.waitForTimeout(2000);
 });
