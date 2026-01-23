@@ -52,7 +52,8 @@
   let {
     pathReligion = '',
     pathCollection = '',
-    pathSlug = ''
+    pathSlug = '',
+    initialViewMode = 'default'
   } = $props();
 
   // Auth state
@@ -466,9 +467,30 @@
   let isLoggedIn = $derived(auth.isAuthenticated);
   let isNonEnglish = $derived(document?.language && document.language !== 'en');
 
-  // View mode state
-  let viewMode = $state('default'); // 'default' | 'sbs' | 'study'
+  // View mode state - initialize from prop (for shareable links)
+  let viewMode = $state(initialViewMode); // 'default' | 'sbs' | 'study'
   let showViewMenu = $state(false); // Mobile dropdown
+
+  /**
+   * Update URL query parameter when view mode changes
+   * This makes the view mode shareable via the URL
+   */
+  function updateViewModeUrl(mode) {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (mode === 'default') {
+      url.searchParams.delete('view');
+    } else {
+      url.searchParams.set('view', mode);
+    }
+    // Update URL without reload
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  // Watch for viewMode changes and update URL
+  $effect(() => {
+    updateViewModeUrl(viewMode);
+  });
 
   // Translation queue state
   let translationQueuing = $state(false);

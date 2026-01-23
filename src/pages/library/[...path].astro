@@ -22,6 +22,9 @@ const { path } = Astro.params;
 const segments = path?.split('/').filter(Boolean) || [];
 const [religion, collection, slug] = segments;
 
+// Get view mode from query parameter (for shareable links)
+const viewMode = Astro.url.searchParams.get('view') || 'default';
+
 // For document pages, check for redirects server-side
 // This ensures proper SEO with HTTP 301 redirects
 if (segments.length === 3) {
@@ -85,9 +88,12 @@ function getPageMeta() {
         keywords: `${collName}, ${relName}, sacred texts, religious collection, interfaith library`
       };
     case 'document':
+      const viewSuffix = viewMode === 'sbs' ? ' (Side-by-Side)'
+                      : viewMode === 'study' ? ' (Study Mode)'
+                      : '';
       return {
-        title: `Document - SifterSearch Library`,
-        description: `Read this document from the SifterSearch interfaith library.`,
+        title: `Document${viewSuffix} - SifterSearch Library`,
+        description: `Read this document from the SifterSearch interfaith library${viewSuffix.toLowerCase()}.`,
         keywords: `sacred text, religious document, interfaith library`
       };
     default:
@@ -182,6 +188,7 @@ const canonicalUrl = `https://siftersearch.com/library/${path}`;
       pathReligion={religion}
       pathCollection={collection}
       pathSlug={slug}
+      initialViewMode={viewMode}
     />
   )}
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T04:53:33.052Z",
+  "generated": "2026-01-23T05:00:00.801Z",
   "entries": [
+    {
+      "hash": "bed8f12",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Add script to generate missing document slugs",
+      "scope": null
+    },
     {
       "hash": "18bb203",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Include author in document URL slugs",
       "scope": null
-    },
-    {
-      "hash": "43d6357",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "bed8f12",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Add script to generate missing document slugs",
+        "scope": null
+      },
       {
         "hash": "18bb203",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Include author in document URL slugs",
-        "scope": null
-      },
-      {
-        "hash": "43d6357",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
         "scope": null
       }
     ]
