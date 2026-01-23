@@ -198,7 +198,10 @@ async function refreshToken() {
   try {
     const response = await fetch(`${API_URL}/api/auth/refresh`, {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
     if (!response.ok) {
