@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T05:25:06.838Z",
+  "generated": "2026-01-23T05:56:55.800Z",
   "entries": [
+    {
+      "hash": "902b15b",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Auto-segment paragraphs during translation",
+      "scope": null
+    },
     {
       "hash": "28d9295",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add unique slug storage to prevent URL collisions",
       "scope": null
-    },
-    {
-      "hash": "04df1d1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add server-side redirect detection and redirect management API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "902b15b",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Auto-segment paragraphs during translation",
+        "scope": null
+      },
       {
         "hash": "28d9295",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add unique slug storage to prevent URL collisions",
-        "scope": null
-      },
-      {
-        "hash": "04df1d1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add server-side redirect detection and redirect management API",
         "scope": null
       }
     ]
