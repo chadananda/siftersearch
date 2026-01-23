@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T15:31:23.028Z",
+  "generated": "2026-01-23T15:37:13.396Z",
   "entries": [
+    {
+      "hash": "6563ae7",
+      "date": "2026-01-23",
+      "type": "New",
+      "description": "Add 404 page with clear ARIA label for home link",
+      "scope": null
+    },
     {
       "hash": "c787550",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update translation progress after each paragraph instead of each wave",
       "scope": null
-    },
-    {
-      "hash": "2719520",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add URL-style breadcrumb header and job queue monitoring API",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "6563ae7",
+        "date": "2026-01-23",
+        "type": "New",
+        "description": "Add 404 page with clear ARIA label for home link",
+        "scope": null
+      },
       {
         "hash": "c787550",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Update translation progress after each paragraph instead of each wave",
-        "scope": null
-      },
-      {
-        "hash": "2719520",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add URL-style breadcrumb header and job queue monitoring API",
         "scope": null
       }
     ]

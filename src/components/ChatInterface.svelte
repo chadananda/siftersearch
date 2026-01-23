@@ -1655,26 +1655,26 @@
 
         <!-- Library Stats - always show with cached or default values -->
         <div class="stats-container">
-          <div class="stats-card">
+          <div class="stats-card" role="region" aria-label="Library Contents statistics">
             {#if displayStats.serverVersion}
               <span class="version-pill">v{displayStats.serverVersion}</span>
             {/if}
             <h3 class="stats-title">Library Contents</h3>
             <!-- Row 1: Key metrics -->
             <div class="stats-grid">
-              <div class="stat">
+              <div class="stat" aria-label="Religions count">
                 <span class="stat-label">Religions</span>
                 <span class="stat-value">{displayStats.religions || 0}</span>
               </div>
-              <div class="stat">
+              <div class="stat" aria-label="Collections count">
                 <span class="stat-label">Collections</span>
                 <span class="stat-value">{displayStats.collections || 0}</span>
               </div>
-              <div class="stat">
+              <div class="stat" aria-label="Documents count">
                 <span class="stat-label">Documents</span>
                 <span class="stat-value">{formatNumber(displayStats.totalDocuments)}</span>
               </div>
-              <div class="stat">
+              <div class="stat" aria-label="Paragraphs count">
                 <span class="stat-label">Paragraphs</span>
                 <span class="stat-value">{formatNumber(displayStats.totalPassages)}</span>
               </div>
@@ -1727,13 +1727,13 @@
                 </div>
               {/if}
               <!-- Meilisearch indexing progress - show when actively indexing -->
-              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.percentComplete < 100 && libraryStats.indexingProgress.totalWithContent > 0}
-                <div class="ingestion-progress indexing">
+              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalWithContent > 0}
+                <div class="ingestion-progress indexing" role="region" aria-label="Content indexing progress">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Indexed in search</span>
+                    <span class="ingestion-label">Content indexed</span>
                     <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
                   </div>
-                  <div class="ingestion-bar">
+                  <div class="ingestion-bar" role="progressbar" aria-valuenow={libraryStats.indexingProgress.percentComplete} aria-valuemin="0" aria-valuemax="100">
                     <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
