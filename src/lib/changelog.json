@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T14:04:30.262Z",
+  "generated": "2026-01-23T14:11:46.222Z",
   "entries": [
+    {
+      "hash": "3667632",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Add missing auth steps and handle quick search mode",
+      "scope": null
+    },
     {
       "hash": "c6fc90c",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Generate both reading and study translations simultaneously",
       "scope": null
-    },
-    {
-      "hash": "1250a2f",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add phrase-level hover/tap highlighting in SBS mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "3667632",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Add missing auth steps and handle quick search mode",
+        "scope": null
+      },
       {
         "hash": "c6fc90c",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Generate both reading and study translations simultaneously",
-        "scope": null
-      },
-      {
-        "hash": "1250a2f",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add phrase-level hover/tap highlighting in SBS mode",
         "scope": null
       }
     ]
