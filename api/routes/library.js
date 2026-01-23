@@ -12,6 +12,7 @@
  * GET /api/library/documents/:id/content - Get original file from storage
  * PUT /api/library/documents/:id/content - Update content + re-index (admin)
  * POST /api/library/documents/:id/reindex - Re-index from original (admin)
+ * POST /api/library/documents/:id/write-markers - Write markers to source file (admin)
  * GET /api/library/documents/:id/raw - Get raw markdown from source file (admin)
  * PUT /api/library/documents/:id/raw - Update source file + re-index (admin)
  */
@@ -2417,6 +2418,77 @@ Provide only the translation, no explanations.`;
       if (err.statusCode) throw err; // Re-throw ApiErrors
       logger.error({ err, documentId: id }, 'Failed to re-ingest document');
       throw ApiError.internal('Failed to re-ingest document: ' + err.message);
+    }
+  });
+
+  /**
+   * Write markers from database back to source file
+   * Admin only - writes sentence/phrase markers to enable marker reuse on re-ingest
+   */
+  fastify.post('/documents/:id/write-markers', {
+    preHandler: [requireAuth, requireAdmin],
+    schema: {
+      params: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: ['id']
+      }
+    }
+  }, async (request) => {
+    const { id } = request.params;
+
+    // Get document to find its file path
+    const doc = await queryOne('SELECT id, file_path, title, language FROM docs WHERE id = ?', [id]);
+    if (!doc) {
+      throw ApiError.notFound('Document not found');
+    }
+
+    if (!doc.file_path) {
+      throw ApiError.badRequest('Document has no source file path');
+    }
+
+    // Get paragraphs with markers from database
+    const paragraphs = await queryAll(
+      'SELECT text FROM content WHERE doc_id = ? ORDER BY paragraph_index',
+      [id]
+    );
+
+    if (paragraphs.length === 0) {
+      throw ApiError.badRequest('Document has no paragraphs in database');
+    }
+
+    // Check if any paragraphs have markers
+    const hasAnyMarkers = paragraphs.some(p => p.text && p.text.includes('\u2045'));
+    if (!hasAnyMarkers) {
+      throw ApiError.badRequest('Document has no sentence markers to write back');
+    }
+
+    try {
+      // Import writeMarkersToSource
+      const { writeMarkersToSource } = await import('../services/ingester.js');
+
+      const result = await writeMarkersToSource(id, doc.file_path, paragraphs);
+
+      logger.info({
+        documentId: id,
+        userId: request.user?.sub,
+        paragraphs: paragraphs.length,
+        backupPath: result.backupPath
+      }, 'Markers written to source file');
+
+      return {
+        success: true,
+        message: result.skipped
+          ? 'Source file already has valid markers'
+          : 'Markers written to source file successfully',
+        documentId: id,
+        paragraphCount: paragraphs.length,
+        backupPath: result.backupPath,
+        skipped: result.skipped || false
+      };
+    } catch (err) {
+      logger.error({ err, documentId: id }, 'Failed to write markers to source');
+      throw ApiError.internal('Failed to write markers: ' + err.message);
     }
   });
 

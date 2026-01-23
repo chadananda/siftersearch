@@ -7,6 +7,8 @@
  */
 
 import { createHash } from 'crypto';
+import { readFile, writeFile, rename, copyFile, mkdir } from 'fs/promises';
+import { join, dirname, basename } from 'path';
 import { query, queryOne, queryAll, transaction } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
@@ -16,6 +18,8 @@ import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDoc
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
+import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
+import config from '../lib/config.js';
 
 /**
  * Normalize text for embedding deduplication
@@ -112,6 +116,168 @@ export function stripMarkersForHash(text) {
 export function hashContentWords(text) {
   const stripped = stripMarkersForHash(text);
   return createHash('sha256').update(stripped).digest('hex');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Marker Writeback Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normalize text for comparison (strips markers and collapses whitespace)
+ * Used to verify content hasn't changed when writing markers back
+ */
+function normalizeForComparison(text) {
+  if (!text) return '';
+  return stripMarkers(text).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Write sentence/phrase markers from database back to source markdown file
+ *
+ * SAFETY REQUIREMENTS:
+ * 1. NEVER changes original text - only adds markers
+ * 2. Creates backup before any modification
+ * 3. Validates normalized content matches before writing
+ * 4. Uses atomic write (temp file + rename)
+ *
+ * @param {number} docId - Document ID
+ * @param {string} relativePath - Relative path from library base
+ * @param {Array<{text: string}>} markedParagraphs - Paragraphs with markers from DB
+ * @returns {Promise<{success: boolean, backupPath: string}>}
+ */
+export async function writeMarkersToSource(docId, relativePath, markedParagraphs) {
+  if (!relativePath) {
+    throw new Error('writeMarkersToSource requires relativePath');
+  }
+
+  if (!markedParagraphs || markedParagraphs.length === 0) {
+    throw new Error('writeMarkersToSource requires markedParagraphs');
+  }
+
+  const fullPath = join(config.library.basePath, relativePath);
+
+  // Read current file
+  const original = await readFile(fullPath, 'utf-8');
+  const { content: originalBody, data: frontmatter } = matter(original);
+
+  // Reconstruct body with markers from DB (paragraphs separated by double newlines)
+  const markedBody = markedParagraphs.map(p => p.text).join('\n\n');
+
+  // SAFETY: Normalized comparison (strip markers + whitespace)
+  // This catches ANY content changes that would corrupt the file
+  const originalNormalized = normalizeForComparison(originalBody);
+  const markedNormalized = normalizeForComparison(markedBody);
+
+  if (originalNormalized !== markedNormalized) {
+    logger.warn({
+      docId,
+      relativePath,
+      originalLen: originalNormalized.length,
+      markedLen: markedNormalized.length
+    }, 'Content mismatch - aborting marker write');
+    throw new Error('Content mismatch between source file and database - aborting marker write');
+  }
+
+  // Validate markers are well-formed
+  const validation = validateMarkers(markedBody);
+  if (!validation.valid) {
+    logger.warn({
+      docId,
+      relativePath,
+      errors: validation.errors
+    }, 'Invalid markers - aborting marker write');
+    throw new Error(`Invalid markers in database content: ${validation.errors.join(', ')}`);
+  }
+
+  // Check if markers already exist in source
+  if (hasMarkers(originalBody)) {
+    // Validate existing markers
+    const existingValidation = validateMarkers(originalBody);
+    if (existingValidation.valid) {
+      logger.info({ docId, relativePath }, 'Source file already has valid markers - skipping write');
+      return { success: true, backupPath: null, skipped: true };
+    }
+    logger.warn({ docId, relativePath, errors: existingValidation.errors },
+      'Source file has corrupted markers - will overwrite with valid ones');
+  }
+
+  // Create backup directory and file
+  const backupDir = join(dirname(fullPath), '.backups');
+  await mkdir(backupDir, { recursive: true });
+  const backupPath = join(backupDir, `${basename(fullPath)}.${Date.now()}`);
+  await copyFile(fullPath, backupPath);
+
+  // Cleanup old backups (keep last 3)
+  try {
+    const { readdir: readdirSync } = await import('fs/promises');
+    const backupFiles = await readdirSync(backupDir);
+    const thisFileBackups = backupFiles
+      .filter(f => f.startsWith(basename(fullPath) + '.'))
+      .sort()
+      .reverse();
+
+    // Keep only last 3 backups
+    for (const oldBackup of thisFileBackups.slice(3)) {
+      const { unlink } = await import('fs/promises');
+      await unlink(join(backupDir, oldBackup)).catch(() => {});
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Failed to cleanup old backups');
+  }
+
+  // Reconstruct file with frontmatter + marked body
+  const newContent = matter.stringify(markedBody, frontmatter);
+
+  // Atomic write: write to temp file, then rename
+  const tempPath = `${fullPath}.tmp`;
+  await writeFile(tempPath, newContent, 'utf-8');
+  await rename(tempPath, fullPath);
+
+  logger.info({
+    docId,
+    relativePath,
+    backupPath,
+    paragraphs: markedParagraphs.length,
+    markerCount: (markedBody.match(/⁅s\d+⁆/g) || []).length
+  }, 'Wrote markers to source file');
+
+  return { success: true, backupPath, skipped: false };
+}
+
+/**
+ * Auto-write markers to source file after successful AI segmentation
+ * Called at the end of ingestDocument() when AI segmentation was performed
+ *
+ * @param {number} docId - Document ID
+ * @param {string} relativePath - Relative path from library base
+ * @returns {Promise<void>}
+ */
+async function autoWriteMarkersToSource(docId, relativePath) {
+  // Get paragraphs from database
+  const paragraphs = await queryAll(
+    'SELECT text FROM content WHERE doc_id = ? ORDER BY paragraph_index',
+    [docId]
+  );
+
+  if (paragraphs.length === 0) {
+    logger.debug({ docId }, 'No paragraphs to write back');
+    return;
+  }
+
+  // Check if any paragraphs have markers
+  const hasAnyMarkers = paragraphs.some(p => hasMarkers(p.text));
+  if (!hasAnyMarkers) {
+    logger.debug({ docId }, 'No markers in paragraphs - skipping auto-write');
+    return;
+  }
+
+  try {
+    await writeMarkersToSource(docId, relativePath, paragraphs);
+  } catch (err) {
+    // Non-fatal - log but don't fail
+    logger.warn({ err: err.message, docId, relativePath },
+      'Failed to auto-write markers to source (ingestion still succeeded)');
+  }
 }
 
 /**
@@ -495,7 +661,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   const {
     maxChunkSize = CHUNK_CONFIG.maxChunkSize,
     minChunkSize = CHUNK_CONFIG.minChunkSize,
-    language = 'en'
+    language = 'en',
+    skipAISegmentation = false
   } = options;
 
   if (!text || typeof text !== 'string') {
@@ -509,13 +676,26 @@ export async function parseDocumentWithBlocks(text, options = {}) {
   logger.debug({
     textLength: text.length,
     detectedLanguage,
-    isRTL: features.isRTL
+    isRTL: features.isRTL,
+    skipAISegmentation
   }, 'Parsing document with block awareness');
 
-  // Document-type check: Does this need segmentation?
-  // Only unpunctuated Arabic/Farsi classical texts need AI segmentation
-  if (features.isRTL && isUnpunctuatedText(text)) {
-    logger.info({ language: detectedLanguage, textLength: text.length }, 'Unpunctuated RTL text - using AI segmentation');
+  // ───────────────────────────────────────────────────────────────────────────
+  // PARAGRAPH SEGMENTATION: Only for unpunctuated RTL classical texts
+  // ───────────────────────────────────────────────────────────────────────────
+  // Classical Arabic/Farsi texts often have NO paragraph structure (continuous prose).
+  // These need AI to:
+  // 1) Detect sentence boundaries (phrases → sentences)
+  // 2) Group sentences into paragraphs by topic
+  //
+  // For other languages, markdown paragraphs are used directly.
+  // If those paragraphs are too large, ingestion will fail with an error
+  // (the source file must be manually split into proper paragraphs).
+  //
+  // SKIP if caller detected existing markers in source file.
+  // ───────────────────────────────────────────────────────────────────────────
+  if (features.isRTL && isUnpunctuatedText(text) && !skipAISegmentation) {
+    logger.info({ language: detectedLanguage, textLength: text.length }, 'Unpunctuated RTL text - using AI paragraph segmentation');
 
     try {
       // Strip HTML comments (manual exclusions like page markers)
@@ -554,8 +734,15 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     }
   }
 
-  // Standard approach for punctuated texts (English, etc.)
-  // Already segmented - just parse markdown and use directly
+  // ───────────────────────────────────────────────────────────────────────────
+  // STANDARD PATH: For texts with existing paragraph structure
+  // ───────────────────────────────────────────────────────────────────────────
+  // Most texts (English, modern Arabic, etc.) already have markdown paragraphs.
+  // We use them directly without AI processing.
+  //
+  // NOTE: Sentence markers for non-English are added LATER in ingestDocument(),
+  // after this function returns. This function only handles PARAGRAPH structure.
+  // ───────────────────────────────────────────────────────────────────────────
   const blocks = parseMarkdownBlocks(text);
 
   if (blocks.length === 0) {
@@ -1058,16 +1245,39 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // Parse frontmatter using gray-matter (handles detection automatically)
   const { content, metadata: extractedMeta } = parseMarkdownFrontmatter(text);
 
-  // Detect language from content - this is more reliable than frontmatter
-  // Arabic/Farsi detection should OVERRIDE frontmatter 'en' since it's often wrong
+  // Detect language from content for fallback/override
   const detectedLang = detectLanguageFeatures(content);
-  const contentLanguage = detectedLang.language !== 'en' ? detectedLang.language : null;
 
   // Extract religion/collection from path (e.g., "Baha'i/Core Tablets/...")
   // This provides fallback when frontmatter doesn't specify these fields
   const pathParts = relativePath?.split('/') || [];
   const pathReligion = pathParts.length >= 1 ? pathParts[0] : null;
   const pathCollection = pathParts.length >= 2 ? pathParts[1] : null;
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Language Resolution Priority:
+  // 1. Frontmatter language (if specified and non-English) - TRUST IT
+  // 2. Content detection (only used to OVERRIDE 'en' when content is clearly RTL)
+  // 3. Frontmatter 'en' (if content doesn't suggest otherwise)
+  // 4. Default 'en'
+  //
+  // The key insight: if frontmatter says 'fa' (Farsi), trust it even if
+  // detectLanguageFeatures returns 'ar' (can't distinguish Arabic script languages).
+  // Only override frontmatter when it says 'en' but content is clearly RTL.
+  // ───────────────────────────────────────────────────────────────────────────
+  const frontmatterLang = extractedMeta.language || metadata.language;
+  let resolvedLanguage;
+
+  if (frontmatterLang && frontmatterLang !== 'en') {
+    // Frontmatter specifies a non-English language - trust it
+    resolvedLanguage = frontmatterLang;
+  } else if (detectedLang.language !== 'en') {
+    // Frontmatter says 'en' or is missing, but content is clearly non-English
+    resolvedLanguage = detectedLang.language;
+  } else {
+    // Frontmatter says 'en' or content appears English
+    resolvedLanguage = frontmatterLang || 'en';
+  }
 
   // Merge metadata: religion/collection come ONLY from path (folder structure = library organization)
   // Frontmatter religion/collection is ignored - it refers to archive codes, not library categories
@@ -1079,9 +1289,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     author: extractedMeta.author || (metadata.author !== 'Unknown' ? metadata.author : null) || 'Unknown',
     religion: pathReligion || existingDoc?.religion || null,
     collection: pathCollection || existingDoc?.collection || null,
-    // Language: detected Arabic/Farsi > frontmatter > filename metadata > default 'en'
-    // Content detection takes priority because frontmatter often incorrectly says 'en' for RTL texts
-    language: contentLanguage || extractedMeta.language || metadata.language || 'en',
+    language: resolvedLanguage,
     year: extractedMeta.year || metadata.year || null,
     description: extractedMeta.description || metadata.description || ''
   };
@@ -1109,10 +1317,37 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     };
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // Early marker detection: Skip AI segmentation if source file has valid markers
+  // This saves expensive GPT-4 calls on re-ingest of previously processed files
+  // ───────────────────────────────────────────────────────────────────────────
+  let skipAISegmentation = false;
+  let contentToProcess = content;
+
+  if (hasMarkers(content)) {
+    const validation = validateMarkers(content);
+    if (!validation.valid) {
+      // Corrupted markers in source - strip them and proceed with AI segmentation
+      logger.warn({
+        relativePath,
+        errors: validation.errors
+      }, 'Corrupted markers in source file - stripping and re-segmenting');
+      contentToProcess = stripMarkers(content);
+    } else {
+      // Valid markers exist - skip AI segmentation, use existing markers
+      skipAISegmentation = true;
+      logger.info({
+        relativePath,
+        markerCount: (content.match(/⁅s\d+⁆/g) || []).length
+      }, 'Using existing markers from source file - skipping AI segmentation');
+    }
+  }
+
   // Parse into chunks/paragraphs with blocktype awareness
-  // Uses AI segmentation for RTL languages without punctuation
-  const { chunks, autoSegmented } = await parseDocumentWithBlocks(content, {
-    language: finalMeta.language
+  // Uses AI segmentation for RTL languages without punctuation (unless skipAISegmentation)
+  const { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
+    language: finalMeta.language,
+    skipAISegmentation
   });
 
   if (chunks.length === 0) {
@@ -1176,18 +1411,24 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
-  // Add sentence markers to paragraphs that don't already have them
-  // (sentence-first approach for RTL texts already has markers applied)
-  // This enables per-sentence translations and URL anchors
+  // ───────────────────────────────────────────────────────────────────────────
+  // Sentence/Phrase Markers for Translation Support
+  // ───────────────────────────────────────────────────────────────────────────
+  // Sentence markers are needed for ALL non-English documents to enable:
+  // - Per-sentence translations
+  // - URL anchors to specific sentences
+  // - Translation segment alignment
+  //
+  // NOTE: This is distinct from PARAGRAPH segmentation (segmentUnpunctuatedDocument)
+  // which is only for unpunctuated RTL texts that need to be split into paragraphs.
+  // ───────────────────────────────────────────────────────────────────────────
   let totalSentences = 0;
 
-  // Check if chunks already have sentence markers (from sentence-first segmentation)
+  // Check if chunks already have sentence markers (from source file or prior segmentation)
   const hasExistingMarkers = chunks.some(c => c.text && c.text.includes('\u2045'));
 
-  // Only add sentence markers for RTL texts (Arabic, Farsi, Hebrew, Urdu)
-  // English and other LTR texts don't need sentence markers
-  const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
-  const isRTLText = RTL_LANGUAGES.includes(finalMeta.language);
+  // Sentence markers needed for ALL non-English documents (for translation support)
+  const isNonEnglish = finalMeta.language && finalMeta.language !== 'en';
 
   if (hasExistingMarkers) {
     // Count existing sentences
@@ -1196,10 +1437,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       totalSentences += matches ? matches.length : 0;
     }
     logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Using pre-existing sentence markers');
-  } else if (isRTLText && !existingDoc) {
-    // ONLY add sentence markers for NEW RTL documents (not updates)
+  } else if (isNonEnglish && !existingDoc) {
+    // Add sentence markers for NEW non-English documents
     // For updates, we'll reuse existing markers from DB paragraphs
-    // This avoids expensive GPT-4o calls for re-ingestion of unchanged paragraphs
+    // This avoids expensive AI calls for re-ingestion of unchanged paragraphs
     try {
       const paragraphsToMark = chunks.map((chunk, idx) => ({
         id: String(idx),
@@ -1216,18 +1457,18 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           totalSentences += result.sentenceCount;
         }
       }
-      logger.debug({ paragraphs: chunks.length, sentences: totalSentences }, 'Added sentence markers for NEW RTL document');
+      logger.debug({ paragraphs: chunks.length, sentences: totalSentences, language: finalMeta.language }, 'Added sentence markers for NEW non-English document');
     } catch (err) {
       // If batch marking fails completely, log but keep original text
-      logger.warn({ err: err.message }, 'Failed to batch add sentence markers');
+      logger.warn({ err: err.message, language: finalMeta.language }, 'Failed to batch add sentence markers');
     }
-  } else if (isRTLText && existingDoc) {
-    // For RTL document UPDATES, markers will be preserved from existing DB paragraphs
+  } else if (isNonEnglish && existingDoc) {
+    // For non-English document UPDATES, markers will be preserved from existing DB paragraphs
     // via the paragraph matching logic below (reusedParagraphs preserve their text)
-    logger.debug({ paragraphs: chunks.length, documentId: existingDoc.id }, 'Skipping sentence detection for RTL document update - will reuse existing markers');
+    logger.debug({ paragraphs: chunks.length, documentId: existingDoc.id, language: finalMeta.language }, 'Skipping sentence detection for non-English document update - will reuse existing markers');
   } else {
-    // LTR texts (English, etc.) - no sentence markers needed
-    logger.debug({ paragraphs: chunks.length, language: finalMeta.language }, 'Skipping sentence markers for LTR text');
+    // English texts - no sentence markers needed (translations not required)
+    logger.debug({ paragraphs: chunks.length, language: finalMeta.language }, 'Skipping sentence markers for English text');
   }
 
   // Use existing document ID if updating, otherwise null (will be assigned after INSERT)
@@ -1452,9 +1693,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     }
   }
 
-  // For RTL document UPDATES with NEW paragraphs, add sentence markers only to new ones
+  // For non-English document UPDATES with NEW paragraphs, add sentence markers only to new ones
   // This is the cost-efficient path: reuse existing markers, only process truly new content
-  if (isRTLText && existingDoc && insertStatements.length > 0) {
+  if (isNonEnglish && existingDoc && insertStatements.length > 0) {
     try {
       // Extract new paragraph texts for sentence detection
       const newParagraphs = insertStatements.map((stmt, idx) => ({
@@ -1462,7 +1703,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         text: stmt.args[2]  // text is at index 2 in args
       }));
 
-      logger.info({ count: newParagraphs.length }, 'Adding sentence markers to NEW paragraphs only (RTL update)');
+      logger.info({ count: newParagraphs.length, language: finalMeta.language }, 'Adding sentence markers to NEW paragraphs only (non-English update)');
       const markedResults = await batchAddSentenceMarkers(newParagraphs, finalMeta.language);
 
       // Update INSERT statements with marked text and recalculated hash
@@ -1523,6 +1764,21 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     autoSegmented,
     relativePath
   }, existingDoc ? 'Document updated (incremental)' : 'Document ingested');
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Auto-write markers back to source file after successful AI processing
+  // This enables future re-ingests to skip expensive AI calls
+  // Applies to:
+  // - NEW documents that were auto-segmented (paragraph splitting)
+  // - NEW non-English documents that got sentence markers added
+  // Does NOT apply when source already had valid markers (skipAISegmentation)
+  // ───────────────────────────────────────────────────────────────────────────
+  const shouldWriteMarkers = !existingDoc && chunks.length > 0 && !skipAISegmentation &&
+    (autoSegmented || (isNonEnglish && totalSentences > 0));
+
+  if (shouldWriteMarkers) {
+    await autoWriteMarkersToSource(finalDocId, relativePath);
+  }
 
   return {
     documentId: finalDocId,
@@ -1697,7 +1953,8 @@ export const ingester = {
   isFileIngested,
   getDocumentByPath,
   getDocumentByBodyHash,
-  getMovedDocumentByBodyHash
+  getMovedDocumentByBodyHash,
+  writeMarkersToSource
 };
 
 export default ingester;

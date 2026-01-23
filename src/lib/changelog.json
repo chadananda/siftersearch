@@ -1,6 +1,27 @@
 {
-  "generated": "2026-01-20T17:31:19.634Z",
+  "generated": "2026-01-23T04:32:34.885Z",
   "entries": [
+    {
+      "hash": "40ec392",
+      "date": "2026-01-20",
+      "type": "Fixed",
+      "description": "Sync script now updates Meilisearch documents directly",
+      "scope": null
+    },
+    {
+      "hash": "4b33144",
+      "date": "2026-01-20",
+      "type": "New",
+      "description": "Add script to sync frontmatter metadata without re-ingestion",
+      "scope": null
+    },
+    {
+      "hash": "ec3ac97",
+      "date": "2026-01-20",
+      "type": "Fixed",
+      "description": "Normalize whitespace before hashing to prevent false mismatches",
+      "scope": null
+    },
     {
       "hash": "e4b0639",
       "date": "2026-01-20",
@@ -3479,31 +3500,31 @@
       "type": "New",
       "description": "Add sentence-first streaming segmentation for unpunctuated texts",
       "scope": null
-    },
-    {
-      "hash": "60740e9",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add retry logic and sanity caps for sentence detection",
-      "scope": null
-    },
-    {
-      "hash": "fc0198c",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve Arabic sentence detection for unpunctuated texts",
-      "scope": null
-    },
-    {
-      "hash": "e3053e8",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Batch sentence detection reduces AI calls by 95%",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-20": [
+      {
+        "hash": "40ec392",
+        "date": "2026-01-20",
+        "type": "Fixed",
+        "description": "Sync script now updates Meilisearch documents directly",
+        "scope": null
+      },
+      {
+        "hash": "4b33144",
+        "date": "2026-01-20",
+        "type": "New",
+        "description": "Add script to sync frontmatter metadata without re-ingestion",
+        "scope": null
+      },
+      {
+        "hash": "ec3ac97",
+        "date": "2026-01-20",
+        "type": "Fixed",
+        "description": "Normalize whitespace before hashing to prevent false mismatches",
+        "scope": null
+      },
       {
         "hash": "e4b0639",
         "date": "2026-01-20",
@@ -7015,27 +7036,6 @@
         "date": "2026-01-02",
         "type": "New",
         "description": "Add sentence-first streaming segmentation for unpunctuated texts",
-        "scope": null
-      },
-      {
-        "hash": "60740e9",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add retry logic and sanity caps for sentence detection",
-        "scope": null
-      },
-      {
-        "hash": "fc0198c",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve Arabic sentence detection for unpunctuated texts",
-        "scope": null
-      },
-      {
-        "hash": "e3053e8",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Batch sentence detection reduces AI calls by 95%",
         "scope": null
       }
     ]
