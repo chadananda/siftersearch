@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T05:18:04.538Z",
+  "generated": "2026-01-23T05:25:06.838Z",
   "entries": [
+    {
+      "hash": "28d9295",
+      "date": "2026-01-22",
+      "type": "New",
+      "description": "Improve document abstract styling and QR code",
+      "scope": null
+    },
     {
       "hash": "fd83ece",
       "date": "2026-01-22",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add server-side redirect detection and redirect management API",
       "scope": null
-    },
-    {
-      "hash": "f7c6eaf",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Correct Fastify 5 redirect argument order",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-22": [
+      {
+        "hash": "28d9295",
+        "date": "2026-01-22",
+        "type": "New",
+        "description": "Improve document abstract styling and QR code",
+        "scope": null
+      },
       {
         "hash": "fd83ece",
         "date": "2026-01-22",
@@ -7029,13 +7036,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add server-side redirect detection and redirect management API",
-        "scope": null
-      },
-      {
-        "hash": "f7c6eaf",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Correct Fastify 5 redirect argument order",
         "scope": null
       }
     ]

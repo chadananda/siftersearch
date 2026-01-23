@@ -31,6 +31,8 @@ import { chatCompletion } from '../lib/ai.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { getSentences, stripMarkers, hasMarkers } from '../lib/markers.js';
+import { segmentText } from './segmenter.js';
+import { writeMarkersToSource } from './ingester.js';
 
 /**
  * Parse TOON (TOML-like Object Notation) format
@@ -611,6 +613,72 @@ function parseExistingTranslation(translationField) {
 }
 
 /**
+ * Auto-segment paragraphs that are missing sentence markers
+ * This ensures phrase-level highlighting works in SBS mode
+ *
+ * @param {number} documentId - Document ID
+ * @param {string} language - Document language (ar, fa, etc.)
+ * @param {Array} paragraphs - Paragraphs from database
+ * @returns {Promise<boolean>} True if any paragraphs were segmented
+ */
+async function autoSegmentMissingMarkers(documentId, language, paragraphs) {
+  const paragraphsNeedingSegmentation = paragraphs.filter(p => !hasMarkers(p.text));
+
+  if (paragraphsNeedingSegmentation.length === 0) {
+    return false; // All paragraphs already have markers
+  }
+
+  logger.info({
+    documentId,
+    totalParagraphs: paragraphs.length,
+    needingSegmentation: paragraphsNeedingSegmentation.length
+  }, 'Auto-segmenting paragraphs missing sentence markers');
+
+  let segmentedCount = 0;
+
+  for (const para of paragraphsNeedingSegmentation) {
+    try {
+      // Run AI segmentation on this paragraph
+      const result = await segmentText(para.text, {
+        language,
+        maxChunkSize: 1500
+      });
+
+      if (result && result.markedText) {
+        // Update database with marked text
+        await query(
+          'UPDATE content SET text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [result.markedText, para.id]
+        );
+
+        segmentedCount++;
+        logger.info({
+          paragraphId: para.id,
+          paragraphIndex: para.paragraph_index,
+          sentences: result.segments?.length || 0
+        }, 'Added sentence markers to paragraph');
+      }
+    } catch (err) {
+      logger.warn({
+        paragraphId: para.id,
+        error: err.message
+      }, 'Failed to segment paragraph - continuing without markers');
+      // Continue with other paragraphs
+    }
+  }
+
+  if (segmentedCount > 0) {
+    logger.info({
+      documentId,
+      segmentedCount
+    }, 'Auto-segmentation complete - markers added to paragraphs');
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Process in-app translation (Arabic/Persian -> English)
  * Generates BOTH reading and study translations simultaneously
  * Saves to content.translation as JSON: { reading, study, segments, notes }
@@ -620,6 +688,7 @@ function parseExistingTranslation(translationField) {
  * - Wave-based staggered translation for context propagation
  * - Previous paragraph context (original + translation when available)
  * - Dual translation: reading (literary) + study (literal with notes)
+ * - Auto-segmentation for paragraphs missing sentence markers
  */
 async function processInAppTranslation(job, document, sourceLang, contentType) {
   const documentId = job.document_id;
@@ -642,12 +711,46 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
 
   // Get paragraphs that need any translation
   // We'll check existing JSON to see what's missing
-  const paragraphs = await queryAll(`
+  let paragraphs = await queryAll(`
     SELECT id, paragraph_index, text, translation
     FROM content
     WHERE doc_id = ?
     ORDER BY paragraph_index
   `, [documentId]);
+
+  // Auto-segment paragraphs missing sentence markers (needed for SBS phrase highlighting)
+  // This happens automatically during translation to fix documents incrementally
+  const markersAdded = await autoSegmentMissingMarkers(documentId, sourceLang, paragraphs);
+
+  if (markersAdded) {
+    // Write markers back to source file for persistence
+    try {
+      const markedParagraphs = await queryAll(`
+        SELECT paragraph_index, text
+        FROM content
+        WHERE doc_id = ?
+        ORDER BY paragraph_index
+      `, [documentId]);
+
+      await writeMarkersToSource(documentId, document.file_path, markedParagraphs);
+
+      logger.info({ documentId }, 'Markers written to source file');
+    } catch (err) {
+      logger.warn({
+        documentId,
+        error: err.message
+      }, 'Failed to write markers to source file - markers saved in database only');
+      // Non-fatal - markers are in DB, translation can continue
+    }
+
+    // Reload paragraphs to get the marked text
+    paragraphs = await queryAll(`
+      SELECT id, paragraph_index, text, translation
+      FROM content
+      WHERE doc_id = ?
+      ORDER BY paragraph_index
+    `, [documentId]);
+  }
 
   // Check if we're resuming from a checkpoint
   const resumeFromCheckpoint = job.last_checkpoint || 0;
