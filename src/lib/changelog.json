@@ -1,6 +1,41 @@
 {
-  "generated": "2026-01-23T04:32:34.885Z",
+  "generated": "2026-01-23T04:53:33.052Z",
   "entries": [
+    {
+      "hash": "18bb203",
+      "date": "2026-01-22",
+      "type": "Fixed",
+      "description": "Add empty JSON body to refresh request",
+      "scope": null
+    },
+    {
+      "hash": "f7f12ed",
+      "date": "2026-01-22",
+      "type": "Chore",
+      "description": "Bump version to 0.1.880",
+      "scope": null
+    },
+    {
+      "hash": "f41862d",
+      "date": "2026-01-22",
+      "type": "Fixed",
+      "description": "Updater dependency check - skip better-sqlite3 ESM issue",
+      "scope": null
+    },
+    {
+      "hash": "b5f15e3",
+      "date": "2026-01-22",
+      "type": "Chore",
+      "description": "Auto-generated changelog and code changes",
+      "scope": null
+    },
+    {
+      "hash": "6335a25",
+      "date": "2026-01-22",
+      "type": "Fixed",
+      "description": "Add Content-Type header to auth refresh request",
+      "scope": null
+    },
     {
       "hash": "40ec392",
       "date": "2026-01-20",
@@ -3465,44 +3500,46 @@
       "type": "New",
       "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
       "scope": null
-    },
-    {
-      "hash": "288cca6",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add redirect support for changed document URLs",
-      "scope": null
-    },
-    {
-      "hash": "b56aa6c",
-      "date": "2026-01-02",
-      "type": "Fixed",
-      "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
-      "scope": null
-    },
-    {
-      "hash": "de3ee70",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Improve paragraph grouping with discourse markers",
-      "scope": null
-    },
-    {
-      "hash": "7fc0879",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Integrate sentence-first segmentation into ingester pipeline",
-      "scope": null
-    },
-    {
-      "hash": "0fbdaf6",
-      "date": "2026-01-02",
-      "type": "New",
-      "description": "Add sentence-first streaming segmentation for unpunctuated texts",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-22": [
+      {
+        "hash": "18bb203",
+        "date": "2026-01-22",
+        "type": "Fixed",
+        "description": "Add empty JSON body to refresh request",
+        "scope": null
+      },
+      {
+        "hash": "f7f12ed",
+        "date": "2026-01-22",
+        "type": "Chore",
+        "description": "Bump version to 0.1.880",
+        "scope": null
+      },
+      {
+        "hash": "f41862d",
+        "date": "2026-01-22",
+        "type": "Fixed",
+        "description": "Updater dependency check - skip better-sqlite3 ESM issue",
+        "scope": null
+      },
+      {
+        "hash": "b5f15e3",
+        "date": "2026-01-22",
+        "type": "Chore",
+        "description": "Auto-generated changelog and code changes",
+        "scope": null
+      },
+      {
+        "hash": "6335a25",
+        "date": "2026-01-22",
+        "type": "Fixed",
+        "description": "Add Content-Type header to auth refresh request",
+        "scope": null
+      }
+    ],
     "2026-01-20": [
       {
         "hash": "40ec392",
@@ -6999,43 +7036,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add Cloudflare bulk redirects for SEO-friendly URL changes",
-        "scope": null
-      },
-      {
-        "hash": "288cca6",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add redirect support for changed document URLs",
-        "scope": null
-      }
-    ],
-    "2026-01-02": [
-      {
-        "hash": "b56aa6c",
-        "date": "2026-01-02",
-        "type": "Fixed",
-        "description": "Add cwd to PM2 ecosystem config for node_modules resolution",
-        "scope": null
-      },
-      {
-        "hash": "de3ee70",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Improve paragraph grouping with discourse markers",
-        "scope": null
-      },
-      {
-        "hash": "7fc0879",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Integrate sentence-first segmentation into ingester pipeline",
-        "scope": null
-      },
-      {
-        "hash": "0fbdaf6",
-        "date": "2026-01-02",
-        "type": "New",
-        "description": "Add sentence-first streaming segmentation for unpunctuated texts",
         "scope": null
       }
     ]
