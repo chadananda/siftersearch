@@ -5,6 +5,6 @@ import LibraryBrowser from '../components/library/LibraryBrowser.svelte';
 ---
 
 <Layout title="Library - SifterSearch" description="Browse the complete document library. Explore sacred texts, scriptures, and scholarly works from world religions.">
-  <NavBar client:load currentPage="library" />
-  <LibraryBrowser client:load />
+  <NavBar client:only="svelte" currentPage="library" />
+  <LibraryBrowser client:only="svelte" />
 </Layout>

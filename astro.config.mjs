@@ -78,6 +78,8 @@ export default defineConfig({
       workbox: {
         // Precache static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Exclude Cloudflare Workers runtime files
+        globIgnores: ['**/_worker.js/**', '**/_worker.js', '**/worker.js'],
         // Clean up old caches when new SW activates
         cleanupOutdatedCaches: true,
         // Auto-activate new SW immediately - no waiting for tab close

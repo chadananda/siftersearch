@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T23:40:29.107Z",
+  "generated": "2026-01-23T23:54:16.921Z",
   "entries": [
+    {
+      "hash": "4e16a1c",
+      "date": "2026-01-23",
+      "type": "Chore",
+      "description": "Auto-generated changelog and version bump to 0.1.906",
+      "scope": null
+    },
     {
       "hash": "75ad0ff",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Collapse all utility buttons to hamburger menu on mobile",
       "scope": null
-    },
-    {
-      "hash": "e639a3f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Center utility bar buttons in right margin",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "4e16a1c",
+        "date": "2026-01-23",
+        "type": "Chore",
+        "description": "Auto-generated changelog and version bump to 0.1.906",
+        "scope": null
+      },
       {
         "hash": "75ad0ff",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Collapse all utility buttons to hamburger menu on mobile",
-        "scope": null
-      },
-      {
-        "hash": "e639a3f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Center utility bar buttons in right margin",
         "scope": null
       }
     ]

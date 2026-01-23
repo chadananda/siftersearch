@@ -7,7 +7,7 @@ import ChatInterface from '../components/ChatInterface.svelte';
 <Layout title="SifterSearch - AI-Powered Interfaith Library">
   <LiquidBackground client:only="svelte" />
   <main class="main-container">
-    <ChatInterface client:load />
+    <ChatInterface client:only="svelte" />
   </main>
 </Layout>
 
