@@ -48,6 +48,18 @@ Given('I am logged in as an admin user', async function () {
   this.authToken = 'test_admin_token';
 });
 
+Given('I am logged in as an approved user as admin', async function () {
+  // Admin user (admin tier includes approved permissions)
+  this.testUser = { email: 'admin@test.com', tier: 'admin', id: 'user_admin' };
+  this.authToken = 'test_admin_token';
+});
+
+Given('I am logged in', async function () {
+  // Default to approved user
+  this.testUser = { email: 'approved@test.com', tier: 'approved', id: 'user_approved' };
+  this.authToken = 'test_approved_token';
+});
+
 // ============================================
 // Common Response Assertions
 // ============================================
@@ -191,21 +203,39 @@ When('I search for {string}', async function (query) {
   const searchInput = this.page.locator('input[type="search"], input[aria-label*="earch"], input[placeholder*="earch"]').first();
   await searchInput.fill(query);
 
-  // Find and click search button
-  const searchButton = this.page.locator('button[type="submit"], button[aria-label*="earch"]').first();
-  await searchButton.click();
-  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
-  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
-  // Give it a moment for any immediate JavaScript to run
+  // Check if submit button exists (AI chat mode) or if we're in quick search mode
+  const submitButton = this.page.locator('button[type="submit"]').first();
+  const submitButtonExists = await submitButton.count() > 0;
+
+  if (submitButtonExists) {
+    // AI Chat mode - click submit button
+    await submitButton.click();
+    await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  } else {
+    // Quick search mode - instant search, just wait for results
+    await this.page.waitForTimeout(1000); // Wait for debounced search
+  }
+
   await this.page.waitForTimeout(500);
 });
 
 When('I perform a search', async function () {
-  await this.page.locator('input[type="search"], input[aria-label*="earch"]').first().fill('test query');
-  await this.page.locator('button[type="submit"], button[aria-label*="earch"]').first().click();
-  // Use 'load' instead of 'networkidle' to avoid hanging on failing API calls
-  await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
-  // Give it a moment for any immediate JavaScript to run
+  const searchInput = this.page.locator('input[type="search"], input[aria-label*="earch"]').first();
+  await searchInput.fill('test query');
+
+  // Check if submit button exists (AI chat mode) or if we're in quick search mode
+  const submitButton = this.page.locator('button[type="submit"]').first();
+  const submitButtonExists = await submitButton.count() > 0;
+
+  if (submitButtonExists) {
+    // AI Chat mode - click submit button
+    await submitButton.click();
+    await this.page.waitForLoadState('load', { timeout: 15000 }).catch(() => {});
+  } else {
+    // Quick search mode - instant search, just wait for results
+    await this.page.waitForTimeout(1000); // Wait for debounced search
+  }
+
   await this.page.waitForTimeout(500);
 });
 

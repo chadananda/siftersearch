@@ -2152,8 +2152,16 @@
       <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
       <div class="input-wrapper">
         <!-- Chat toggle for AI chat mode -->
-        <button type="button" class="chat-toggle-btn {!searchMode ? 'active' : ''}" onclick={toggleSearchMode} title={searchMode ? 'Switch to AI Chat' : 'Switch to Quick Search'}>
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        <button
+          type="button"
+          class="chat-toggle-btn {!searchMode ? 'active' : ''}"
+          onclick={toggleSearchMode}
+          title={searchMode ? 'Switch to AI Chat' : 'Switch to Quick Search'}
+          aria-label={searchMode ? 'Switch to AI Chat mode' : 'Switch to Quick Search mode'}
+          aria-pressed={!searchMode}
+          data-mode={searchMode ? 'quick-search' : 'ai-chat'}
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         </button>
         <input
           id="search-input"
