@@ -228,7 +228,7 @@
           onclick={() => auth.isAuthenticated ? showUserMenu = !showUserMenu : showAuthModal = true}
           aria-expanded={auth.isAuthenticated ? showUserMenu : undefined}
           aria-haspopup={auth.isAuthenticated ? "true" : undefined}
-          aria-label={auth.isAuthenticated ? "User menu" : "Open sign in dialog"}
+          aria-label={auth.isAuthenticated ? "User menu" : "Account"}
         >
           {#if auth.isAuthenticated}
             <span class="user-avatar">{userInitial}</span>
