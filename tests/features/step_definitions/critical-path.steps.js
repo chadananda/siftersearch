@@ -176,16 +176,26 @@ Then('I should see the user menu', async function () {
 });
 
 Given('I am authenticated as a test user', async function () {
-  // Login via API or localStorage for test user
-  this.testUser = { email: 'test@siftersearch.com', tier: 'approved' };
-  // For now, set up test auth state
+  // Set auth token in localStorage to simulate logged in state
+  this.testUser = { email: 'test@siftersearch.com', tier: 'approved', name: 'Test User' };
+
   await this.goto('/');
-  // If there's a way to set auth via localStorage or cookies, do it here
+
+  // Set auth state in localStorage
+  await this.page.evaluate((user) => {
+    localStorage.setItem('authToken', 'test_token_123');
+    localStorage.setItem('user', JSON.stringify(user));
+  }, this.testUser);
+
+  // Reload to apply auth state
+  await this.page.reload();
+  await this.page.waitForTimeout(1000);
 });
 
 When('I open the user menu', async function () {
-  const userMenu = this.page.locator('[aria-label*="user"], [aria-label*="account"], [data-testid="user-menu"], .user-avatar');
-  await userMenu.first().click();
+  // Click the user menu button (has "User menu" aria-label when authenticated)
+  const userMenuButton = this.page.locator('button[aria-label="User menu"]');
+  await userMenuButton.click();
   await this.page.waitForTimeout(300);
 });
 

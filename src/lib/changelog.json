@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T15:21:33.181Z",
+  "generated": "2026-01-23T15:24:14.073Z",
   "entries": [
+    {
+      "hash": "9eeb652",
+      "date": "2026-01-23",
+      "type": "New",
+      "description": "Add theme toggle to navbar with clear ARIA labels",
+      "scope": null
+    },
     {
       "hash": "b6fb4b4",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add labeled view mode buttons with circular progress indicator",
       "scope": null
-    },
-    {
-      "hash": "675a804",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add JWT auth middleware + translation job polling",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "9eeb652",
+        "date": "2026-01-23",
+        "type": "New",
+        "description": "Add theme toggle to navbar with clear ARIA labels",
+        "scope": null
+      },
       {
         "hash": "b6fb4b4",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add labeled view mode buttons with circular progress indicator",
-        "scope": null
-      },
-      {
-        "hash": "675a804",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add JWT auth middleware + translation job polling",
         "scope": null
       }
     ]
