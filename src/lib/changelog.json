@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T15:26:55.595Z",
+  "generated": "2026-01-23T15:31:23.028Z",
   "entries": [
+    {
+      "hash": "c787550",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Use ARIA labels for chat/quick-search toggle instead of class",
+      "scope": null
+    },
     {
       "hash": "fb4f551",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add URL-style breadcrumb header and job queue monitoring API",
       "scope": null
-    },
-    {
-      "hash": "02bc56c",
-      "date": "2026-01-03",
-      "type": "Refactor",
-      "description": "Reorganize utility bar with mobile hamburger menu",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "c787550",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Use ARIA labels for chat/quick-search toggle instead of class",
+        "scope": null
+      },
       {
         "hash": "fb4f551",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add URL-style breadcrumb header and job queue monitoring API",
-        "scope": null
-      },
-      {
-        "hash": "02bc56c",
-        "date": "2026-01-03",
-        "type": "Refactor",
-        "description": "Reorganize utility bar with mobile hamburger menu",
         "scope": null
       }
     ]

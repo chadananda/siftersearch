@@ -177,9 +177,8 @@ Then('the page should show a 404 error', async function () {
 });
 
 Then('there should be a link back to home', async function () {
-  const homeLink = this.page.locator('a[href="/"], a:has-text("Home"), a:has-text("home")');
-  const count = await homeLink.count();
-  expect(count, 'Should have link back to home').to.be.greaterThan(0);
+  const homeLink = this.page.locator('a[aria-label="Return to home page"]');
+  await this.assertVisible(homeLink);
 });
 
 // ============================================

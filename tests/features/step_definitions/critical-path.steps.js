@@ -363,9 +363,8 @@ Then('I should see the 404 error page', async function () {
 });
 
 Then('I should see a way to return home', async function () {
-  // Look for home link
-  const homeLink = this.page.locator('a[href="/"], :text("home"), :text("go back")');
-  await this.assertVisible(homeLink.first());
+  const homeLink = this.page.locator('a[aria-label="Return to home page"]');
+  await this.assertVisible(homeLink);
 });
 
 Given('the API returns an error', async function () {
