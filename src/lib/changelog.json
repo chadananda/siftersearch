@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-23T19:52:36.670Z",
+  "generated": "2026-01-23T20:04:58.082Z",
   "entries": [
+    {
+      "hash": "8035289",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Prevent document duplication by using client:only for LibraryBrowser",
+      "scope": null
+    },
     {
       "hash": "815f213",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Responsive right margin for utility bar - prevent content overlap",
       "scope": null
-    },
-    {
-      "hash": "2c8898f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "8035289",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Prevent document duplication by using client:only for LibraryBrowser",
+        "scope": null
+      },
       {
         "hash": "815f213",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Responsive right margin for utility bar - prevent content overlap",
-        "scope": null
-      },
-      {
-        "hash": "2c8898f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "SBS/Study mode improvements - English on left, parse JSON translations, icon/QR larger, move mode label to meta",
         "scope": null
       }
     ]
