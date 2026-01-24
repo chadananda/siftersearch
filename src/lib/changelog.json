@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T14:09:54.123Z",
+  "generated": "2026-01-24T14:55:16.853Z",
   "entries": [
+    {
+      "hash": "43f1e4e",
+      "date": "2026-01-24",
+      "type": "Fixed",
+      "description": "Hide duplicate metadata headings and improve document styling",
+      "scope": null
+    },
     {
       "hash": "66a21e1",
       "date": "2026-01-23",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Show existing translation progress when queueing new job",
       "scope": null
-    },
-    {
-      "hash": "6e1b7cf",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Translation queue reliability + UI fixes",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-24": [
+      {
+        "hash": "43f1e4e",
+        "date": "2026-01-24",
+        "type": "Fixed",
+        "description": "Hide duplicate metadata headings and improve document styling",
+        "scope": null
+      }
+    ],
     "2026-01-23": [
       {
         "hash": "66a21e1",
@@ -7031,13 +7040,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Show existing translation progress when queueing new job",
-        "scope": null
-      },
-      {
-        "hash": "6e1b7cf",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Translation queue reliability + UI fixes",
         "scope": null
       }
     ]
