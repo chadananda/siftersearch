@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T04:20:57.952Z",
+  "generated": "2026-01-24T04:21:22.235Z",
   "entries": [
+    {
+      "hash": "1394b5c",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Improve heading and italic text readability",
+      "scope": null
+    },
     {
       "hash": "fa30e5a",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Adjust corner icon positioning for 5px visual overlap",
       "scope": null
-    },
-    {
-      "hash": "208ed9e",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Three-line centered breadcrumb with corner icons",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "1394b5c",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Improve heading and italic text readability",
+        "scope": null
+      },
       {
         "hash": "fa30e5a",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust corner icon positioning for 5px visual overlap",
-        "scope": null
-      },
-      {
-        "hash": "208ed9e",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Three-line centered breadcrumb with corner icons",
         "scope": null
       }
     ]
