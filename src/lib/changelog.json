@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T00:43:03.084Z",
+  "generated": "2026-01-24T04:20:57.952Z",
   "entries": [
+    {
+      "hash": "fa30e5a",
+      "date": "2026-01-23",
+      "type": "Chore",
+      "description": "Auto-generated changelog and version bump to 0.1.914",
+      "scope": null
+    },
     {
       "hash": "d025c91",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Three-line centered breadcrumb with corner icons",
       "scope": null
-    },
-    {
-      "hash": "047902d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Position icons at actual corners of document box",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "fa30e5a",
+        "date": "2026-01-23",
+        "type": "Chore",
+        "description": "Auto-generated changelog and version bump to 0.1.914",
+        "scope": null
+      },
       {
         "hash": "d025c91",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Three-line centered breadcrumb with corner icons",
-        "scope": null
-      },
-      {
-        "hash": "047902d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Position icons at actual corners of document box",
         "scope": null
       }
     ]

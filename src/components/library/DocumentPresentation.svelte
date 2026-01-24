@@ -2345,12 +2345,15 @@
   }
 
   .paragraph-text :global(h3) {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     color: var(--text-secondary);
+    font-style: italic;
   }
 
   .paragraph-text :global(h4) {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
     color: var(--text-secondary);
     font-style: italic;
   }
@@ -2360,7 +2363,7 @@
     padding-left: 1rem;
     margin: 0;
     font-style: italic;
-    color: var(--text-secondary);
+    color: var(--text-primary);
   }
 
   /* Bilingual layout - three columns: original | par# | translation */
