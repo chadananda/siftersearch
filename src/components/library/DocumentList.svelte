@@ -594,6 +594,18 @@
             <div>
               <h4 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Metadata</h4>
               <div class="bg-surface-2 rounded-lg p-3 font-mono text-xs space-y-1 max-h-40 overflow-auto">
+                {#if doc.id}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">id:</span>
+                    <span class="text-primary">{doc.id}</span>
+                  </div>
+                {/if}
+                {#if doc.file_path}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">file_path:</span>
+                    <span class="text-primary break-all text-[10px] leading-relaxed">{doc.file_path}</span>
+                  </div>
+                {/if}
                 {#if doc.author}
                   <div class="flex gap-2">
                     <span class="text-accent font-medium">author:</span>
