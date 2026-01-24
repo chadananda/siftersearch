@@ -134,7 +134,7 @@
           </svg>
           <span class="nav-label">Chat</span>
         </a>
-        <!-- Library and Community are public -->
+        <!-- Library and Discuss are public -->
         <a href="/library" class="nav-link show-sm" class:active={currentPage === 'library'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -146,7 +146,7 @@
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          <span class="nav-label">Community</span>
+          <span class="nav-label">Discuss</span>
         </a>
         <a href="/docs" class="nav-link show-lg" class:active={currentPage === 'docs'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -191,7 +191,7 @@
               </svg>
               Chat
             </a>
-            <!-- Library and Community are public -->
+            <!-- Library and Discuss are public -->
             <a href="/library" class="nav-dropdown-item hide-above-sm" class:active={currentPage === 'library'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -202,7 +202,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
               </svg>
-              Community
+              Discuss
             </a>
             <a href="/docs" class="nav-dropdown-item hide-above-lg" class:active={currentPage === 'docs'} role="menuitem" onclick={closeNavMenu}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

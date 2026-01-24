@@ -351,6 +351,19 @@
   }
 
   /**
+   * Check if paragraph is a metadata heading (byline, section marker, etc.)
+   * These are h3/h4 headings that should be skipped during rendering
+   */
+  function isMetadataHeading(para) {
+    if (!para || (para.blocktype !== 'heading3' && para.blocktype !== 'heading4')) return false;
+    const text = (para.text || '').toLowerCase();
+    // Match common metadata patterns
+    return text.includes('by / on behalf') ||
+           text.includes('by on behalf') ||
+           text.match(/^\d+\.\s*(letter|message|excerpt)/);
+  }
+
+  /**
    * Convert straight quotes to curly/smart quotes
    * Handles both single and double quotes
    */
@@ -1199,7 +1212,7 @@
           <p>No content available for this document.</p>
         </div>
       {:else}
-        {#each paragraphs as para, i}
+        {#each paragraphs.filter(p => !isMetadataHeading(p)) as para, i}
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
@@ -2345,17 +2358,18 @@
   }
 
   .paragraph-text :global(h3) {
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 1.1rem;
+    font-weight: 600;
     color: var(--text-secondary);
-    font-style: italic;
+    margin: 0;
   }
 
   .paragraph-text :global(h4) {
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--text-secondary);
     font-style: italic;
+    margin: 0;
   }
 
   .paragraph-text :global(blockquote) {
@@ -2363,7 +2377,7 @@
     padding-left: 1rem;
     margin: 0;
     font-style: italic;
-    color: var(--text-primary);
+    color: #334155; /* Darker gray for readability while maintaining quote styling */
   }
 
   /* Bilingual layout - three columns: original | par# | translation */

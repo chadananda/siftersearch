@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T04:21:22.235Z",
+  "generated": "2026-01-24T14:09:54.123Z",
   "entries": [
+    {
+      "hash": "66a21e1",
+      "date": "2026-01-23",
+      "type": "Chore",
+      "description": "Auto-generated changelog and version bump to 0.1.916",
+      "scope": null
+    },
     {
       "hash": "1394b5c",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Translation queue reliability + UI fixes",
       "scope": null
-    },
-    {
-      "hash": "e88776f",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Adjust corner icon positioning for 5px visual overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "66a21e1",
+        "date": "2026-01-23",
+        "type": "Chore",
+        "description": "Auto-generated changelog and version bump to 0.1.916",
+        "scope": null
+      },
       {
         "hash": "1394b5c",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Translation queue reliability + UI fixes",
-        "scope": null
-      },
-      {
-        "hash": "e88776f",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Adjust corner icon positioning for 5px visual overlap",
         "scope": null
       }
     ]
