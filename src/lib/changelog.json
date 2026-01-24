@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T00:42:37.738Z",
+  "generated": "2026-01-24T00:43:03.084Z",
   "entries": [
+    {
+      "hash": "d025c91",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Include file_path in library documents API response",
+      "scope": null
+    },
     {
       "hash": "a00b313",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Position icons at actual corners of document box",
       "scope": null
-    },
-    {
-      "hash": "f4ec0c6",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Allow corner icons to overflow document container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "d025c91",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Include file_path in library documents API response",
+        "scope": null
+      },
       {
         "hash": "a00b313",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Position icons at actual corners of document box",
-        "scope": null
-      },
-      {
-        "hash": "f4ec0c6",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Allow corner icons to overflow document container",
         "scope": null
       }
     ]
