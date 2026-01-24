@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T00:29:30.253Z",
+  "generated": "2026-01-24T00:35:50.262Z",
   "entries": [
+    {
+      "hash": "3ea3c56",
+      "date": "2026-01-23",
+      "type": "Chore",
+      "description": "Auto-generated changelog and version bump to 0.1.911",
+      "scope": null
+    },
     {
       "hash": "b1ffd5c",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Position logo/QR in corners with overlap, make twice as big",
       "scope": null
-    },
-    {
-      "hash": "dc0c683",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Reduce SBS padding and fix highlight text visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "3ea3c56",
+        "date": "2026-01-23",
+        "type": "Chore",
+        "description": "Auto-generated changelog and version bump to 0.1.911",
+        "scope": null
+      },
       {
         "hash": "b1ffd5c",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Position logo/QR in corners with overlap, make twice as big",
-        "scope": null
-      },
-      {
-        "hash": "dc0c683",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Reduce SBS padding and fix highlight text visibility",
         "scope": null
       }
     ]

@@ -606,6 +606,18 @@
                     <span class="text-primary break-all text-[10px] leading-relaxed">{doc.file_path}</span>
                   </div>
                 {/if}
+                {#if doc.title}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">title:</span>
+                    <span class="text-primary break-all">{doc.title}</span>
+                  </div>
+                {/if}
+                {#if doc.description}
+                  <div class="flex gap-2">
+                    <span class="text-accent font-medium">description:</span>
+                    <span class="text-primary break-all">{doc.description}</span>
+                  </div>
+                {/if}
                 {#if doc.author}
                   <div class="flex gap-2">
                     <span class="text-accent font-medium">author:</span>
