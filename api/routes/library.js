@@ -1351,7 +1351,7 @@ Return ONLY the description text, no quotes or formatting.`;
     const [documents, countResult] = await Promise.all([
       queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, created_at, updated_at, cover_url, encumbered, filename,
+               paragraph_count, created_at, updated_at, cover_url, encumbered, filename, file_path,
                (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
                 FROM (SELECT paragraph_index, text FROM content WHERE doc_id = docs.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
         FROM docs

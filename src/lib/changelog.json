@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T00:35:50.262Z",
+  "generated": "2026-01-24T00:42:37.738Z",
   "entries": [
+    {
+      "hash": "a00b313",
+      "date": "2026-01-23",
+      "type": "Fixed",
+      "description": "Add title and description to metadata display",
+      "scope": null
+    },
     {
       "hash": "3ea3c56",
       "date": "2026-01-23",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Allow corner icons to overflow document container",
       "scope": null
-    },
-    {
-      "hash": "89d8e3f",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Position logo/QR in corners with overlap, make twice as big",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-23": [
+      {
+        "hash": "a00b313",
+        "date": "2026-01-23",
+        "type": "Fixed",
+        "description": "Add title and description to metadata display",
+        "scope": null
+      },
       {
         "hash": "3ea3c56",
         "date": "2026-01-23",
@@ -7031,13 +7038,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Allow corner icons to overflow document container",
-        "scope": null
-      },
-      {
-        "hash": "89d8e3f",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Position logo/QR in corners with overlap, make twice as big",
         "scope": null
       }
     ]
