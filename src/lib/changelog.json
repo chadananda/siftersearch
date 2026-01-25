@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-24T14:55:16.853Z",
+  "generated": "2026-01-25T14:04:27.897Z",
   "entries": [
+    {
+      "hash": "ff8b6b3",
+      "date": "2026-01-24",
+      "type": "Chore",
+      "description": "Deploy version 0.1.920 with proper build",
+      "scope": null
+    },
     {
       "hash": "43f1e4e",
       "date": "2026-01-24",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Make mode button label white when active",
       "scope": null
-    },
-    {
-      "hash": "8d0c5e2",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Show existing translation progress when queueing new job",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-01-24": [
+      {
+        "hash": "ff8b6b3",
+        "date": "2026-01-24",
+        "type": "Chore",
+        "description": "Deploy version 0.1.920 with proper build",
+        "scope": null
+      },
       {
         "hash": "43f1e4e",
         "date": "2026-01-24",
@@ -7033,13 +7040,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Make mode button label white when active",
-        "scope": null
-      },
-      {
-        "hash": "8d0c5e2",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Show existing translation progress when queueing new job",
         "scope": null
       }
     ]

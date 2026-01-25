@@ -350,18 +350,6 @@
     return text.replace(/⁅\/?[sp]\d+⁆/g, '');
   }
 
-  /**
-   * Check if paragraph is a metadata heading (byline, section marker, etc.)
-   * These are h3/h4 headings that should be skipped during rendering
-   */
-  function isMetadataHeading(para) {
-    if (!para || (para.blocktype !== 'heading3' && para.blocktype !== 'heading4')) return false;
-    const text = (para.text || '').toLowerCase();
-    // Match common metadata patterns
-    return text.includes('by / on behalf') ||
-           text.includes('by on behalf') ||
-           text.match(/^\d+\.\s*(letter|message|excerpt)/);
-  }
 
   /**
    * Convert straight quotes to curly/smart quotes
@@ -383,25 +371,11 @@
     return marked.parse(clean);
   }
 
-  // Render content based on blocktype (heading1, heading2, heading3, heading4, quote, etc.)
+  // Render markdown content - the text already contains proper markdown syntax
   function renderBlockContent(text, blocktype) {
     if (!text) return '';
     const clean = stripMarkers(text);
-    // For headings, use marked.parseInline to handle links/formatting but not wrap in <p>
-    switch (blocktype) {
-      case 'heading1':
-        return `<h1>${marked.parseInline(clean)}</h1>`;
-      case 'heading2':
-        return `<h2>${marked.parseInline(clean)}</h2>`;
-      case 'heading3':
-        return `<h3>${marked.parseInline(clean)}</h3>`;
-      case 'heading4':
-        return `<h4>${marked.parseInline(clean)}</h4>`;
-      case 'quote':
-        return `<blockquote>${marked.parse(clean)}</blockquote>`;
-      default:
-        return marked.parse(clean);
-    }
+    return marked.parse(clean);
   }
 
   function getLanguageDirection(lang) {
@@ -1212,7 +1186,7 @@
           <p>No content available for this document.</p>
         </div>
       {:else}
-        {#each paragraphs.filter(p => !isMetadataHeading(p)) as para, i}
+        {#each paragraphs as para, i}
           <div
             class="paragraph"
             class:highlighted={highlightedParagraphs.has(para.paragraph_index)}
@@ -1220,7 +1194,7 @@
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
-            {#if para.heading}
+            {#if para.heading && !para.heading.toLowerCase().includes('by / on behalf') && !para.heading.toLowerCase().includes('by on behalf')}
               <h2 class="paragraph-heading">{@html renderMarkdown(para.heading)}</h2>
             {/if}
 
@@ -2358,16 +2332,16 @@
   }
 
   .paragraph-text :global(h3) {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     margin: 0;
   }
 
   .paragraph-text :global(h4) {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-style: italic;
     margin: 0;
   }
