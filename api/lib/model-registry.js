@@ -334,6 +334,55 @@ export const MODEL_REGISTRY = {
     notes: 'MoE architecture. Only uses 12B params per inference. Efficient for quality.'
   },
 
+  // =========================================================================
+  // LM Studio Models (Local Network - Tailscale, Free)
+  // Server: LM Studio on 100.103.78.63:1234
+  // =========================================================================
+  'qwen2.5-72b-instruct': {
+    provider: 'lmstudio',
+    name: 'Qwen 2.5 72B Instruct',
+    type: 'chat',
+    pricing: { input: 0, output: 0 },
+    contextWindow: 32768,
+    maxOutput: 16384,
+    capabilities: ['reasoning', 'coding', 'analysis', 'multilingual', 'segmentation'],
+    quality: 'premium',
+    speed: 'medium',
+    local: true,
+    recommended: ['arabic_segmentation', 'farsi_segmentation', 'document_processing'],
+    notes: 'Primary segmentation model. Excellent multilingual support. Hosted on LM Studio via Tailscale.'
+  },
+
+  'qwen2.5-7b-instruct': {
+    provider: 'lmstudio',
+    name: 'Qwen 2.5 7B Instruct',
+    type: 'chat',
+    pricing: { input: 0, output: 0 },
+    contextWindow: 32768,
+    maxOutput: 8192,
+    capabilities: ['basic_reasoning', 'classification', 'multilingual'],
+    quality: 'fast',
+    speed: 'very_fast',
+    local: true,
+    recommended: ['simple_tasks', 'classification'],
+    notes: 'Fast lightweight model on LM Studio. Good for simple tasks.'
+  },
+
+  'openai/gpt-oss-20b': {
+    provider: 'lmstudio',
+    name: 'GPT-OSS 20B',
+    type: 'chat',
+    pricing: { input: 0, output: 0 },
+    contextWindow: 32768,
+    maxOutput: 8192,
+    capabilities: ['reasoning', 'coding', 'analysis'],
+    quality: 'balanced',
+    speed: 'fast',
+    local: true,
+    recommended: ['general_tasks'],
+    notes: 'Open-source GPT variant on LM Studio.'
+  },
+
   // --- Embedding Models ---
   'nomic-embed-text': {
     provider: 'ollama',

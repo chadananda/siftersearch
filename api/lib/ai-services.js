@@ -42,6 +42,11 @@ const MODEL_PRICING = {
   'qwen2.5:14b': { input: 0, output: 0 },
   'qwen2.5:7b': { input: 0, output: 0 },
   'nomic-embed-text': { input: 0, output: 0 },
+
+  // LM Studio (local network, free)
+  'qwen2.5-72b-instruct': { input: 0, output: 0 },
+  'qwen2.5-7b-instruct': { input: 0, output: 0 },
+  'openai/gpt-oss-20b': { input: 0, output: 0 },
 };
 
 // =============================================================================
@@ -126,7 +131,7 @@ export async function getAllDailySpending() {
  * Search/chat AI should always work for users, even when
  * expensive document processing (embedding) is paused.
  */
-const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative']);
+const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative', 'segmentation']);
 
 /**
  * Check spending and pause if over limit
@@ -345,6 +350,26 @@ const SERVICE_CONFIG = {
     }
   },
 
+  // Segmentation: Arabic/Farsi document segmentation via LM Studio
+  // Use: AI-powered text segmentation for non-Latin scripts
+  get segmentation() {
+    const segConfig = config.ai.segmentation;
+    return {
+      local: {
+        provider: segConfig.provider,
+        model: segConfig.model,
+        temperature: segConfig.temperature,
+        maxTokens: segConfig.maxTokens
+      },
+      remote: {
+        provider: 'openai',
+        model: 'gpt-4o',
+        temperature: 0.1,
+        maxTokens: 16000
+      }
+    };
+  },
+
   // ==========================================================================
   // EMBEDDING SERVICE
   // ==========================================================================
@@ -376,7 +401,8 @@ const SERVICE_CONFIG = {
 let clients = {
   openai: null,
   anthropic: null,
-  ollama: null
+  ollama: null,
+  lmstudio: null
 };
 
 function getClient(provider) {
@@ -400,6 +426,13 @@ function getClient(provider) {
     case 'ollama':
       clients.ollama = new Ollama({
         host: process.env.OLLAMA_HOST || 'http://localhost:11434'
+      });
+      break;
+
+    case 'lmstudio':
+      clients.lmstudio = new OpenAI({
+        baseURL: `${config.ai.endpoints.lmstudio}/v1`,
+        apiKey: 'lm-studio'  // LM Studio doesn't require a real key
       });
       break;
 
@@ -490,6 +523,29 @@ async function chatOllama(messages, opts) {
       promptTokens: response.prompt_eval_count,
       completionTokens: response.eval_count,
       totalTokens: (response.prompt_eval_count || 0) + (response.eval_count || 0)
+    },
+    model: response.model
+  };
+}
+
+async function chatLmstudio(messages, opts) {
+  const client = getClient('lmstudio');
+  const response = await client.chat.completions.create({
+    model: opts.model,
+    messages,
+    temperature: opts.temperature,
+    max_tokens: opts.maxTokens,
+    stream: opts.stream || false
+  });
+
+  if (opts.stream) return response;
+
+  return {
+    content: response.choices[0].message.content,
+    usage: {
+      promptTokens: response.usage?.prompt_tokens,
+      completionTokens: response.usage?.completion_tokens,
+      totalTokens: response.usage?.total_tokens
     },
     model: response.model
   };
@@ -608,7 +664,7 @@ export function aiService(serviceType, options = {}) {
       const { caller, userId, jobId, documentId } = overrides;
 
       // Check spending limit before making AI call (skip for local/free models)
-      if (opts.provider !== 'ollama') {
+      if (opts.provider !== 'ollama' && opts.provider !== 'lmstudio') {
         await checkSpendingLimit(serviceType);
       }
 
@@ -630,6 +686,9 @@ export function aiService(serviceType, options = {}) {
             break;
           case 'ollama':
             response = await chatOllama(messages, opts);
+            break;
+          case 'lmstudio':
+            response = await chatLmstudio(messages, opts);
             break;
           default:
             throw new Error(`Unknown provider: ${opts.provider}`);
@@ -745,6 +804,39 @@ export function aiService(serviceType, options = {}) {
           jobId,
           documentId
         });
+        throw err;
+      }
+    }
+  };
+}
+
+// =============================================================================
+// SEGMENTATION SERVICE (with automatic fallback)
+// =============================================================================
+
+/**
+ * Get segmentation AI service with automatic fallback.
+ * Tries LM Studio first (free, local network), falls back to cloud API on error.
+ */
+export function segmentationService() {
+  // Always try local (LM Studio) first, regardless of USE_REMOTE_AI setting
+  const primary = aiService('segmentation', { forceLocal: true });
+
+  return {
+    name: primary.name,
+    config: primary.config,
+
+    async chat(messages, overrides = {}) {
+      try {
+        return await primary.chat(messages, overrides);
+      } catch (err) {
+        // If LM Studio fails, fall back to cloud API
+        const primaryProvider = primary.config.provider;
+        if (primaryProvider === 'lmstudio') {
+          logger.warn({ err: err.message }, 'LM Studio unreachable, falling back to cloud API for segmentation');
+          const fallback = aiService('segmentation', { forceRemote: true });
+          return await fallback.chat(messages, overrides);
+        }
         throw err;
       }
     }

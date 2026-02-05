@@ -10,7 +10,7 @@
  * Text integrity is verified after every segmentation operation.
  */
 
-import { aiService } from '../lib/ai-services.js';
+import { segmentationService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import { wrapSentence, stripMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
 
@@ -227,7 +227,7 @@ IMPORTANT: Copy the markers EXACTLY as they appear in the text. Semantic coheren
 
   try {
     // Force remote API for segmentation (OpenAI GPT-4 for best quality)
-    const response = await aiService('quality', { forceRemote: true }).chat([
+    const response = await segmentationService().chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ], {
@@ -900,7 +900,7 @@ Return JSON with exact sentence text copied from above:
 CRITICAL: Copy each sentence EXACTLY as it appears. Do not modify, trim, or "clean up" the text.`;
 
   try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
+    const response = await segmentationService().chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ], {
@@ -1262,7 +1262,7 @@ Return JSON with the EXACT last 3-4 words of each sentence:
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await aiService('quality', { forceRemote: true }).chat([
+      const response = await segmentationService().chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ], {
@@ -1895,7 +1895,7 @@ Example:
 5:prose`;
 
   try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
+    const response = await segmentationService().chat([
       { role: 'user', content: prompt }
     ], { temperature: 0.1, maxTokens: 2000, caller: 'segmenter' });
 
@@ -1983,7 +1983,7 @@ Example: 5, 12, 18, 25, 33
 TEXT:
 ${numberedText}`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 2000, caller: 'segmenter' });
 
@@ -2048,7 +2048,7 @@ ${numberedList}
 Return ONLY comma-separated phrase numbers that END sentences.
 Example: 3, 7, 12, 18, ${phrases.length}`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
@@ -2121,7 +2121,7 @@ Example: 1, 5, 12, 18
 Sentence 1 always starts the first paragraph.
 With ${sentences.length} sentences, expect roughly ${Math.ceil(sentences.length / 4)} paragraphs.`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 500, caller: 'segmenter' });
 
@@ -2385,7 +2385,7 @@ Return the LAST 2-3 WORDS of each phrase, one per line. Nothing else.
 TEXT:
 ${text}`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 4000, caller: 'segmenter' });
 
@@ -2468,7 +2468,7 @@ Output ONLY the phrase ID numbers that end complete sentences, one per line. Exa
 
 Nothing else - just the numbers.`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
@@ -2524,7 +2524,7 @@ For ${sentences.length} sentences, give approximately ${Math.ceil(sentences.leng
 
 Nothing else - just the numbers.`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], { temperature: 0.1, maxTokens: 500, caller: 'segmenter' });
 
@@ -2693,7 +2693,7 @@ Output ONLY the last 3-5 words of each COMPLETE sentence, one per line.`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await aiService('quality', { forceRemote: true }).chat([
+      const response = await segmentationService().chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: makeUserPrompt(attempt) }
       ], {
@@ -3181,7 +3181,7 @@ If you find MULTIPLE sentences: Output each sentence ending (last 3-5 words) on 
 
 CRITICAL: Only split if you're confident. Classical religious texts sometimes have legitimately long sentences.`;
 
-  const response = await aiService('quality', { forceRemote: true }).chat([
+  const response = await segmentationService().chat([
     { role: 'user', content: prompt }
   ], {
     temperature: 0.1,
@@ -3343,7 +3343,7 @@ Example: If sentences 4, 8, and 12 each end a paragraph, output:
 Nothing else - just the numbers.`;
 
   try {
-    const response = await aiService('quality', { forceRemote: true }).chat([
+    const response = await segmentationService().chat([
       { role: 'user', content: prompt }
     ], { temperature: 0.1, maxTokens: 1000, caller: 'segmenter' });
 
