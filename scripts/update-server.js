@@ -100,13 +100,14 @@ async function repairDependencies() {
 }
 
 /**
- * Check if PM2 is running the correct version
+ * Check if PM2 is running code older than the latest git commit.
+ * Compares the API process start time against the last commit timestamp.
+ * This works even when the package.json version isn't bumped.
  */
-async function checkPm2Version() {
-  const pkgVersion = getCurrentVersion();
+async function checkPm2NeedsReload() {
   const pm2Result = await run('pm2 jlist');
   if (!pm2Result.success) {
-    log('warn', 'Could not check PM2 version');
+    log('warn', 'Could not check PM2 processes');
     return { needsReload: false };
   }
 
@@ -118,15 +119,28 @@ async function checkPm2Version() {
       return { needsReload: false };
     }
 
-    const runningVersion = apiProcess.pm2_env?.version || 'unknown';
-    if (runningVersion !== pkgVersion) {
-      log('info', `PM2 running v${runningVersion}, package.json is v${pkgVersion}`);
-      return { needsReload: true, runningVersion, pkgVersion };
+    const apiStartTime = apiProcess.pm2_env?.pm_uptime;
+    if (!apiStartTime) {
+      log('warn', 'Could not determine API start time');
+      return { needsReload: false };
+    }
+
+    // Get last commit timestamp (unix seconds)
+    const gitResult = await run('git log -1 --format=%ct');
+    if (!gitResult.success) {
+      log('warn', 'Could not get git commit time');
+      return { needsReload: false };
+    }
+
+    const lastCommitTime = parseInt(gitResult.stdout) * 1000; // to ms
+    if (lastCommitTime > apiStartTime) {
+      log('info', `API started at ${new Date(apiStartTime).toISOString()}, latest commit at ${new Date(lastCommitTime).toISOString()}`);
+      return { needsReload: true };
     }
 
     return { needsReload: false };
   } catch (err) {
-    log('warn', `Failed to parse PM2 output: ${err.message}`);
+    log('warn', `Failed to check PM2 state: ${err.message}`);
     return { needsReload: false };
   }
 }
@@ -158,8 +172,8 @@ async function checkForUpdates() {
       log('info', 'Already up to date with git');
     }
     // Even if git is up to date, check if PM2 needs reload
-    // (handles case where git commit happened locally but PM2 wasn't reloaded)
-    const pm2Check = await checkPm2Version();
+    // (handles case where code was pulled but PM2 wasn't reloaded — e.g. updater self-restart)
+    const pm2Check = await checkPm2NeedsReload();
     if (pm2Check.needsReload) {
       return { hasUpdates: false, needsPm2Reload: true };
     }
@@ -234,21 +248,36 @@ async function applyUpdates() {
     log('info', 'Deploy hooks complete');
   }
 
-  // Reload all PM2 processes from ecosystem config
-  // --update-env picks up any changes to env variables in the ecosystem file
-  log('info', 'Reloading PM2 ecosystem...');
-  const reloadResult = await run('pm2 reload ecosystem.config.cjs --update-env');
-  if (!reloadResult.success) {
-    log('warn', `PM2 reload warning: ${reloadResult.error}`);
-    // Try startOrReload as fallback (handles new processes)
-    log('info', 'Trying startOrReload instead...');
-    const startResult = await run('pm2 startOrReload ecosystem.config.cjs --update-env');
-    if (!startResult.success) {
-      log('error', `Failed to reload PM2: ${startResult.error}`);
-      return false;
+  // Reload PM2 processes individually (NOT ecosystem.config.cjs).
+  // Reloading the full ecosystem would restart the updater itself mid-execution,
+  // potentially leaving other processes un-reloaded.
+  const processesToReload = [
+    'siftersearch-api',
+    'siftersearch-watchdog',
+    'siftersearch-library-watcher',
+    'siftersearch-jobs',
+  ];
+
+  log('info', `Reloading PM2 processes: ${processesToReload.join(', ')}...`);
+  let reloadFailed = false;
+  for (const proc of processesToReload) {
+    const result = await run(`pm2 reload ${proc} --update-env`);
+    if (!result.success) {
+      log('warn', `Failed to reload ${proc}: ${result.error}`);
+      // Try restart as fallback
+      const restartResult = await run(`pm2 restart ${proc} --update-env`);
+      if (!restartResult.success) {
+        log('error', `Failed to restart ${proc}: ${restartResult.error}`);
+        reloadFailed = true;
+      }
     }
   }
-  log('info', 'PM2 ecosystem reloaded');
+
+  if (reloadFailed) {
+    log('error', 'Some processes failed to reload');
+    return false;
+  }
+  log('info', 'All PM2 processes reloaded');
 
   return true;
 }
@@ -270,17 +299,21 @@ function getCurrentVersion() {
  * Reload PM2 only (no git pull needed)
  */
 async function reloadPm2Only() {
-  log('info', 'Reloading PM2 ecosystem (code already up to date)...');
-  const reloadResult = await run('pm2 reload ecosystem.config.cjs --update-env');
-  if (!reloadResult.success) {
-    log('warn', `PM2 reload warning: ${reloadResult.error}`);
-    const startResult = await run('pm2 startOrReload ecosystem.config.cjs --update-env');
-    if (!startResult.success) {
-      log('error', `Failed to reload PM2: ${startResult.error}`);
-      return false;
+  log('info', 'Reloading PM2 processes (code already up to date)...');
+  const processesToReload = [
+    'siftersearch-api',
+    'siftersearch-watchdog',
+    'siftersearch-library-watcher',
+    'siftersearch-jobs',
+  ];
+  for (const proc of processesToReload) {
+    const result = await run(`pm2 reload ${proc} --update-env`);
+    if (!result.success) {
+      log('warn', `Failed to reload ${proc}, trying restart...`);
+      await run(`pm2 restart ${proc} --update-env`);
     }
   }
-  log('info', 'PM2 ecosystem reloaded');
+  log('info', 'All PM2 processes reloaded');
   return true;
 }
 
