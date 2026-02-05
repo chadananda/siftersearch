@@ -2326,6 +2326,57 @@ Collection: ${paragraph.collection || 'Unknown'}
   });
 
   /**
+   * POST /server/sync/cleanup-paragraphs - Remove orphaned paragraph IDs from Meilisearch
+   * Checks ALL documents and deletes Meilisearch paragraph IDs not in content table.
+   */
+  fastify.post('/server/sync/cleanup-paragraphs', { preHandler: requireInternal }, async () => {
+    const meili = getMeili();
+    if (!meili) throw ApiError.serviceUnavailable('Meilisearch not available');
+
+    const docs = await queryAll('SELECT id FROM docs WHERE deleted_at IS NULL');
+    const paragraphsIndex = meili.index('paragraphs');
+    let totalOrphans = 0;
+    let docsWithOrphans = 0;
+
+    for (const doc of docs) {
+      const dbContent = await queryAll('SELECT id FROM content WHERE doc_id = ?', [doc.id]);
+      const dbIdSet = new Set(dbContent.map(r => r.id));
+
+      let offset = 0;
+      const meiliIds = [];
+      while (true) {
+        const result = await paragraphsIndex.getDocuments({
+          filter: `doc_id = ${doc.id}`,
+          fields: ['id'],
+          limit: 1000,
+          offset
+        });
+        if (!result.results || result.results.length === 0) break;
+        meiliIds.push(...result.results.map(r => r.id));
+        if (result.results.length < 1000) break;
+        offset += 1000;
+      }
+
+      const orphanIds = meiliIds.filter(id => !dbIdSet.has(id));
+      if (orphanIds.length > 0) {
+        docsWithOrphans++;
+        totalOrphans += orphanIds.length;
+        for (let i = 0; i < orphanIds.length; i += 1000) {
+          await paragraphsIndex.deleteDocuments(orphanIds.slice(i, i + 1000));
+        }
+        logger.info({ docId: doc.id, orphans: orphanIds.length, meili: meiliIds.length, db: dbContent.length }, 'Cleaned orphaned paragraphs');
+      }
+    }
+
+    return {
+      success: true,
+      documentsChecked: docs.length,
+      documentsWithOrphans: docsWithOrphans,
+      orphanedParagraphsDeleted: totalOrphans
+    };
+  });
+
+  /**
    * GET /server/sync/orphaned - Find documents without content table entries
    */
   fastify.get('/server/sync/orphaned', { preHandler: requireInternal }, async () => {
