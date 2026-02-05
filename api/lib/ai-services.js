@@ -122,12 +122,19 @@ export async function getAllDailySpending() {
 }
 
 /**
+ * Service types exempt from the spending pause.
+ * Search/chat AI should always work for users, even when
+ * expensive document processing (embedding) is paused.
+ */
+const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative']);
+
+/**
  * Check spending and pause if over limit
  * Returns true if processing should continue, throws if paused
  */
 async function checkSpendingLimit(serviceType) {
-  // If already paused, throw immediately
-  if (aiProcessingPaused) {
+  // If already paused, only block non-exempt (document processing) services
+  if (aiProcessingPaused && !PAUSE_EXEMPT_SERVICES.has(serviceType)) {
     throw new AIBudgetExceededError(pausedReason, 0, DAILY_SPENDING_LIMIT_USD);
   }
 

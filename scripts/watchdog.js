@@ -27,8 +27,8 @@ const API_PORT = process.env.API_PORT || '3000';
 const MEILI_PORT = process.env.MEILI_PORT || '7700';
 
 // Configuration - use ports from environment
-const API_HEALTH_URL = process.env.API_HEALTH_URL || `http://localhost:${API_PORT}/health`;
-const MEILI_HEALTH_URL = process.env.MEILI_HEALTH_URL || `http://localhost:${MEILI_PORT}/health`;
+const API_HEALTH_URL = process.env.API_HEALTH_URL || `http://127.0.0.1:${API_PORT}/health`;
+const MEILI_HEALTH_URL = process.env.MEILI_HEALTH_URL || `http://127.0.0.1:${MEILI_PORT}/health`;
 const TUNNEL_HEALTH_URL = process.env.TUNNEL_HEALTH_URL || 'https://api.siftersearch.com/health';
 const CHECK_INTERVAL = parseInt(process.env.WATCHDOG_INTERVAL) || 30000; // 30 seconds
 const MAX_FAILURES = parseInt(process.env.WATCHDOG_MAX_FAILURES) || 3;

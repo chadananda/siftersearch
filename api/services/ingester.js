@@ -1304,6 +1304,17 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   if (extractedMeta.documentType) extraMeta.documentType = extractedMeta.documentType;
   const metadataJson = Object.keys(extraMeta).length > 0 ? JSON.stringify(extraMeta) : null;
 
+  // Skip Arabic documents - ingestion is paused until cost is addressed
+  if (finalMeta.language === 'ar') {
+    logger.info({ relativePath, title: finalMeta.title }, 'Skipping Arabic document (ingestion paused)');
+    return {
+      documentId: existingDoc?.id ?? null,
+      paragraphCount: 0,
+      status: 'skipped',
+      error: 'Arabic document ingestion is paused'
+    };
+  }
+
   // Validate required fields - error out rather than using fake defaults
   if (!finalMeta.religion || !finalMeta.collection) {
     const error = `Missing required metadata: religion=${finalMeta.religion}, collection=${finalMeta.collection}. ` +
