@@ -1,6 +1,13 @@
 {
-  "generated": "2026-02-05T04:50:06.817Z",
+  "generated": "2026-02-05T12:57:04.994Z",
   "entries": [
+    {
+      "hash": "cdf2788",
+      "date": "2026-02-04",
+      "type": "Chore",
+      "description": "Bump version to 0.1.922",
+      "scope": null
+    },
     {
       "hash": "1f1d528",
       "date": "2026-01-25",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Set English line-height to 1 in all paragraph text rules",
       "scope": null
-    },
-    {
-      "hash": "4dda2fe",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-02-04": [
+      {
+        "hash": "cdf2788",
+        "date": "2026-02-04",
+        "type": "Chore",
+        "description": "Bump version to 0.1.922",
+        "scope": null
+      }
+    ],
     "2026-01-25": [
       {
         "hash": "1f1d528",
@@ -7035,13 +7044,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Set English line-height to 1 in all paragraph text rules",
-        "scope": null
-      },
-      {
-        "hash": "4dda2fe",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
         "scope": null
       }
     ]

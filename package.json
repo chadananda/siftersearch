@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.922",
+  "version": "0.1.924",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -62,7 +62,7 @@
     "version:major": "node scripts/bump-version.js major",
     "changelog": "node scripts/generate-changelog.js",
     "prebuild": "node scripts/generate-changelog.js",
-    "deploy": "node scripts/bump-version.js && npm run build && npx wrangler pages deploy ./dist --project-name siftersearch",
+    "deploy": "node scripts/deploy.js",
     "lint": "eslint . --ext .js,.svelte,.astro",
     "format": "prettier --write .",
     "prod:start": "pm2 start ecosystem.config.cjs --env production",

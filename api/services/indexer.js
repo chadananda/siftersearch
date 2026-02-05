@@ -528,6 +528,19 @@ export async function indexDocumentFromText(text, metadata = {}) {
 
   const { docId, paragraphIds } = await storeInLibsql(document, libsqlParagraphs);
 
+  // storeInLibsql() deleted all old content rows and inserted new ones with new IDs.
+  // Delete old paragraphs from Meilisearch to prevent orphaned entries.
+  try {
+    const meili = getMeili();
+    if (meili) {
+      await meili.index(INDEXES.PARAGRAPHS).deleteDocuments({
+        filter: `doc_id = ${docId}`
+      });
+    }
+  } catch (err) {
+    logger.warn({ docId, err: err.message }, 'Failed to clean old paragraphs from Meilisearch before re-index');
+  }
+
   // Create document record for Meilisearch (uses INTEGER id from SQLite)
   const meiliDocument = {
     id: docId,  // INTEGER id from SQLite

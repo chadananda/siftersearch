@@ -316,6 +316,39 @@ async function syncDocument(docId) {
       if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
     }
 
+    // Clean up orphaned paragraph IDs from Meilisearch for this document.
+    // Orphans occur when content rows are deleted from DB (e.g., during re-ingestion)
+    // but their IDs remain in Meilisearch.
+    try {
+      const dbIds = await queryAll('SELECT id FROM content WHERE doc_id = ?', [docId]);
+      const dbIdSet = new Set(dbIds.map(r => r.id));
+
+      // Get all paragraph IDs in Meilisearch for this document
+      const paragraphsIndex = meili.index('paragraphs');
+      let offset = 0;
+      const meiliIds = [];
+      while (true) {
+        const result = await paragraphsIndex.getDocuments({
+          filter: `doc_id = ${docId}`,
+          fields: ['id'],
+          limit: 1000,
+          offset
+        });
+        if (!result.results || result.results.length === 0) break;
+        meiliIds.push(...result.results.map(r => r.id));
+        if (result.results.length < 1000) break;
+        offset += 1000;
+      }
+
+      const orphanIds = meiliIds.filter(id => !dbIdSet.has(id));
+      if (orphanIds.length > 0) {
+        await paragraphsIndex.deleteDocuments(orphanIds);
+        logger.info({ docId, orphans: orphanIds.length }, 'Cleaned up orphaned paragraph IDs from Meilisearch');
+      }
+    } catch (cleanupErr) {
+      logger.warn({ docId, err: cleanupErr.message }, 'Failed to clean up orphaned paragraphs');
+    }
+
     logger.info({ docId, paragraphs: paragraphs.length }, 'Document synced to Meilisearch');
     return { success: true, synced: paragraphs.length };
 
@@ -444,6 +477,57 @@ async function runCleanupCycle() {
 
       syncStats.documentsDeleted += staleIds.length;
       logger.info({ count: staleIds.length }, 'Cleaned up stale documents from Meilisearch');
+    }
+
+    // Paragraph-level orphan cleanup: find paragraph IDs in Meilisearch
+    // that no longer exist in the content table. Sample a batch of documents
+    // each cycle to avoid overwhelming Meilisearch with large queries.
+    try {
+      const sampleDocs = await queryAll(`
+        SELECT id FROM docs WHERE deleted_at IS NULL
+        ORDER BY RANDOM() LIMIT 20
+      `);
+
+      let totalOrphans = 0;
+      const paragraphsIndex = meili.index('paragraphs');
+
+      for (const doc of sampleDocs) {
+        // Get all content IDs from DB for this doc
+        const dbContent = await queryAll('SELECT id FROM content WHERE doc_id = ?', [doc.id]);
+        const dbContentIds = new Set(dbContent.map(r => r.id));
+
+        // Get all paragraph IDs from Meilisearch for this doc
+        let offset = 0;
+        const meiliParaIds = [];
+        while (true) {
+          const result = await paragraphsIndex.getDocuments({
+            filter: `doc_id = ${doc.id}`,
+            fields: ['id'],
+            limit: 1000,
+            offset
+          });
+          if (!result.results || result.results.length === 0) break;
+          meiliParaIds.push(...result.results.map(r => r.id));
+          if (result.results.length < 1000) break;
+          offset += 1000;
+        }
+
+        const orphanIds = meiliParaIds.filter(id => !dbContentIds.has(id));
+        if (orphanIds.length > 0) {
+          await paragraphsIndex.deleteDocuments(orphanIds);
+          totalOrphans += orphanIds.length;
+          logger.info({ docId: doc.id, orphans: orphanIds.length }, 'Cleaned orphaned paragraphs from Meilisearch');
+        }
+
+        // Yield to avoid blocking
+        if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
+      }
+
+      if (totalOrphans > 0) {
+        logger.info({ totalOrphans, docsChecked: sampleDocs.length }, 'Paragraph orphan cleanup complete');
+      }
+    } catch (paraErr) {
+      logger.warn({ err: paraErr.message }, 'Paragraph-level orphan cleanup failed');
     }
 
     syncStats.lastCleanup = new Date().toISOString();
