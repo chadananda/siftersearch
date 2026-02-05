@@ -1,6 +1,13 @@
 {
-  "generated": "2026-01-25T14:04:27.897Z",
+  "generated": "2026-02-05T04:50:06.817Z",
   "entries": [
+    {
+      "hash": "1f1d528",
+      "date": "2026-01-25",
+      "type": "Fixed",
+      "description": "Properly render markdown headings and improve h3/h4 visibility",
+      "scope": null
+    },
     {
       "hash": "ff8b6b3",
       "date": "2026-01-24",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
       "scope": null
-    },
-    {
-      "hash": "4bb30e8",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Make mode button label white when active",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-01-25": [
+      {
+        "hash": "1f1d528",
+        "date": "2026-01-25",
+        "type": "Fixed",
+        "description": "Properly render markdown headings and improve h3/h4 visibility",
+        "scope": null
+      }
+    ],
     "2026-01-24": [
       {
         "hash": "ff8b6b3",
@@ -7033,13 +7042,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust SBS layout - 775px width, hamburger at 900px, tight English line-height",
-        "scope": null
-      },
-      {
-        "hash": "4bb30e8",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Make mode button label white when active",
         "scope": null
       }
     ]

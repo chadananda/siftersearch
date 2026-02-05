@@ -1620,7 +1620,7 @@
               <div class="citation-line">
                 <span class="citation-meta">
                   {#if showAuthor}{author} — {/if}{displayTitle}
-                  {#if $admin?.isAdmin}<span class="doc-id-debug" title="Document ID">#{docId}</span>{/if}
+                  {#if isAdmin}<span class="doc-id-debug" title="Document ID">#{docId}</span>{/if}
                 </span>
               </div>
             </div>
