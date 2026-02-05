@@ -1753,6 +1753,21 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     await transaction(batch);
   }
 
+  // Also delete stale paragraph IDs from Meilisearch
+  if (deleteStatements.length > 0) {
+    try {
+      const { getMeili } = await import('../lib/search.js');
+      const meili = getMeili();
+      if (meili) {
+        const staleIds = deleteStatements.map(s => s.args[0]);
+        await meili.index('paragraphs').deleteDocuments(staleIds);
+        logger.debug({ count: staleIds.length, docId: finalDocId }, 'Deleted stale paragraph IDs from Meilisearch');
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, docId: finalDocId }, 'Failed to delete stale paragraphs from Meilisearch');
+    }
+  }
+
   // 2. Update existing paragraphs (position changes, preserves embeddings)
   for (let i = 0; i < updateStatements.length; i += BATCH_SIZE) {
     const batch = updateStatements.slice(i, i + BATCH_SIZE);

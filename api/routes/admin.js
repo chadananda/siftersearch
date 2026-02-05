@@ -897,6 +897,17 @@ export default async function adminRoutes(fastify) {
     if (forceReindex && existing) {
       await query('DELETE FROM content WHERE doc_id = ?', [existing.id]);
       await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [existing.id]);
+      // Also clear old paragraphs from Meilisearch to prevent orphans
+      try {
+        const meili = getMeili();
+        if (meili) {
+          await meili.index('paragraphs').deleteDocuments({
+            filter: `doc_id = ${existing.id}`
+          });
+        }
+      } catch (err) {
+        logger.warn({ docId: existing.id, err: err.message }, 'Failed to clear old paragraphs from Meilisearch during force re-index');
+      }
       logger.info({ filePath, docId: existing.id }, 'Force re-index: cleared existing content');
     }
 
