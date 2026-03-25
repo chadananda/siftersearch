@@ -184,12 +184,9 @@ async function syncDocument(docId) {
       created_at: new Date().toISOString()
     };
 
-    // Only include _vectors when we have a valid embedding — sending null vectors
-    // forces Meilisearch to update its HNSW vector index for every document,
-    // which is extremely slow on a 1.6M+ document index with 3072 dimensions
-    if (embedding) {
-      record._vectors = { default: embedding };
-    }
+    // Include _vectors with valid embedding, or explicit null to opt out
+    // Meilisearch requires explicit null for userProvided embedders
+    record._vectors = { default: embedding };
 
     return record;
   });

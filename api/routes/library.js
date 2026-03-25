@@ -39,7 +39,7 @@ import config from '../lib/config.js';
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 // In-memory cache for library stats (expensive aggregation queries on 2.5M+ rows)
-const statsCache = { data: null, timestamp: 0, ttl: 60000 }; // 60s TTL
+const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s TTL (short to show sync progress)
 
 /**
  * Parse translation field from paragraph
