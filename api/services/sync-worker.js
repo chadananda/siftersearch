@@ -96,7 +96,7 @@ function blobToFloatArray(blob) {
  */
 async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 30000) {
   const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
-  const task = await meili.tasks.waitForTask(taskUid, { timeOutMs: timeoutMs });
+  const task = await meili.tasks.waitForTask(taskUid, { timeout: timeoutMs });
 
   if (task.status === 'failed') {
     const errMsg = task.error?.message || 'Unknown Meilisearch task error';
