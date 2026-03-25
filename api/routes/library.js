@@ -924,13 +924,44 @@ export default async function libraryRoutes(fastify) {
       throw ApiError.notFound('Religion not found');
     }
 
-    // Get collection
-    const node = await queryOne(`
+    // Get collection — check library_nodes first, then fall back to docs table
+    let node = await queryOne(`
       SELECT id, parent_id, node_type, name, slug, description, overview,
              cover_image_url, authority_default, metadata, created_at, updated_at
       FROM library_nodes
       WHERE node_type = 'collection' AND slug = ? AND parent_id = ?
     `, [collectionSlug, religion.id]);
+
+    // Fallback: collection exists in docs table but not in library_nodes
+    if (!node) {
+      const collections = await queryAll(`
+        SELECT collection as name, COUNT(*) as doc_count
+        FROM docs
+        WHERE religion = ? AND deleted_at IS NULL
+        GROUP BY collection
+      `, [religion.name]);
+
+      const match = collections.find(c =>
+        c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === collectionSlug
+      );
+
+      if (match) {
+        node = {
+          id: null,
+          parent_id: religion.id,
+          node_type: 'collection',
+          name: match.name,
+          slug: collectionSlug,
+          description: null,
+          overview: null,
+          cover_image_url: null,
+          authority_default: 5,
+          metadata: null,
+          created_at: null,
+          updated_at: null
+        };
+      }
+    }
 
     if (!node) {
       throw ApiError.notFound('Collection not found');
