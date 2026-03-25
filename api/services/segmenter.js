@@ -3645,6 +3645,9 @@ Rules:
           afterIndex: para.paragraph_index,
           paragraphs: valid.map(text => ({ text, heading: para.heading || '', blocktype: para.blocktype || 'paragraph' }))
         });
+        logger.info({ id: para.id, original: para.text.length,
+          pieces: valid.length, sizes: valid.map(s => s.trim().length).join(',') },
+          'Split oversized paragraph via text-marker fallback');
         continue;
       }
 
