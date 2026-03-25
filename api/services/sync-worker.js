@@ -293,7 +293,8 @@ async function runSyncCycle() {
     await content.propagateEmbeddings();
 
     // Get documents with dirty (unsynced) content
-    const docs = await content.getDocsWithDirtyParagraphs();
+    // Limit to 5 docs per cycle to keep event loop responsive for health checks
+    const docs = await content.getDocsWithDirtyParagraphs(5);
 
     if (docs.length === 0) {
       isRunning = false;
@@ -315,6 +316,8 @@ async function runSyncCycle() {
         totalErrors++;
         syncStats.errors++;
       }
+      // Yield event loop between documents
+      await delay(10);
     }
 
     if (totalSynced > 0) {
