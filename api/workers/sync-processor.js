@@ -35,8 +35,8 @@ import { runMigrations } from '../lib/migrations.js';
 // Configuration
 const BATCH_SIZE = 50;
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
-const YIELD_DELAY_MS = 5;         // Delay between batches within a doc
-const DOC_DELAY_MS = 50;          // Delay between documents
+const YIELD_DELAY_MS = 10;        // Delay between batches within a doc
+const DOC_DELAY_MS = 200;         // Delay between documents — gives API breathing room for DB reads
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
@@ -439,8 +439,8 @@ async function processJob(job) {
     await content.propagateEmbeddings();
 
     while (!isShuttingDown) {
-      // Get ALL docs with dirty paragraphs (no limit — process to completion)
-      const docs = await content.getDocsWithDirtyParagraphs(100);
+      // Get docs with dirty paragraphs in small batches — avoids starving the API of DB access
+      const docs = await content.getDocsWithDirtyParagraphs(10);
       if (docs.length === 0) break;
 
       for (const doc of docs) {
