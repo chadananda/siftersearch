@@ -1731,24 +1731,27 @@
                 {@const job = libraryStats.indexingProgress.activeJob}
                 <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Indexing {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs</span>
+                    <span class="ingestion-label">Indexing</span>
                     <span class="ingestion-percent">{job.percentComplete}%</span>
                   </div>
                   <div class="ingestion-bar" role="progressbar" aria-valuenow={job.percentComplete} aria-valuemin="0" aria-valuemax="100">
                     <div class="ingestion-fill active" style="width: {job.percentComplete}%"></div>
                   </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs
+                  </div>
                 </div>
               {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
                 <div class="ingestion-progress indexing" role="region" aria-label="Search index progress">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Search ready</span>
+                    <span class="ingestion-label">Indexing</span>
                     <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
                   </div>
                   <div class="ingestion-bar" role="progressbar" aria-valuenow={libraryStats.indexingProgress.percentComplete} aria-valuemin="0" aria-valuemax="100">
                     <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs synced
+                    {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs
                   </div>
                 </div>
               {/if}
