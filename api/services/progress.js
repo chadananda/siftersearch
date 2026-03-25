@@ -136,16 +136,16 @@ export async function getIndexingProgress() {
   }
 
   try {
-    // Get paragraph counts from SQLite — synced vs total
-    const [totalResult, syncedResult, docsWithContentResult] = await Promise.all([
+    // Get paragraph counts from SQLite — use unsynced count (small set, fast) instead of synced count (huge set, slow)
+    const [totalResult, unsyncedResult, docsWithContentResult] = await Promise.all([
       queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 1 AND deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
       queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL')
     ]);
 
     const totalParagraphs = totalResult?.count || 0;
-    const syncedParagraphs = syncedResult?.count || 0;
-    const pendingParagraphs = totalParagraphs - syncedParagraphs;
+    const pendingParagraphs = unsyncedResult?.count || 0;
+    const syncedParagraphs = totalParagraphs - pendingParagraphs;
     const docsWithContent = docsWithContentResult?.count || 0;
 
     // Also get Meilisearch counts for verification
