@@ -17,7 +17,7 @@ import { content } from '../lib/content.js';
 const SYNC_INTERVAL_MS = 10000;  // Poll every 10 seconds
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Cleanup stale Meili docs every 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // Full sync check every hour
-const BATCH_SIZE = 100;          // Paragraphs per batch (Meili handles this easily)
+const BATCH_SIZE = 50;           // Paragraphs per batch (smaller = faster on large indexes)
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
 const YIELD_DELAY_MS = 5;        // Small delay to yield event loop
 
@@ -94,7 +94,7 @@ function blobToFloatArray(blob) {
  * Wait for a Meilisearch task to complete.
  * Returns the finished task object. Throws if the task failed.
  */
-async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 120000) {
+async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 300000) {
   const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
   const task = await meili.tasks.waitForTask(taskUid, { timeout: timeoutMs });
 
