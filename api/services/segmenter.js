@@ -12,13 +12,14 @@
 
 import { segmentationService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
+import { content } from '../lib/content.js';
 import { wrapSentence, stripMarkers, hasMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
 
 /**
  * Configuration for segmentation
  */
 const SEGMENT_CONFIG = {
-  maxChunkSize: 1500,        // Maximum characters per segment - triggers AI if exceeded
+  maxChunkSize: 6000,        // Maximum characters per segment - must fit within embedding model's token limit
   minChunkSize: 20,          // Minimum characters to keep a segment (lowered to preserve short prayers/invocations)
   sentenceDelimiters: /[.!?。！？؟۔]\s+/,  // Standard + Arabic/Farsi end marks
   // Arabic verse markers and section indicators
@@ -3546,6 +3547,263 @@ export function validateSegmentationStrict(originalText, paragraphs) {
 
   return {
     valid: errors.length === 0,
+    errors
+  };
+}
+
+// ============================================================
+// Oversized paragraph re-segmentation
+// ============================================================
+
+const EMBEDDING_MAX_CHARS = 6000;
+
+/**
+ * Re-segment oversized paragraphs for a document.
+ *
+ * Uses the efficient index-only approach: extracts existing sentence markers
+ * from the oversized paragraph, sends the sentence array to AI, and AI returns
+ * only the indices where paragraph breaks should go. Minimal output tokens,
+ * maximum cache efficiency.
+ *
+ * Only touches paragraphs exceeding the character limit — everything else
+ * is untouched.
+ *
+ * @param {number} docId - Document ID
+ * @param {object} [options]
+ * @param {number} [options.maxChars=6000] - Character threshold triggering re-segmentation
+ * @param {boolean} [options.dryRun=false] - Preview changes without writing to DB
+ * @returns {Promise<{docId: number, oversized: number, newParagraphs: number, removed: number, errors: string[]}>}
+ */
+export async function resegmentOversized(docId, options = {}) {
+  const { maxChars = EMBEDDING_MAX_CHARS, dryRun = false } = options;
+  const errors = [];
+
+  // Get all paragraphs for this document, ordered by position
+  const allParagraphs = await content.getByDocId(docId);
+  if (!allParagraphs || allParagraphs.length === 0) {
+    return { docId, oversized: 0, newParagraphs: 0, removed: 0, errors: ['No paragraphs found'] };
+  }
+
+  // Identify oversized paragraphs
+  const oversizedParas = allParagraphs.filter(p => (p.text?.length || 0) > maxChars);
+  if (oversizedParas.length === 0) {
+    return { docId, oversized: 0, newParagraphs: 0, removed: 0, errors: [] };
+  }
+
+  // Detect language from first oversized paragraph
+  const langFeatures = detectLanguageFeatures(oversizedParas[0].text);
+  const language = langFeatures.language;
+  const languageHint = language === 'fa' ? 'Persian/Farsi' : language === 'ar' ? 'Arabic' : 'English';
+
+  logger.info({ docId, oversized: oversizedParas.length, language, maxChars },
+    'Re-segmenting oversized paragraphs');
+
+  // Static system prompt for index-only paragraph splitting.
+  // Identical across all calls within this function → benefits from prefix caching.
+  const systemPrompt = `You are an expert in classical ${languageHint} literature. You identify paragraph boundaries from a list of sentences.
+
+You will receive a JSON array of sentences from a classical text. Your job is to identify which sentences START a new paragraph — a shift in topic, subject, argument, or narrative thread.
+
+Classical texts frequently contain very long sentences where the predicate is far from its verb. Do not artificially break these. A paragraph of a single long sentence is completely normal if that sentence is one complete topic.
+
+Look for: topic shifts, transitions, new subjects, changes in addressee, new arguments, new quotations or references.
+
+Return ONLY a JSON array of integers — the 0-based indices of sentences that begin a new paragraph. Index 0 always starts a paragraph, so never include it.
+
+Rules:
+- Return ONLY a JSON array of integers. No text, no explanation.
+- Do NOT include index 0.`;
+
+  const toInsert = [];
+  const toRemove = [];
+
+  for (const para of oversizedParas) {
+    logger.info({ id: para.id, chars: para.text.length, index: para.paragraph_index },
+      'Re-segmenting oversized paragraph');
+
+    try {
+      // Extract sentences from existing markers (⁅s1⁆...⁅/s1⁆)
+      const { getSentences } = await import('../lib/markers.js');
+      const sentences = getSentences(para.text);
+
+      if (sentences.length < 2) {
+        // No sentence markers or just one sentence — fall back to the text-based approach
+        // This shouldn't happen for properly-segmented content, but handle gracefully
+        const result = await getAIBreakPositions(para.text, { language, maxChunkSize: maxChars });
+        if (result.breakPositions.length === 0) {
+          errors.push(`Paragraph ${para.id} (${para.text.length} chars): no sentence markers and AI found no break points`);
+          continue;
+        }
+        const subSegments = splitAtPositions(para.text, result.breakPositions);
+        const valid = subSegments.filter(s => s.trim().length >= SEGMENT_CONFIG.minChunkSize);
+        if (valid.length <= 1) {
+          errors.push(`Paragraph ${para.id}: fallback split produced only ${valid.length} segment(s)`);
+          continue;
+        }
+        toRemove.push(para.id);
+        toInsert.push({
+          afterIndex: para.paragraph_index,
+          paragraphs: valid.map(text => ({ text, heading: para.heading || '', blocktype: para.blocktype || 'paragraph' }))
+        });
+        continue;
+      }
+
+      // Efficient path: send sentence TEXTS as JSON array, get back indices only.
+      // Output is tiny (just a few integers), input is the sentence array.
+      const sentenceTexts = sentences.map(s => stripMarkers(s.text).trim());
+
+      const response = await segmentationService().chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: JSON.stringify(sentenceTexts) }
+      ], {
+        temperature: 0.1,
+        maxTokens: 500, // Output is just a short array of integers
+        caller: 'segmenter:resegment'
+      });
+
+      const responseText = response.content || response;
+      const match = responseText.match(/\[[\d\s,]*\]/);
+      if (!match) {
+        errors.push(`Paragraph ${para.id}: could not parse AI response`);
+        continue;
+      }
+
+      let breakIndices;
+      try {
+        breakIndices = JSON.parse(match[0])
+          .filter(n => Number.isInteger(n) && n > 0 && n < sentences.length);
+      } catch {
+        errors.push(`Paragraph ${para.id}: JSON parse failed`);
+        continue;
+      }
+
+      if (breakIndices.length === 0) {
+        errors.push(`Paragraph ${para.id} (${para.text.length} chars, ${sentences.length} sentences): AI found no paragraph breaks — keeping as-is`);
+        continue;
+      }
+
+      // Build new sub-paragraphs from the break indices.
+      // Each sub-paragraph gets the full sentence text including markers.
+      const paraStarts = [0, ...breakIndices.sort((a, b) => a - b)];
+      const newParagraphs = [];
+
+      for (let i = 0; i < paraStarts.length; i++) {
+        const start = paraStarts[i];
+        const end = i + 1 < paraStarts.length ? paraStarts[i + 1] : sentences.length;
+        // Reconstruct paragraph text from original sentence markers
+        const paraSentences = sentences.slice(start, end);
+        const paraText = paraSentences.map(s => s.text).join(' ');
+        newParagraphs.push(paraText);
+      }
+
+      // Verify: check that no sub-paragraph is still oversized
+      const stillOversized = newParagraphs.filter(p => p.length > maxChars);
+      if (stillOversized.length > 0) {
+        logger.warn({ id: para.id, stillOversized: stillOversized.length,
+          maxLen: Math.max(...stillOversized.map(p => p.length)) },
+          'Some sub-paragraphs still oversized after split — may need sentence-level re-segmentation');
+      }
+
+      toRemove.push(para.id);
+      toInsert.push({
+        afterIndex: para.paragraph_index,
+        paragraphs: newParagraphs.map(text => ({
+          text,
+          heading: para.heading || '',
+          blocktype: para.blocktype || 'paragraph'
+        }))
+      });
+
+      logger.info({ id: para.id, original: para.text.length, sentences: sentences.length,
+        pieces: newParagraphs.length, sizes: newParagraphs.map(p => p.length).join(',') },
+        'Split oversized paragraph via index-only approach');
+
+    } catch (err) {
+      errors.push(`Paragraph ${para.id}: ${err.message}`);
+      logger.error({ id: para.id, err: err.message }, 'Failed to re-segment paragraph');
+    }
+  }
+
+  if (dryRun) {
+    const totalNew = toInsert.reduce((sum, t) => sum + t.paragraphs.length, 0);
+    return {
+      docId,
+      oversized: oversizedParas.length,
+      newParagraphs: totalNew,
+      removed: toRemove.length,
+      errors,
+      preview: toInsert.map(t => ({
+        replacesIndex: t.afterIndex,
+        pieces: t.paragraphs.map(p => ({ chars: p.text.length, preview: p.text.substring(0, 100) }))
+      }))
+    };
+  }
+
+  // Apply changes: delete old oversized, insert new sub-paragraphs, reindex positions
+  if (toRemove.length > 0) {
+    // Delete the oversized originals
+    for (const id of toRemove) {
+      await content.deleteParagraph(id);
+    }
+
+    // Rebuild paragraph indices for the entire document
+    const remaining = allParagraphs.filter(p => !toRemove.includes(p.id));
+    const insertMap = new Map(toInsert.map(t => [t.afterIndex, t.paragraphs]));
+
+    let newIndex = 0;
+    const bulkInserts = [];
+
+    for (const existing of remaining) {
+      if (insertMap.has(existing.paragraph_index)) {
+        const newParas = insertMap.get(existing.paragraph_index);
+        for (const np of newParas) {
+          bulkInserts.push({
+            paragraphIndex: newIndex++,
+            text: np.text,
+            heading: np.heading,
+            blocktype: np.blocktype
+          });
+        }
+        insertMap.delete(existing.paragraph_index);
+      } else {
+        if (existing.paragraph_index !== newIndex) {
+          await content.updatePosition(existing.id, { paragraphIndex: newIndex });
+        }
+        newIndex++;
+      }
+    }
+
+    // Insert any remaining
+    for (const [, newParas] of insertMap) {
+      for (const np of newParas) {
+        bulkInserts.push({
+          paragraphIndex: newIndex++,
+          text: np.text,
+          heading: np.heading,
+          blocktype: np.blocktype
+        });
+      }
+    }
+
+    if (bulkInserts.length > 0) {
+      await content.bulkInsertParagraphs(docId, bulkInserts);
+    }
+
+    // Update document paragraph count
+    const { query: dbQuery } = await import('../lib/db.js');
+    await dbQuery('UPDATE docs SET paragraph_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [newIndex, docId]);
+
+    logger.info({ docId, removed: toRemove.length, inserted: bulkInserts.length, totalParagraphs: newIndex },
+      'Re-segmentation complete');
+  }
+
+  const totalNew = toInsert.reduce((sum, t) => sum + t.paragraphs.length, 0);
+  return {
+    docId,
+    oversized: oversizedParas.length,
+    newParagraphs: totalNew,
+    removed: toRemove.length,
     errors
   };
 }
