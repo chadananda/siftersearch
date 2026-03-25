@@ -19,7 +19,6 @@ dotenv.config({ path: '.env-secrets' });
 dotenv.config({ path: '.env-public' });
 
 import { query, queryOne, queryAll } from '../api/lib/db.js';
-import { getMeili, INDEXES } from '../api/lib/search.js';
 import { logger } from '../api/lib/logger.js';
 
 const dryRun = process.argv.includes('--dry-run');
@@ -108,43 +107,33 @@ async function syncLibraryNodes() {
     await query('DELETE FROM library_nodes');
   }
 
-  const meili = getMeili();
+  // Source from docs table (authoritative) instead of Meilisearch
+  // This ensures collections appear even if documents haven't been synced to search yet
+  console.log('Fetching document facets from docs table...');
 
-  // Get all documents grouped by religion and collection
-  console.log('Fetching document facets from Meilisearch...');
-
-  const searchResult = await meili.index(INDEXES.DOCUMENTS).search('', {
-    limit: 0,
-    facets: ['religion', 'collection']
-  });
-
-  const facets = searchResult.facetDistribution || {};
-  const religions = Object.keys(facets.religion || {});
-  const collections = Object.keys(facets.collection || {});
-
-  console.log(`Found ${religions.length} religions and ${collections.length} collections\n`);
-
-  // Get detailed breakdown by querying documents
-  // We need to know which collections belong to which religions
-  const docsResult = await meili.index(INDEXES.DOCUMENTS).search('', {
-    limit: 10000,
-    attributesToRetrieve: ['religion', 'collection']
-  });
+  const docRows = await queryAll(`
+    SELECT religion, collection, COUNT(*) as doc_count
+    FROM docs
+    WHERE deleted_at IS NULL AND religion IS NOT NULL AND collection IS NOT NULL
+    GROUP BY religion, collection
+    ORDER BY religion, collection
+  `);
 
   // Build religion -> collections mapping with counts
   const religionCollections = {};
-  for (const doc of docsResult.hits) {
-    const religion = doc.religion || 'Uncategorized';
-    const collection = doc.collection || 'General';
+  for (const row of docRows) {
+    const religion = row.religion || 'Uncategorized';
+    const collection = row.collection || 'General';
 
     if (!religionCollections[religion]) {
       religionCollections[religion] = {};
     }
-    if (!religionCollections[religion][collection]) {
-      religionCollections[religion][collection] = 0;
-    }
-    religionCollections[religion][collection]++;
+    religionCollections[religion][collection] = row.doc_count;
   }
+
+  const religions = Object.keys(religionCollections);
+  const totalCollections = Object.values(religionCollections).reduce((sum, cols) => sum + Object.keys(cols).length, 0);
+  console.log(`Found ${religions.length} religions and ${totalCollections} collections\n`);
 
   // Check existing nodes
   let existingNodes = [];

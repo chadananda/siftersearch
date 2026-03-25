@@ -289,20 +289,7 @@
               </svg>
               Settings
             </a>
-            <a href="/referrals" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              Referrals
-            </a>
-            <a href="/support" class="dropdown-item" role="menuitem" onclick={closeUserMenu}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              Support
-            </a>
+            <!-- Referrals and Support hidden until multi-user launch -->
             {#if isAdmin}
               <div class="dropdown-divider"></div>
               <a href="/admin" class="dropdown-item admin-item" role="menuitem" onclick={closeUserMenu}>

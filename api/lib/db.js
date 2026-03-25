@@ -100,13 +100,29 @@ export async function getUserDb() {
 export const getBatchDb = getDb;
 
 // ============================================
+// Slow Query Logging
+// ============================================
+
+const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '500', 10);
+
+function logQueryTiming(sql, params, startTime, dbName) {
+  const duration = Date.now() - startTime;
+  if (duration >= SLOW_QUERY_THRESHOLD_MS) {
+    const shortSql = sql.replace(/\s+/g, ' ').trim().slice(0, 200);
+    logger.warn({ duration, sql: shortSql, params: params?.length > 5 ? `[${params.length} params]` : params, db: dbName }, `Slow query (${duration}ms)`);
+  }
+}
+
+// ============================================
 // Content Database Operations (local)
 // ============================================
 
 // Execute a query on content DB
 export async function query(sql, params = []) {
   const client = await getDb();
+  const start = Date.now();
   const result = await client.execute({ sql, args: params });
+  logQueryTiming(sql, params, start, 'content');
   return result;
 }
 
@@ -136,7 +152,9 @@ export async function transaction(statements) {
 // Execute a query on user DB
 export async function userQuery(sql, params = []) {
   const client = await getUserDb();
+  const start = Date.now();
   const result = await client.execute({ sql, args: params });
+  logQueryTiming(sql, params, start, 'user');
   return result;
 }
 
