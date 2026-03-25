@@ -48,6 +48,64 @@ function computeNormalizedHash(text) {
   return createHash('md5').update(normalized).digest('hex');
 }
 
+// Cache of known religion/collection nodes to avoid repeated DB lookups
+const knownNodes = new Set();
+
+/**
+ * Ensure library_nodes exist for a religion/collection pair.
+ * Creates them if missing, so the library tree stays in sync with folder structure.
+ */
+async function ensureLibraryNodes(religion, collection) {
+  if (!religion || !collection) return;
+
+  const key = `${religion}|${collection}`;
+  if (knownNodes.has(key)) return;
+
+  try {
+    // Ensure religion node exists
+    let religionNode = await queryOne(
+      `SELECT id FROM library_nodes WHERE node_type = 'religion' AND name = ?`,
+      [religion]
+    );
+
+    if (!religionNode) {
+      const slug = slugifyPath(religion);
+      await query(
+        `INSERT OR IGNORE INTO library_nodes (parent_id, node_type, name, slug, authority_default, display_order)
+         VALUES (NULL, 'religion', ?, ?, 5, 99)`,
+        [religion, slug]
+      );
+      religionNode = await queryOne(
+        `SELECT id FROM library_nodes WHERE node_type = 'religion' AND name = ?`,
+        [religion]
+      );
+      logger.info({ religion, slug }, 'Auto-created religion node');
+    }
+
+    if (!religionNode) return;
+
+    // Ensure collection node exists under this religion
+    const collectionNode = await queryOne(
+      `SELECT id FROM library_nodes WHERE node_type = 'collection' AND name = ? AND parent_id = ?`,
+      [collection, religionNode.id]
+    );
+
+    if (!collectionNode) {
+      const slug = slugifyPath(collection);
+      await query(
+        `INSERT OR IGNORE INTO library_nodes (parent_id, node_type, name, slug, authority_default, display_order)
+         VALUES (?, 'collection', ?, ?, 5, 99)`,
+        [religionNode.id, collection, slug]
+      );
+      logger.info({ religion, collection, slug }, 'Auto-created collection node');
+    }
+
+    knownNodes.add(key);
+  } catch (err) {
+    logger.warn({ err: err.message, religion, collection }, 'Failed to ensure library nodes');
+  }
+}
+
 // Chunking configuration
 const CHUNK_CONFIG = {
   maxChunkSize: 1500,      // Max characters per chunk - triggers AI segmentation if exceeded
@@ -1302,7 +1360,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   const metadataJson = Object.keys(extraMeta).length > 0 ? JSON.stringify(extraMeta) : null;
 
   // Skip Arabic documents - ingestion is paused until cost is addressed
+  // But still ensure library nodes exist so the collection shows up in the library tree
   if (finalMeta.language === 'ar') {
+    await ensureLibraryNodes(finalMeta.religion, finalMeta.collection);
     logger.info({ relativePath, title: finalMeta.title }, 'Skipping Arabic document (ingestion paused)');
     return {
       documentId: existingDoc?.id ?? null,
@@ -1592,6 +1652,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     finalDocId = Number(result.lastInsertRowid);
     logger.debug({ finalDocId, relativePath }, 'Created new document with INTEGER id');
   }
+
+  // Ensure library_nodes exist for this religion/collection
+  // This keeps the library tree in sync with the folder structure automatically
+  await ensureLibraryNodes(finalMeta.religion, finalMeta.collection);
 
   // Create redirect if URL slug changed (for SEO and link preservation)
   if (existingDoc) {
