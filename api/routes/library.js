@@ -38,6 +38,9 @@ import config from '../lib/config.js';
 // 4-hour cooldown period for file stability before ingestion
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
+// In-memory cache for library stats (expensive aggregation queries on 2.5M+ rows)
+const statsCache = { data: null, timestamp: 0, ttl: 60000 }; // 60s TTL
+
 /**
  * Parse translation field from paragraph
  * Handles both legacy (plain string) and new (JSON object) formats
@@ -171,6 +174,13 @@ export default async function libraryRoutes(fastify) {
   fastify.get('/stats', { preHandler: optionalAuthenticate }, async (request) => {
     // Check if authenticated user is admin
     const isAdmin = request.user?.tier === 'admin';
+
+    // Return cached stats if fresh (expensive queries on 2.5M+ rows)
+    const now = Date.now();
+    if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
+      return { ...statsCache.data, isAdmin };
+    }
+
     // Get document and paragraph counts from libsql + Meilisearch indexing progress
     // Exclude soft-deleted content (deleted_at IS NULL)
     const [docCount, paraCount, docsWithContent, facetStats, meiliProgress] = await Promise.all([
@@ -280,8 +290,7 @@ export default async function libraryRoutes(fastify) {
     const pendingDocs = totalDocs - withContent;
     const percentComplete = totalDocs > 0 ? Math.round((withContent / totalDocs) * 100) : 0;
 
-    return {
-      isAdmin,  // Include admin status for client-side conditional rendering
+    const result = {
       totalDocuments: totalDocs,
       totalParagraphs: paraCount?.count || 0,
       religions: Object.keys(religionCounts).length,
@@ -291,8 +300,8 @@ export default async function libraryRoutes(fastify) {
       collectionCounts,
       languageCounts,
       indexing: indexingStats.pending > 0 || indexingStats.processing > 0,
-      ingestionQueue: indexingStats,  // Renamed: queue status for document processing
-      indexingProgress: meiliProgress,  // Meilisearch indexing: indexed vs totalWithContent
+      ingestionQueue: indexingStats,
+      indexingProgress: meiliProgress,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
       translationProgress: translationStats,
       ingestionProgress: {
@@ -303,6 +312,12 @@ export default async function libraryRoutes(fastify) {
       },
       pipelineStatus
     };
+
+    // Cache result (isAdmin is per-request, not cached)
+    statsCache.data = result;
+    statsCache.timestamp = Date.now();
+
+    return { ...result, isAdmin };
   });
 
   /**
