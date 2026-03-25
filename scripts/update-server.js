@@ -256,6 +256,7 @@ async function applyUpdates() {
     'siftersearch-watchdog',
     'siftersearch-library-watcher',
     'siftersearch-jobs',
+    'siftersearch-sync',
   ];
 
   log('info', `Reloading PM2 processes: ${processesToReload.join(', ')}...`);
@@ -305,6 +306,7 @@ async function reloadPm2Only() {
     'siftersearch-watchdog',
     'siftersearch-library-watcher',
     'siftersearch-jobs',
+    'siftersearch-sync',
   ];
   for (const proc of processesToReload) {
     const result = await run(`pm2 reload ${proc} --update-env`);

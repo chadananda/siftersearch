@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 37;
+const CURRENT_VERSION = 38;
 const USER_DB_CURRENT_VERSION = 2;
 
 /**
@@ -1499,6 +1499,29 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)');
 
     logger.info('Migration 37 complete: api_keys table created');
+  },
+
+  38: async () => {
+    logger.info('Starting migration 38: sync_jobs table');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS sync_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        total_items INTEGER DEFAULT 0,
+        completed_items INTEGER DEFAULT 0,
+        failed_items INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        started_at TEXT,
+        completed_at TEXT,
+        error TEXT
+      )
+    `);
+
+    await query('CREATE INDEX IF NOT EXISTS idx_sync_jobs_status ON sync_jobs(status, created_at)');
+
+    logger.info('Migration 38 complete: sync_jobs table created');
   },
 };
 

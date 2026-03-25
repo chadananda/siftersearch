@@ -1726,8 +1726,19 @@
                   </div>
                 </div>
               {/if}
-              <!-- Search index progress - paragraphs synced to Meilisearch -->
-              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0}
+              <!-- Search index progress - show active job or overall sync status -->
+              {#if libraryStats?.indexingProgress?.activeJob?.status === 'running'}
+                {@const job = libraryStats.indexingProgress.activeJob}
+                <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Indexing {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs</span>
+                    <span class="ingestion-percent">{job.percentComplete}%</span>
+                  </div>
+                  <div class="ingestion-bar" role="progressbar" aria-valuenow={job.percentComplete} aria-valuemin="0" aria-valuemax="100">
+                    <div class="ingestion-fill active" style="width: {job.percentComplete}%"></div>
+                  </div>
+                </div>
+              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
                 <div class="ingestion-progress indexing" role="region" aria-label="Search index progress">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Search ready</span>
@@ -2948,6 +2959,23 @@
   .ingestion-detail .pending-count {
     color: var(--warning);
     margin-left: 0.25rem;
+  }
+
+  /* Active indexing job — animated shimmer on the fill bar */
+  .ingestion-fill.active {
+    background: linear-gradient(
+      90deg,
+      var(--accent-primary-light) 0%,
+      color-mix(in srgb, var(--accent-primary-light), white 30%) 50%,
+      var(--accent-primary-light) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 
   @keyframes pulse {

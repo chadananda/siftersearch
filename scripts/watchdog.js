@@ -41,12 +41,14 @@ let meiliFailures = 0;
 let tunnelFailures = 0;
 let libraryWatcherFailures = 0;
 let jobsFailures = 0;
+let syncFailures = 0;
 let isRestarting = false;
 
 // PM2 processes to monitor (no health endpoint, check PM2 status)
 const PM2_PROCESSES = [
   'siftersearch-library-watcher',
-  'siftersearch-jobs'
+  'siftersearch-jobs',
+  'siftersearch-sync'
 ];
 
 /**
@@ -132,6 +134,10 @@ async function checkPM2Processes() {
         log('info', `${processName} recovered`);
         jobsFailures = 0;
       }
+      if (processName.includes('sync') && syncFailures > 0) {
+        log('info', `${processName} recovered`);
+        syncFailures = 0;
+      }
     } else if (status === 'stopped' || status === 'errored' || status === 'waiting restart') {
       // Process is down - restart it
       if (processName.includes('library-watcher')) {
@@ -139,6 +145,9 @@ async function checkPM2Processes() {
         log('warn', `${processName} is ${status} (failure ${libraryWatcherFailures})`);
       } else if (processName.includes('jobs')) {
         jobsFailures++;
+        log('warn', `${processName} is ${status}`);
+      } else if (processName.includes('sync')) {
+        syncFailures++;
         log('warn', `${processName} is ${status}`);
       }
 

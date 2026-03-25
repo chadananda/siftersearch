@@ -120,6 +120,29 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
+    // Meilisearch Sync Processor (standalone sync — survives API restarts)
+    // Single instance: only one process should sync to avoid race conditions
+    {
+      name: 'siftersearch-sync',
+      script: 'api/workers/sync-processor.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      env: {
+        NODE_ENV: 'production'
+      },
+      // Restart policies
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '30s',
+      // Logging
+      error_file: './logs/sync-error.log',
+      out_file: './logs/sync-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Auto-updater daemon (polls git every 5 minutes)
     // MUST be fork mode - cluster mode leaves orphaned processes on restart!
     {

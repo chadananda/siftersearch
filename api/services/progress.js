@@ -7,7 +7,7 @@
  * Indexing Progress: Documents indexed in Meilisearch vs total with content
  */
 
-import { queryOne } from '../lib/db.js';
+import { queryOne, queryAll } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { logger } from '../lib/logger.js';
 
@@ -164,6 +164,33 @@ export async function getIndexingProgress() {
       // Meilisearch not available
     }
 
+    // Get active sync job from sync_jobs table (if available)
+    let activeJob = null;
+    try {
+      const job = await queryOne(`
+        SELECT id, job_type, status, total_items, completed_items, failed_items,
+               created_at, started_at, completed_at
+        FROM sync_jobs
+        WHERE status IN ('running', 'pending')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
+      if (job) {
+        activeJob = {
+          id: job.id,
+          status: job.status,
+          totalItems: job.total_items || 0,
+          completedItems: job.completed_items || 0,
+          failedItems: job.failed_items || 0,
+          startedAt: job.started_at,
+          percentComplete: job.total_items > 0
+            ? Math.round((job.completed_items / job.total_items) * 100) : 0
+        };
+      }
+    } catch {
+      // sync_jobs table may not exist yet (pre-migration 38)
+    }
+
     return {
       totalWithContent: docsWithContent,
       indexed: meiliDocs,
@@ -171,7 +198,8 @@ export async function getIndexingProgress() {
       totalParagraphs,
       syncedParagraphs,
       pending: pendingParagraphs,
-      percentComplete: totalParagraphs > 0 ? Math.round((syncedParagraphs / totalParagraphs) * 100) : 100
+      percentComplete: totalParagraphs > 0 ? Math.round((syncedParagraphs / totalParagraphs) * 100) : 100,
+      activeJob
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get indexing progress');
