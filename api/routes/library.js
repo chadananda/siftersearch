@@ -745,11 +745,10 @@ export default async function libraryRoutes(fastify) {
     const collectionNodes = nodes.filter(n => n.node_type === 'collection');
 
     const tree = religionNodes.map(religion => {
-      const children = collectionNodes
+      // Start with defined library_nodes collections that have documents
+      const definedChildren = collectionNodes
         .filter(c => c.parent_id === religion.id)
-        // Filter out collections with 0 documents (orphaned nodes)
         .filter(c => (collectionCounts[religion.name]?.[c.name] || 0) > 0)
-        .sort((a, b) => (b.authority_default || 5) - (a.authority_default || 5) || a.name.localeCompare(b.name))
         .map(c => ({
           id: c.id,
           node_type: c.node_type,
@@ -761,6 +760,20 @@ export default async function libraryRoutes(fastify) {
           document_count: collectionCounts[religion.name]?.[c.name] || 0,
           metadata: c.metadata ? JSON.parse(c.metadata) : null
         }));
+
+      // Add collections from docs table that aren't in library_nodes
+      const definedNames = new Set(definedChildren.map(c => c.name));
+      const docsCollections = Object.keys(collectionCounts[religion.name] || {})
+        .filter(name => !definedNames.has(name))
+        .map(name => ({
+          node_type: 'collection',
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          document_count: collectionCounts[religion.name][name]
+        }));
+
+      const children = [...definedChildren, ...docsCollections]
+        .sort((a, b) => (b.authority_default || 5) - (a.authority_default || 5) || a.name.localeCompare(b.name));
 
       return {
         id: religion.id,
