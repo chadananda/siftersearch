@@ -1726,18 +1726,18 @@
                   </div>
                 </div>
               {/if}
-              <!-- Meilisearch indexing progress - show when actively indexing -->
-              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalWithContent > 0}
-                <div class="ingestion-progress indexing" role="region" aria-label="Content indexing progress">
+              <!-- Search index progress - paragraphs synced to Meilisearch -->
+              {#if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0}
+                <div class="ingestion-progress indexing" role="region" aria-label="Search index progress">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Content indexed</span>
+                    <span class="ingestion-label">Search ready</span>
                     <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
                   </div>
                   <div class="ingestion-bar" role="progressbar" aria-valuenow={libraryStats.indexingProgress.percentComplete} aria-valuemin="0" aria-valuemax="100">
                     <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(libraryStats.indexingProgress.indexed)} / {formatWithCommas(libraryStats.indexingProgress.totalWithContent)} documents
+                    {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs synced
                   </div>
                 </div>
               {/if}
@@ -1746,7 +1746,7 @@
                 <span class="offline-status">Server offline - showing cached data</span>
               </div>
             {/if}
-              {#if libraryStats?.pipelineStatus && (libraryStats.pipelineStatus.ingestionQueuePending > 0 || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0 || libraryStats.pipelineStatus.paragraphsPendingSync > 0)}
+              {#if libraryStats?.pipelineStatus && (libraryStats.pipelineStatus.ingestionQueuePending > 0 || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0 || libraryStats.pipelineStatus.oversizedSkipped > 0)}
                 <div class="pipeline-status">
                   <div class="pipeline-header">
                     <svg class="pipeline-dot" fill="currentColor" viewBox="0 0 8 8">
@@ -1774,13 +1774,7 @@
                         <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} needed, ~{timeStr} remaining</span>
                       </div>
                     {/if}
-                    {#if libraryStats.pipelineStatus.paragraphsPendingSync > 0}
-                      <div class="pipeline-item">
-                        <span class="pipeline-icon">🔍</span>
-                        <span class="pipeline-label">Search Index:</span>
-                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.paragraphsPendingSync)} pending sync</span>
-                      </div>
-                    {/if}
+                    <!-- Search sync count is shown in the "Search ready" progress bar above -->
                     {#if libraryStats.pipelineStatus.oversizedSkipped > 0}
                       <div class="pipeline-item warning">
                         <span class="pipeline-icon">⚠️</span>

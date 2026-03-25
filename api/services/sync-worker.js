@@ -163,7 +163,7 @@ async function syncDocument(docId) {
       embedding = null;
     }
 
-    return {
+    const record = {
       id: p.id,
       doc_id: p.doc_id,
       paragraph_index: p.paragraph_index,
@@ -181,9 +181,17 @@ async function syncDocument(docId) {
       authority,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
-      _vectors: { default: embedding || null },
       created_at: new Date().toISOString()
     };
+
+    // Only include _vectors when we have a valid embedding — sending null vectors
+    // forces Meilisearch to update its HNSW vector index for every document,
+    // which is extremely slow on a 1.6M+ document index with 3072 dimensions
+    if (embedding) {
+      record._vectors = { default: embedding };
+    }
+
+    return record;
   });
 
   try {

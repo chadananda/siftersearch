@@ -126,48 +126,52 @@ export async function getIngestionProgress() {
 }
 
 /**
- * Get indexing progress (docs in Meilisearch vs docs with content)
- * Returns null if Meilisearch is disabled
+ * Get indexing progress (paragraphs synced to Meilisearch vs total paragraphs)
+ * Tracks actual search readiness — how many paragraphs are searchable.
+ * Returns null if Meilisearch is disabled.
  */
 export async function getIndexingProgress() {
-  // Indexing progress only makes sense when Meilisearch is enabled
   if (!config.search.enabled) {
     return null;
   }
 
   try {
-    // Get docs with content from SQLite (filter deleted to match library.js stats)
-    const contentCount = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
-    const docsWithContent = contentCount?.count || 0;
+    // Get paragraph counts from SQLite — synced vs total
+    const [totalResult, syncedResult, docsWithContentResult] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 1 AND deleted_at IS NULL'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL')
+    ]);
 
-    // Get indexed docs from Meilisearch documents index
-    // Using index stats instead of facets (facets have a 100 value limit by default)
-    let indexedDocs = 0;
-    let indexedParagraphs = 0;
+    const totalParagraphs = totalResult?.count || 0;
+    const syncedParagraphs = syncedResult?.count || 0;
+    const pendingParagraphs = totalParagraphs - syncedParagraphs;
+    const docsWithContent = docsWithContentResult?.count || 0;
+
+    // Also get Meilisearch counts for verification
+    let meiliDocs = 0;
+    let meiliParagraphs = 0;
     try {
       const { getMeili, INDEXES } = await getMeiliClient();
       const meili = await getMeili();
       if (meili) {
-        // Get document count directly from documents index stats
         const docStats = await meili.index(INDEXES.DOCUMENTS).getStats();
-        indexedDocs = docStats.numberOfDocuments || 0;
-
-        // Also get paragraph count for display
+        meiliDocs = docStats.numberOfDocuments || 0;
         const paraStats = await meili.index(INDEXES.PARAGRAPHS).getStats();
-        indexedParagraphs = paraStats.numberOfDocuments || 0;
+        meiliParagraphs = paraStats.numberOfDocuments || 0;
       }
     } catch {
-      // Meilisearch not available - show as 0 indexed
-      indexedDocs = 0;
-      indexedParagraphs = 0;
+      // Meilisearch not available
     }
 
     return {
       totalWithContent: docsWithContent,
-      indexed: indexedDocs,
-      indexedParagraphs,
-      pending: Math.max(0, docsWithContent - indexedDocs),
-      percentComplete: docsWithContent > 0 ? Math.round((indexedDocs / docsWithContent) * 100) : 100
+      indexed: meiliDocs,
+      indexedParagraphs: meiliParagraphs,
+      totalParagraphs,
+      syncedParagraphs,
+      pending: pendingParagraphs,
+      percentComplete: totalParagraphs > 0 ? Math.round((syncedParagraphs / totalParagraphs) * 100) : 100
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get indexing progress');
