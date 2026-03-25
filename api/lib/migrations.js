@@ -9,8 +9,8 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 36;
-const USER_DB_CURRENT_VERSION = 1;
+const CURRENT_VERSION = 37;
+const USER_DB_CURRENT_VERSION = 2;
 
 /**
  * Get current database schema version (content DB)
@@ -1475,6 +1475,31 @@ const migrations = {
 
     logger.info('Migration 36 complete: file_mtime column added');
   },
+
+  37: async () => {
+    logger.info('Starting migration 37: API keys table');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        key_hash TEXT UNIQUE NOT NULL,
+        key_prefix TEXT NOT NULL,
+        rate_limit INTEGER DEFAULT 1000,
+        permissions TEXT DEFAULT '["search"]',
+        last_used_at TEXT,
+        request_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        revoked_at TEXT
+      )
+    `);
+
+    await query('CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)');
+    await query('CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)');
+
+    logger.info('Migration 37 complete: api_keys table created');
+  },
 };
 
 /**
@@ -1686,6 +1711,33 @@ const userMigrations = {
     try { await userQuery('CREATE INDEX IF NOT EXISTS idx_analytics_type ON analytics(event_type)'); } catch { /* exists */ }
 
     logger.info('User database tables created');
+  },
+
+  2: async () => {
+    logger.info('Starting user migration 2: search_log table');
+
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS search_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT NOT NULL,
+        user_id INTEGER,
+        anonymous_user_id TEXT,
+        api_key_id INTEGER,
+        result_count INTEGER DEFAULT 0,
+        duration_ms INTEGER,
+        search_type TEXT DEFAULT 'web',
+        filters TEXT,
+        ip_country TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await userQuery('CREATE INDEX IF NOT EXISTS idx_search_log_created ON search_log(created_at)');
+    await userQuery('CREATE INDEX IF NOT EXISTS idx_search_log_user ON search_log(user_id)');
+    await userQuery('CREATE INDEX IF NOT EXISTS idx_search_log_anon ON search_log(anonymous_user_id)');
+    await userQuery('CREATE INDEX IF NOT EXISTS idx_search_log_query ON search_log(query)');
+
+    logger.info('User migration 2 complete: search_log table created');
   },
 };
 

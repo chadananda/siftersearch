@@ -27,6 +27,7 @@ import { slugifyPath, generateDocSlug, parseDocSlug } from '../lib/slug.js';
 import { aiService } from '../lib/ai-services.js';
 import { translateTextWithSegments } from '../services/translation.js';
 import { ingestDocument, hashContent } from '../services/ingester.js';
+import { content } from '../lib/content.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { readFile, writeFile, rename, access, stat, readdir } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
@@ -1185,7 +1186,8 @@ Return ONLY the description text, no quotes or formatting.`;
         { role: 'user', content: prompt }
       ], {
         temperature: 0.7,
-        maxTokens: 200
+        maxTokens: 200,
+        caller: 'library:description'
       });
 
       const description = result.content.trim();
@@ -1778,7 +1780,7 @@ Return ONLY the description text, no quotes or formatting.`;
       // If metadata that propagates to paragraphs changed, mark paragraphs for re-sync
       // This ensures sync-worker will update Meilisearch even if direct push below fails
       if (updates.title || updates.author || updates.religion || updates.collection || updates.language || updates.year) {
-        await query('UPDATE content SET synced = 0, updated_at = CURRENT_TIMESTAMP WHERE doc_id = ?', [id]);
+        await content.markDocDirty(id);
       }
     }
 
@@ -2140,11 +2142,7 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Clear translations
-    const result = await query(`
-      UPDATE content
-      SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
-      WHERE doc_id = ?
-    `, [new Date().toISOString(), id]);
+    const result = await content.clearTranslationsForDoc(id);
 
     logger.info({ documentId: id, cleared: result.changes }, 'Cleared document translations');
 
@@ -2189,10 +2187,7 @@ Return ONLY the description text, no quotes or formatting.`;
     }
 
     // Clear this paragraph's translation
-    await query(
-      'UPDATE content SET translation = NULL, translation_segments = NULL WHERE id = ?',
-      [para.id]
-    );
+    await content.clearTranslation(para.id);
 
     // Translate with segments
     const sourceLang = doc.language || 'ar';
@@ -2205,10 +2200,7 @@ Return ONLY the description text, no quotes or formatting.`;
       segments: result.segments || null,
       notes: null
     });
-    await query(
-      'UPDATE content SET translation = ?, synced = 0, updated_at = ? WHERE id = ?',
-      [translationJson, new Date().toISOString(), para.id]
-    );
+    await content.updateTranslation(para.id, translationJson);
 
     return {
       success: true,
@@ -2342,7 +2334,8 @@ Provide only the translation, no explanations.`;
         { role: 'user', content: text }
       ], {
         temperature: 0.3,
-        maxTokens: Math.max(text.length * 4, 1000)
+        maxTokens: Math.max(text.length * 4, 1000),
+        caller: 'library:translation'
       });
 
       return {
@@ -2602,10 +2595,7 @@ Provide only the translation, no explanations.`;
             segments: result.segments || null,
             notes: null
           });
-          await query(
-            'UPDATE content SET translation = ?, synced = 0, updated_at = ? WHERE id = ?',
-            [translationJson, new Date().toISOString(), para.id]
-          );
+          await content.updateTranslation(para.id, translationJson);
 
           return {
             id: para.id,
@@ -2824,11 +2814,7 @@ Provide only the translation, no explanations.`;
   fastify.delete('/translations/all', {
     preHandler: [requireInternal]
   }, async () => {
-    const result = await query(`
-      UPDATE content
-      SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
-      WHERE translation IS NOT NULL
-    `, [new Date().toISOString()]);
+    const result = await content.clearAllTranslations();
 
     logger.info({ cleared: result.changes }, 'Cleared ALL translations');
 
@@ -3357,15 +3343,7 @@ Provide only the translation, no explanations.`;
     const { docId } = request.params;
 
     // Soft delete oversized paragraphs for this document
-    const result = await query(`
-      UPDATE content
-      SET deleted_at = datetime('now'),
-          synced = 0
-      WHERE doc_id = ?
-        AND embedding IS NULL
-        AND deleted_at IS NULL
-        AND LENGTH(text) > ?
-    `, [docId, MAX_PARAGRAPH_CHARS]);
+    const result = await content.softDeleteOversized(MAX_PARAGRAPH_CHARS, docId);
 
     logger.info({ docId, deleted: result.changes }, 'Deleted oversized paragraphs for document');
     return { success: true, deleted: result.changes || 0 };
@@ -3391,14 +3369,7 @@ Provide only the translation, no explanations.`;
     }
 
     // Soft delete all oversized paragraphs
-    const result = await query(`
-      UPDATE content
-      SET deleted_at = datetime('now'),
-          synced = 0
-      WHERE embedding IS NULL
-        AND deleted_at IS NULL
-        AND LENGTH(text) > ?
-    `, [MAX_PARAGRAPH_CHARS]);
+    const result = await content.softDeleteOversized(MAX_PARAGRAPH_CHARS);
 
     logger.warn({ deleted: result.changes || count.total }, 'Deleted ALL oversized paragraphs');
     return { success: true, deleted: result.changes || count.total };

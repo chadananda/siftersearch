@@ -377,7 +377,7 @@ export async function hybridSearch(query, options = {}) {
   let vector = null;
   if (semanticRatio > 0) {
     try {
-      const embedding = await createEmbedding(query);
+      const embedding = await createEmbedding(query, { caller: 'search' });
       vector = embedding.embedding;
     } catch (err) {
       logger.warn({ err }, 'Failed to generate embedding, falling back to keyword search');
@@ -680,7 +680,7 @@ export async function federatedSearch(queries, options = {}) {
 export async function batchEmbeddings(texts) {
   if (texts.length === 0) return [];
 
-  const { embeddings } = await createEmbeddings(texts);
+  const { embeddings } = await createEmbeddings(texts, { caller: 'search:rerank' });
   return embeddings;
 }
 

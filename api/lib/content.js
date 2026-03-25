@@ -1,0 +1,733 @@
+/**
+ * Content API — the ONLY authorized way to write to the `content` table.
+ *
+ * Every mutation automatically:
+ *   - Sets synced = 0 (marks paragraph dirty for Meilisearch)
+ *   - Sets updated_at = now
+ *
+ * The sole exception is markSynced(), which is the sync-worker's exclusive
+ * privilege after Meilisearch has CONFIRMED the data was indexed.
+ *
+ * Direct SQL writes to `content` are a bug. Use this module instead.
+ *
+ * Architecture:
+ *   Source Files → Ingester → content table (via this API) → sync-worker → Meilisearch
+ *   Embedding worker → content table (via this API) → sync-worker → Meilisearch
+ *   Admin/Routes → content table (via this API) → sync-worker → Meilisearch
+ */
+
+import { createHash } from 'crypto';
+import { query, queryOne, queryAll, transaction } from './db.js';
+import { logger } from './logger.js';
+import config from './config.js';
+
+// ============================================================
+// Constants
+// ============================================================
+
+/** Expected embedding byte length: 3072 floats × 4 bytes = 12288 */
+const EXPECTED_EMBEDDING_BYTES = config.ai.embeddings.dimensions * 4;
+
+/** Expected embedding float count */
+const EXPECTED_EMBEDDING_DIMS = config.ai.embeddings.dimensions;
+
+// ============================================================
+// Internal helpers
+// ============================================================
+
+function now() {
+  return new Date().toISOString();
+}
+
+/**
+ * Normalize text for embedding deduplication.
+ * Strips formatting/punctuation so semantically identical content matches.
+ */
+function normalizeForEmbedding(text) {
+  return text
+    .replace(/<[^>]+>/g, '')           // Remove HTML tags
+    .replace(/\s+/g, ' ')              // Collapse whitespace
+    .replace(/[^\p{L}\p{N}\s]/gu, '')  // Remove punctuation (keep letters, numbers, spaces)
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Compute normalized hash for embedding deduplication.
+ */
+function computeNormalizedHash(text) {
+  const normalized = normalizeForEmbedding(text);
+  return createHash('md5').update(normalized).digest('hex');
+}
+
+/**
+ * Compute content hash for change detection.
+ */
+function computeContentHash(text) {
+  return createHash('md5').update(text).digest('hex');
+}
+
+/**
+ * Validate embedding dimensions. Returns true if valid, false if wrong size.
+ * Null/undefined embeddings are valid (paragraph just won't have semantic search).
+ */
+function validateEmbedding(embedding) {
+  if (!embedding) return true;
+  const bytes = Buffer.isBuffer(embedding) ? embedding.length : embedding.byteLength || embedding.length;
+  return bytes === EXPECTED_EMBEDDING_BYTES;
+}
+
+// ============================================================
+// Paragraph lifecycle
+// ============================================================
+
+/**
+ * Insert a new paragraph.
+ * @returns {object} The insert result with lastInsertRowid
+ */
+async function insertParagraph(docId, {
+  paragraphIndex,
+  text,
+  heading = '',
+  blocktype = 'paragraph',
+  embedding = null,
+  embeddingModel = null
+}) {
+  if (embedding && !validateEmbedding(embedding)) {
+    logger.warn({ docId, paragraphIndex, size: embedding.length, expected: EXPECTED_EMBEDDING_BYTES },
+      'Rejected wrong-dimension embedding on insert');
+    embedding = null;
+    embeddingModel = null;
+  }
+
+  const contentHash = computeContentHash(text);
+  const normalizedHash = computeNormalizedHash(text);
+  const ts = now();
+
+  return query(`
+    INSERT INTO content
+      (doc_id, paragraph_index, text, content_hash, normalized_hash,
+       heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+  `, [docId, paragraphIndex, text, contentHash, normalizedHash,
+      heading, blocktype, embedding, embeddingModel, ts, ts]);
+}
+
+/**
+ * Bulk insert paragraphs in a transaction.
+ * Used during document ingestion for performance.
+ * @returns {Array} Transaction results
+ */
+async function bulkInsertParagraphs(docId, paragraphs) {
+  const ts = now();
+  const statements = paragraphs.map(p => {
+    const embedding = (p.embedding && validateEmbedding(p.embedding)) ? p.embedding : null;
+    const embeddingModel = embedding ? p.embeddingModel : null;
+
+    return {
+      sql: `INSERT INTO content
+        (doc_id, paragraph_index, text, content_hash, normalized_hash,
+         heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      args: [
+        docId, p.paragraphIndex, p.text,
+        computeContentHash(p.text), computeNormalizedHash(p.text),
+        p.heading || '', p.blocktype || 'paragraph',
+        embedding, embeddingModel, ts, ts
+      ]
+    };
+  });
+
+  return transaction(statements);
+}
+
+/**
+ * Hard-delete a paragraph by ID.
+ */
+async function deleteParagraph(id) {
+  return query('DELETE FROM content WHERE id = ?', [id]);
+}
+
+/**
+ * Hard-delete all paragraphs for a document.
+ */
+async function deleteParagraphsByDoc(docId) {
+  return query('DELETE FROM content WHERE doc_id = ?', [docId]);
+}
+
+/**
+ * Soft-delete all paragraphs for a document (preserves embeddings for reuse).
+ */
+async function softDeleteByDoc(docId) {
+  const ts = now();
+  return query(
+    'UPDATE content SET deleted_at = ?, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at IS NULL',
+    [ts, ts, docId]
+  );
+}
+
+/**
+ * Restore soft-deleted paragraphs for a document.
+ */
+async function restoreByDoc(docId) {
+  const ts = now();
+  return query(
+    'UPDATE content SET deleted_at = NULL, synced = 0, updated_at = ? WHERE doc_id = ? AND deleted_at IS NOT NULL',
+    [ts, docId]
+  );
+}
+
+/**
+ * Hard-delete soft-deleted content older than the given date.
+ */
+async function hardDeleteExpired(olderThan) {
+  return query(
+    'DELETE FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ?',
+    [olderThan]
+  );
+}
+
+/**
+ * Bulk delete + insert in a single transaction (for re-ingestion).
+ * Deletes specified IDs, updates positions, inserts new paragraphs.
+ */
+async function bulkReplace(docId, { toDelete = [], toUpdate = [], toInsert = [] } = {}) {
+  const ts = now();
+  const statements = [];
+
+  for (const id of toDelete) {
+    statements.push({ sql: 'DELETE FROM content WHERE id = ?', args: [id] });
+  }
+
+  for (const p of toUpdate) {
+    statements.push({
+      sql: `UPDATE content
+        SET paragraph_index = ?, heading = ?, blocktype = ?, synced = 0, updated_at = ?
+        WHERE id = ?`,
+      args: [p.paragraphIndex, p.heading || '', p.blocktype || 'paragraph', ts, p.id]
+    });
+  }
+
+  for (const p of toInsert) {
+    const embedding = (p.embedding && validateEmbedding(p.embedding)) ? p.embedding : null;
+    statements.push({
+      sql: `INSERT INTO content
+        (doc_id, paragraph_index, text, content_hash, normalized_hash,
+         heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      args: [
+        docId, p.paragraphIndex, p.text,
+        computeContentHash(p.text), computeNormalizedHash(p.text),
+        p.heading || '', p.blocktype || 'paragraph',
+        embedding, embedding ? p.embeddingModel : null, ts, ts
+      ]
+    });
+  }
+
+  if (statements.length === 0) return [];
+  return transaction(statements);
+}
+
+// ============================================================
+// Field updates — each one marks the paragraph dirty
+// ============================================================
+
+/**
+ * Update paragraph text. Recomputes hashes. Clears embedding if text changed
+ * (since the old embedding no longer represents this content).
+ */
+async function updateText(id, newText) {
+  const ts = now();
+  const contentHash = computeContentHash(newText);
+  const normalizedHash = computeNormalizedHash(newText);
+
+  // Check if text actually changed (by hash)
+  const existing = await queryOne('SELECT content_hash FROM content WHERE id = ?', [id]);
+  if (existing && existing.content_hash === contentHash) {
+    return { changes: 0, unchanged: true };
+  }
+
+  // Text changed — clear embedding since it's stale
+  return query(`
+    UPDATE content
+    SET text = ?, content_hash = ?, normalized_hash = ?,
+        embedding = NULL, embedding_model = NULL,
+        synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [newText, contentHash, normalizedHash, ts, id]);
+}
+
+/**
+ * Update embedding for a paragraph. Validates dimensions.
+ */
+async function updateEmbedding(id, embedding, model) {
+  if (!validateEmbedding(embedding)) {
+    const actualDims = embedding ? (Buffer.isBuffer(embedding) ? embedding.length / 4 : embedding.length) : 0;
+    logger.warn({ id, actualDims, expectedDims: EXPECTED_EMBEDDING_DIMS },
+      'Rejected wrong-dimension embedding');
+    return { changes: 0, rejected: true, reason: 'wrong_dimensions' };
+  }
+
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET embedding = ?, embedding_model = ?, synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [embedding, model, ts, id]);
+}
+
+/**
+ * Update translation for a paragraph.
+ */
+async function updateTranslation(id, translation, segments = null) {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET translation = ?, translation_segments = ?, synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [translation, segments, ts, id]);
+}
+
+/**
+ * Clear translation for a paragraph.
+ */
+async function clearTranslation(id) {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [ts, id]);
+}
+
+/**
+ * Clear all translations for a document.
+ */
+async function clearTranslationsForDoc(docId) {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+    WHERE doc_id = ? AND translation IS NOT NULL
+  `, [ts, docId]);
+}
+
+/**
+ * Clear all translations in the database.
+ */
+async function clearAllTranslations() {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET translation = NULL, translation_segments = NULL, synced = 0, updated_at = ?
+    WHERE translation IS NOT NULL
+  `, [ts]);
+}
+
+/**
+ * Update context (AI-generated disambiguation) for a paragraph.
+ */
+async function updateContext(id, context) {
+  const ts = now();
+  return query(`
+    UPDATE content SET context = ?, synced = 0, updated_at = ? WHERE id = ?
+  `, [context, ts, id]);
+}
+
+/**
+ * Update paragraph position/heading/blocktype (during re-ingestion).
+ */
+async function updatePosition(id, { paragraphIndex, heading, blocktype }) {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET paragraph_index = ?, heading = ?, blocktype = ?, synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [paragraphIndex, heading || '', blocktype || 'paragraph', ts, id]);
+}
+
+/**
+ * Update normalized_hash (backfill/repair).
+ */
+async function updateNormalizedHash(id, hash) {
+  const ts = now();
+  return query(
+    'UPDATE content SET normalized_hash = ?, synced = 0, updated_at = ? WHERE id = ?',
+    [hash, ts, id]
+  );
+}
+
+/**
+ * Mark all paragraphs for a document as dirty.
+ * Use when document metadata changes (title, author, religion, etc.)
+ * since Meilisearch stores denormalized metadata on each paragraph.
+ */
+async function markDocDirty(docId) {
+  const ts = now();
+  return query(
+    'UPDATE content SET synced = 0, updated_at = ? WHERE doc_id = ?',
+    [ts, docId]
+  );
+}
+
+// ============================================================
+// Embedding operations
+// ============================================================
+
+/**
+ * Regenerate embedding for a specific paragraph.
+ * Clears the current embedding so the embedding-worker picks it up.
+ * Sync-worker will then push the new embedding to Meilisearch.
+ *
+ * The paragraph is marked dirty (synced=0) because:
+ * - If the old embedding was wrong-dimension, Meilisearch couldn't use it anyway
+ * - With embedding=NULL, the paragraph is still FTS-searchable in Meilisearch
+ * - When the embedding-worker generates the new one, updateEmbedding() marks
+ *   it dirty again and the sync-worker pushes the complete version
+ *
+ * If OpenAI is down, the paragraph stays FTS-only until the embedding-worker
+ * succeeds. This is strictly better than a wrong-dimension embedding that
+ * poisons sync batches.
+ */
+async function regenerateEmbedding(id) {
+  const ts = now();
+  return query(`
+    UPDATE content
+    SET embedding = NULL, embedding_model = NULL, synced = 0, updated_at = ?
+    WHERE id = ?
+  `, [ts, id]);
+}
+
+/**
+ * Regenerate embeddings for all paragraphs in a document.
+ */
+async function regenerateEmbeddingsForDoc(docId) {
+  const ts = now();
+  const result = await query(`
+    UPDATE content
+    SET embedding = NULL, embedding_model = NULL, synced = 0, updated_at = ?
+    WHERE doc_id = ? AND deleted_at IS NULL
+  `, [ts, docId]);
+  logger.info({ docId, affected: result.rowsAffected }, 'Cleared embeddings for re-generation');
+  return result;
+}
+
+/**
+ * Find and clear all wrong-dimension embeddings.
+ * Wrong-dimension embeddings are useless — Meilisearch rejects them and they
+ * poison entire sync batches. Clearing them lets paragraphs:
+ * 1. Immediately become FTS-searchable (synced=0 → sync-worker → Meilisearch with null vector)
+ * 2. Get correct embeddings when the embedding-worker regenerates them
+ *
+ * @returns {object} { cleared: number } count of embeddings nulled out
+ */
+async function clearWrongDimensionEmbeddings() {
+  const ts = now();
+  const result = await query(`
+    UPDATE content
+    SET embedding = NULL, embedding_model = NULL, synced = 0, updated_at = ?
+    WHERE embedding IS NOT NULL
+      AND deleted_at IS NULL
+      AND LENGTH(embedding) != ?
+  `, [ts, EXPECTED_EMBEDDING_BYTES]);
+
+  const cleared = result.rowsAffected || 0;
+  if (cleared > 0) {
+    logger.warn({ cleared, expectedBytes: EXPECTED_EMBEDDING_BYTES },
+      'Cleared wrong-dimension embeddings for re-generation');
+  }
+  return { cleared };
+}
+
+/**
+ * Propagate existing embeddings to rows with matching normalized_hash.
+ * Avoids expensive re-generation for duplicate content across documents.
+ * Includes soft-deleted content as sources (embeddings are expensive to regenerate).
+ */
+async function propagateEmbeddings() {
+  const ts = now();
+  const result = await query(`
+    UPDATE content
+    SET embedding = (
+      SELECT c2.embedding FROM content c2
+      WHERE c2.normalized_hash = content.normalized_hash
+        AND c2.embedding IS NOT NULL
+        AND LENGTH(c2.embedding) = ?
+      LIMIT 1
+    ),
+    embedding_model = (
+      SELECT c2.embedding_model FROM content c2
+      WHERE c2.normalized_hash = content.normalized_hash
+        AND c2.embedding IS NOT NULL
+        AND LENGTH(c2.embedding) = ?
+      LIMIT 1
+    ),
+    synced = 0,
+    updated_at = ?
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND normalized_hash IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM content c2
+        WHERE c2.normalized_hash = content.normalized_hash
+          AND c2.embedding IS NOT NULL
+          AND LENGTH(c2.embedding) = ?
+      )
+  `, [EXPECTED_EMBEDDING_BYTES, EXPECTED_EMBEDDING_BYTES, ts, EXPECTED_EMBEDDING_BYTES]);
+
+  const propagated = result.rowsAffected || 0;
+  if (propagated > 0) {
+    logger.info({ propagated }, 'Propagated existing embeddings to matching content');
+  }
+  return { propagated };
+}
+
+// ============================================================
+// Sync-worker operations
+// ============================================================
+
+/**
+ * Get documents that have dirty (synced=0) paragraphs.
+ */
+async function getDocsWithDirtyParagraphs(limit = 50) {
+  return queryAll(`
+    SELECT DISTINCT d.id, d.title, d.author, d.religion, d.collection,
+           d.language, d.year, d.description, d.filename
+    FROM docs d
+    INNER JOIN content c ON c.doc_id = d.id
+    WHERE c.synced = 0 AND c.deleted_at IS NULL
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * Get dirty paragraphs for a specific document.
+ */
+async function getDirtyParagraphsForDoc(docId) {
+  return queryAll(`
+    SELECT id, doc_id, paragraph_index, text, heading, blocktype,
+           embedding, embedding_model, content_hash, normalized_hash,
+           translation, translation_segments, context
+    FROM content
+    WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL
+    ORDER BY paragraph_index
+  `, [docId]);
+}
+
+/**
+ * Mark paragraphs as synced. ONLY the sync-worker should call this,
+ * and ONLY after Meilisearch has confirmed the task succeeded.
+ */
+async function markSynced(ids) {
+  if (!ids || ids.length === 0) return;
+
+  const ts = now();
+  const BATCH = 500; // SQLite variable limit safety
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    await query(`
+      UPDATE content SET synced = 1, updated_at = ?
+      WHERE id IN (${batch.map(() => '?').join(',')})
+    `, [ts, ...batch]);
+  }
+}
+
+// ============================================================
+// Embedding-worker operations
+// ============================================================
+
+/**
+ * Get paragraphs that need embedding generation.
+ * Groups by normalized_hash to avoid generating duplicates.
+ */
+async function getUnembedded(limit = 50, maxChars = 6000) {
+  return queryAll(`
+    SELECT id, text, normalized_hash
+    FROM content
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND text IS NOT NULL
+      AND text != ''
+      AND LENGTH(text) <= ?
+    GROUP BY IFNULL(normalized_hash, CAST(id AS TEXT))
+    LIMIT ?
+  `, [maxChars, limit]);
+}
+
+/**
+ * Count paragraphs needing embeddings.
+ */
+async function getUnembeddedCount(maxChars = 6000) {
+  return queryOne(`
+    SELECT
+      COUNT(*) as total,
+      COUNT(DISTINCT normalized_hash) as unique_hashes
+    FROM content
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND LENGTH(text) <= ?
+  `, [maxChars]);
+}
+
+/**
+ * Count oversized paragraphs (skipped by embedding worker).
+ */
+async function getOversizedCount(maxChars = 6000) {
+  return queryOne(`
+    SELECT
+      COUNT(*) as total,
+      COUNT(DISTINCT normalized_hash) as unique_hashes
+    FROM content
+    WHERE embedding IS NULL
+      AND deleted_at IS NULL
+      AND LENGTH(text) > ?
+  `, [maxChars]);
+}
+
+/**
+ * Soft-delete oversized content that can't be embedded.
+ */
+async function softDeleteOversized(maxChars = 6000, docId = null) {
+  const ts = now();
+  const where = docId
+    ? 'doc_id = ? AND embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?'
+    : 'embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?';
+  const params = docId ? [ts, ts, docId, maxChars] : [ts, ts, maxChars];
+
+  return query(`
+    UPDATE content SET deleted_at = ?, synced = 0, updated_at = ?
+    WHERE ${where}
+  `, params);
+}
+
+// ============================================================
+// Query helpers (reads — no dirty-flag concerns)
+// ============================================================
+
+/**
+ * Get a paragraph by ID.
+ */
+async function getById(id) {
+  return queryOne('SELECT * FROM content WHERE id = ?', [id]);
+}
+
+/**
+ * Get all paragraphs for a document.
+ */
+async function getByDocId(docId) {
+  return queryAll(
+    'SELECT * FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index',
+    [docId]
+  );
+}
+
+/**
+ * Count paragraphs for a document.
+ */
+async function countByDocId(docId) {
+  const result = await queryOne(
+    'SELECT COUNT(*) as count FROM content WHERE doc_id = ? AND deleted_at IS NULL',
+    [docId]
+  );
+  return result?.count || 0;
+}
+
+/**
+ * Get count of dirty (unsynced) paragraphs.
+ */
+async function getDirtyCount() {
+  const result = await queryOne(`
+    SELECT
+      COUNT(DISTINCT doc_id) as documents,
+      COUNT(*) as paragraphs
+    FROM content
+    WHERE synced = 0 AND deleted_at IS NULL
+  `);
+  return result || { documents: 0, paragraphs: 0 };
+}
+
+/**
+ * Get all content IDs for a document (for orphan cleanup).
+ */
+async function getIdsForDoc(docId) {
+  return queryAll('SELECT id FROM content WHERE doc_id = ?', [docId]);
+}
+
+/**
+ * Get embedding stats for diagnostics.
+ */
+async function getEmbeddingStats() {
+  return queryOne(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN embedding IS NOT NULL AND LENGTH(embedding) = ${EXPECTED_EMBEDDING_BYTES} THEN 1 ELSE 0 END) as correct_embeddings,
+      SUM(CASE WHEN embedding IS NOT NULL AND LENGTH(embedding) != ${EXPECTED_EMBEDDING_BYTES} THEN 1 ELSE 0 END) as wrong_embeddings,
+      SUM(CASE WHEN embedding IS NULL THEN 1 ELSE 0 END) as missing_embeddings,
+      SUM(CASE WHEN synced = 0 THEN 1 ELSE 0 END) as dirty
+    FROM content
+    WHERE deleted_at IS NULL
+  `);
+}
+
+// ============================================================
+// Exports
+// ============================================================
+
+export const content = {
+  // Lifecycle
+  insertParagraph,
+  bulkInsertParagraphs,
+  deleteParagraph,
+  deleteParagraphsByDoc,
+  softDeleteByDoc,
+  restoreByDoc,
+  hardDeleteExpired,
+  bulkReplace,
+
+  // Field updates (all mark dirty)
+  updateText,
+  updateEmbedding,
+  updateTranslation,
+  clearTranslation,
+  clearTranslationsForDoc,
+  clearAllTranslations,
+  updateContext,
+  updatePosition,
+  updateNormalizedHash,
+  markDocDirty,
+
+  // Embedding operations
+  regenerateEmbedding,
+  regenerateEmbeddingsForDoc,
+  clearWrongDimensionEmbeddings,
+  propagateEmbeddings,
+
+  // Sync-worker (exclusive)
+  getDocsWithDirtyParagraphs,
+  getDirtyParagraphsForDoc,
+  markSynced,
+
+  // Embedding-worker
+  getUnembedded,
+  getUnembeddedCount,
+  getOversizedCount,
+  softDeleteOversized,
+
+  // Reads
+  getById,
+  getByDocId,
+  countByDocId,
+  getDirtyCount,
+  getIdsForDoc,
+  getEmbeddingStats,
+
+  // Utility (exported for ingester)
+  computeContentHash,
+  computeNormalizedHash,
+  normalizeForEmbedding,
+  validateEmbedding,
+  EXPECTED_EMBEDDING_BYTES,
+  EXPECTED_EMBEDDING_DIMS
+};
+
+export default content;

@@ -4,8 +4,6 @@
   import { performUpdate, getPWAState } from '../../lib/pwa.svelte.js';
   import TierBadge from '../TierBadge.svelte';
   import AuthModal from '../AuthModal.svelte';
-  import ThemeToggle from '../ThemeToggle.svelte';
-
   // Props
   let { currentPage = 'search', showAboutModal = $bindable(false), hideLogo = false } = $props();
 
@@ -221,8 +219,7 @@
         {/if}
       </div>
 
-      <!-- Theme toggle -->
-      <ThemeToggle />
+      <!-- Dark mode only -->
 
       <!-- User menu -->
       <div class="user-menu-container">

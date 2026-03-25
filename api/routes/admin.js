@@ -57,6 +57,8 @@ import { getWatcherStats, isWatcherRunning } from '../services/library-watcher.j
 import { spawn } from 'child_process';
 import { logger } from '../lib/logger.js';
 import { isAIProcessingPaused, resumeAIProcessing, getAllDailySpending } from '../lib/ai-services.js';
+import { content } from '../lib/content.js';
+import { createApiKey, listApiKeys, revokeApiKey, getAllApiKeys } from '../lib/api-keys.js';
 
 // Track background tasks
 const backgroundTasks = new Map();
@@ -637,7 +639,7 @@ export default async function adminRoutes(fastify) {
 
       for (const row of rows) {
         const hash = computeNormalizedHash(row.text);
-        await query('UPDATE content SET normalized_hash = ? WHERE id = ?', [hash, row.id]);
+        await content.updateNormalizedHash(row.id, hash);
       }
 
       totalUpdated += rows.length;
@@ -895,7 +897,7 @@ export default async function adminRoutes(fastify) {
 
     // If forceReindex and document exists, clear content to force re-ingestion
     if (forceReindex && existing) {
-      await query('DELETE FROM content WHERE doc_id = ?', [existing.id]);
+      await content.deleteParagraphsByDoc(existing.id);
       await query('UPDATE docs SET file_hash = NULL WHERE id = ?', [existing.id]);
       // Also clear old paragraphs from Meilisearch to prevent orphans
       try {
@@ -1042,7 +1044,7 @@ export default async function adminRoutes(fastify) {
     }
 
     // Delete from content table
-    const contentResult = await query('DELETE FROM content WHERE doc_id = ?', [documentId]);
+    const contentResult = await content.deleteParagraphsByDoc(documentId);
     logger.info({ documentId, contentDeleted: contentResult.changes }, 'Deleted content rows');
 
     // Delete from docs table
@@ -1317,23 +1319,19 @@ export default async function adminRoutes(fastify) {
 
     let result;
     if (documentId) {
-      result = await query(
-        'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE doc_id = ?',
-        [documentId]
-      );
+      result = await content.clearTranslationsForDoc(documentId);
       logger.info({ documentId, rowsAffected: result.rowsAffected }, 'Cleared translations for document');
     } else if (pattern) {
       // Clear translations for documents matching pattern
       const likePattern = `%${pattern}%`;
+      // TODO: migrate to content API when pattern-match clear is added
       result = await query(
         'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE doc_id LIKE ? AND translation IS NOT NULL',
         [likePattern]
       );
       logger.info({ pattern, rowsAffected: result.rowsAffected }, 'Cleared translations matching pattern');
     } else {
-      result = await query(
-        'UPDATE content SET translation = NULL, translation_segments = NULL, synced = 0 WHERE translation IS NOT NULL'
-      );
+      result = await content.clearAllTranslations();
       logger.info({ rowsAffected: result.rowsAffected }, 'Cleared all translations');
     }
 
@@ -1420,10 +1418,7 @@ Collection: ${doc.collection || 'Unknown'}
           notes: result.notes || []
         });
 
-        await query(
-          'UPDATE content SET translation = ?, synced = 0 WHERE id = ?',
-          [translationJson, para.id]
-        );
+        await content.updateTranslation(para.id, translationJson);
 
         // Update context for next paragraph
         prevPara = {
@@ -1569,10 +1564,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           notes: result.notes || []
         });
 
-        await query(
-          'UPDATE content SET translation = ?, synced = 0 WHERE id = ?',
-          [translationJson, paragraph.id]
-        );
+        await content.updateTranslation(paragraph.id, translationJson);
         logger.info({ paragraphId }, 'Test translation saved to database');
       }
 
@@ -2026,10 +2018,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     const { documentId } = request.body;
 
     try {
-      const result = await query(
-        'UPDATE content SET synced = 0 WHERE doc_id = ?',
-        [documentId]
-      );
+      const result = await content.markDocDirty(documentId);
 
       logger.info({ documentId, changes: result.changes }, 'Marked paragraphs for resync');
 
@@ -2469,6 +2458,7 @@ Collection: ${paragraph.collection || 'Unknown'}
           const embedding = para._vectors?.default;
           const embeddingBlob = embedding ? Buffer.from(new Float32Array(embedding).buffer) : null;
 
+          // Direct SQL: recovery operation - restoring content from Meilisearch backup
           await query(`
             INSERT OR REPLACE INTO content
             (id, doc_id, paragraph_index, text, heading, blocktype, embedding, synced, created_at, updated_at)
@@ -3355,5 +3345,534 @@ Collection: ${paragraph.collection || 'Unknown'}
     const result = await resumeAIProcessing();
     logger.info('Admin resumed AI processing');
     return result;
+  });
+
+  // =============================================
+  // Library Management — pipeline visibility
+  // =============================================
+
+  // Library overview: document counts by language, pipeline stages
+  fastify.get('/library/overview', { preHandler: requireTier('admin') }, async () => {
+    const [
+      byLanguage,
+      embeddingStats,
+      dirtyCount,
+      failureCount,
+      totalDocs,
+      recentDocs,
+      syncStats
+    ] = await Promise.all([
+      queryAll(`
+        SELECT
+          d.language,
+          COUNT(DISTINCT d.id) as doc_count,
+          COUNT(c.id) as paragraph_count,
+          SUM(CASE WHEN c.embedding IS NULL THEN 1 ELSE 0 END) as pending_embedding,
+          SUM(CASE WHEN c.synced = 0 AND c.embedding IS NOT NULL THEN 1 ELSE 0 END) as pending_sync,
+          SUM(CASE WHEN c.synced = 1 THEN 1 ELSE 0 END) as synced
+        FROM docs d
+        LEFT JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL
+        WHERE d.deleted_at IS NULL
+        GROUP BY d.language
+        ORDER BY paragraph_count DESC
+      `),
+      content.getEmbeddingStats(),
+      content.getDirtyCount(),
+      queryOne('SELECT COUNT(*) as count FROM document_failures WHERE resolved = 0'),
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+      queryAll(`
+        SELECT d.id, d.title, d.author, d.language, d.religion, d.collection, d.updated_at,
+          (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL) as paragraph_count,
+          (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL) as pending_embedding
+        FROM docs d
+        WHERE d.deleted_at IS NULL
+        ORDER BY d.updated_at DESC
+        LIMIT 20
+      `),
+      getSyncStats().catch(() => null)
+    ]);
+
+    return {
+      totalDocuments: totalDocs?.count || 0,
+      unresolvedFailures: failureCount?.count || 0,
+      embedding: embeddingStats || {},
+      dirty: dirtyCount || { documents: 0, paragraphs: 0 },
+      sync: syncStats || null,
+      byLanguage: byLanguage || [],
+      recentDocuments: recentDocs || []
+    };
+  });
+
+  // Pipeline bottleneck detail — documents stuck at each stage
+  fastify.get('/library/bottlenecks', { preHandler: requireTier('admin') }, async (request) => {
+    const language = request.query.language || null;
+
+    let langFilter = '';
+    const params = [];
+    if (language) {
+      langFilter = ' AND d.language = ?';
+      params.push(language);
+    }
+
+    const [pendingEmbedding, pendingSync, failures] = await Promise.all([
+      queryAll(`
+        SELECT d.id, d.title, d.author, d.language, d.file_path,
+          COUNT(c.id) as pending_paragraphs
+        FROM docs d
+        JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.embedding IS NULL
+        WHERE d.deleted_at IS NULL ${langFilter}
+        GROUP BY d.id
+        ORDER BY pending_paragraphs DESC
+        LIMIT 50
+      `, params),
+      queryAll(`
+        SELECT d.id, d.title, d.author, d.language,
+          COUNT(c.id) as unsynced_paragraphs
+        FROM docs d
+        JOIN content c ON c.doc_id = d.id AND c.deleted_at IS NULL AND c.synced = 0 AND c.embedding IS NOT NULL
+        WHERE d.deleted_at IS NULL ${langFilter}
+        GROUP BY d.id
+        ORDER BY unsynced_paragraphs DESC
+        LIMIT 50
+      `, params),
+      queryAll(`
+        SELECT file_path, file_name, error_type, error_message, created_at
+        FROM document_failures
+        WHERE resolved = 0
+        ORDER BY created_at DESC
+        LIMIT 50
+      `)
+    ]);
+
+    return {
+      pendingEmbedding: pendingEmbedding || [],
+      pendingSync: pendingSync || [],
+      failures: failures || []
+    };
+  });
+
+  // =============================================
+  // Library Changelog — ingestion run tracking
+  // =============================================
+
+  // Get recent document changes (uses docs updated_at + created_at)
+  fastify.get('/library/changelog', { preHandler: requireTier('admin') }, async (request) => {
+    const limit = Math.min(parseInt(request.query.limit) || 50, 200);
+    const offset = parseInt(request.query.offset) || 0;
+    const days = parseInt(request.query.days) || 30;
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const sinceStr = since.toISOString();
+
+    const [changes, total] = await Promise.all([
+      queryAll(`
+        SELECT d.id, d.file_path, d.title, d.author, d.language, d.religion, d.collection,
+          d.created_at, d.updated_at, d.deleted_at,
+          (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL) as paragraph_count,
+          CASE
+            WHEN d.deleted_at IS NOT NULL THEN 'deleted'
+            WHEN d.created_at >= ? THEN 'created'
+            WHEN d.updated_at > d.created_at THEN 'updated'
+            ELSE 'unchanged'
+          END as change_type
+        FROM docs d
+        WHERE d.updated_at >= ? OR d.created_at >= ? OR d.deleted_at >= ?
+        ORDER BY COALESCE(d.deleted_at, d.updated_at) DESC
+        LIMIT ? OFFSET ?
+      `, [sinceStr, sinceStr, sinceStr, sinceStr, limit, offset]),
+      queryOne(`
+        SELECT COUNT(*) as count FROM docs d
+        WHERE d.updated_at >= ? OR d.created_at >= ? OR d.deleted_at >= ?
+      `, [sinceStr, sinceStr, sinceStr])
+    ]);
+
+    // Group by date for timeline view
+    const byDate = {};
+    for (const change of (changes || [])) {
+      const date = (change.deleted_at || change.updated_at || change.created_at || '').slice(0, 10);
+      if (!byDate[date]) byDate[date] = { date, created: 0, updated: 0, deleted: 0, items: [] };
+      byDate[date][change.change_type]++;
+      byDate[date].items.push(change);
+    }
+
+    return {
+      changes: changes || [],
+      byDate: Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date)),
+      total: total?.count || 0,
+      limit,
+      offset,
+      days
+    };
+  });
+
+  // Changelog summary stats
+  fastify.get('/library/changelog/summary', { preHandler: requireTier('admin') }, async () => {
+    const [today, week, month, byReligion] = await Promise.all([
+      queryOne(`
+        SELECT
+          SUM(CASE WHEN created_at >= date('now') THEN 1 ELSE 0 END) as created,
+          SUM(CASE WHEN updated_at >= date('now') AND updated_at > created_at THEN 1 ELSE 0 END) as updated,
+          SUM(CASE WHEN deleted_at >= date('now') THEN 1 ELSE 0 END) as deleted
+        FROM docs
+      `),
+      queryOne(`
+        SELECT
+          SUM(CASE WHEN created_at >= date('now', '-7 days') THEN 1 ELSE 0 END) as created,
+          SUM(CASE WHEN updated_at >= date('now', '-7 days') AND updated_at > created_at THEN 1 ELSE 0 END) as updated,
+          SUM(CASE WHEN deleted_at >= date('now', '-7 days') THEN 1 ELSE 0 END) as deleted
+        FROM docs
+      `),
+      queryOne(`
+        SELECT
+          SUM(CASE WHEN created_at >= date('now', '-30 days') THEN 1 ELSE 0 END) as created,
+          SUM(CASE WHEN updated_at >= date('now', '-30 days') AND updated_at > created_at THEN 1 ELSE 0 END) as updated,
+          SUM(CASE WHEN deleted_at >= date('now', '-30 days') THEN 1 ELSE 0 END) as deleted
+        FROM docs
+      `),
+      queryAll(`
+        SELECT religion,
+          SUM(CASE WHEN created_at >= date('now', '-30 days') THEN 1 ELSE 0 END) as created,
+          SUM(CASE WHEN updated_at >= date('now', '-30 days') AND updated_at > created_at THEN 1 ELSE 0 END) as updated
+        FROM docs
+        WHERE deleted_at IS NULL
+        GROUP BY religion
+        ORDER BY created DESC
+      `)
+    ]);
+
+    return {
+      today: today || { created: 0, updated: 0, deleted: 0 },
+      week: week || { created: 0, updated: 0, deleted: 0 },
+      month: month || { created: 0, updated: 0, deleted: 0 },
+      byReligion: byReligion || []
+    };
+  });
+
+  // =============================================
+  // User Activity — search logs & engagement
+  // =============================================
+
+  // Search activity overview
+  fastify.get('/activity/searches', { preHandler: requireTier('admin') }, async (request) => {
+    const limit = Math.min(parseInt(request.query.limit) || 50, 200);
+    const offset = parseInt(request.query.offset) || 0;
+    const days = parseInt(request.query.days) || 7;
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const sinceStr = since.toISOString();
+
+    const [searches, total, summary, topQueries, byDay] = await Promise.all([
+      userQueryAll(`
+        SELECT id, event_type, user_id, details, created_at
+        FROM analytics
+        WHERE event_type IN ('anonymous_search', 'search')
+          AND created_at >= ?
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `, [sinceStr, limit, offset]),
+      userQueryOne(`
+        SELECT COUNT(*) as count FROM analytics
+        WHERE event_type IN ('anonymous_search', 'search')
+          AND created_at >= ?
+      `, [sinceStr]),
+      userQueryOne(`
+        SELECT
+          COUNT(*) as total_searches,
+          COUNT(DISTINCT user_id) as unique_users
+        FROM analytics
+        WHERE event_type IN ('anonymous_search', 'search')
+          AND created_at >= ?
+      `, [sinceStr]),
+      userQueryAll(`
+        SELECT details, COUNT(*) as count
+        FROM analytics
+        WHERE event_type IN ('anonymous_search', 'search')
+          AND created_at >= ?
+        GROUP BY details
+        ORDER BY count DESC
+        LIMIT 20
+      `, [sinceStr]),
+      userQueryAll(`
+        SELECT DATE(created_at) as day, COUNT(*) as searches
+        FROM analytics
+        WHERE event_type IN ('anonymous_search', 'search')
+          AND created_at >= ?
+        GROUP BY DATE(created_at)
+        ORDER BY day DESC
+      `, [sinceStr])
+    ]);
+
+    return {
+      searches: searches || [],
+      total: total?.count || 0,
+      summary: summary || { total_searches: 0, unique_users: 0 },
+      topQueries: topQueries || [],
+      byDay: byDay || [],
+      limit,
+      offset,
+      days
+    };
+  });
+
+  // User engagement summary
+  fastify.get('/activity/engagement', { preHandler: requireTier('admin') }, async () => {
+    const [
+      anonymousStats,
+      registeredStats,
+      conversionCount,
+      recentAnonymous,
+      activeSearchers
+    ] = await Promise.all([
+      userQueryOne(`
+        SELECT COUNT(*) as total,
+          SUM(CASE WHEN search_count > 0 THEN 1 ELSE 0 END) as searched,
+          SUM(search_count) as total_searches,
+          AVG(search_count) as avg_searches
+        FROM anonymous_users
+      `),
+      userQueryOne(`
+        SELECT COUNT(*) as total,
+          SUM(CASE WHEN search_count > 0 THEN 1 ELSE 0 END) as searched,
+          SUM(search_count) as total_searches,
+          AVG(search_count) as avg_searches
+        FROM users
+      `),
+      userQueryOne(`
+        SELECT COUNT(*) as count FROM anonymous_users WHERE converted_to_user_id IS NOT NULL
+      `),
+      userQueryAll(`
+        SELECT id, search_count, last_search_query, first_seen_at, last_seen_at, country
+        FROM anonymous_users
+        WHERE search_count > 0
+        ORDER BY last_seen_at DESC
+        LIMIT 20
+      `),
+      userQueryAll(`
+        SELECT id, email, name, tier, search_count, created_at
+        FROM users
+        WHERE search_count > 0
+        ORDER BY search_count DESC
+        LIMIT 20
+      `)
+    ]);
+
+    return {
+      anonymous: anonymousStats || { total: 0, searched: 0, total_searches: 0, avg_searches: 0 },
+      registered: registeredStats || { total: 0, searched: 0, total_searches: 0, avg_searches: 0 },
+      conversions: conversionCount?.count || 0,
+      recentAnonymous: recentAnonymous || [],
+      activeSearchers: activeSearchers || []
+    };
+  });
+
+  // =============================================
+  // SEO Analytics — Cloudflare traffic data
+  // =============================================
+
+  fastify.get('/seo/traffic', { preHandler: requireTier('admin') }, async (request) => {
+    const days = parseInt(request.query.days) || 7;
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const sinceStr = since.toISOString().slice(0, 10);
+    const untilStr = new Date().toISOString().slice(0, 10);
+
+    const zoneId = '418ed936d83870f3e451ffa50bfade43';
+    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+    if (!apiToken) {
+      return { error: 'CLOUDFLARE_API_TOKEN not configured', data: null };
+    }
+
+    const graphqlQuery = `{
+      viewer {
+        zones(filter: { zoneTag: "${zoneId}" }) {
+          httpRequests1dGroups(limit: ${days}, filter: { date_geq: "${sinceStr}", date_lt: "${untilStr}" }) {
+            dimensions { date }
+            sum {
+              requests
+              pageViews
+              threats
+              bytes
+              cachedBytes
+              cachedRequests
+            }
+            uniq { uniques }
+          }
+          httpRequestsAdaptiveGroups(limit: 20, filter: { date_geq: "${sinceStr}", date_lt: "${untilStr}" }) {
+            dimensions { clientCountryName }
+            count
+          }
+        }
+      }
+    }`;
+
+    try {
+      const resp = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: graphqlQuery })
+      });
+
+      const result = await resp.json();
+      const zone = result.data?.viewer?.zones?.[0];
+
+      return {
+        daily: zone?.httpRequests1dGroups || [],
+        countries: zone?.httpRequestsAdaptiveGroups || [],
+        days,
+        since: sinceStr,
+        until: untilStr
+      };
+    } catch (err) {
+      logger.error({ err }, 'Failed to fetch Cloudflare analytics');
+      return { error: err.message, data: null };
+    }
+  });
+
+  // Top pages and referrers from Cloudflare
+  fastify.get('/seo/pages', { preHandler: requireTier('admin') }, async (request) => {
+    const days = parseInt(request.query.days) || 7;
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const sinceStr = since.toISOString().slice(0, 10);
+    const untilStr = new Date().toISOString().slice(0, 10);
+
+    const zoneId = '418ed936d83870f3e451ffa50bfade43';
+    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+    if (!apiToken) {
+      return { error: 'CLOUDFLARE_API_TOKEN not configured', data: null };
+    }
+
+    const graphqlQuery = `{
+      viewer {
+        zones(filter: { zoneTag: "${zoneId}" }) {
+          topPaths: httpRequestsAdaptiveGroups(limit: 30, filter: { date_geq: "${sinceStr}", date_lt: "${untilStr}" }, orderBy: [count_DESC]) {
+            dimensions { clientRequestPath }
+            count
+          }
+          topReferers: httpRequestsAdaptiveGroups(limit: 20, filter: { date_geq: "${sinceStr}", date_lt: "${untilStr}", clientRefererHost_neq: "siftersearch.com" }) {
+            dimensions { clientRefererHost }
+            count
+          }
+          topBrowsers: httpRequestsAdaptiveGroups(limit: 10, filter: { date_geq: "${sinceStr}", date_lt: "${untilStr}" }) {
+            dimensions { userAgent }
+            count
+          }
+        }
+      }
+    }`;
+
+    try {
+      const resp = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: graphqlQuery })
+      });
+
+      const result = await resp.json();
+      const zone = result.data?.viewer?.zones?.[0];
+
+      return {
+        topPages: zone?.topPaths || [],
+        topReferrers: zone?.topReferers || [],
+        topBrowsers: zone?.topBrowsers || [],
+        days
+      };
+    } catch (err) {
+      logger.error({ err }, 'Failed to fetch Cloudflare page analytics');
+      return { error: err.message, data: null };
+    }
+  });
+
+  // =============================================
+  // API Key Management
+  // =============================================
+
+  fastify.get('/api-keys', { preHandler: requireTier('admin') }, async () => {
+    const keys = await getAllApiKeys();
+    return { keys: keys || [] };
+  });
+
+  fastify.post('/api-keys', { preHandler: requireTier('admin') }, async (request) => {
+    const { userId, name, rateLimit, permissions } = request.body || {};
+    if (!name) throw new ApiError('name is required', 400);
+    const key = await createApiKey(userId || request.user?.id || 0, name, { rateLimit, permissions });
+    return key;
+  });
+
+  fastify.delete('/api-keys/:id', { preHandler: requireTier('admin') }, async (request) => {
+    const { id } = request.params;
+    await revokeApiKey(id, 0); // Admin can revoke any key
+    // Also try without user restriction
+    await query('UPDATE api_keys SET revoked_at = CURRENT_TIMESTAMP WHERE id = ?', [id]).catch(() => {});
+    return { success: true };
+  });
+
+  // =============================================
+  // Search Log (from new search_log table)
+  // =============================================
+
+  fastify.get('/activity/search-log', { preHandler: requireTier('admin') }, async (request) => {
+    const limit = Math.min(parseInt(request.query.limit) || 50, 200);
+    const offset = parseInt(request.query.offset) || 0;
+    const days = parseInt(request.query.days) || 7;
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const sinceStr = since.toISOString();
+
+    const [logs, total, summary, topQueries, byDay] = await Promise.all([
+      userQueryAll(`
+        SELECT id, query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, created_at
+        FROM search_log
+        WHERE created_at >= ?
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `, [sinceStr, limit, offset]),
+      userQueryOne('SELECT COUNT(*) as count FROM search_log WHERE created_at >= ?', [sinceStr]),
+      userQueryOne(`
+        SELECT
+          COUNT(*) as total_searches,
+          COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users,
+          AVG(duration_ms) as avg_duration,
+          AVG(result_count) as avg_results
+        FROM search_log WHERE created_at >= ?
+      `, [sinceStr]),
+      userQueryAll(`
+        SELECT query, COUNT(*) as count, AVG(result_count) as avg_results
+        FROM search_log
+        WHERE created_at >= ?
+        GROUP BY query
+        ORDER BY count DESC
+        LIMIT 30
+      `, [sinceStr]),
+      userQueryAll(`
+        SELECT DATE(created_at) as day,
+          COUNT(*) as searches,
+          COUNT(DISTINCT COALESCE(user_id, anonymous_user_id)) as unique_users
+        FROM search_log
+        WHERE created_at >= ?
+        GROUP BY DATE(created_at)
+        ORDER BY day DESC
+      `, [sinceStr])
+    ]);
+
+    return {
+      logs: logs || [],
+      total: total?.count || 0,
+      summary: summary || {},
+      topQueries: topQueries || [],
+      byDay: byDay || [],
+      limit, offset, days
+    };
   });
 }

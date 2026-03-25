@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import UserActivity from '../../components/admin/UserActivity.svelte';
+---
+
+<AdminLayout title="User Activity">
+  <UserActivity client:only="svelte" />
+</AdminLayout>

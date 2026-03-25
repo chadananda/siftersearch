@@ -62,3 +62,5 @@ data/meilisearch/
 public/sw.js
 public/workbox-*.js
 data/meilisearch-dev/
+
+.claude/

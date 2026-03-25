@@ -38,7 +38,8 @@ export class BaseAgent {
       const response = await svc.chat(fullMessages, {
         temperature: options.temperature ?? this.temperature,
         maxTokens: options.maxTokens ?? this.maxTokens,
-        stream: options.stream ?? false
+        stream: options.stream ?? false,
+        caller: options.caller ?? `agent:${this.name}`
       });
 
       const duration = Date.now() - startTime;
@@ -68,7 +69,8 @@ export class BaseAgent {
     const stream = await aiService(service).chat(fullMessages, {
       temperature: options.temperature ?? this.temperature,
       maxTokens: options.maxTokens ?? this.maxTokens,
-      stream: true
+      stream: true,
+      caller: options.caller ?? `agent:${this.name}`
     });
 
     for await (const chunk of stream) {

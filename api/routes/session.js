@@ -48,7 +48,8 @@ export default async function sessionRoutes(fastify) {
           { role: 'user', content: 'A new user just opened SifterSearch for the first time. Give them a warm, brief welcome introducing yourself as Sifter and what you can help them do. Be friendly and inviting. Keep it to 2-3 sentences.' }
         ], {
           temperature: 0.9,
-          maxTokens: 200
+          maxTokens: 200,
+          caller: 'session:welcome'
         });
 
         return {

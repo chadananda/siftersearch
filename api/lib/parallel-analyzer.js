@@ -121,7 +121,8 @@ OUTPUT FORMAT (do not copy example values - analyze the actual passages):
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
-      maxTokens: 600
+      maxTokens: 600,
+      caller: 'search:rerank'
     });
 
     // Parse JSON response
@@ -171,7 +172,8 @@ ${summaries.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 Write a 1-2 sentence synthesis that answers the user's question based on these passages. Start directly with the answer, not "Based on..." or "The passages suggest...". Example: "Justice, according to these texts, is the fair treatment of all people according to divine principles."` }
       ], {
         temperature: 0.3,
-        maxTokens: 100
+        maxTokens: 100,
+        caller: 'search:synthesis'
       });
 
       if (response.content) {

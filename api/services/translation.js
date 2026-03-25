@@ -7,6 +7,7 @@
 
 // Removed: getMeili, INDEXES - translation uses LibSQL as source of truth
 import { query, queryOne, queryAll } from '../lib/db.js';
+import { content } from '../lib/content.js';
 import { aiService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -645,11 +646,8 @@ async function autoSegmentMissingMarkers(documentId, language, paragraphs) {
       });
 
       if (result && result.markedText) {
-        // Update database with marked text
-        await query(
-          'UPDATE content SET text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [result.markedText, para.id]
-        );
+        // Update database with marked text via content API
+        await content.updateText(para.id, result.markedText);
 
         segmentedCount++;
         logger.info({
@@ -887,11 +885,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
           };
 
           // Segments are embedded in translationData JSON, no separate column needed
-          await query(`
-            UPDATE content
-            SET translation = ?, synced = 0, updated_at = ?
-            WHERE id = ?
-          `, [JSON.stringify(translationData), now, para.id]);
+          await content.updateTranslation(para.id, JSON.stringify(translationData));
 
           const mapEntry = paragraphMap.get(para.paragraph_index);
           if (mapEntry) {
@@ -938,11 +932,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
             const now = new Date().toISOString();
             try {
               // Segments are embedded in result JSON, no separate column needed
-              await query(`
-                UPDATE content
-                SET translation = ?, synced = 0, updated_at = ?
-                WHERE id = ?
-              `, [JSON.stringify(result), now, para.id]);
+              await content.updateTranslation(para.id, JSON.stringify(result));
               logger.info({ paraId: para.id }, 'Translation saved successfully');
             } catch (saveErr) {
               logger.error({ paraId: para.id, err: saveErr.message }, 'Failed to save translation');
@@ -1045,11 +1035,7 @@ async function processInAppTranslation(job, document, sourceLang, contentType) {
       }
 
       // Segments are embedded in translationData JSON, no separate column needed
-      await query(`
-        UPDATE content
-        SET translation = ?, synced = 0, updated_at = ?
-        WHERE id = ?
-      `, [JSON.stringify(translationData), now, para.id]);
+      await content.updateTranslation(para.id, JSON.stringify(translationData));
 
       translatedCount++;
       await updateJobCheckpoint(job.id, para.paragraph_index, startingProgress + translatedCount);

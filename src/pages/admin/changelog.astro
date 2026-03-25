@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import LibraryChangelog from '../../components/admin/LibraryChangelog.svelte';
+---
+
+<AdminLayout title="Library Changelog">
+  <LibraryChangelog client:only="svelte" />
+</AdminLayout>

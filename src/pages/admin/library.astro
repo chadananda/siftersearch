@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import LibraryManagement from '../../components/admin/LibraryManagement.svelte';
+---
+
+<AdminLayout title="Library Management">
+  <LibraryManagement client:only="svelte" />
+</AdminLayout>

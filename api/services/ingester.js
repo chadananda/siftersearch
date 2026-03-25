@@ -20,6 +20,7 @@ import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
 import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
 import config from '../lib/config.js';
+import { content } from '../lib/content.js';
 
 /**
  * Normalize text for embedding deduplication
@@ -1080,7 +1081,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       // Found a soft-deleted doc at this path - restore it!
       await query(`UPDATE docs SET deleted_at = NULL WHERE id = ?`, [deletedDoc.id]);
       // Also restore any soft-deleted content rows for this doc
-      await query(`UPDATE content SET deleted_at = NULL WHERE doc_id = ? AND deleted_at IS NOT NULL`, [deletedDoc.id]);
+      await content.restoreByDoc(deletedDoc.id);
 
       existingDoc = { ...deletedDoc, deleted_at: null };
       logger.info({
@@ -1119,9 +1120,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       `, [relativePath, newReligion, newCollection, existingDoc.id]);
 
       // Mark all paragraphs as unsynced so religion/collection updates propagate to search
-      const updateResult = await query(`
-        UPDATE content SET synced = 0 WHERE doc_id = ?
-      `, [existingDoc.id]);
+      const updateResult = await content.markDocDirty(existingDoc.id);
 
       logger.info({
         documentId: existingDoc.id,
@@ -1207,9 +1206,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     ]);
 
     // Mark paragraphs as unsynced so metadata updates propagate to search
-    const updateResult = await query(`
-      UPDATE content SET synced = 0 WHERE doc_id = ?
-    `, [existingDoc.id]);
+    const updateResult = await content.markDocDirty(existingDoc.id);
 
     logger.info({
       documentId: existingDoc.id,
@@ -1665,6 +1662,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       const reuseHash = existing.content_hash;  // Keep existing hash
 
       // Only mark as needing sync if position changed
+      // TODO: migrate to content.bulkReplace() for full content API coverage
       const positionChanged = existing.paragraph_index !== index;
       updateStatements.push({
         sql: `
@@ -1684,6 +1682,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     } else {
       // New paragraph - insert it with blocktype
       // Let SQLite auto-generate INTEGER id (matches Meilisearch rowid)
+      // TODO: migrate to content.bulkReplace() for full content API coverage
       newCount++;
       insertStatements.push({
         sql: `
@@ -1737,6 +1736,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     deletedCount++;
     // Note: Embeddings are cached by content_hash, not paragraph_id
     // So deleting the content row doesn't lose the embedding cache
+    // TODO: migrate to content.bulkReplace() for full content API coverage
     deleteStatements.push({
       sql: `DELETE FROM content WHERE id = ?`,
       args: [oldParagraph.id]
@@ -1827,7 +1827,7 @@ export async function removeDocument(documentId) {
 
   // Soft-delete: set deleted_at timestamp instead of DELETE
   // This preserves embeddings for potential reuse
-  await query('UPDATE content SET deleted_at = ? WHERE doc_id = ?', [now, documentId]);
+  await content.softDeleteByDoc(documentId);
   await query('UPDATE docs SET deleted_at = ? WHERE id = ?', [now, documentId]);
 
   // Remove from Meilisearch immediately (exclude from search)
@@ -1852,10 +1852,7 @@ export async function purgeOldDeletedContent(retentionDays = 30) {
   const cutoffStr = cutoff.toISOString();
 
   // Delete content first (foreign key), then docs
-  const contentResult = await query(
-    'DELETE FROM content WHERE deleted_at IS NOT NULL AND deleted_at < ?',
-    [cutoffStr]
-  );
+  const contentResult = await content.hardDeleteExpired(cutoffStr);
   const docsResult = await query(
     'DELETE FROM docs WHERE deleted_at IS NOT NULL AND deleted_at < ?',
     [cutoffStr]

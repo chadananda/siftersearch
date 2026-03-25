@@ -667,6 +667,75 @@ export const admin = {
     return request('/api/admin/ai-usage/resume', {
       method: 'POST'
     });
+  },
+
+  // Library Management
+  async getLibraryOverview() {
+    return request('/api/admin/library/overview');
+  },
+  async getLibraryBottlenecks(options = {}) {
+    const params = new URLSearchParams();
+    if (options.language) params.set('language', options.language);
+    return request(`/api/admin/library/bottlenecks?${params.toString()}`);
+  },
+
+  // Library Changelog
+  async getLibraryChangelog(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/library/changelog?${params.toString()}`);
+  },
+  async getLibraryChangelogSummary() {
+    return request('/api/admin/library/changelog/summary');
+  },
+
+  // User Activity
+  async getActivitySearches(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/activity/searches?${params.toString()}`);
+  },
+  async getActivityEngagement() {
+    return request('/api/admin/activity/engagement');
+  },
+
+  // SEO Analytics
+  async getSEOTraffic(options = {}) {
+    const params = new URLSearchParams();
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/seo/traffic?${params.toString()}`);
+  },
+  async getSEOPages(options = {}) {
+    const params = new URLSearchParams();
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/seo/pages?${params.toString()}`);
+  },
+
+  // API Key Management
+  async getApiKeys() {
+    return request('/api/admin/api-keys');
+  },
+  async createApiKey(name, options = {}) {
+    return request('/api/admin/api-keys', {
+      method: 'POST',
+      body: JSON.stringify({ name, ...options })
+    });
+  },
+  async revokeApiKey(id) {
+    return request(`/api/admin/api-keys/${id}`, { method: 'DELETE' });
+  },
+
+  // Search Log
+  async getSearchLog(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.set('limit', options.limit);
+    if (options.offset) params.set('offset', options.offset);
+    if (options.days) params.set('days', options.days);
+    return request(`/api/admin/activity/search-log?${params.toString()}`);
   }
 };
 

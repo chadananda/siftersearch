@@ -8,9 +8,10 @@
  * This worker handles the "Content Table → Meilisearch" part automatically.
  */
 
-import { query, queryAll, queryOne } from '../lib/db.js';
+import { queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, initializeIndexes } from '../lib/search.js';
+import { content } from '../lib/content.js';
 
 // Configuration - tuned for throughput while yielding event loop
 const SYNC_INTERVAL_MS = 10000;  // Poll every 10 seconds
@@ -43,124 +44,10 @@ let syncStats = {
   embeddingsPropagated: 0
 };
 
-/**
- * Propagate existing embeddings to rows with matching normalized_hash
- * This avoids expensive re-generation for duplicate content across documents
- * (e.g., same quote in 50 documents = 1 embedding, 49 copies)
- *
- * Note: We include soft-deleted content as sources because embeddings are
- * expensive - soft-deleted records are kept specifically to preserve embeddings.
- */
-async function propagateExistingEmbeddings() {
-  try {
-    // Find rows that need embeddings but have a matching normalized_hash with existing embedding
-    // Source includes ALL content (even soft-deleted) to maximize embedding reuse
-    const result = await query(`
-      UPDATE content
-      SET embedding = (
-        SELECT c2.embedding FROM content c2
-        WHERE c2.normalized_hash = content.normalized_hash
-          AND c2.embedding IS NOT NULL
-        LIMIT 1
-      ),
-      embedding_model = (
-        SELECT c2.embedding_model FROM content c2
-        WHERE c2.normalized_hash = content.normalized_hash
-          AND c2.embedding IS NOT NULL
-        LIMIT 1
-      ),
-      synced = 0,
-      updated_at = datetime('now')
-      WHERE embedding IS NULL
-        AND deleted_at IS NULL
-        AND normalized_hash IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM content c2
-          WHERE c2.normalized_hash = content.normalized_hash
-            AND c2.embedding IS NOT NULL
-        )
-    `);
-
-    const propagated = result?.changes || 0;
-    if (propagated > 0) {
-      syncStats.embeddingsPropagated += propagated;
-      logger.info({ propagated }, 'Propagated existing embeddings to matching content');
-    }
-    return propagated;
-  } catch (err) {
-    logger.error({ err: err.message }, 'Failed to propagate embeddings');
-    return 0;
-  }
-}
-
-/**
- * Get unsynced documents (those with synced=0 paragraphs)
- */
-async function getUnsyncedDocuments() {
-  const docs = await queryAll(`
-    SELECT DISTINCT d.id, d.title, d.author, d.religion, d.collection,
-           d.language, d.year, d.description
-    FROM docs d
-    INNER JOIN content c ON c.doc_id = d.id
-    WHERE c.synced = 0
-    LIMIT 50
-  `);
-  return docs;
-}
-
-/**
- * Get unsynced paragraphs for a document
- */
-async function getUnsyncedParagraphs(docId) {
-  // After migration 30, content.id is INTEGER PRIMARY KEY (same as rowid)
-  return queryAll(`
-    SELECT id, doc_id, paragraph_index, text, heading, blocktype, embedding, embedding_model, content_hash, normalized_hash, translation, translation_segments
-    FROM content
-    WHERE doc_id = ? AND synced = 0
-    ORDER BY paragraph_index
-  `, [docId]);
-}
-
-/**
- * Find embeddings by normalized_hash for paragraphs missing them
- * Returns a map of id -> { embedding, embedding_model }
- *
- * Note: Includes soft-deleted content as sources - embeddings are expensive
- * and soft-deleted records are kept specifically to preserve embeddings.
- */
-async function findEmbeddingsByNormalizedHash(paragraphs) {
-  // Filter to paragraphs missing embeddings
-  const missing = paragraphs.filter(p => !p.embedding && p.normalized_hash);
-  if (missing.length === 0) return new Map();
-
-  const hashes = missing.map(p => p.normalized_hash);
-  const placeholders = hashes.map(() => '?').join(',');
-
-  // Search ALL content (including soft-deleted) to maximize embedding reuse
-  const matches = await queryAll(`
-    SELECT normalized_hash, embedding, embedding_model
-    FROM content
-    WHERE normalized_hash IN (${placeholders})
-      AND embedding IS NOT NULL
-    GROUP BY normalized_hash
-  `, hashes);
-
-  // Build hash -> embedding map
-  const hashMap = new Map();
-  for (const m of matches) {
-    hashMap.set(m.normalized_hash, { embedding: m.embedding, embedding_model: m.embedding_model });
-  }
-
-  // Map paragraph id -> embedding for those that match
-  const result = new Map();
-  for (const p of missing) {
-    const match = hashMap.get(p.normalized_hash);
-    if (match) {
-      result.set(p.id, match);
-    }
-  }
-  return result;
-}
+// Old helper functions (propagateExistingEmbeddings, getUnsyncedDocuments,
+// getUnsyncedParagraphs, findEmbeddingsByNormalizedHash) have been replaced
+// by the content API (api/lib/content.js). All content table reads/writes
+// now go through that module.
 
 /**
  * Get document metadata from docs table
@@ -204,7 +91,27 @@ function blobToFloatArray(blob) {
 }
 
 /**
- * Sync a single document's paragraphs to Meilisearch
+ * Wait for a Meilisearch task to complete.
+ * Returns the finished task object. Throws if the task failed.
+ */
+async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 30000) {
+  const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
+  const task = await meili.waitForTask(taskUid, { timeOutMs: timeoutMs });
+
+  if (task.status === 'failed') {
+    const errMsg = task.error?.message || 'Unknown Meilisearch task error';
+    throw new Error(`Meilisearch task ${taskUid} failed: ${errMsg}`);
+  }
+
+  return task;
+}
+
+/**
+ * Sync a single document's paragraphs to Meilisearch.
+ *
+ * VERIFIED SYNC: Does NOT mark synced=1 until Meilisearch confirms
+ * each task succeeded. If Meilisearch rejects a batch, those paragraphs
+ * stay dirty and will be retried on the next cycle.
  */
 async function syncDocument(docId) {
   const meili = await getMeili();
@@ -220,30 +127,15 @@ async function syncDocument(docId) {
     return { success: false, reason: 'doc_not_found' };
   }
 
-  // Get unsynced paragraphs
-  const paragraphs = await getUnsyncedParagraphs(docId);
+  // Get dirty paragraphs via content API
+  const paragraphs = await content.getDirtyParagraphsForDoc(docId);
   if (paragraphs.length === 0) {
     return { success: true, synced: 0 };
   }
 
-  // Final attempt: find embeddings for any paragraphs still missing them
-  // This catches any that weren't found during the batch propagation
-  const foundEmbeddings = await findEmbeddingsByNormalizedHash(paragraphs);
-
-  // Persist found embeddings to content table (so they're not looked up again)
-  if (foundEmbeddings.size > 0) {
-    for (const [contentId, { embedding, embedding_model }] of foundEmbeddings) {
-      await query(`
-        UPDATE content SET embedding = ?, embedding_model = ?, updated_at = datetime('now')
-        WHERE id = ?
-      `, [embedding, embedding_model, contentId]);
-    }
-    logger.debug({ docId, found: foundEmbeddings.size }, 'Found embeddings via normalized_hash during sync');
-  }
-
   const authority = getAuthority(doc);
 
-  // Build Meilisearch document
+  // Build Meilisearch document metadata
   const meiliDoc = {
     id: doc.id,
     title: doc.title,
@@ -260,19 +152,25 @@ async function syncDocument(docId) {
   };
 
   // Build paragraph records for Meilisearch
+  // Validate embedding dimensions — wrong-dimension embeddings become null (FTS-only)
   const meiliParagraphs = paragraphs.map(p => {
-    // Use found embedding if paragraph was missing one, otherwise use existing
-    const found = foundEmbeddings.get(p.id);
-    const embeddingBlob = found ? found.embedding : p.embedding;
-    const embedding = blobToFloatArray(embeddingBlob);
+    let embedding = blobToFloatArray(p.embedding);
+
+    // Dimension gate: reject wrong-size embeddings rather than poisoning the batch
+    if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
+      logger.warn({ id: p.id, dims: embedding.length, expected: content.EXPECTED_EMBEDDING_DIMS },
+        'Skipping wrong-dimension embedding for Meilisearch (paragraph will be FTS-only)');
+      embedding = null;
+    }
 
     return {
-      id: p.id,  // INTEGER id (same as rowid after migration 30)
-      doc_id: p.doc_id,  // INTEGER from SQLite docs.id
+      id: p.id,
+      doc_id: p.doc_id,
       paragraph_index: p.paragraph_index,
       text: p.text,
-      translation: p.translation || null,  // English translation for side-by-side display
-      translation_segments: p.translation_segments || null,  // Aligned phrase pairs for highlighting
+      context: p.context || null,
+      translation: p.translation || null,
+      translation_segments: p.translation_segments || null,
       title: doc.title,
       author: doc.author,
       filename: doc.filename,
@@ -283,48 +181,50 @@ async function syncDocument(docId) {
       authority,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
-      _vectors: { default: embedding || null },  // Explicit null opts out of embeddings
+      _vectors: { default: embedding || null },
       created_at: new Date().toISOString()
     };
   });
 
   try {
-    // Index document to documents index
+    // Index document metadata — wait for confirmation
     const documentsIndex = meili.index('documents');
-    await documentsIndex.addDocuments([meiliDoc]);
+    const docTask = await documentsIndex.addDocuments([meiliDoc]);
+    await waitForMeiliTask(meili, docTask);
 
-    // Index paragraphs in batches
+    // Index paragraphs in batches — wait for each batch to confirm
     const paragraphsIndex = meili.index('paragraphs');
+    const confirmedIds = [];
 
     for (let i = 0; i < meiliParagraphs.length; i += BATCH_SIZE) {
       const batch = meiliParagraphs.slice(i, i + BATCH_SIZE);
-      await paragraphsIndex.addDocuments(batch);
-      // Yield event loop between batches to allow health checks
-      if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
-    }
+      const batchIds = batch.map(p => p.id);
 
-    // Mark paragraphs as synced (batch to avoid SQLite variable limit)
-    const ids = paragraphs.map(p => p.id);
-    const UPDATE_BATCH_SIZE = 500;  // SQLite safe limit
-    for (let i = 0; i < ids.length; i += UPDATE_BATCH_SIZE) {
-      const batchIds = ids.slice(i, i + UPDATE_BATCH_SIZE);
-      await query(`
-        UPDATE content SET synced = 1, updated_at = datetime('now')
-        WHERE id IN (${batchIds.map(() => '?').join(',')})
-      `, batchIds);
+      try {
+        const task = await paragraphsIndex.addDocuments(batch);
+        await waitForMeiliTask(meili, task);
+        // Meilisearch confirmed this batch — these IDs are safe to mark synced
+        confirmedIds.push(...batchIds);
+      } catch (batchErr) {
+        // This batch failed — leave these paragraphs dirty for retry
+        logger.error({ docId, batchStart: i, batchSize: batch.length, err: batchErr.message },
+          'Meilisearch rejected paragraph batch — will retry next cycle');
+      }
+
       // Yield event loop between batches
       if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
     }
 
-    // Clean up orphaned paragraph IDs from Meilisearch for this document.
-    // Orphans occur when content rows are deleted from DB (e.g., during re-ingestion)
-    // but their IDs remain in Meilisearch.
+    // Only mark CONFIRMED paragraphs as synced (via content API)
+    if (confirmedIds.length > 0) {
+      await content.markSynced(confirmedIds);
+    }
+
+    // Clean up orphaned paragraph IDs from Meilisearch for this document
     try {
-      const dbIds = await queryAll('SELECT id FROM content WHERE doc_id = ?', [docId]);
+      const dbIds = await content.getIdsForDoc(docId);
       const dbIdSet = new Set(dbIds.map(r => r.id));
 
-      // Get all paragraph IDs in Meilisearch for this document
-      const paragraphsIndex = meili.index('paragraphs');
       let offset = 0;
       const meiliIds = [];
       while (true) {
@@ -349,8 +249,14 @@ async function syncDocument(docId) {
       logger.warn({ docId, err: cleanupErr.message }, 'Failed to clean up orphaned paragraphs');
     }
 
-    logger.info({ docId, paragraphs: paragraphs.length }, 'Document synced to Meilisearch');
-    return { success: true, synced: paragraphs.length };
+    const failed = paragraphs.length - confirmedIds.length;
+    if (failed > 0) {
+      logger.warn({ docId, confirmed: confirmedIds.length, failed }, 'Partial sync — some paragraphs will retry');
+    } else {
+      logger.info({ docId, paragraphs: confirmedIds.length }, 'Document synced to Meilisearch (verified)');
+    }
+
+    return { success: true, synced: confirmedIds.length, failed };
 
   } catch (err) {
     logger.error({ docId, err: err.message }, 'Failed to sync document to Meilisearch');
@@ -379,10 +285,10 @@ async function runSyncCycle() {
 
     // Propagate existing embeddings to rows with matching normalized_hash
     // This ensures "paragraphs needing embeddings" count is accurate
-    await propagateExistingEmbeddings();
+    await content.propagateEmbeddings();
 
-    // Get documents with unsynced content
-    const docs = await getUnsyncedDocuments();
+    // Get documents with dirty (unsynced) content
+    const docs = await content.getDocsWithDirtyParagraphs();
 
     if (docs.length === 0) {
       isRunning = false;
@@ -493,7 +399,7 @@ async function runCleanupCycle() {
 
       for (const doc of sampleDocs) {
         // Get all content IDs from DB for this doc
-        const dbContent = await queryAll('SELECT id FROM content WHERE doc_id = ?', [doc.id]);
+        const dbContent = await content.getIdsForDoc(doc.id);
         const dbContentIds = new Set(dbContent.map(r => r.id));
 
         // Get all paragraph IDs from Meilisearch for this doc
@@ -576,9 +482,9 @@ async function runFullSyncCheck() {
     if (missingInMeili.length > 0) {
       logger.info({ count: missingInMeili.length }, 'Found documents in DB missing from Meilisearch');
 
-      // Mark all their paragraphs as needing sync
+      // Mark all their paragraphs as dirty via content API
       for (const docId of missingInMeili) {
-        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [docId]);
+        await content.markDocDirty(docId);
       }
 
       syncStats.fullSyncMarked += missingInMeili.length;
@@ -596,10 +502,8 @@ async function runFullSyncCheck() {
 
     // For these, compare paragraph counts
     for (const row of potentiallyStale) {
-      const dbCount = await queryOne(
-        'SELECT COUNT(*) as count FROM content WHERE doc_id = ?',
-        [row.doc_id]
-      );
+      const dbCountVal = await content.countByDocId(row.doc_id);
+      const dbCount = { count: dbCountVal };
 
       try {
         const meiliResult = await meili.index('paragraphs').search('', {
@@ -609,14 +513,14 @@ async function runFullSyncCheck() {
 
         // If counts don't match, mark for re-sync
         if (dbCount?.count !== meiliResult.estimatedTotalHits) {
-          await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
+          await content.markDocDirty(row.doc_id);
           syncStats.fullSyncMarked++;
           logger.info({ docId: row.doc_id, dbCount: dbCount?.count, meiliCount: meiliResult.estimatedTotalHits },
             'Paragraph count mismatch, marking for re-sync');
         }
       } catch {
         // Document might not exist in Meili, mark for sync
-        await query('UPDATE content SET synced = 0 WHERE doc_id = ?', [row.doc_id]);
+        await content.markDocDirty(row.doc_id);
         syncStats.fullSyncMarked++;
       }
     }
@@ -714,12 +618,5 @@ export async function forceSyncNow() {
  * Get count of unsynced content
  */
 export async function getUnsyncedCount() {
-  const result = await queryOne(`
-    SELECT
-      COUNT(DISTINCT doc_id) as documents,
-      COUNT(*) as paragraphs
-    FROM content
-    WHERE synced = 0
-  `);
-  return result || { documents: 0, paragraphs: 0 };
+  return content.getDirtyCount();
 }

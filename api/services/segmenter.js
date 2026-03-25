@@ -12,7 +12,7 @@
 
 import { segmentationService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
-import { wrapSentence, stripMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
+import { wrapSentence, stripMarkers, hasMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
 
 /**
  * Configuration for segmentation
@@ -93,6 +93,62 @@ export function hasPunctuation(text) {
 
   // Require at least 50% of expected punctuation to consider it "punctuated"
   return punctuationMarks >= Math.max(3, expectedPunctuation * 0.5);
+}
+
+/**
+ * Determine the segmentation status of a document's body text.
+ *
+ * Classical Arabic/Farsi manuscripts arrive as enormous blocks of unpunctuated
+ * text — sometimes entire chapters with no structure at all. Some have artificial
+ * page breaks from OCR/PDF extraction, but those don't represent real semantic
+ * boundaries. These documents need AI segmentation before import.
+ *
+ * A document is considered "already segmented" only if it has our segmentation
+ * markers (⁅s⁆/⁅p⁆ or ⁅ph⁆/⁅s⁆), which prove it has been through the pipeline.
+ * Paragraph breaks alone don't count — they could be artificial page breaks.
+ *
+ * @param {string} body - Document body text (without frontmatter)
+ * @param {object} [meta] - Optional metadata with language hint
+ * @param {string} [meta.language] - Language code from frontmatter (e.g. 'ar', 'fa')
+ * @returns {{ status: 'segmented'|'needs-segmentation'|'no-segmentation-needed', format?: string, language?: string, wordCount?: number, reason: string }}
+ */
+export function getSegmentationStatus(body, meta = {}) {
+  if (!body || typeof body !== 'string' || body.trim().length === 0) {
+    return { status: 'no-segmentation-needed', reason: 'Empty or missing body' };
+  }
+
+  // Check for our segmentation markers — the only reliable proof of segmentation.
+  // Ingester markers (⁅s1⁆/⁅p1⁆) or three-pass markers (⁅ph⁆/⁅s⁆) mean the
+  // document has been through the segmentation pipeline.
+  if (hasMarkers(body)) {
+    return { status: 'segmented', format: 'markers', reason: 'Has sentence/phrase markers (⁅s⁆/⁅p⁆ format)' };
+  }
+  if (/⁅ph⁆/.test(body) || /⁅s⁆/.test(body)) {
+    return { status: 'segmented', format: 'three-pass', reason: 'Has three-pass segmentation markers (⁅ph⁆/⁅s⁆)' };
+  }
+
+  // Detect language
+  const features = detectLanguageFeatures(body);
+  const language = meta.language || features.language;
+
+  // Only Arabic-script languages need AI segmentation — English and other
+  // LTR languages come with punctuation and paragraph structure already present
+  const AI_SEGMENTED_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
+  if (!AI_SEGMENTED_LANGUAGES.includes(language)) {
+    return { status: 'no-segmentation-needed', language, reason: `Language "${language}" uses standard punctuation` };
+  }
+
+  // It's an Arabic/Farsi/Hebrew/Urdu document without markers → needs segmentation.
+  // Even if it has paragraph breaks, those are likely artificial page breaks from
+  // OCR/PDF extraction, not real semantic boundaries. The three-pass segmentation
+  // will strip these and re-segment properly.
+  const wordCount = body.split(/\s+/).filter(w => w.length > 0).length;
+  return {
+    status: 'needs-segmentation',
+    language,
+    wordCount,
+    reason: `Unsegmented ${language.toUpperCase()} text (${wordCount.toLocaleString()} words)`
+  };
 }
 
 /**

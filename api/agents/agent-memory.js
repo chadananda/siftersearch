@@ -54,7 +54,7 @@ Be concise and precise in your extractions.`,
 
     try {
       // Generate embedding for the content
-      const embedding = await aiService('embedding').embed(content);
+      const embedding = await aiService('embedding').embed(content, { caller: 'agent:memory' });
 
       // Extract key topics from the content
       const topics = await this.extractTopics(content);
@@ -97,7 +97,7 @@ Be concise and precise in your extractions.`,
 
     try {
       // Generate embedding for search query
-      const queryEmbedding = await aiService('embedding').embed(searchQuery);
+      const queryEmbedding = await aiService('embedding').embed(searchQuery, { caller: 'agent:memory' });
 
       // Fetch all memories for this user (we'll compute similarity in JS)
       // In production with many memories, use vector index or pgvector

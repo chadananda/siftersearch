@@ -19,6 +19,7 @@ import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
 import { getAuthority } from '../lib/authority.js';
 import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } from '../lib/db.js';
+import { content } from '../lib/content.js';
 import { detectLanguageFeatures } from './segmenter.js';
 import { config } from '../lib/config.js';
 import { hashContent, parseMarkdownFrontmatter } from './ingester.js';
@@ -258,36 +259,24 @@ async function storeInLibsql(document, paragraphs) {
     // Get the INTEGER doc id (either newly inserted or existing)
     const docId = Number(docResult.rows?.[0]?.id || docResult.lastInsertRowid);
 
-    // Delete existing paragraphs for this document (simpler than complex upsert)
-    await query('DELETE FROM content WHERE doc_id = ?', [docId]);
+    // Delete existing paragraphs for this document via content API
+    await content.deleteParagraphsByDoc(docId);
 
-    // Insert all paragraphs and collect auto-generated ids
+    // Insert all paragraphs via content API and collect auto-generated ids
     for (const para of paragraphs) {
       // Convert Float32Array to Buffer for BLOB storage
       const embeddingBlob = para.embedding
         ? Buffer.from(para.embedding.buffer || para.embedding)
         : null;
 
-      // Compute normalized hash for embedding deduplication (same content across docs)
-      const normalizedHash = computeNormalizedHash(para.text);
-
-      // Let SQLite auto-generate INTEGER id
-      const result = await query(`
-        INSERT INTO content (doc_id, paragraph_index, text, content_hash, normalized_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-      `, [
-        docId,  // INTEGER doc id from above
-        para.paragraph_index,
-        para.text,
-        para.content_hash,
-        normalizedHash,
-        para.heading || null,
-        para.blocktype || 'paragraph',
-        embeddingBlob,
-        para.embedding ? EMBEDDING_MODEL : null,
-        now,
-        now
-      ]);
+      const result = await content.insertParagraph(docId, {
+        paragraphIndex: para.paragraph_index,
+        text: para.text,
+        heading: para.heading || '',
+        blocktype: para.blocktype || 'paragraph',
+        embedding: embeddingBlob,
+        embeddingModel: para.embedding ? EMBEDDING_MODEL : null
+      });
 
       // Get the auto-generated id (lastInsertRowid)
       insertedIds.push(Number(result.lastInsertRowid));
@@ -474,7 +463,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   let newEmbeddings = [];
   if (chunksToEmbed.length > 0) {
     const textsToEmbed = chunksToEmbed.map(c => c.text);
-    newEmbeddings = await aiService('embedding').embed(textsToEmbed);
+    newEmbeddings = await aiService('embedding').embed(textsToEmbed, { caller: 'indexer' });
     logger.info({ documentId: filePath, generated: newEmbeddings.length }, 'Generated new embeddings');
   }
 
@@ -579,12 +568,13 @@ export async function indexDocumentFromText(text, metadata = {}) {
   // Index in Meilisearch
   await indexDocument(meiliDocument, paragraphs);
 
-  // Mark paragraphs as synced
+  // Mark paragraphs as synced via content API
+  // NOTE: indexDocument() above uses fire-and-forget Meilisearch enqueue.
+  // The sync-worker will handle verified sync for any that fail.
+  // This optimistic mark is acceptable here because the sync-worker
+  // will re-dirty and re-sync any that Meilisearch actually rejected.
   if (paragraphIds.length > 0) {
-    await query(`
-      UPDATE content SET synced = 1
-      WHERE id IN (${paragraphIds.map(() => '?').join(',')})
-    `, paragraphIds);
+    await content.markSynced(paragraphIds);
   }
 
   return {
@@ -858,7 +848,8 @@ export async function migrateEmbeddingsFromMeilisearch(options = {}) {
               continue;
             }
 
-            // Use doc_id as the primary column (NOT NULL in schema)
+            // TODO: Direct SQL — recovery path from Meilisearch, sets synced=1
+            // since data is already confirmed in Meilisearch. No content API equivalent.
             await withRetry(() => batchQuery(`
               INSERT INTO content (id, doc_id, paragraph_index, text, content_hash, heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?11)

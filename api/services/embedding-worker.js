@@ -6,12 +6,14 @@
  *
  * Architecture: Content Table → Embedding Worker → Content Table (with embeddings)
  * Sync Worker then picks up content with synced=0 and pushes to Meilisearch.
+ *
+ * All content table writes go through the content API (api/lib/content.js).
  */
 
-import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
+import { content } from '../lib/content.js';
 
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 5000;   // Poll every 5 seconds (batch takes ~2-3s)
@@ -19,6 +21,11 @@ const BATCH_SIZE = 50;                // Texts per OpenAI batch (API supports up
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
 const DB_WRITE_DELAY_MS = 10;         // Small delay between DB writes to yield event loop
+
+// Backoff: on quota/rate errors, wait longer instead of hammering OpenAI every 5s
+const MAX_BACKOFF_MS = 10 * 60 * 1000; // Cap at 10 minutes
+let backoffMs = 0;
+let backoffUntil = 0;
 
 let embeddingInterval = null;
 let isRunning = false;
@@ -31,36 +38,14 @@ let embeddingStats = {
   embeddingsGenerated: 0,
   batchesProcessed: 0,
   errors: 0,
-  lastError: null
+  consecutiveErrors: 0,
+  lastError: null,
+  backoffUntil: null
 };
 
 /**
- * Get content rows that need embeddings
- * Groups by normalized_hash to avoid generating duplicate embeddings
- * Skips content over MAX_CHARS (must be re-segmented, not truncated)
- */
-async function getContentNeedingEmbeddings(limit = BATCH_SIZE) {
-  // Get unique normalized_hash values that need embeddings
-  // This avoids generating duplicates when same content exists in multiple docs
-  // Skip content longer than MAX_CHARS (must be properly segmented first)
-  // Use IFNULL to handle NULL normalized_hash (falls back to id for uniqueness)
-  const results = await queryAll(`
-    SELECT id, text, normalized_hash
-    FROM content
-    WHERE embedding IS NULL
-      AND deleted_at IS NULL
-      AND text IS NOT NULL
-      AND text != ''
-      AND LENGTH(text) <= ?
-    GROUP BY IFNULL(normalized_hash, CAST(id AS TEXT))
-    LIMIT ?
-  `, [MAX_CHARS, limit]);
-  return results;
-}
-
-/**
- * Store embeddings in content table
- * Also propagates to all rows with same normalized_hash
+ * Store embeddings in content table via content API.
+ * Also propagates to all rows with same normalized_hash.
  */
 async function storeEmbeddings(rows, embeddings) {
   const model = config.ai.embeddings.model;
@@ -74,31 +59,19 @@ async function storeEmbeddings(rows, embeddings) {
     // Convert embedding array to Buffer for SQLite BLOB storage
     const embeddingBuffer = Buffer.from(new Float32Array(embedding).buffer);
 
+    // Use content API — validates dimensions and sets synced=0 automatically
+    const result = await content.updateEmbedding(row.id, embeddingBuffer, model);
+
+    if (result.rejected) {
+      logger.warn({ id: row.id, reason: result.reason }, 'Embedding rejected by content API');
+      continue;
+    }
+
+    // Propagate to all rows with same normalized_hash (deduplication)
+    // The content API's propagateEmbeddings() handles this in bulk,
+    // but we also do per-row propagation for immediate effect
     if (row.normalized_hash) {
-      // Update this row and ALL rows with same normalized_hash
-      // This propagates the embedding to duplicate content across documents
-      await query(`
-        UPDATE content
-        SET embedding = ?,
-            embedding_model = ?,
-            synced = 0,
-            updated_at = datetime('now')
-        WHERE normalized_hash = ?
-          AND embedding IS NULL
-          AND deleted_at IS NULL
-      `, [embeddingBuffer, model, row.normalized_hash]);
-    } else {
-      // No normalized_hash - update only this specific row by id
-      await query(`
-        UPDATE content
-        SET embedding = ?,
-            embedding_model = ?,
-            synced = 0,
-            updated_at = datetime('now')
-        WHERE id = ?
-          AND embedding IS NULL
-          AND deleted_at IS NULL
-      `, [embeddingBuffer, model, row.id]);
+      await content.propagateEmbeddings();
     }
 
     // Yield event loop to allow health checks to respond
@@ -111,8 +84,22 @@ async function storeEmbeddings(rows, embeddings) {
 /**
  * Run one embedding generation cycle
  */
+/**
+ * Check if an error is a rate limit or quota error that warrants backoff.
+ */
+function isRetryableAPIError(err) {
+  const msg = err.message || '';
+  return msg.includes('429') || msg.includes('quota') || msg.includes('rate limit')
+    || msg.includes('Rate limit') || msg.includes('timed out') || msg.includes('Connection error');
+}
+
 async function runEmbeddingCycle() {
   if (isRunning) {
+    return;
+  }
+
+  // Skip cycle if we're in backoff
+  if (Date.now() < backoffUntil) {
     return;
   }
 
@@ -120,8 +107,8 @@ async function runEmbeddingCycle() {
   embeddingStats.lastRun = new Date().toISOString();
 
   try {
-    // Get content needing embeddings
-    const rows = await getContentNeedingEmbeddings(BATCH_SIZE);
+    // Get content needing embeddings via content API
+    const rows = await content.getUnembedded(BATCH_SIZE, MAX_CHARS);
 
     if (rows.length === 0) {
       isRunning = false;
@@ -138,8 +125,14 @@ async function runEmbeddingCycle() {
       caller: 'embedding-worker'
     });
 
-    // Store embeddings (propagates to all matching normalized_hash rows)
+    // Store embeddings via content API (validates dimensions, sets synced=0)
     await storeEmbeddings(rows, result.embeddings);
+
+    // Success — reset backoff
+    backoffMs = 0;
+    backoffUntil = 0;
+    embeddingStats.consecutiveErrors = 0;
+    embeddingStats.backoffUntil = null;
 
     embeddingStats.embeddingsGenerated += rows.length;
     embeddingStats.batchesProcessed++;
@@ -152,9 +145,24 @@ async function runEmbeddingCycle() {
     }, 'Embedding batch complete');
 
   } catch (err) {
-    logger.error({ err: err.message }, 'Embedding cycle failed');
     embeddingStats.errors++;
+    embeddingStats.consecutiveErrors++;
     embeddingStats.lastError = err.message;
+
+    if (isRetryableAPIError(err)) {
+      // Exponential backoff: 30s, 60s, 120s, 240s, ... capped at 10min
+      backoffMs = Math.min(backoffMs ? backoffMs * 2 : 30000, MAX_BACKOFF_MS);
+      backoffUntil = Date.now() + backoffMs;
+      embeddingStats.backoffUntil = new Date(backoffUntil).toISOString();
+
+      logger.warn({
+        err: err.message,
+        backoffSec: Math.round(backoffMs / 1000),
+        consecutiveErrors: embeddingStats.consecutiveErrors
+      }, 'Embedding API error — backing off');
+    } else {
+      logger.error({ err: err.message }, 'Embedding cycle failed');
+    }
   } finally {
     isRunning = false;
   }
@@ -196,6 +204,7 @@ export function getEmbeddingStats() {
   return {
     ...embeddingStats,
     running: isRunning,
+    backingOff: Date.now() < backoffUntil,
     config: {
       intervalMs: EMBEDDING_INTERVAL_MS,
       batchSize: BATCH_SIZE
@@ -216,40 +225,21 @@ export async function forceEmbeddingNow() {
  * Get count of content needing embeddings (within size limit)
  */
 export async function getUnembeddedCount() {
-  const result = await queryOne(`
-    SELECT
-      COUNT(*) as total,
-      COUNT(DISTINCT normalized_hash) as unique_hashes
-    FROM content
-    WHERE embedding IS NULL
-      AND deleted_at IS NULL
-      AND LENGTH(text) <= ?
-  `, [MAX_CHARS]);
-  return result || { total: 0, unique_hashes: 0 };
+  return content.getUnembeddedCount(MAX_CHARS);
 }
 
 /**
  * Get count of oversized content that's being skipped
  */
 export async function getOversizedCount() {
-  const result = await queryOne(`
-    SELECT
-      COUNT(*) as total,
-      COUNT(DISTINCT normalized_hash) as unique_hashes
-    FROM content
-    WHERE embedding IS NULL
-      AND deleted_at IS NULL
-      AND LENGTH(text) > ?
-  `, [MAX_CHARS]);
-  return result || { total: 0, unique_hashes: 0 };
+  return content.getOversizedCount(MAX_CHARS);
 }
 
 /**
  * Delete all oversized content rows (must be re-ingested with proper segmentation)
  */
 export async function deleteOversizedContent() {
-  // First get the count for logging
-  const count = await getOversizedCount();
+  const count = await content.getOversizedCount(MAX_CHARS);
 
   if (count.total === 0) {
     logger.info('No oversized content to delete');
@@ -258,16 +248,8 @@ export async function deleteOversizedContent() {
 
   logger.warn({ total: count.total, unique: count.unique_hashes }, 'Deleting oversized content that needs re-ingestion');
 
-  // Soft delete by setting deleted_at
-  const result = await query(`
-    UPDATE content
-    SET deleted_at = datetime('now'),
-        synced = 0
-    WHERE embedding IS NULL
-      AND deleted_at IS NULL
-      AND LENGTH(text) > ?
-  `, [MAX_CHARS]);
+  const result = await content.softDeleteOversized(MAX_CHARS);
 
-  logger.info({ deleted: result.changes || count.total }, 'Oversized content deleted - documents must be re-ingested');
-  return { deleted: result.changes || count.total };
+  logger.info({ deleted: result.rowsAffected || count.total }, 'Oversized content deleted - documents must be re-ingested');
+  return { deleted: result.rowsAffected || count.total };
 }

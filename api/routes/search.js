@@ -8,7 +8,7 @@
  */
 
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
-import { queryOne } from '../lib/db.js';
+import { queryOne, userQuery } from '../lib/db.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
@@ -179,6 +179,15 @@ function findSentenceByAnchors(text, startAnchor, endAnchor) {
 }
 
 
+/** Log search to search_log table (fire-and-forget) */
+function logSearch({ query, userId, anonymousUserId, apiKeyId, resultCount, durationMs, searchType, filters }) {
+  userQuery(
+    `INSERT INTO search_log (query, user_id, anonymous_user_id, api_key_id, result_count, duration_ms, search_type, filters, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [query, userId || null, anonymousUserId || null, apiKeyId || null, resultCount || 0, durationMs || 0, searchType || 'web', filters ? JSON.stringify(filters) : null]
+  ).catch(err => logger.warn({ err }, 'Failed to log search'));
+}
+
 export default async function searchRoutes(fastify) {
   // Main search endpoint
   fastify.post('/', {
@@ -229,11 +238,21 @@ export default async function searchRoutes(fastify) {
         searchFn = hybridSearch;
     }
 
+    const startTime = Date.now();
     const results = await searchFn(query, {
       limit,
       offset,
       filters,
       semanticRatio
+    });
+
+    const userId = request.user?.id;
+    const anonymousUserId = request.headers['x-user-id'];
+    logSearch({
+      query, userId, anonymousUserId,
+      resultCount: results.hits?.length || 0,
+      durationMs: Date.now() - startTime,
+      searchType: mode, filters
     });
 
     return {
@@ -259,8 +278,20 @@ export default async function searchRoutes(fastify) {
     }
   }, async (request, reply) => {
     const { q, limit = 10, offset = 0 } = request.query;
+    const quickStart = Date.now();
 
     const results = await keywordSearch(q, { limit, offset });
+
+    // Log search (only first page to avoid spamming on pagination)
+    if (offset === 0) {
+      logSearch({
+        query: q,
+        anonymousUserId: request.headers['x-user-id'],
+        resultCount: results.hits?.length || 0,
+        durationMs: Date.now() - quickStart,
+        searchType: 'quick'
+      });
+    }
 
     // Log keys to detect duplicate key issues
     const resultKeys = results.hits.map(hit => `${hit.doc_id}-${hit.paragraph_index}`);
@@ -429,7 +460,8 @@ Provide a BRIEF introduction (1-2 sentences). Remember: passages are already sor
         { role: 'user', content: userPrompt }
       ], {
         temperature: 0.7,
-        maxTokens: 1500
+        maxTokens: 1500,
+        caller: 'search:analysis'
       });
 
       logger.info({ query, hitsAnalyzed: searchResults.hits.length }, 'Analysis completed');
@@ -630,7 +662,8 @@ Just respond with the acknowledgment, nothing else.`;
         ], {
           model: config.ai.search.model, // Fast model for quick response
           temperature: 0.8,
-          maxTokens: 100
+          maxTokens: 100,
+          caller: 'search:acknowledgment'
         });
 
         const ack = ackResponse.content?.trim() || '';

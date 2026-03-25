@@ -128,18 +128,24 @@ export async function getAllDailySpending() {
 
 /**
  * Service types exempt from the spending pause.
- * Search/chat AI should always work for users, even when
- * expensive document processing (embedding) is paused.
+ * Search/chat AI should always work for users, and embeddings
+ * must keep running to maintain the search index pipeline.
+ * The embedding worker has its own backoff for API errors (429s).
  */
-const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative', 'segmentation']);
+const PAUSE_EXEMPT_SERVICES = new Set(['fast', 'balanced', 'quality', 'creative', 'segmentation', 'embedding']);
 
 /**
  * Check spending and pause if over limit
  * Returns true if processing should continue, throws if paused
  */
 async function checkSpendingLimit(serviceType) {
-  // If already paused, only block non-exempt (document processing) services
-  if (aiProcessingPaused && !PAUSE_EXEMPT_SERVICES.has(serviceType)) {
+  // Exempt services bypass spending limits entirely
+  if (PAUSE_EXEMPT_SERVICES.has(serviceType)) {
+    return true;
+  }
+
+  // If already paused, block non-exempt services
+  if (aiProcessingPaused) {
     throw new AIBudgetExceededError(pausedReason, 0, DAILY_SPENDING_LIMIT_USD);
   }
 
@@ -477,11 +483,26 @@ async function chatAnthropic(messages, opts) {
   const systemMsg = messages.find(m => m.role === 'system');
   const otherMsgs = messages.filter(m => m.role !== 'system');
 
+  // Build system parameter — supports prefix caching when opts.cacheSystemPrompt is true.
+  // Prefix caching reuses the KV cache for identical system prompts across calls,
+  // reducing input token costs to ~10% for repeated calls with the same system prompt.
+  let systemParam;
+  if (systemMsg) {
+    if (opts.cacheSystemPrompt) {
+      // Structured format with cache_control for prefix caching
+      systemParam = [
+        { type: 'text', text: systemMsg.content, cache_control: { type: 'ephemeral' } }
+      ];
+    } else {
+      systemParam = systemMsg.content;
+    }
+  }
+
   const response = await client.messages.create({
     model: opts.model,
     max_tokens: opts.maxTokens,
     temperature: opts.temperature,
-    ...(systemMsg && { system: systemMsg.content }),
+    ...(systemParam && { system: systemParam }),
     messages: otherMsgs.map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content
@@ -496,7 +517,9 @@ async function chatAnthropic(messages, opts) {
     usage: {
       promptTokens: response.usage?.input_tokens,
       completionTokens: response.usage?.output_tokens,
-      totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+      totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0),
+      cacheCreationInputTokens: response.usage?.cache_creation_input_tokens || 0,
+      cacheReadInputTokens: response.usage?.cache_read_input_tokens || 0
     },
     model: response.model
   };
