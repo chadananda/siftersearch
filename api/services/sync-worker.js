@@ -94,7 +94,7 @@ function blobToFloatArray(blob) {
  * Wait for a Meilisearch task to complete.
  * Returns the finished task object. Throws if the task failed.
  */
-async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 30000) {
+async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 120000) {
   const taskUid = typeof enqueuedTask === 'number' ? enqueuedTask : enqueuedTask.taskUid;
   const task = await meili.tasks.waitForTask(taskUid, { timeout: timeoutMs });
 
