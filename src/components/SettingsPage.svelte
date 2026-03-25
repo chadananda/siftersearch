@@ -9,12 +9,7 @@
 
   const auth = getAuthState();
 
-  // Route guard - redirect to home if not authenticated
-  $effect(() => {
-    if (!auth.loading && !auth.isAuthenticated) {
-      requireAuth('/');
-    }
-  });
+  // No redirect — just show "not signed in" message if auth resolves as unauthenticated
 
   // Loading states
   let loading = $state(true);
@@ -107,7 +102,7 @@
 </script>
 
 <div class="settings-page">
-  {#if loading}
+  {#if loading || auth.loading}
     <div class="loading">
       <div class="spinner"></div>
       <p>Loading settings...</p>

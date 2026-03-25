@@ -10,12 +10,7 @@
 
   const auth = getAuthState();
 
-  // Route guard - redirect to home if not authenticated
-  $effect(() => {
-    if (!auth.loading && !auth.isAuthenticated) {
-      requireAuth('/');
-    }
-  });
+  // No redirect — just show "not signed in" message if auth resolves as unauthenticated
 
   // Profile state
   let profile = $state(null);
@@ -137,7 +132,7 @@
 </script>
 
 <div class="profile-page">
-  {#if loading}
+  {#if loading || auth.loading}
     <div class="loading">
       <div class="spinner"></div>
       <p>Loading profile...</p>
