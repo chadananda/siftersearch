@@ -101,7 +101,7 @@
 {:else}
   <div class="dashboard">
     <div class="page-header">
-      <h1>SEO Analytics</h1>
+      <h1>Analytics</h1>
       <div class="time-filters">
         <button class="time-btn" class:active={days === 1} onclick={() => changeDays(1)}>Today</button>
         <button class="time-btn" class:active={days === 7} onclick={() => changeDays(7)}>7 days</button>

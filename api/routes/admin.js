@@ -3643,7 +3643,7 @@ Collection: ${paragraph.collection || 'Unknown'}
         SELECT COUNT(*) as count FROM anonymous_users WHERE converted_to_user_id IS NOT NULL
       `),
       userQueryAll(`
-        SELECT id, search_count, last_search_query, first_seen_at, last_seen_at, country
+        SELECT id, search_count, last_search_query, first_seen_at, last_seen_at
         FROM anonymous_users
         WHERE search_count > 0
         ORDER BY last_seen_at DESC
