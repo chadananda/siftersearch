@@ -334,8 +334,15 @@ export default async function searchRoutes(fastify) {
     };
   });
 
-  // Index statistics
+  // Index statistics — cached to avoid hammering 2.5M row content table
+  const searchStatsCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s
+
   fastify.get('/stats', async () => {
+    const now = Date.now();
+    if (searchStatsCache.data && (now - searchStatsCache.timestamp) < searchStatsCache.ttl) {
+      return searchStatsCache.data;
+    }
+
     const stats = await getStats();
 
     // Get pipeline status - paragraphs needing embeddings and pending sync
@@ -345,13 +352,12 @@ export default async function searchRoutes(fastify) {
     try {
       const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
         queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        // Unique normalized_hash values that need embedding (for accurate time estimate)
         queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
         queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
         queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
       ]);
       pipelineStatus = {
-        ingestionQueuePending: 0, // Not tracked in search stats
+        ingestionQueuePending: 0,
         paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
         uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
         paragraphsPendingSync: syncCount?.count || 0,
@@ -361,11 +367,15 @@ export default async function searchRoutes(fastify) {
       // Columns may not exist yet
     }
 
-    return {
+    const result = {
       ...stats,
       serverVersion,
       pipelineStatus
     };
+
+    searchStatsCache.data = result;
+    searchStatsCache.timestamp = now;
+    return result;
   });
 
   // Health check

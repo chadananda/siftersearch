@@ -26,6 +26,38 @@ async function getMeiliClient() {
 // In-memory tracking for current import batch
 let importJob = null;
 
+// Cache for expensive DB count queries (shared across getIngestionProgress + getIndexingProgress)
+const countCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s
+
+export async function getCachedContentCounts() {
+  return getCachedCounts();
+}
+
+async function getCachedCounts() {
+  const now = Date.now();
+  if (countCache.data && (now - countCache.timestamp) < countCache.ttl) {
+    return countCache.data;
+  }
+
+  const [totalDocs, docsWithContent, totalParagraphs, unsyncedParagraphs] = await Promise.all([
+    queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+    queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
+    queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+    queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL')
+  ]);
+
+  const result = {
+    totalDocs: totalDocs?.count || 0,
+    docsWithContent: docsWithContent?.count || 0,
+    totalParagraphs: totalParagraphs?.count || 0,
+    unsyncedParagraphs: unsyncedParagraphs?.count || 0
+  };
+
+  countCache.data = result;
+  countCache.timestamp = now;
+  return result;
+}
+
 /**
  * Start tracking a new import batch
  * @param {number} totalDocs - Total documents to import in this batch
@@ -100,24 +132,15 @@ export function getImportProgress() {
  */
 export async function getIngestionProgress() {
   try {
-    // Filter by deleted_at IS NULL to match library.js stats endpoint
-    const [totalResult, withContentResult, paragraphResult] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL')
-    ]);
-
-    const totalDocs = totalResult?.count || 0;
-    const docsWithContent = withContentResult?.count || 0;
-    const docsPending = totalDocs - docsWithContent;
-    const totalParagraphs = paragraphResult?.count || 0;
+    const counts = await getCachedCounts();
+    const docsPending = counts.totalDocs - counts.docsWithContent;
 
     return {
-      totalDocs,
-      docsWithContent,
+      totalDocs: counts.totalDocs,
+      docsWithContent: counts.docsWithContent,
       docsPending,
-      totalParagraphs,  // Total paragraphs ingested (stable LibSQL count)
-      percentComplete: totalDocs > 0 ? Math.round((docsWithContent / totalDocs) * 100) : 100
+      totalParagraphs: counts.totalParagraphs,
+      percentComplete: counts.totalDocs > 0 ? Math.round((counts.docsWithContent / counts.totalDocs) * 100) : 100
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get ingestion progress');
@@ -136,17 +159,12 @@ export async function getIndexingProgress() {
   }
 
   try {
-    // Get paragraph counts from SQLite — use unsynced count (small set, fast) instead of synced count (huge set, slow)
-    const [totalResult, unsyncedResult, docsWithContentResult] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL')
-    ]);
-
-    const totalParagraphs = totalResult?.count || 0;
-    const pendingParagraphs = unsyncedResult?.count || 0;
+    // Use shared cached counts — avoids hammering 2.5M row table every request
+    const counts = await getCachedCounts();
+    const totalParagraphs = counts.totalParagraphs;
+    const pendingParagraphs = counts.unsyncedParagraphs;
     const syncedParagraphs = totalParagraphs - pendingParagraphs;
-    const docsWithContent = docsWithContentResult?.count || 0;
+    const docsWithContent = counts.docsWithContent;
 
     // Also get Meilisearch counts for verification
     let meiliDocs = 0;

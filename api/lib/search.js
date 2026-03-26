@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { createEmbedding, createEmbeddings } from './ai.js';
 import { getAuthority } from './authority.js';
 import { queryOne, queryAll } from './db.js';
-import { getImportProgress, getIngestionProgress, getIndexingProgress } from '../services/progress.js';
+import { getImportProgress, getIngestionProgress, getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 
 let client = null;
 
@@ -757,15 +757,11 @@ export async function getStats() {
   ]);
 
   try {
-    // Get all stats from SQLite (source of truth) - exclude soft-deleted
-    const [
-      docCountResult,
-      contentCountResult,
-      religionRows,
-      collectionRows
-    ] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+    // Use cached counts for the heavy content table queries
+    const cachedCounts = await getCachedContentCounts();
+
+    // Docs table is small — GROUP BY queries are fast
+    const [religionRows, collectionRows] = await Promise.all([
       queryAll(`
         SELECT religion, COUNT(*) as count
         FROM docs
@@ -780,8 +776,8 @@ export async function getStats() {
       `)
     ]);
 
-    const totalDocuments = docCountResult?.count || 0;
-    const totalPassages = contentCountResult?.count || 0;
+    const totalDocuments = cachedCounts.totalDocs;
+    const totalPassages = cachedCounts.totalParagraphs;
 
     // Build religion and collection count maps
     const religionCounts = {};

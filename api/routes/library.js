@@ -18,7 +18,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
-import { getIndexingProgress } from '../services/progress.js';
+import { getIndexingProgress, getCachedContentCounts } from '../services/progress.js';
 import { query, queryOne, queryAll, userQueryOne } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
@@ -39,7 +39,7 @@ import config from '../lib/config.js';
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 // In-memory cache for library stats (expensive aggregation queries on 2.5M+ rows)
-const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s TTL (short to show sync progress)
+const statsCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s TTL — counts change slowly; sync job progress is fetched separately
 
 /**
  * Parse translation field from paragraph
@@ -176,17 +176,39 @@ export default async function libraryRoutes(fastify) {
     const isAdmin = request.user?.tier === 'admin';
 
     // Return cached stats if fresh (expensive queries on 2.5M+ rows)
+    // Always fetch fresh sync job progress (tiny table, fast query)
     const now = Date.now();
     if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
-      return { ...statsCache.data, isAdmin };
+      let freshJob = null;
+      try {
+        const job = await queryOne(`
+          SELECT id, job_type, status, total_items, completed_items, failed_items,
+                 created_at, started_at, completed_at
+          FROM sync_jobs WHERE status IN ('running', 'pending')
+          ORDER BY created_at DESC LIMIT 1
+        `);
+        if (job) {
+          freshJob = {
+            id: job.id, status: job.status,
+            totalItems: job.total_items || 0, completedItems: job.completed_items || 0,
+            failedItems: job.failed_items || 0, startedAt: job.started_at,
+            percentComplete: job.total_items > 0 ? Math.round((job.completed_items / job.total_items) * 100) : 0
+          };
+        }
+      } catch { /* sync_jobs may not exist */ }
+
+      const cached = { ...statsCache.data, isAdmin };
+      if (cached.indexingProgress) {
+        cached.indexingProgress = { ...cached.indexingProgress, activeJob: freshJob };
+      }
+      cached.indexing = (cached.ingestionQueue?.pending > 0 || cached.ingestionQueue?.processing > 0 || freshJob?.status === 'running');
+      return cached;
     }
 
-    // Get document and paragraph counts from libsql + Meilisearch indexing progress
-    // Exclude soft-deleted content (deleted_at IS NULL)
-    const [docCount, paraCount, docsWithContent, facetStats, meiliProgress] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
+    // Use cached counts for the heavy content table queries (2.5M+ rows)
+    // Docs GROUP BY is fast (small table), indexing progress uses its own cache
+    const [cachedCounts, facetStats, meiliProgress] = await Promise.all([
+      getCachedContentCounts(),
       queryAll(`
         SELECT
           religion,
@@ -199,6 +221,9 @@ export default async function libraryRoutes(fastify) {
       `),
       getIndexingProgress()
     ]);
+    const docCount = { count: cachedCounts.totalDocs };
+    const paraCount = { count: cachedCounts.totalParagraphs };
+    const docsWithContent = { count: cachedCounts.docsWithContent };
 
     // Build facet distributions from query results
     const religionCounts = {};
