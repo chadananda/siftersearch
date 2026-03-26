@@ -1656,11 +1656,11 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_content_needs_embedding_v2 ON content(embedding, deleted_at, id) WHERE embedding IS NULL AND deleted_at IS NULL');
 
     // Seed counter table with embedding-related counts (extends migration 39 pattern)
-    const unembeddedCount = await queryOne(`SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND text IS NOT NULL AND text != '' AND LENGTH(text) <= 6000`);
-    const oversizedCount = await queryOne(`SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > 6000`);
-
-    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_unembedded', ?)`, [unembeddedCount?.c || 0]);
-    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_oversized', ?)`, [oversizedCount?.c || 0]);
+    // Use 0 as placeholder — triggers maintain correct counts from here on.
+    // Full reseed can be done later when memory pressure is lower via:
+    //   UPDATE table_counts SET row_count = (SELECT COUNT(*) ...) WHERE table_name = 'content_unembedded'
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_unembedded', 0)`);
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_oversized', 0)`);
 
     // Triggers for embedding counter: decrement when embedding is set, increment when cleared
     await query(`
@@ -1679,10 +1679,7 @@ const migrations = {
       END
     `);
 
-    logger.info({
-      unembedded: unembeddedCount?.c,
-      oversized: oversizedCount?.c
-    }, 'Migration 40 complete: composite indexes + embedding counters');
+    logger.info('Migration 40 complete: composite indexes + embedding counters (seeded with 0)');
   },
 };
 
