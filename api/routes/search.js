@@ -9,6 +9,7 @@
 
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
 import { queryOne, userQuery } from '../lib/db.js';
+import { getCachedContentCounts } from '../services/progress.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
 import { createRequire } from 'module';
@@ -334,8 +335,10 @@ export default async function searchRoutes(fastify) {
     };
   });
 
-  // Index statistics — cached to avoid hammering 2.5M row content table
-  const searchStatsCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s
+  // Index statistics — counter table makes main counts instant
+  const searchStatsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s
+  // Pipeline status cache — heavy embedding COUNT queries, refresh rarely
+  const searchPipelineCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 min
 
   fastify.get('/stats', async () => {
     const now = Date.now();
@@ -343,28 +346,35 @@ export default async function searchRoutes(fastify) {
       return searchStatsCache.data;
     }
 
-    const stats = await getStats();
+    const [stats, cachedCounts] = await Promise.all([
+      getStats(),
+      getCachedContentCounts()
+    ]);
 
-    // Get pipeline status - paragraphs needing embeddings and pending sync
-    // Skip content > 6000 chars (must be re-segmented, not truncated)
-    const MAX_CHARS = 6000;
-    let pipelineStatus = null;
-    try {
-      const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
-      ]);
-      pipelineStatus = {
-        ingestionQueuePending: 0,
-        paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-        uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
-        paragraphsPendingSync: syncCount?.count || 0,
-        oversizedSkipped: oversizedCount?.count || 0
-      };
-    } catch {
-      // Columns may not exist yet
+    // Pipeline status — use cached or compute (heavy queries)
+    let pipelineStatus;
+    if (searchPipelineCache.data && (now - searchPipelineCache.timestamp) < searchPipelineCache.ttl) {
+      pipelineStatus = { ...searchPipelineCache.data, paragraphsPendingSync: cachedCounts.unsyncedParagraphs };
+    } else {
+      const MAX_CHARS = 6000;
+      pipelineStatus = null;
+      try {
+        // Run sequentially to limit event loop blocking per query
+        const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
+        const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
+        const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS]);
+        pipelineStatus = {
+          ingestionQueuePending: 0,
+          paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+          uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
+          paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
+          oversizedSkipped: oversizedCount?.count || 0
+        };
+        searchPipelineCache.data = pipelineStatus;
+        searchPipelineCache.timestamp = Date.now();
+      } catch {
+        // Columns may not exist yet
+      }
     }
 
     const result = {
