@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 38;
+const CURRENT_VERSION = 39;
 const USER_DB_CURRENT_VERSION = 2;
 
 /**
@@ -1522,6 +1522,128 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_sync_jobs_status ON sync_jobs(status, created_at)');
 
     logger.info('Migration 38 complete: sync_jobs table created');
+  },
+
+  // Migration 39: Counter table for instant COUNT queries
+  // Replaces expensive COUNT(*) on 2.5M row content table (~2.2s each) with instant lookups
+  39: async () => {
+    logger.info('Starting migration 39: table_counts + triggers');
+
+    // Create the counter table
+    await query(`
+      CREATE TABLE IF NOT EXISTS table_counts (
+        table_name TEXT PRIMARY KEY,
+        row_count INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+
+    // Seed with current counts (one-time expensive operation during migration)
+    const docsCount = await queryOne('SELECT COUNT(*) as c FROM docs WHERE deleted_at IS NULL');
+    const contentCount = await queryOne('SELECT COUNT(*) as c FROM content WHERE deleted_at IS NULL');
+    const unsyncedCount = await queryOne('SELECT COUNT(*) as c FROM content WHERE synced = 0 AND deleted_at IS NULL');
+    const docsWithContentCount = await queryOne('SELECT COUNT(DISTINCT doc_id) as c FROM content WHERE deleted_at IS NULL');
+
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('docs', ?)`, [docsCount?.c || 0]);
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content', ?)`, [contentCount?.c || 0]);
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_unsynced', ?)`, [unsyncedCount?.c || 0]);
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('docs_with_content', ?)`, [docsWithContentCount?.c || 0]);
+
+    // --- Triggers for docs table ---
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_docs_insert AFTER INSERT ON docs
+      WHEN NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'docs';
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_docs_soft_delete AFTER UPDATE OF deleted_at ON docs
+      WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+      BEGIN
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'docs';
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_docs_undelete AFTER UPDATE OF deleted_at ON docs
+      WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'docs';
+      END
+    `);
+
+    // --- Triggers for content table ---
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_insert AFTER INSERT ON content
+      WHEN NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content';
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content_unsynced' AND NEW.synced = 0;
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_soft_delete AFTER UPDATE OF deleted_at ON content
+      WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+      BEGIN
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'content';
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'content_unsynced' AND OLD.synced = 0;
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_undelete AFTER UPDATE OF deleted_at ON content
+      WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content';
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content_unsynced' AND NEW.synced = 0;
+      END
+    `);
+
+    // Track synced status changes
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_synced AFTER UPDATE OF synced ON content
+      WHEN OLD.synced = 0 AND NEW.synced = 1 AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'content_unsynced';
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_unsynced AFTER UPDATE OF synced ON content
+      WHEN OLD.synced = 1 AND NEW.synced = 0 AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content_unsynced';
+      END
+    `);
+
+    // Track docs_with_content: increment when first content row inserted for a doc
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_insert_doc_count AFTER INSERT ON content
+      WHEN NEW.deleted_at IS NULL
+        AND (SELECT COUNT(*) FROM content WHERE doc_id = NEW.doc_id AND deleted_at IS NULL AND id != NEW.id) = 0
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'docs_with_content';
+      END
+    `);
+
+    // Decrement when last content row for a doc is soft-deleted
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_delete_doc_count AFTER UPDATE OF deleted_at ON content
+      WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+        AND (SELECT COUNT(*) FROM content WHERE doc_id = NEW.doc_id AND deleted_at IS NULL) = 0
+      BEGIN
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'docs_with_content';
+      END
+    `);
+
+    logger.info({
+      docs: docsCount?.c,
+      content: contentCount?.c,
+      unsynced: unsyncedCount?.c,
+      docsWithContent: docsWithContentCount?.c
+    }, 'Migration 39 complete: table_counts seeded with triggers');
   },
 };
 

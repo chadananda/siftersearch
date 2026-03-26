@@ -67,13 +67,6 @@ async function storeEmbeddings(rows, embeddings) {
       continue;
     }
 
-    // Propagate to all rows with same normalized_hash (deduplication)
-    // The content API's propagateEmbeddings() handles this in bulk,
-    // but we also do per-row propagation for immediate effect
-    if (row.normalized_hash) {
-      await content.propagateEmbeddings();
-    }
-
     // Yield event loop to allow health checks to respond
     if (DB_WRITE_DELAY_MS > 0) {
       await delay(DB_WRITE_DELAY_MS);
@@ -127,6 +120,14 @@ async function runEmbeddingCycle() {
 
     // Store embeddings via content API (validates dimensions, sets synced=0)
     await storeEmbeddings(rows, result.embeddings);
+
+    // Propagate embeddings to duplicate content (same normalized_hash)
+    // Once per batch, not per row — this query scans the full content table
+    try {
+      await content.propagateEmbeddings();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Embedding propagation failed (non-fatal)');
+    }
 
     // Success — reset backoff
     backoffMs = 0;

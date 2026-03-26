@@ -31,7 +31,6 @@ import { startLibraryWatcher, stopLibraryWatcher } from './services/library-watc
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
 import { prewarmCache, POPULAR_QUERIES } from './lib/search.js';
-import { getCachedContentCounts } from './services/progress.js';
 
 // Validate all environment variables on startup
 // This will print a detailed report and exit if required vars are missing
@@ -88,16 +87,7 @@ const start = async () => {
       logger.warn({ err }, 'Failed to restore AI processing state');
     }
 
-    // Pre-warm stats cache in background — don't block startup or health checks
-    setTimeout(async () => {
-      try {
-        const startMs = Date.now();
-        const counts = await getCachedContentCounts();
-        logger.info({ docs: counts.totalDocs, paragraphs: counts.totalParagraphs, elapsedMs: Date.now() - startMs }, 'Stats cache pre-warmed');
-      } catch (err) {
-        logger.warn({ err: err.message }, 'Failed to pre-warm stats cache');
-      }
-    }, 1000);
+    // Stats cache no longer needs prewarm — counter table (migration 39) provides instant counts
 
     // Start background content sync worker (keeps Content Table → Meilisearch in sync)
     // Only if Meilisearch is enabled

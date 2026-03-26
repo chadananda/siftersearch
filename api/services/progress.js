@@ -26,9 +26,9 @@ async function getMeiliClient() {
 // In-memory tracking for current import batch
 let importJob = null;
 
-// Cache for expensive DB count queries (shared across getIngestionProgress + getIndexingProgress)
-const countCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s
-let countCacheRefreshing = false; // prevent concurrent refresh
+// Cache for count queries — now backed by trigger-maintained table_counts (instant lookups)
+// Short TTL since the queries are sub-millisecond now
+const countCache = { data: null, timestamp: 0, ttl: 5000 }; // 5s TTL (queries are instant)
 
 const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0 };
 
@@ -42,32 +42,49 @@ async function getCachedCounts() {
     return countCache.data;
   }
 
-  // If another request is already refreshing, return stale data or zeros
-  if (countCacheRefreshing) {
-    return countCache.data || EMPTY_COUNTS;
-  }
-
-  countCacheRefreshing = true;
   try {
-    // Run heavy COUNT queries sequentially to avoid blocking event loop with parallel I/O
-    const totalDocs = await queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL');
-    const totalParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL');
-    const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
-    const docsWithContent = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
+    // Read from trigger-maintained counter table — single row lookups, sub-millisecond
+    const rows = await queryAll('SELECT table_name, row_count FROM table_counts');
+    const counts = {};
+    for (const r of rows) counts[r.table_name] = r.row_count;
 
     const result = {
-      totalDocs: totalDocs?.count || 0,
-      docsWithContent: docsWithContent?.count || 0,
-      totalParagraphs: totalParagraphs?.count || 0,
-      unsyncedParagraphs: unsyncedParagraphs?.count || 0
+      totalDocs: counts.docs || 0,
+      docsWithContent: counts.docs_with_content || 0,
+      totalParagraphs: counts.content || 0,
+      unsyncedParagraphs: counts.content_unsynced || 0
     };
 
     countCache.data = result;
     countCache.timestamp = Date.now();
     return result;
-  } finally {
-    countCacheRefreshing = false;
+  } catch (err) {
+    // table_counts may not exist yet (pre-migration 39) — fall back to COUNT queries
+    if (err.message?.includes('no such table') || err.message?.includes('table_counts')) {
+      logger.warn('table_counts not found, falling back to COUNT queries');
+      return getCachedCountsFallback();
+    }
+    throw err;
   }
+}
+
+// Fallback for pre-migration-39 databases
+async function getCachedCountsFallback() {
+  const totalDocs = await queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL');
+  const totalParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL');
+  const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
+  const docsWithContent = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
+
+  const result = {
+    totalDocs: totalDocs?.count || 0,
+    docsWithContent: docsWithContent?.count || 0,
+    totalParagraphs: totalParagraphs?.count || 0,
+    unsyncedParagraphs: unsyncedParagraphs?.count || 0
+  };
+
+  countCache.data = result;
+  countCache.timestamp = Date.now();
+  return result;
 }
 
 /**

@@ -38,10 +38,9 @@ import config from '../lib/config.js';
 // 4-hour cooldown period for file stability before ingestion
 const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
-// In-memory cache for library stats (expensive aggregation queries on 2.5M+ rows)
-const statsCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s TTL — counts change slowly; sync job progress is fetched separately
-const SERVER_START_TIME = Date.now();
-const STARTUP_GRACE_MS = 15000; // Return empty stats during first 15s to avoid blocking health checks
+// In-memory cache for library stats
+// Counter table makes main counts instant; pipeline status queries still need caching
+const statsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s TTL
 
 /**
  * Parse translation field from paragraph
@@ -177,14 +176,9 @@ export default async function libraryRoutes(fastify) {
     // Check if authenticated user is admin
     const isAdmin = request.user?.tier === 'admin';
 
-    // During startup grace period, return empty stats to avoid blocking the event loop
-    // with heavy COUNT queries while the prewarm cache is still populating
     const now = Date.now();
-    if (!statsCache.data && (now - SERVER_START_TIME) < STARTUP_GRACE_MS) {
-      return { totalDocuments: 0, totalParagraphs: 0, religions: 0, collections: 0, languages: 0, religionCounts: {}, collectionCounts: {}, languageCounts: {}, indexing: false, ingestionQueue: { pending: 0, processing: 0 }, indexingProgress: null, translating: false, translationProgress: { pending: 0, processing: 0, completed: 0, totalProgress: 0, totalItems: 0 }, ingestionProgress: { totalDocs: 0, docsWithContent: 0, docsPending: 0, percentComplete: 0 }, pipelineStatus: { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 }, isAdmin };
-    }
 
-    // Return cached stats if fresh (expensive queries on 2.5M+ rows)
+    // Return cached stats if fresh
     // Always fetch fresh sync job progress (tiny table, fast query)
     if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
       let freshJob = null;
@@ -300,17 +294,17 @@ export default async function libraryRoutes(fastify) {
     const MAX_CHARS = 6000;
     let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
     try {
-      const [embeddingCount, uniqueEmbeddingCount, syncCount, oversizedCount] = await Promise.all([
+      // Sync count comes from counter table (instant); embedding counts still need queries
+      const [embeddingCount, uniqueEmbeddingCount, oversizedCount] = await Promise.all([
         queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
         queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`),
         queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
       ]);
       pipelineStatus = {
         ingestionQueuePending: indexingStats.pending + indexingStats.processing,
         paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
         uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
-        paragraphsPendingSync: syncCount?.count || 0,
+        paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
         oversizedSkipped: oversizedCount?.count || 0
       };
     } catch {
