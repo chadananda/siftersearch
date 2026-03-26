@@ -138,9 +138,7 @@ async function syncDocument(docId) {
   const meiliParagraphs = paragraphs.map(p => {
     let embedding = blobToFloatArray(p.embedding);
     if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
-      logger.warn({ id: p.id, dims: embedding.length, expected: content.EXPECTED_EMBEDDING_DIMS },
-        'Skipping wrong-dimension embedding for Meilisearch (paragraph will be FTS-only)');
-      embedding = null;
+      embedding = null; // Wrong dimensions — FTS-only (logged at doc level below)
     }
     const record = {
       id: p.id,
@@ -165,6 +163,11 @@ async function syncDocument(docId) {
     record._vectors = { default: embedding };
     return record;
   });
+
+  const wrongDimCount = meiliParagraphs.filter(p => p._vectors.default === null && paragraphs.find(pp => pp.id === p.id)?.embedding).length;
+  if (wrongDimCount > 0) {
+    logger.warn({ docId, wrongDimCount, total: paragraphs.length }, 'Paragraphs with wrong-dimension embeddings (FTS-only)');
+  }
 
   try {
     const documentsIndex = meili.index('documents');
@@ -202,27 +205,7 @@ async function syncDocument(docId) {
 
     if (confirmedIds.length > 0) await content.markSynced(confirmedIds);
 
-    // Clean up orphaned paragraph IDs from Meilisearch for this document
-    try {
-      const dbIds = await content.getIdsForDoc(docId);
-      const dbIdSet = new Set(dbIds.map(r => r.id));
-      let offset = 0;
-      const meiliIds = [];
-      while (true) {
-        const result = await paragraphsIndex.getDocuments({ filter: `doc_id = ${docId}`, fields: ['id'], limit: 1000, offset });
-        if (!result.results || result.results.length === 0) break;
-        meiliIds.push(...result.results.map(r => r.id));
-        if (result.results.length < 1000) break;
-        offset += 1000;
-      }
-      const orphanIds = meiliIds.filter(id => !dbIdSet.has(id));
-      if (orphanIds.length > 0) {
-        await paragraphsIndex.deleteDocuments(orphanIds);
-        logger.info({ docId, orphans: orphanIds.length }, 'Cleaned up orphaned paragraph IDs from Meilisearch');
-      }
-    } catch (cleanupErr) {
-      logger.warn({ docId, err: cleanupErr.message }, 'Failed to clean up orphaned paragraphs');
-    }
+    // Orphan cleanup is done periodically in runCleanupCycle(), not per-document
 
     const failed = paragraphs.length - confirmedIds.length;
     if (failed > 0) {
@@ -447,8 +430,8 @@ async function processJob(job) {
   let docsProcessed = 0;
 
   try {
-    // Propagate embeddings before starting (ensures dirty count is accurate)
-    await content.propagateEmbeddings();
+    // Propagate embeddings periodically, not every job (it's a heavy UPDATE on 2.5M rows)
+    // The embedding worker handles this during normal operation
 
     while (!isShuttingDown) {
       // Get docs with dirty paragraphs in small batches — avoids starving the API of DB access
