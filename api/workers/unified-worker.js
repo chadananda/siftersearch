@@ -156,7 +156,7 @@ async function processSyncJob(job) {
             year: doc.year ? parseInt(doc.year, 10) : null, authority,
             heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
             created_at: new Date().toISOString(),
-            ...(embedding ? { _vectors: { default: embedding } } : {})
+            _vectors: { default: embedding || null }
           });
           allParaIds.push(p.id);
         }
