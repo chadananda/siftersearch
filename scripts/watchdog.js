@@ -32,7 +32,7 @@ const MEILI_HEALTH_URL = process.env.MEILI_HEALTH_URL || `http://127.0.0.1:${MEI
 const TUNNEL_HEALTH_URL = process.env.TUNNEL_HEALTH_URL || 'https://api.siftersearch.com/health';
 const CHECK_INTERVAL = parseInt(process.env.WATCHDOG_INTERVAL) || 30000; // 30 seconds
 const MAX_FAILURES = parseInt(process.env.WATCHDOG_MAX_FAILURES) || 3;
-const FETCH_TIMEOUT = parseInt(process.env.WATCHDOG_TIMEOUT) || 30000;
+const FETCH_TIMEOUT = parseInt(process.env.WATCHDOG_TIMEOUT) || 60000;
 const TUNNEL_TIMEOUT = parseInt(process.env.WATCHDOG_TUNNEL_TIMEOUT) || 10000; // Longer timeout for external
 
 // State

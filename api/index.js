@@ -50,8 +50,14 @@ const start = async () => {
       }
     }
 
-    // Run database migrations BEFORE listening — heavy migration queries
-    // must not block health checks from an already-listening server
+    const server = await createServer();
+    const port = parseInt(process.env.API_PORT || '3000', 10);
+    const host = process.env.HOST || '0.0.0.0';
+
+    await server.listen({ port, host });
+
+    // Run database migrations AFTER listening so health checks work during migration.
+    // Migration 39 seeds counter table with COUNT queries (~15s on 2.5M rows) — one-time cost.
     try {
       const migrationResult = await runMigrations();
       if (migrationResult.applied > 0) {
@@ -61,12 +67,6 @@ const start = async () => {
       logger.error({ err }, 'Database migration failed');
       process.exit(1);
     }
-
-    const server = await createServer();
-    const port = parseInt(process.env.API_PORT || '3000', 10);
-    const host = process.env.HOST || '0.0.0.0';
-
-    await server.listen({ port, host });
 
     // Seed admin user if configured
     try {
