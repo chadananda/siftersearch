@@ -235,110 +235,61 @@ export async function initializeIndexes() {
     if (currentDimensions && currentDimensions !== expectedDimensions) {
       logger.warn({ currentDimensions, expectedDimensions }, 'Paragraphs index has wrong embedding dimensions, deleting and recreating');
       await meili.deleteIndex(INDEXES.PARAGRAPHS);
-      // Small delay to ensure deletion completes
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   } catch (err) {
-    // Index doesn't exist yet, that's fine
     if (!err.message?.includes('not found')) {
       logger.debug({ err: err.message }, 'Could not check paragraphs index settings');
     }
   }
 
-  // Fire-and-forget settings updates — don't await, just enqueue
-  logger.info('Enqueuing paragraphs settings update...');
-  try {
-  paragraphs.updateSettings({
-    searchableAttributes: [
-      'text',
-      'context',  // AI-generated disambiguation (who, what, where, when)
-      'heading',
-      'title',
-      'author'
-    ],
+  // Update settings via direct HTTP to avoid meilisearch-js client hanging
+  // when Meilisearch has a large task queue
+  const meiliUrl = config.search.host || 'http://localhost:7700';
+  const meiliKey = config.search.apiKey;
+  const headers = { 'Content-Type': 'application/json' };
+  if (meiliKey) headers['Authorization'] = `Bearer ${meiliKey}`;
+
+  const paragraphSettings = {
+    searchableAttributes: ['text', 'context', 'heading', 'title', 'author'],
     filterableAttributes: [
-      'doc_id',  // INTEGER from SQLite docs.id
-      'religion',
-      'collection',
-      'language',
-      'year',
-      'paragraph_index',
-      'blocktype',  // For filtering by content type (paragraph, heading1, quote, etc.)
-      'author',  // For parenthetical filter syntax: (author_name)
-      'title',   // For parenthetical filter syntax: (title_keyword)
-      'authority'  // Doctrinal weight (1-10) for filtering
+      'doc_id', 'religion', 'collection', 'language', 'year',
+      'paragraph_index', 'blocktype', 'author', 'title', 'authority'
     ],
-    sortableAttributes: [
-      'year',
-      'created_at',
-      'paragraph_index',
-      'authority'  // Doctrinal weight for sorting
-    ],
-    // Custom ranking rules with configurable authority position
+    sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority'],
     rankingRules: buildRankingRules(),
-    // Increase maxTotalHits for pagination (default 1000 is too low)
-    pagination: {
-      maxTotalHits: 50000
-    },
-    // Enable vector search
+    pagination: { maxTotalHits: 50000 },
     embedders: {
-      default: {
-        source: 'userProvided',
-        dimensions: expectedDimensions
-      }
+      default: { source: 'userProvided', dimensions: expectedDimensions }
     }
-  }).then(task => {
+  };
+
+  const documentSettings = {
+    searchableAttributes: ['title', 'author', 'description'],
+    filterableAttributes: ['religion', 'collection', 'language', 'year', 'author', 'authority'],
+    sortableAttributes: ['year', 'title', 'created_at', 'authority'],
+    rankingRules: buildRankingRules(),
+    pagination: { maxTotalHits: 50000 }
+  };
+
+  // Fire-and-forget via native fetch — bypasses meilisearch-js client entirely
+  fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings`, {
+    method: 'PATCH', headers, body: JSON.stringify(paragraphSettings)
+  }).then(r => r.json()).then(task => {
     logger.info({ taskUid: task.taskUid }, 'Paragraphs settings update enqueued');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Failed to enqueue paragraphs settings update');
   });
-  logger.info('Paragraphs updateSettings() call returned (fire-and-forget)');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Paragraphs updateSettings() threw synchronously');
-  }
 
-  // Documents index (for document-level search)
-  const documents = meili.index(INDEXES.DOCUMENTS);
-
-  logger.info('Enqueuing documents settings update...');
-  try {
-  documents.updateSettings({
-    searchableAttributes: [
-      'title',
-      'author',
-      'description'
-    ],
-    filterableAttributes: [
-      'religion',
-      'collection',
-      'language',
-      'year',
-      'author',    // For filtering by author
-      'authority'  // Doctrinal weight (1-10) for filtering
-    ],
-    sortableAttributes: [
-      'year',
-      'title',
-      'created_at',
-      'authority'  // Doctrinal weight for sorting
-    ],
-    // Custom ranking rules with configurable authority position
-    rankingRules: buildRankingRules(),
-    // Increase maxTotalHits for pagination (default 1000 is too low)
-    pagination: {
-      maxTotalHits: 50000
-    }
-  }).then(task => {
+  fetch(`${meiliUrl}/indexes/${INDEXES.DOCUMENTS}/settings`, {
+    method: 'PATCH', headers, body: JSON.stringify(documentSettings)
+  }).then(r => r.json()).then(task => {
     logger.info({ taskUid: task.taskUid }, 'Documents settings update enqueued');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Failed to enqueue documents settings update');
   });
-  logger.info('Documents updateSettings() call returned (fire-and-forget)');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Documents updateSettings() threw synchronously');
-  }
 
-  logger.info('Search indexes initialized');
+  logger.info('Search indexes initialized (settings updates queued)');
 }
 
 /**

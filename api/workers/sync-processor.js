@@ -622,14 +622,14 @@ async function workerLoop() {
     process.exit(1);
   }
 
-  // Initialize Meilisearch indexes once on startup
-  try {
-    logger.info('Initializing Meilisearch indexes...');
-    await initializeIndexes();
-    logger.info('Meilisearch indexes initialized');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to initialize Meilisearch indexes — will retry later');
-  }
+  // Initialize Meilisearch indexes in background (non-blocking)
+  // The meilisearch-js client can hang on updateSettings() when Meilisearch has
+  // a large task queue. Run in background so sync worker can start immediately.
+  initializeIndexes().then(() => {
+    logger.info('Meilisearch indexes initialized (background)');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Failed to initialize Meilisearch indexes (non-fatal)');
+  });
 
   // On startup: any job stuck in 'running' was abandoned mid-flight — requeue it
   logger.info('Checking for stuck sync jobs...');
