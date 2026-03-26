@@ -125,17 +125,16 @@ async function processSyncJob(job) {
       if (docs.length === 0) break;
       const doc = docs[0];
       const authority = getAuthority(doc);
-      // Submit the doc metadata once
+      // Submit the doc metadata (fire-and-forget — Meilisearch is eventually consistent)
       try {
         const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
-        const docTask = await documentsIndex.addDocuments([{
+        await documentsIndex.addDocuments([{
           id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
           collection: doc.collection, language: doc.language,
           year: doc.year ? parseInt(doc.year, 10) : null,
           description: doc.description, filename: doc.filename, authority,
           chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
         }]);
-        await waitForMeiliTask(meili, docTask);
       } catch (err) {
         logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document');
       }
@@ -169,15 +168,16 @@ async function processSyncJob(job) {
         if (wrongDimBatch > 0) {
           logger.warn({ wrongDimBatch, batchSize: meiliParas.length }, 'Wrong-dimension embeddings in batch (FTS-only)');
         }
-        // Submit paragraph batch to Meilisearch
+        // Submit paragraph batch to Meilisearch (fire-and-forget)
+        // Meilisearch is eventually consistent — no need to wait for task completion.
+        // Waiting blocks the worker for minutes when the Meilisearch queue is backed up.
         try {
-          const task = await paragraphsIndex.addDocuments(meiliParas);
-          await waitForMeiliTask(meili, task);
+          await paragraphsIndex.addDocuments(meiliParas);
         } catch (err) {
           logger.error({ err: err.message, docId: doc.id, batchSize: meiliParas.length }, 'Paragraph batch failed');
           failedItems += meiliParas.length;
         }
-        // Mark synced immediately after Meilisearch confirms
+        // Mark synced — data has been submitted to Meilisearch
         await content.markSynced(paraIds);
         completedItems += paraIds.length;
         docParasProcessed += paraIds.length;
