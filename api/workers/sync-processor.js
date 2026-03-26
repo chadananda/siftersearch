@@ -418,6 +418,14 @@ async function getNextPendingJob() {
  * Count unsynced paragraphs
  */
 async function countUnsyncedParagraphs() {
+  // Use counter table (trigger-maintained) to avoid blocking full table scan on 2.5M rows
+  try {
+    const row = await queryOne(`SELECT row_count as count FROM table_counts WHERE table_name = 'content_unsynced'`);
+    if (row) return row.count || 0;
+  } catch {
+    // Counter table may not exist yet
+  }
+  // Fallback to COUNT query
   const row = await queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`);
   return row?.count || 0;
 }
@@ -616,6 +624,7 @@ async function workerLoop() {
 
   // Initialize Meilisearch indexes once on startup
   try {
+    logger.info('Initializing Meilisearch indexes...');
     await initializeIndexes();
     logger.info('Meilisearch indexes initialized');
   } catch (err) {
@@ -623,6 +632,7 @@ async function workerLoop() {
   }
 
   // On startup: any job stuck in 'running' was abandoned mid-flight — requeue it
+  logger.info('Checking for stuck sync jobs...');
   const stuckJobs = await queryAll(`SELECT id FROM sync_jobs WHERE status = 'running'`);
   for (const j of stuckJobs) {
     logger.info({ jobId: j.id }, 'Found stuck running job on startup — requeueing');
