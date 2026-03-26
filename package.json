@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "0.1.962",
+  "version": "0.1.964",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {

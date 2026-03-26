@@ -40,6 +40,8 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 // In-memory cache for library stats (expensive aggregation queries on 2.5M+ rows)
 const statsCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s TTL — counts change slowly; sync job progress is fetched separately
+const SERVER_START_TIME = Date.now();
+const STARTUP_GRACE_MS = 15000; // Return empty stats during first 15s to avoid blocking health checks
 
 /**
  * Parse translation field from paragraph
@@ -175,9 +177,15 @@ export default async function libraryRoutes(fastify) {
     // Check if authenticated user is admin
     const isAdmin = request.user?.tier === 'admin';
 
+    // During startup grace period, return empty stats to avoid blocking the event loop
+    // with heavy COUNT queries while the prewarm cache is still populating
+    const now = Date.now();
+    if (!statsCache.data && (now - SERVER_START_TIME) < STARTUP_GRACE_MS) {
+      return { totalDocuments: 0, totalParagraphs: 0, religions: 0, collections: 0, languages: 0, religionCounts: {}, collectionCounts: {}, languageCounts: {}, indexing: false, ingestionQueue: { pending: 0, processing: 0 }, indexingProgress: null, translating: false, translationProgress: { pending: 0, processing: 0, completed: 0, totalProgress: 0, totalItems: 0 }, ingestionProgress: { totalDocs: 0, docsWithContent: 0, docsPending: 0, percentComplete: 0 }, pipelineStatus: { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 }, isAdmin };
+    }
+
     // Return cached stats if fresh (expensive queries on 2.5M+ rows)
     // Always fetch fresh sync job progress (tiny table, fast query)
-    const now = Date.now();
     if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
       let freshJob = null;
       try {
