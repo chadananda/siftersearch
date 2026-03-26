@@ -409,6 +409,14 @@ function levenshtein(a, b) {
 }
 
 /**
+ * Strip Arabic diacritics (tashkeel) for normalization.
+ * Range U+064B–U+065F covers fathah, dammah, kasrah, shadda, sukun, etc.
+ */
+function stripTashkeel(text) {
+  return text.replace(/[\u064B-\u065F\u0670]/g, '');
+}
+
+/**
  * Check if text contains a fuzzy match for a term
  * Allows typos based on Meilisearch rules: 1 typo for 5+ chars, 2 for 9+ chars
  * @param {string} text - Text to search in
@@ -416,20 +424,20 @@ function levenshtein(a, b) {
  * @returns {boolean} True if fuzzy match found
  */
 function textContainsFuzzy(text, term) {
-  const lowerText = text.toLowerCase();
-  const lowerTerm = term.toLowerCase();
+  const lowerText = stripTashkeel(text.toLowerCase());
+  const lowerTerm = stripTashkeel(term.toLowerCase());
 
   // Exact or prefix match (fast path)
-  const prefixRegex = new RegExp(`\\b${escapeRegex(lowerTerm)}`, 'i');
-  if (prefixRegex.test(lowerText)) return true;
+  // Use Unicode-aware word boundary for Arabic support
+  if (lowerText.includes(lowerTerm)) return true;
 
   // Fuzzy match: extract words and check Levenshtein distance
   // Meilisearch: 1 typo for 5-8 chars, 2 typos for 9+ chars
   const maxTypos = lowerTerm.length >= 9 ? 2 : (lowerTerm.length >= 5 ? 1 : 0);
   if (maxTypos === 0) return false; // No typo tolerance for short terms
 
-  // Extract words of similar length from text
-  const words = lowerText.match(/\b\w+\b/g) || [];
+  // Extract words using Unicode-aware pattern (supports Arabic, Latin, etc.)
+  const words = lowerText.match(/[\p{L}\p{N}]+/gu) || [];
   return words.some(word => {
     // Only compare words of similar length (within 2 chars)
     if (Math.abs(word.length - lowerTerm.length) > 2) return false;
@@ -457,8 +465,8 @@ function hasAllTermMatches(hit, terms) {
  * @returns {number} Score (0-100)
  */
 function calculatePhraseScore(text, query, terms) {
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
+  const lowerText = stripTashkeel(text.toLowerCase());
+  const lowerQuery = stripTashkeel(query.toLowerCase());
 
   // Exact phrase match (highest priority) - score 100
   if (lowerText.includes(lowerQuery)) {
@@ -470,9 +478,8 @@ function calculatePhraseScore(text, query, terms) {
   if (terms.length >= 2) {
     // Try to find all terms within a 100-char window
     const positions = terms.map(term => {
-      const regex = new RegExp(`\\b${escapeRegex(term)}`, 'gi');
-      const match = regex.exec(lowerText);
-      return match ? match.index : -1;
+      const idx = lowerText.indexOf(stripTashkeel(term));
+      return idx;
     }).filter(p => p >= 0);
 
     if (positions.length === terms.length) {
@@ -530,7 +537,8 @@ export async function keywordSearch(query, options = {}) {
   });
 
   // Extract query terms for filtering (min 2 chars, filter stop words)
-  const queryTerms = query.toLowerCase()
+  // Strip Arabic diacritics so terms match undiacritized indexed text
+  const queryTerms = stripTashkeel(query.toLowerCase())
     .split(/\s+/)
     .filter(t => t.length >= 2 && !STOP_WORDS.has(t));
 
