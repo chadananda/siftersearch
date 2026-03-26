@@ -39,6 +39,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
 const DAEMON_MODE = process.argv.includes('--daemon');
 const CHECK_INTERVAL = parseInt(process.env.UPDATE_INTERVAL) || 5 * 60 * 1000; // 5 minutes
+let lastReloadedCommitHash = null; // Track which commit we last reloaded for
 
 /**
  * Log with timestamp
@@ -101,10 +102,23 @@ async function repairDependencies() {
 
 /**
  * Check if PM2 is running code older than the latest git commit.
- * Compares the API process start time against the last commit timestamp.
- * This works even when the package.json version isn't bumped.
+ * Uses commit hash comparison (not timestamps) to avoid reload loops.
  */
 async function checkPm2NeedsReload() {
+  // Get current HEAD commit hash
+  const gitResult = await run('git rev-parse HEAD');
+  if (!gitResult.success) {
+    log('warn', 'Could not get git HEAD hash');
+    return { needsReload: false };
+  }
+  const currentHash = gitResult.stdout.trim();
+
+  // If we already reloaded for this exact commit, don't reload again
+  if (lastReloadedCommitHash === currentHash) {
+    return { needsReload: false };
+  }
+
+  // Check if PM2 API version matches package.json version
   const pm2Result = await run('pm2 jlist');
   if (!pm2Result.success) {
     log('warn', 'Could not check PM2 processes');
@@ -119,25 +133,16 @@ async function checkPm2NeedsReload() {
       return { needsReload: false };
     }
 
-    const apiStartTime = apiProcess.pm2_env?.pm_uptime;
-    if (!apiStartTime) {
-      log('warn', 'Could not determine API start time');
-      return { needsReload: false };
+    const pm2Version = apiProcess.pm2_env?.version;
+    const pkgVersion = getCurrentVersion();
+
+    if (pm2Version !== pkgVersion) {
+      log('info', `PM2 version ${pm2Version} != package.json ${pkgVersion}, needs reload`);
+      return { needsReload: true, commitHash: currentHash };
     }
 
-    // Get last commit timestamp (unix seconds)
-    const gitResult = await run('git log -1 --format=%ct');
-    if (!gitResult.success) {
-      log('warn', 'Could not get git commit time');
-      return { needsReload: false };
-    }
-
-    const lastCommitTime = parseInt(gitResult.stdout) * 1000; // to ms
-    if (lastCommitTime > apiStartTime) {
-      log('info', `API started at ${new Date(apiStartTime).toISOString()}, latest commit at ${new Date(lastCommitTime).toISOString()}`);
-      return { needsReload: true };
-    }
-
+    // Versions match — no reload needed. Remember this commit.
+    lastReloadedCommitHash = currentHash;
     return { needsReload: false };
   } catch (err) {
     log('warn', `Failed to check PM2 state: ${err.message}`);
@@ -175,7 +180,7 @@ async function checkForUpdates() {
     // (handles case where code was pulled but PM2 wasn't reloaded — e.g. updater self-restart)
     const pm2Check = await checkPm2NeedsReload();
     if (pm2Check.needsReload) {
-      return { hasUpdates: false, needsPm2Reload: true };
+      return { hasUpdates: false, needsPm2Reload: true, commitHash: pm2Check.commitHash };
     }
     return { hasUpdates: false };
   }
@@ -351,6 +356,8 @@ async function runOnce() {
     }
     const success = await reloadPm2Only();
     if (success) {
+      // Record commit hash so we don't reload again for the same commit
+      lastReloadedCommitHash = updateCheck.commitHash || null;
       log('info', '='.repeat(50));
       log('info', `PM2 reloaded to v${versionBefore}`);
       log('info', '='.repeat(50));

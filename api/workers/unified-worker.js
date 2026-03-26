@@ -18,7 +18,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili, initializeIndexes } from '../lib/search.js';
+import { getMeili } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -383,12 +383,9 @@ async function workerLoop() {
     logger.error({ err: err.message }, 'Migration failed — aborting');
     process.exit(1);
   }
-  // Initialize Meilisearch indexes (background, non-blocking)
-  initializeIndexes().then(() => {
-    logger.info('Meilisearch indexes initialized (background)');
-  }).catch(err => {
-    logger.warn({ err: err.message }, 'Failed to initialize Meilisearch indexes (non-fatal)');
-  });
+  // Skip initializeIndexes() — settings updates are idempotent but queue
+  // Meilisearch tasks on every restart, backing up the queue and blocking sync.
+  // The API runs initializeIndexes() on startup; the worker doesn't need to.
   // Recover stuck sync jobs
   const stuckSyncJobs = await queryAll(`SELECT id FROM sync_jobs WHERE status = 'running'`);
   for (const j of stuckSyncJobs) {
@@ -404,10 +401,11 @@ async function workerLoop() {
   } catch (err) {
     logger.error({ error: err.message }, 'Failed to recover stuck jobs');
   }
-  // Force periodic tasks on first loop
-  lastCleanupTime = 0;
-  lastFullSyncTime = 0;
-  lastJobCleanupTime = 0;
+  // Let periodic tasks run on their normal intervals (cleanup: 5min, full sync: 1hr)
+  // Don't force them on startup — they add load and delay the main sync loop
+  lastCleanupTime = Date.now();
+  lastFullSyncTime = Date.now();
+  lastJobCleanupTime = Date.now();
   logger.info('Unified worker ready');
   while (!isShuttingDown) {
     try {
