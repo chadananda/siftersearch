@@ -120,7 +120,10 @@ async function processSyncJob(job) {
     const documentsIndex = meili.index('documents');
     const paragraphsIndex = meili.index('paragraphs');
     while (!isShuttingDown) {
-      const docs = await content.getDocsWithDirtyParagraphs(100);
+      // Small batches to avoid OOM on swap-starved servers.
+      // 100 docs × 500 paragraphs × 12KB embeddings = 600MB — too much.
+      // 5 docs keeps memory under ~30MB per batch.
+      const docs = await content.getDocsWithDirtyParagraphs(5);
       if (docs.length === 0) break;
       const allMeiliDocs = [];
       const allMeiliParas = [];
