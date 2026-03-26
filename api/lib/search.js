@@ -245,7 +245,11 @@ export async function initializeIndexes() {
     }
   }
 
-  const paragraphsTask = await paragraphs.updateSettings({
+  // Fire-and-forget: meilisearch-js 0.54.0 returns EnqueuedTaskPromise which
+  // auto-waits for task completion when awaited. With hundreds of pending tasks
+  // in the queue, awaiting would hang indefinitely. Use .then() to get the task
+  // UID without blocking.
+  paragraphs.updateSettings({
     searchableAttributes: [
       'text',
       'context',  // AI-generated disambiguation (who, what, where, when)
@@ -284,15 +288,17 @@ export async function initializeIndexes() {
         dimensions: expectedDimensions
       }
     }
+  }).then(task => {
+    logger.debug({ taskUid: task.taskUid }, 'Paragraphs index settings update enqueued');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Failed to enqueue paragraphs settings update');
   });
-  // Don't wait for settings task - it's idempotent and will complete in background
-  // Waiting causes timeout issues when Meilisearch is busy processing documents
-  logger.debug({ taskUid: paragraphsTask.taskUid }, 'Paragraphs index settings update queued');
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
 
-  const documentsTask = await documents.updateSettings({
+  // Fire-and-forget — same pattern as paragraphs above
+  documents.updateSettings({
     searchableAttributes: [
       'title',
       'author',
@@ -318,9 +324,11 @@ export async function initializeIndexes() {
     pagination: {
       maxTotalHits: 50000
     }
+  }).then(task => {
+    logger.debug({ taskUid: task.taskUid }, 'Documents index settings update enqueued');
+  }).catch(err => {
+    logger.warn({ err: err.message }, 'Failed to enqueue documents settings update');
   });
-  // Don't wait for settings task - it's idempotent and will complete in background
-  logger.debug({ taskUid: documentsTask.taskUid }, 'Documents index settings update queued');
 
   logger.info('Search indexes initialized');
 }
