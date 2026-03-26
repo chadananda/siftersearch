@@ -1671,11 +1671,11 @@ Return ONLY the description text, no quotes or formatting.`;
       document = candidates.find(doc => {
         const docReligionSlug = slugifyPath(doc.religion || '');
         const docCollectionSlug = slugifyPath(doc.collection || '');
-        const docSlug = generateDocSlug(doc);
+        if (docReligionSlug !== religion || docCollectionSlug !== collection) return false;
 
-        return docReligionSlug === religion &&
-               docCollectionSlug === collection &&
-               docSlug === slug;
+        const docSlug = generateDocSlug(doc);
+        // Exact match or URL is the title+lang portion without author prefix
+        return docSlug === slug || docSlug.endsWith(`_${slug}`);
       });
     }
 
@@ -1700,12 +1700,14 @@ Return ONLY the description text, no quotes or formatting.`;
 
       // Try partial slug match: find docs where slug ends with requested slug
       // This handles cases where author prefix is missing from the URL
+      // Escape underscores in the slug for LIKE pattern (underscore = single-char wildcard)
+      const escapedSlug = slug.replace(/_/g, '\\_');
       const partialMatch = await queryOne(`
         SELECT id, title, author, religion, collection, language, year, description,
                paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
         FROM docs
-        WHERE slug LIKE ? AND slug != ?
-      `, [`%_${slug}`, slug]);
+        WHERE slug LIKE ? ESCAPE '\\' AND slug != ?
+      `, [`%\\_${escapedSlug}`, slug]);
 
       if (partialMatch) {
         const matchReligionSlug = slugifyPath(partialMatch.religion || '');

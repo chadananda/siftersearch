@@ -7,9 +7,10 @@
 
 import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
+import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 41;
+const CURRENT_VERSION = 42;
 const USER_DB_CURRENT_VERSION = 2;
 
 /**
@@ -1698,6 +1699,40 @@ const migrations = {
     await query(`CREATE INDEX IF NOT EXISTS idx_librarian_suggestions_status ON librarian_suggestions(status)`);
 
     logger.info('Migration 41 complete: librarian_suggestions table');
+  },
+
+  42: async () => {
+    logger.info('Starting migration 42: backfill empty doc slugs');
+
+    const docs = await queryAll(`
+      SELECT id, title, author, filename, language
+      FROM docs
+      WHERE (slug IS NULL OR slug = '') AND title IS NOT NULL
+    `);
+
+    let updated = 0;
+    const seen = new Set();
+    // Collect existing slugs to avoid collisions
+    const existing = await queryAll(`SELECT slug FROM docs WHERE slug IS NOT NULL AND slug != ''`);
+    for (const row of existing) seen.add(row.slug);
+
+    for (const doc of docs) {
+      let slug = generateDocSlug(doc);
+      if (!slug) continue;
+
+      // Ensure uniqueness
+      if (seen.has(slug)) {
+        let counter = 2;
+        while (seen.has(`${slug}-${counter}`)) counter++;
+        slug = `${slug}-${counter}`;
+      }
+
+      await query(`UPDATE docs SET slug = ? WHERE id = ?`, [slug, doc.id]);
+      seen.add(slug);
+      updated++;
+    }
+
+    logger.info({ total: docs.length, updated }, 'Migration 42 complete: backfilled doc slugs');
   },
 };
 
