@@ -1647,18 +1647,15 @@ const migrations = {
   },
 
   40: async () => {
-    logger.info('Starting migration 40: composite indexes for single-writer architecture');
+    logger.info('Starting migration 40: embedding counters + triggers for single-writer architecture');
 
-    // Partial index for unsynced content — covers the sync worker's primary query path
-    await query('CREATE INDEX IF NOT EXISTS idx_content_unsynced_partial ON content(synced, deleted_at) WHERE synced = 0 AND deleted_at IS NULL');
-
-    // Composite index for getUnembedded() — avoids full table scan on 2.5M rows
-    await query('CREATE INDEX IF NOT EXISTS idx_content_needs_embedding_v2 ON content(embedding, deleted_at, id) WHERE embedding IS NULL AND deleted_at IS NULL');
+    // NOTE: Index creation deferred — CREATE INDEX scans the full 17GB table,
+    // causing D-state hangs on swap-starved servers. Run manually when memory frees up:
+    //   CREATE INDEX IF NOT EXISTS idx_content_unsynced_partial ON content(synced, deleted_at) WHERE synced = 0 AND deleted_at IS NULL;
+    //   CREATE INDEX IF NOT EXISTS idx_content_needs_embedding_v2 ON content(embedding, deleted_at, id) WHERE embedding IS NULL AND deleted_at IS NULL;
 
     // Seed counter table with embedding-related counts (extends migration 39 pattern)
     // Use 0 as placeholder — triggers maintain correct counts from here on.
-    // Full reseed can be done later when memory pressure is lower via:
-    //   UPDATE table_counts SET row_count = (SELECT COUNT(*) ...) WHERE table_name = 'content_unembedded'
     await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_unembedded', 0)`);
     await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_oversized', 0)`);
 
