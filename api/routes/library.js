@@ -1659,13 +1659,15 @@ Return ONLY the description text, no quotes or formatting.`;
       }
     }
 
-    // Fall back to dynamic slug matching for legacy docs without stored slugs
+    // Fall back: regenerate slug from doc metadata and compare
+    // Handles old URLs without author prefix, dedup suffixes, etc.
     if (!document) {
+      const { baseSlug, language: slugLang } = parseDocSlug(slug);
       const candidates = await queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
                paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
         FROM docs
-        WHERE religion IS NOT NULL AND collection IS NOT NULL AND (slug IS NULL OR slug = '')
+        WHERE religion IS NOT NULL AND collection IS NOT NULL
       `);
 
       document = candidates.find(doc => {
@@ -1674,8 +1676,19 @@ Return ONLY the description text, no quotes or formatting.`;
         if (docReligionSlug !== religion || docCollectionSlug !== collection) return false;
 
         const docSlug = generateDocSlug(doc);
-        // Exact match or URL is the title+lang portion without author prefix
-        return docSlug === slug || docSlug.endsWith(`_${slug}`);
+        // Exact match
+        if (docSlug === slug) return true;
+        // URL is missing author prefix: docSlug ends with _<url-slug>
+        if (docSlug.endsWith(`_${slug}`)) return true;
+        // URL is missing author prefix and docSlug has dedup suffix (-2, -3, etc.)
+        // e.g., docSlug = "author_title_ar-2", url = "title_ar"
+        if (docSlug.replace(/-\d+$/, '').endsWith(`_${slug}`)) return true;
+        // URL matches the title+lang portion of the generated slug
+        const { baseSlug: docBase } = parseDocSlug(docSlug);
+        const titlePart = docBase.includes('_') ? docBase.split('_').slice(1).join('_') : docBase;
+        if (titlePart === baseSlug) return true;
+
+        return false;
       });
     }
 
