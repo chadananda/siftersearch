@@ -36,7 +36,7 @@ import { runMigrations } from '../lib/migrations.js';
 const BATCH_SIZE = 50;
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
 const YIELD_DELAY_MS = 10;        // Delay between batches within a doc
-const DOC_DELAY_MS = 200;         // Delay between documents — gives API breathing room for DB reads
+const DOC_DELAY_MS = 50;          // Delay between documents
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
@@ -168,24 +168,36 @@ async function syncDocument(docId) {
 
   try {
     const documentsIndex = meili.index('documents');
-    const docTask = await documentsIndex.addDocuments([meiliDoc]);
-    await waitForMeiliTask(meili, docTask);
-
     const paragraphsIndex = meili.index('paragraphs');
-    const confirmedIds = [];
 
+    // Submit document (don't wait for completion)
+    const docTask = await documentsIndex.addDocuments([meiliDoc]);
+
+    // Submit all paragraph batches without waiting — collect task UIDs for verification
+    const submittedBatches = []; // { taskUid, ids }
     for (let i = 0; i < meiliParagraphs.length; i += BATCH_SIZE) {
       const batch = meiliParagraphs.slice(i, i + BATCH_SIZE);
       const batchIds = batch.map(p => p.id);
       try {
         const task = await paragraphsIndex.addDocuments(batch);
-        await waitForMeiliTask(meili, task);
-        confirmedIds.push(...batchIds);
+        submittedBatches.push({ taskUid: task.taskUid, ids: batchIds });
       } catch (batchErr) {
         logger.error({ docId, batchStart: i, batchSize: batch.length, err: batchErr.message },
           'Meilisearch rejected paragraph batch — will retry next cycle');
       }
-      if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
+    }
+
+    // Wait for the doc task and all paragraph tasks to complete
+    await waitForMeiliTask(meili, docTask);
+    const confirmedIds = [];
+    for (const batch of submittedBatches) {
+      try {
+        await waitForMeiliTask(meili, batch.taskUid);
+        confirmedIds.push(...batch.ids);
+      } catch (err) {
+        logger.error({ docId, taskUid: batch.taskUid, err: err.message },
+          'Meilisearch paragraph task failed — will retry next cycle');
+      }
     }
 
     if (confirmedIds.length > 0) await content.markSynced(confirmedIds);
@@ -440,7 +452,7 @@ async function processJob(job) {
 
     while (!isShuttingDown) {
       // Get docs with dirty paragraphs in small batches — avoids starving the API of DB access
-      const docs = await content.getDocsWithDirtyParagraphs(10);
+      const docs = await content.getDocsWithDirtyParagraphs(100);
       if (docs.length === 0) break;
 
       for (const doc of docs) {
