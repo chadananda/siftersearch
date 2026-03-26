@@ -57,15 +57,20 @@ const start = async () => {
     await server.listen({ port, host });
 
     // Run database migrations AFTER listening so health checks work during migration.
-    // Migration 39 seeds counter table with COUNT queries (~15s on 2.5M rows) — one-time cost.
+    // In single-writer architecture, the unified worker is the authoritative migration runner.
+    // API tolerates SQLITE_BUSY — the worker will complete the migration.
     try {
       const migrationResult = await runMigrations();
       if (migrationResult.applied > 0) {
         logger.info(migrationResult, 'Database migrations applied');
       }
     } catch (err) {
-      logger.error({ err }, 'Database migration failed');
-      process.exit(1);
+      if (err.code === 'SQLITE_BUSY') {
+        logger.warn({ err: err.message }, 'Migration blocked by worker (SQLITE_BUSY) — worker will complete it');
+      } else {
+        logger.error({ err }, 'Database migration failed');
+        process.exit(1);
+      }
     }
 
     // Seed admin user if configured
