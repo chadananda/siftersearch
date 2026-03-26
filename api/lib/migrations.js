@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 40;
+const CURRENT_VERSION = 41;
 const USER_DB_CURRENT_VERSION = 2;
 
 /**
@@ -1677,6 +1677,27 @@ const migrations = {
     `);
 
     logger.info('Migration 40 complete: composite indexes + embedding counters (seeded with 0)');
+  },
+
+  41: async () => {
+    logger.info('Starting migration 41: librarian_suggestions table');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS librarian_suggestions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        data TEXT NOT NULL,
+        priority TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'pending',
+        admin_notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        reviewed_at TEXT
+      )
+    `);
+
+    await query(`CREATE INDEX IF NOT EXISTS idx_librarian_suggestions_status ON librarian_suggestions(status)`);
+
+    logger.info('Migration 41 complete: librarian_suggestions table');
   },
 };
 
