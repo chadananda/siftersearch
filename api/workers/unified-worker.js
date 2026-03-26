@@ -31,8 +31,7 @@ import { JOB_TYPES } from '../services/jobs.js';
 // ============================================================
 // Configuration
 // ============================================================
-const SYNC_BATCH_SIZE = 500;
-const MAX_BATCH_BYTES = 90 * 1024 * 1024;
+const PARA_BATCH_SIZE = 200;    // paragraphs per Meilisearch batch (200 × 12KB ≈ 2.4MB)
 const YIELD_DELAY_MS = 10;
 const DOC_DELAY_MS = 50;
 const IDLE_SLEEP_MS = 10000;
@@ -119,35 +118,42 @@ async function processSyncJob(job) {
     }
     const documentsIndex = meili.index('documents');
     const paragraphsIndex = meili.index('paragraphs');
+    // Process one doc at a time, paragraph batches of PARA_BATCH_SIZE.
+    // Large docs (10K+ paragraphs) would OOM if loaded all at once.
     while (!isShuttingDown) {
-      // Small batches to avoid OOM on swap-starved servers.
-      // 100 docs × 500 paragraphs × 12KB embeddings = 600MB — too much.
-      // 5 docs keeps memory under ~30MB per batch.
-      const docs = await content.getDocsWithDirtyParagraphs(5);
+      const docs = await content.getDocsWithDirtyParagraphs(1);
       if (docs.length === 0) break;
-      const allMeiliDocs = [];
-      const allMeiliParas = [];
-      const allParaIds = [];
-      let wrongDimTotal = 0;
-      for (const doc of docs) {
-        if (isShuttingDown) break;
-        const paragraphs = await content.getDirtyParagraphsForDoc(doc.id);
-        if (paragraphs.length === 0) continue;
-        const authority = getAuthority(doc);
-        allMeiliDocs.push({
+      const doc = docs[0];
+      const authority = getAuthority(doc);
+      // Submit the doc metadata once
+      try {
+        const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
+        const docTask = await documentsIndex.addDocuments([{
           id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
           collection: doc.collection, language: doc.language,
           year: doc.year ? parseInt(doc.year, 10) : null,
           description: doc.description, filename: doc.filename, authority,
-          chunk_count: paragraphs.length, created_at: new Date().toISOString()
-        });
+          chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
+        }]);
+        await waitForMeiliTask(meili, docTask);
+      } catch (err) {
+        logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document');
+      }
+      // Process paragraphs in small batches (200 paragraphs × 12KB ≈ 2.4MB per batch)
+      let docParasProcessed = 0;
+      while (!isShuttingDown) {
+        const paragraphs = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
+        if (paragraphs.length === 0) break;
+        const meiliParas = [];
+        const paraIds = [];
+        let wrongDimBatch = 0;
         for (const p of paragraphs) {
           let embedding = blobToFloatArray(p.embedding);
           if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
             embedding = null;
-            wrongDimTotal++;
+            wrongDimBatch++;
           }
-          allMeiliParas.push({
+          meiliParas.push({
             id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
             text: p.text, context: p.context || null,
             translation: p.translation || null, translation_segments: p.translation_segments || null,
@@ -158,47 +164,30 @@ async function processSyncJob(job) {
             created_at: new Date().toISOString(),
             _vectors: { default: embedding || null }
           });
-          allParaIds.push(p.id);
+          paraIds.push(p.id);
         }
-        docsProcessed++;
-      }
-      if (allMeiliParas.length === 0) break;
-      if (wrongDimTotal > 0) {
-        logger.warn({ wrongDimTotal, totalParas: allMeiliParas.length }, 'Paragraphs with wrong-dimension embeddings (FTS-only)');
-      }
-      // Submit to Meilisearch
-      const taskUids = [];
-      try {
-        const docTask = await documentsIndex.addDocuments(allMeiliDocs);
-        taskUids.push(docTask.taskUid);
-      } catch (err) {
-        logger.error({ err: err.message, count: allMeiliDocs.length }, 'Failed to submit document batch');
-      }
-      for (let i = 0; i < allMeiliParas.length; i += SYNC_BATCH_SIZE) {
-        const batch = allMeiliParas.slice(i, i + SYNC_BATCH_SIZE);
+        if (wrongDimBatch > 0) {
+          logger.warn({ wrongDimBatch, batchSize: meiliParas.length }, 'Wrong-dimension embeddings in batch (FTS-only)');
+        }
+        // Submit paragraph batch to Meilisearch
         try {
-          const task = await paragraphsIndex.addDocuments(batch);
-          taskUids.push(task.taskUid);
+          const task = await paragraphsIndex.addDocuments(meiliParas);
+          await waitForMeiliTask(meili, task);
         } catch (err) {
-          logger.error({ err: err.message, batchStart: i, batchSize: batch.length }, 'Failed to submit paragraph batch');
-          failedItems += batch.length;
+          logger.error({ err: err.message, docId: doc.id, batchSize: meiliParas.length }, 'Paragraph batch failed');
+          failedItems += meiliParas.length;
         }
+        // Mark synced immediately after Meilisearch confirms
+        await content.markSynced(paraIds);
+        completedItems += paraIds.length;
+        docParasProcessed += paraIds.length;
+        // Free memory before next batch
+        meiliParas.length = 0;
+        paraIds.length = 0;
+        await delay(YIELD_DELAY_MS);
       }
-      logger.info({ docs: allMeiliDocs.length, paragraphs: allMeiliParas.length, tasks: taskUids.length }, 'Submitted mega-batch to Meilisearch');
-      // Wait for all tasks
-      for (const uid of taskUids) {
-        try { await waitForMeiliTask(meili, uid); } catch (err) {
-          logger.error({ taskUid: uid, err: err.message }, 'Meilisearch task failed');
-        }
-      }
-      // Mark synced
-      if (allParaIds.length > 0) {
-        for (let i = 0; i < allParaIds.length; i += 500) {
-          await content.markSynced(allParaIds.slice(i, i + 500));
-        }
-        completedItems += allParaIds.length;
-      }
-      logger.info({ docsProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
+      docsProcessed++;
+      logger.info({ docId: doc.id, docTitle: doc.title, docParasProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
       await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
       await delay(DOC_DELAY_MS);
     }

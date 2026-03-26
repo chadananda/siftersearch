@@ -516,7 +516,7 @@ async function getDocsWithDirtyParagraphs(limit = 50) {
 /**
  * Get dirty paragraphs for a specific document.
  */
-async function getDirtyParagraphsForDoc(docId) {
+async function getDirtyParagraphsForDoc(docId, limit = 999999) {
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
            embedding, embedding_model, content_hash, normalized_hash,
@@ -524,7 +524,8 @@ async function getDirtyParagraphsForDoc(docId) {
     FROM content
     WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL
     ORDER BY paragraph_index
-  `, [docId]);
+    LIMIT ?
+  `, [docId, limit]);
 }
 
 /**
