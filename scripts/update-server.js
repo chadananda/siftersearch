@@ -253,34 +253,32 @@ async function applyUpdates() {
     log('info', 'Deploy hooks complete');
   }
 
-  // Reload PM2 processes individually (NOT ecosystem.config.cjs).
-  // Reloading the full ecosystem would restart the updater itself mid-execution,
-  // potentially leaving other processes un-reloaded.
+  // Delete + recreate PM2 processes from ecosystem config.
+  // pm2 reload/restart does NOT update max_memory_restart from the config,
+  // so stale limits persist and cause restart loops.
   const processesToReload = [
     'siftersearch-api',
     'siftersearch-worker',
   ];
 
-  log('info', `Reloading PM2 processes: ${processesToReload.join(', ')}...`);
+  log('info', `Recreating PM2 processes: ${processesToReload.join(', ')}...`);
   let reloadFailed = false;
   for (const proc of processesToReload) {
-    const result = await run(`pm2 reload ${proc} --update-env`);
+    // Delete the old process (ignore failure — may not exist yet)
+    await run(`pm2 delete ${proc}`);
+    // Recreate from ecosystem config to pick up current max_memory_restart
+    const result = await run(`pm2 start ecosystem.config.cjs --only ${proc}`);
     if (!result.success) {
-      log('warn', `Failed to reload ${proc}: ${result.error}`);
-      // Try restart as fallback
-      const restartResult = await run(`pm2 restart ${proc} --update-env`);
-      if (!restartResult.success) {
-        log('error', `Failed to restart ${proc}: ${restartResult.error}`);
-        reloadFailed = true;
-      }
+      log('error', `Failed to start ${proc}: ${result.error}`);
+      reloadFailed = true;
     }
   }
 
   if (reloadFailed) {
-    log('error', 'Some processes failed to reload');
+    log('error', 'Some processes failed to start');
     return false;
   }
-  log('info', 'All PM2 processes reloaded');
+  log('info', 'All PM2 processes recreated');
 
   return true;
 }
@@ -302,19 +300,19 @@ function getCurrentVersion() {
  * Reload PM2 only (no git pull needed)
  */
 async function reloadPm2Only() {
-  log('info', 'Reloading PM2 processes (code already up to date)...');
+  log('info', 'Recreating PM2 processes (code already up to date)...');
   const processesToReload = [
     'siftersearch-api',
     'siftersearch-worker',
   ];
   for (const proc of processesToReload) {
-    const result = await run(`pm2 reload ${proc} --update-env`);
+    await run(`pm2 delete ${proc}`);
+    const result = await run(`pm2 start ecosystem.config.cjs --only ${proc}`);
     if (!result.success) {
-      log('warn', `Failed to reload ${proc}, trying restart...`);
-      await run(`pm2 restart ${proc} --update-env`);
+      log('error', `Failed to start ${proc}: ${result.error}`);
     }
   }
-  log('info', 'All PM2 processes reloaded');
+  log('info', 'All PM2 processes recreated');
   return true;
 }
 
