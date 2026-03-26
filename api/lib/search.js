@@ -245,10 +245,9 @@ export async function initializeIndexes() {
     }
   }
 
-  // Fire-and-forget: meilisearch-js 0.54.0 returns EnqueuedTaskPromise which
-  // auto-waits for task completion when awaited. With hundreds of pending tasks
-  // in the queue, awaiting would hang indefinitely. Use .then() to get the task
-  // UID without blocking.
+  // Fire-and-forget settings updates — don't await, just enqueue
+  logger.info('Enqueuing paragraphs settings update...');
+  try {
   paragraphs.updateSettings({
     searchableAttributes: [
       'text',
@@ -289,15 +288,20 @@ export async function initializeIndexes() {
       }
     }
   }).then(task => {
-    logger.debug({ taskUid: task.taskUid }, 'Paragraphs index settings update enqueued');
+    logger.info({ taskUid: task.taskUid }, 'Paragraphs settings update enqueued');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Failed to enqueue paragraphs settings update');
   });
+  logger.info('Paragraphs updateSettings() call returned (fire-and-forget)');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Paragraphs updateSettings() threw synchronously');
+  }
 
   // Documents index (for document-level search)
   const documents = meili.index(INDEXES.DOCUMENTS);
 
-  // Fire-and-forget — same pattern as paragraphs above
+  logger.info('Enqueuing documents settings update...');
+  try {
   documents.updateSettings({
     searchableAttributes: [
       'title',
@@ -325,10 +329,14 @@ export async function initializeIndexes() {
       maxTotalHits: 50000
     }
   }).then(task => {
-    logger.debug({ taskUid: task.taskUid }, 'Documents index settings update enqueued');
+    logger.info({ taskUid: task.taskUid }, 'Documents settings update enqueued');
   }).catch(err => {
     logger.warn({ err: err.message }, 'Failed to enqueue documents settings update');
   });
+  logger.info('Documents updateSettings() call returned (fire-and-forget)');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Documents updateSettings() threw synchronously');
+  }
 
   logger.info('Search indexes initialized');
 }
