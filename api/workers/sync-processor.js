@@ -160,11 +160,15 @@ async function syncDocument(docId) {
       blocktype: p.blocktype || 'paragraph',
       created_at: new Date().toISOString()
     };
-    record._vectors = { default: embedding };
+    // Only include _vectors when embedding exists — Meilisearch rejects
+    // documents with null vectors when embedder source is userProvided
+    if (embedding) {
+      record._vectors = { default: embedding };
+    }
     return record;
   });
 
-  const wrongDimCount = meiliParagraphs.filter(p => p._vectors.default === null && paragraphs.find(pp => pp.id === p.id)?.embedding).length;
+  const wrongDimCount = meiliParagraphs.filter(p => !p._vectors && paragraphs.find(pp => pp.id === p.id)?.embedding).length;
   if (wrongDimCount > 0) {
     logger.warn({ docId, wrongDimCount, total: paragraphs.length }, 'Paragraphs with wrong-dimension embeddings (FTS-only)');
   }
@@ -499,7 +503,8 @@ async function processJob(job) {
             heading: p.heading || '',
             blocktype: p.blocktype || 'paragraph',
             created_at: new Date().toISOString(),
-            _vectors: { default: embedding }
+            // Only include _vectors when embedding exists — Meilisearch rejects null vectors
+            ...(embedding ? { _vectors: { default: embedding } } : {})
           });
           allParaIds.push(p.id);
         }
