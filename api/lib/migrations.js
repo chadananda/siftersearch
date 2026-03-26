@@ -9,7 +9,7 @@ import { query, queryOne, queryAll, userQuery, userQueryOne } from './db.js';
 import { logger } from './logger.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 39;
+const CURRENT_VERSION = 40;
 const USER_DB_CURRENT_VERSION = 2;
 
 /**
@@ -1644,6 +1644,45 @@ const migrations = {
       unsynced: unsyncedCount?.c,
       docsWithContent: docsWithContentCount?.c
     }, 'Migration 39 complete: table_counts seeded with triggers');
+  },
+
+  40: async () => {
+    logger.info('Starting migration 40: composite indexes for single-writer architecture');
+
+    // Partial index for unsynced content — covers the sync worker's primary query path
+    await query('CREATE INDEX IF NOT EXISTS idx_content_unsynced_partial ON content(synced, deleted_at) WHERE synced = 0 AND deleted_at IS NULL');
+
+    // Composite index for getUnembedded() — avoids full table scan on 2.5M rows
+    await query('CREATE INDEX IF NOT EXISTS idx_content_needs_embedding_v2 ON content(embedding, deleted_at, id) WHERE embedding IS NULL AND deleted_at IS NULL');
+
+    // Seed counter table with embedding-related counts (extends migration 39 pattern)
+    const unembeddedCount = await queryOne(`SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND text IS NOT NULL AND text != '' AND LENGTH(text) <= 6000`);
+    const oversizedCount = await queryOne(`SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > 6000`);
+
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_unembedded', ?)`, [unembeddedCount?.c || 0]);
+    await query(`INSERT OR REPLACE INTO table_counts (table_name, row_count) VALUES ('content_oversized', ?)`, [oversizedCount?.c || 0]);
+
+    // Triggers for embedding counter: decrement when embedding is set, increment when cleared
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_embedding_set AFTER UPDATE OF embedding ON content
+      WHEN OLD.embedding IS NULL AND NEW.embedding IS NOT NULL AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = MAX(0, row_count - 1) WHERE table_name = 'content_unembedded';
+      END
+    `);
+
+    await query(`
+      CREATE TRIGGER IF NOT EXISTS trg_content_embedding_clear AFTER UPDATE OF embedding ON content
+      WHEN OLD.embedding IS NOT NULL AND NEW.embedding IS NULL AND NEW.deleted_at IS NULL
+      BEGIN
+        UPDATE table_counts SET row_count = row_count + 1 WHERE table_name = 'content_unembedded';
+      END
+    `);
+
+    logger.info({
+      unembedded: unembeddedCount?.c,
+      oversized: oversizedCount?.c
+    }, 'Migration 40 complete: composite indexes + embedding counters');
   },
 };
 

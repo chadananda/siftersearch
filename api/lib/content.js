@@ -442,44 +442,57 @@ async function clearWrongDimensionEmbeddings() {
 /**
  * Propagate existing embeddings to rows with matching normalized_hash.
  * Avoids expensive re-generation for duplicate content across documents.
- * Includes soft-deleted content as sources (embeddings are expensive to regenerate).
+ * Batched in chunks of 1000 to avoid holding the write lock for seconds.
  */
 async function propagateEmbeddings() {
   const ts = now();
-  const result = await query(`
-    UPDATE content
-    SET embedding = (
-      SELECT c2.embedding FROM content c2
-      WHERE c2.normalized_hash = content.normalized_hash
-        AND c2.embedding IS NOT NULL
-        AND LENGTH(c2.embedding) = ?
-      LIMIT 1
-    ),
-    embedding_model = (
-      SELECT c2.embedding_model FROM content c2
-      WHERE c2.normalized_hash = content.normalized_hash
-        AND c2.embedding IS NOT NULL
-        AND LENGTH(c2.embedding) = ?
-      LIMIT 1
-    ),
-    synced = 0,
-    updated_at = ?
-    WHERE embedding IS NULL
-      AND deleted_at IS NULL
-      AND normalized_hash IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM content c2
-        WHERE c2.normalized_hash = content.normalized_hash
-          AND c2.embedding IS NOT NULL
-          AND LENGTH(c2.embedding) = ?
-      )
-  `, [EXPECTED_EMBEDDING_BYTES, EXPECTED_EMBEDDING_BYTES, ts, EXPECTED_EMBEDDING_BYTES]);
-
-  const propagated = result.rowsAffected || 0;
-  if (propagated > 0) {
-    logger.info({ propagated }, 'Propagated existing embeddings to matching content');
+  const BATCH = 1000;
+  let totalPropagated = 0;
+  while (true) {
+    // Find a batch of rows that need propagation
+    const candidates = await queryAll(`
+      SELECT c1.id, c1.normalized_hash
+      FROM content c1
+      WHERE c1.embedding IS NULL
+        AND c1.deleted_at IS NULL
+        AND c1.normalized_hash IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM content c2
+          WHERE c2.normalized_hash = c1.normalized_hash
+            AND c2.embedding IS NOT NULL
+            AND LENGTH(c2.embedding) = ?
+        )
+      LIMIT ?
+    `, [EXPECTED_EMBEDDING_BYTES, BATCH]);
+    if (candidates.length === 0) break;
+    // Build batch update using transaction
+    const statements = [];
+    for (const row of candidates) {
+      statements.push({
+        sql: `UPDATE content
+          SET embedding = (
+            SELECT c2.embedding FROM content c2
+            WHERE c2.normalized_hash = ? AND c2.embedding IS NOT NULL AND LENGTH(c2.embedding) = ?
+            LIMIT 1
+          ),
+          embedding_model = (
+            SELECT c2.embedding_model FROM content c2
+            WHERE c2.normalized_hash = ? AND c2.embedding IS NOT NULL AND LENGTH(c2.embedding) = ?
+            LIMIT 1
+          ),
+          synced = 0, updated_at = ?
+          WHERE id = ?`,
+        args: [row.normalized_hash, EXPECTED_EMBEDDING_BYTES, row.normalized_hash, EXPECTED_EMBEDDING_BYTES, ts, row.id]
+      });
+    }
+    await transaction(statements);
+    totalPropagated += candidates.length;
+    if (candidates.length < BATCH) break;
   }
-  return { propagated };
+  if (totalPropagated > 0) {
+    logger.info({ propagated: totalPropagated }, 'Propagated existing embeddings to matching content');
+  }
+  return { propagated: totalPropagated };
 }
 
 // ============================================================
@@ -538,10 +551,13 @@ async function markSynced(ids) {
 
 /**
  * Get paragraphs that need embedding generation.
- * Groups by normalized_hash to avoid generating duplicates.
+ * Uses indexed lookup + pagination instead of GROUP BY full-table scan.
+ * Deduplicates by normalized_hash in-memory (much cheaper than SQL GROUP BY on 2.5M rows).
  */
 async function getUnembedded(limit = 50, maxChars = 6000) {
-  return queryAll(`
+  // Fetch more than needed since we deduplicate in-memory
+  const fetchLimit = limit * 3;
+  const rows = await queryAll(`
     SELECT id, text, normalized_hash
     FROM content
     WHERE embedding IS NULL
@@ -549,15 +565,32 @@ async function getUnembedded(limit = 50, maxChars = 6000) {
       AND text IS NOT NULL
       AND text != ''
       AND LENGTH(text) <= ?
-    GROUP BY IFNULL(normalized_hash, CAST(id AS TEXT))
+    ORDER BY id
     LIMIT ?
-  `, [maxChars, limit]);
+  `, [maxChars, fetchLimit]);
+  // Deduplicate by normalized_hash — keep first occurrence per hash
+  const seen = new Set();
+  const result = [];
+  for (const row of rows) {
+    const key = row.normalized_hash || `id:${row.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(row);
+      if (result.length >= limit) break;
+    }
+  }
+  return result;
 }
 
 /**
  * Count paragraphs needing embeddings.
+ * Uses counter table (trigger-maintained) when available, falls back to COUNT query.
  */
 async function getUnembeddedCount(maxChars = 6000) {
+  try {
+    const row = await queryOne(`SELECT row_count as total FROM table_counts WHERE table_name = 'content_unembedded'`);
+    if (row) return { total: row.total, unique_hashes: null };
+  } catch { /* counter table may not exist */ }
   return queryOne(`
     SELECT
       COUNT(*) as total,
@@ -571,8 +604,13 @@ async function getUnembeddedCount(maxChars = 6000) {
 
 /**
  * Count oversized paragraphs (skipped by embedding worker).
+ * Uses counter table when available.
  */
 async function getOversizedCount(maxChars = 6000) {
+  try {
+    const row = await queryOne(`SELECT row_count as total FROM table_counts WHERE table_name = 'content_oversized'`);
+    if (row) return { total: row.total, unique_hashes: null };
+  } catch { /* counter table may not exist */ }
   return queryOne(`
     SELECT
       COUNT(*) as total,

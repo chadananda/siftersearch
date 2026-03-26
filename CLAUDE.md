@@ -74,9 +74,9 @@ pm2 list
 ```
 
 **PM2 Process Names:**
-- `siftersearch-api` - Main API server
-- `siftersearch-jobs` - Background job workers
-- `siftersearch-watchdog` - Health monitoring
+- `siftersearch-api` - Main API server (read-only DB access)
+- `siftersearch-worker` - Unified worker (single writer: sync + jobs + indexing)
 - `siftersearch-updater` - Auto-update service
+- `cloudflared-tunnel` - Cloudflare tunnel
 
 **Database:** `~/sifter/siftersearch/data/sifter.db`

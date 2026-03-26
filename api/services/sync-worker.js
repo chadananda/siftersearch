@@ -1,7 +1,7 @@
 /**
  * Content Sync Worker — API Facade
  *
- * The actual sync worker is now a standalone PM2 process: api/workers/sync-processor.js
+ * The actual sync worker is now the unified PM2 process: api/workers/unified-worker.js
  * This module exists only to provide the API surface that admin.js depends on.
  *
  * getSyncStats()     — reads current progress from sync_jobs table
@@ -43,7 +43,7 @@ export async function getSyncStats() {
         failedItems: 0,
         lastRun: null,
         lastSuccess: null,
-        note: 'Sync worker is a standalone process (siftersearch-sync)'
+        note: 'Sync worker is a standalone process (siftersearch-worker)'
       };
     }
     return {
@@ -59,7 +59,7 @@ export async function getSyncStats() {
       startedAt: lastJob.started_at,
       completedAt: lastJob.completed_at,
       error: lastJob.error || null,
-      note: 'Sync worker is a standalone process (siftersearch-sync)'
+      note: 'Sync worker is a standalone process (siftersearch-worker)'
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to read sync stats from sync_jobs');
@@ -97,15 +97,15 @@ export async function getUnsyncedCount() {
 }
 
 /**
- * No-op — sync worker is now the standalone siftersearch-sync PM2 process
+ * No-op — sync worker is now the standalone siftersearch-worker PM2 process
  */
 export function startSyncWorker() {
-  logger.info('startSyncWorker() called — sync worker is now a standalone process (siftersearch-sync), no action taken');
+  logger.info('startSyncWorker() called — sync worker is now a standalone process (siftersearch-worker), no action taken');
 }
 
 /**
- * No-op — sync worker is now the standalone siftersearch-sync PM2 process
+ * No-op — sync worker is now the standalone siftersearch-worker PM2 process
  */
 export function stopSyncWorker() {
-  logger.info('stopSyncWorker() called — sync worker is now a standalone process (siftersearch-sync), no action taken');
+  logger.info('stopSyncWorker() called — sync worker is now a standalone process (siftersearch-worker), no action taken');
 }
