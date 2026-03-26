@@ -88,15 +88,16 @@ const start = async () => {
       logger.warn({ err }, 'Failed to restore AI processing state');
     }
 
-    // Pre-warm stats cache — runs the slow COUNT queries once at startup so the
-    // first client request doesn't block the event loop and trigger watchdog restarts
-    try {
-      const startMs = Date.now();
-      const counts = await getCachedContentCounts();
-      logger.info({ docs: counts.totalDocs, paragraphs: counts.totalParagraphs, elapsedMs: Date.now() - startMs }, 'Stats cache pre-warmed');
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Failed to pre-warm stats cache');
-    }
+    // Pre-warm stats cache in background — don't block startup or health checks
+    setTimeout(async () => {
+      try {
+        const startMs = Date.now();
+        const counts = await getCachedContentCounts();
+        logger.info({ docs: counts.totalDocs, paragraphs: counts.totalParagraphs, elapsedMs: Date.now() - startMs }, 'Stats cache pre-warmed');
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Failed to pre-warm stats cache');
+      }
+    }, 1000);
 
     // Start background content sync worker (keeps Content Table → Meilisearch in sync)
     // Only if Meilisearch is enabled

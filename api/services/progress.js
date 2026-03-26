@@ -28,6 +28,9 @@ let importJob = null;
 
 // Cache for expensive DB count queries (shared across getIngestionProgress + getIndexingProgress)
 const countCache = { data: null, timestamp: 0, ttl: 120000 }; // 120s
+let countCacheRefreshing = false; // prevent concurrent refresh
+
+const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0 };
 
 export async function getCachedContentCounts() {
   return getCachedCounts();
@@ -39,23 +42,32 @@ async function getCachedCounts() {
     return countCache.data;
   }
 
-  const [totalDocs, docsWithContent, totalParagraphs, unsyncedParagraphs] = await Promise.all([
-    queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-    queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL'),
-    queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-    queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL')
-  ]);
+  // If another request is already refreshing, return stale data or zeros
+  if (countCacheRefreshing) {
+    return countCache.data || EMPTY_COUNTS;
+  }
 
-  const result = {
-    totalDocs: totalDocs?.count || 0,
-    docsWithContent: docsWithContent?.count || 0,
-    totalParagraphs: totalParagraphs?.count || 0,
-    unsyncedParagraphs: unsyncedParagraphs?.count || 0
-  };
+  countCacheRefreshing = true;
+  try {
+    // Run heavy COUNT queries sequentially to avoid blocking event loop with parallel I/O
+    const totalDocs = await queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL');
+    const totalParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL');
+    const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
+    const docsWithContent = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
 
-  countCache.data = result;
-  countCache.timestamp = now;
-  return result;
+    const result = {
+      totalDocs: totalDocs?.count || 0,
+      docsWithContent: docsWithContent?.count || 0,
+      totalParagraphs: totalParagraphs?.count || 0,
+      unsyncedParagraphs: unsyncedParagraphs?.count || 0
+    };
+
+    countCache.data = result;
+    countCache.timestamp = Date.now();
+    return result;
+  } finally {
+    countCacheRefreshing = false;
+  }
 }
 
 /**
