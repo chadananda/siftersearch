@@ -123,12 +123,11 @@ async function refreshPipelineCache() {
 
 export default async function libraryRoutes(fastify) {
 
-  // Start background pipeline cache refresh (first run after 30s, then every 5 min)
-  setTimeout(refreshPipelineCache, 30000);
-  pipelineRefreshTimer = setInterval(refreshPipelineCache, pipelineCache.ttl);
-  fastify.addHook('onClose', () => {
-    if (pipelineRefreshTimer) clearInterval(pipelineRefreshTimer);
-  });
+  // Pipeline cache refresh disabled — the 3 COUNT queries on 2.5M rows block the
+  // event loop for 6-9s total, causing health check timeouts. Pipeline status will
+  // show zeros until these counts are added to the counter table (trigger-maintained).
+  // TODO: Add content_unembedded and content_oversized to table_counts via migration 40
+  logger.info('Pipeline cache refresh disabled (blocks event loop), needs counter table');
 
   // ============================================
   // Public Routes

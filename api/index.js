@@ -100,13 +100,10 @@ const start = async () => {
         logger.warn({ err }, 'Failed to start sync worker');
       }
 
-      // Start embedding worker (generates embeddings for content missing them)
-      try {
-        startEmbeddingWorker();
-        logger.info('Embedding worker started');
-      } catch (err) {
-        logger.warn({ err }, 'Failed to start embedding worker');
-      }
+      // Embedding worker disabled in API — its getUnembedded() query scans 2.5M rows
+      // every 5 seconds, blocking the event loop and causing health check timeouts.
+      // TODO: Move to standalone PM2 process like library-watcher
+      logger.info('Embedding worker disabled in API (blocks event loop), needs standalone process');
 
       // Pre-warm search cache with popular queries (background, non-blocking)
       // Delayed by 5s to let Meilisearch finish any pending tasks first
