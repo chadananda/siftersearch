@@ -615,8 +615,10 @@ async function workerLoop() {
 
   // Run migrations so the sync_jobs table exists
   try {
+    logger.info('Running migrations...');
+    const migStart = Date.now();
     const result = await runMigrations();
-    if (result.applied > 0) logger.info(result, 'Migrations applied');
+    logger.info({ elapsedMs: Date.now() - migStart, applied: result.applied }, 'Migrations complete');
   } catch (err) {
     logger.error({ err: err.message }, 'Migration failed — aborting');
     process.exit(1);
