@@ -103,7 +103,7 @@ export const getBatchDb = getDb;
 // Slow Query Logging
 // ============================================
 
-const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '100', 10);
+const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '15', 10);
 
 function logQueryTiming(sql, params, startTime, dbName) {
   const duration = Date.now() - startTime;
