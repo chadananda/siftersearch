@@ -239,7 +239,11 @@ export async function seedAdminUser() {
   const existing = await queryOne('SELECT id, tier, email_verified FROM users WHERE email = ?', [adminEmail.toLowerCase()]);
 
   if (existing) {
-    // Always sync password hash, tier, and email_verified from env credentials
+    // Skip expensive bcrypt hash + cloud DB update if admin is already correctly configured
+    if (existing.tier === 'admin' && existing.email_verified === 1) {
+      return { id: existing.id, email: adminEmail, action: 'verified' };
+    }
+    // Only update if tier or verification changed
     const passwordHash = await hashPassword(adminPass);
     await query(
       'UPDATE users SET password_hash = ?, tier = ?, email_verified = 1 WHERE id = ?',

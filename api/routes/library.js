@@ -41,6 +41,9 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // In-memory cache for library stats
 // Counter table makes main counts instant; pipeline status queries still need caching
 const statsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s TTL
+// Separate cache for pipeline status (heavy COUNT queries on content table)
+// Longer TTL since embedding/sync status changes slowly
+const pipelineCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 min TTL
 
 /**
  * Parse translation field from paragraph
@@ -289,26 +292,32 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
-    // Get pipeline status - paragraphs needing embeddings and pending sync
-    // Skip content > 6000 chars (must be re-segmented, not truncated)
+    // Pipeline status — heavy COUNT queries on content table, use separate long cache
     const MAX_CHARS = 6000;
-    let pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
-    try {
-      // Sync count comes from counter table (instant); embedding counts still need queries
-      const [embeddingCount, uniqueEmbeddingCount, oversizedCount] = await Promise.all([
-        queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]),
-        queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS])
-      ]);
-      pipelineStatus = {
-        ingestionQueuePending: indexingStats.pending + indexingStats.processing,
-        paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-        uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
-        paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-        oversizedSkipped: oversizedCount?.count || 0
-      };
-    } catch {
-      // Columns may not exist yet
+    let pipelineStatus;
+    const pipelineNow = Date.now();
+    if (pipelineCache.data && (pipelineNow - pipelineCache.timestamp) < pipelineCache.ttl) {
+      // Use cached pipeline data, update sync count from instant counter
+      pipelineStatus = { ...pipelineCache.data, paragraphsPendingSync: cachedCounts.unsyncedParagraphs };
+    } else {
+      pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
+      try {
+        // These COUNT queries scan the 2.5M row content table — run sequentially to limit blocking
+        const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
+        const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
+        const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS]);
+        pipelineStatus = {
+          ingestionQueuePending: indexingStats.pending + indexingStats.processing,
+          paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+          uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
+          paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
+          oversizedSkipped: oversizedCount?.count || 0
+        };
+        pipelineCache.data = pipelineStatus;
+        pipelineCache.timestamp = Date.now();
+      } catch {
+        // Columns may not exist yet
+      }
     }
 
     // Calculate ingestion progress
