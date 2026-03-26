@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { initAuth, logout, getAuthState } from '../../lib/auth.svelte.js';
   import { performUpdate, getPWAState } from '../../lib/pwa.svelte.js';
+  import { getConnectionStatus, onConnectionStatusChange } from '../../lib/api.js';
   import TierBadge from '../TierBadge.svelte';
   import AuthModal from '../AuthModal.svelte';
   // Props
@@ -19,6 +20,10 @@
   onMount(() => {
     initAuth();
   });
+
+  // Connection status
+  let connectionStatus = $state(getConnectionStatus());
+  $effect(() => onConnectionStatusChange(s => { connectionStatus = s; }));
 
   // Local state
   let showAuthModal = $state(false);
@@ -313,6 +318,12 @@
     </div>
   </div>
 </header>
+
+{#if connectionStatus === 'reconnecting' || connectionStatus === 'offline'}
+  <div class="connection-banner" class:reconnecting={connectionStatus === 'reconnecting'} class:offline={connectionStatus === 'offline'}>
+    {connectionStatus === 'reconnecting' ? 'Reconnecting to server...' : 'Server unavailable'}
+  </div>
+{/if}
 
 <style>
   .navbar {
@@ -822,5 +833,23 @@
   .signout-item:hover {
     color: var(--error);
     background: color-mix(in srgb, var(--error) 10%, transparent);
+  }
+
+  .connection-banner {
+    position: sticky;
+    top: 57px;
+    z-index: 99;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.3rem 1rem;
+    color: var(--surface-solid);
+  }
+  .connection-banner.reconnecting {
+    background: var(--warning);
+    animation: pulse 2s infinite;
+  }
+  .connection-banner.offline {
+    background: var(--error);
   }
 </style>

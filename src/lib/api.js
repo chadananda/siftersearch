@@ -91,6 +91,21 @@ export function getAccessToken() {
 // eslint-disable-next-line no-undef
 const CLIENT_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null;
 
+// Connection status
+let _connectionStatus = 'connected';
+const _statusListeners = new Set();
+export function getConnectionStatus() { return _connectionStatus; }
+export function onConnectionStatusChange(fn) {
+  _statusListeners.add(fn);
+  return () => _statusListeners.delete(fn);
+}
+function setConnectionStatus(status) {
+  if (_connectionStatus !== status) {
+    _connectionStatus = status;
+    _statusListeners.forEach(fn => fn(status));
+  }
+}
+
 /**
  * Authenticated fetch wrapper - adds JWT headers to any fetch request
  * Use this instead of raw fetch() for any authenticated API calls
@@ -127,54 +142,54 @@ export async function authenticatedFetch(url, options = {}) {
   });
 }
 
-/**
- * Make an API request
- */
 async function request(path, options = {}) {
   const url = `${API_URL}${path}`;
+  const method = (options.method || 'GET').toUpperCase();
+  const isRetryable = method === 'GET' || path.startsWith('/api/search');
+  const maxRetries = isRetryable ? 3 : 0;
 
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers
   };
 
-  // Always send user ID for anonymous user tracking
   const uid = getUserId();
-  if (uid) {
-    headers['X-User-ID'] = uid;
-  }
+  if (uid) headers['X-User-ID'] = uid;
+  if (CLIENT_VERSION) headers['X-Client-Version'] = CLIENT_VERSION;
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
 
-  // Always send client version for auto-update detection
-  if (CLIENT_VERSION) {
-    headers['X-Client-Version'] = CLIENT_VERSION;
-  }
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, { ...options, headers, credentials: 'include' });
 
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
+      if (response.status === 401 && accessToken) {
+        const refreshed = await refreshToken();
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+          const retryResponse = await fetch(url, { ...options, headers, credentials: 'include' });
+          setConnectionStatus('connected');
+          return handleResponse(retryResponse);
+        }
+      }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include' // For refresh token cookie
-  });
+      if (response.status >= 500 && attempt < maxRetries) {
+        setConnectionStatus('reconnecting');
+        await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
 
-  // Handle token refresh on 401
-  if (response.status === 401 && accessToken) {
-    const refreshed = await refreshToken();
-    if (refreshed) {
-      // Retry with new token
-      headers['Authorization'] = `Bearer ${accessToken}`;
-      const retryResponse = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include'
-      });
-      return handleResponse(retryResponse);
+      setConnectionStatus('connected');
+      return handleResponse(response);
+    } catch (err) {
+      if (attempt < maxRetries) {
+        setConnectionStatus('reconnecting');
+        await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+      setConnectionStatus('offline');
+      throw err;
     }
   }
-
-  return handleResponse(response);
 }
 
 async function handleResponse(response) {

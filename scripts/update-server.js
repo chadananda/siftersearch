@@ -21,11 +21,12 @@
  *   (Replace STAR with asterisk)
  */
 
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 
 const execAsync = promisify(exec);
 
@@ -39,6 +40,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose') || process.argv.includes('-v');
 const DAEMON_MODE = process.argv.includes('--daemon');
 const CHECK_INTERVAL = parseInt(process.env.UPDATE_INTERVAL) || 5 * 60 * 1000; // 5 minutes
+const API_PORT = parseInt(process.env.API_PORT) || 7839;
 let lastReloadedCommitHash = null; // Track which commit we last reloaded for
 
 /**
@@ -192,8 +194,96 @@ async function checkForUpdates() {
   return { hasUpdates: true, commits };
 }
 
+const HEALTH_CHECK_PORT = 7899; // Temp port for pre-deploy health check
+const HEALTH_CHECK_RETRIES = 5;
+const HEALTH_CHECK_INTERVAL = 2000; // 2s between retries
+
 /**
- * Apply updates
+ * Hit a health endpoint and return true if it responds 200
+ */
+function httpGet(url, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    const req = http.get(url, { timeout: timeoutMs }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => resolve({ ok: res.statusCode === 200, status: res.statusCode, body }));
+    });
+    req.on('error', () => resolve({ ok: false }));
+    req.on('timeout', () => { req.destroy(); resolve({ ok: false }); });
+  });
+}
+
+/**
+ * Start a test API instance, health check it, return success/failure.
+ * Kills the test instance before returning either way.
+ */
+async function verifyNewCode() {
+  log('info', `Starting test API on port ${HEALTH_CHECK_PORT}...`);
+
+  const child = spawn('node', ['api/index.js'], {
+    cwd: PROJECT_ROOT,
+    env: { ...process.env, API_PORT: String(HEALTH_CHECK_PORT), NODE_ENV: 'production' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false
+  });
+
+  let testOutput = '';
+  child.stdout.on('data', d => testOutput += d.toString());
+  child.stderr.on('data', d => testOutput += d.toString());
+
+  // Wait for the process to either exit early (crash) or pass health check
+  const earlyExit = new Promise(resolve => {
+    child.on('exit', (code) => resolve({ crashed: true, code }));
+  });
+
+  for (let i = 0; i < HEALTH_CHECK_RETRIES; i++) {
+    await new Promise(r => setTimeout(r, HEALTH_CHECK_INTERVAL));
+
+    // Check if process crashed during startup
+    const raceResult = await Promise.race([
+      earlyExit,
+      httpGet(`http://127.0.0.1:${HEALTH_CHECK_PORT}/api/search/health`)
+    ]);
+
+    if (raceResult.crashed) {
+      log('error', `Test API crashed during startup (exit code ${raceResult.code})`);
+      log('error', `Test output: ${testOutput.slice(-500)}`);
+      return false;
+    }
+
+    if (raceResult.ok) {
+      log('info', `Health check passed on attempt ${i + 1}`);
+      child.kill('SIGTERM');
+      await new Promise(r => setTimeout(r, 500)); // Let it shut down
+      return true;
+    }
+
+    log('info', `Health check attempt ${i + 1}/${HEALTH_CHECK_RETRIES} — waiting...`);
+  }
+
+  // All retries exhausted
+  log('error', 'Test API failed health check after all retries');
+  log('error', `Test output: ${testOutput.slice(-500)}`);
+  child.kill('SIGTERM');
+  return false;
+}
+
+/**
+ * Swap a PM2 process: delete old, start new from ecosystem config.
+ * pm2 reload/restart does NOT update max_memory_restart, so we must delete+recreate.
+ */
+async function swapPm2Process(name) {
+  await run(`pm2 delete ${name}`);
+  const result = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
+  if (!result.success) {
+    log('error', `Failed to start ${name}: ${result.error}`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Apply updates with zero-downtime deploy
  */
 async function applyUpdates() {
   log('info', 'Pulling latest changes...');
@@ -217,69 +307,72 @@ async function applyUpdates() {
   }
   log('info', 'Pull successful');
 
-  // Install dependencies
-  log('info', 'Installing dependencies...');
-  const npmResult = await run('npm ci --omit=dev');
-  if (!npmResult.success) {
-    log('error', `Failed to install dependencies: ${npmResult.error}`);
-    return false;
+  // Skip npm ci if package-lock.json didn't change
+  const lockChanged = await run(`git diff HEAD~1 --name-only -- package-lock.json`);
+  if (lockChanged.success && lockChanged.stdout.includes('package-lock.json')) {
+    log('info', 'package-lock.json changed — installing dependencies...');
+    const npmResult = await run('npm ci --omit=dev');
+    if (!npmResult.success) {
+      log('error', `Failed to install dependencies: ${npmResult.error}`);
+      return false;
+    }
+    log('info', 'Dependencies installed');
+  } else {
+    log('info', 'package-lock.json unchanged — skipping npm ci');
   }
-  log('info', 'Dependencies installed');
 
   // Run migrations
   log('info', 'Running migrations...');
   const migrateResult = await run('npm run migrate');
   if (!migrateResult.success) {
     log('warn', `Migration warning: ${migrateResult.stderr || migrateResult.error}`);
-    // Don't fail on migration warnings - they might just be "nothing to migrate"
   } else {
     log('info', 'Migrations complete');
   }
 
-  // Run deploy hooks (one-time commands defined in deploy-hooks.json)
+  // Run deploy hooks
   log('info', 'Running deploy hooks...');
   const hooksResult = await run('node scripts/deploy-hooks.js');
   if (!hooksResult.success) {
     log('warn', `Deploy hooks warning: ${hooksResult.stderr || hooksResult.error}`);
-    // Don't fail deployment for hook failures - they're logged in the database
   } else {
     if (hooksResult.stdout) {
-      // Show hook output
       const lines = hooksResult.stdout.split('\n').slice(0, 10);
-      for (const line of lines) {
-        log('info', `  ${line}`);
-      }
+      for (const line of lines) log('info', `  ${line}`);
     }
     log('info', 'Deploy hooks complete');
   }
 
-  // Delete + recreate PM2 processes from ecosystem config.
-  // pm2 reload/restart does NOT update max_memory_restart from the config,
-  // so stale limits persist and cause restart loops.
-  const processesToReload = [
-    'siftersearch-api',
-    'siftersearch-worker',
-  ];
-
-  log('info', `Recreating PM2 processes: ${processesToReload.join(', ')}...`);
-  let reloadFailed = false;
-  for (const proc of processesToReload) {
-    // Delete the old process (ignore failure — may not exist yet)
-    await run(`pm2 delete ${proc}`);
-    // Recreate from ecosystem config to pick up current max_memory_restart
-    const result = await run(`pm2 start ecosystem.config.cjs --only ${proc}`);
-    if (!result.success) {
-      log('error', `Failed to start ${proc}: ${result.error}`);
-      reloadFailed = true;
-    }
+  // Pre-deploy verification: start test API on temp port, health check it
+  log('info', 'Verifying new code before deploy...');
+  const verified = await verifyNewCode();
+  if (!verified) {
+    log('error', 'New code failed verification — aborting deploy, old server stays running');
+    return false;
   }
+  log('info', 'Verification passed — swapping to new code');
 
-  if (reloadFailed) {
+  // Swap API first (user-facing), then worker
+  let failed = false;
+  if (!await swapPm2Process('siftersearch-api')) failed = true;
+  if (!await swapPm2Process('siftersearch-worker')) failed = true;
+
+  if (failed) {
     log('error', 'Some processes failed to start');
     return false;
   }
-  log('info', 'All PM2 processes recreated');
 
+  // Post-deploy: verify the PM2-managed API is healthy
+  log('info', 'Post-deploy health check...');
+  await new Promise(r => setTimeout(r, 3000)); // Give PM2 process time to start
+  const postCheck = await httpGet(`http://127.0.0.1:${API_PORT}/api/search/health`);
+  if (!postCheck.ok) {
+    log('warn', 'Post-deploy health check failed — API may still be starting');
+  } else {
+    log('info', 'Post-deploy health check passed');
+  }
+
+  log('info', 'All PM2 processes recreated');
   return true;
 }
 
@@ -300,18 +393,16 @@ function getCurrentVersion() {
  * Reload PM2 only (no git pull needed)
  */
 async function reloadPm2Only() {
-  log('info', 'Recreating PM2 processes (code already up to date)...');
-  const processesToReload = [
-    'siftersearch-api',
-    'siftersearch-worker',
-  ];
-  for (const proc of processesToReload) {
-    await run(`pm2 delete ${proc}`);
-    const result = await run(`pm2 start ecosystem.config.cjs --only ${proc}`);
-    if (!result.success) {
-      log('error', `Failed to start ${proc}: ${result.error}`);
-    }
+  log('info', 'Verifying code before PM2 reload...');
+  const verified = await verifyNewCode();
+  if (!verified) {
+    log('error', 'Code verification failed — keeping current processes');
+    return false;
   }
+
+  log('info', 'Verification passed — recreating PM2 processes...');
+  if (!await swapPm2Process('siftersearch-api')) return false;
+  if (!await swapPm2Process('siftersearch-worker')) return false;
   log('info', 'All PM2 processes recreated');
   return true;
 }
@@ -330,7 +421,8 @@ async function runOnce() {
     if (repaired) {
       // Reload PM2 after repair
       log('info', 'Reloading PM2 after dependency repair...');
-      await run('pm2 reload ecosystem.config.cjs --update-env');
+      await swapPm2Process('siftersearch-api');
+      await swapPm2Process('siftersearch-worker');
     } else {
       log('error', 'Failed to repair dependencies');
       return false;
