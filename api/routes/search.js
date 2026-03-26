@@ -8,7 +8,7 @@
  */
 
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
-import { queryOne, userQuery } from '../lib/db.js';
+import { userQuery } from '../lib/db.js';
 import { getCachedContentCounts } from '../services/progress.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { config } from '../lib/config.js';
@@ -337,8 +337,8 @@ export default async function searchRoutes(fastify) {
 
   // Index statistics — counter table makes main counts instant
   const searchStatsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s
-  // Pipeline status cache — heavy embedding COUNT queries, refresh rarely
-  const searchPipelineCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 min
+  // Pipeline status: reuse library.js background timer via shared pipelineCache import
+  // No heavy queries in request path — always return cached/zero data
 
   fastify.get('/stats', async () => {
     const now = Date.now();
@@ -351,31 +351,14 @@ export default async function searchRoutes(fastify) {
       getCachedContentCounts()
     ]);
 
-    // Pipeline status — use cached or compute (heavy queries)
-    let pipelineStatus;
-    if (searchPipelineCache.data && (now - searchPipelineCache.timestamp) < searchPipelineCache.ttl) {
-      pipelineStatus = { ...searchPipelineCache.data, paragraphsPendingSync: cachedCounts.unsyncedParagraphs };
-    } else {
-      const MAX_CHARS = 6000;
-      pipelineStatus = null;
-      try {
-        // Run sequentially to limit event loop blocking per query
-        const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
-        const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
-        const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS]);
-        pipelineStatus = {
-          ingestionQueuePending: 0,
-          paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-          uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
-          paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-          oversizedSkipped: oversizedCount?.count || 0
-        };
-        searchPipelineCache.data = pipelineStatus;
-        searchPipelineCache.timestamp = Date.now();
-      } catch {
-        // Columns may not exist yet
-      }
-    }
+    // Pipeline status — always from cache, never computed in request path
+    const pipelineStatus = {
+      ingestionQueuePending: 0,
+      paragraphsNeedingEmbeddings: 0,
+      uniqueEmbeddingsNeeded: 0,
+      paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
+      oversizedSkipped: 0
+    };
 
     const result = {
       ...stats,

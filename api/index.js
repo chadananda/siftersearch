@@ -122,15 +122,9 @@ const start = async () => {
       logger.info('Meilisearch disabled (MEILISEARCH_ENABLED=false), sync worker not started');
     }
 
-    // Start library watcher (auto-ingest file changes)
-    try {
-      if (config.library?.paths?.length > 0) {
-        startLibraryWatcher(config.library.paths);
-        logger.info({ paths: config.library.paths }, 'Library watcher started');
-      }
-    } catch (err) {
-      logger.warn({ err }, 'Failed to start library watcher');
-    }
+    // Library watcher runs as separate PM2 process (siftersearch-library-watcher)
+    // Do NOT start it inside the API — it duplicates work and consumes memory
+    logger.info('Library watcher is a standalone process, skipping in API');
 
     // Log startup summary
     const envSummary = getEnvSummary();

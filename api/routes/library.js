@@ -41,8 +41,9 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // In-memory cache for library stats
 // Counter table makes main counts instant; pipeline status queries still need caching
 const statsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s TTL
-// Separate cache for pipeline status (heavy COUNT queries on content table)
-// Longer TTL since embedding/sync status changes slowly
+// Pipeline status cache — refreshed by background timer, NEVER by request handlers.
+// Heavy COUNT queries on 2.5M row content table block the event loop; keeping them
+// out of the request path prevents health check timeouts.
 const pipelineCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 min TTL
 
 /**
@@ -98,7 +99,36 @@ function parseTranslationField(paragraph) {
   };
 }
 
+// Background refresh of pipeline cache — runs every 5 minutes outside request handlers.
+// These COUNT queries block the event loop for 2-3s each; running them here means
+// they only block during the timer callback, never during a user request.
+const MAX_CHARS_PIPELINE = 6000;
+let pipelineRefreshTimer = null;
+
+async function refreshPipelineCache() {
+  try {
+    const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
+    const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
+    const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
+    pipelineCache.data = {
+      paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
+      uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
+      oversizedSkipped: oversizedCount?.count || 0
+    };
+    pipelineCache.timestamp = Date.now();
+  } catch {
+    // Columns may not exist yet
+  }
+}
+
 export default async function libraryRoutes(fastify) {
+
+  // Start background pipeline cache refresh (first run after 30s, then every 5 min)
+  setTimeout(refreshPipelineCache, 30000);
+  pipelineRefreshTimer = setInterval(refreshPipelineCache, pipelineCache.ttl);
+  fastify.addHook('onClose', () => {
+    if (pipelineRefreshTimer) clearInterval(pipelineRefreshTimer);
+  });
 
   // ============================================
   // Public Routes
@@ -292,33 +322,16 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
-    // Pipeline status — heavy COUNT queries on content table, use separate long cache
-    const MAX_CHARS = 6000;
-    let pipelineStatus;
-    const pipelineNow = Date.now();
-    if (pipelineCache.data && (pipelineNow - pipelineCache.timestamp) < pipelineCache.ttl) {
-      // Use cached pipeline data, update sync count from instant counter
-      pipelineStatus = { ...pipelineCache.data, paragraphsPendingSync: cachedCounts.unsyncedParagraphs };
-    } else {
-      pipelineStatus = { ingestionQueuePending: 0, paragraphsNeedingEmbeddings: 0, paragraphsPendingSync: 0, oversizedSkipped: 0 };
-      try {
-        // These COUNT queries scan the 2.5M row content table — run sequentially to limit blocking
-        const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
-        const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS]);
-        const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS]);
-        pipelineStatus = {
-          ingestionQueuePending: indexingStats.pending + indexingStats.processing,
-          paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-          uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
-          paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-          oversizedSkipped: oversizedCount?.count || 0
-        };
-        pipelineCache.data = pipelineStatus;
-        pipelineCache.timestamp = Date.now();
-      } catch {
-        // Columns may not exist yet
-      }
-    }
+    // Pipeline status — always from cache (refreshed by background timer, never in request path)
+    // Heavy COUNT queries on 2.5M rows block the event loop; keeping them out of request
+    // handlers prevents health check timeouts and watchdog restart loops.
+    const pipelineStatus = {
+      ingestionQueuePending: indexingStats.pending + indexingStats.processing,
+      paragraphsNeedingEmbeddings: pipelineCache.data?.paragraphsNeedingEmbeddings || 0,
+      uniqueEmbeddingsNeeded: pipelineCache.data?.uniqueEmbeddingsNeeded || 0,
+      paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
+      oversizedSkipped: pipelineCache.data?.oversizedSkipped || 0
+    };
 
     // Calculate ingestion progress
     const totalDocs = docCount?.count || 0;

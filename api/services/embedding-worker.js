@@ -21,6 +21,7 @@ const BATCH_SIZE = 50;                // Texts per OpenAI batch (API supports up
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
 const DB_WRITE_DELAY_MS = 10;         // Small delay between DB writes to yield event loop
+const PROPAGATE_INTERVAL_MS = 10 * 60 * 1000; // Propagate embeddings to duplicates every 10 min
 
 // Backoff: on quota/rate errors, wait longer instead of hammering OpenAI every 5s
 const MAX_BACKOFF_MS = 10 * 60 * 1000; // Cap at 10 minutes
@@ -28,6 +29,7 @@ let backoffMs = 0;
 let backoffUntil = 0;
 
 let embeddingInterval = null;
+let propagateTimeout = null;
 let isRunning = false;
 
 // Small delay to yield event loop and prevent blocking health checks
@@ -121,13 +123,8 @@ async function runEmbeddingCycle() {
     // Store embeddings via content API (validates dimensions, sets synced=0)
     await storeEmbeddings(rows, result.embeddings);
 
-    // Propagate embeddings to duplicate content (same normalized_hash)
-    // Once per batch, not per row — this query scans the full content table
-    try {
-      await content.propagateEmbeddings();
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Embedding propagation failed (non-fatal)');
-    }
+    // NOTE: propagateEmbeddings() runs on a separate 10-minute timer (schedulePropagation)
+    // to avoid blocking the event loop every 5 seconds with a full-table correlated UPDATE
 
     // Success — reset backoff
     backoffMs = 0;
@@ -170,6 +167,28 @@ async function runEmbeddingCycle() {
 }
 
 /**
+ * Schedule periodic embedding propagation (copies embeddings to duplicate content).
+ * Runs every 10 minutes to avoid blocking the event loop with a full-table UPDATE.
+ */
+function schedulePropagation() {
+  propagateTimeout = setTimeout(async () => {
+    try {
+      const result = await content.propagateEmbeddings();
+      const affected = result?.rowsAffected || 0;
+      if (affected > 0) {
+        logger.info({ propagated: affected }, 'Embedding propagation complete');
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Embedding propagation failed (non-fatal)');
+    }
+    // Reschedule
+    if (embeddingInterval) {
+      schedulePropagation();
+    }
+  }, PROPAGATE_INTERVAL_MS);
+}
+
+/**
  * Start the embedding worker
  */
 export function startEmbeddingWorker() {
@@ -185,6 +204,9 @@ export function startEmbeddingWorker() {
 
   // Schedule periodic cycles
   embeddingInterval = setInterval(runEmbeddingCycle, EMBEDDING_INTERVAL_MS);
+
+  // Schedule propagation on a much slower cadence (every 10 min)
+  schedulePropagation();
 }
 
 /**
@@ -194,6 +216,10 @@ export function stopEmbeddingWorker() {
   if (embeddingInterval) {
     clearInterval(embeddingInterval);
     embeddingInterval = null;
+  }
+  if (propagateTimeout) {
+    clearTimeout(propagateTimeout);
+    propagateTimeout = null;
   }
   logger.info('Embedding worker stopped');
 }
