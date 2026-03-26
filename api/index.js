@@ -26,7 +26,7 @@ import { ensureServicesRunning, cleanupServices } from './lib/services.js';
 import { seedAdminUser } from './lib/auth.js';
 import { runMigrations } from './lib/migrations.js';
 import { startSyncWorker, stopSyncWorker } from './services/sync-worker.js';
-import { startEmbeddingWorker, stopEmbeddingWorker } from './services/embedding-worker.js';
+import { stopEmbeddingWorker } from './services/embedding-worker.js';
 import { stopLibraryWatcher } from './services/library-watcher.js';
 import { config } from './lib/config.js';
 import { initAIProcessingState } from './lib/ai-services.js';
