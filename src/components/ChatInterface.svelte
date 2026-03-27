@@ -1729,6 +1729,17 @@
               <!-- Search index progress - show active job or overall sync status -->
               {#if libraryStats?.indexingProgress?.activeJob?.status === 'running'}
                 {@const job = libraryStats.indexingProgress.activeJob}
+                {@const etaText = (() => {
+                  if (!job.startedAt || !job.completedItems || job.completedItems < 500) return '';
+                  const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
+                  const rate = job.completedItems / elapsed;
+                  const remaining = (job.totalItems - job.completedItems) / rate;
+                  if (remaining < 60) return 'less than a minute';
+                  if (remaining < 3600) return `~${Math.round(remaining / 60)}m`;
+                  const hrs = Math.floor(remaining / 3600);
+                  const mins = Math.round((remaining % 3600) / 60);
+                  return `~${hrs}h ${mins}m`;
+                })()}
                 <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Indexing</span>
@@ -1738,7 +1749,7 @@
                     <div class="ingestion-fill active" style="width: {job.percentComplete}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs
+                    {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs{#if etaText} · {etaText} remaining{/if}
                   </div>
                 </div>
               {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
