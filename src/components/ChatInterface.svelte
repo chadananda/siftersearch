@@ -725,25 +725,16 @@
   let currentPollingInterval = $state(null);
   let isActivelyIndexing = $state(false);
   let refreshTimeoutId = null;
-  // Tick counter drives interpolation in the progress bar (updates every second during indexing)
-  let progressTick = $state(0);
+  // Interpolated indexing progress — $state updated every second by setInterval
+  let indexingInterpolated = $state(null);
   let progressTickInterval = null;
-  $effect(() => {
-    if (isActivelyIndexing && !progressTickInterval) {
-      progressTickInterval = setInterval(() => { progressTick++; }, 1000);
-    } else if (!isActivelyIndexing && progressTickInterval) {
-      clearInterval(progressTickInterval);
-      progressTickInterval = null;
-    }
-  });
 
-  // Interpolated indexing progress — ticks every second between server polls
-  let indexingInterpolated = $derived.by(() => {
-    void progressTick; // reactive dependency
+  function updateInterpolation() {
     const job = libraryStats?.indexingProgress?.activeJob;
-    if (!job || job.status !== 'running') return null;
+    if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
     if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
-      return { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '' };
+      indexingInterpolated = { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '', totalItems: job.totalItems };
+      return;
     }
     const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
     const rate = job.completedItems / elapsed;
@@ -755,7 +746,18 @@
     if (remaining < 60) eta = 'less than a minute';
     else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
     else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
-    return { items: estimated, pct, eta, totalItems: job.totalItems };
+    indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
+  }
+
+  $effect(() => {
+    if (isActivelyIndexing && !progressTickInterval) {
+      progressTickInterval = setInterval(updateInterpolation, 1000);
+      updateInterpolation(); // immediate first tick
+    } else if (!isActivelyIndexing && progressTickInterval) {
+      clearInterval(progressTickInterval);
+      progressTickInterval = null;
+      updateInterpolation(); // clear interpolation
+    }
   });
 
   // Track user activity to reset backoff
