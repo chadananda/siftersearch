@@ -33,9 +33,8 @@ import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
 
 // Configuration
-const BATCH_SIZE = 500; // Paragraphs per sync batch — fewer Meili tasks = fewer index rebuilds
-const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
-const COOLDOWN_MS = 2000;         // 2s between batches — let Meili breathe
+const BATCH_SIZE = 50;  // Small batches = fast Meili indexing + frequent progress updates
+const COOLDOWN_MS = 500; // 500ms between batches
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour

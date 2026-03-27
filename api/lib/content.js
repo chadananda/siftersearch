@@ -522,7 +522,7 @@ async function getDocsWithDirtyParagraphs(limit = 50) {
  * Only reads embedding when it exists AND matches expected dimensions (via embedding_model).
  * This avoids reading 12KB BLOBs that will be discarded for wrong-dimension vectors.
  */
-async function getDirtyParagraphsBatch(limit = 500) {
+async function getDirtyParagraphsBatch(limit = 50) {
   return queryAll(`
     SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
            CASE WHEN c.embedding_model = 'text-embedding-3-large' THEN c.embedding ELSE NULL END as embedding,
