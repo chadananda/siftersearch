@@ -605,7 +605,7 @@
   const RETRY_DELAY = 10000; // 10 seconds
   const MIN_REFRESH_INTERVAL = 10000; // 10 seconds - minimum polling interval
   const MAX_REFRESH_INTERVAL = 300000; // 5 minutes - maximum backoff
-  const INDEXING_REFRESH_INTERVAL = 3000; // 3 seconds - faster polling during indexing
+  const INDEXING_REFRESH_INTERVAL = 10000; // 10s - progress bar interpolates between polls
   const BACKOFF_MULTIPLIER = 1.5; // Increase interval by 50% each time stats unchanged
 
   // Backoff state for reducing polling when idle
@@ -628,6 +628,7 @@
       serverOffline = false;
 
       if (hasChanged) {
+        stats._fetchedAt = Date.now();
         libraryStats = stats;
         setCachedStats(stats); // Cache for instant display on next visit
         if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
@@ -723,6 +724,17 @@
   let currentPollingInterval = $state(null);
   let isActivelyIndexing = $state(false);
   let refreshTimeoutId = null;
+  // Tick counter drives interpolation in the progress bar (updates every second during indexing)
+  let progressTick = $state(0);
+  let progressTickInterval = null;
+  $effect(() => {
+    if (isActivelyIndexing && !progressTickInterval) {
+      progressTickInterval = setInterval(() => { progressTick++; }, 1000);
+    } else if (!isActivelyIndexing && progressTickInterval) {
+      clearInterval(progressTickInterval);
+      progressTickInterval = null;
+    }
+  });
 
   // Track user activity to reset backoff
   function handleUserActivity() {
@@ -1729,27 +1741,32 @@
               <!-- Search index progress - show active job or overall sync status -->
               {#if libraryStats?.indexingProgress?.activeJob?.status === 'running'}
                 {@const job = libraryStats.indexingProgress.activeJob}
-                {@const etaText = (() => {
-                  if (!job.startedAt || !job.completedItems || job.completedItems < 500) return '';
+                {@const interpolated = (() => {
+                  void progressTick; // reactive dependency — re-evaluate every second
+                  if (!job.startedAt || !job.completedItems || job.completedItems < 500) return { items: job.completedItems, pct: job.percentComplete, eta: '' };
                   const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
                   const rate = job.completedItems / elapsed;
-                  const remaining = (job.totalItems - job.completedItems) / rate;
-                  if (remaining < 60) return 'less than a minute';
-                  if (remaining < 3600) return `~${Math.round(remaining / 60)}m`;
-                  const hrs = Math.floor(remaining / 3600);
-                  const mins = Math.round((remaining % 3600) / 60);
-                  return `~${hrs}h ${mins}m`;
+                  // Interpolate forward from last known position
+                  const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
+                  const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
+                  const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
+                  const remaining = (job.totalItems - estimated) / rate;
+                  let eta = '';
+                  if (remaining < 60) eta = 'less than a minute';
+                  else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
+                  else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
+                  return { items: estimated, pct, eta };
                 })()}
                 <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Indexing</span>
-                    <span class="ingestion-percent">{job.percentComplete}%</span>
+                    <span class="ingestion-percent">{interpolated.pct}%</span>
                   </div>
-                  <div class="ingestion-bar" role="progressbar" aria-valuenow={job.percentComplete} aria-valuemin="0" aria-valuemax="100">
-                    <div class="ingestion-fill active" style="width: {job.percentComplete}%"></div>
+                  <div class="ingestion-bar" role="progressbar" aria-valuenow={interpolated.pct} aria-valuemin="0" aria-valuemax="100">
+                    <div class="ingestion-fill active" style="width: {interpolated.pct}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(job.completedItems)} / {formatWithCommas(job.totalItems)} paragraphs{#if etaText} · {etaText} remaining{/if}
+                    {formatWithCommas(interpolated.items)} / {formatWithCommas(job.totalItems)} paragraphs{#if interpolated.eta} · {interpolated.eta} remaining{/if}
                   </div>
                 </div>
               {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}

@@ -40,7 +40,7 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 // In-memory cache for library stats
 // Counter table makes main counts instant; pipeline status queries still need caching
-const statsCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s TTL
+const statsCache = { data: null, timestamp: 0, ttl: 30000, activeTtl: 5000 }; // 30s idle, 5s during indexing
 // Pipeline status cache — refreshed by background timer, NEVER by request handlers.
 // Heavy COUNT queries on 2.5M row content table block the event loop; keeping them
 // out of the request path prevents health check timeouts.
@@ -212,7 +212,8 @@ export default async function libraryRoutes(fastify) {
 
     // Return cached stats if fresh
     // Always fetch fresh sync job progress (tiny table, fast query)
-    if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
+    const effectiveTtl = statsCache.data?.indexing ? statsCache.activeTtl : statsCache.ttl;
+    if (statsCache.data && (now - statsCache.timestamp) < effectiveTtl) {
       let freshJob = null;
       try {
         const job = await queryOne(`
