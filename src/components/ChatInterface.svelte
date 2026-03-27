@@ -636,14 +636,14 @@
         // Reset backoff when stats change
         currentBackoffInterval = MIN_REFRESH_INTERVAL;
       } else if (silent) {
-        // Stats unchanged - increase backoff for next poll (unless actively indexing)
-        if (!stats.indexing && !stats.translating) {
+        // During active indexing, never back off — we need frequent updates
+        if (stats.indexing || stats.translating) {
+          currentBackoffInterval = MIN_REFRESH_INTERVAL;
+        } else {
+          // Stats unchanged and not indexing - increase backoff if user idle
           const timeSinceActivity = Date.now() - lastUserActivity;
-          if (timeSinceActivity > 30000) { // User idle for 30+ seconds
+          if (timeSinceActivity > 30000) {
             const newInterval = Math.min(currentBackoffInterval * BACKOFF_MULTIPLIER, MAX_REFRESH_INTERVAL);
-            if (newInterval > currentBackoffInterval) {
-              console.log('[Library] User idle, backing off polling to', Math.round(newInterval / 1000), 's');
-            }
             currentBackoffInterval = newInterval;
           }
         }
@@ -725,18 +725,15 @@
   let currentPollingInterval = $state(null);
   let isActivelyIndexing = $state(false);
   let refreshTimeoutId = null;
-  // Interpolated indexing progress — ticks every second between API polls
+  // Interpolated indexing progress — ticks every second between API polls.
+  // Uses a plain setInterval (not $effect) because $state reads inside
+  // setInterval callbacks don't reliably trigger in Svelte 5's reactive system.
   let indexingInterpolated = $state(null);
+  let _indexTickId = null;
 
-  $effect(() => {
-    // Read the reactive dependency — re-runs when indexing state changes
-    const active = isActivelyIndexing;
-    if (!active) {
-      indexingInterpolated = null;
-      return;
-    }
-
-    function tick() {
+  function startIndexTicker() {
+    if (_indexTickId) return; // already running
+    _indexTickId = setInterval(() => {
       const job = libraryStats?.indexingProgress?.activeJob;
       if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
       if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
@@ -754,12 +751,13 @@
       else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
       else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
       indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
-    }
+    }, 1000);
+  }
 
-    tick(); // immediate
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id); // cleanup on re-run or unmount
-  });
+  function stopIndexTicker() {
+    if (_indexTickId) { clearInterval(_indexTickId); _indexTickId = null; }
+    indexingInterpolated = null;
+  }
 
   // Track user activity to reset backoff
   function handleUserActivity() {
@@ -817,9 +815,11 @@
     isActivelyIndexing = isActive;
 
     if (isActive && !wasActive) {
-      console.log('[Library] Indexing/translating detected - polling every 3s');
-      // Reset backoff when indexing starts
+      console.log('[Library] Indexing detected - starting progress ticker');
       currentBackoffInterval = MIN_REFRESH_INTERVAL;
+      startIndexTicker();
+    } else if (!isActive && wasActive) {
+      stopIndexTicker();
     }
 
     // Schedule next poll with dynamic interval
