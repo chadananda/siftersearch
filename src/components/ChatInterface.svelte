@@ -751,7 +751,7 @@
       else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
       else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
       indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
-    }, 1000);
+    }, 200);
   }
 
   function stopIndexTicker() {
