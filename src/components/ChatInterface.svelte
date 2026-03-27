@@ -622,7 +622,8 @@
       const hasChanged = !libraryStats ||
         libraryStats.lastUpdated !== stats.lastUpdated ||
         libraryStats.totalDocuments !== stats.totalDocuments ||
-        libraryStats.totalPassages !== stats.totalPassages;
+        libraryStats.totalPassages !== stats.totalPassages ||
+        libraryStats.indexingProgress?.activeJob?.completedItems !== stats.indexingProgress?.activeJob?.completedItems;
 
       // Mark server as connected
       serverOffline = false;
