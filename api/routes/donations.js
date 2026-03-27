@@ -50,11 +50,11 @@ let stripePromise = null;
 
 // Lazy init Stripe to avoid startup errors if key not configured
 async function getStripe() {
-  if (!stripe && process.env.STRIPE_SECRET_KEY) {
+  if (!stripe && process.env.STRIPE_SECRET_KEY_LIVE) {
     if (!stripePromise) {
       stripePromise = import('stripe').then(mod => {
         const Stripe = mod.default;
-        stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        stripe = new Stripe(process.env.STRIPE_SECRET_KEY_LIVE, {
           apiVersion: '2024-12-18.acacia'
         });
         return stripe;
@@ -197,19 +197,33 @@ export default async function donationRoutes(fastify) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
-        await handleSubscriptionUpdate(subscription);
+        if (subscription.metadata?.type === 'api_metered') {
+          await handleApiSubscriptionUpdate(subscription);
+        } else {
+          await handleSubscriptionUpdate(subscription);
+        }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
-        await handleSubscriptionCanceled(subscription);
+        if (subscription.metadata?.type === 'api_metered') {
+          await handleApiSubscriptionCanceled(subscription);
+        } else {
+          await handleSubscriptionCanceled(subscription);
+        }
         break;
       }
 
       case 'invoice.paid': {
         const invoice = event.data.object;
         await handleInvoicePaid(invoice);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        await handleApiInvoicePaymentFailed(invoice);
         break;
       }
 
@@ -359,4 +373,41 @@ async function handleInvoicePaid(invoice) {
   }
 
   logger.info({ invoiceId: invoice.id }, 'Invoice paid');
+}
+
+// API subscription webhook handlers (metadata.type === 'api_metered')
+async function handleApiSubscriptionUpdate(subscription) {
+  const userId = subscription.metadata?.userId;
+  const item = subscription.items?.data?.[0];
+  await query(`
+    INSERT INTO api_subscriptions (user_id, stripe_customer_id, stripe_subscription_id, stripe_subscription_item_id, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(stripe_subscription_id) DO UPDATE SET
+      status = excluded.status,
+      stripe_subscription_item_id = excluded.stripe_subscription_item_id,
+      updated_at = CURRENT_TIMESTAMP
+  `, [userId || null, subscription.customer, subscription.id, item?.id || null, subscription.status]);
+
+  logger.info({ subscriptionId: subscription.id, userId, status: subscription.status }, 'API subscription upserted');
+}
+
+async function handleApiSubscriptionCanceled(subscription) {
+  await query(`
+    UPDATE api_subscriptions SET status = 'canceled', canceled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+    WHERE stripe_subscription_id = ?
+  `, [subscription.id]);
+
+  logger.info({ subscriptionId: subscription.id }, 'API subscription canceled');
+}
+
+async function handleApiInvoicePaymentFailed(invoice) {
+  if (!invoice.subscription) return;
+  const sub = await queryOne('SELECT id FROM api_subscriptions WHERE stripe_subscription_id = ?', [invoice.subscription]);
+  if (!sub) return;
+  await query(`
+    UPDATE api_subscriptions SET status = 'past_due', updated_at = CURRENT_TIMESTAMP
+    WHERE stripe_subscription_id = ?
+  `, [invoice.subscription]);
+
+  logger.info({ invoiceId: invoice.id, subscriptionId: invoice.subscription }, 'API subscription marked past_due after payment failure');
 }

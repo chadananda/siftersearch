@@ -422,7 +422,7 @@ async function checkEnvironmentVars() {
 
   // Cloud storage
   const storage = [
-    { key: 'B2_APPLICATION_KEY_ID', name: 'Backblaze B2' },
+    { key: 'R2_ACCESS_KEY_ID', name: 'Cloudflare R2' },
     { key: 'SCALEWAY_ACCESS_KEY', name: 'Scaleway S3' },
     { key: 'AWS_ACCESS_KEY_ID', name: 'AWS S3' }
   ];

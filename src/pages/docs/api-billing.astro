@@ -1,0 +1,130 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="API Billing"
+  description="Pricing, billing, and usage details for the SifterSearch Public API"
+  activeSection="api-billing"
+>
+  <h1>API Billing</h1>
+  <p class="subtitle">Pay-per-search pricing with free caching</p>
+
+  <p>
+    The SifterSearch API uses metered billing so you only pay for what you use. There are no monthly
+    minimums or seat fees — just a small charge per search, with caching to keep repeat queries free.
+  </p>
+
+  <h2>Pricing Model</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Search Type</th>
+        <th>Price</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Hybrid search (<code>/search</code>)</td>
+        <td>~$0.001 per request</td>
+        <td>Always billed; includes AI scoring and summaries</td>
+      </tr>
+      <tr>
+        <td>Quick/keyword search (<code>/search/quick</code>)</td>
+        <td>~$0.001 per request</td>
+        <td>Free when served from cache (see below)</td>
+      </tr>
+      <tr>
+        <td>Collections endpoint (<code>/collections</code>)</td>
+        <td>Free</td>
+        <td>Not metered</td>
+      </tr>
+      <tr>
+        <td>Health check (<code>/health</code>)</td>
+        <td>Free</td>
+        <td>Not metered</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>What Counts as Billable</h2>
+
+  <p>A search is billable when:</p>
+  <ul>
+    <li>It is a hybrid search (<code>POST /api/v1/search</code>) — always billed regardless of cache.</li>
+    <li>It is a quick search (<code>POST /api/v1/search/quick</code>) with a query not seen in the last 15 minutes.</li>
+  </ul>
+
+  <p>A search is <strong>not</strong> billable when:</p>
+  <ul>
+    <li>The same keyword query was already made within the last 15 minutes (cache hit).</li>
+    <li>The request is made by an admin account (admin users have free unlimited access).</li>
+  </ul>
+
+  <h2>Cache Behavior</h2>
+
+  <p>
+    Quick/keyword searches are cached for <strong>15 minutes</strong> by query string. If you (or any other
+    API key on your account) make the same keyword query within that window, the cached result is returned
+    at no charge. This makes typeahead, autocomplete, and repeated lookups essentially free.
+  </p>
+
+  <p>
+    Hybrid searches use AI analysis on each call and are not cached — every hybrid search is billed.
+    Use <code>/search/quick</code> for high-frequency lookups and <code>/search</code> for research queries
+    where AI scoring and summaries matter.
+  </p>
+
+  <h2>Rate Limits</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Limit</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Requests per hour (standard)</td>
+        <td>1,000</td>
+      </tr>
+      <tr>
+        <td>Max results per request</td>
+        <td>50</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Rate limit headers are returned on every response: <code>X-RateLimit-Limit</code>,
+    <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code>. Implement exponential
+    backoff if you receive a <code>429 rate_limit_exceeded</code> error.
+  </p>
+
+  <h2>Invoicing</h2>
+
+  <p>
+    Usage is aggregated daily and invoiced monthly via <strong>Stripe</strong>. You will receive an
+    email receipt when each invoice is generated. To manage payment methods, download past invoices,
+    or update billing details, visit the Stripe customer portal from your
+    <a href="/settings">Settings &rarr; API Keys</a> page.
+  </p>
+
+  <h2>Admin Access</h2>
+
+  <p>
+    Accounts with admin privileges have free unlimited API access. Usage is still tracked for
+    monitoring purposes but is not billed. Admin status is set by the system administrator and
+    is not self-service.
+  </p>
+
+  <hr />
+
+  <p>
+    Questions about billing? Contact <a href="mailto:billing@siftersearch.com">billing@siftersearch.com</a>
+    or see the <a href="/docs/api">API Reference</a> for endpoint documentation.
+  </p>
+</DocsLayout>

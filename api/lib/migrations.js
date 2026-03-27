@@ -11,7 +11,7 @@ import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
 const CURRENT_VERSION = 42;
-const USER_DB_CURRENT_VERSION = 2;
+const USER_DB_CURRENT_VERSION = 3;
 
 /**
  * Get current database schema version (content DB)
@@ -1972,6 +1972,43 @@ const userMigrations = {
     await userQuery('CREATE INDEX IF NOT EXISTS idx_search_log_query ON search_log(query)');
 
     logger.info('User migration 2 complete: search_log table created');
+  },
+
+  3: async () => {
+    logger.info('Starting user migration 3: api_subscriptions and api_usage_log tables');
+
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS api_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT UNIQUE,
+        stripe_subscription_item_id TEXT,
+        status TEXT DEFAULT 'active',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        canceled_at TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await userQuery(`
+      CREATE TABLE IF NOT EXISTS api_usage_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        api_key_id INTEGER NOT NULL,
+        search_type TEXT NOT NULL,
+        was_cached INTEGER DEFAULT 0,
+        billable INTEGER DEFAULT 1,
+        reported_to_stripe INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_api_subscriptions_user ON api_subscriptions(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_api_usage_log_user ON api_usage_log(user_id)'); } catch { /* exists */ }
+    try { await userQuery('CREATE INDEX IF NOT EXISTS idx_api_usage_log_reported ON api_usage_log(reported_to_stripe)'); } catch { /* exists */ }
+
+    logger.info('User migration 3 complete: api_subscriptions and api_usage_log tables created');
   },
 };
 

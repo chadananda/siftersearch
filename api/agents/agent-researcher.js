@@ -140,9 +140,9 @@ Return JSON only:
   "reasoning": "1-sentence strategy focusing on what ANSWER we're seeking",
   "queries": [
     {
-      "query": "search string designed to find passages with answers",
+      "query": "search string — topic/concept ONLY, no author/religion/collection names",
       "mode": "hybrid" | "keyword",
-      "filters": { "religion": "optional" }
+      "filters": { "author": "optional", "religion": "optional", "collection": "optional" }
     }
   ]
 }
@@ -151,8 +151,19 @@ RULES:
 - Generate 3-5 queries MAX (keep it fast)
 - Use "hybrid" for conceptual, "keyword" for specific terms/names
 - Include queries that target answer-containing phrases (e.g., "justice is", "the meaning of justice")
-- Add religion filter only if query mentions a specific tradition
-- Keep reasoning brief (1 sentence)`;
+- Keep reasoning brief (1 sentence)
+
+FACETING — CRITICAL:
+- Extract author/religion/collection constraints from the query and put them in "filters", NOT in the search string.
+- The search string must contain ONLY the topic/concept being searched for.
+- "decentralization of political power in the writings of Abdu'l-Baha" → query: "decentralization of political power", filters: { "author": "'Abdu'l-Bahá" }
+- "reincarnation in Buddhist scripture" → query: "reincarnation", filters: { "religion": "Buddhism" }
+- "forgiveness in the Hidden Words" → query: "forgiveness", filters: { "collection": "Hidden Words" }
+- "what does Jesus say about the poor" → query: "the poor", filters: { "author": "Jesus" }
+- If NO author/religion/collection constraint is mentioned, use empty filters or omit.
+- Normalize spelling: "Abdul-Baha"/"Abdul Baha" → "'Abdu'l-Bahá", "Bahaullah" → "Bahá'u'lláh", "Shoghi"/"Guardian" → "Shoghi Effendi"
+- Normalize religions: "Buddhist" → "Buddhism", "Islamic"/"Muslim" → "Islam", "Christian"/"Biblical" → "Christianity", "Hindu" → "Hinduism", "Jewish" → "Judaism", "Bahai" → "Bahá'í"
+- When a tradition/author is specified, ALL queries in the plan should use that filter — don't search broadly for something the user explicitly scoped.`;
 
     const response = await this.chat([
       { role: 'user', content: planPrompt }
@@ -194,8 +205,9 @@ RULES:
     const filterParts = [];
 
     // Standard filters
+    if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
     if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-    if (filters.collection) filterParts.push(`collection = "${filters.collection}"`);
+    if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
     if (filters.language) filterParts.push(`language = "${filters.language}"`);
     if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
     if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
@@ -454,15 +466,17 @@ Return JSON only:
   "reasoning": "strategy for second pass - what we're trying to find that we missed",
   "queries": [
     {
-      "query": "search string",
+      "query": "search string — topic/concept ONLY, no author/religion/collection names",
       "mode": "hybrid" | "semantic" | "keyword",
       "rationale": "why this fills a gap or goes deeper",
       "angle": "gap" | "deeper" | "alternative" | "wider",
-      "filters": { "religion": "optional" },
+      "filters": { "author": "optional", "religion": "optional", "collection": "optional" },
       "limit": 15
     }
   ]
 }
+
+FACETING: Put author/religion/collection constraints in "filters", NOT in the search string. The search string must contain ONLY the topic/concept.
 
 Generate 5-8 queries that COMPLEMENT (not duplicate) the first pass. Focus on what's MISSING.`;
 

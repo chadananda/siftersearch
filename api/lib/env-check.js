@@ -118,10 +118,23 @@ export const ENV_CONFIG = {
     name: 'Cloud Storage',
     required: false,
     vars: [
-      { key: 'B2_APPLICATION_KEY_ID', description: 'Backblaze B2 key ID', sensitive: true },
-      { key: 'B2_APPLICATION_KEY', description: 'Backblaze B2 secret', sensitive: true },
+      { key: 'R2_ACCOUNT_ID', description: 'Cloudflare account ID' },
+      { key: 'R2_ACCESS_KEY_ID', description: 'Cloudflare R2 access key', sensitive: true },
+      { key: 'R2_SECRET_ACCESS_KEY', description: 'Cloudflare R2 secret', sensitive: true },
       { key: 'SCALEWAY_ACCESS_KEY', description: 'Scaleway access key', sensitive: true },
       { key: 'SCALEWAY_SECRET_KEY', description: 'Scaleway secret', sensitive: true }
+    ]
+  },
+
+  // Stripe (Optional - for donations and API billing)
+  stripe: {
+    name: 'Stripe Payments',
+    required: false,
+    vars: [
+      { key: 'STRIPE_SECRET_KEY_LIVE', description: 'Stripe live secret key', sensitive: true },
+      { key: 'STRIPE_PUBLISHABLE_KEY_LIVE', description: 'Stripe live publishable key' },
+      { key: 'STRIPE_WEBHOOK_SECRET', description: 'Stripe webhook signing secret', sensitive: true },
+      { key: 'STRIPE_API_METERED_PRICE_ID', description: 'Stripe metered price ID for API billing' }
     ]
   },
 

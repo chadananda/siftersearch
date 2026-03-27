@@ -26,40 +26,47 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   -d '&#123;"query": "what is justice"&#125;'</code></pre>
 
   <p>
-    To request an API key, contact us at <a href="mailto:api@siftersearch.com">api@siftersearch.com</a>.
-    Include your intended use case and expected request volume.
+    API keys are self-service. Sign up for a SifterSearch account, subscribe to an API plan in
+    <a href="/settings">Settings &rarr; API Keys</a>, then create your first key. Your key is active
+    immediately. See <a href="/docs/api-billing">API Billing</a> for pricing details.
   </p>
+
+  <h2>Getting Started</h2>
+
+  <p>Four steps to your first request:</p>
+
+  <ol>
+    <li><strong>Sign up</strong> — Create a free SifterSearch account at <a href="/login">/login</a>.</li>
+    <li><strong>Subscribe</strong> — In <a href="/settings">Settings &rarr; API Keys</a>, activate the pay-per-search plan.</li>
+    <li><strong>Create a key</strong> — Click "Create API Key", give it a name, and copy the key shown once.</li>
+    <li><strong>Make a request</strong> — Pass the key in the <code>X-API-Key</code> header on every call.</li>
+  </ol>
+
+  <p>Your first request (example with cURL):</p>
+
+  <pre><code>curl -X POST https://api.siftersearch.com/api/v1/search \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_live_your-key-here" \
+  -d '&#123;"query": "what does Islam teach about gratitude"&#125;'</code></pre>
 
   <h2>Rate Limits</h2>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Tier</th>
-        <th>Requests/Hour</th>
-        <th>Max Results</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Standard</td>
-        <td>1,000</td>
-        <td>50</td>
-      </tr>
-      <tr>
-        <td>Premium</td>
-        <td>10,000</td>
-        <td>100</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p>Rate limit headers are included in every response:</p>
+  <p>Standard accounts are limited to <strong>1,000 requests per hour</strong> with up to 50 results per request. Rate limit headers are included in every response:</p>
   <ul>
-    <li><code>X-RateLimit-Limit</code> - Maximum requests per hour</li>
-    <li><code>X-RateLimit-Remaining</code> - Requests remaining in current window</li>
-    <li><code>X-RateLimit-Reset</code> - Unix timestamp when the window resets</li>
+    <li><code>X-RateLimit-Limit</code> — Maximum requests per hour</li>
+    <li><code>X-RateLimit-Remaining</code> — Requests remaining in current window</li>
+    <li><code>X-RateLimit-Reset</code> — Unix timestamp when the window resets</li>
   </ul>
+
+  <h2>Billing</h2>
+
+  <p>
+    The API uses metered pay-per-search pricing at approximately <strong>$0.001 per search</strong>.
+    Hybrid searches (<code>/search</code>) are always billed. Quick/keyword searches (<code>/search/quick</code>)
+    are free when served from cache — the same keyword query within 15 minutes costs nothing.
+    Admin accounts have free unlimited access. Invoices are generated monthly via Stripe.
+    See <a href="/docs/api-billing">API Billing documentation</a> for full details.
+  </p>
 
   <hr />
 
@@ -136,10 +143,44 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     </tbody>
   </table>
 
+  <h4>Faceting Examples</h4>
+  <p>Filter by religion:</p>
+  <pre><code>&#123;
+  "query": "the nature of the soul",
+  "filters": &#123;
+    "religion": "Buddhism"
+  &#125;
+&#125;</code></pre>
+
+  <p>Filter by collection:</p>
+  <pre><code>&#123;
+  "query": "daily devotional practice",
+  "filters": &#123;
+    "collection": "Pilgrim Notes"
+  &#125;
+&#125;</code></pre>
+
+  <p>Filter by author:</p>
+  <pre><code>&#123;
+  "query": "unity of religions",
+  "filters": &#123;
+    "author": "Abdu'l-Baha"
+  &#125;
+&#125;</code></pre>
+
+  <p>Filter by year range:</p>
+  <pre><code>&#123;
+  "query": "interfaith dialogue",
+  "filters": &#123;
+    "yearFrom": 1900,
+    "yearTo": 1950
+  &#125;
+&#125;</code></pre>
+
   <h4>Example Request</h4>
   <pre><code>POST /api/v1/search
 Content-Type: application/json
-X-API-Key: your-api-key
+X-API-Key: sk_live_your-key-here
 
 &#123;
   "query": "meaning of prayer and meditation",
@@ -319,15 +360,16 @@ X-API-Key: your-api-key
   &#125;,
   body: JSON.stringify(&#123;
     query: 'what is the purpose of life',
-    limit: 10
+    limit: 10,
+    filters: &#123; religion: "Buddhism" &#125;
   &#125;)
 &#125;);
 
 const data = await response.json();
-console.log(data.results);</code></pre>
+data.results.forEach(r => console.log(`&#123;r.score&#125; - &#123;r.title&#125;: &#123;r.summary&#125;`));</code></pre>
 
   <h4>Python</h4>
-  <pre><code>import requests
+  <pre><code>import os, requests
 
 response = requests.post(
     'https://api.siftersearch.com/api/v1/search',
@@ -337,19 +379,20 @@ response = requests.post(
     &#125;,
     json=&#123;
         'query': 'what is the purpose of life',
-        'limit': 10
+        'limit': 10,
+        'filters': &#123;'religion': 'Buddhism'&#125;
     &#125;
 )
 
 data = response.json()
 for result in data['results']:
-    print(f"&#123;result['title']&#125;: &#123;result['summary']&#125;")</code></pre>
+    print(f"&#123;result['score']&#125; - &#123;result['title']&#125;: &#123;result['summary']&#125;")</code></pre>
 
   <h4>cURL</h4>
   <pre><code>curl -X POST https://api.siftersearch.com/api/v1/search \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $SIFTER_API_KEY" \
-  -d '&#123;"query": "what is the purpose of life", "limit": 10&#125;'</code></pre>
+  -d '&#123;"query": "what is the purpose of life", "limit": 10, "filters": &#123;"religion": "Buddhism"&#125;&#125;'</code></pre>
 
   <hr />
 

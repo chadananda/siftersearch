@@ -60,8 +60,9 @@ function buildMetadataFilter(filterTerms, existingFilters = {}) {
   const filterParts = [];
 
   // Add existing filters
+  if (existingFilters.author) filterParts.push(`author CONTAINS "${existingFilters.author}"`);
   if (existingFilters.religion) filterParts.push(`religion = "${existingFilters.religion}"`);
-  if (existingFilters.collection) filterParts.push(`collection = "${existingFilters.collection}"`);
+  if (existingFilters.collection) filterParts.push(`collection CONTAINS "${existingFilters.collection}"`);
   if (existingFilters.language) filterParts.push(`language = "${existingFilters.language}"`);
   if (existingFilters.yearFrom) filterParts.push(`year >= ${existingFilters.yearFrom}`);
   if (existingFilters.yearTo) filterParts.push(`year <= ${existingFilters.yearTo}`);

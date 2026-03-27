@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import { user } from '../lib/api.js';
   import { getAuthState, logout, requireAuth } from '../lib/auth.svelte.js';
+  import ApiKeyManager from './ApiKeyManager.svelte';
 
   const auth = getAuthState();
 
@@ -240,6 +241,15 @@
           {saving ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
+
+      <!-- API Access Section -->
+      {#if auth.user?.tier && ['approved', 'patron', 'institutional', 'admin'].includes(auth.user.tier)}
+        <section class="settings-section">
+          <h2>API Access</h2>
+          <p class="section-desc">Create and manage API keys for programmatic access</p>
+          <ApiKeyManager userTier={auth.user.tier} />
+        </section>
+      {/if}
 
       <!-- Account Link -->
       <section class="settings-section">

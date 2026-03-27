@@ -1264,6 +1264,20 @@ export const donations = {
 };
 
 // ============================================
+// API Keys API
+// ============================================
+
+export const apiKeys = {
+  async list() { return request('/api/api-keys'); },
+  async create(name) { return request('/api/api-keys', { method: 'POST', body: JSON.stringify({ name }) }); },
+  async revoke(id) { return request(`/api/api-keys/${id}`, { method: 'DELETE' }); },
+  async getUsage() { return request('/api/api-keys/usage'); },
+  async getSubscription() { return request('/api/api-keys/subscription'); },
+  async subscribe() { return request('/api/api-keys/subscribe', { method: 'POST' }); },
+  async portal() { return request('/api/api-keys/portal', { method: 'POST' }) }
+};
+
+// ============================================
 // Default export
 // ============================================
 
@@ -1279,6 +1293,7 @@ export default {
   services,
   forum,
   donations,
+  apiKeys,
   healthCheck,
   triggerServerUpdate,
   setAccessToken,

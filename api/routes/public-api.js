@@ -18,7 +18,8 @@ import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
-import { queryOne, userQuery } from '../lib/db.js';
+import { queryOne, userQuery, userQueryOne } from '../lib/db.js';
+import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 
 /** Log search to search_log table (fire-and-forget) */
 function logApiSearch({ query, apiKeyId, resultCount, durationMs, searchType, filters }) {
@@ -58,6 +59,20 @@ async function apiKeyAuth(request, reply) {
   // Attach key info to request for logging
   request.apiKeyId = keyRecord.id;
   request.apiKeyName = keyRecord.name;
+
+  // Look up owning user and check subscription (skip for legacy keys)
+  if (!keyRecord.legacy && keyRecord.user_id) {
+    const keyUser = await userQueryOne('SELECT id, tier FROM users WHERE id = ?', [keyRecord.user_id]);
+    request.apiKeyUserId = keyUser?.id;
+    request.apiKeyUserTier = keyUser?.tier;
+    if (isUserBillable(keyUser?.tier)) {
+      const sub = await getSubscriptionStatus(keyUser.id);
+      if (!sub || sub.status !== 'active') {
+        reply.code(402).send({ error: 'Active API subscription required.', code: 'subscription_required' });
+        throw new ApiError('Subscription required', 402);
+      }
+    }
+  }
 }
 
 export default async function publicApiRoutes(fastify) {
@@ -80,6 +95,7 @@ export default async function publicApiRoutes(fastify) {
           filters: {
             type: 'object',
             properties: {
+              author: { type: 'string' },
               religion: { type: 'string' },
               collection: { type: 'string' },
               yearFrom: { type: 'integer' },
@@ -95,8 +111,9 @@ export default async function publicApiRoutes(fastify) {
 
     // Build filter string for Meilisearch
     const filterParts = [];
+    if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
     if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-    if (filters.collection) filterParts.push(`collection = "${filters.collection}"`);
+    if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
     if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
     if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
     const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
@@ -109,6 +126,7 @@ export default async function publicApiRoutes(fastify) {
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
       logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api', filters });
+      if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
       return { results: [], query, totalFound: 0, processingTimeMs: Date.now() - startTime };
     }
 
@@ -147,6 +165,9 @@ export default async function publicApiRoutes(fastify) {
 
     const durationMs = Date.now() - startTime;
     logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api', filters });
+    if (request.apiKeyUserId) {
+      recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
+    }
 
     return { results, query, totalFound: searchResults.hits.length, processingTimeMs: durationMs };
   });
@@ -167,6 +188,7 @@ export default async function publicApiRoutes(fastify) {
           filters: {
             type: 'object',
             properties: {
+              author: { type: 'string' },
               religion: { type: 'string' },
               collection: { type: 'string' }
             }
@@ -179,8 +201,9 @@ export default async function publicApiRoutes(fastify) {
     const startTime = Date.now();
 
     const filterParts = [];
+    if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
     if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-    if (filters.collection) filterParts.push(`collection = "${filters.collection}"`);
+    if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
     const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
 
     const searchResults = await keywordSearch(query, { limit, filter });
@@ -197,6 +220,9 @@ export default async function publicApiRoutes(fastify) {
 
     const durationMs = Date.now() - startTime;
     logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: results.length, durationMs, searchType: 'api_quick', filters });
+    if (request.apiKeyUserId) {
+      recordUsage(request.apiKeyUserId, request.apiKeyId, 'search_quick', false).catch(() => {});
+    }
 
     return { results, query, processingTimeMs: durationMs };
   });

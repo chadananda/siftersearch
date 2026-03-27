@@ -27,6 +27,7 @@ import { processTranslationJob } from '../services/translation.js';
 import { processAudioJob } from '../services/audio.js';
 import { notifyJobComplete, processEmailQueue } from '../services/email.js';
 import { JOB_TYPES } from '../services/jobs.js';
+import { reportUsageToStripe } from '../lib/billing.js';
 
 // ============================================================
 // Configuration
@@ -39,6 +40,7 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;
 const JOB_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const HEARTBEAT_INTERVAL_MS = 30000;
+const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
 
 // ============================================================
 // State
@@ -48,6 +50,7 @@ let currentSyncJobId = null;
 let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
 let lastJobCleanupTime = 0;
+let lastUsageReportTime = 0;
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -365,6 +368,11 @@ async function runPeriodicTasks() {
   }
   // Process email queue
   try { await processEmailQueue(5); } catch { /* ignore */ }
+  // Report API usage to Stripe every 5 min
+  if (now - lastUsageReportTime >= USAGE_REPORT_INTERVAL_MS) {
+    try { await reportUsageToStripe(); } catch (err) { logger.error({ error: err.message }, 'Usage report error'); }
+    lastUsageReportTime = now;
+  }
 }
 
 // ============================================================
@@ -406,6 +414,7 @@ async function workerLoop() {
   lastCleanupTime = Date.now();
   lastFullSyncTime = Date.now();
   lastJobCleanupTime = Date.now();
+  lastUsageReportTime = Date.now();
   logger.info('Unified worker ready');
   while (!isShuttingDown) {
     try {

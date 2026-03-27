@@ -1,7 +1,7 @@
 /**
  * S3-Compatible Object Storage
  *
- * Supports Backblaze B2 and Scaleway as S3-compatible backends.
+ * Supports Cloudflare R2 and Scaleway as S3-compatible backends.
  * Used for storing:
  * - Document originals (PDFs, etc.)
  * - Cover images
@@ -25,23 +25,22 @@ let publicBaseUrl = null;
 
 /**
  * Initialize S3 client based on available credentials
- * Priority: Backblaze B2 → Scaleway → Local filesystem fallback
+ * Priority: Cloudflare R2 → Scaleway → Local filesystem fallback
  */
 export function initStorage() {
-  // Try Backblaze B2 first
-  if (process.env.B2_APPLICATION_KEY_ID && process.env.B2_APPLICATION_KEY) {
-    const region = process.env.B2_REGION || 'us-west-004';
+  // Try Cloudflare R2 first
+  if (process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_ACCOUNT_ID) {
     s3Client = new S3Client({
-      region,
-      endpoint: `https://s3.${region}.backblazeb2.com`,
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: process.env.B2_APPLICATION_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
       }
     });
-    bucketName = process.env.B2_BUCKET_NAME || 'siftersearch';
-    publicBaseUrl = process.env.B2_PUBLIC_URL || `https://${bucketName}.s3.${region}.backblazeb2.com`;
-    logger.info({ provider: 'backblaze', bucket: bucketName }, 'Storage initialized');
+    bucketName = process.env.R2_BUCKET_NAME || 'siftersearch';
+    publicBaseUrl = process.env.R2_PUBLIC_URL || `https://${bucketName}.r2.dev`;
+    logger.info({ provider: 'cloudflare-r2', bucket: bucketName }, 'Storage initialized');
     return true;
   }
 
