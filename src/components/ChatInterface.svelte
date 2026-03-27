@@ -637,7 +637,7 @@
         currentBackoffInterval = MIN_REFRESH_INTERVAL;
       } else if (silent) {
         // During active indexing, never back off — we need frequent updates
-        if (stats.indexing || stats.translating) {
+        if (stats.indexing || stats.meilisearchIndexing || stats.translating) {
           currentBackoffInterval = MIN_REFRESH_INTERVAL;
         } else {
           // Stats unchanged and not indexing - increase backoff if user idle
@@ -658,7 +658,7 @@
       }
 
       // Adjust polling frequency based on indexing/translating state
-      startRefreshPolling(stats.indexing || stats.translating);
+      startRefreshPolling(stats.indexing || stats.meilisearchIndexing || stats.translating);
     } catch (err) {
       console.error('Failed to load library stats:', err);
       // Mark server offline but keep showing cached data
