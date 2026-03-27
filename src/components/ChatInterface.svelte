@@ -733,7 +733,6 @@
 
   function startIndexTicker() {
     if (_indexTickId) return; // already running
-    console.log('[Ticker] Starting index progress ticker');
     _indexTickId = setInterval(() => {
       const job = libraryStats?.indexingProgress?.activeJob;
       if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
@@ -752,7 +751,6 @@
       else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
       else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
       indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
-      console.log('[Ticker]', estimated, '/', job.totalItems, 'rate:', Math.round(rate), '/s');
     }, 1000);
   }
 
