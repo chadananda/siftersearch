@@ -737,6 +737,27 @@
     }
   });
 
+  // Interpolated indexing progress — ticks every second between server polls
+  let indexingInterpolated = $derived.by(() => {
+    void progressTick; // reactive dependency
+    const job = libraryStats?.indexingProgress?.activeJob;
+    if (!job || job.status !== 'running') return null;
+    if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
+      return { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '' };
+    }
+    const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
+    const rate = job.completedItems / elapsed;
+    const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
+    const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
+    const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
+    const remaining = (job.totalItems - estimated) / rate;
+    let eta = '';
+    if (remaining < 60) eta = 'less than a minute';
+    else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
+    else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
+    return { items: estimated, pct, eta, totalItems: job.totalItems };
+  });
+
   // Track user activity to reset backoff
   function handleUserActivity() {
     const wasIdle = Date.now() - lastUserActivity > 30000;
@@ -1740,34 +1761,17 @@
                 </div>
               {/if}
               <!-- Search index progress - show active job or overall sync status -->
-              {#if libraryStats?.indexingProgress?.activeJob?.status === 'running'}
-                {@const job = libraryStats.indexingProgress.activeJob}
-                {@const interpolated = (() => {
-                  void progressTick; // reactive dependency — re-evaluate every second
-                  if (!job.startedAt || !job.completedItems || job.completedItems < 500) return { items: job.completedItems, pct: job.percentComplete, eta: '' };
-                  const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
-                  const rate = job.completedItems / elapsed;
-                  // Interpolate forward from last known position
-                  const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
-                  const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
-                  const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
-                  const remaining = (job.totalItems - estimated) / rate;
-                  let eta = '';
-                  if (remaining < 60) eta = 'less than a minute';
-                  else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
-                  else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
-                  return { items: estimated, pct, eta };
-                })()}
+              {#if indexingInterpolated}
                 <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Indexing</span>
-                    <span class="ingestion-percent">{interpolated.pct}%</span>
+                    <span class="ingestion-percent">{indexingInterpolated.pct}%</span>
                   </div>
-                  <div class="ingestion-bar" role="progressbar" aria-valuenow={interpolated.pct} aria-valuemin="0" aria-valuemax="100">
-                    <div class="ingestion-fill active" style="width: {interpolated.pct}%"></div>
+                  <div class="ingestion-bar" role="progressbar" aria-valuenow={indexingInterpolated.pct} aria-valuemin="0" aria-valuemax="100">
+                    <div class="ingestion-fill active" style="width: {indexingInterpolated.pct}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(interpolated.items)} / {formatWithCommas(job.totalItems)} paragraphs{#if interpolated.eta} · {interpolated.eta} remaining{/if}
+                    {formatWithCommas(indexingInterpolated.items)} / {formatWithCommas(indexingInterpolated.totalItems)} paragraphs{#if indexingInterpolated.eta} · {indexingInterpolated.eta} remaining{/if}
                   </div>
                 </div>
               {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
