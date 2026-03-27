@@ -725,39 +725,40 @@
   let currentPollingInterval = $state(null);
   let isActivelyIndexing = $state(false);
   let refreshTimeoutId = null;
-  // Interpolated indexing progress — $state updated every second by setInterval
+  // Interpolated indexing progress — ticks every second between API polls
   let indexingInterpolated = $state(null);
-  let progressTickInterval = null;
-
-  function updateInterpolation() {
-    const job = libraryStats?.indexingProgress?.activeJob;
-    if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
-    if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
-      indexingInterpolated = { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '', totalItems: job.totalItems };
-      return;
-    }
-    const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
-    const rate = job.completedItems / elapsed;
-    const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
-    const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
-    const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
-    const remaining = (job.totalItems - estimated) / rate;
-    let eta = '';
-    if (remaining < 60) eta = 'less than a minute';
-    else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
-    else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
-    indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
-  }
 
   $effect(() => {
-    if (isActivelyIndexing && !progressTickInterval) {
-      progressTickInterval = setInterval(updateInterpolation, 1000);
-      updateInterpolation(); // immediate first tick
-    } else if (!isActivelyIndexing && progressTickInterval) {
-      clearInterval(progressTickInterval);
-      progressTickInterval = null;
-      updateInterpolation(); // clear interpolation
+    // Read the reactive dependency — re-runs when indexing state changes
+    const active = isActivelyIndexing;
+    if (!active) {
+      indexingInterpolated = null;
+      return;
     }
+
+    function tick() {
+      const job = libraryStats?.indexingProgress?.activeJob;
+      if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
+      if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
+        indexingInterpolated = { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '', totalItems: job.totalItems };
+        return;
+      }
+      const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
+      const rate = job.completedItems / elapsed;
+      const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
+      const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
+      const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
+      const remaining = (job.totalItems - estimated) / rate;
+      let eta = '';
+      if (remaining < 60) eta = 'less than a minute';
+      else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
+      else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
+      indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
+    }
+
+    tick(); // immediate
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id); // cleanup on re-run or unmount
   });
 
   // Track user activity to reset backoff
