@@ -503,11 +503,32 @@ async function propagateEmbeddings() {
  * Get documents that have dirty (synced=0) paragraphs.
  */
 async function getDocsWithDirtyParagraphs(limit = 50) {
+  // Subquery on partial index is fast; avoids full JOIN scan
   return queryAll(`
-    SELECT DISTINCT d.id, d.title, d.author, d.religion, d.collection,
+    SELECT d.id, d.title, d.author, d.religion, d.collection,
            d.language, d.year, d.description, d.filename
     FROM docs d
-    INNER JOIN content c ON c.doc_id = d.id
+    WHERE d.id IN (
+      SELECT DISTINCT doc_id FROM content
+      WHERE synced = 0 AND deleted_at IS NULL
+      LIMIT ?
+    )
+  `, [limit * 10]);  // over-fetch doc_ids since LIMIT inside subquery is on rows not distinct
+}
+
+/**
+ * Get a batch of dirty paragraphs (doc-agnostic).
+ * Joins doc metadata so the sync processor doesn't need separate doc lookups.
+ */
+async function getDirtyParagraphsBatch(limit = 200) {
+  return queryAll(`
+    SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
+           c.embedding, c.embedding_model, c.content_hash, c.normalized_hash,
+           c.translation, c.translation_segments, c.context,
+           d.title, d.author, d.filename, d.religion, d.collection,
+           d.language, d.year, d.description
+    FROM content c
+    JOIN docs d ON d.id = c.doc_id
     WHERE c.synced = 0 AND c.deleted_at IS NULL
     LIMIT ?
   `, [limit]);
@@ -516,7 +537,7 @@ async function getDocsWithDirtyParagraphs(limit = 50) {
 /**
  * Get dirty paragraphs for a specific document.
  */
-async function getDirtyParagraphsForDoc(docId, limit = 999999) {
+async function getDirtyParagraphsForDoc(docId, limit = 500) {
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
            embedding, embedding_model, content_hash, normalized_hash,
@@ -743,6 +764,7 @@ export const content = {
 
   // Sync-worker (exclusive)
   getDocsWithDirtyParagraphs,
+  getDirtyParagraphsBatch,
   getDirtyParagraphsForDoc,
   markSynced,
 
