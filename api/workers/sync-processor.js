@@ -27,15 +27,15 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili, initializeIndexes } from '../lib/search.js';
+import { getMeili } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
 
 // Configuration
-const BATCH_SIZE = 200; // Paragraphs per sync batch — small enough for fast SQLite reads, large enough for efficient Meili indexing
+const BATCH_SIZE = 500; // Paragraphs per sync batch — fewer Meili tasks = fewer index rebuilds
 const MAX_BATCH_BYTES = 90 * 1024 * 1024;  // 90MB limit (Meili has 100MB)
-const YIELD_DELAY_MS = 10;        // Delay between batches
+const COOLDOWN_MS = 2000;         // 2s between batches — let Meili breathe
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
@@ -277,7 +277,7 @@ async function runCleanupCycle() {
           totalOrphans += orphanIds.length;
           logger.info({ docId: doc.id, orphans: orphanIds.length }, 'Cleaned orphaned paragraphs from Meilisearch');
         }
-        if (YIELD_DELAY_MS > 0) await delay(YIELD_DELAY_MS);
+        if (COOLDOWN_MS > 0) await delay(COOLDOWN_MS);
       }
       if (totalOrphans > 0) logger.info({ totalOrphans, docsChecked: sampleDocs.length }, 'Paragraph orphan cleanup complete');
     } catch (paraErr) {
@@ -535,8 +535,8 @@ async function processJob(job) {
         'Sync job progress');
       await updateJobProgress(job.id, completedItems, failedItems);
 
-      // Brief yield to keep SQLite responsive
-      await delay(YIELD_DELAY_MS);
+      // Cooldown — let Meilisearch finish indexing before next batch
+      await delay(COOLDOWN_MS);
     }
 
     if (isShuttingDown) {
@@ -583,14 +583,9 @@ async function workerLoop() {
     process.exit(1);
   }
 
-  // Initialize Meilisearch indexes in background (non-blocking)
-  // The meilisearch-js client can hang on updateSettings() when Meilisearch has
-  // a large task queue. Run in background so sync worker can start immediately.
-  initializeIndexes().then(() => {
-    logger.info('Meilisearch indexes initialized (background)');
-  }).catch(err => {
-    logger.warn({ err: err.message }, 'Failed to initialize Meilisearch indexes (non-fatal)');
-  });
+  // Skip initializeIndexes() — it queues settingsUpdate tasks in Meilisearch
+  // on every restart, and those tasks block the entire queue while Meili rebuilds
+  // indexes on 2M+ documents. The API server handles index initialization.
 
   // On startup: any job stuck in 'running' was abandoned mid-flight — requeue it
   logger.info('Checking for stuck sync jobs...');

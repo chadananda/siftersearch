@@ -519,11 +519,14 @@ async function getDocsWithDirtyParagraphs(limit = 50) {
 /**
  * Get a batch of dirty paragraphs (doc-agnostic).
  * Joins doc metadata so the sync processor doesn't need separate doc lookups.
+ * Only reads embedding when it exists AND matches expected dimensions (via embedding_model).
+ * This avoids reading 12KB BLOBs that will be discarded for wrong-dimension vectors.
  */
-async function getDirtyParagraphsBatch(limit = 200) {
+async function getDirtyParagraphsBatch(limit = 500) {
   return queryAll(`
     SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
-           c.embedding, c.embedding_model, c.content_hash, c.normalized_hash,
+           CASE WHEN c.embedding_model = 'text-embedding-3-large' THEN c.embedding ELSE NULL END as embedding,
+           c.embedding_model, c.content_hash, c.normalized_hash,
            c.translation, c.translation_segments, c.context,
            d.title, d.author, d.filename, d.religion, d.collection,
            d.language, d.year, d.description
