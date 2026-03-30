@@ -228,6 +228,8 @@
                   >
                     {copiedKeyId === key.id ? '✓' : 'Copy'}
                   </button>
+                {:else}
+                  <span class="key-hint" title="Revoke and recreate to get a copyable key">legacy</span>
                 {/if}
               </span>
               <span class="key-meta">{formatDate(key.created_at)}</span>
@@ -503,6 +505,11 @@
     white-space: nowrap;
   }
   .btn-copy-sm:hover { background: var(--surface-3); color: var(--text-primary); }
+  .key-hint {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
   .key-meta {
     color: var(--text-secondary);
     font-size: 0.8125rem;
