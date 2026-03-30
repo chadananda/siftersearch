@@ -104,7 +104,7 @@ export async function listApiKeys(userId) {
   if (!_columnEnsured) { await ensureKeyValueColumn(); _columnEnsured = true; }
   return queryAll(
     `SELECT id, name, key_prefix, key_value, rate_limit, permissions, request_count, last_used_at, created_at, revoked_at
-     FROM api_keys WHERE user_id = ? ORDER BY created_at DESC`,
+     FROM api_keys WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at DESC`,
     [userId]
   );
 }
