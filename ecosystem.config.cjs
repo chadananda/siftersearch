@@ -27,7 +27,8 @@ module.exports = {
       watch: false,
       max_memory_restart: '500M',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
       listen_timeout: 10000,
       kill_timeout: 5000,
@@ -51,7 +52,8 @@ module.exports = {
       watch: false,
       max_memory_restart: '500M',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
       exp_backoff_restart_delay: 5000,
       max_restarts: 10,
