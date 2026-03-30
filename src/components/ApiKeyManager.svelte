@@ -20,6 +20,50 @@
   let newlyCreatedKey = $state(null);
   let copiedKey = $state(false);
   let copiedKeyId = $state(null);
+  let copiedExample = $state(null);
+
+  const API_BASE = 'https://api.siftersearch.com/api/v1';
+
+  const exampleCurl = `curl -X POST ${API_BASE}/search/quick \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: $SIFTER_API_KEY" \\
+  -d '{"query": "justice", "limit": 5}'`;
+
+  const exampleCurlAI = `curl -X POST ${API_BASE}/search \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: $SIFTER_API_KEY" \\
+  -d '{"query": "what do the scriptures say about justice?", "limit": 10}'`;
+
+  const exampleJS = `const SIFTER_API_KEY = process.env.SIFTER_API_KEY;
+
+const response = await fetch("${API_BASE}/search/quick", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": SIFTER_API_KEY
+  },
+  body: JSON.stringify({ query: "justice", limit: 10 })
+});
+const data = await response.json();
+console.log(data.results);`;
+
+  const examplePython = `import os, requests
+
+API_KEY = os.environ["SIFTER_API_KEY"]
+
+response = requests.post("${API_BASE}/search/quick",
+    headers={"X-API-Key": API_KEY},
+    json={"query": "justice", "limit": 10})
+data = response.json()
+print(data["results"])`;
+
+  async function copyExample(text, name) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copiedExample = name;
+      setTimeout(() => { copiedExample = null; }, 2000);
+    } catch { /* ignore */ }
+  }
   // Revoke confirmation
   let revokingId = $state(null);
   let confirmRevokeId = $state(null);
@@ -239,7 +283,7 @@
     {/if}
 
     <!-- Usage Dashboard -->
-    {#if usage}
+    {#if usage && usage.totalRequests > 0}
       <div class="usage-section">
         <h3>Usage</h3>
         <div class="usage-stats">
@@ -258,6 +302,63 @@
         </div>
       </div>
     {/if}
+
+    <!-- API Guide -->
+    <div class="api-guide">
+      <h3>Quick Start</h3>
+      <p class="guide-text">Base URL: <code>https://api.siftersearch.com/api/v1</code></p>
+
+      <div class="example-block">
+        <div class="example-header">
+          <span class="example-label">curl — keyword search</span>
+          <button class="btn-copy-sm" onclick={() => copyExample(exampleCurl, 'curl')}>
+            {copiedExample === 'curl' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre class="example-code">{exampleCurl}</pre>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <span class="example-label">curl — AI-powered search</span>
+          <button class="btn-copy-sm" onclick={() => copyExample(exampleCurlAI, 'curlai')}>
+            {copiedExample === 'curlai' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre class="example-code">{exampleCurlAI}</pre>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <span class="example-label">JavaScript / Node.js</span>
+          <button class="btn-copy-sm" onclick={() => copyExample(exampleJS, 'js')}>
+            {copiedExample === 'js' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre class="example-code">{exampleJS}</pre>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <span class="example-label">Python</span>
+          <button class="btn-copy-sm" onclick={() => copyExample(examplePython, 'py')}>
+            {copiedExample === 'py' ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <pre class="example-code">{examplePython}</pre>
+      </div>
+
+      <div class="guide-endpoints">
+        <h4>Endpoints</h4>
+        <div class="endpoint"><code>POST /search/quick</code> <span>Fast keyword search</span></div>
+        <div class="endpoint"><code>POST /search</code> <span>AI-powered hybrid search</span></div>
+        <div class="endpoint"><code>GET /paragraph/:id</code> <span>Get a specific passage</span></div>
+        <div class="endpoint"><code>GET /collections</code> <span>List available collections</span></div>
+        <div class="endpoint"><code>GET /health</code> <span>API health check</span></div>
+      </div>
+
+      <p class="guide-text"><a href="/docs/api" class="guide-link">Full API documentation</a></p>
+    </div>
   {/if}
 {/if}
 
@@ -617,6 +718,93 @@
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 2px;
+  }
+  /* API Guide */
+  .api-guide {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-default);
+  }
+  .api-guide h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+  .api-guide h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+  }
+  .guide-text {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin: 0 0 1rem;
+  }
+  .guide-text code {
+    background: var(--surface-2);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+  .guide-link {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .guide-link:hover { color: var(--accent-primary-hover); }
+  .example-block {
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+  .example-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.375rem 0.75rem;
+    background: var(--surface-2);
+    font-size: 0.75rem;
+  }
+  .example-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .example-code {
+    margin: 0;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface-0);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: var(--text-primary);
+  }
+  .example-code code {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .guide-endpoints {
+    margin-bottom: 1rem;
+  }
+  .endpoint {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.8125rem;
+  }
+  .endpoint code {
+    background: var(--surface-2);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+  .endpoint span {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
   }
   @media (max-width: 580px) {
     .usage-stats {
