@@ -3119,96 +3119,51 @@ Collection: ${paragraph.collection || 'Unknown'}
     const monthStart = new Date();
     monthStart.setDate(monthStart.getDate() - 30);
 
-    const [today, week, month, byModel, byProvider, byCaller, byCallerToday, failures] = await Promise.all([
-      // Today's stats
-      queryOne(`
-        SELECT
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-      `, [formatDate(todayStart)]),
-
-      // Week's stats
-      queryOne(`
-        SELECT
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-      `, [formatDate(weekStart)]),
-
-      // Month's stats
-      queryOne(`
-        SELECT
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-      `, [formatDate(monthStart)]),
-
-      // By model (last 30 days)
-      queryAll(`
-        SELECT
-          model,
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-        GROUP BY model
-        ORDER BY cost DESC
-      `, [formatDate(monthStart)]),
-
-      // By provider (last 30 days)
-      queryAll(`
-        SELECT
-          provider,
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-        GROUP BY provider
-        ORDER BY cost DESC
-      `, [formatDate(monthStart)]),
-
-      // By caller (last 30 days)
-      queryAll(`
-        SELECT
-          COALESCE(caller, 'unknown') as caller,
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-        GROUP BY caller
-        ORDER BY cost DESC
-      `, [formatDate(monthStart)]),
-
-      // By caller (last 24 hours) - for ticker display
-      queryAll(`
-        SELECT
-          COALESCE(caller, 'unknown') as caller,
-          COUNT(*) as calls,
-          COALESCE(SUM(total_tokens), 0) as tokens,
-          COALESCE(SUM(estimated_cost_usd), 0) as cost
-        FROM ai_usage
-        WHERE timestamp >= ?
-        GROUP BY caller
-        ORDER BY cost DESC
-      `, [formatDate(todayStart)]),
-
-      // Failed calls (last 7 days)
-      queryOne(`
-        SELECT COUNT(*) as count
-        FROM ai_usage
-        WHERE success = 0 AND timestamp >= ?
-      `, [formatDate(weekStart)])
+    // Single-pass aggregation: compute today/week/month stats in one query
+    const combined = await queryOne(`
+      SELECT
+        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as today_calls,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as today_tokens,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as today_cost,
+        SUM(CASE WHEN timestamp >= ? THEN 1 ELSE 0 END) as week_calls,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN total_tokens ELSE 0 END), 0) as week_tokens,
+        COALESCE(SUM(CASE WHEN timestamp >= ? THEN estimated_cost_usd ELSE 0 END), 0) as week_cost,
+        COUNT(*) as month_calls,
+        COALESCE(SUM(total_tokens), 0) as month_tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as month_cost,
+        SUM(CASE WHEN success = 0 AND timestamp >= ? THEN 1 ELSE 0 END) as failed_week
+      FROM ai_usage
+      WHERE timestamp >= ?
+    `, [
+      formatDate(todayStart), formatDate(todayStart), formatDate(todayStart),
+      formatDate(weekStart), formatDate(weekStart), formatDate(weekStart),
+      formatDate(weekStart),
+      formatDate(monthStart)
     ]);
+
+    const [byModel, byProvider, byCaller, byCallerToday] = await Promise.all([
+      queryAll(`
+        SELECT model, COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens, COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY model ORDER BY cost DESC
+      `, [formatDate(monthStart)]),
+      queryAll(`
+        SELECT provider, COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens, COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY provider ORDER BY cost DESC
+      `, [formatDate(monthStart)]),
+      queryAll(`
+        SELECT COALESCE(caller, 'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens, COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC
+      `, [formatDate(monthStart)]),
+      queryAll(`
+        SELECT COALESCE(caller, 'unknown') as caller, COUNT(*) as calls, COALESCE(SUM(total_tokens), 0) as tokens, COALESCE(SUM(estimated_cost_usd), 0) as cost
+        FROM ai_usage WHERE timestamp >= ? GROUP BY caller ORDER BY cost DESC
+      `, [formatDate(todayStart)])
+    ]);
+
+    const today = { calls: combined?.today_calls || 0, tokens: combined?.today_tokens || 0, cost: combined?.today_cost || 0 };
+    const week = { calls: combined?.week_calls || 0, tokens: combined?.week_tokens || 0, cost: combined?.week_cost || 0 };
+    const month = { calls: combined?.month_calls || 0, tokens: combined?.month_tokens || 0, cost: combined?.month_cost || 0 };
+    const failures = { count: combined?.failed_week || 0 };
 
     return {
       today: { calls: today?.calls || 0, tokens: today?.tokens || 0, cost: today?.cost || 0 },
