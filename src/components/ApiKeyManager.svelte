@@ -19,6 +19,7 @@
   let createError = $state(null);
   let newlyCreatedKey = $state(null);
   let copiedKey = $state(false);
+  let copiedKeyId = $state(null);
   // Revoke confirmation
   let revokingId = $state(null);
   let confirmRevokeId = $state(null);
@@ -83,11 +84,16 @@
     }
   }
 
-  async function copyKey() {
+  async function copyKey(keyValue = null, keyId = null) {
     try {
-      await navigator.clipboard.writeText(newlyCreatedKey);
-      copiedKey = true;
-      setTimeout(() => { copiedKey = false; }, 2000);
+      await navigator.clipboard.writeText(keyValue || newlyCreatedKey);
+      if (keyId) {
+        copiedKeyId = keyId;
+        setTimeout(() => { copiedKeyId = null; }, 2000);
+      } else {
+        copiedKey = true;
+        setTimeout(() => { copiedKey = false; }, 2000);
+      }
     } catch {
       // fallback: select text
     }
@@ -165,7 +171,7 @@
       <p class="reveal-warning">Copy your API key now — it won't be shown again.</p>
       <div class="key-display">
         <code class="key-text">{newlyCreatedKey}</code>
-        <button class="btn-copy" onclick={copyKey}>
+        <button class="btn-copy" onclick={() => copyKey()}>
           {copiedKey ? 'Copied!' : 'Copy'}
         </button>
       </div>
@@ -212,7 +218,18 @@
           {#each keys as key (key.id)}
             <div class="key-row">
               <span class="key-name">{key.name}</span>
-              <code class="key-prefix">{key.prefix}...</code>
+              <span class="key-prefix-cell">
+                <code class="key-prefix">{key.key_prefix || key.prefix}...</code>
+                {#if key.key_value}
+                  <button
+                    class="btn-copy-sm"
+                    onclick={() => copyKey(key.key_value, key.id)}
+                    title="Copy full API key"
+                  >
+                    {copiedKeyId === key.id ? '✓' : 'Copy'}
+                  </button>
+                {/if}
+              </span>
               <span class="key-meta">{formatDate(key.created_at)}</span>
               <span class="key-meta">{formatDate(key.last_used_at)}</span>
               <span class="key-meta">{formatNumber(key.request_count)}</span>
@@ -250,40 +267,18 @@
         <h3>Usage</h3>
         <div class="usage-stats">
           <div class="stat-card">
-            <span class="stat-value">{formatNumber(usage.searches_this_month)}</span>
-            <span class="stat-label">Searches this month</span>
+            <span class="stat-value">{formatNumber(usage.totalRequests || 0)}</span>
+            <span class="stat-label">Total requests</span>
           </div>
-          <div class="stat-card">
-            <span class="stat-value">{formatNumber(usage.cached_count)}</span>
-            <span class="stat-label">Cached (free)</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{formatNumber(usage.billable_count)}</span>
-            <span class="stat-label">Billable</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">${(usage.estimated_cost_cents / 100).toFixed(2)}</span>
-            <span class="stat-label">Est. monthly cost</span>
-          </div>
+          {#if usage.usage && usage.usage.length > 0}
+            {#each usage.usage as row}
+              <div class="stat-card">
+                <span class="stat-value">{formatNumber(row.count)}</span>
+                <span class="stat-label">{row.search_type || 'searches'}</span>
+              </div>
+            {/each}
+          {/if}
         </div>
-        {#if usage.daily && usage.daily.length > 0}
-          <div class="daily-chart">
-            <h4>Last 7 Days</h4>
-            <div class="bar-chart">
-              {#each usage.daily as day}
-                {@const maxVal = Math.max(...usage.daily.map(d => d.count || 0), 1)}
-                <div class="bar-col">
-                  <div
-                    class="bar"
-                    style="height: {Math.round(((day.count || 0) / maxVal) * 80)}px"
-                    title="{day.date}: {formatNumber(day.count)}"
-                  ></div>
-                  <span class="bar-label">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/if}
       </div>
     {/if}
   {/if}
@@ -486,11 +481,28 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .key-prefix-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   .key-prefix {
     font-family: monospace;
     color: var(--text-secondary);
     font-size: 0.8125rem;
   }
+  .btn-copy-sm {
+    padding: 0.15rem 0.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.6875rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-copy-sm:hover { background: var(--surface-3); color: var(--text-primary); }
   .key-meta {
     color: var(--text-secondary);
     font-size: 0.8125rem;

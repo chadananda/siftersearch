@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-30T19:56:15.206Z",
+  "generated": "2026-03-30T19:59:07.420Z",
   "entries": [
+    {
+      "hash": "e9a5f93",
+      "date": "2026-03-30",
+      "type": "Fixed",
+      "description": "API key creation returned object instead of key string",
+      "scope": null
+    },
     {
       "hash": "b218d93",
       "date": "2026-03-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Force line-height 1 on English translation with !important",
       "scope": null
-    },
-    {
-      "hash": "fe2a086",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Add missing PWA icons (192x192 and 512x512)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-03-30": [
+      {
+        "hash": "e9a5f93",
+        "date": "2026-03-30",
+        "type": "Fixed",
+        "description": "API key creation returned object instead of key string",
+        "scope": null
+      },
       {
         "hash": "b218d93",
         "date": "2026-03-30",
@@ -7041,13 +7048,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Force line-height 1 on English translation with !important",
-        "scope": null
-      },
-      {
-        "hash": "fe2a086",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Add missing PWA icons (192x192 and 512x512)",
         "scope": null
       }
     ]

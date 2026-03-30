@@ -17,19 +17,33 @@ function hashKey(key) {
 }
 
 /**
+ * Ensure the key_value column exists (added to store retrievable keys).
+ */
+async function ensureKeyValueColumn() {
+  try {
+    await query(`ALTER TABLE api_keys ADD COLUMN key_value TEXT`);
+  } catch {
+    // Column already exists
+  }
+}
+let _columnEnsured = false;
+
+/**
  * Generate a new API key for a user.
- * Returns the full key (only shown once) and the stored record.
+ * The full key is stored so the user can retrieve it later.
  */
 export async function createApiKey(userId, name, options = {}) {
+  if (!_columnEnsured) { await ensureKeyValueColumn(); _columnEnsured = true; }
+
   const rawKey = 'sk_' + randomBytes(32).toString('hex');
   const keyHash = hashKey(rawKey);
   const keyPrefix = rawKey.substring(0, 10);
 
   const result = await query(
-    `INSERT INTO api_keys (user_id, name, key_hash, key_prefix, rate_limit, permissions, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `INSERT INTO api_keys (user_id, name, key_hash, key_prefix, key_value, rate_limit, permissions, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
      RETURNING id, name, key_prefix, rate_limit, permissions, created_at`,
-    [userId, name, keyHash, keyPrefix, options.rateLimit || 1000, JSON.stringify(options.permissions || ['search'])]
+    [userId, name, keyHash, keyPrefix, rawKey, options.rateLimit || 1000, JSON.stringify(options.permissions || ['search'])]
   );
 
   return {
@@ -87,8 +101,9 @@ export async function validateApiKey(key) {
  * List API keys for a user (without hashes).
  */
 export async function listApiKeys(userId) {
+  if (!_columnEnsured) { await ensureKeyValueColumn(); _columnEnsured = true; }
   return queryAll(
-    `SELECT id, name, key_prefix, rate_limit, permissions, request_count, last_used_at, created_at, revoked_at
+    `SELECT id, name, key_prefix, key_value, rate_limit, permissions, request_count, last_used_at, created_at, revoked_at
      FROM api_keys WHERE user_id = ? ORDER BY created_at DESC`,
     [userId]
   );
