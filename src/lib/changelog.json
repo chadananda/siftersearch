@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-30T20:15:21.232Z",
+  "generated": "2026-03-30T20:16:37.252Z",
   "entries": [
+    {
+      "hash": "61c4672",
+      "date": "2026-03-30",
+      "type": "Fixed",
+      "description": "Filter out revoked API keys from list",
+      "scope": null
+    },
     {
       "hash": "2f97d03",
       "date": "2026-03-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add global CSS override for English translation line-height",
       "scope": null
-    },
-    {
-      "hash": "00e78c3",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Use :global() for English translation line-height in SBS mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-03-30": [
+      {
+        "hash": "61c4672",
+        "date": "2026-03-30",
+        "type": "Fixed",
+        "description": "Filter out revoked API keys from list",
+        "scope": null
+      },
       {
         "hash": "2f97d03",
         "date": "2026-03-30",
@@ -7041,13 +7048,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Add global CSS override for English translation line-height",
-        "scope": null
-      },
-      {
-        "hash": "00e78c3",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Use :global() for English translation line-height in SBS mode",
         "scope": null
       }
     ]
