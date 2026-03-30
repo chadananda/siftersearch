@@ -202,62 +202,37 @@
       </form>
     </div>
 
-    <!-- Key Table -->
+    <!-- Key Cards -->
     {#if keys.length > 0}
       <div class="keys-section">
         <h3>Your Keys</h3>
-        <div class="key-table">
-          <div class="key-table-header">
-            <span>Name</span>
-            <span>Prefix</span>
-            <span>Created</span>
-            <span>Last Used</span>
-            <span>Requests</span>
-            <span></span>
-          </div>
-          {#each keys as key (key.id)}
-            <div class="key-row">
+        {#each keys as key (key.id)}
+          <div class="key-card">
+            <div class="key-card-header">
               <span class="key-name">{key.name}</span>
-              <span class="key-prefix-cell">
-                <code class="key-prefix">{key.key_prefix || key.prefix}...</code>
+              <div class="key-actions">
                 {#if key.key_value}
                   <button
                     class="btn-copy-sm"
                     onclick={() => copyKey(key.key_value, key.id)}
-                    title="Copy full API key"
                   >
-                    {copiedKeyId === key.id ? '✓' : 'Copy'}
+                    {copiedKeyId === key.id ? 'Copied!' : 'Copy'}
                   </button>
-                {:else}
-                  <span class="key-hint" title="Revoke and recreate to get a copyable key">legacy</span>
                 {/if}
-              </span>
-              <span class="key-meta">{formatDate(key.created_at)}</span>
-              <span class="key-meta">{formatDate(key.last_used_at)}</span>
-              <span class="key-meta">{formatNumber(key.request_count)}</span>
-              <span class="key-action">
                 {#if confirmRevokeId === key.id}
-                  <button
-                    class="btn-danger-sm"
-                    onclick={() => revokeKey(key.id)}
-                    disabled={revokingId === key.id}
-                  >
-                    Confirm
-                  </button>
+                  <button class="btn-danger-sm" onclick={() => revokeKey(key.id)} disabled={revokingId === key.id}>Confirm</button>
                   <button class="btn-link-sm" onclick={() => { confirmRevokeId = null; }}>Cancel</button>
                 {:else}
-                  <button
-                    class="btn-revoke"
-                    onclick={() => revokeKey(key.id)}
-                    disabled={revokingId === key.id}
-                  >
-                    Revoke
-                  </button>
+                  <button class="btn-delete" onclick={() => revokeKey(key.id)} disabled={revokingId === key.id} title="Delete key">✕</button>
                 {/if}
-              </span>
+              </div>
             </div>
-          {/each}
-        </div>
+            <div class="key-card-body">
+              <code class="key-prefix">{key.key_prefix || key.prefix}...</code>
+              <span class="key-meta">{formatNumber(key.request_count)} requests · Created {formatDate(key.created_at)}</span>
+            </div>
+          </div>
+        {/each}
       </div>
     {:else}
       <p class="no-keys">No API keys yet. Create one above.</p>
@@ -443,50 +418,56 @@
   }
   .keys-section {
     margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
   .keys-section h3 {
-    margin: 0 0 0.75rem;
+    margin: 0;
     font-size: 1rem;
     color: var(--text-primary);
   }
-  .key-table {
+  .key-card {
     border: 1px solid var(--border-default);
     border-radius: 0.5rem;
     overflow: hidden;
     font-size: 0.875rem;
   }
-  .key-table-header {
-    display: grid;
-    grid-template-columns: 1.5fr 1.2fr 1fr 1fr 0.8fr 1fr;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    background: var(--surface-2);
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .key-row {
-    display: grid;
-    grid-template-columns: 1.5fr 1.2fr 1fr 1fr 0.8fr 1fr;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--border-default);
+  .key-card-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.875rem;
+    background: var(--surface-2);
   }
-  .key-row:nth-child(even) { background: var(--surface-0); }
-  .key-name {
-    color: var(--text-primary);
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .key-prefix-cell {
+  .key-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+  .key-card-body {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    flex-wrap: wrap;
+  }
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .btn-delete:hover:not(:disabled) { color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+  .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+  .key-name {
+    color: var(--text-primary);
+    font-weight: 500;
   }
   .key-prefix {
     font-family: monospace;
@@ -494,25 +475,25 @@
     font-size: 0.8125rem;
   }
   .btn-copy-sm {
-    padding: 0.15rem 0.5rem;
+    padding: 0.25rem 0.625rem;
     background: var(--surface-2);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     color: var(--text-secondary);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s;
     white-space: nowrap;
   }
   .btn-copy-sm:hover { background: var(--surface-3); color: var(--text-primary); }
   .key-hint {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     color: var(--text-muted);
     font-style: italic;
   }
   .key-meta {
     color: var(--text-secondary);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
   }
   .key-action {
     display: flex;
@@ -618,21 +599,6 @@
     text-underline-offset: 2px;
   }
   .btn-link:hover { color: var(--accent-primary-hover); }
-  .btn-revoke {
-    padding: 0.25rem 0.625rem;
-    background: none;
-    border: 1px solid var(--border-default);
-    border-radius: 0.375rem;
-    color: var(--text-secondary);
-    font-size: 0.8125rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .btn-revoke:hover:not(:disabled) {
-    border-color: var(--error);
-    color: var(--error);
-  }
-  .btn-revoke:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-danger-sm {
     padding: 0.25rem 0.625rem;
     background: var(--error);
@@ -653,17 +619,6 @@
     text-underline-offset: 2px;
   }
   @media (max-width: 580px) {
-    .key-table-header, .key-row {
-      grid-template-columns: 1fr 1fr auto;
-    }
-    .key-table-header span:nth-child(3),
-    .key-table-header span:nth-child(4),
-    .key-table-header span:nth-child(5),
-    .key-row .key-meta:nth-child(3),
-    .key-row .key-meta:nth-child(4),
-    .key-row .key-meta:nth-child(5) {
-      display: none;
-    }
     .usage-stats {
       grid-template-columns: repeat(2, 1fr);
     }
