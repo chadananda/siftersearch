@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-30T13:36:01.625Z",
+  "generated": "2026-03-30T19:56:15.206Z",
   "entries": [
+    {
+      "hash": "b218d93",
+      "date": "2026-03-30",
+      "type": "Fixed",
+      "description": "Pass MEILI_MASTER_KEY to API and worker via PM2 env",
+      "scope": null
+    },
     {
       "hash": "5e4b218",
       "date": "2026-03-26",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Add missing PWA icons (192x192 and 512x512)",
       "scope": null
-    },
-    {
-      "hash": "295aa6d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Explicitly set English font-size to 1rem in translation column",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-03-30": [
+      {
+        "hash": "b218d93",
+        "date": "2026-03-30",
+        "type": "Fixed",
+        "description": "Pass MEILI_MASTER_KEY to API and worker via PM2 env",
+        "scope": null
+      }
+    ],
     "2026-03-26": [
       {
         "hash": "5e4b218",
@@ -7039,13 +7048,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Add missing PWA icons (192x192 and 512x512)",
-        "scope": null
-      },
-      {
-        "hash": "295aa6d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Explicitly set English font-size to 1rem in translation column",
         "scope": null
       }
     ]

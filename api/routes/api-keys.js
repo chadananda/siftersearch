@@ -75,7 +75,7 @@ export default async function apiKeyRoutes(fastify) {
     }
     const result = await createApiKey(request.user.sub, request.body.name);
     logger.info({ userId: request.user.sub, keyName: request.body.name }, 'API key created');
-    return { key: result };
+    return { key: result.key, id: result.id, name: result.name, keyPrefix: result.keyPrefix };
   });
 
   // DELETE /:id — revoke a key
