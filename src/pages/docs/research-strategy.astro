@@ -56,7 +56,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
       <!-- Disambiguation box -->
       <rect x="326" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
       <text x="396" y="53" text-anchor="middle" class="node-label">Disambiguation</text>
-      <text x="396" y="84" text-anchor="middle" class="node-sublabel">(Claude Haiku)</text>
+      <text x="396" y="84" text-anchor="middle" class="node-sublabel">(Claude Sonnet)</text>
       <!-- Arrow 3 -->
       <path d="M466 60 L494 60" class="arrow-line"/>
       <polygon points="494,55 504,60 494,65" class="arrow-head"/>
@@ -64,7 +64,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
       <rect x="504" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
       <text x="574" y="53" text-anchor="middle" class="node-label">HyPE</text>
       <text x="574" y="69" text-anchor="middle" class="node-label">Questions</text>
-      <text x="574" y="84" text-anchor="middle" class="node-sublabel">(Claude Haiku)</text>
+      <text x="574" y="84" text-anchor="middle" class="node-sublabel">(Claude Sonnet)</text>
       <!-- Arrow 4 -->
       <path d="M644 60 L672 60" class="arrow-line"/>
       <polygon points="672,55 682,60 672,65" class="arrow-head"/>
@@ -347,69 +347,82 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
   <p>
     <strong>The Problem.</strong> Processing 2.57 million passages requires millions of AI API
-    calls. Without optimization, this would cost tens of thousands of dollars — putting the
-    project out of reach for an individual initiative. The cost isn't just a funding problem;
-    it's a signal that the architecture is wrong.
+    calls. Using Claude Sonnet — the quality level needed for nuanced religious and philosophical
+    text — the raw cost would be roughly $25,000 for disambiguation alone and $17,000 for HyPE
+    question generation. Over $42,000 total, before re-embedding. This is not feasible for an
+    individual initiative, even if the quality justifies it.
   </p>
   <p>
-    <strong>The Solution.</strong> Anthropic's API charges based on tokens processed. When the
-    same context appears at the start of multiple consecutive requests, it can be cached —
-    and cached tokens are billed at roughly 10% of normal cost. The insight that makes this
-    powerful: when processing passages from the same document sequentially, the context
-    (document metadata, entity glossary, surrounding paragraphs) changes very little between
-    calls.
+    <strong>The Solution.</strong> Two strategies combine to make this affordable: prompt caching
+    and priority-based processing.
   </p>
   <p>
-    SifterSearch uses a sliding window strategy. Passages are processed in document order.
-    The system prompt for each passage contains the document metadata, the entity glossary,
-    and approximately twenty surrounding paragraphs for context. Between consecutive passages
-    in the same document, most of this context remains unchanged — only a few paragraphs
-    slide in and out of the window. This achieves cache hit rates of approximately 90%,
-    meaning 90% of each API call is billed at one-tenth the normal rate.
+    <strong>Prompt caching</strong> exploits Anthropic's pricing structure. When the same context
+    appears at the start of multiple consecutive requests, cached input tokens are billed at 10%
+    of normal cost. When processing passages from the same document sequentially, the system
+    prompt (document metadata, entity glossary, ~20 surrounding paragraphs) remains nearly
+    identical between calls — only a few paragraphs slide in and out of the window. This
+    achieves ~90% cache hit rates on input tokens, reducing the input cost by roughly 70%
+    overall. Output tokens ($15/M for Sonnet) cannot be cached, so the total savings are
+    approximately 63% — bringing the full-library cost from ~$42,000 to ~$15,500.
   </p>
   <p>
-    The concrete numbers: without prompt caching, disambiguation of 2.57 million passages
-    would cost roughly $250. With caching, the estimated cost is around $25 — a 90% reduction.
-    Adding hypothetical question generation and re-embedding, the total estimated cost for
-    the full enhancement pipeline across the entire 5,834-document library is approximately
-    $90–100. Entity extraction and all query-time classification run on local AI models,
-    adding zero marginal API cost.
+    <strong>Priority-based processing</strong> makes the remaining cost manageable. Not all 2.57
+    million passages need enhancement simultaneously. SifterSearch processes documents in order
+    of authority and scholarly importance:
+  </p>
+  <ul>
+    <li><strong>Tier 1 — Core scripture and foundational texts</strong> (authority 8-10): ~500
+    documents, ~200K passages. These are the texts researchers search most. Estimated cost:
+    ~$1,200.</li>
+    <li><strong>Tier 2 — Major scholarly works</strong> (authority 5-7): ~2,000 documents,
+    ~800K passages. Important commentary, hadith collections, and historical works.
+    Estimated cost: ~$4,800.</li>
+    <li><strong>Tier 3 — Supporting texts</strong> (authority 1-4): the remaining ~3,300
+    documents. Enhanced as budget allows, with the original un-enhanced index continuing
+    to serve these texts via keyword and semantic search.</li>
+  </ul>
+  <p>
+    Re-embedding with OpenAI (text-embedding-3-large) adds only ~$170 for the full library — a
+    negligible cost. Entity extraction and all query-time classification run on local AI models
+    at zero marginal cost.
   </p>
   <p>
-    <strong>The Result.</strong> A project that would cost $50,000 at standard AI rates costs
-    roughly $100 — making comprehensive AI enrichment of the entire library not just feasible
-    but done.
+    <strong>The Result.</strong> By processing the most important texts first, SifterSearch
+    delivers enhanced search quality where it matters most for roughly $1,200 — then
+    progressively enhances the rest of the library as funding allows. The dual-index
+    architecture means un-enhanced texts remain fully searchable through the original index.
   </p>
 
   <!-- Diagram 5: Cost Savings Bar Chart -->
   <div class="diagram">
     <div class="cost-chart">
       <div class="cost-row">
-        <div class="cost-label">Without caching</div>
+        <div class="cost-label">Full library, no caching</div>
         <div class="cost-bar-wrap">
           <div class="cost-bar cost-bar-high" style="width: 100%">
-            <span class="cost-bar-value">~$250</span>
+            <span class="cost-bar-value">~$42,000</span>
           </div>
         </div>
       </div>
       <div class="cost-row">
-        <div class="cost-label">With prompt caching</div>
+        <div class="cost-label">Full library, with caching</div>
         <div class="cost-bar-wrap">
-          <div class="cost-bar cost-bar-low" style="width: 10%">
-            <span class="cost-bar-value cost-bar-value-outside">~$25</span>
+          <div class="cost-bar cost-bar-total" style="width: 37%">
+            <span class="cost-bar-value">~$15,500</span>
           </div>
         </div>
       </div>
       <div class="cost-row">
-        <div class="cost-label">Full pipeline total</div>
+        <div class="cost-label">Tier 1 only (core texts)</div>
         <div class="cost-bar-wrap">
-          <div class="cost-bar cost-bar-total" style="width: 38%">
-            <span class="cost-bar-value">~$90–100</span>
+          <div class="cost-bar cost-bar-low" style="width: 3%">
+            <span class="cost-bar-value cost-bar-value-outside">~$1,200</span>
           </div>
         </div>
       </div>
     </div>
-    <p class="diagram-caption">Figure 5. Prompt caching reduces disambiguation cost by approximately 90%. The full enhancement pipeline — disambiguation, HyPE question generation, and re-embedding — costs roughly $90–100 across 2.57 million passages.</p>
+    <p class="diagram-caption">Figure 5. Cost estimates for Claude Sonnet at current pricing. Prompt caching saves ~63% on input tokens. Priority processing (Tier 1 first) makes the initial deployment affordable, with progressive enhancement of the full library over time.</p>
   </div>
 
   <h2>Problem 6: The Index Improves Slowly or Not at All</h2>

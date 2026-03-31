@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-31T16:00:57.693Z",
+  "generated": "2026-03-31T16:24:06.181Z",
   "entries": [
+    {
+      "hash": "dd8e368",
+      "date": "2026-03-31",
+      "type": "Other",
+      "description": "Add definitional + philosophical implication question types",
+      "scope": null
+    },
     {
       "hash": "5f6f53b",
       "date": "2026-03-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Adjust segment highlight height to match line-height",
       "scope": null
-    },
-    {
-      "hash": "bea207c",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Set line-height on translation-col parent container",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-03-31": [
+      {
+        "hash": "dd8e368",
+        "date": "2026-03-31",
+        "type": "Other",
+        "description": "Add definitional + philosophical implication question types",
+        "scope": null
+      },
       {
         "hash": "5f6f53b",
         "date": "2026-03-31",
@@ -7043,13 +7050,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Adjust segment highlight height to match line-height",
-        "scope": null
-      },
-      {
-        "hash": "bea207c",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Set line-height on translation-col parent container",
         "scope": null
       }
     ]
