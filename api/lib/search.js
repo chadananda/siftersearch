@@ -580,8 +580,10 @@ export async function keywordSearch(query, options = {}) {
   // 3. Document: max 3 passages per document (prevent single doc flooding results)
   const seenKeys = new Set();
   const seenTexts = new Set();
-  const docCounts = {};
-  const MAX_PER_DOC = 3;
+  const docIdCounts = {};
+  const titleCounts = {};
+  const MAX_PER_DOC = 2;
+  const MAX_PER_TITLE = 2; // catches same book indexed under different doc_ids
   const deduplicatedHits = [];
   for (const hit of rankedHits) {
     const key = `${hit.doc_id || hit.document_id}-${hit.paragraph_index}`;
@@ -591,10 +593,16 @@ export async function keywordSearch(query, options = {}) {
     const textKey = (hit.text || '').replace(/\s+/g, ' ').trim().slice(0, 100).toLowerCase();
     if (textKey.length > 20 && seenTexts.has(textKey)) continue;
     seenTexts.add(textKey);
-    // Document limit: max N passages from same document
+    // Document limit: max N passages from same doc_id
     const docId = hit.doc_id || hit.document_id;
-    docCounts[docId] = (docCounts[docId] || 0) + 1;
-    if (docCounts[docId] > MAX_PER_DOC) continue;
+    docIdCounts[docId] = (docIdCounts[docId] || 0) + 1;
+    if (docIdCounts[docId] > MAX_PER_DOC) continue;
+    // Title limit: catches duplicate uploads with different doc_ids
+    const titleKey = (hit.title || '').toLowerCase().trim();
+    if (titleKey) {
+      titleCounts[titleKey] = (titleCounts[titleKey] || 0) + 1;
+      if (titleCounts[titleKey] > MAX_PER_TITLE) continue;
+    }
     deduplicatedHits.push(hit);
   }
 
