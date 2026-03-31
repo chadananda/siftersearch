@@ -74,8 +74,8 @@ describe('Disambiguation Prompt', () => {
 
     const { systemPrompt } = buildDisambiguationPrompt(doc, {}, [{ paragraph_index: 0, text: 'Test' }], 0);
 
-    expect(systemPrompt).toMatch(/only.*from.*document|only.*from.*text/i);
-    expect(systemPrompt).toMatch(/never.*general knowledge/i);
+    expect(systemPrompt).toMatch(/only.*document.*text|use only document/i);
+    expect(systemPrompt).toMatch(/no general knowledge|never.*general knowledge/i);
   });
 
   it('should include conceptual reference types in disambiguation instructions', async () => {

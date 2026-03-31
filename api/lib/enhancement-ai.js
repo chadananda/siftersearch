@@ -38,24 +38,17 @@ export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex
   // Build window lines
   const windowLines = preceding.map((p, i) => `[P${i + 1}] ${p.text}`).join('\n');
   const targetLine = `[TARGET] ${targetParagraph.text}`;
-  const systemPrompt = `You are a scholarly disambiguation assistant for sacred texts.
+  const systemPrompt = `Disambiguate references in sacred texts. Output ONLY key→value pairs.
 
-Document: "${title}" by ${author}
-Religion: ${religion} | Collection: ${collection} | Year: ${year}${entitySection}
+Doc: "${title}" by ${author} | ${religion} / ${collection} | ${year}${entitySection}
 
-TASK: Rewrite [TARGET] as a fully self-contained sentence by resolving ALL ambiguous references, drawing ONLY from the document text provided. Never use general knowledge outside this document.
+FORMAT: ref→resolved | ref→resolved | ref→resolved
+EXAMPLE: He→Mullá Husayn | the city→Shíráz, Iran | dawn→May 23, 1844
 
-Resolve ALL of the following reference types:
-- Pronominal: he, she, it, they, this, that, these, those
-- Conceptual: this principle, teaching, doctrine, idea
-- Temporal: at that time, in this age, in that era
-- Spatial: in that place, there, here
-- Textual: as mentioned above, the aforementioned
-- Philosophical: this station, condition, path, truth
+Resolve: pronouns, conceptual refs (this teaching, that station), temporal, spatial, textual refs.
+Use ONLY document text. No general knowledge. No prose. No explanation. Just key→value pairs.
+If nothing needs disambiguation, output: NONE
 
-Keep your response concise (under 80 words). Draw ONLY from document text above, never from general knowledge.
-
-Context window:
 ${windowLines}
 
 ${targetLine}`;
@@ -65,16 +58,45 @@ ${targetLine}`;
 
 /**
  * Parse a disambiguation response from the LLM.
- * Returns null for empty/missing input; truncates verbose responses to ~80 words.
+ * Accepts both terse key→value format and prose. Truncates verbose responses.
+ * Returns null for empty/missing/NONE input.
  */
 export function parseDisambiguationResponse(response) {
   if (!response) return null;
   const trimmed = response.trim();
-  if (!trimmed) return null;
+  if (!trimmed || trimmed === 'NONE') return null;
+  // Truncate verbose responses
   const words = trimmed.split(/\s+/);
   if (words.length <= MAX_DISAMBIGUATION_WORDS) return trimmed;
-  // Truncate to MAX_DISAMBIGUATION_WORDS words
   return words.slice(0, MAX_DISAMBIGUATION_WORDS).join(' ');
+}
+
+/**
+ * Build prompt for HyPE question generation. Ultra-terse output format.
+ * Generates 3 types: factual, definitional, philosophical implication.
+ */
+export function buildHyPEPrompt(passage, context, doc) {
+  const systemPrompt = `Generate exactly 5 questions this passage answers. One per line. No numbering. No preamble.
+
+Types needed:
+- 2 factual (what does it say?)
+- 1 definitional (what concept does it define/explain?)
+- 2 implication (what are the philosophical/spiritual implications?)
+
+Max 15 words per question. ${doc?.religion ? `Domain: ${doc.religion}` : ''}`;
+  const userPrompt = `${passage.text}${context ? '\nContext: ' + context : ''}`;
+  return { systemPrompt, userPrompt };
+}
+
+/**
+ * Build prompt for entity extraction. JSON output, terse.
+ */
+export function buildEntityPrompt(docText, doc) {
+  const systemPrompt = `Extract key entities from this ${doc?.religion || ''} text. Return ONLY JSON:
+{"people":["name (dates, role)"],"organizations":["name"],"concepts":["term (brief definition)"],"time_periods":["period"]}
+Be terse. Max 5 per category. No prose.`;
+  const userPrompt = docText.slice(0, 3000);
+  return { systemPrompt, userPrompt };
 }
 
 /**
@@ -132,7 +154,7 @@ export function parseEntityResponse(response) {
 export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
   const endpoint = config.localLlm?.endpoint || 'http://localhost:8000/v1';
   const model = options.model || config.localLlm?.model || 'Qwen/Qwen3-32B-AWQ';
-  const maxTokens = options.maxTokens || 200;
+  const maxTokens = options.maxTokens || 100; // Terse output — every token costs time on local LLM
   const temperature = options.temperature ?? 0.3;
   try {
     const response = await fetch(`${endpoint}/chat/completions`, {
