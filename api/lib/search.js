@@ -570,15 +570,32 @@ export async function keywordSearch(query, options = {}) {
 
   logger.info({ query, filteredCount: rankedHits.length }, 'keywordSearch: after filtering');
 
-  // Deduplicate by doc_id + paragraph_index (keep first occurrence, which has highest rank)
-  const seen = new Set();
+  // Filter out trivially short passages (headings, fragments)
+  const MIN_TEXT_LENGTH = 40;
+  rankedHits = rankedHits.filter(hit => (hit.text || '').length >= MIN_TEXT_LENGTH);
+
+  // Deduplicate: 3 layers
+  // 1. Exact: same doc_id + paragraph_index (duplicate index entries)
+  // 2. Content: same text appearing in different documents (secondary quoting primary)
+  // 3. Document: max 3 passages per document (prevent single doc flooding results)
+  const seenKeys = new Set();
+  const seenTexts = new Set();
+  const docCounts = {};
+  const MAX_PER_DOC = 3;
   const deduplicatedHits = [];
   for (const hit of rankedHits) {
     const key = `${hit.doc_id || hit.document_id}-${hit.paragraph_index}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduplicatedHits.push(hit);
-    }
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    // Content dedup: normalize and check first 100 chars
+    const textKey = (hit.text || '').replace(/\s+/g, ' ').trim().slice(0, 100).toLowerCase();
+    if (textKey.length > 20 && seenTexts.has(textKey)) continue;
+    seenTexts.add(textKey);
+    // Document limit: max N passages from same document
+    const docId = hit.doc_id || hit.document_id;
+    docCounts[docId] = (docCounts[docId] || 0) + 1;
+    if (docCounts[docId] > MAX_PER_DOC) continue;
+    deduplicatedHits.push(hit);
   }
 
   if (deduplicatedHits.length !== rankedHits.length) {
