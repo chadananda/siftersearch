@@ -64,7 +64,7 @@ async function main() {
   const docIds = specificDocId ? [parseInt(specificDocId)] : PRIORITY_DOC_IDS;
 
   for (const docId of docIds) {
-    const doc = await queryOne('SELECT id, title, author, religion, collection, year, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
+    const doc = await queryOne('SELECT id, title, author, religion, collection, year, language, description, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
     if (!doc) { console.log(`⚠ Doc ${docId} not found, skipping`); continue; }
 
     console.log(`\n━━━ ${doc.title} by ${doc.author} (${doc.paragraph_count} paragraphs) ━━━`);

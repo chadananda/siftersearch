@@ -18,7 +18,13 @@ const WINDOW_SIZE = 20;
  * Includes ~20 preceding paragraphs as context window, document metadata, and entities.
  */
 export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
-  const { title, author, religion, collection, year } = doc;
+  const { title, author, religion, collection, year, description, language } = doc;
+  // Build book metadata block — gives the LLM essential context about what this work IS
+  const metaLines = [`"${title}" by ${author}`, `${religion} / ${collection}`];
+  if (year) metaLines.push(`Year: ${year}`);
+  if (language && language !== 'en') metaLines.push(`Language: ${language}`);
+  if (description) metaLines.push(`About: ${description.slice(0, 300)}`);
+  const metaBlock = metaLines.join('\n');
   // Build entity lines
   const entityLines = [];
   if (entities?.people?.length) entityLines.push(`People: ${entities.people.join(', ')}`);
@@ -26,7 +32,7 @@ export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex
   if (entities?.concepts?.length) entityLines.push(`Concepts: ${entities.concepts.join(', ')}`);
   if (entities?.time_periods?.length) entityLines.push(`Time periods: ${entities.time_periods.join(', ')}`);
   const entitySection = entityLines.length
-    ? `\n\nKey entities in this document:\n${entityLines.join('\n')}`
+    ? `\nEntities:\n${entityLines.join('\n')}`
     : '';
   // Collect preceding paragraphs sorted by index, up to WINDOW_SIZE
   const preceding = paragraphs
@@ -40,7 +46,7 @@ export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex
   const targetLine = `[TARGET] ${targetParagraph.text}`;
   const systemPrompt = `Disambiguate references in sacred texts. Output ONLY key→value pairs.
 
-Doc: "${title}" by ${author} | ${religion} / ${collection} | ${year}${entitySection}
+${metaBlock}${entitySection}
 
 FORMAT: ref→resolved | ref→resolved | ref→resolved
 EXAMPLE: He→Mullá Husayn | the city→Shíráz, Iran | dawn→May 23, 1844
@@ -78,6 +84,7 @@ export function parseDisambiguationResponse(response) {
  * Generates 3 types: factual, definitional, philosophical implication.
  */
 export function buildHyPEPrompt(passage, context, doc) {
+  const bookContext = doc ? `Book: "${doc.title}" by ${doc.author} (${doc.religion}/${doc.collection})${doc.description ? '\nAbout: ' + doc.description.slice(0, 200) : ''}` : '';
   const systemPrompt = `Generate exactly 5 questions this passage answers. One per line. No numbering. No preamble.
 
 Types needed:
@@ -85,7 +92,8 @@ Types needed:
 - 1 definitional (what concept does it define/explain?)
 - 2 implication (what are the philosophical/spiritual implications?)
 
-Max 15 words per question. ${doc?.religion ? `Domain: ${doc.religion}` : ''}`;
+Max 15 words per question.
+${bookContext}`;
   const userPrompt = `${passage.text}${context ? '\nContext: ' + context : ''}`;
   return { systemPrompt, userPrompt };
 }
@@ -94,7 +102,9 @@ Max 15 words per question. ${doc?.religion ? `Domain: ${doc.religion}` : ''}`;
  * Build prompt for entity extraction. JSON output, terse.
  */
 export function buildEntityPrompt(docText, doc) {
-  const systemPrompt = `Extract key entities from this ${doc?.religion || ''} text. Return ONLY JSON:
+  const bookInfo = doc ? `"${doc.title}" by ${doc.author} (${doc.religion}/${doc.collection})${doc.description ? '. ' + doc.description.slice(0, 200) : ''}` : '';
+  const systemPrompt = `Extract key entities from this text: ${bookInfo}
+Return ONLY JSON:
 {"people":["name (dates, role)"],"organizations":["name"],"concepts":["term (brief definition)"],"time_periods":["period"]}
 Be terse. Max 5 per category. No prose.`;
   const userPrompt = docText.slice(0, 3000);
