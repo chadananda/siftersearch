@@ -169,7 +169,7 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
         max_tokens: maxTokens,
         temperature
       }),
-      signal: globalThis.AbortSignal?.timeout?.(options.timeout || 30000)
+      signal: globalThis.AbortSignal?.timeout?.(options.timeout || 120000) // 2min — local LLM is slow
     });
     if (!response.ok) {
       logger.warn({ status: response.status, endpoint }, 'Local LLM request failed');
