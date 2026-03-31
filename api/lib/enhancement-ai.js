@@ -167,7 +167,8 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
           { role: 'user', content: userPrompt }
         ],
         max_tokens: maxTokens,
-        temperature
+        temperature,
+        chat_template_kwargs: { enable_thinking: false } // Disable Qwen3 thinking mode for terse output
       }),
       signal: globalThis.AbortSignal?.timeout?.(options.timeout || 120000) // 2min — local LLM is slow
     });
@@ -176,7 +177,11 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
       return null;
     }
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    let content = data.choices?.[0]?.message?.content;
+    // Strip Qwen3 <think>...</think> reasoning tags if present
+    if (content && content.includes('<think>')) {
+      content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    }
     // Log usage for tracking (cost = 0 for local)
     const usage = data.usage || {};
     logger.debug({
