@@ -63,7 +63,9 @@ ${targetLine}`;
  */
 export function parseDisambiguationResponse(response) {
   if (!response) return null;
-  const trimmed = response.trim();
+  let trimmed = response.trim();
+  // Strip any remaining think tags
+  trimmed = trimmed.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*/g, '').trim();
   if (!trimmed || trimmed === 'NONE') return null;
   // Truncate verbose responses
   const words = trimmed.split(/\s+/);
@@ -178,9 +180,16 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
     }
     const data = await response.json();
     let content = data.choices?.[0]?.message?.content;
-    // Strip Qwen3 <think>...</think> reasoning tags if present
+    // Strip Qwen3 <think>...</think> reasoning tags — greedy and non-greedy
     if (content && content.includes('<think>')) {
+      // First try to strip complete think blocks
       content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      // If unclosed <think> remains (truncated by max_tokens), strip everything from <think> onward
+      if (content.includes('<think>')) {
+        content = content.replace(/<think>[\s\S]*/g, '').trim();
+      }
+      // If content starts with thinking that was already stripped, it may be empty
+      if (!content) return null;
     }
     // Log usage for tracking (cost = 0 for local)
     const usage = data.usage || {};
