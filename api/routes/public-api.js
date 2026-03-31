@@ -77,7 +77,14 @@ async function apiKeyAuth(request, reply) {
 }
 
 export default async function publicApiRoutes(fastify) {
-  // Apply API key auth to all routes in this plugin
+  // Health check — public, no auth required
+  fastify.get('/health', async () => ({
+    status: 'ok',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  }));
+
+  // Apply API key auth to all remaining routes
   fastify.addHook('preHandler', apiKeyAuth);
 
   /**
@@ -119,11 +126,19 @@ export default async function publicApiRoutes(fastify) {
     if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
     const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
 
-    // Execute hybrid search
-    const searchResults = await hybridSearch(query, {
+    // Execute hybrid search, fall back to keyword if hybrid returns empty
+    let searchResults = await hybridSearch(query, {
       limit: Math.min(limit * 2, 30),
       filter
-    });
+    }).catch(() => ({ hits: [] }));
+
+    // Fallback: if hybrid search fails (no embeddings configured), use keyword search
+    if (!searchResults.hits || searchResults.hits.length === 0) {
+      searchResults = await keywordSearch(query, {
+        limit: Math.min(limit * 2, 30),
+        filter
+      });
+    }
 
     if (!searchResults.hits || searchResults.hits.length === 0) {
       logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api', filters });
@@ -285,22 +300,22 @@ export default async function publicApiRoutes(fastify) {
    */
   fastify.get('/collections', async () => {
     const stats = await getStats();
+    // getStats may return facets from Meilisearch or from SQLite fallback
+    const religions = stats.facets?.religion || stats.religionCounts || {};
+    const collections = stats.facets?.collection || stats.collectionCounts || {};
     return {
-      religions: stats.facets?.religion || [],
-      collections: stats.facets?.collection || [],
-      totalDocuments: stats.numberOfDocuments || 0,
-      lastUpdated: stats.lastUpdated || null
+      religions: typeof religions === 'object' && !Array.isArray(religions)
+        ? Object.entries(religions).map(([name, count]) => ({ name, count }))
+        : religions,
+      collections: typeof collections === 'object' && !Array.isArray(collections)
+        ? Object.entries(collections).map(([name, count]) => ({ name, count }))
+        : collections,
+      totalDocuments: stats.numberOfDocuments || stats.totalDocuments || 0,
+      totalParagraphs: stats.totalParagraphs || 0,
+      languages: stats.languages || 0,
+      lastUpdated: new Date().toISOString()
     };
   });
 
-  /**
-   * GET /api/v1/health
-   */
-  fastify.get('/health', async () => {
-    return {
-      status: 'ok',
-      version: '1.0.0',
-      timestamp: new Date().toISOString()
-    };
-  });
+  // Health endpoint registered above (before auth hook) so it's public
 }
