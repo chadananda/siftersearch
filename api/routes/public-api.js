@@ -35,6 +35,9 @@ function logApiSearch({ query, apiKeyId, resultCount, durationMs, searchType, fi
  * API key authentication preHandler
  */
 async function apiKeyAuth(request, reply) {
+  // Health endpoint is public — skip auth
+  if (request.url === '/health' || request.routeOptions?.url === '/health') return;
+
   const apiKey = request.headers['x-api-key'];
 
   if (!apiKey) {
