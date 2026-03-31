@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-31T15:24:17.615Z",
+  "generated": "2026-03-31T15:29:59.495Z",
   "entries": [
+    {
+      "hash": "114ae27",
+      "date": "2026-03-31",
+      "type": "Fixed",
+      "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
+      "scope": null
+    },
     {
       "hash": "61c4672",
       "date": "2026-03-30",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Force single line-height on SBS translation text via JS action",
       "scope": null
-    },
-    {
-      "hash": "c8875c3",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Add global CSS override for English translation line-height",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-03-31": [
+      {
+        "hash": "114ae27",
+        "date": "2026-03-31",
+        "type": "Fixed",
+        "description": "SifterSearch framed as backend engine behind OceanLibrary.com",
+        "scope": null
+      }
+    ],
     "2026-03-30": [
       {
         "hash": "61c4672",
@@ -7041,13 +7050,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Force single line-height on SBS translation text via JS action",
-        "scope": null
-      },
-      {
-        "hash": "c8875c3",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Add global CSS override for English translation line-height",
         "scope": null
       }
     ]

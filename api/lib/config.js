@@ -274,6 +274,21 @@ const backupConfig = {
   localRetentionDays: getInt('BACKUP_RETENTION_DAYS', 7),
 };
 
+// CTAI.info — translation API (Arabic/Persian root analysis + translation)
+const ctaiConfig = {
+  apiUrl: get('CTAI_API_URL', 'https://ctai.info/api'),
+  apiKey: get('CTAI_API_KEY', ''),
+  enabled: getBool('CTAI_ENABLED', true),
+};
+
+// Voyage AI — reranking and embeddings
+const voyageConfig = {
+  apiKey: get('VOYAGE_API_KEY', ''),
+  rerankModel: get('VOYAGE_RERANK_MODEL', 'rerank-2'),
+  rerankEnabled: getBool('RERANK_ENABLED', true),
+  rerankTimeout: getInt('RERANK_TIMEOUT_MS', 3000),
+};
+
 export const config = {
   isDevMode,
   isProduction,
@@ -288,6 +303,8 @@ export const config = {
   publicApi: publicApiConfig,
   cloudflare: cloudflareConfig,
   backup: backupConfig,
+  ctai: ctaiConfig,
+  voyage: voyageConfig,
   get,
   getBool,
   getInt,
