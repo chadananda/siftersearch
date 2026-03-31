@@ -274,6 +274,13 @@ const backupConfig = {
   localRetentionDays: getInt('BACKUP_RETENTION_DAYS', 7),
 };
 
+// Local LLM — OpenAI-compatible endpoint for disambiguation, HyPE, entity extraction
+const localLlmConfig = {
+  endpoint: get('LOCAL_LLM', 'http://localhost:8000/v1'),
+  model: get('LOCAL_LLM_MODEL', 'Qwen/Qwen3-32B-AWQ'),
+  enabled: getBool('LOCAL_LLM_ENABLED', true),
+};
+
 // CTAI.info — translation API (Arabic/Persian root analysis + translation)
 const ctaiConfig = {
   apiUrl: get('CTAI_API_URL', 'https://ctai.info/api'),
@@ -303,6 +310,7 @@ export const config = {
   publicApi: publicApiConfig,
   cloudflare: cloudflareConfig,
   backup: backupConfig,
+  localLlm: localLlmConfig,
   ctai: ctaiConfig,
   voyage: voyageConfig,
   get,

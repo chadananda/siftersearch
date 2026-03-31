@@ -1,7 +1,12 @@
 /**
- * Enhancement AI — prompt builders and response parsers for RAG enhancement layer.
- * Handles disambiguation, HyPE (Hypothetical Questions), and entity extraction.
+ * Enhancement AI — prompt builders, response parsers, and local LLM client for RAG enhancement.
+ * :arch: All enhancement runs on local vLLM (OpenAI-compatible) via LOCAL_LLM endpoint. $0 cost.
+ * :why: Anthropic too expensive for 2.57M passages. Local prefix caching gives same speed benefit.
+ * :deps: config.localLlm for endpoint/model | ai-services.logAIUsage for tracking
  */
+
+import { config } from './config.js';
+import { logger } from './logger.js';
 
 // ~80 words ≈ 100 tokens; used to truncate verbose disambiguation responses
 const MAX_DISAMBIGUATION_WORDS = 80;
@@ -112,6 +117,69 @@ export function parseEntityResponse(response) {
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Build an enhanced Meilisearch document from a content paragraph with enhancement fields.
+ * hyp_questions is stored as the raw joined string, not JSON.
+ */
+/**
+ * Call local LLM (OpenAI-compatible endpoint) for enhancement tasks.
+ * Uses LOCAL_LLM env var. Prefix caching handled by vLLM's LMCache layer.
+ * Returns the assistant message content string, or null on failure.
+ */
+export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
+  const endpoint = config.localLlm?.endpoint || 'http://localhost:8000/v1';
+  const model = options.model || config.localLlm?.model || 'Qwen/Qwen3-32B-AWQ';
+  const maxTokens = options.maxTokens || 200;
+  const temperature = options.temperature ?? 0.3;
+  try {
+    const response = await fetch(`${endpoint}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: maxTokens,
+        temperature
+      }),
+      signal: globalThis.AbortSignal?.timeout?.(options.timeout || 30000)
+    });
+    if (!response.ok) {
+      logger.warn({ status: response.status, endpoint }, 'Local LLM request failed');
+      return null;
+    }
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    // Log usage for tracking (cost = 0 for local)
+    const usage = data.usage || {};
+    logger.debug({
+      model,
+      promptTokens: usage.prompt_tokens,
+      completionTokens: usage.completion_tokens,
+      cacheHit: usage.prompt_tokens_details?.cached_tokens > 0
+    }, 'Local LLM call');
+    return content || null;
+  } catch (err) {
+    logger.warn({ err: err.message, endpoint }, 'Local LLM call error');
+    return null;
+  }
+}
+
+/**
+ * Health check for local LLM endpoint.
+ */
+export async function localLLMHealthCheck() {
+  const endpoint = config.localLlm?.endpoint || 'http://localhost:8000/v1';
+  try {
+    const res = await fetch(`${endpoint}/models`, { signal: globalThis.AbortSignal?.timeout?.(5000) });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
