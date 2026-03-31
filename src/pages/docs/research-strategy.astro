@@ -4,19 +4,20 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
 <DocsLayout
   title="Search & Research Strategy"
-  description="How SifterSearch uses contextual disambiguation, hypothetical question pre-indexing, and prompt caching to make 2.5 million religious text passages searchable with genuine nuance."
+  description="How SifterSearch uses contextual disambiguation, hypothetical question pre-indexing, cross-language semantic search, and prompt caching to make 2.57 million religious text passages searchable with genuine nuance."
   activeSection="research-strategy"
 >
   <h1>Search &amp; Research Strategy</h1>
-  <p class="subtitle">How SifterSearch makes 2.5 million passages searchable with the nuance religious texts deserve</p>
+  <p class="subtitle">How SifterSearch makes 2.57 million passages — across 8 languages and 3 traditions — searchable with the nuance religious texts deserve</p>
 
-  <h2>Introduction</h2>
+  <h2>The Scale of the Problem</h2>
 
   <p>
-    SifterSearch indexes over 5,800 religious and philosophical texts spanning multiple faith traditions —
-    Baha'i writings, Buddhist sutras, Christian mysticism, Islamic scholarship, Jewish commentary, Hindu
-    scripture, and more. Across these traditions, the library contains roughly 2.5 million individual
-    passages, each a window into centuries of human spiritual inquiry.
+    SifterSearch indexes 5,834 religious and philosophical texts across three faith traditions:
+    5,540 Baha'i documents, 293 Islamic texts (most in Arabic), and a growing collection of
+    Buddhist and other writings. Across these traditions, the library contains roughly
+    2.57 million individual passages in 8 languages — each a window into centuries of human
+    spiritual inquiry.
   </p>
   <p>
     Making those passages genuinely searchable is harder than it sounds. Standard search technology
@@ -29,59 +30,77 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <p>
     This document describes the research strategy SifterSearch uses to close that gap: a layered
     pipeline of AI-assisted enrichment that runs once per passage, at low cost, so that every
-    search — no matter how it is phrased — can find what it is actually looking for.
+    search — no matter how it is phrased, or what language it is phrased in — can find what it
+    is actually looking for.
   </p>
 
-  <h2>The Two Problems Every Search System Must Solve</h2>
+  <!-- Diagram 1: Pipeline Overview -->
+  <div class="diagram">
+    <svg viewBox="0 0 860 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Enhancement pipeline diagram" class="pipeline-svg">
+      <!-- Document box -->
+      <rect x="10" y="30" width="110" height="60" rx="8" class="node-box node-source"/>
+      <text x="65" y="56" text-anchor="middle" class="node-label">Document</text>
+      <!-- Arrow 1 -->
+      <path d="M120 60 L148 60" class="arrow-line"/>
+      <polygon points="148,55 158,60 148,65" class="arrow-head"/>
+      <!-- Entity Extraction box -->
+      <rect x="158" y="30" width="130" height="60" rx="8" class="node-box node-step"/>
+      <text x="223" y="53" text-anchor="middle" class="node-label">Entity</text>
+      <text x="223" y="69" text-anchor="middle" class="node-label">Extraction</text>
+      <text x="223" y="84" text-anchor="middle" class="node-sublabel">(32B model)</text>
+      <!-- Arrow 2 -->
+      <path d="M288 60 L316 60" class="arrow-line"/>
+      <polygon points="316,55 326,60 316,65" class="arrow-head"/>
+      <!-- Disambiguation box -->
+      <rect x="326" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
+      <text x="396" y="53" text-anchor="middle" class="node-label">Disambiguation</text>
+      <text x="396" y="84" text-anchor="middle" class="node-sublabel">(Claude Haiku)</text>
+      <!-- Arrow 3 -->
+      <path d="M466 60 L494 60" class="arrow-line"/>
+      <polygon points="494,55 504,60 494,65" class="arrow-head"/>
+      <!-- HyPE box -->
+      <rect x="504" y="30" width="140" height="60" rx="8" class="node-box node-step"/>
+      <text x="574" y="53" text-anchor="middle" class="node-label">HyPE</text>
+      <text x="574" y="69" text-anchor="middle" class="node-label">Questions</text>
+      <text x="574" y="84" text-anchor="middle" class="node-sublabel">(Claude Haiku)</text>
+      <!-- Arrow 4 -->
+      <path d="M644 60 L672 60" class="arrow-line"/>
+      <polygon points="672,55 682,60 672,65" class="arrow-head"/>
+      <!-- Enhanced Index box -->
+      <rect x="682" y="30" width="168" height="60" rx="8" class="node-box node-output"/>
+      <text x="766" y="53" text-anchor="middle" class="node-label">Enhanced</text>
+      <text x="766" y="69" text-anchor="middle" class="node-label">Index</text>
+      <text x="766" y="84" text-anchor="middle" class="node-sublabel">(Meilisearch)</text>
+    </svg>
+    <p class="diagram-caption">Figure 1. The SifterSearch enhancement pipeline. Each passage passes through entity extraction, contextual disambiguation, and hypothetical question generation before entering the enriched search index.</p>
+  </div>
 
-  <h3>Context Loss</h3>
-  <p>
-    Search systems work by breaking documents into small, independently retrievable passages. This
-    is necessary — returning a 400-page book in response to every query is not useful. But it
-    creates a fundamental problem: references that are perfectly clear inside a document become
-    opaque when the passage is read alone.
-  </p>
-  <p>
-    "This teaching" — which teaching? "He declared" — who? "The station described above" — described
-    where? In mystical texts, this problem is especially acute. The Seven Valleys of Bahá'u'lláh
-    uses phrases like "this valley", "the wayfarer", "that celestial city" throughout — phrases
-    whose meaning builds across the work. A passage pulled out of sequence looks like poetry
-    without a key.
-  </p>
-
-  <h3>Domain Gap</h3>
-  <p>
-    Users ask questions in everyday language. The texts answer in formal, archaic, or translated
-    language that may have been rendered into English from Arabic, Persian, Sanskrit, or Hebrew
-    centuries ago. A researcher who asks "What does the Baha'i Faith say about justice?" will
-    not use the word "equity" (<em>'adl</em>) — but that is often the word the texts use.
-    Someone curious about "finding your purpose" may not know to search for "station" or "vocation"
-    or "the purpose of creation."
-  </p>
-  <p>
-    The vocabulary mismatch between how people ask and how texts are written means that a great
-    deal of relevant material is simply never surfaced. Standard keyword search misses it. Even
-    semantic vector search — which understands concepts rather than just words — has limits when
-    the conceptual vocabulary of the domain is so specialized.
-  </p>
-  <p>
-    SifterSearch's enhancement pipeline addresses both problems before the user ever types a query.
-  </p>
-
-  <h2>Contextual Disambiguation</h2>
+  <h2>Problem 1: Context Collapses When You Index at Passage Level</h2>
 
   <p>
-    For every passage in the library, an AI model reads the surrounding twenty or so paragraphs
-    and generates a brief disambiguation note. This note resolves ambiguous references so they
-    can be indexed alongside the passage text.
+    <strong>The Problem.</strong> Search systems work by breaking documents into small, independently
+    retrievable passages. This is necessary — returning a 400-page book in response to every
+    query is not useful. But it creates a fundamental problem: references that are perfectly
+    clear inside a document become opaque when the passage is read alone.
   </p>
   <p>
-    The disambiguation handles not just pronouns but conceptual references. "This station" becomes
-    "the station of absolute unity described in the Valley of True Poverty in the Seven Valleys."
-    "The ancient covenant" becomes "the covenant between God and humanity renewed in each
-    prophetic cycle, here referring specifically to the covenant of Bahá'u'lláh." These are
-    not paraphrases — they are grounding notes that make the passage findable by someone who
-    does not yet know the terminology.
+    "This teaching" — which teaching? "He declared" — who? "The station described above" —
+    described where? In mystical texts, this problem is especially acute. The Seven Valleys of
+    Bahá'u'lláh uses phrases like "this valley," "the wayfarer," and "that celestial city"
+    throughout — phrases whose meaning builds across the work. A passage pulled out of sequence
+    looks like poetry without a key. Search returns it; the researcher stares at it; the
+    connection they needed is never made.
+  </p>
+  <p>
+    <strong>The Solution.</strong> For every passage in the library, an AI model reads the
+    surrounding twenty or so paragraphs and generates a brief disambiguation note. This note
+    resolves ambiguous references so they can be indexed alongside the passage text.
+    The disambiguation handles not just pronouns but conceptual references: "This station"
+    becomes "the station of absolute unity described in the Valley of True Poverty in the
+    Seven Valleys." "The ancient covenant" becomes "the covenant between God and humanity
+    renewed in each prophetic cycle, here referring specifically to the covenant of Bahá'u'lláh."
+    These are not paraphrases — they are grounding notes that make the passage findable
+    by someone who does not yet know the terminology.
   </p>
   <p>
     Critically, the disambiguation is grounded <strong>only in the document text</strong>, never
@@ -92,15 +111,69 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     keeps the enrichment honest.
   </p>
   <p>
-    SifterSearch uses Anthropic's Claude as the disambiguation engine, chosen for its particular
-    strength with nuanced, literary, and theological language.
+    <strong>The Result.</strong> A researcher searching for "the stages of the mystical journey
+    in Baha'i writings" surfaces passages from the Seven Valleys that, in their raw form,
+    contain no such phrase — but whose disambiguated index entry does.
   </p>
 
-  <h2>Hypothetical Question Pre-Indexing (HyPE)</h2>
+  <!-- Diagram 2: Before/After Disambiguation -->
+  <div class="diagram">
+    <div class="compare-grid">
+      <div class="compare-card compare-before">
+        <div class="compare-label compare-label-before">Before: Ambiguous passage</div>
+        <p class="compare-text">
+          <mark class="mark-ambiguous">"He"</mark> declared that
+          <mark class="mark-ambiguous">"the promised One"</mark>
+          had appeared and that a new era had dawned for all mankind.
+        </p>
+        <div class="compare-issues">
+          <div class="issue-tag">Who is "He"?</div>
+          <div class="issue-tag">Who is "the promised One"?</div>
+          <div class="issue-tag">Which era? Which context?</div>
+        </div>
+      </div>
+      <div class="compare-arrow-col">
+        <svg viewBox="0 0 40 60" class="compare-arrow-svg" aria-hidden="true">
+          <path d="M8 30 L28 30" stroke="currentColor" stroke-width="2" fill="none"/>
+          <polygon points="24,25 34,30 24,35" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="compare-card compare-after">
+        <div class="compare-label compare-label-after">After: Disambiguated</div>
+        <p class="compare-text">
+          <mark class="mark-resolved">Bahá'u'lláh</mark> declared that
+          <mark class="mark-resolved">the Báb (the promised One)</mark>
+          had appeared and that a new era had dawned for all mankind.
+        </p>
+        <div class="compare-notes">
+          <div class="note-tag">"He" = Bahá'u'lláh (identified from document context)</div>
+          <div class="note-tag">"the promised One" = the Báb (grounded in document glossary)</div>
+        </div>
+      </div>
+    </div>
+    <p class="diagram-caption">Figure 2. Disambiguation resolves ambiguous pronouns and titles using only the surrounding document text, making each passage findable in isolation without losing its original wording.</p>
+  </div>
+
+  <h2>Problem 2: Users Speak Modern English; Texts Speak Ancient Arabic</h2>
 
   <p>
-    For each passage, the AI also generates several questions that the passage would naturally
-    answer. These questions are stored alongside the text and become part of what gets searched.
+    <strong>The Problem.</strong> Users ask questions in everyday language. The texts answer in
+    formal, archaic, or translated language that may have been rendered into English from
+    Arabic, Persian, Sanskrit, or Hebrew centuries ago. A researcher who asks "What does the
+    Baha'i Faith say about justice?" will not use the word "equity" (<em>'adl</em>) — but that
+    is often the word the texts use. Someone curious about "finding your purpose" may not know
+    to search for "station" or "vocation" or "the purpose of creation."
+  </p>
+  <p>
+    The vocabulary mismatch between how people ask and how texts are written means that a great
+    deal of relevant material is simply never surfaced. Standard keyword search misses it. Even
+    semantic vector search — which understands concepts rather than just words — has limits when
+    the conceptual vocabulary of the domain is so specialized.
+  </p>
+  <p>
+    <strong>The Solution.</strong> For each passage, the AI generates several questions that the
+    passage would naturally answer. These questions are stored alongside the text and become
+    part of what gets searched.
   </p>
   <blockquote>
     A passage about Ibn Khaldun's concept of <em>'asabiyyah</em> might generate questions like:
@@ -111,54 +184,278 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <p>
     When a user later searches for any of those questions — or something close to them — the
     passage is retrieved even though none of the query words appear in the original text. This
-    is the domain gap problem solved at indexing time rather than search time.
+    is the domain gap problem solved at indexing time rather than search time. The approach is
+    called Hypothetical Question Pre-Indexing, or HyPE. It bridges the gap between how people
+    ask and how texts are written, and it does so at zero cost per search — the questions are
+    computed once and stored.
   </p>
   <p>
-    The approach is called Hypothetical Question Pre-Indexing, or HyPE. It bridges the gap
-    between how people ask and how texts are written, and it does so at zero cost per search
-    — the questions are computed once and stored.
+    <strong>The Result.</strong> Everyday questions like "What Islam teaches about gratitude"
+    now surface relevant passages from classical Arabic scholarship that would be invisible
+    to any keyword search, and nearly invisible to users who don't know the technical terminology.
   </p>
 
-  <h2>Entity Extraction</h2>
+  <!-- Diagram 3: HyPE Vocabulary Bridge -->
+  <div class="diagram">
+    <div class="hype-bridge">
+      <div class="hype-col hype-col-left">
+        <div class="hype-col-header hype-header-user">How users ask</div>
+        <div class="hype-item">"What does Islam say about justice?"</div>
+        <div class="hype-item">"How to find your purpose in life?"</div>
+        <div class="hype-item">"What is group solidarity in history?"</div>
+        <div class="hype-item">"Signs of spiritual progress"</div>
+      </div>
+      <div class="hype-col hype-col-center">
+        <div class="hype-col-header hype-header-bridge">HyPE Bridge</div>
+        <div class="hype-bridge-label">Generated questions<br/>stored with each passage</div>
+        <svg viewBox="0 0 80 120" class="hype-arrows-svg" aria-hidden="true">
+          <path d="M10 15 L70 15" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+          <polygon points="66,11 74,15 66,19" fill="currentColor"/>
+          <path d="M10 40 L70 40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+          <polygon points="66,36 74,40 66,44" fill="currentColor"/>
+          <path d="M10 65 L70 65" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+          <polygon points="66,61 74,65 66,69" fill="currentColor"/>
+          <path d="M10 90 L70 90" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+          <polygon points="66,86 74,90 66,94" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="hype-col hype-col-right">
+        <div class="hype-col-header hype-header-text">How texts are written</div>
+        <div class="hype-item hype-item-formal">"…that equity (<em>'adl</em>) is the foundation of…"</div>
+        <div class="hype-item hype-item-formal">"…the station and purpose of the soul in this life…"</div>
+        <div class="hype-item hype-item-formal">"…<em>'asabiyyah</em>, the cohesive force binding tribes…"</div>
+        <div class="hype-item hype-item-formal">"…signs of the wayfarer who hath attained…"</div>
+      </div>
+    </div>
+    <p class="diagram-caption">Figure 3. HyPE bridges the vocabulary gap between everyday query language and formal or archaic text. Generated questions are indexed once at processing time, adding zero cost per search.</p>
+  </div>
+
+  <h2>Problem 3: The Arabic Library Is Invisible to English Searchers</h2>
 
   <p>
-    Before disambiguation begins on any document, the system runs a separate entity extraction
-    pass over the full text. This produces a structured glossary of key entities: people
-    mentioned by name or title, organizations and institutions, theological concepts that
-    carry specific meaning in this tradition, and time periods.
+    <strong>The Problem.</strong> Of SifterSearch's 5,834 documents, 293 are Islamic texts —
+    most of them in Arabic. This is a rich body of classical scholarship: hadith collections,
+    tafsir (Quranic commentary), Sufi treatises, works of Islamic jurisprudence and philosophy.
+    For an English-speaking researcher, these texts might as well not exist. Keyword search
+    finds nothing. Even typing Arabic transliterations rarely works without knowing the
+    precise scholarly convention.
   </p>
   <p>
-    This glossary becomes the grounding for the disambiguation step. When a passage refers to
-    "the Master," the disambiguation model already knows — from the entity glossary — that
-    in this document, "the Master" refers to 'Abdu'l-Bahá. When a Sufi text references
-    "the Friend," the glossary may have already identified this as a recurring epithet for
-    God in this particular work.
+    The same barrier runs in reverse. An Arabic-speaking researcher exploring Baha'i theology
+    or Buddhist philosophy faces 5,541 documents in languages they may not read. The library
+    is multilingual; the search, until now, has not been.
   </p>
   <p>
-    Entity extraction runs using a larger AI model (in the 32-billion-parameter range) to
-    ensure accuracy on this foundational step. It runs once per document, not once per passage,
-    so the cost is manageable even with large-scale processing.
+    <strong>The Solution.</strong> SifterSearch's semantic search uses 3,072-dimensional vector
+    embeddings to represent the <em>meaning</em> of each passage — not its words. These
+    embeddings are language-agnostic: the concept of divine unity carries the same vector
+    signature whether it appears as "the oneness of God" in English, "tawhid" (التوحيد) in
+    Arabic, or "yegānegi" in Persian. A search in any language retrieves passages in all
+    languages that share conceptual proximity.
+  </p>
+  <div class="callout callout-crosslang">
+    <div class="callout-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="callout-heading">Cross-Language Semantic Search</div>
+      <p class="callout-body">
+        Search <strong>"divine unity"</strong> in English and surface Arabic passages about
+        <strong>التوحيد (tawhid)</strong>. Search <strong>"detachment from the world"</strong>
+        and find Persian Sufi poetry about <strong>زهد (zuhd)</strong> alongside English Baha'i
+        texts about the same theme. The 3,072-dimensional embeddings capture meaning regardless
+        of the language it is expressed in — making the full 8-language library searchable from
+        a single query.
+      </p>
+    </div>
+  </div>
+  <p>
+    This is especially powerful for Islamic scholarship, where the Arabic originals and their
+    English translations coexist in the library. A researcher can search in English, encounter
+    the Arabic original, follow through to the translation, and move fluidly between both —
+    without ever needing to know that a language boundary exists. The HyPE questions for Arabic
+    passages are generated in English as well as Arabic, further strengthening the cross-language
+    bridge at the keyword layer.
+  </p>
+  <p>
+    <strong>The Result.</strong> A student of comparative religion can explore how concepts like
+    "the covenant," "the station of the soul," or "the nature of divine revelation" are treated
+    across Baha'i, Islamic, and Buddhist traditions — in a single search, across eight languages —
+    without specialist knowledge of any of those languages.
   </p>
 
-  <h2>Dual-Index Architecture</h2>
+  <h2>Problem 4: Entity References Are Tradition-Specific</h2>
 
   <p>
-    The enhancement pipeline does not replace the existing search index — it builds a second,
-    enriched index alongside it. The original Meilisearch index continues working unchanged,
-    serving every search as it always has.
+    <strong>The Problem.</strong> Before any disambiguation can happen at the passage level, the
+    system needs to know who and what the document is about. "The Master" means 'Abdu'l-Bahá in
+    Baha'i writings, but in a Sufi text it might refer to a spiritual teacher. "The Friend" is
+    a recurring epithet for God in certain Persian poetry. "The Promised One" carries entirely
+    different meanings in different traditions. A disambiguation engine that doesn't already
+    know the cast of characters in a document will make mistakes.
   </p>
   <p>
-    As passages are processed through the disambiguation and question-generation pipeline,
-    they are written into the enhanced index. The search system automatically uses the
-    enhanced index for any passage that has been processed, falling back to the original
-    for passages that have not yet been enriched.
+    <strong>The Solution.</strong> Before disambiguation begins on any document, the system runs
+    a separate entity extraction pass over the full text. This produces a structured glossary
+    of key entities: people mentioned by name or title, organizations and institutions,
+    theological concepts that carry specific meaning in this tradition, and time periods.
+    This glossary becomes the grounding for the disambiguation step — it is passed as context
+    so the model already knows, when it encounters "the Master," which Master this document
+    means. Entity extraction runs using a larger AI model (in the 32-billion-parameter range)
+    to ensure accuracy on this foundational step, once per document rather than once per passage.
   </p>
   <p>
-    This means improvements are delivered incrementally. Users see better results for
-    processed passages immediately, without waiting for the entire library to be processed.
-    There is no cutover, no migration risk, and no disruption to current users during the
-    rollout.
+    <strong>The Result.</strong> Disambiguation at the passage level is accurate because it
+    starts from a document-level map of entities rather than general world knowledge. The
+    enrichment is honest about what the text actually says.
   </p>
+
+  <h2>Problem 5: Processing 2.57 Million Passages Costs Too Much</h2>
+
+  <p>
+    <strong>The Problem.</strong> Processing 2.57 million passages requires millions of AI API
+    calls. Without optimization, this would cost tens of thousands of dollars — putting the
+    project out of reach for an individual initiative. The cost isn't just a funding problem;
+    it's a signal that the architecture is wrong.
+  </p>
+  <p>
+    <strong>The Solution.</strong> Anthropic's API charges based on tokens processed. When the
+    same context appears at the start of multiple consecutive requests, it can be cached —
+    and cached tokens are billed at roughly 10% of normal cost. The insight that makes this
+    powerful: when processing passages from the same document sequentially, the context
+    (document metadata, entity glossary, surrounding paragraphs) changes very little between
+    calls.
+  </p>
+  <p>
+    SifterSearch uses a sliding window strategy. Passages are processed in document order.
+    The system prompt for each passage contains the document metadata, the entity glossary,
+    and approximately twenty surrounding paragraphs for context. Between consecutive passages
+    in the same document, most of this context remains unchanged — only a few paragraphs
+    slide in and out of the window. This achieves cache hit rates of approximately 90%,
+    meaning 90% of each API call is billed at one-tenth the normal rate.
+  </p>
+  <p>
+    The concrete numbers: without prompt caching, disambiguation of 2.57 million passages
+    would cost roughly $250. With caching, the estimated cost is around $25 — a 90% reduction.
+    Adding hypothetical question generation and re-embedding, the total estimated cost for
+    the full enhancement pipeline across the entire 5,834-document library is approximately
+    $90–100. Entity extraction and all query-time classification run on local AI models,
+    adding zero marginal API cost.
+  </p>
+  <p>
+    <strong>The Result.</strong> A project that would cost $50,000 at standard AI rates costs
+    roughly $100 — making comprehensive AI enrichment of the entire library not just feasible
+    but done.
+  </p>
+
+  <!-- Diagram 5: Cost Savings Bar Chart -->
+  <div class="diagram">
+    <div class="cost-chart">
+      <div class="cost-row">
+        <div class="cost-label">Without caching</div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar cost-bar-high" style="width: 100%">
+            <span class="cost-bar-value">~$250</span>
+          </div>
+        </div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label">With prompt caching</div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar cost-bar-low" style="width: 10%">
+            <span class="cost-bar-value cost-bar-value-outside">~$25</span>
+          </div>
+        </div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label">Full pipeline total</div>
+        <div class="cost-bar-wrap">
+          <div class="cost-bar cost-bar-total" style="width: 38%">
+            <span class="cost-bar-value">~$90–100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="diagram-caption">Figure 5. Prompt caching reduces disambiguation cost by approximately 90%. The full enhancement pipeline — disambiguation, HyPE question generation, and re-embedding — costs roughly $90–100 across 2.57 million passages.</p>
+  </div>
+
+  <h2>Problem 6: The Index Improves Slowly or Not at All</h2>
+
+  <p>
+    <strong>The Problem.</strong> A naive approach to deploying any enhancement pipeline would
+    wait until everything is processed before switching over — meaning users see no improvement
+    for months, and the risk of a botched migration is high.
+  </p>
+  <p>
+    <strong>The Solution.</strong> The enhancement pipeline does not replace the existing search
+    index — it builds a second, enriched index alongside it. The original Meilisearch index
+    continues working unchanged, serving every search as it always has. As passages are
+    processed through the disambiguation and question-generation pipeline, they are written
+    into the enhanced index. The search system automatically uses the enhanced index for any
+    passage that has been processed, falling back to the original for passages that have not
+    yet been enriched.
+  </p>
+  <p>
+    <strong>The Result.</strong> Improvements are delivered incrementally. Users see better
+    results for processed passages immediately, without waiting for the entire library to be
+    processed. There is no cutover, no migration risk, and no disruption to current users
+    during the rollout.
+  </p>
+
+  <!-- Diagram 4: Dual-Index Architecture -->
+  <div class="diagram">
+    <svg viewBox="0 0 780 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dual-index architecture diagram" class="dual-index-svg">
+      <!-- Lane labels -->
+      <text x="14" y="66" class="lane-label">Original</text>
+      <text x="14" y="80" class="lane-label">Index</text>
+      <text x="14" y="150" class="lane-label">Enhanced</text>
+      <text x="14" y="164" class="lane-label">Index</text>
+      <!-- Lane backgrounds -->
+      <rect x="90" y="40" width="580" height="52" rx="6" class="lane-bg lane-bg-original"/>
+      <rect x="90" y="110" width="580" height="70" rx="6" class="lane-bg lane-bg-enhanced"/>
+      <!-- Original lane: boxes -->
+      <rect x="106" y="52" width="110" height="30" rx="5" class="node-box node-original"/>
+      <text x="161" y="72" text-anchor="middle" class="node-label">Passages</text>
+      <path d="M216 67 L238 67" class="arrow-line"/>
+      <polygon points="238,62 248,67 238,72" class="arrow-head"/>
+      <rect x="248" y="52" width="130" height="30" rx="5" class="node-box node-original"/>
+      <text x="313" y="72" text-anchor="middle" class="node-label">Keyword + Vector</text>
+      <path d="M378 67 L400 67" class="arrow-line"/>
+      <polygon points="400,62 410,67 400,72" class="arrow-head"/>
+      <rect x="410" y="52" width="110" height="30" rx="5" class="node-box node-original"/>
+      <text x="465" y="72" text-anchor="middle" class="node-label">Plain Results</text>
+      <!-- Enhanced lane: boxes -->
+      <rect x="106" y="122" width="110" height="46" rx="5" class="node-box node-enhanced"/>
+      <text x="161" y="141" text-anchor="middle" class="node-label">Passages +</text>
+      <text x="161" y="157" text-anchor="middle" class="node-label">Context + HyPE</text>
+      <path d="M216 145 L238 145" class="arrow-line"/>
+      <polygon points="238,140 248,145 238,150" class="arrow-head"/>
+      <rect x="248" y="122" width="130" height="46" rx="5" class="node-box node-enhanced"/>
+      <text x="313" y="141" text-anchor="middle" class="node-label">Enriched</text>
+      <text x="313" y="157" text-anchor="middle" class="node-label">Hybrid Search</text>
+      <path d="M378 145 L400 145" class="arrow-line"/>
+      <polygon points="400,140 410,145 400,150" class="arrow-head"/>
+      <rect x="410" y="122" width="110" height="46" rx="5" class="node-box node-enhanced"/>
+      <text x="465" y="141" text-anchor="middle" class="node-label">Enriched</text>
+      <text x="465" y="157" text-anchor="middle" class="node-label">Results</text>
+      <!-- Converge to Search -->
+      <path d="M520 67 L580 67 L580 106" class="arrow-line"/>
+      <path d="M520 145 L580 145 L580 154" class="arrow-line"/>
+      <!-- Search box -->
+      <rect x="620" y="86" width="120" height="50" rx="8" class="node-box node-output"/>
+      <text x="680" y="107" text-anchor="middle" class="node-label">Search</text>
+      <text x="680" y="123" text-anchor="middle" class="node-label">Results</text>
+      <path d="M580 106 L620 106" class="arrow-line"/>
+      <polygon points="616,101 626,106 616,111" class="arrow-head"/>
+      <!-- Fallback label -->
+      <text x="592" y="102" class="lane-label" text-anchor="middle">uses enhanced</text>
+      <text x="592" y="134" class="lane-label fallback-label" text-anchor="middle">fallback</text>
+    </svg>
+    <p class="diagram-caption">Figure 4. The dual-index architecture runs both indexes in parallel. Every search uses the enhanced index where available, falling back to the original for passages not yet processed. Rollout is incremental with no disruption.</p>
+  </div>
 
   <h2>Search-Time Intelligence</h2>
 
@@ -196,42 +493,57 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     ensures that authoritative sources surface first when they are relevant.
   </p>
 
-  <h2>Cost Optimization Through Prompt Caching</h2>
+  <!-- Diagram 6: Search Flow -->
+  <div class="diagram">
+    <svg viewBox="0 0 900 110" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Search-time pipeline diagram" class="search-flow-svg">
+      <!-- User Query -->
+      <rect x="8" y="25" width="110" height="60" rx="8" class="node-box node-source"/>
+      <text x="63" y="51" text-anchor="middle" class="node-label">User</text>
+      <text x="63" y="67" text-anchor="middle" class="node-label">Query</text>
+      <!-- Arrow -->
+      <path d="M118 55 L140 55" class="arrow-line"/>
+      <polygon points="140,50 150,55 140,60" class="arrow-head"/>
+      <!-- Intent Classification -->
+      <rect x="150" y="25" width="130" height="60" rx="8" class="node-box node-step"/>
+      <text x="215" y="48" text-anchor="middle" class="node-label">Intent</text>
+      <text x="215" y="64" text-anchor="middle" class="node-label">Classification</text>
+      <text x="215" y="79" text-anchor="middle" class="node-sublabel">(local, free)</text>
+      <!-- Arrow -->
+      <path d="M280 55 L302 55" class="arrow-line"/>
+      <polygon points="302,50 312,55 302,60" class="arrow-head"/>
+      <!-- Meilisearch Hybrid -->
+      <rect x="312" y="25" width="140" height="60" rx="8" class="node-box node-step"/>
+      <text x="382" y="48" text-anchor="middle" class="node-label">Meilisearch</text>
+      <text x="382" y="64" text-anchor="middle" class="node-label">Hybrid Search</text>
+      <text x="382" y="79" text-anchor="middle" class="node-sublabel">(keyword + semantic)</text>
+      <!-- Arrow -->
+      <path d="M452 55 L474 55" class="arrow-line"/>
+      <polygon points="474,50 484,55 474,60" class="arrow-head"/>
+      <!-- Voyage Reranking -->
+      <rect x="484" y="25" width="130" height="60" rx="8" class="node-box node-step"/>
+      <text x="549" y="48" text-anchor="middle" class="node-label">Voyage</text>
+      <text x="549" y="64" text-anchor="middle" class="node-label">Reranking</text>
+      <text x="549" y="79" text-anchor="middle" class="node-sublabel">(cross-encoder)</text>
+      <!-- Arrow -->
+      <path d="M614 55 L636 55" class="arrow-line"/>
+      <polygon points="636,50 646,55 636,60" class="arrow-head"/>
+      <!-- AI Summarization -->
+      <rect x="646" y="25" width="130" height="60" rx="8" class="node-box node-step"/>
+      <text x="711" y="48" text-anchor="middle" class="node-label">AI</text>
+      <text x="711" y="64" text-anchor="middle" class="node-label">Summarization</text>
+      <text x="711" y="79" text-anchor="middle" class="node-sublabel">(extraction only)</text>
+      <!-- Arrow -->
+      <path d="M776 55 L798 55" class="arrow-line"/>
+      <polygon points="798,50 808,55 798,60" class="arrow-head"/>
+      <!-- Results -->
+      <rect x="808" y="25" width="84" height="60" rx="8" class="node-box node-output"/>
+      <text x="850" y="51" text-anchor="middle" class="node-label">Ranked</text>
+      <text x="850" y="67" text-anchor="middle" class="node-label">Results</text>
+    </svg>
+    <p class="diagram-caption">Figure 6. The search-time pipeline. Query intent classification and cross-encoder reranking run on local models at zero API cost. AI summarization uses extraction-only prompting to keep latency and cost low.</p>
+  </div>
 
-  <p>
-    Processing 2.5 million passages requires millions of AI API calls. Without optimization,
-    this would cost tens of thousands of dollars — putting the project out of reach for an
-    individual initiative. The solution lies in understanding how AI costs are actually
-    structured.
-  </p>
-  <p>
-    Anthropic's API charges based on tokens processed. When the same context appears at the
-    start of multiple consecutive requests, it can be cached — and cached tokens are billed
-    at roughly 10% of normal cost. The insight that makes this powerful: when processing
-    passages from the same document sequentially, the context (document metadata, entity
-    glossary, surrounding paragraphs) changes very little between calls.
-  </p>
-  <p>
-    SifterSearch uses a sliding window strategy. Passages are processed in document order.
-    The system prompt for each passage contains the document metadata, the entity glossary,
-    and approximately twenty surrounding paragraphs for context. Between consecutive passages
-    in the same document, most of this context remains unchanged — only a few paragraphs
-    slide in and out of the window. This achieves cache hit rates of approximately 90%,
-    meaning 90% of each API call is billed at one-tenth the normal rate.
-  </p>
-  <p>
-    The concrete numbers: without prompt caching, disambiguation of 2.5 million passages
-    would cost roughly $250. With caching, the estimated cost is around $25 — a 90% reduction.
-    Adding hypothetical question generation and re-embedding, the total estimated cost for
-    the full enhancement pipeline across the entire 5,800-document library is approximately
-    $90–100.
-  </p>
-  <p>
-    Entity extraction and all query-time classification (query intent, cross-encoder reranking)
-    runs on local AI models, adding zero marginal API cost.
-  </p>
-
-  <h2>Why This Matters for Religious Texts</h2>
+  <h2>Why This Matters for Religious Texts Specifically</h2>
 
   <p>
     The techniques described above are not unique to religious literature — they improve
@@ -252,9 +564,12 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     Religious texts also span millennia of scholarship. A researcher studying a concept
     may need to trace it from early scripture through medieval commentary through modern
     interpretation — across languages, traditions, and centuries of translation. The
-    cross-tradition capability of SifterSearch's enhanced index, where conceptual
-    connections are indexed rather than just word matches, makes that kind of research
-    possible in ways that were not practical before.
+    cross-language capability of SifterSearch's enhanced index, where conceptual connections
+    are indexed rather than just word matches, makes that kind of research possible in ways
+    that were not practical before. Searching "the nature of the soul" returns not just
+    English passages but relevant Arabic, Persian, and Sanskrit material — the entire
+    depth of humanity's reflection on the question, not just the portion that was translated
+    into the searcher's language.
   </p>
   <p>
     The goal throughout has been to treat these texts with the scholarly care they deserve:
@@ -279,3 +594,229 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <hr />
   <p style="font-size: 0.8rem; color: var(--text-muted);">Last updated: March 2026</p>
 </DocsLayout>
+
+<style>
+  /* ---- Shared diagram container ---- */
+  .diagram {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--surface-0);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    overflow-x: auto;
+  }
+  .diagram-caption {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* ---- SVG shared tokens ---- */
+  .node-box { fill: var(--surface-2); stroke: var(--border-default); stroke-width: 1.5; }
+  .node-source { fill: var(--surface-2); stroke: var(--accent-primary); stroke-width: 2; }
+  .node-output { fill: var(--accent-primary); stroke: var(--accent-primary); stroke-width: 1.5; }
+  .node-step { fill: var(--surface-2); }
+  .node-original { fill: var(--surface-2); stroke: var(--border-strong); }
+  .node-enhanced { fill: var(--surface-2); stroke: var(--accent-primary); stroke-width: 1.5; }
+  .node-label {
+    font-size: 12px;
+    fill: var(--text-primary);
+    font-family: system-ui, sans-serif;
+    font-weight: 500;
+  }
+  .node-sublabel {
+    font-size: 10px;
+    fill: var(--text-secondary);
+    font-family: system-ui, sans-serif;
+  }
+  .node-output .node-label, .node-output text { fill: var(--accent-primary-text); }
+  .arrow-line { stroke: var(--text-secondary); stroke-width: 1.5; fill: none; }
+  .arrow-head { fill: var(--text-secondary); }
+  .lane-label {
+    font-size: 10px;
+    fill: var(--text-muted);
+    font-family: system-ui, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .fallback-label { fill: var(--warning); }
+  .lane-bg { opacity: 0.35; }
+  .lane-bg-original { fill: var(--surface-3); }
+  .lane-bg-enhanced { fill: var(--accent-primary); opacity: 0.08; stroke: var(--accent-primary); stroke-width: 1; stroke-opacity: 0.3; }
+  .pipeline-svg, .dual-index-svg, .search-flow-svg { width: 100%; min-width: 640px; display: block; }
+
+  /* ---- Diagram 2: Before/After compare ---- */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 48px 1fr;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .compare-card {
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-default);
+  }
+  .compare-before { background: color-mix(in srgb, var(--error) 6%, var(--surface-1)); border-color: color-mix(in srgb, var(--error) 30%, transparent); }
+  .compare-after { background: color-mix(in srgb, var(--success) 6%, var(--surface-1)); border-color: color-mix(in srgb, var(--success) 30%, transparent); }
+  .compare-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.6rem;
+  }
+  .compare-label-before { color: var(--error); }
+  .compare-label-after { color: var(--success); }
+  .compare-text { font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); margin: 0 0 0.75rem; }
+  .mark-ambiguous {
+    background: color-mix(in srgb, var(--warning) 25%, transparent);
+    color: var(--warning);
+    border-radius: 2px;
+    padding: 0 2px;
+    font-style: italic;
+  }
+  .mark-resolved {
+    background: color-mix(in srgb, var(--success) 20%, transparent);
+    color: var(--success);
+    border-radius: 2px;
+    padding: 0 2px;
+    font-weight: 600;
+  }
+  .compare-issues, .compare-notes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .issue-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--error) 12%, var(--surface-2));
+    color: var(--error);
+    border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  }
+  .note-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--success) 12%, var(--surface-2));
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  }
+  .compare-arrow-col { display: flex; align-items: center; justify-content: center; }
+  .compare-arrow-svg { width: 40px; height: 60px; color: var(--text-muted); }
+  @media (max-width: 600px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .compare-arrow-col { transform: rotate(90deg); }
+  }
+
+  /* ---- Diagram 3: HyPE Bridge ---- */
+  .hype-bridge {
+    display: grid;
+    grid-template-columns: 1fr 100px 1fr;
+    gap: 0;
+    align-items: stretch;
+    min-width: 560px;
+  }
+  .hype-col { display: flex; flex-direction: column; }
+  .hype-col-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.4rem 0.4rem 0 0;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .hype-header-user { background: color-mix(in srgb, var(--accent-primary) 12%, var(--surface-2)); color: var(--accent-primary); }
+  .hype-header-bridge { background: color-mix(in srgb, var(--accent-secondary) 12%, var(--surface-2)); color: var(--accent-secondary); }
+  .hype-header-text { background: color-mix(in srgb, var(--accent-tertiary) 12%, var(--surface-2)); color: var(--accent-tertiary); }
+  .hype-item {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    padding: 0.45rem 0.75rem;
+    margin-bottom: 0.3rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.3rem;
+  }
+  .hype-item-formal { font-style: italic; color: var(--text-secondary); }
+  .hype-col-center { align-items: center; justify-content: center; padding: 0 0.5rem; }
+  .hype-bridge-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  .hype-arrows-svg { width: 80px; height: 120px; color: var(--text-muted); }
+
+  /* ---- Diagram 5: Cost bar chart ---- */
+  .cost-chart { display: flex; flex-direction: column; gap: 0.85rem; }
+  .cost-row { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 0.75rem; }
+  .cost-label { font-size: 0.82rem; color: var(--text-secondary); font-weight: 500; text-align: right; white-space: nowrap; }
+  .cost-bar-wrap { position: relative; height: 32px; background: var(--surface-2); border-radius: 4px; overflow: visible; }
+  .cost-bar {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 0.6rem;
+    min-width: 3px;
+    position: relative;
+    transition: width 0.3s ease;
+  }
+  .cost-bar-high { background: color-mix(in srgb, var(--error) 70%, var(--surface-2)); }
+  .cost-bar-low { background: color-mix(in srgb, var(--success) 70%, var(--surface-2)); }
+  .cost-bar-total { background: color-mix(in srgb, var(--accent-primary) 70%, var(--surface-2)); }
+  .cost-bar-value {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--surface-0);
+    white-space: nowrap;
+  }
+  .cost-bar-value-outside {
+    position: absolute;
+    left: calc(100% + 8px);
+    color: var(--text-secondary);
+  }
+  @media (max-width: 480px) {
+    .cost-row { grid-template-columns: 1fr; }
+    .cost-label { text-align: left; }
+  }
+
+  /* ---- Cross-language callout ---- */
+  .callout {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-default);
+  }
+  .callout-crosslang {
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--surface-1));
+    border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+  }
+  .callout-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--accent-primary);
+  }
+  .callout-heading {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-primary);
+    margin-bottom: 0.5rem;
+  }
+  .callout-body {
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--text-primary);
+    margin: 0;
+  }
+</style>

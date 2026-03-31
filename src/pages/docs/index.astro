@@ -16,15 +16,37 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     it goes beyond simple keyword matching to understand the deeper meaning behind your questions.
   </p>
 
+  <!-- By the Numbers -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-number">5,834</span>
+      <span class="stat-label">Documents</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">2.57M</span>
+      <span class="stat-label">Passages</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">8</span>
+      <span class="stat-label">Languages</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">3</span>
+      <span class="stat-label">Traditions (growing)</span>
+    </div>
+  </div>
+
   <h2>What Makes SifterSearch Different</h2>
 
   <p>Traditional search engines find words. SifterSearch finds <strong>meaning</strong>.</p>
 
   <ul>
-    <li><strong>Semantic Understanding</strong> - Understands concepts, not just keywords. Search for "detachment from material things" and find passages about spiritual freedom, even if they don't use those exact words.</li>
-    <li><strong>Cross-Tradition Discovery</strong> - Explore how different religions approach similar themes. Find connections between Baha'i writings, Buddhist sutras, and Christian mystics.</li>
-    <li><strong>AI-Powered Analysis</strong> - Each search result is scored, summarized, and highlighted by AI to show you why it's relevant to your query.</li>
-    <li><strong>Scholarly Focus</strong> - Built for serious study with proper citations, source attribution, and access to original texts.</li>
+    <li><strong>Semantic Understanding</strong> — Understands concepts, not just keywords. Search for "detachment from material things" and find passages about spiritual freedom, even if they don't use those exact words.</li>
+    <li><strong>Cross-Language Search</strong> — Semantic search operates across language boundaries. An English query finds Arabic passages; a Persian query finds English ones. <a href="/docs/research-strategy">Learn how &rarr;</a></li>
+    <li><strong>RAG-Enhanced Retrieval</strong> — Advanced query disambiguation, hypothetical passage expansion (HyPE), and cross-encoder reranking surface the most relevant passages — not just the most popular ones. <a href="/docs/research-strategy">See the strategy &rarr;</a></li>
+    <li><strong>Cross-Tradition Discovery</strong> — Explore how different religions approach the same themes. Find connections across Baha'i writings, Islamic texts, and Buddhist sutras.</li>
+    <li><strong>AI-Powered Analysis</strong> — Each search result is scored, summarized, and highlighted by AI to show you why it's relevant to your query.</li>
+    <li><strong>Scholarly Focus</strong> — Built for serious study with proper citations, source attribution, and access to original texts.</li>
   </ul>
 
   <h2>Core Features</h2>
@@ -35,6 +57,13 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     Find exact quotes when you need them, or explore conceptually related passages.
   </p>
 
+  <h3>Advanced RAG Pipeline</h3>
+  <p>
+    Beyond basic retrieval, SifterSearch uses a multi-step enhancement strategy: query disambiguation
+    resolves ambiguous terms, HyPE generates hypothetical ideal passages to improve semantic matching,
+    and a cross-encoder reranks results for precision. <a href="/docs/research-strategy">Full strategy details &rarr;</a>
+  </p>
+
   <h3>Multi-Agent System</h3>
   <p>
     Under the hood, specialized AI agents collaborate to understand your query, design search strategies,
@@ -43,8 +72,8 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
   <h3>Comprehensive Library</h3>
   <p>
-    Access thousands of documents spanning major world religions, with special depth in Baha'i writings,
-    pilgrim notes, and interfaith literature. <a href="/docs/library">Explore the library &rarr;</a>
+    5,834 documents and 2.57 million passages spanning Baha'i, Islamic, and Buddhist traditions
+    in 8 languages, with more being added. <a href="/docs/library">Explore the library &rarr;</a>
   </p>
 
   <h3>Developer API</h3>
@@ -56,33 +85,104 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <h2>Quick Start</h2>
 
   <ol>
-    <li><strong>Ask a question</strong> - Type naturally: "What does Baha'u'llah say about justice?"</li>
-    <li><strong>Review results</strong> - Each passage shows its relevance score and key phrases highlighted</li>
-    <li><strong>Explore deeper</strong> - Click any result to see the full context and document</li>
-    <li><strong>Refine your search</strong> - Filter by religion, collection, or time period</li>
+    <li><strong>Ask a question</strong> — Type naturally: "What does Baha'u'llah say about justice?"</li>
+    <li><strong>Review results</strong> — Each passage shows its relevance score and key phrases highlighted</li>
+    <li><strong>Explore deeper</strong> — Click any result to see the full context and document</li>
+    <li><strong>Refine your search</strong> — Filter by religion, collection, or language</li>
   </ol>
 
   <h2>Architecture Overview</h2>
 
-  <pre><code>User Query
-    │
-    ▼
-┌─────────────┐
-│   SIFTER    │ ◄── Orchestrator (routes to appropriate agents)
-└─────────────┘
-    │
-    ├───────────────┬───────────────┬───────────────┐
-    ▼               ▼               ▼               ▼
-┌─────────┐   ┌──────────┐   ┌────────────┐   ┌──────────┐
-│RESEARCHER│   │ ANALYZER │   │ TRANSLATOR │   │ NARRATOR │
-│(Search)  │   │(Re-rank) │   │  (Style)   │   │ (Audio)  │
-└─────────┘   └──────────┘   └────────────┘   └──────────┘</code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Search pipeline diagram">
+      <!-- Query box -->
+      <rect x="10" y="30" width="80" height="40" rx="6" fill="var(--surface-2)" stroke="var(--border-default)" stroke-width="1.5"/>
+      <text x="50" y="55" text-anchor="middle" font-size="11" fill="var(--text-primary)" font-family="system-ui, sans-serif">Query</text>
+      <!-- Arrow -->
+      <path d="M90 50 L108 50" stroke="var(--border-default)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Intent Classification -->
+      <rect x="110" y="20" width="100" height="60" rx="6" fill="var(--surface-2)" stroke="var(--accent-primary)" stroke-width="1.5"/>
+      <text x="160" y="46" text-anchor="middle" font-size="10" fill="var(--text-primary)" font-family="system-ui, sans-serif">Intent</text>
+      <text x="160" y="60" text-anchor="middle" font-size="10" fill="var(--text-primary)" font-family="system-ui, sans-serif">Classification</text>
+      <!-- Arrow -->
+      <path d="M210 50 L228 50" stroke="var(--border-default)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Hybrid Search -->
+      <rect x="230" y="20" width="100" height="60" rx="6" fill="var(--surface-2)" stroke="var(--accent-primary)" stroke-width="1.5"/>
+      <text x="280" y="44" text-anchor="middle" font-size="10" fill="var(--text-primary)" font-family="system-ui, sans-serif">Hybrid Search</text>
+      <text x="280" y="58" text-anchor="middle" font-size="9" fill="var(--text-secondary)" font-family="system-ui, sans-serif">keyword + semantic</text>
+      <!-- Arrow -->
+      <path d="M330 50 L348 50" stroke="var(--border-default)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Reranking -->
+      <rect x="350" y="20" width="80" height="60" rx="6" fill="var(--surface-2)" stroke="var(--accent-primary)" stroke-width="1.5"/>
+      <text x="390" y="46" text-anchor="middle" font-size="10" fill="var(--text-primary)" font-family="system-ui, sans-serif">Cross-Encoder</text>
+      <text x="390" y="60" text-anchor="middle" font-size="10" fill="var(--text-primary)" font-family="system-ui, sans-serif">Reranking</text>
+      <!-- Arrow -->
+      <path d="M430 50 L448 50" stroke="var(--border-default)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- Results -->
+      <rect x="450" y="20" width="80" height="60" rx="6" fill="var(--accent-primary)" stroke="none"/>
+      <text x="490" y="46" text-anchor="middle" font-size="10" fill="var(--accent-primary-text)" font-family="system-ui, sans-serif">AI Summary</text>
+      <text x="490" y="60" text-anchor="middle" font-size="10" fill="var(--accent-primary-text)" font-family="system-ui, sans-serif">+ Results</text>
+      <!-- Arrow marker -->
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="var(--border-default)"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
 
   <h2>Getting Help</h2>
 
   <ul>
-    <li><strong>Questions?</strong> - Use the search bar to ask Sifter directly</li>
-    <li><strong>Bug reports</strong> - <a href="https://github.com/chadananda/siftersearch/issues">GitHub Issues</a></li>
-    <li><strong>Feature requests</strong> - We'd love to hear your ideas</li>
+    <li><strong>Questions?</strong> — Use the search bar to ask Sifter directly</li>
+    <li><strong>Bug reports</strong> — <a href="https://github.com/chadananda/siftersearch/issues">GitHub Issues</a></li>
+    <li><strong>Feature requests</strong> — We'd love to hear your ideas</li>
   </ul>
 </DocsLayout>
+
+<style>
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 1rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+  .diagram {
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    padding: 1.5rem 1rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .diagram svg {
+    width: 100%;
+    min-width: 540px;
+    height: auto;
+    display: block;
+  }
+</style>
