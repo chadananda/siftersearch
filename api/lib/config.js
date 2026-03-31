@@ -267,6 +267,13 @@ const cloudflareConfig = {
   zoneId: get('CLOUDFLARE_ZONE_ID', '')
 };
 
+// Backup configuration
+const backupConfig = {
+  nasTarget: get('BACKUP_NAS_TARGET', ''),
+  intervalHours: getInt('BACKUP_INTERVAL_HOURS', 24),
+  localRetentionDays: getInt('BACKUP_RETENTION_DAYS', 7),
+};
+
 export const config = {
   isDevMode,
   isProduction,
@@ -280,6 +287,7 @@ export const config = {
   library: libraryConfig,
   publicApi: publicApiConfig,
   cloudflare: cloudflareConfig,
+  backup: backupConfig,
   get,
   getBool,
   getInt,

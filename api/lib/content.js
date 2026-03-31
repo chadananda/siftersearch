@@ -335,6 +335,119 @@ async function updateContext(id, context) {
 }
 
 /**
+ * Update context and context_model WITHOUT touching synced or embedding.
+ * Used by enhancement worker — disambiguation is a separate sync pass.
+ */
+async function updateContextOnly(id, context, model) {
+  const ts = now();
+  return query(`
+    UPDATE content SET context = ?, context_model = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
+  `, [context, model || null, ts, id]);
+}
+
+/**
+ * Update hyp_questions WITHOUT touching synced or embedding.
+ */
+async function updateHypQuestions(id, questions) {
+  const ts = now();
+  const val = Array.isArray(questions) ? JSON.stringify(questions) : questions;
+  return query(`
+    UPDATE content SET hyp_questions = ?, enhanced_synced = 0, updated_at = ? WHERE id = ?
+  `, [val, ts, id]);
+}
+
+/**
+ * Mark enhanced content as synced after Meilisearch confirms indexing.
+ */
+async function markEnhancedSynced(ids) {
+  if (!ids || ids.length === 0) return;
+  const BATCH = 500;
+  const ts = now();
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const batch = ids.slice(i, i + BATCH);
+    await query(`
+      UPDATE content SET enhanced_synced = 1, updated_at = ?
+      WHERE id IN (${batch.map(() => '?').join(',')})
+    `, [ts, ...batch]);
+  }
+}
+
+/**
+ * Get paragraphs that need disambiguation (context IS NULL).
+ */
+async function getUndisambiguated(limit = 20) {
+  return queryAll(`
+    SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype
+    FROM content c
+    WHERE c.context IS NULL AND c.deleted_at IS NULL
+    ORDER BY c.doc_id, c.paragraph_index
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * Get paragraphs that need HyPE questions (context exists, hyp_questions missing).
+ */
+async function getUnhyped(limit = 10) {
+  return queryAll(`
+    SELECT id, doc_id, paragraph_index, text, context
+    FROM content
+    WHERE hyp_questions IS NULL AND context IS NOT NULL AND deleted_at IS NULL
+    ORDER BY id
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * Get enhanced paragraphs not yet synced to Meilisearch.
+ * Joins doc metadata so the sync processor has full context.
+ */
+async function getEnhancedUnsynced(limit = 200) {
+  return queryAll(`
+    SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.context, c.hyp_questions,
+           c.heading, c.blocktype, c.enhanced_synced,
+           d.title, d.author, d.religion, d.collection, d.language, d.year,
+           d.description
+    FROM content c
+    JOIN docs d ON d.id = c.doc_id
+    WHERE c.enhanced_synced = 0 AND c.context IS NOT NULL AND c.deleted_at IS NULL
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * Get documents that do not yet have extracted entities.
+ */
+async function getDocsWithoutEntities(limit = 1) {
+  return queryAll(`
+    SELECT id, title, author, religion, collection, language, year
+    FROM docs
+    WHERE deleted_at IS NULL
+      AND id NOT IN (SELECT doc_id FROM doc_entities)
+    LIMIT ?
+  `, [limit]);
+}
+
+/**
+ * Insert or replace entity data for a document.
+ */
+async function upsertDocEntities(docId, entities, model) {
+  const ts = now();
+  const entitiesJson = typeof entities === 'string' ? entities : JSON.stringify(entities);
+  return query(`
+    INSERT OR REPLACE INTO doc_entities (doc_id, entities, model, updated_at)
+    VALUES (?, ?, ?, ?)
+  `, [docId, entitiesJson, model || null, ts]);
+}
+
+/**
+ * Get entity data for a document.
+ */
+async function getDocEntities(docId) {
+  return queryOne('SELECT * FROM doc_entities WHERE doc_id = ?', [docId]);
+}
+
+/**
  * Update paragraph position/heading/blocktype (during re-ingestion).
  */
 async function updatePosition(id, { paragraphIndex, heading, blocktype }) {
@@ -755,9 +868,20 @@ export const content = {
   clearTranslationsForDoc,
   clearAllTranslations,
   updateContext,
+  updateContextOnly,
+  updateHypQuestions,
+  markEnhancedSynced,
   updatePosition,
   updateNormalizedHash,
   markDocDirty,
+
+  // Enhancement-worker
+  getUndisambiguated,
+  getUnhyped,
+  getEnhancedUnsynced,
+  getDocsWithoutEntities,
+  upsertDocEntities,
+  getDocEntities,
 
   // Embedding operations
   regenerateEmbedding,

@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 42;
+const CURRENT_VERSION = 43;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1733,6 +1733,41 @@ const migrations = {
     }
 
     logger.info({ total: docs.length, updated }, 'Migration 42 complete: backfilled doc slugs');
+  },
+
+  // Version 43: RAG Enhancement Layer — new columns + doc_entities table + indexes
+  43: async () => {
+    logger.info('Starting migration 43: RAG enhancement layer schema');
+    // New content columns for enhancement pipeline
+    try { await query('ALTER TABLE content ADD COLUMN hyp_questions TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try { await query('ALTER TABLE content ADD COLUMN context_model TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try { await query('ALTER TABLE content ADD COLUMN enhanced_synced INTEGER DEFAULT 0'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    // Optional tier column on docs (may already exist)
+    try {
+      await query("ALTER TABLE docs ADD COLUMN tier TEXT DEFAULT 'secondary'");
+    } catch { /* column may exist */ }
+    // Entity store for whole-document NER
+    await query(`
+      CREATE TABLE IF NOT EXISTS doc_entities (
+        doc_id INTEGER PRIMARY KEY,
+        entities TEXT NOT NULL,
+        model TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (doc_id) REFERENCES docs(id)
+      )
+    `);
+    // Partial indexes for enhancement worker queries
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_needs_context ON content(doc_id, paragraph_index) WHERE context IS NULL AND deleted_at IS NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_needs_hype ON content(id) WHERE hyp_questions IS NULL AND context IS NOT NULL AND deleted_at IS NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_enhanced_unsynced ON content(enhanced_synced, deleted_at) WHERE enhanced_synced = 0 AND deleted_at IS NULL'); } catch { /* exists */ }
+    logger.info('Migration 43 complete: RAG enhancement layer schema added');
   },
 };
 

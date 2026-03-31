@@ -23,6 +23,7 @@ import { ApiError } from '../lib/errors.js';
 import { MemoryAgent } from '../agents/agent-memory.js';
 import { getCachedSearch, setCachedSearch } from '../lib/search-cache.js';
 import { analyzePassagesParallel, getOptimalPassageCount } from '../lib/parallel-analyzer.js';
+import { rerank } from '../lib/reranker.js';
 
 // Helper function to parse parenthetical filter terms from query
 /**
@@ -790,8 +791,27 @@ Just respond with the acknowledgment, nothing else.`;
     const planType = researchPlan?.type || 'simple';
     const { toAnalyze, toReturn } = getOptimalPassageCount(query, planType);
 
-    // Build context for analyzer - include hit id for tracking
-    const analyzerInputLimit = Math.min(searchResults.hits.length, toAnalyze);
+    // VOYAGE RERANKING: Reorder results before expensive LLM analysis
+    // This ensures the parallel analyzer spends its budget on the most relevant passages
+    const voyageKey = process.env.VOYAGE_API_KEY;
+    if (voyageKey && searchResults.hits.length > 5) {
+      try {
+        const reranked = await rerank(query, searchResults.hits, {
+          provider: 'voyage', apiKey: voyageKey, timeout: 3000
+        });
+        if (reranked[0]?.rerank_score !== undefined) {
+          searchResults.hits = reranked;
+          logger.info({ query, rerankCount: reranked.length }, 'Voyage reranking applied');
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Voyage reranking skipped');
+      }
+    }
+
+    // With Voyage reranking, we trust the top results more — analyze fewer passages
+    const voyageApplied = searchResults.hits[0]?.rerank_score !== undefined;
+    const effectiveAnalyzeCount = voyageApplied ? Math.min(toAnalyze, toReturn + 3) : toAnalyze;
+    const analyzerInputLimit = Math.min(searchResults.hits.length, effectiveAnalyzeCount);
     const passagesForAnalysis = searchResults.hits.slice(0, analyzerInputLimit).map((hit, i) => ({
       index: i,
       id: hit.id,
@@ -841,7 +861,7 @@ Just respond with the acknowledgment, nothing else.`;
           collection: originalHit.collection || originalHit.religion,
           authority: result.authority || originalHit.authority || 5,
           summary: result.summary || result.briefAnswer || '',
-          score: result.score || 0,
+          score: result.score || originalHit.rerank_score || originalHit._rankingScore || 0,
           highlightedText: result.highlightedText || originalHit.text,
           keyPhrase: result.keyPhrase || '',
           coreTerms: result.coreTerms || []

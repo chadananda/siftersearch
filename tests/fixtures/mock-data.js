@@ -394,6 +394,56 @@ export const inlineTranslationTable = {
 };
 
 // ============================================================================
+// RAG ENHANCEMENT MOCK DATA
+// ============================================================================
+
+export const sampleDisambiguationResponse = 'The author (Baha\'u\'llah) addresses believers in Baghdad, 1858. "He" refers to the Bab. "This teaching" refers to progressive revelation as described in Part One.';
+
+export const sampleHyPEResponse = `What did Baha'u'llah say about the Bab's station?
+How does the Kitab-i-Iqan describe progressive revelation?
+What evidence is given for the Bab as the promised One?`;
+
+export const sampleEntityResponse = JSON.stringify({
+  people: ["Baha'u'llah (1817-1892, founder of the Baha'i Faith)", "The Bab (1819-1850, herald of Baha'u'llah)"],
+  organizations: ["Baha'i community", "Babi movement"],
+  concepts: ["progressive revelation", "unity of God (tawhid)", "the Covenant"],
+  time_periods: ["mid-19th century Persia (1844-1863)"]
+});
+
+export const sampleParagraphsWithEnhancement = [
+  {
+    id: 'para_enh_001',
+    doc_id: 1,
+    paragraph_index: 0,
+    text: 'He declared that the promised One had appeared and that a new era had dawned.',
+    context: 'Baha\'u\'llah declares that the Bab (the "promised One") has appeared, inaugurating the Babi dispensation in 1844 Persia.',
+    hyp_questions: JSON.stringify([
+      "What did Baha'u'llah say about the Bab's appearance?",
+      "When did the promised One appear according to Baha'i belief?",
+      "What new era is referenced in the Kitab-i-Iqan?"
+    ]),
+    heading: 'Part One',
+    blocktype: 'paragraph',
+    title: 'Kitab-i-Iqan',
+    author: "Baha'u'llah",
+    religion: "Baha'i",
+    collection: 'Core Publications',
+    language: 'en',
+    year: 1861,
+    authority: 10,
+    tier: 'primary'
+  }
+];
+
+export const sampleVoyageRerankResponse = {
+  data: [
+    { index: 1, relevance_score: 0.95 },
+    { index: 0, relevance_score: 0.72 },
+    { index: 2, relevance_score: 0.15 }
+  ]
+};
+
+// ============================================================================
 // EXPORT HELPER
 // ============================================================================
 
@@ -420,5 +470,10 @@ export default {
   mockMeiliResponses,
   inlineTranslationTable,
   getAllParagraphs,
-  getAllDocuments
+  getAllDocuments,
+  sampleDisambiguationResponse,
+  sampleHyPEResponse,
+  sampleEntityResponse,
+  sampleParagraphsWithEnhancement,
+  sampleVoyageRerankResponse
 };

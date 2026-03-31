@@ -28,6 +28,7 @@ import { processAudioJob } from '../services/audio.js';
 import { notifyJobComplete, processEmailQueue } from '../services/email.js';
 import { JOB_TYPES } from '../services/jobs.js';
 import { reportUsageToStripe } from '../lib/billing.js';
+import { runBackup, shouldRunBackup } from '../lib/backup.js';
 
 // ============================================================
 // Configuration
@@ -372,6 +373,15 @@ async function runPeriodicTasks() {
   if (now - lastUsageReportTime >= USAGE_REPORT_INTERVAL_MS) {
     try { await reportUsageToStripe(); } catch (err) { logger.error({ error: err.message }, 'Usage report error'); }
     lastUsageReportTime = now;
+  }
+  // Daily backup (checks interval internally via .last-backup timestamp)
+  if (shouldRunBackup()) {
+    try {
+      const result = await runBackup();
+      logger.info({ ...result }, 'Daily backup completed');
+    } catch (err) {
+      logger.error({ err: err.message }, 'Backup failed');
+    }
   }
 }
 

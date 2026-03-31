@@ -1,0 +1,281 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Search & Research Strategy"
+  description="How SifterSearch uses contextual disambiguation, hypothetical question pre-indexing, and prompt caching to make 2.5 million religious text passages searchable with genuine nuance."
+  activeSection="research-strategy"
+>
+  <h1>Search &amp; Research Strategy</h1>
+  <p class="subtitle">How SifterSearch makes 2.5 million passages searchable with the nuance religious texts deserve</p>
+
+  <h2>Introduction</h2>
+
+  <p>
+    SifterSearch indexes over 5,800 religious and philosophical texts spanning multiple faith traditions —
+    Baha'i writings, Buddhist sutras, Christian mysticism, Islamic scholarship, Jewish commentary, Hindu
+    scripture, and more. Across these traditions, the library contains roughly 2.5 million individual
+    passages, each a window into centuries of human spiritual inquiry.
+  </p>
+  <p>
+    Making those passages genuinely searchable is harder than it sounds. Standard search technology
+    was built for the web: short documents, contemporary language, authors who write to be found.
+    Religious texts are the opposite. They are dense with allusion, written across millennia in
+    translated language, and full of references that only make sense in context. A passage that
+    uses "He" might mean God, a prophet, a historical figure, or an archetypal spiritual seeker —
+    and the difference matters enormously to anyone doing serious study.
+  </p>
+  <p>
+    This document describes the research strategy SifterSearch uses to close that gap: a layered
+    pipeline of AI-assisted enrichment that runs once per passage, at low cost, so that every
+    search — no matter how it is phrased — can find what it is actually looking for.
+  </p>
+
+  <h2>The Two Problems Every Search System Must Solve</h2>
+
+  <h3>Context Loss</h3>
+  <p>
+    Search systems work by breaking documents into small, independently retrievable passages. This
+    is necessary — returning a 400-page book in response to every query is not useful. But it
+    creates a fundamental problem: references that are perfectly clear inside a document become
+    opaque when the passage is read alone.
+  </p>
+  <p>
+    "This teaching" — which teaching? "He declared" — who? "The station described above" — described
+    where? In mystical texts, this problem is especially acute. The Seven Valleys of Bahá'u'lláh
+    uses phrases like "this valley", "the wayfarer", "that celestial city" throughout — phrases
+    whose meaning builds across the work. A passage pulled out of sequence looks like poetry
+    without a key.
+  </p>
+
+  <h3>Domain Gap</h3>
+  <p>
+    Users ask questions in everyday language. The texts answer in formal, archaic, or translated
+    language that may have been rendered into English from Arabic, Persian, Sanskrit, or Hebrew
+    centuries ago. A researcher who asks "What does the Baha'i Faith say about justice?" will
+    not use the word "equity" (<em>'adl</em>) — but that is often the word the texts use.
+    Someone curious about "finding your purpose" may not know to search for "station" or "vocation"
+    or "the purpose of creation."
+  </p>
+  <p>
+    The vocabulary mismatch between how people ask and how texts are written means that a great
+    deal of relevant material is simply never surfaced. Standard keyword search misses it. Even
+    semantic vector search — which understands concepts rather than just words — has limits when
+    the conceptual vocabulary of the domain is so specialized.
+  </p>
+  <p>
+    SifterSearch's enhancement pipeline addresses both problems before the user ever types a query.
+  </p>
+
+  <h2>Contextual Disambiguation</h2>
+
+  <p>
+    For every passage in the library, an AI model reads the surrounding twenty or so paragraphs
+    and generates a brief disambiguation note. This note resolves ambiguous references so they
+    can be indexed alongside the passage text.
+  </p>
+  <p>
+    The disambiguation handles not just pronouns but conceptual references. "This station" becomes
+    "the station of absolute unity described in the Valley of True Poverty in the Seven Valleys."
+    "The ancient covenant" becomes "the covenant between God and humanity renewed in each
+    prophetic cycle, here referring specifically to the covenant of Bahá'u'lláh." These are
+    not paraphrases — they are grounding notes that make the passage findable by someone who
+    does not yet know the terminology.
+  </p>
+  <p>
+    Critically, the disambiguation is grounded <strong>only in the document text</strong>, never
+    in general knowledge. This matters for specialized religious literature where general
+    knowledge can mislead. The word "Covenant" means something very specific in Baha'i writings
+    that a model trained on general internet text might conflate with Jewish or Christian usage.
+    The constraint that disambiguation must cite only what the surrounding text actually says
+    keeps the enrichment honest.
+  </p>
+  <p>
+    SifterSearch uses Anthropic's Claude as the disambiguation engine, chosen for its particular
+    strength with nuanced, literary, and theological language.
+  </p>
+
+  <h2>Hypothetical Question Pre-Indexing (HyPE)</h2>
+
+  <p>
+    For each passage, the AI also generates several questions that the passage would naturally
+    answer. These questions are stored alongside the text and become part of what gets searched.
+  </p>
+  <blockquote>
+    A passage about Ibn Khaldun's concept of <em>'asabiyyah</em> might generate questions like:
+    "What is Ibn Khaldun's theory of group solidarity?", "How does social cohesion lead to
+    the rise and fall of civilizations?", or "What did medieval Islamic historians say about
+    tribal bonds?"
+  </blockquote>
+  <p>
+    When a user later searches for any of those questions — or something close to them — the
+    passage is retrieved even though none of the query words appear in the original text. This
+    is the domain gap problem solved at indexing time rather than search time.
+  </p>
+  <p>
+    The approach is called Hypothetical Question Pre-Indexing, or HyPE. It bridges the gap
+    between how people ask and how texts are written, and it does so at zero cost per search
+    — the questions are computed once and stored.
+  </p>
+
+  <h2>Entity Extraction</h2>
+
+  <p>
+    Before disambiguation begins on any document, the system runs a separate entity extraction
+    pass over the full text. This produces a structured glossary of key entities: people
+    mentioned by name or title, organizations and institutions, theological concepts that
+    carry specific meaning in this tradition, and time periods.
+  </p>
+  <p>
+    This glossary becomes the grounding for the disambiguation step. When a passage refers to
+    "the Master," the disambiguation model already knows — from the entity glossary — that
+    in this document, "the Master" refers to 'Abdu'l-Bahá. When a Sufi text references
+    "the Friend," the glossary may have already identified this as a recurring epithet for
+    God in this particular work.
+  </p>
+  <p>
+    Entity extraction runs using a larger AI model (in the 32-billion-parameter range) to
+    ensure accuracy on this foundational step. It runs once per document, not once per passage,
+    so the cost is manageable even with large-scale processing.
+  </p>
+
+  <h2>Dual-Index Architecture</h2>
+
+  <p>
+    The enhancement pipeline does not replace the existing search index — it builds a second,
+    enriched index alongside it. The original Meilisearch index continues working unchanged,
+    serving every search as it always has.
+  </p>
+  <p>
+    As passages are processed through the disambiguation and question-generation pipeline,
+    they are written into the enhanced index. The search system automatically uses the
+    enhanced index for any passage that has been processed, falling back to the original
+    for passages that have not yet been enriched.
+  </p>
+  <p>
+    This means improvements are delivered incrementally. Users see better results for
+    processed passages immediately, without waiting for the entire library to be processed.
+    There is no cutover, no migration risk, and no disruption to current users during the
+    rollout.
+  </p>
+
+  <h2>Search-Time Intelligence</h2>
+
+  <p>
+    In addition to the pre-indexed enrichment, SifterSearch applies several AI-assisted
+    techniques at query time to further improve result quality.
+  </p>
+
+  <h3>Query Intent Classification</h3>
+  <p>
+    Each search query is analyzed by a local AI model to determine what kind of search
+    will serve it best. A query that is clearly looking for a specific quote or passage
+    ("exact phrase" intent) benefits from stronger keyword matching. A query exploring
+    a theme or concept ("semantic" intent) benefits from stronger vector similarity.
+    The system blends the two approaches dynamically based on this classification,
+    rather than using a fixed ratio for every query.
+  </p>
+
+  <h3>Cross-Encoder Reranking</h3>
+  <p>
+    Initial retrieval is fast but imprecise — it returns a broad set of candidates, not
+    a perfectly ranked list. A second AI model, called a cross-encoder, then re-evaluates
+    each candidate by reading both the query and the passage together, scoring them as a
+    pair rather than in isolation. This catches nuanced relevance that simpler scoring
+    misses: a passage that uses completely different words but addresses exactly the same
+    concept rises to the top.
+  </p>
+
+  <h3>Document Authority Weighting</h3>
+  <p>
+    Primary scripture and authoritative texts are given a relevance boost over secondary
+    commentary and peripheral works. A researcher looking for what "the Baha'i Faith says"
+    about a topic should encounter Bahá'u'lláh's own words before encountering a pilgrim's
+    second-hand recollection. The weighting is soft — commentary is not excluded — but it
+    ensures that authoritative sources surface first when they are relevant.
+  </p>
+
+  <h2>Cost Optimization Through Prompt Caching</h2>
+
+  <p>
+    Processing 2.5 million passages requires millions of AI API calls. Without optimization,
+    this would cost tens of thousands of dollars — putting the project out of reach for an
+    individual initiative. The solution lies in understanding how AI costs are actually
+    structured.
+  </p>
+  <p>
+    Anthropic's API charges based on tokens processed. When the same context appears at the
+    start of multiple consecutive requests, it can be cached — and cached tokens are billed
+    at roughly 10% of normal cost. The insight that makes this powerful: when processing
+    passages from the same document sequentially, the context (document metadata, entity
+    glossary, surrounding paragraphs) changes very little between calls.
+  </p>
+  <p>
+    SifterSearch uses a sliding window strategy. Passages are processed in document order.
+    The system prompt for each passage contains the document metadata, the entity glossary,
+    and approximately twenty surrounding paragraphs for context. Between consecutive passages
+    in the same document, most of this context remains unchanged — only a few paragraphs
+    slide in and out of the window. This achieves cache hit rates of approximately 90%,
+    meaning 90% of each API call is billed at one-tenth the normal rate.
+  </p>
+  <p>
+    The concrete numbers: without prompt caching, disambiguation of 2.5 million passages
+    would cost roughly $250. With caching, the estimated cost is around $25 — a 90% reduction.
+    Adding hypothetical question generation and re-embedding, the total estimated cost for
+    the full enhancement pipeline across the entire 5,800-document library is approximately
+    $90–100.
+  </p>
+  <p>
+    Entity extraction and all query-time classification (query intent, cross-encoder reranking)
+    runs on local AI models, adding zero marginal API cost.
+  </p>
+
+  <h2>Why This Matters for Religious Texts</h2>
+
+  <p>
+    The techniques described above are not unique to religious literature — they improve
+    search quality across many domains. But religious and philosophical texts are where
+    the gap between standard search and good search is widest, and where the consequences
+    of getting it wrong are most visible.
+  </p>
+  <p>
+    These texts are dense with conceptual reference in ways that secular texts usually are
+    not. A passage about "the Covenant" means something very different in Baha'i, Jewish,
+    and Christian contexts — and the disambiguation approach, grounded in the document itself,
+    resolves this rather than conflating it. Mystical texts like the Seven Valleys or Sufi
+    poetry use metaphor as their primary mode of expression — "this station," "the path,"
+    "the valley" are not vague terms but precise references that carry the full weight of
+    a spiritual tradition.
+  </p>
+  <p>
+    Religious texts also span millennia of scholarship. A researcher studying a concept
+    may need to trace it from early scripture through medieval commentary through modern
+    interpretation — across languages, traditions, and centuries of translation. The
+    cross-tradition capability of SifterSearch's enhanced index, where conceptual
+    connections are indexed rather than just word matches, makes that kind of research
+    possible in ways that were not practical before.
+  </p>
+  <p>
+    The goal throughout has been to treat these texts with the scholarly care they deserve:
+    not to flatten their richness into keyword bags, but to index their meaning.
+  </p>
+
+  <h2>Open Source &amp; Community</h2>
+
+  <p>
+    SifterSearch is an individual initiative, developed for personal and academic research
+    and offered freely to anyone who finds it useful. The research strategy described in
+    this document is being implemented openly — the approach, the architecture, and the
+    cost estimates are all shared here rather than kept proprietary.
+  </p>
+  <p>
+    The enhancement pipeline is actively being built. Supporters can follow progress,
+    explore the library, and contribute at <a href="https://siftersearch.com">siftersearch.com</a>.
+    Questions and feedback are welcome through the search interface itself — asking Sifter
+    is the fastest way to explore what is already working and what still needs improvement.
+  </p>
+
+  <hr />
+  <p style="font-size: 0.8rem; color: var(--text-muted);">Last updated: March 2026</p>
+</DocsLayout>

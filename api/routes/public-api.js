@@ -15,6 +15,7 @@
 
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
 import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
+import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
@@ -128,6 +129,17 @@ export default async function publicApiRoutes(fastify) {
       logApiSearch({ query, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api', filters });
       if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'search', false).catch(() => {});
       return { results: [], query, totalFound: 0, processingTimeMs: Date.now() - startTime };
+    }
+
+    // Voyage reranking before LLM analysis
+    const voyageKey = process.env.VOYAGE_API_KEY;
+    if (voyageKey && searchResults.hits.length > 3) {
+      try {
+        const reranked = await rerank(query, searchResults.hits, {
+          provider: 'voyage', apiKey: voyageKey, timeout: 3000
+        });
+        if (reranked[0]?.rerank_score !== undefined) searchResults.hits = reranked;
+      } catch { /* fallback to original order */ }
     }
 
     // Prepare passages for analysis

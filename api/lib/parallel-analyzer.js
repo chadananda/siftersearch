@@ -72,6 +72,10 @@ function truncateAtWord(text, maxLength) {
 async function analyzeBatch(query, passages, batchIndex, researchContext = '') {
   // Use excerpt if available, otherwise fall back to full text (truncated)
   // Normalize text to remove markdown that could confuse keyPhrase matching
+  // When Voyage reranking handles relevance ordering, we only need extraction (summary, keyPhrase, coreTerms).
+  // Without Voyage, we still score for relevance as a fallback.
+  const hasVoyageReranking = passages[0]?.rerank_score !== undefined;
+
   const batchPrompt = `User's question: "${query}"
 
 ${passages.map((p, i) => {
@@ -80,49 +84,28 @@ ${passages.map((p, i) => {
 "${text}"`;
 }).join('\n\n')}
 
-TASK: For each passage, evaluate how directly it ANSWERS the user's question.
+TASK: For each passage, extract a faithful summary and key phrase.${!hasVoyageReranking ? ' Also score relevance 0-100.' : ''}
 
-Even when the user's input is a topic or statement (not a question), treat it as an implied question:
-- "justice" → "What is justice?" or "What do the texts say about justice?"
-- "love and marriage" → "What is the relationship between love and marriage?"
-- "meditation practices" → "What are meditation practices?" or "How should one meditate?"
+Return JSON with:${!hasVoyageReranking ? `
+- score: 0-100 (90-100: direct answer, 70-89: relevant insight, 50-69: related, <50: off-topic keyword match)` : ''}
+- summary: 8-15 words describing WHAT THE PASSAGE ACTUALLY SAYS. Be faithful to the text.
+  Start with the main point, NEVER with "Addresses...", "Discusses...", "This passage..."
+  NEVER fabricate claims the passage doesn't make.
+- keyPhrase: VERBATIM 5-15 words copied from the quoted text. Pick the most meaningful phrase.
+- coreTerms: 1-3 key words to bold (copy exactly from the text)
 
-CRITICAL - Keyword matches are NOT enough:
-- A passage containing "meditation" but discussing organizational planning scores <30
-- A passage must address the ACTUAL TOPIC, not just contain the keyword
-- Ask yourself: "Does this passage help answer the question?" If no, score <50
-
-Return JSON with:
-- score: 0-100 based on how DIRECTLY the passage answers the question
-  * 90-100: Contains a clear, direct answer (definitions, explanations, instructions)
-  * 70-89: Substantially addresses the question with relevant insight
-  * 50-69: Related to the topic but doesn't directly answer
-  * <50: OFF-TOPIC - merely mentions keyword in unrelated context, or doesn't address the question
-- summary: 8-15 words describing WHAT THE PASSAGE ACTUALLY SAYS - be faithful to the text!
-  CRITICAL RULES:
-  1. NEVER fabricate claims the passage doesn't make
-  2. If the passage discusses X, say it discusses X - don't claim it "answers" something it doesn't
-  3. Start with the main point, NEVER with "Addresses...", "Discusses...", "This passage..."
-  EXAMPLES:
-  - Passage about prayer's purpose → "Prayer is conversation with God"
-  - Passage about letters in 'Báb' having mystical meaning → "The three letters of 'Báb' symbolize stages of divine Action"
-  - Passage mentioning justice but focused on something else → score <50, or summary reflects actual topic
-  BAD: Claiming a passage "answers" or "explains" something it merely mentions
-- keyPhrase: CRITICAL - copy VERBATIM from the quoted text (5-15 words). Pick the most meaningful phrase.
-- coreTerms: 1-3 key words to bold (copy exactly)
-
-OUTPUT FORMAT (do not copy example values - analyze the actual passages):
-{"results":[{"globalIndex":N,"score":N,"summary":"YOUR_ANALYSIS","keyPhrase":"COPY_FROM_TEXT","coreTerms":["term1"]}]}`;
+OUTPUT FORMAT:
+{"results":[{"globalIndex":N${!hasVoyageReranking ? ',"score":N' : ''},"summary":"...","keyPhrase":"COPY_FROM_TEXT","coreTerms":["term1"]}]}`;
 
   try {
     // Use 'fast' service for quick analysis
     const response = await aiService('fast').chat([
-      { role: 'system', content: 'You are a scholarly research assistant. Your job is to identify which passages actually ANSWER the user\'s question. CRITICAL: The summary must FAITHFULLY represent what the passage actually says - never fabricate claims or connections the passage doesn\'t make. If a passage mentions a keyword but discusses something else, say what it actually discusses and score it low. Return only valid JSON. CRITICAL: keyPhrase MUST be copied character-for-character from the passage text.' },
+      { role: 'system', content: 'You are a scholarly research assistant extracting summaries and key phrases from passages. CRITICAL: The summary must FAITHFULLY represent what the passage actually says - never fabricate claims. keyPhrase MUST be copied character-for-character from the passage text. Return only valid JSON.' },
       { role: 'user', content: batchPrompt }
     ], {
       temperature: 0.1,  // Lower temperature for more precise copying
-      maxTokens: 600,
-      caller: 'search:rerank'
+      maxTokens: hasVoyageReranking ? 400 : 600, // Less work when Voyage handles ranking
+      caller: 'search:summarize'
     });
 
     // Parse JSON response
