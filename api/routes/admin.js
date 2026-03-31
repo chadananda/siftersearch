@@ -3107,8 +3107,17 @@ Collection: ${paragraph.collection || 'Unknown'}
   // AI Usage Tracking
   // ==========================================================================
 
+  // Cache for AI usage summary (expensive queries, refresh every 5 min)
+  let _aiUsageCache = null;
+  let _aiUsageCacheTime = 0;
+  const AI_USAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   // Get AI usage summary (today, week, month, by model, by caller)
   fastify.get('/ai-usage/summary', { preHandler: requireTier('admin') }, async () => {
+    const now = Date.now();
+    if (_aiUsageCache && (now - _aiUsageCacheTime) < AI_USAGE_CACHE_TTL) {
+      return _aiUsageCache;
+    }
     // Format date for SQLite comparison (DB stores 'YYYY-MM-DD HH:MM:SS' format)
     const formatDate = (d) => d.toISOString().replace('T', ' ').slice(0, 19);
 
@@ -3165,7 +3174,7 @@ Collection: ${paragraph.collection || 'Unknown'}
     const month = { calls: combined?.month_calls || 0, tokens: combined?.month_tokens || 0, cost: combined?.month_cost || 0 };
     const failures = { count: combined?.failed_week || 0 };
 
-    return {
+    const result = {
       today: { calls: today?.calls || 0, tokens: today?.tokens || 0, cost: today?.cost || 0 },
       week: { calls: week?.calls || 0, tokens: week?.tokens || 0, cost: week?.cost || 0 },
       month: { calls: month?.calls || 0, tokens: month?.tokens || 0, cost: month?.cost || 0 },
@@ -3175,6 +3184,10 @@ Collection: ${paragraph.collection || 'Unknown'}
       byCaller: byCaller || [],
       byCallerToday: byCallerToday || []
     };
+
+    _aiUsageCache = result;
+    _aiUsageCacheTime = Date.now();
+    return result;
   });
 
   // Get recent AI usage calls
@@ -3282,17 +3295,28 @@ Collection: ${paragraph.collection || 'Unknown'}
   // ==========================================================================
 
   // Get AI processing status (paused state, daily spending by service)
+  let _aiStatusCache = null;
+  let _aiStatusCacheTime = 0;
+  const AI_STATUS_CACHE_TTL = 60 * 1000; // 1 minute
+
   fastify.get('/ai-usage/status', { preHandler: requireTier('admin') }, async () => {
+    const now = Date.now();
+    if (_aiStatusCache && (now - _aiStatusCacheTime) < AI_STATUS_CACHE_TTL) {
+      return _aiStatusCache;
+    }
+
     const [pauseState, spending] = await Promise.all([
       Promise.resolve(isAIProcessingPaused()),
       getAllDailySpending()
     ]);
 
-    return {
+    _aiStatusCache = {
       ...pauseState,
       dailySpending: spending,
       dailyLimit: 100  // USD per service
     };
+    _aiStatusCacheTime = now;
+    return _aiStatusCache;
   });
 
   // Resume AI processing (admin action after budget review)
