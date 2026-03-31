@@ -1,6 +1,13 @@
 {
-  "generated": "2026-03-31T15:41:10.804Z",
+  "generated": "2026-03-31T15:43:40.984Z",
   "entries": [
+    {
+      "hash": "5f6f53b",
+      "date": "2026-03-31",
+      "type": "Fixed",
+      "description": "Adl is justice not equity, add insaf for equity",
+      "scope": null
+    },
     {
       "hash": "114ae27",
       "date": "2026-03-31",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Set line-height on translation-col parent container",
       "scope": null
-    },
-    {
-      "hash": "fc3ba6b",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Force single line-height on SBS translation text via JS action",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-03-31": [
+      {
+        "hash": "5f6f53b",
+        "date": "2026-03-31",
+        "type": "Fixed",
+        "description": "Adl is justice not equity, add insaf for equity",
+        "scope": null
+      },
       {
         "hash": "114ae27",
         "date": "2026-03-31",
@@ -7043,13 +7050,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Set line-height on translation-col parent container",
-        "scope": null
-      },
-      {
-        "hash": "fc3ba6b",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Force single line-height on SBS translation text via JS action",
         "scope": null
       }
     ]

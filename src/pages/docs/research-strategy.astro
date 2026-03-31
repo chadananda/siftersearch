@@ -124,14 +124,14 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
       <div class="compare-card compare-before">
         <div class="compare-label compare-label-before">Before: Ambiguous passage</div>
         <p class="compare-text">
-          <mark class="mark-ambiguous">"He"</mark> declared that
-          <mark class="mark-ambiguous">"the promised One"</mark>
-          had appeared and that a new era had dawned for all mankind.
+          <mark class="mark-ambiguous">He</mark> arrived at
+          <mark class="mark-ambiguous">the city</mark>
+          before <mark class="mark-ambiguous">dawn</mark>.
         </p>
         <div class="compare-issues">
           <div class="issue-tag">Who is "He"?</div>
-          <div class="issue-tag">Who is "the promised One"?</div>
-          <div class="issue-tag">Which era? Which context?</div>
+          <div class="issue-tag">Which city?</div>
+          <div class="issue-tag">Which dawn? What date?</div>
         </div>
       </div>
       <div class="compare-arrow-col">
@@ -143,17 +143,18 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
       <div class="compare-card compare-after">
         <div class="compare-label compare-label-after">After: Disambiguated</div>
         <p class="compare-text">
-          <mark class="mark-resolved">Bahá'u'lláh</mark> declared that
-          <mark class="mark-resolved">the Báb (the promised One)</mark>
-          had appeared and that a new era had dawned for all mankind.
+          <mark class="mark-resolved">He [Mullá Husayn-i-Bushrú'í]</mark> arrived at
+          <mark class="mark-resolved">the city [Shíráz, Iran]</mark>
+          before <mark class="mark-resolved">dawn [May 23rd, 1844]</mark>.
         </p>
         <div class="compare-notes">
-          <div class="note-tag">"He" = Bahá'u'lláh (identified from document context)</div>
-          <div class="note-tag">"the promised One" = the Báb (grounded in document glossary)</div>
+          <div class="note-tag">"He" = Mullá Husayn (first to believe in the Báb)</div>
+          <div class="note-tag">"the city" = Shíráz (from document context)</div>
+          <div class="note-tag">"dawn" = May 23, 1844 (the Declaration of the Báb)</div>
         </div>
       </div>
     </div>
-    <p class="diagram-caption">Figure 2. Disambiguation resolves ambiguous pronouns and titles using only the surrounding document text, making each passage findable in isolation without losing its original wording.</p>
+    <p class="diagram-caption">Figure 2. A single sentence becomes fully searchable. Someone researching "Mullá Husayn" or "Shíráz" or "1844" will now find this passage — impossible with the original text alone.</p>
   </div>
 
   <h2>Problem 2: Users Speak Modern English; Texts Speak Ancient Arabic</h2>
