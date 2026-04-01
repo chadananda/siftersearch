@@ -281,10 +281,10 @@ const localLlmConfig = {
   enabled: getBool('LOCAL_LLM_ENABLED', true),
 };
 
-// CTAI.info — translation API (Arabic/Persian root analysis + translation)
+// CTAI.info — Arabic/Persian root analysis (JAFAR reports) + translation
 const ctaiConfig = {
-  apiUrl: get('CTAI_API_URL', 'https://ctai.info/api'),
-  apiKey: get('CTAI_API_KEY', ''),
+  apiUrl: get('CTAI_API_URL', 'https://ctai.info/api/v1'),
+  apiKey: get('CTAI_KEY', ''),
   enabled: getBool('CTAI_ENABLED', true),
 };
 
