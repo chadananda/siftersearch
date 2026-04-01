@@ -290,6 +290,33 @@ export async function initializeIndexes() {
   });
 
   logger.info('Search indexes initialized (settings updates queued)');
+
+  // CRITICAL: Verify embedder config was actually applied after a delay.
+  // A partial PATCH to /settings can silently clear the embedder config,
+  // which destroys the vector index and requires a week-long re-index.
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings/embedders`, { headers });
+      const embedders = await res.json();
+      if (!embedders?.default) {
+        logger.error('CRITICAL: Meilisearch embedder config is MISSING. Vectors will not be indexed. Re-applying...');
+        await fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings`, {
+          method: 'PATCH', headers,
+          body: JSON.stringify({ embedders: { default: { source: 'userProvided', dimensions: expectedDimensions } } })
+        });
+        logger.info('Embedder config re-applied');
+      } else {
+        const dims = embedders.default.dimensions;
+        if (dims !== expectedDimensions) {
+          logger.warn({ expected: expectedDimensions, actual: dims }, 'Embedder dimensions mismatch');
+        } else {
+          logger.info({ dimensions: dims }, 'Embedder config verified OK');
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Failed to verify embedder config');
+    }
+  }, 30000); // Check 30s after startup (allows settings tasks to complete)
 }
 
 /**
