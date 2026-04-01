@@ -130,12 +130,12 @@ const aiConfig = {
     maxTokens: getInt('DOC_LLM_MAX_TOKENS', 2000)
   },
 
-  // Embeddings (always OpenAI text-embedding-3-large for maximum semantic quality)
-  // For a classical religious library, 3072 dimensions capture nuanced spiritual meanings
+  // Embeddings (OpenAI text-embedding-3-large with Matryoshka truncation to 512 dims)
+  // 512 dims keeps ~98% quality; disambiguation + HyPE + reranking handle the rest
   embeddings: {
     provider: 'openai',
     model: get('EMBEDDING_MODEL', 'text-embedding-3-large'),
-    dimensions: getInt('EMBEDDING_DIMENSIONS', 3072)
+    dimensions: getInt('EMBEDDING_DIMENSIONS', 512)
   },
 
   // Segmentation (Arabic/Farsi AI segmentation via LM Studio)
