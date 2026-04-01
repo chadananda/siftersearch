@@ -190,7 +190,7 @@ export default async function publicApiRoutes(fastify) {
       religion: result.religion,
       collection: result.collection,
       score: result.score,
-      summary: result.briefAnswer
+      summary: result.summary || result.briefAnswer || ''
     }));
 
     const durationMs = Date.now() - startTime;

@@ -88,8 +88,11 @@ TASK: For each passage, extract a faithful summary and key phrase.${!hasVoyageRe
 
 Return JSON with:${!hasVoyageReranking ? `
 - score: 0-100 (90-100: direct answer, 70-89: relevant insight, 50-69: related, <50: off-topic keyword match)` : ''}
-- summary: 8-15 words describing WHAT THE PASSAGE ACTUALLY SAYS. Be faithful to the text.
-  Start with the main point, NEVER with "Addresses...", "Discusses...", "This passage..."
+- summary: 8-15 words explaining HOW this passage answers the user's question (explicitly or implicitly).
+  Frame it as the connection between query and passage. Examples:
+  Query "what is justice" + passage about equity → "Defines justice as the foundation of human society"
+  Query "prayer" + passage about meditation → "Describes meditation as a form of prayer and communion with God"
+  NEVER start with "Addresses...", "Discusses...", "This passage..."
   NEVER fabricate claims the passage doesn't make.
 - keyPhrase: VERBATIM 5-15 words copied from the quoted text. Pick the most meaningful phrase.
 - coreTerms: 1-3 key words to bold (copy exactly from the text)
