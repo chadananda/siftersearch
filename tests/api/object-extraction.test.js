@@ -11,7 +11,41 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createClient } from '@libsql/client';
+import Database from 'better-sqlite3';
+
+// ---------------------------------------------------------------------------
+// better-sqlite3 in-memory wrapper with libsql-compatible API
+// ---------------------------------------------------------------------------
+
+function createInMemoryDb() {
+  const db = new Database(':memory:');
+  db.pragma('journal_mode = WAL');
+  return {
+    _db: db,
+    execute(sqlOrObj, argsArr) {
+      const sql = typeof sqlOrObj === 'string' ? sqlOrObj : sqlOrObj.sql;
+      const args = typeof sqlOrObj === 'string' ? (argsArr || []) : (sqlOrObj.args || []);
+      const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
+      if (isWrite) {
+        const info = db.prepare(sql).run(...args);
+        return Promise.resolve({ rows: [], lastInsertRowid: info.lastInsertRowid, changes: info.changes });
+      }
+      const rows = db.prepare(sql).all(...args);
+      return Promise.resolve({ rows, lastInsertRowid: null });
+    },
+    executeMultiple(sql) {
+      db.exec(sql);
+      return Promise.resolve();
+    },
+    batch(stmts) {
+      const txn = db.transaction((s) => s.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
+      return Promise.resolve(txn(stmts));
+    },
+    close() {
+      db.close();
+    }
+  };
+}
 
 // ==========================================================================
 // Object Extraction Prompts and Parsers
@@ -19,8 +53,8 @@ import { createClient } from '@libsql/client';
 
 describe('Object Extraction Prompts', () => {
   const doc = {
-    title: 'Kitáb-i-Íqán',
-    author: "Bahá'u'lláh",
+    title: 'Kitab-i-Iqan',
+    author: "Baha'u'llah",
     religion: "Baha'i",
     collection: 'Core Publications',
     year: 1861,
@@ -28,7 +62,7 @@ describe('Object Extraction Prompts', () => {
   };
   const paragraph = {
     id: 1,
-    text: 'The Báb declared His mission in Shiraz...',
+    text: 'The Bab declared His mission in Shiraz...',
     paragraph_index: 5
   };
 
@@ -49,7 +83,7 @@ describe('Object Extraction Prompts', () => {
     const { buildObjectExtractionPrompt } = await import('../../api/lib/object-extraction.js');
     const { systemPrompt } = buildObjectExtractionPrompt(paragraph, doc);
     expect(systemPrompt).toContain("Baha'i");
-    expect(systemPrompt).toContain("Bahá'u'lláh");
+    expect(systemPrompt).toContain("Baha'u'llah");
     expect(systemPrompt).toContain('1861');
   });
 
@@ -73,12 +107,12 @@ describe('Object Extraction Prompts', () => {
   it('parseObjectResponse returns structured object with all 6 arrays for valid JSON', async () => {
     const { parseObjectResponse } = await import('../../api/lib/object-extraction.js');
     const validJSON = JSON.stringify({
-      people: [{ name: 'The Báb', description: 'Herald of the Baha\'i Faith' }],
+      people: [{ name: 'The Bab', description: "Herald of the Baha'i Faith" }],
       places: [{ name: 'Shiraz', description: 'City in Persia' }],
       documents: [],
-      events: [{ name: 'Declaration of the Báb', description: 'Mission declaration in 1844' }],
-      concepts: [{ name: 'Progressive Revelation', description: 'Core Baha\'i principle' }],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared mission in' }]
+      events: [{ name: 'Declaration of the Bab', description: 'Mission declaration in 1844' }],
+      concepts: [{ name: 'Progressive Revelation', description: "Core Baha'i principle" }],
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared mission in' }]
     });
     const result = parseObjectResponse(validJSON);
     expect(result).toBeTruthy();
@@ -94,10 +128,10 @@ describe('Object Extraction Prompts', () => {
 
   it('parseObjectResponse handles markdown code fences', async () => {
     const { parseObjectResponse } = await import('../../api/lib/object-extraction.js');
-    const fenced = '```json\n{"people":[{"name":"The Báb","description":"Herald"}],"places":[],"documents":[],"events":[],"concepts":[],"relations":[]}\n```';
+    const fenced = '```json\n{"people":[{"name":"The Bab","description":"Herald"}],"places":[],"documents":[],"events":[],"concepts":[],"relations":[]}\n```';
     const result = parseObjectResponse(fenced);
     expect(result).toBeTruthy();
-    expect(result.people[0].name).toBe('The Báb');
+    expect(result.people[0].name).toBe('The Bab');
   });
 
   it('parseObjectResponse returns null for empty input', async () => {
@@ -115,8 +149,7 @@ describe('Object Extraction Prompts', () => {
 
   it('parseObjectResponse normalizes missing arrays to empty arrays', async () => {
     const { parseObjectResponse } = await import('../../api/lib/object-extraction.js');
-    // Only people present — all others must default to []
-    const partial = JSON.stringify({ people: [{ name: 'The Báb', description: 'Herald' }] });
+    const partial = JSON.stringify({ people: [{ name: 'The Bab', description: 'Herald' }] });
     const result = parseObjectResponse(partial);
     expect(result).toBeTruthy();
     expect(Array.isArray(result.places)).toBe(true);
@@ -131,15 +164,15 @@ describe('Object Extraction Prompts', () => {
     expect(result.relations).toEqual([]);
   });
 
-  it('renderObjectsForPrompt returns deterministic text (same input → same output)', async () => {
+  it('renderObjectsForPrompt returns deterministic text (same input same output)', async () => {
     const { renderObjectsForPrompt } = await import('../../api/lib/object-extraction.js');
     const objects = {
-      people: [{ name: 'The Báb', description: 'Herald' }],
+      people: [{ name: 'The Bab', description: 'Herald' }],
       places: [{ name: 'Shiraz', description: 'City' }],
       documents: [],
       events: [],
       concepts: [],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared in' }]
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared in' }]
     };
     const first = renderObjectsForPrompt(objects);
     const second = renderObjectsForPrompt(objects);
@@ -151,22 +184,21 @@ describe('Object Extraction Prompts', () => {
   it('renderObjectsForPrompt includes entity names, types, and relation descriptions', async () => {
     const { renderObjectsForPrompt } = await import('../../api/lib/object-extraction.js');
     const objects = {
-      people: [{ name: 'The Báb', description: 'Herald of the Baha\'i Faith' }],
+      people: [{ name: 'The Bab', description: "Herald of the Baha'i Faith" }],
       places: [{ name: 'Shiraz', description: 'City in Persia' }],
       documents: [],
       events: [],
       concepts: [],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared mission in' }]
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared mission in' }]
     };
     const rendered = renderObjectsForPrompt(objects);
-    expect(rendered).toContain('The Báb');
+    expect(rendered).toContain('The Bab');
     expect(rendered).toContain('Shiraz');
     expect(rendered).toContain('declared mission in');
   });
 
   it('renderObjectsForPrompt uses sorted keys for deterministic serialization', async () => {
     const { renderObjectsForPrompt } = await import('../../api/lib/object-extraction.js');
-    // Objects with keys in different insertion orders must produce identical output
     const objectsA = { people: [{ name: 'A', description: 'desc' }], places: [], documents: [], events: [], concepts: [], relations: [] };
     const objectsB = { relations: [], concepts: [], events: [], documents: [], places: [], people: [{ name: 'A', description: 'desc' }] };
     expect(renderObjectsForPrompt(objectsA)).toBe(renderObjectsForPrompt(objectsB));
@@ -175,16 +207,16 @@ describe('Object Extraction Prompts', () => {
   it('renderObjectsForMeili returns flattened searchable strings', async () => {
     const { renderObjectsForMeili } = await import('../../api/lib/object-extraction.js');
     const objects = {
-      people: [{ name: 'The Báb', description: 'Herald' }],
+      people: [{ name: 'The Bab', description: 'Herald' }],
       places: [{ name: 'Shiraz', description: 'City' }],
       documents: [],
       events: [],
       concepts: [{ name: 'Progressive Revelation', description: 'Core principle' }],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared mission in' }]
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared mission in' }]
     };
     const result = renderObjectsForMeili(objects);
     expect(typeof result).toBe('string');
-    expect(result).toContain('The Báb');
+    expect(result).toContain('The Bab');
     expect(result).toContain('Shiraz');
     expect(result).toContain('Progressive Revelation');
     expect(result).toContain('declared mission in');
@@ -193,7 +225,7 @@ describe('Object Extraction Prompts', () => {
   it('renderObjectsForMeili returns space-separated text (no JSON structure)', async () => {
     const { renderObjectsForMeili } = await import('../../api/lib/object-extraction.js');
     const objects = {
-      people: [{ name: 'The Báb', description: 'Herald' }],
+      people: [{ name: 'The Bab', description: 'Herald' }],
       places: [],
       documents: [],
       events: [],
@@ -201,7 +233,6 @@ describe('Object Extraction Prompts', () => {
       relations: []
     };
     const result = renderObjectsForMeili(objects);
-    // Should be plain text, not JSON
     expect(result).not.toContain('{');
     expect(result).not.toContain('[');
   });
@@ -211,10 +242,8 @@ describe('Object Extraction Prompts', () => {
 // Entity Resolution (conservative merge — interfaith library)
 // ==========================================================================
 
-// Create an isolated in-memory libsql client for each test
 async function createGraphDb() {
-  // libsql supports ":memory:" for an in-memory database
-  const db = createClient({ url: ':memory:' });
+  const db = createInMemoryDb();
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS entities (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -250,7 +279,7 @@ describe('Entity Resolution', () => {
   it('resolveEntity with no existing match creates new entity and returns { id, isNew: true }', async () => {
     const { resolveEntity } = await import('../../api/lib/entity-resolution.js');
     const result = await resolveEntity(
-      { name: "Bahá'u'lláh", entityType: 'person', religion: "Baha'i" },
+      { name: "Baha'u'llah", entityType: 'person', religion: "Baha'i" },
       graphDb
     );
     expect(result).toBeTruthy();
@@ -260,10 +289,8 @@ describe('Entity Resolution', () => {
 
   it('resolveEntity with exact match returns existing entity and { id, isNew: false, merged: true }', async () => {
     const { resolveEntity } = await import('../../api/lib/entity-resolution.js');
-    const entity = { name: "Bahá'u'lláh", entityType: 'person', religion: "Baha'i" };
-    // First call creates
+    const entity = { name: "Baha'u'llah", entityType: 'person', religion: "Baha'i" };
     const first = await resolveEntity(entity, graphDb);
-    // Second call must find it
     const second = await resolveEntity(entity, graphDb);
     expect(second.id).toBe(first.id);
     expect(second.isNew).toBe(false);
@@ -288,11 +315,11 @@ describe('Entity Resolution', () => {
   it('same name + same religion + different entityType creates TWO separate entities', async () => {
     const { resolveEntity } = await import('../../api/lib/entity-resolution.js');
     const asPerson = await resolveEntity(
-      { name: "Bahá'u'lláh", entityType: 'person', religion: "Baha'i" },
+      { name: "Baha'u'llah", entityType: 'person', religion: "Baha'i" },
       graphDb
     );
     const asConcept = await resolveEntity(
-      { name: "Bahá'u'lláh", entityType: 'concept', religion: "Baha'i" },
+      { name: "Baha'u'llah", entityType: 'concept', religion: "Baha'i" },
       graphDb
     );
     expect(asPerson.id).not.toBe(asConcept.id);
@@ -302,7 +329,7 @@ describe('Entity Resolution', () => {
 
   it('resolveEntity increments mention_count on merge', async () => {
     const { resolveEntity } = await import('../../api/lib/entity-resolution.js');
-    const entity = { name: "Bahá'u'lláh", entityType: 'person', religion: "Baha'i" };
+    const entity = { name: "Baha'u'llah", entityType: 'person', religion: "Baha'i" };
     const first = await resolveEntity(entity, graphDb);
     await resolveEntity(entity, graphDb);
     await resolveEntity(entity, graphDb);
@@ -315,10 +342,9 @@ describe('Entity Resolution', () => {
 
   it('resolveEntity appends doc_id to source_doc_ids array on merge', async () => {
     const { resolveEntity } = await import('../../api/lib/entity-resolution.js');
-    const entity = { name: "Bahá'u'lláh", entityType: 'person', religion: "Baha'i" };
+    const entity = { name: "Baha'u'llah", entityType: 'person', religion: "Baha'i" };
     await resolveEntity({ ...entity, docId: 101 }, graphDb);
     await resolveEntity({ ...entity, docId: 202 }, graphDb);
-    // Calling again with same doc_id should not duplicate it
     const third = await resolveEntity({ ...entity, docId: 101 }, graphDb);
     const row = await graphDb.execute({
       sql: 'SELECT source_doc_ids FROM entities WHERE id = ?',
@@ -332,8 +358,7 @@ describe('Entity Resolution', () => {
 
   it('buildCanonicalName normalizes diacriticals for matching', async () => {
     const { buildCanonicalName } = await import('../../api/lib/entity-resolution.js');
-    // Diacritical variants should produce the same canonical string
-    const withDiacriticals = buildCanonicalName("Bahá'u'lláh");
+    const withDiacriticals = buildCanonicalName("Baha'u'llah");
     const withoutDiacriticals = buildCanonicalName("Baha'u'llah");
     expect(typeof withDiacriticals).toBe('string');
     expect(typeof withoutDiacriticals).toBe('string');
@@ -349,24 +374,23 @@ describe('Entity Resolution', () => {
   it('buildCanonicalName trims whitespace', async () => {
     const { buildCanonicalName } = await import('../../api/lib/entity-resolution.js');
     expect(buildCanonicalName('  Shiraz  ')).toBe(buildCanonicalName('Shiraz'));
-    expect(buildCanonicalName('\tThe Báb\n')).toBe(buildCanonicalName('The Bab'));
+    expect(buildCanonicalName('\tThe Bab\n')).toBe(buildCanonicalName('The Bab'));
   });
 
   it('resolveEntitiesForParagraph processes all entity types and returns resolved IDs + relations', async () => {
     const { resolveEntitiesForParagraph } = await import('../../api/lib/entity-resolution.js');
     const extractedObjects = {
-      people: [{ name: 'The Báb', description: "Herald of the Baha'i Faith" }],
+      people: [{ name: 'The Bab', description: "Herald of the Baha'i Faith" }],
       places: [{ name: 'Shiraz', description: 'City in Persia' }],
       documents: [],
-      events: [{ name: 'Declaration of the Báb', description: 'Mission declaration' }],
+      events: [{ name: 'Declaration of the Bab', description: 'Mission declaration' }],
       concepts: [{ name: 'Progressive Revelation', description: 'Core principle' }],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared mission in' }]
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared mission in' }]
     };
     const doc = { id: 1, religion: "Baha'i" };
     const result = await resolveEntitiesForParagraph(extractedObjects, doc, graphDb);
     expect(result).toBeTruthy();
     expect(Array.isArray(result.entityIds)).toBe(true);
-    // Should have resolved people, places, events, concepts (4 entities minimum)
     expect(result.entityIds.length).toBeGreaterThanOrEqual(4);
     expect(Array.isArray(result.relations)).toBe(true);
   });
@@ -374,12 +398,12 @@ describe('Entity Resolution', () => {
   it('resolveEntitiesForParagraph creates relation records in graph DB', async () => {
     const { resolveEntitiesForParagraph } = await import('../../api/lib/entity-resolution.js');
     const extractedObjects = {
-      people: [{ name: 'The Báb', description: 'Herald' }],
+      people: [{ name: 'The Bab', description: 'Herald' }],
       places: [{ name: 'Shiraz', description: 'City' }],
       documents: [],
       events: [],
       concepts: [],
-      relations: [{ from: 'The Báb', to: 'Shiraz', description: 'declared mission in' }]
+      relations: [{ from: 'The Bab', to: 'Shiraz', description: 'declared mission in' }]
     };
     const doc = { id: 1, religion: "Baha'i" };
     await resolveEntitiesForParagraph(extractedObjects, doc, graphDb);

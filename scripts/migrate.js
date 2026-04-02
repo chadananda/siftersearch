@@ -5,7 +5,7 @@
  */
 
 import dotenv from 'dotenv';
-import { createClient } from '@libsql/client';
+import Database from 'better-sqlite3';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -14,38 +14,32 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 const MIGRATIONS_DIR = join(PROJECT_ROOT, 'migrations');
 
-// Load env files with absolute paths
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-async function getDb() {
-  return createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN
-  });
+function stripFilePrefix(url) { return url?.startsWith('file:') ? url.slice(5) : url; }
+
+function getDb() {
+  const url = process.env.TURSO_DATABASE_URL || 'file:./data/sifter.db';
+  const path = stripFilePrefix(url) || './data/sifter.db';
+  const db = new Database(path);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 30000');
+  return db;
 }
 
-async function ensureMigrationsTable(db) {
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS _migrations (
-      id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+function ensureMigrationsTable(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS _migrations (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 }
 
-async function getAppliedMigrations(db) {
-  const result = await db.execute('SELECT name FROM _migrations ORDER BY id');
-  return new Set(result.rows.map(r => r.name));
+function getAppliedMigrations(db) {
+  return new Set(db.prepare('SELECT name FROM _migrations ORDER BY id').all().map(r => r.name));
 }
 
 async function getMigrationFiles() {
   try {
     const files = await readdir(MIGRATIONS_DIR);
-    return files
-      .filter(f => f.endsWith('.sql'))
-      .sort();
+    return files.filter(f => f.endsWith('.sql')).sort();
   } catch {
     await mkdir(MIGRATIONS_DIR, { recursive: true });
     return [];
@@ -53,73 +47,40 @@ async function getMigrationFiles() {
 }
 
 async function runMigrations() {
-  const db = await getDb();
-
+  const db = getDb();
   console.log('Running migrations...\n');
-
-  await ensureMigrationsTable(db);
-  const applied = await getAppliedMigrations(db);
+  ensureMigrationsTable(db);
+  const applied = getAppliedMigrations(db);
   const files = await getMigrationFiles();
-
   let count = 0;
   for (const file of files) {
-    if (applied.has(file)) {
-      console.log(`  [skip] ${file}`);
-      continue;
-    }
-
+    if (applied.has(file)) { console.log(`  [skip] ${file}`); continue; }
     const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf-8');
-    const statements = sql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-
+    const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
     console.log(`  [run]  ${file}`);
-
     for (const stmt of statements) {
       try {
-        await db.execute(stmt);
+        db.exec(stmt);
       } catch (err) {
-        // Handle expected errors (e.g., column already exists)
-        if (err.message?.includes('duplicate column name')) {
-          console.log(`    [info] Column already exists, skipping`);
-        } else {
-          throw err;
-        }
+        if (err.message?.includes('duplicate column name')) console.log(`    [info] Column already exists, skipping`);
+        else throw err;
       }
     }
-
-    await db.execute({
-      sql: 'INSERT INTO _migrations (name) VALUES (?)',
-      args: [file]
-    });
-
+    db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);
     count++;
   }
-
   console.log(`\nDone. Applied ${count} migration(s).`);
+  db.close();
 }
 
 async function createMigration(name) {
   await mkdir(MIGRATIONS_DIR, { recursive: true });
-
   const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const filename = `${timestamp}_${name}.sql`;
-  const filepath = join(MIGRATIONS_DIR, filename);
-
-  await writeFile(filepath, `-- Migration: ${name}\n-- Created: ${new Date().toISOString()}\n\n`);
-
+  await writeFile(join(MIGRATIONS_DIR, filename), `-- Migration: ${name}\n-- Created: ${new Date().toISOString()}\n\n`);
   console.log(`Created: migrations/${filename}`);
 }
 
-// CLI
 const [,, cmd, arg] = process.argv;
-
-if (cmd === 'create' && arg) {
-  createMigration(arg);
-} else {
-  runMigrations().catch(err => {
-    console.error('Migration failed:', err.message);
-    process.exit(1);
-  });
-}
+if (cmd === 'create' && arg) createMigration(arg);
+else runMigrations().catch(err => { console.error('Migration failed:', err.message); process.exit(1); });

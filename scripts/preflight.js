@@ -518,7 +518,7 @@ async function checkNodeModules() {
   }
 
   // Check key dependencies
-  const deps = ['fastify', 'meilisearch', '@anthropic-ai/sdk', 'openai', '@libsql/client'];
+  const deps = ['fastify', 'meilisearch', '@anthropic-ai/sdk', 'openai', 'better-sqlite3'];
   let missing = [];
 
   for (const dep of deps) {

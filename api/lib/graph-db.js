@@ -9,9 +9,7 @@
  * Different religion or type → always separate entity.
  */
 
-import { createClient } from '@libsql/client';
-
-// ─── Schema ─────────────────────────────────────────────────────────────────
+import Database from 'better-sqlite3';
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS graph_entities (
@@ -41,99 +39,57 @@ const SCHEMA = `
   );
 `;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function toRow(row) {
-  if (!row) return null;
-  return Object.fromEntries(Object.entries(row).map(([k, v]) => [k, v]));
-}
-
-function rowsToObjects(rows) {
-  return rows.map(toRow);
-}
-
-// ─── Entity Operations ───────────────────────────────────────────────────────
-
-async function upsertEntity(client, { name, entityType, canonicalName, religion = '', language, era, description, sourceDocIds = [] }) {
+function upsertEntity(db, { name, entityType, canonicalName, religion = '', language, era, description, sourceDocIds = [] }) {
   const canon = canonicalName || name;
-  // Try insert — if conflict, increment mention_count
-  await client.execute({
-    sql: `INSERT INTO graph_entities (name, canonical_name, entity_type, religion, language, era, description, source_doc_ids)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(canonical_name, entity_type, religion) DO UPDATE SET
-            mention_count = mention_count + 1,
-            source_doc_ids = (
-              SELECT json_group_array(DISTINCT val)
-              FROM (
-                SELECT json_each.value AS val FROM json_each(graph_entities.source_doc_ids)
-                UNION
-                SELECT json_each.value AS val FROM json_each(?)
-              )
-            )`,
-    args: [name, canon, entityType, religion, language ?? null, era ?? null, description ?? null, JSON.stringify(sourceDocIds), JSON.stringify(sourceDocIds)]
-  });
-  const row = await client.execute({
-    sql: 'SELECT id FROM graph_entities WHERE canonical_name = ? AND entity_type = ? AND religion = ?',
-    args: [canon, entityType, religion]
-  });
-  return Number(row.rows[0].id);
+  const sourceJson = JSON.stringify(sourceDocIds);
+  db.prepare(`
+    INSERT INTO graph_entities (name, canonical_name, entity_type, religion, language, era, description, source_doc_ids)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(canonical_name, entity_type, religion) DO UPDATE SET
+      mention_count = mention_count + 1,
+      source_doc_ids = (
+        SELECT json_group_array(DISTINCT val)
+        FROM (
+          SELECT json_each.value AS val FROM json_each(graph_entities.source_doc_ids)
+          UNION
+          SELECT json_each.value AS val FROM json_each(?)
+        )
+      )
+  `).run(name, canon, entityType, religion, language ?? null, era ?? null, description ?? null, sourceJson, sourceJson);
+  const row = db.prepare('SELECT id FROM graph_entities WHERE canonical_name = ? AND entity_type = ? AND religion = ?').get(canon, entityType, religion);
+  return Number(row.id);
 }
 
-async function getEntity(client, id) {
-  const result = await client.execute({ sql: 'SELECT * FROM graph_entities WHERE id = ?', args: [id] });
-  return toRow(result.rows[0]) || null;
+function getEntity(db, id) {
+  return db.prepare('SELECT * FROM graph_entities WHERE id = ?').get(id) || null;
 }
 
-async function getEntitiesByReligion(client, religion) {
-  const result = await client.execute({ sql: 'SELECT * FROM graph_entities WHERE religion = ?', args: [religion] });
-  return rowsToObjects(result.rows);
+function getEntitiesByReligion(db, religion) {
+  return db.prepare('SELECT * FROM graph_entities WHERE religion = ?').all(religion);
 }
 
-async function getEntitiesByType(client, entityType, religion) {
-  const result = await client.execute({
-    sql: 'SELECT * FROM graph_entities WHERE entity_type = ? AND religion = ?',
-    args: [entityType, religion]
-  });
-  return rowsToObjects(result.rows);
+function getEntitiesByType(db, entityType, religion) {
+  return db.prepare('SELECT * FROM graph_entities WHERE entity_type = ? AND religion = ?').all(entityType, religion);
 }
 
-async function searchEntities(client, query) {
-  const result = await client.execute({
-    sql: "SELECT * FROM graph_entities WHERE name LIKE ? OR canonical_name LIKE ?",
-    args: [`%${query}%`, `%${query}%`]
-  });
-  return rowsToObjects(result.rows);
+function searchEntities(db, q) {
+  return db.prepare("SELECT * FROM graph_entities WHERE name LIKE ? OR canonical_name LIKE ?").all(`%${q}%`, `%${q}%`);
 }
 
-// ─── Relation Operations ─────────────────────────────────────────────────────
-
-async function insertRelation(client, sourceEntityId, targetEntityId, relationType, sourceDocId, sourceContentId) {
-  const result = await client.execute({
-    sql: 'INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type, source_doc_id, source_content_id) VALUES (?, ?, ?, ?, ?)',
-    args: [sourceEntityId, targetEntityId, relationType, sourceDocId ?? null, sourceContentId ?? null]
-  });
-  return Number(result.lastInsertRowid);
+function insertRelation(db, sourceEntityId, targetEntityId, relationType, sourceDocId, sourceContentId) {
+  const info = db.prepare('INSERT INTO graph_relations (source_entity_id, target_entity_id, relation_type, source_doc_id, source_content_id) VALUES (?, ?, ?, ?, ?)').run(sourceEntityId, targetEntityId, relationType, sourceDocId ?? null, sourceContentId ?? null);
+  return Number(info.lastInsertRowid);
 }
 
-async function getRelationsForEntity(client, entityId) {
-  const result = await client.execute({
-    sql: 'SELECT * FROM graph_relations WHERE source_entity_id = ? OR target_entity_id = ?',
-    args: [entityId, entityId]
-  });
-  return rowsToObjects(result.rows);
+function getRelationsForEntity(db, entityId) {
+  return db.prepare('SELECT * FROM graph_relations WHERE source_entity_id = ? OR target_entity_id = ?').all(entityId, entityId);
 }
 
-async function getRelationsBetween(client, entityId1, entityId2) {
-  const result = await client.execute({
-    sql: 'SELECT * FROM graph_relations WHERE (source_entity_id = ? AND target_entity_id = ?) OR (source_entity_id = ? AND target_entity_id = ?)',
-    args: [entityId1, entityId2, entityId2, entityId1]
-  });
-  return rowsToObjects(result.rows);
+function getRelationsBetween(db, entityId1, entityId2) {
+  return db.prepare('SELECT * FROM graph_relations WHERE (source_entity_id = ? AND target_entity_id = ?) OR (source_entity_id = ? AND target_entity_id = ?)').all(entityId1, entityId2, entityId2, entityId1);
 }
 
-// ─── Graph Queries ───────────────────────────────────────────────────────────
-
-async function getGraphForReligion(client, religion, { limit, entityTypes } = {}) {
+function getGraphForReligion(db, religion, { limit, entityTypes } = {}) {
   let sql = 'SELECT * FROM graph_entities WHERE religion = ?';
   const args = [religion];
   if (entityTypes && entityTypes.length > 0) {
@@ -141,96 +97,70 @@ async function getGraphForReligion(client, religion, { limit, entityTypes } = {}
     args.push(...entityTypes);
   }
   if (limit) { sql += ' LIMIT ?'; args.push(limit); }
-  const entityResult = await client.execute({ sql, args });
-  const nodes = rowsToObjects(entityResult.rows);
+  const nodes = db.prepare(sql).all(...args);
   const nodeIds = new Set(nodes.map(n => Number(n.id)));
-  // Only return edges where BOTH endpoints are in the filtered node set
   let edges = [];
   if (nodes.length > 0) {
-    const allRels = await client.execute({
-      sql: `SELECT r.* FROM graph_relations r
-            JOIN graph_entities s ON s.id = r.source_entity_id AND s.religion = ?
-            JOIN graph_entities t ON t.id = r.target_entity_id AND t.religion = ?`,
-      args: [religion, religion]
-    });
-    edges = rowsToObjects(allRels.rows).filter(r => nodeIds.has(Number(r.source_entity_id)) && nodeIds.has(Number(r.target_entity_id)));
+    const allRels = db.prepare(`
+      SELECT r.* FROM graph_relations r
+      JOIN graph_entities s ON s.id = r.source_entity_id AND s.religion = ?
+      JOIN graph_entities t ON t.id = r.target_entity_id AND t.religion = ?
+    `).all(religion, religion);
+    edges = allRels.filter(r => nodeIds.has(Number(r.source_entity_id)) && nodeIds.has(Number(r.target_entity_id)));
   }
   return { nodes, edges };
 }
 
-async function getGraphStats(client) {
-  const result = await client.execute(`
-    SELECT
-      e.religion,
-      COUNT(DISTINCT e.id) AS entity_count,
-      COUNT(DISTINCT r.id) AS relation_count
-    FROM graph_entities e
-    LEFT JOIN graph_relations r
-      ON r.source_entity_id = e.id OR r.target_entity_id = e.id
-    GROUP BY e.religion
-  `);
-  // relation_count must be distinct relations touching this religion's entities
-  // The above may double-count if both endpoints are same religion; use a subquery approach
-  const stats = [];
-  const religionResult = await client.execute('SELECT DISTINCT religion FROM graph_entities');
-  for (const rel of religionResult.rows) {
-    const religion = rel.religion;
-    const entityCount = await client.execute({
-      sql: 'SELECT COUNT(*) AS cnt FROM graph_entities WHERE religion = ?',
-      args: [religion]
-    });
-    // Count relations where at least one endpoint belongs to this religion
-    // But to avoid double-counting, count DISTINCT relation IDs
-    const relCount = await client.execute({
-      sql: `SELECT COUNT(DISTINCT r.id) AS cnt
-            FROM graph_relations r
-            WHERE r.source_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
-               OR r.target_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)`,
-      args: [religion, religion]
-    });
-    stats.push({ religion, entity_count: Number(entityCount.rows[0].cnt), relation_count: Number(relCount.rows[0].cnt) });
-  }
-  return stats;
+function getGraphStats(db) {
+  const religionRows = db.prepare('SELECT DISTINCT religion FROM graph_entities').all();
+  return religionRows.map(rel => {
+    const { religion } = rel;
+    const { cnt: entity_count } = db.prepare('SELECT COUNT(*) AS cnt FROM graph_entities WHERE religion = ?').get(religion);
+    const { cnt: relation_count } = db.prepare(`
+      SELECT COUNT(DISTINCT r.id) AS cnt
+      FROM graph_relations r
+      WHERE r.source_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
+         OR r.target_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
+    `).get(religion, religion);
+    return { religion, entity_count: Number(entity_count), relation_count: Number(relation_count) };
+  });
 }
 
-async function getEntityWithRelations(client, entityId) {
-  const entity = await getEntity(client, entityId);
+function getEntityWithRelations(db, entityId) {
+  const entity = getEntity(db, entityId);
   if (!entity) return null;
-  const relations = await getRelationsForEntity(client, entityId);
-  // Collect connected entity IDs
+  const relations = getRelationsForEntity(db, entityId);
   const connectedIds = new Set();
   for (const r of relations) {
     const otherId = Number(r.source_entity_id) === entityId ? Number(r.target_entity_id) : Number(r.source_entity_id);
     connectedIds.add(otherId);
   }
-  const connectedEntities = await Promise.all([...connectedIds].map(id => getEntity(client, id)));
-  return { entity, relations, connectedEntities: connectedEntities.filter(Boolean) };
+  const connectedEntities = [...connectedIds].map(id => getEntity(db, id)).filter(Boolean);
+  return { entity, relations, connectedEntities };
 }
 
-// ─── Init / Close ────────────────────────────────────────────────────────────
-
 export async function initGraphDb(dbPath) {
-  const url = dbPath.startsWith('file:') ? dbPath : `file:${dbPath}`;
-  const client = createClient({ url });
-  await client.executeMultiple(SCHEMA);
-  // Return a db handle with all operations bound
-  const db = {
-    // Expose raw query for tests
-    query: (sql, args = []) => client.execute({ sql, args }),
+  const path = dbPath.startsWith('file:') ? dbPath.slice(5) : dbPath;
+  const client = new Database(path);
+  client.pragma('journal_mode = WAL');
+  client.pragma('busy_timeout = 30000');
+  client.exec(SCHEMA);
+  const handle = {
+    query: (sql, args = []) => Promise.resolve({ rows: client.prepare(sql).all(...args), lastInsertRowid: null }),
     close: () => Promise.resolve(client.close()),
-    upsertEntity: (opts) => upsertEntity(client, opts),
-    getEntity: (id) => getEntity(client, id),
-    getEntitiesByReligion: (religion) => getEntitiesByReligion(client, religion),
-    getEntitiesByType: (entityType, religion) => getEntitiesByType(client, entityType, religion),
-    searchEntities: (query) => searchEntities(client, query),
-    insertRelation: (src, tgt, type, docId, contentId) => insertRelation(client, src, tgt, type, docId, contentId),
-    getRelationsForEntity: (entityId) => getRelationsForEntity(client, entityId),
-    getRelationsBetween: (id1, id2) => getRelationsBetween(client, id1, id2),
-    getGraphForReligion: (religion, opts) => getGraphForReligion(client, religion, opts),
-    getGraphStats: () => getGraphStats(client),
-    getEntityWithRelations: (entityId) => getEntityWithRelations(client, entityId)
+    upsertEntity: (opts) => Promise.resolve(upsertEntity(client, opts)),
+    getEntity: (id) => Promise.resolve(getEntity(client, id)),
+    getEntitiesByReligion: (religion) => Promise.resolve(getEntitiesByReligion(client, religion)),
+    getEntitiesByType: (entityType, religion) => Promise.resolve(getEntitiesByType(client, entityType, religion)),
+    searchEntities: (q) => Promise.resolve(searchEntities(client, q)),
+    insertRelation: (src, tgt, type, docId, contentId) => Promise.resolve(insertRelation(client, src, tgt, type, docId, contentId)),
+    getRelationsForEntity: (entityId) => Promise.resolve(getRelationsForEntity(client, entityId)),
+    getRelationsBetween: (id1, id2) => Promise.resolve(getRelationsBetween(client, id1, id2)),
+    getGraphForReligion: (religion, opts) => Promise.resolve(getGraphForReligion(client, religion, opts)),
+    getGraphStats: () => Promise.resolve(getGraphStats(client)),
+    getEntityWithRelations: (entityId) => Promise.resolve(getEntityWithRelations(client, entityId))
   };
-  return db;
+  return handle;
 }
 
 export async function closeGraphDb(db) {
