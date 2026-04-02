@@ -23,7 +23,7 @@ import { content } from '../api/lib/content.js';
 import { callLocalLLM, localLLMHealthCheck, buildDisambiguationPrompt, buildHyPEPrompt, buildEntityPrompt, parseDisambiguationResponse, parseHyPEResponse, parseEntityResponse } from '../api/lib/enhancement-ai.js';
 import { logger } from '../api/lib/logger.js';
 
-// Priority document IDs — historical Baha'i texts first
+// Priority document IDs — can be overridden with --collection flag
 const PRIORITY_DOC_IDS = [
   8645,  // The Dawn-Breakers (Nabil's Narrative) — 1,741 paragraphs
   8635,  // God Passes By — 1,148 paragraphs
@@ -47,8 +47,10 @@ const entityOnly = args.includes('--entity-only');
 const disambigOnly = args.includes('--disambig-only');
 const hypeOnly = args.includes('--hype-only');
 const specificDocId = args.find(a => a.startsWith('--doc-id='))?.split('=')[1];
+const collectionArg = args.find(a => a.startsWith('--collection='))?.split('=')[1];
+const religionArg = args.find(a => a.startsWith('--religion='))?.split('=')[1];
 const limitArg = args.find(a => a.startsWith('--limit='))?.split('=')[1];
-const batchLimit = parseInt(limitArg) || 10; // paragraphs per batch
+const batchLimit = parseInt(limitArg) || 9999;
 
 async function main() {
   console.log('=== RAG Enhancement Runner ===\n');
@@ -61,7 +63,22 @@ async function main() {
   }
   console.log('✓ Local LLM connected\n');
 
-  const docIds = specificDocId ? [parseInt(specificDocId)] : PRIORITY_DOC_IDS;
+  let docIds;
+  if (specificDocId) {
+    docIds = [parseInt(specificDocId)];
+  } else if (collectionArg) {
+    const collections = collectionArg.split(',');
+    const placeholders = collections.map(() => '?').join(',');
+    let sql = `SELECT id FROM docs WHERE deleted_at IS NULL AND collection IN (${placeholders})`;
+    const params = [...collections];
+    if (religionArg) { sql += ' AND religion = ?'; params.push(religionArg); }
+    sql += ' ORDER BY id';
+    const rows = await queryAll(sql, params);
+    docIds = rows.map(r => r.id);
+    console.log(`Collections: ${collections.join(', ')} → ${docIds.length} documents\n`);
+  } else {
+    docIds = PRIORITY_DOC_IDS;
+  }
 
   for (const docId of docIds) {
     const doc = await queryOne('SELECT id, title, author, religion, collection, year, language, description, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
