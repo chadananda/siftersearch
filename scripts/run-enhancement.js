@@ -158,12 +158,17 @@ async function runDisambiguation(doc, batchLimit) {
   let failed = 0;
 
   let totalCached = 0, totalPrompt = 0;
+  const callTimes = [];
   for (const para of paras) {
     const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entityData, allParas, para.paragraph_index);
     const result = await callLocalLLM(systemPrompt, userPrompt, { maxTokens: 80, temperature: 0.2, returnUsage: true });
     const response = result?.content ?? result;
     const usage = result?.usage;
-    if (usage) { totalCached += usage.cachedTokens || 0; totalPrompt += usage.promptTokens || 0; }
+    if (usage) {
+      totalCached += usage.cachedTokens || 0;
+      totalPrompt += usage.promptTokens || 0;
+      callTimes.push(usage.callMs || 0);
+    }
     const parsed = parseDisambiguationResponse(response);
 
     if (parsed) {
@@ -173,14 +178,19 @@ async function runDisambiguation(doc, batchLimit) {
       failed++;
     }
 
-    // Progress every 10 — include cache hit rate
+    // Progress every 10 — include timing stats
     if ((done + failed) % 10 === 0) {
-      const cachePct = totalPrompt > 0 ? Math.round(totalCached / totalPrompt * 100) : 0;
-      process.stdout.write(`  ... ${done + failed}/${paras.length} (${failed} failed, ${cachePct}% cache)\r`);
+      const avgMs = callTimes.length > 0 ? Math.round(callTimes.reduce((a, b) => a + b, 0) / callTimes.length) : 0;
+      const firstMs = callTimes[0] || 0;
+      const recentMs = callTimes.length > 1 ? Math.round(callTimes.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, callTimes.length - 1)) : 0;
+      process.stdout.write(`  ... ${done + failed}/${paras.length} (${failed} fail, avg:${avgMs}ms, first:${firstMs}ms, recent:${recentMs}ms)\r`);
     }
   }
-  const cachePct = totalPrompt > 0 ? Math.round(totalCached / totalPrompt * 100) : 0;
-  console.log(`  ✓ Disambiguated ${done}/${paras.length} (${failed} failed, ${cachePct}% prefix cache)            `);
+  const avgMs = callTimes.length > 0 ? Math.round(callTimes.reduce((a, b) => a + b, 0) / callTimes.length) : 0;
+  const firstMs = callTimes[0] || 0;
+  const lastMs = callTimes.length > 1 ? callTimes[callTimes.length - 1] : 0;
+  const speedup = firstMs > 0 && lastMs > 0 ? (firstMs / lastMs).toFixed(1) : '?';
+  console.log(`  ✓ Disambiguated ${done}/${paras.length} (${failed} failed, avg:${avgMs}ms, first:${firstMs}ms→last:${lastMs}ms, ${speedup}x speedup)            `);
   console.log(`  ✓ Disambiguated ${done}/${paras.length} (${failed} failed)            `);
 }
 

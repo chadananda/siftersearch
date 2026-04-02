@@ -176,6 +176,7 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
   const model = options.model || config.localLlm?.model || 'Qwen/Qwen3-32B-AWQ';
   const maxTokens = options.maxTokens || 100; // Terse output — every token costs time on local LLM
   const temperature = options.temperature ?? 0.3;
+  const callStart = Date.now();
   try {
     const response = await fetch(`${endpoint}/chat/completions`, {
       method: 'POST',
@@ -209,20 +210,25 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
       // If content starts with thinking that was already stripped, it may be empty
       if (!content) return null;
     }
-    // Log usage for tracking (cost = 0 for local)
+    // Log usage with timing for prefix/KV cache analysis
+    const callMs = Date.now() - callStart;
     const usage = data.usage || {};
     const cachedTokens = usage.prompt_tokens_details?.cached_tokens || 0;
     const totalPrompt = usage.prompt_tokens || 0;
+    const completionTokens = usage.completion_tokens || 0;
+    const tokensPerSec = callMs > 0 ? Math.round((totalPrompt + completionTokens) / (callMs / 1000)) : 0;
     logger.debug({
-      model,
+      callMs,
       promptTokens: totalPrompt,
       cachedTokens,
-      completionTokens: usage.completion_tokens,
-      cacheHitPct: totalPrompt > 0 ? Math.round(cachedTokens / totalPrompt * 100) : 0
+      completionTokens,
+      tokensPerSec,
+      systemPromptLen: systemPrompt.length,
+      userPromptLen: userPrompt.length
     }, 'Local LLM call');
     // Return content + usage metadata
     if (options.returnUsage) {
-      return { content: content || null, usage: { promptTokens: totalPrompt, cachedTokens, completionTokens: usage.completion_tokens } };
+      return { content: content || null, usage: { callMs, promptTokens: totalPrompt, cachedTokens, completionTokens, tokensPerSec } };
     }
     return content || null;
   } catch (err) {
