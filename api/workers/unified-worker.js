@@ -86,10 +86,8 @@ async function waitForMeiliTask(meili, enqueuedTask, timeoutMs = 3600000) {
 }
 
 async function countUnsyncedParagraphs() {
-  try {
-    const row = await queryOne(`SELECT row_count as count FROM table_counts WHERE table_name = 'content_unsynced'`);
-    if (row) return row.count || 0;
-  } catch { /* counter table may not exist */ }
+  // Use the actual count via the partial index (idx_content_unsynced) — fast and accurate.
+  // The table_counts cache was unreliable (stale values caused infinite tight loops).
   const row = await queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`);
   return row?.count || 0;
 }
