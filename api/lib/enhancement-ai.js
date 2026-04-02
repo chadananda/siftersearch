@@ -54,10 +54,20 @@ If nothing needs disambiguation, output: NONE`;
  */
 export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
   // Collect preceding paragraphs for context window
-  const preceding = paragraphs
+  // Dynamically size window to stay under ~6000 chars (safe for 8K token limit)
+  const MAX_WINDOW_CHARS = 6000;
+  const allPreceding = paragraphs
     .filter(p => p.paragraph_index < targetIndex)
-    .sort((a, b) => a.paragraph_index - b.paragraph_index)
-    .slice(-WINDOW_SIZE);
+    .sort((a, b) => a.paragraph_index - b.paragraph_index);
+  // Take as many preceding paragraphs as fit within the char budget
+  let charBudget = MAX_WINDOW_CHARS;
+  const preceding = [];
+  for (let i = allPreceding.length - 1; i >= 0 && preceding.length < WINDOW_SIZE; i--) {
+    const pLen = (allPreceding[i].text || '').length;
+    if (charBudget - pLen < 0 && preceding.length > 0) break;
+    preceding.unshift(allPreceding[i]);
+    charBudget -= pLen;
+  }
   const targetParagraph = paragraphs.find(p => p.paragraph_index === targetIndex)
     || { text: '' };
   const windowLines = preceding.map((p, i) => `[P${i + 1}] ${p.text}`).join('\n');
@@ -194,7 +204,8 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
       signal: globalThis.AbortSignal?.timeout?.(options.timeout || 120000) // 2min — local LLM is slow
     });
     if (!response.ok) {
-      logger.warn({ status: response.status, endpoint }, 'Local LLM request failed');
+      const errBody = await response.text().catch(() => '');
+      logger.warn({ status: response.status, endpoint, error: errBody.slice(0, 200) }, 'Local LLM request failed');
       return null;
     }
     const data = await response.json();
