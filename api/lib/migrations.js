@@ -1792,7 +1792,7 @@ const migrations = {
     const cols = (await queryAll(`PRAGMA table_info(content)`)).map(c => c.name);
     if (cols.includes('embedding')) {
       await query(`CREATE INDEX IF NOT EXISTS idx_content_has_embedding
-        ON content(rowid) WHERE embedding IS NOT NULL AND deleted_at IS NULL`);
+        ON content(id) WHERE embedding IS NOT NULL AND deleted_at IS NULL`);
     }
     if (cols.includes('synced')) {
       await query(`CREATE INDEX IF NOT EXISTS idx_content_unsynced
