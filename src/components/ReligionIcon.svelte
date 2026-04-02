@@ -87,10 +87,10 @@
 <!-- Islam: crescent and star -->
 {:else if isIslam}
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Islam" role="img" fill="currentColor">
-    <!-- Crescent: outer circle minus inner offset circle -->
-    <path d="M12 2a10 10 0 1 0 0 20 7.5 7.5 0 1 1 0-20z"/>
-    <!-- Five-pointed star -->
-    <polygon points="18,6.5 18.9,9 21.5,9 19.4,10.7 20.2,13.2 18,11.5 15.8,13.2 16.6,10.7 14.5,9 17.1,9"/>
+    <!-- Wide crescent: large outer circle minus offset inner circle for thick crescent -->
+    <path d="M10 2a10 10 0 1 0 0 20A8 8 0 0 1 10 2z"/>
+    <!-- Five-pointed star centered in the crescent opening -->
+    <polygon points="17,8 18,10.5 20.5,10.5 18.5,12.2 19.2,14.8 17,13 14.8,14.8 15.5,12.2 13.5,10.5 16,10.5"/>
   </svg>
 
 <!-- Jain: open hand with ahimsa wheel -->
