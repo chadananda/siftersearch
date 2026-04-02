@@ -23,7 +23,7 @@ import {
 // ==========================================================================
 
 describe('Disambiguation Prompt', () => {
-  it('should build sliding window with ~20 preceding paragraphs', async () => {
+  it('should build jumping window with preceding paragraphs in system prompt', async () => {
     const { buildDisambiguationPrompt } = await import('../../api/lib/enhancement-ai.js');
     const doc = { title: 'Kitab-i-Iqan', author: "Baha'u'llah", religion: "Baha'i", collection: 'Core', year: 1861 };
     const entities = { people: ["Baha'u'llah (1817-1892)"], concepts: ["progressive revelation"] };
@@ -35,16 +35,16 @@ describe('Disambiguation Prompt', () => {
 
     const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex);
 
-    // System prompt includes doc metadata (static, cached by vLLM)
+    // System prompt includes doc metadata (cached by vLLM KV cache)
     expect(systemPrompt).toContain('Kitab-i-Iqan');
     expect(systemPrompt).toContain("Baha'u'llah");
     // System prompt includes entities
     expect(systemPrompt).toContain("Baha'u'llah (1817-1892)");
     expect(systemPrompt).toContain('progressive revelation');
-    // User prompt includes sliding window + target (dynamic, changes per paragraph)
-    expect(userPrompt).toContain('[P');
-    expect(userPrompt).toContain('[TARGET]');
-    expect(userPrompt).toContain('Paragraph 22 text content here');
+    // System prompt includes the paragraph window (for KV cache reuse)
+    expect(systemPrompt).toContain('[P');
+    expect(systemPrompt).toContain('<window>');
+    // User prompt is a terse disambiguation instruction
     expect(userPrompt).toContain('Disambiguate');
   });
 
@@ -57,35 +57,33 @@ describe('Disambiguation Prompt', () => {
       text: `Short paragraph ${i}.`
     }));
 
-    const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, 3);
+    const { systemPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, 3);
 
-    // All available preceding paragraphs should be in user prompt (dynamic window)
-    expect(userPrompt).toContain('Short paragraph 0');
-    expect(userPrompt).toContain('Short paragraph 1');
-    expect(userPrompt).toContain('Short paragraph 2');
-    expect(userPrompt).toContain('[TARGET]');
+    // All available preceding paragraphs should be in the system prompt window
+    expect(systemPrompt).toContain('Short paragraph 0');
+    expect(systemPrompt).toContain('Short paragraph 1');
+    expect(systemPrompt).toContain('Short paragraph 2');
+    expect(systemPrompt).toContain('<window>');
   });
 
   it('should instruct to draw only from document text, not general knowledge', async () => {
-    const { buildDisambiguationPrompt } = await import('../../api/lib/enhancement-ai.js');
-    const doc = { title: 'Test', author: 'A', religion: 'Islam', collection: 'Hadith', year: 800 };
+    // Instructions moved from systemPrompt to buildDisambiguationUserPrompt
+    // so the system prompt window stays cacheable across tasks
+    const { buildDisambiguationUserPrompt } = await import('../../api/lib/enhancement-ai.js');
 
-    const { systemPrompt } = buildDisambiguationPrompt(doc, {}, [{ paragraph_index: 0, text: 'Test' }], 0);
+    const userPrompt = buildDisambiguationUserPrompt(1);
 
-    expect(systemPrompt).toMatch(/only.*document.*text|use only document/i);
-    expect(systemPrompt).toMatch(/no general knowledge|never.*general knowledge/i);
+    expect(userPrompt).toMatch(/only.*document.*text|use only document|ONLY/i);
+    expect(userPrompt).toMatch(/no general knowledge|No general knowledge|NONE/i);
   });
 
-  it('should include conceptual reference types in disambiguation instructions', async () => {
-    const { buildDisambiguationPrompt } = await import('../../api/lib/enhancement-ai.js');
-    const doc = { title: 'Test', author: 'A', religion: "Baha'i", collection: 'Mystical', year: 1860 };
+  it('should include reference resolution types in disambiguation instructions', async () => {
+    const { buildDisambiguationUserPrompt } = await import('../../api/lib/enhancement-ai.js');
 
-    const { systemPrompt } = buildDisambiguationPrompt(doc, {}, [{ paragraph_index: 0, text: 'Test' }], 0);
+    const userPrompt = buildDisambiguationUserPrompt(1);
 
-    // Must mention conceptual/philosophical reference resolution
-    expect(systemPrompt).toMatch(/conceptual|philosophical/i);
-    expect(systemPrompt).toMatch(/principle|teaching|doctrine/i);
-    expect(systemPrompt).toMatch(/station|condition|path/i);
+    // Must mention the types of references to resolve
+    expect(userPrompt).toMatch(/pronoun|conceptual|temporal|spatial|short names/i);
   });
 });
 
