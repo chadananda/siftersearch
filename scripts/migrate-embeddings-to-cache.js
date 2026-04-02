@@ -85,10 +85,10 @@ async function runMigration(sourceDb) {
   let batchNum = 0;
 
   const fetchStmt = sourceDb.prepare(`
-    SELECT rowid, normalized_hash, embedding_model, embedding
+    SELECT id, normalized_hash, embedding_model, embedding
     FROM content
-    WHERE rowid > ? AND deleted_at IS NULL
-    ORDER BY rowid
+    WHERE id > ? AND deleted_at IS NULL
+    ORDER BY id
     LIMIT ?
   `);
 
@@ -100,7 +100,7 @@ async function runMigration(sourceDb) {
     const entries = [];
     for (const row of rows) {
       scanned++;
-      lastRowId = row.rowid;
+      lastRowId = row.id;
 
       // Skip rows without embeddings (most rows)
       if (!row.embedding) { skippedNull++; continue; }
