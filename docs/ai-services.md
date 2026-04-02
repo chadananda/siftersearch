@@ -72,6 +72,7 @@ This document describes the AI service abstraction layer used by SifterSearch. S
 **Used by:**
 - Session intro generation
 - Conversational responses
+- Chatbot chat mode (see [chatbot-personality.md](chatbot-personality.md) for personality and conversation strategy)
 
 ---
 
