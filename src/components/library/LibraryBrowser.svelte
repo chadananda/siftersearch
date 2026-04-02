@@ -780,6 +780,9 @@
                     <div class="flex-1 min-w-0">
                       <!-- Title -->
                       <div class="text-base font-medium text-primary mb-0.5">{doc.title || 'Untitled'}</div>
+                      {#if doc.description}
+                        <p class="text-xs italic text-muted mb-0.5 truncate">{doc.description.length > 150 ? doc.description.slice(0, 150) + '...' : doc.description}</p>
+                      {/if}
                       {#if doc.author}
                         <div class="text-sm text-secondary mb-1">by {doc.author}</div>
                       {/if}

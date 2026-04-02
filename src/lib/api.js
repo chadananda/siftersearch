@@ -508,6 +508,63 @@ export const session = {
 };
 
 // ============================================
+// Research Chat API
+// ============================================
+
+export const chat = {
+  /**
+   * Streaming research assistant chat
+   * Accepts message history and streams SSE events:
+   *   chunk | search_start | citations | complete | error
+   * @param {Array} messages - [{role: 'user'|'assistant', content: string}]
+   */
+  async *stream(messages) {
+    const url = `${API_URL}/api/chat/stream`;
+    const headers = { 'Content-Type': 'application/json' };
+    const uid = getUserId();
+    if (uid) headers['X-User-ID'] = uid;
+    if (CLIENT_VERSION) headers['X-Client-Version'] = CLIENT_VERSION;
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ messages })
+    });
+
+    if (!response.ok) {
+      const error = new Error('Chat stream request failed');
+      error.status = response.status;
+      throw error;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr) yield JSON.parse(jsonStr);
+            } catch (_) { /* malformed SSE chunk */ }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+};
+
+// ============================================
 // User API
 // ============================================
 

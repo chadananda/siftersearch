@@ -31,6 +31,7 @@ import forumRoutes from './routes/forum.js';
 import donationRoutes from './routes/donations.js';
 import apiKeyRoutes from './routes/api-keys.js';
 import libraryRoutes from './routes/library.js';
+import chatRoutes from './routes/chat.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -181,6 +182,7 @@ export async function createServer(opts = {}) {
   await server.register(donationRoutes, { prefix: '/api/donations' });
   await server.register(apiKeyRoutes, { prefix: '/api/api-keys' });
   await server.register(libraryRoutes, { prefix: '/api/library' });
+  await server.register(chatRoutes, { prefix: '/api/chat' });
 
   // Error handling
   server.setErrorHandler(errorHandler);

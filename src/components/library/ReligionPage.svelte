@@ -215,12 +215,17 @@
               {#each collDocs as doc}
                 <li>
                   <a href={getDocumentUrl(doc)} class="doc-link">
-                    <span class="doc-title">{doc.title}</span>
-                    {#if doc.author}
-                      <span class="doc-author">by {doc.author}</span>
-                    {/if}
-                    {#if doc.language && doc.language !== 'en'}
-                      <span class="doc-lang">{doc.language.toUpperCase()}</span>
+                    <div class="doc-main">
+                      <span class="doc-title">{doc.title}</span>
+                      {#if doc.author}
+                        <span class="doc-author">by {doc.author}</span>
+                      {/if}
+                      {#if doc.language && doc.language !== 'en'}
+                        <span class="doc-lang">{doc.language.toUpperCase()}</span>
+                      {/if}
+                    </div>
+                    {#if doc.description}
+                      <p class="doc-description">{doc.description.length > 150 ? doc.description.slice(0, 150) + '...' : doc.description}</p>
                     {/if}
                   </a>
                 </li>
@@ -239,9 +244,14 @@
             {#each uncategorized as doc}
               <li>
                 <a href={getDocumentUrl(doc)} class="doc-link">
-                  <span class="doc-title">{doc.title}</span>
-                  {#if doc.author}
-                    <span class="doc-author">by {doc.author}</span>
+                  <div class="doc-main">
+                    <span class="doc-title">{doc.title}</span>
+                    {#if doc.author}
+                      <span class="doc-author">by {doc.author}</span>
+                    {/if}
+                  </div>
+                  {#if doc.description}
+                    <p class="doc-description">{doc.description.length > 150 ? doc.description.slice(0, 150) + '...' : doc.description}</p>
                   {/if}
                 </a>
               </li>
@@ -465,8 +475,8 @@
 
   .doc-link {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.125rem;
     padding: 0.5rem 0.75rem;
     text-decoration: none;
     border-radius: 0.375rem;
@@ -475,6 +485,12 @@
 
   .doc-link:hover {
     background: var(--surface-1);
+  }
+
+  .doc-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
   }
 
   .doc-title {
@@ -487,6 +503,16 @@
     font-size: 0.875rem;
     color: var(--text-secondary);
     flex-shrink: 0;
+  }
+
+  .doc-description {
+    margin: 0;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .doc-lang {

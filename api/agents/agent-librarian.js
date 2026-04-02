@@ -48,7 +48,7 @@ const VALID_RELIGIONS = [
   'Islam',
   'Christianity',
   'Judaism',
-  'Buddhism',
+  'Buddhist',
   'Hinduism',
   'Zoroastrianism',
   'Sikhism',

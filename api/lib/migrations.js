@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 44;
+const CURRENT_VERSION = 45;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -421,7 +421,7 @@ const migrations = {
       "Islam": "☪",       // Star and crescent
       "Christianity": "✝", // Latin cross
       "Judaism": "✡",     // Star of David
-      "Buddhism": "☸",    // Dharma wheel
+      "Buddhist": "☸",    // Dharma wheel
       "Hinduism": "ॐ",    // Om symbol
       "Zoroastrianism": "𐎠", // Old Persian symbol
       "Sikhism": "☬",     // Khanda
@@ -1775,6 +1775,14 @@ const migrations = {
     logger.info('Starting migration 44: Layered indexing tables');
     await query(getMigration44SQL());
     logger.info('Migration 44 complete: Layered indexing tables added');
+  },
+  // Version 45: Normalize religion name from "Buddhism" to "Buddhist"
+  // Library was renamed from Buddhism to Buddhist but old docs retained stale value
+  45: async () => {
+    logger.info('Starting migration 45: Normalize Buddhism → Buddhist');
+    await query("UPDATE docs SET religion = 'Buddhist' WHERE religion = 'Buddhism'");
+    await query("UPDATE library_nodes SET name = 'Buddhist' WHERE node_type = 'religion' AND name = 'Buddhism'");
+    logger.info('Migration 45 complete: Buddhism renamed to Buddhist');
   },
 };
 

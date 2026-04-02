@@ -466,10 +466,15 @@
         tabindex="0"
       >
         <span class="text-[0.625rem] text-muted w-4 shrink-0">{isExpanded ? '▼' : '▶'}</span>
-        <div class="flex-1 min-w-0 flex items-baseline gap-2">
-          <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
-          {#if doc.author}
-            <span class="text-xs text-secondary shrink-0">{doc.author}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-sm font-medium text-primary truncate">{doc.title || 'Untitled'}</span>
+            {#if doc.author}
+              <span class="text-xs text-secondary shrink-0">{doc.author}</span>
+            {/if}
+          </div>
+          {#if doc.description}
+            <p class="text-xs italic text-muted mt-0.5 truncate">{doc.description.length > 150 ? doc.description.slice(0, 150) + '...' : doc.description}</p>
           {/if}
         </div>
         <div class="flex items-center gap-1.5 shrink-0" onclick={(e) => e.stopPropagation()}>

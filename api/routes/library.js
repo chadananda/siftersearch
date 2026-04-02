@@ -808,7 +808,9 @@ export default async function libraryRoutes(fastify) {
     const religionNodes = nodes.filter(n => n.node_type === 'religion');
     const collectionNodes = nodes.filter(n => n.node_type === 'collection');
 
-    const tree = religionNodes.map(religion => {
+    const tree = religionNodes
+      .filter(religion => (religionCounts[religion.name] || 0) > 0)
+      .map(religion => {
       // Start with defined library_nodes collections that have documents
       const definedChildren = collectionNodes
         .filter(c => c.parent_id === religion.id)

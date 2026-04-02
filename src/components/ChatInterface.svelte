@@ -3,7 +3,7 @@
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
   import { marked } from 'marked';
-  import { search, session, documents, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
+  import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
 
   // App description - baked in at build time
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
@@ -139,6 +139,13 @@
   let messages = $state([]);
   let input = $state('');
   let loading = $state(false);
+  // Research chat mode: conversational multi-turn with library search
+  let researchMode = $state(false);
+  let researchMessages = $state([]); // [{role, content, citations?, isSearching?}]
+  let researchLoading = $state(false);
+  let researchInput = $state('');
+  let researchInputEl;
+  let researchMessagesEl;
 
   // Initialize library stats from cache for instant display
   const STATS_CACHE_KEY = 'sifter_library_stats';
@@ -1184,6 +1191,110 @@
     }
   }
 
+  // ============================================
+  // Research Chat Mode
+  // ============================================
+
+  async function sendResearchMessage() {
+    const userText = researchInput.trim();
+    if (!userText || researchLoading) return;
+    researchInput = '';
+
+    const msgId = Date.now();
+    researchMessages = [...researchMessages, { id: `user-${msgId}`, role: 'user', content: userText }];
+
+    // Scroll to bottom
+    await tick();
+    researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight, behavior: 'smooth' });
+
+    researchLoading = true;
+    setThinking(true);
+
+    // Build history for API (role + content only, no UI fields)
+    const history = researchMessages.map(m => ({ role: m.role, content: m.content }));
+
+    // Add assistant placeholder
+    const assistantIdx = researchMessages.length;
+    researchMessages = [...researchMessages, {
+      id: msgId,
+      role: 'assistant',
+      content: '',
+      citations: [],
+      isSearching: false,
+      isStreaming: true
+    }];
+
+    try {
+      let streamedContent = '';
+      let pendingCitations = [];
+
+      for await (const event of chat.stream(history)) {
+        if (event.type === 'search_start') {
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, isSearching: true, searchQuery: event.query } : m
+          );
+        } else if (event.type === 'citations') {
+          pendingCitations = event.citations || [];
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, isSearching: false, citations: pendingCitations } : m
+          );
+        } else if (event.type === 'chunk') {
+          streamedContent += event.text;
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, content: streamedContent, isSearching: false } : m
+          );
+          // Auto-scroll during streaming
+          researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight, behavior: 'smooth' });
+        } else if (event.type === 'complete') {
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, isStreaming: false, content: streamedContent || 'Done.' } : m
+          );
+        } else if (event.type === 'error') {
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, isStreaming: false, content: event.message || 'An error occurred.', error: true } : m
+          );
+        }
+      }
+
+      researchMessages = researchMessages.map((m, i) =>
+        i === assistantIdx ? { ...m, isStreaming: false } : m
+      );
+    } catch (err) {
+      console.error('Research chat error:', err);
+      researchMessages = researchMessages.map((m, i) =>
+        i === assistantIdx ? { ...m, isStreaming: false, content: 'Could not reach the server. Please try again.', error: true } : m
+      );
+    } finally {
+      researchLoading = false;
+      setThinking(false);
+      await tick();
+      researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight, behavior: 'smooth' });
+      researchInputEl?.focus();
+    }
+  }
+
+  function handleResearchKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendResearchMessage();
+    }
+  }
+
+  function clearResearchChat() {
+    researchMessages = [];
+    researchInput = '';
+    researchInputEl?.focus();
+  }
+
+  function toggleResearchMode() {
+    researchMode = !researchMode;
+    if (researchMode) {
+      // Switch off AI search mode if on
+      if (!searchMode) searchMode = true;
+      tick().then(() => researchInputEl?.focus());
+    }
+  }
+
   function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
@@ -1587,8 +1698,79 @@
     </article>
   </div>
 
-  <!-- Messages area - Main content region -->
-  <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation">
+  <!-- Research Chat Mode (full-height conversational panel) -->
+  {#if researchMode}
+    <div class="research-chat-panel" bind:this={researchMessagesEl} role="main" aria-label="Research assistant conversation">
+      {#if researchMessages.length === 0}
+        <!-- Empty state with prompt suggestions -->
+        <div class="research-empty-state">
+          <div class="research-avatar">
+            <img src="/ocean.svg" alt="Research Assistant" class="research-logo" />
+          </div>
+          <h2 class="research-title">Research Assistant</h2>
+          <p class="research-subtitle">Ask anything about ideas, traditions, or scriptures. I can search the library and discuss what we find.</p>
+          <div class="research-suggestions">
+            {#each ['How does the concept of the self differ across Buddhism and Hinduism?', 'What do the Abrahamic traditions say about forgiveness?', 'Explain the relationship between science and religion in the Bahá\'í writings'] as suggestion}
+              <button class="research-suggestion-btn" onclick={() => { researchInput = suggestion; sendResearchMessage(); }}>
+                {suggestion}
+              </button>
+            {/each}
+          </div>
+        </div>
+      {:else}
+        <!-- Conversation messages -->
+        <div class="research-messages">
+          {#each researchMessages as msg}
+            {#if msg.role === 'user'}
+              <div class="research-msg-row research-msg-user">
+                <div class="research-bubble research-bubble-user">
+                  <p class="research-msg-text">{msg.content}</p>
+                </div>
+              </div>
+            {:else}
+              <div class="research-msg-row research-msg-assistant">
+                <!-- Search indicator -->
+                {#if msg.isSearching}
+                  <div class="research-searching">
+                    <svg class="w-4 h-4 animate-spin text-accent" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+                    <span class="text-muted text-sm">Searching library{msg.searchQuery ? ` for "${msg.searchQuery}"` : ''}...</span>
+                  </div>
+                {/if}
+                <!-- Assistant response -->
+                <div class="research-bubble research-bubble-assistant {msg.error ? 'error' : ''}">
+                  {#if msg.isStreaming && !msg.content}
+                    <span class="research-typing"><span></span><span></span><span></span></span>
+                  {:else}
+                    <div class="research-msg-text prose">{@html formatText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                  {/if}
+                </div>
+                <!-- Citations (collapsed by default) -->
+                {#if msg.citations?.length > 0}
+                  <details class="research-citations">
+                    <summary class="research-citations-summary">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      {msg.citations.length} passage{msg.citations.length !== 1 ? 's' : ''} found
+                    </summary>
+                    <div class="research-citations-list">
+                      {#each msg.citations as cit, i}
+                        <div class="research-citation-item" onclick={() => openReader({ document_id: cit.document_id, paragraph_index: cit.paragraph_index, title: cit.title, author: cit.author, religion: cit.religion, collection: cit.collection })} role="button" tabindex="0">
+                          <p class="citation-text">"{cit.text.substring(0, 200)}{cit.text.length > 200 ? '...' : ''}"</p>
+                          <p class="citation-source">{cit.title}{cit.author ? ` — ${cit.author}` : ''}{cit.religion ? ` (${cit.religion})` : ''}</p>
+                        </div>
+                      {/each}
+                    </div>
+                  </details>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Messages area - Main content region (hidden when in research mode) -->
+  <main id="main-content" class="messages-area p-2 gap-3 sm:p-4 sm:gap-4 {researchMode ? 'hidden' : ''}" bind:this={messagesAreaEl} role="main" aria-label="Search results and conversation" aria-hidden={researchMode}>
     {#if searchMode && (input.trim() || searchResults.length > 0 || searchLoading)}
       <!-- Quick Search Results - only show when actively searching -->
       <div class="quick-search-results">
@@ -2185,49 +2367,108 @@
   </div>
 
   <!-- Input area -->
-  <div class="input-area" role="search">
-    <!-- QR code on the left (includes referral link) -->
-    <a href={getReferralUrl(getUserId())} class="qr-link" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
+  <div class="input-area" role={researchMode ? 'region' : 'search'} aria-label={researchMode ? 'Research chat input' : 'Search'}>
+    <!-- QR code on the left (includes referral link) — hide in research mode on small screens -->
+    <a href={getReferralUrl(getUserId())} class="qr-link {researchMode ? 'qr-link-hidden' : ''}" title="Share SifterSearch" aria-label="QR code for sharing SifterSearch">
       <img src={qrCodeUrl || '/qr-siftersearch.svg'} alt="QR code for sharing siftersearch.com" class="qr-code" />
     </a>
-    <!-- Input form with chat toggle and search button inside -->
-    <form onsubmit={(e) => { e.preventDefault(); if (!searchMode) sendMessage(); }} class="input-form" aria-label="Search form">
-      <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
-      <div class="input-wrapper">
-        <!-- Chat toggle for AI chat mode -->
-        <button
-          type="button"
-          class="chat-toggle-btn {!searchMode ? 'active' : ''}"
-          onclick={toggleSearchMode}
-          title={searchMode ? 'Switch to AI Chat' : 'Switch to Quick Search'}
-          aria-label={searchMode ? 'Switch to AI Chat mode' : 'Switch to Quick Search mode'}
-          aria-pressed={!searchMode}
-          data-mode={searchMode ? 'quick-search' : 'ai-chat'}
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-        </button>
-        <input
-          id="search-input"
-          bind:this={inputEl}
-          bind:value={input}
-          oninput={searchMode ? handleSearchInput : undefined}
-          onkeydown={searchMode ? undefined : handleKeydown}
-          placeholder={searchMode ? 'Type to search instantly...' : 'Search sacred texts...'}
-          disabled={loading && !searchMode}
-          class="search-input"
-          type="search"
-          autocomplete="off"
-          aria-describedby="search-status"
-        />
-        {#if !searchMode}
-          <button type="submit" disabled={!input.trim() || loading || !libraryConnected} aria-label={loading ? 'Searching...' : 'Search'} class="submit-btn">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+    {#if researchMode}
+      <!-- Research chat input form -->
+      <form onsubmit={(e) => { e.preventDefault(); sendResearchMessage(); }} class="input-form" aria-label="Research chat form">
+        <label for="research-input" class="sr-only">Ask the research assistant</label>
+        <div class="input-wrapper">
+          <!-- Research mode indicator button (toggles off) -->
+          <button
+            type="button"
+            class="chat-toggle-btn active research-active"
+            onclick={toggleResearchMode}
+            title="Exit Research Chat"
+            aria-label="Exit Research Chat mode"
+            aria-pressed={true}
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
           </button>
-        {/if}
-      </div>
-    </form>
+          <textarea
+            id="research-input"
+            bind:this={researchInputEl}
+            bind:value={researchInput}
+            onkeydown={handleResearchKeydown}
+            placeholder="Ask anything — I can search the library and discuss what we find..."
+            disabled={researchLoading}
+            class="search-input research-textarea"
+            rows="1"
+            autocomplete="off"
+          ></textarea>
+          {#if researchMessages.length > 0}
+            <button
+              type="button"
+              class="clear-research-btn"
+              onclick={clearResearchChat}
+              title="Clear conversation"
+              aria-label="Clear research conversation"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          {/if}
+          <button type="submit" disabled={!researchInput.trim() || researchLoading} aria-label={researchLoading ? 'Thinking...' : 'Send'} class="submit-btn">
+            {#if researchLoading}
+              <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg>
+            {:else}
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            {/if}
+          </button>
+        </div>
+      </form>
+    {:else}
+      <!-- Standard search/chat input form -->
+      <form onsubmit={(e) => { e.preventDefault(); if (!searchMode) sendMessage(); }} class="input-form" aria-label="Search form">
+        <label for="search-input" class="sr-only">{searchMode ? 'Quick search' : 'Search sacred texts'}</label>
+        <div class="input-wrapper">
+          <!-- Mode buttons: Quick Search toggle + Research Chat button -->
+          <button
+            type="button"
+            class="chat-toggle-btn {!searchMode ? 'active' : ''}"
+            onclick={toggleSearchMode}
+            title={searchMode ? 'Switch to AI Search' : 'Switch to Quick Search'}
+            aria-label={searchMode ? 'Switch to AI Search mode' : 'Switch to Quick Search mode'}
+            aria-pressed={!searchMode}
+            data-mode={searchMode ? 'quick-search' : 'ai-chat'}
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+          </button>
+          <input
+            id="search-input"
+            bind:this={inputEl}
+            bind:value={input}
+            oninput={searchMode ? handleSearchInput : undefined}
+            onkeydown={searchMode ? undefined : handleKeydown}
+            placeholder={searchMode ? 'Type to search instantly...' : 'Search sacred texts...'}
+            disabled={loading && !searchMode}
+            class="search-input"
+            type="search"
+            autocomplete="off"
+            aria-describedby="search-status"
+          />
+          <!-- Research chat mode button -->
+          <button
+            type="button"
+            class="chat-toggle-btn research-mode-btn"
+            onclick={toggleResearchMode}
+            title="Research Assistant — conversational chat with library search"
+            aria-label="Switch to Research Assistant mode"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </button>
+          {#if !searchMode}
+            <button type="submit" disabled={!input.trim() || loading || !libraryConnected} aria-label={loading ? 'Searching...' : 'Search'} class="submit-btn">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          {/if}
+        </div>
+      </form>
+    {/if}
   </div>
 </div>
 
@@ -4573,5 +4814,298 @@
     background-color: color-mix(in srgb, #2E8B57 15%, transparent);
     color: #2E8B57;
   }
+
+  /* ============================================================
+   * Research Chat Panel
+   * ============================================================ */
+
+  .research-chat-panel {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    min-height: 0;
+  }
+
+  .research-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .research-avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-default);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem;
+  }
+
+  .research-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 0.85;
+  }
+
+  .research-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .research-subtitle {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .research-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .research-suggestion-btn {
+    padding: 0.625rem 0.875rem;
+    background: light-dark(rgba(255,255,255,0.25), rgba(255,255,255,0.07));
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    backdrop-filter: blur(4px);
+    line-height: 1.4;
+  }
+
+  .research-suggestion-btn:hover {
+    background: light-dark(rgba(255,255,255,0.4), rgba(255,255,255,0.12));
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+  }
+
+  .research-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .research-msg-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .research-msg-user {
+    align-items: flex-end;
+  }
+
+  .research-msg-assistant {
+    align-items: flex-start;
+  }
+
+  .research-bubble {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .research-bubble-user {
+    background: var(--accent-primary);
+    color: var(--accent-primary-text);
+    border-bottom-right-radius: 0.25rem;
+  }
+
+  .research-bubble-assistant {
+    background: light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.08));
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    border-bottom-left-radius: 0.25rem;
+    backdrop-filter: blur(8px);
+    max-width: 95%;
+  }
+
+  .research-bubble-assistant.error {
+    background: light-dark(rgba(239,68,68,0.1), rgba(239,68,68,0.15));
+    border-color: var(--error);
+    color: var(--error);
+  }
+
+  .research-msg-text {
+    margin: 0;
+    word-break: break-word;
+  }
+
+  /* markdown prose inside research bubbles */
+  .research-bubble .prose p { margin: 0 0 0.5em 0; }
+  .research-bubble .prose p:last-child { margin-bottom: 0; }
+  .research-bubble .prose strong { font-weight: 600; }
+  .research-bubble .prose em { font-style: italic; }
+  .research-bubble .prose a { color: var(--accent-primary); }
+
+  .research-searching {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Typing dots animation */
+  .research-typing {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+  }
+
+  .research-typing span {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: research-bounce 1.2s infinite;
+  }
+
+  .research-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .research-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes research-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-0.3rem); opacity: 1; }
+  }
+
+  /* Citations accordion */
+  .research-citations {
+    max-width: 95%;
+    font-size: 0.8125rem;
+  }
+
+  .research-citations-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.25rem 0.25rem;
+    border-radius: 0.375rem;
+    list-style: none;
+    user-select: none;
+    transition: color 0.15s;
+  }
+
+  .research-citations-summary:hover { color: var(--text-secondary); }
+  .research-citations-summary::-webkit-details-marker { display: none; }
+
+  .research-citations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .research-citation-item {
+    padding: 0.5rem 0.75rem;
+    background: light-dark(rgba(255,255,255,0.2), rgba(255,255,255,0.06));
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+
+  .research-citation-item:hover {
+    background: light-dark(rgba(255,255,255,0.35), rgba(255,255,255,0.1));
+    border-color: var(--accent-primary);
+  }
+
+  .citation-text {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.4;
+    font-size: 0.8125rem;
+  }
+
+  .citation-source {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* Research mode input styles */
+  .research-textarea {
+    resize: none;
+    min-height: 2.25rem;
+    max-height: 8rem;
+    overflow-y: auto;
+    line-height: 1.5;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    font-family: inherit;
+    field-sizing: content;
+    type: textarea;
+  }
+
+  .research-active {
+    background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent) !important;
+    border-color: var(--accent-primary) !important;
+  }
+
+  .clear-research-btn {
+    padding: 0.375rem;
+    margin: 0.375rem 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    transition: color 0.15s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .clear-research-btn:hover { color: var(--error); }
+
+  .research-mode-btn {
+    margin-left: 0;
+  }
+
+  .qr-link-hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (max-width: 480px) {
+    .qr-link-hidden { display: none; }
+    .research-bubble { max-width: 92%; }
+    .research-bubble-assistant { max-width: 98%; }
+  }
+
+  .hidden { display: none !important; }
 
 </style>

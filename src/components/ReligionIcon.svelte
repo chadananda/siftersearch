@@ -21,15 +21,15 @@
   );
 
   const isBahai      = $derived(key.includes('baha'));
-  const isBuddhist   = $derived(key === 'buddhist');
-  const isChristian  = $derived(key === 'christian');
-  const isConfucian  = $derived(key === 'confucian');
-  const isHindu      = $derived(key === 'hindu');
-  const isIslam      = $derived(key === 'islam');
-  const isJain       = $derived(key === 'jain');
-  const isJudaism    = $derived(key === 'judaism');
-  const isTao        = $derived(key === 'tao');
-  const isZoroastrian = $derived(key === 'zoroastrian');
+  const isBuddhist   = $derived(key === 'buddhist' || key === 'buddhism');
+  const isChristian  = $derived(key === 'christian' || key === 'christianity');
+  const isConfucian  = $derived(key === 'confucian' || key === 'confucianism');
+  const isHindu      = $derived(key === 'hindu' || key === 'hinduism');
+  const isIslam      = $derived(key === 'islam' || key === 'islamic' || key === 'muslim');
+  const isJain       = $derived(key === 'jain' || key === 'jainism');
+  const isJudaism    = $derived(key === 'judaism' || key === 'jewish');
+  const isTao        = $derived(key === 'tao' || key === 'taoism' || key === 'taoist');
+  const isZoroastrian = $derived(key === 'zoroastrian' || key === 'zoroastrianism');
 </script>
 
 <!-- Baha'i: nine-pointed star -->
@@ -74,35 +74,33 @@
     <path d="M12 9v4"/>
   </svg>
 
-<!-- Hindu: Om symbol -->
+<!-- Hindu: Om symbol (ॐ) -->
 {:else if isHindu}
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Hindu" role="img" fill="currentColor">
-    <!-- Om (ॐ) stylised as SVG paths -->
-    <path d="M7.5 8.5c0-1.1.9-2 2-2s2 .9 2 2c0 .8-.5 1.5-1.2 1.8.7.2 1.7.8 1.7 2.2 0 1.7-1.3 2.5-2.5 2.5s-2-.8-2-2h1.2c0 .5.4.9.8.9.6 0 1.3-.4 1.3-1.4 0-.9-.7-1.3-1.5-1.3H8.6V10h.7c.7 0 1.2-.5 1.2-1s-.4-.8-.8-.8c-.5 0-.8.3-.8.8H7.5z"/>
-    <path d="M12.5 7h1.3l1.7 5.5L17.2 7h1.3l-2.3 7h-1.4z"/>
-    <!-- Curved tail and dot of Om -->
-    <path d="M7 15.5c0 0 2 .5 4 0" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-    <circle cx="12" cy="4.5" r="0.8"/>
+    <!-- Bold Om glyph that reads clearly at small sizes -->
+    <path d="M8 10c0-2.2 1.8-4 4-4 1.5 0 2.8.8 3.4 2h-2.2c-.3-.3-.7-.5-1.2-.5-1.1 0-2 .9-2 2s.9 2 2 2c.8 0 1.4-.4 1.7-1H16c-.5 2-2.2 3.5-4.4 3.5C9.5 14 8 12.5 8 10z"/>
+    <path d="M16 8.5c0 0 2.5.5 2.5 3.5s-2 4.5-4.5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="15" cy="4.5" r="1.5"/>
+    <path d="M6 16c2 1 5 1 8-.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
   </svg>
 
 <!-- Islam: crescent and star -->
 {:else if isIslam}
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Islam" role="img" fill="currentColor">
-    <!-- Crescent: full circle minus offset circle = crescent -->
-    <path d="M12 3a9 9 0 1 0 0 18A7 7 0 1 1 12 3z"/>
+    <!-- Crescent: outer circle minus inner offset circle -->
+    <path d="M12 2a10 10 0 1 0 0 20 7.5 7.5 0 1 1 0-20z"/>
     <!-- Five-pointed star -->
-    <polygon points="17.5,7 18.2,9.2 20.5,9.2 18.7,10.6 19.4,12.8 17.5,11.4 15.6,12.8 16.3,10.6 14.5,9.2 16.8,9.2"/>
+    <polygon points="18,6.5 18.9,9 21.5,9 19.4,10.7 20.2,13.2 18,11.5 15.8,13.2 16.6,10.7 14.5,9 17.1,9"/>
   </svg>
 
-<!-- Jain: hand with wheel (ahimsa) -->
+<!-- Jain: open hand with ahimsa wheel -->
 {:else if isJain}
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Jain" role="img" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Open palm (stop gesture = ahimsa/non-violence) -->
-    <path d="M9 6V3.5a1 1 0 0 1 2 0V9M11 4.5V3a1 1 0 0 1 2 0v6M13 4.5V3.5a1 1 0 0 1 2 0V9M15 5.5V5a1 1 0 0 1 2 0v4c0 3.5-2 6.5-6 6.5S7 12.5 7 9V6.5a1 1 0 0 1 2 0V9"/>
-    <!-- Small dharma wheel in palm -->
-    <circle cx="12" cy="13" r="2" stroke-width="1"/>
-    <line x1="12" y1="11" x2="12" y2="15"/>
-    <line x1="10" y1="13" x2="14" y2="13"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Jain" role="img" fill="currentColor">
+    <!-- Bold open palm silhouette with wheel -->
+    <path d="M8 11V5a1.5 1.5 0 0 1 3 0v5h0V4a1.5 1.5 0 0 1 3 0v6h0V5a1.5 1.5 0 0 1 3 0v6c0 4-2.5 7-6.5 7S4 15 4 11V7.5a1.5 1.5 0 0 1 3 0V11h1z"/>
+    <!-- Ahimsa wheel in palm center -->
+    <circle cx="11.5" cy="15" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="11.5" cy="15" r="0.8"/>
   </svg>
 
 <!-- Judaism: Star of David -->

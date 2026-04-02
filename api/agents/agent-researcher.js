@@ -162,7 +162,7 @@ FACETING — CRITICAL:
 - "what does Jesus say about the poor" → query: "the poor", filters: { "author": "Jesus" }
 - If NO author/religion/collection constraint is mentioned, use empty filters or omit.
 - Normalize spelling: "Abdul-Baha"/"Abdul Baha" → "'Abdu'l-Bahá", "Bahaullah" → "Bahá'u'lláh", "Shoghi"/"Guardian" → "Shoghi Effendi"
-- Normalize religions: "Buddhist" → "Buddhism", "Islamic"/"Muslim" → "Islam", "Christian"/"Biblical" → "Christianity", "Hindu" → "Hinduism", "Jewish" → "Judaism", "Bahai" → "Bahá'í"
+- Normalize religions: "Buddhism" → "Buddhist", "Islamic"/"Muslim" → "Islam", "Christian"/"Biblical" → "Christian", "Hinduism" → "Hindu", "Jewish" → "Judaism", "Bahai" → "Bahá'í"
 - When a tradition/author is specified, ALL queries in the plan should use that filter — don't search broadly for something the user explicitly scoped.`;
 
     const response = await this.chat([

@@ -11,7 +11,7 @@ const DECOMPOSE_PROMPT = `Extract search facets from the user's query. Separate 
 
 FILTERABLE FIELDS:
 - author: e.g. "Bahá'u'lláh", "Abdu'l-Bahá", "Shoghi Effendi", "Buddha", "Jesus", "Muhammad", "Rumi", "Krishna"
-- religion: "Bahá'í", "Buddhism", "Christianity", "Hinduism", "Islam", "Judaism", "Zoroastrianism", "Sikhism"
+- religion: "Bahá'í", "Buddhist", "Christian", "Confucian", "Hindu", "Islam", "Jain", "Judaism", "Tao", "Zoroastrian"
 - collection: book/collection name, e.g. "Hidden Words", "Kitáb-i-Aqdas", "Pilgrim Notes", "Bhagavad Gita", "Quran"
 
 DETECTION PATTERNS — strip these from the search query and convert to filters:
@@ -23,10 +23,10 @@ SPELLING NORMALIZATION:
 - "Abdul-Baha" / "Abdul Baha" / "Abdu'l Baha" → author: "'Abdu'l-Bahá"
 - "Bahaullah" / "Baha'u'llah" → author: "Bahá'u'lláh"
 - "Shoghi" / "Guardian" → author: "Shoghi Effendi"
-- "Buddhist" / "Buddha's teachings" → religion: "Buddhism"
+- "Buddhism" / "Buddha's teachings" → religion: "Buddhist"
 - "Islamic" / "Muslim" → religion: "Islam"
-- "Christian" / "Biblical" → religion: "Christianity"
-- "Hindu" → religion: "Hinduism"
+- "Christianity" / "Biblical" → religion: "Christian"
+- "Hinduism" → religion: "Hindu"
 - "Jewish" / "Torah" → religion: "Judaism"
 - "Bahai" / "Baha'i" → religion: "Bahá'í"
 

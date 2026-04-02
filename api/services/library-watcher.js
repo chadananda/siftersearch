@@ -297,24 +297,7 @@ async function cleanupOrphanedDocuments() {
 }
 
 /**
- * Get the timestamp of the last successful library scan from app_config
- */
-async function getLastScanTimestamp() {
-  try {
-    const result = await queryOne(
-      `SELECT value FROM app_config WHERE key = 'library_last_scan'`
-    );
-    if (result?.value) {
-      return new Date(result.value).getTime();
-    }
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No last scan timestamp found');
-  }
-  return 0; // Return 0 to process all stable files on first run
-}
-
-/**
- * Save the timestamp of the last successful library scan to app_config
+ * Save the timestamp of the last successful library scan to app_config (observability only)
  */
 async function setLastScanTimestamp(timestamp) {
   const isoString = new Date(timestamp).toISOString();
@@ -367,16 +350,23 @@ async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
   return results;
 }
 
+// Batch size for scan processing — avoids overwhelming DB/ingester
+const SCAN_BATCH_SIZE = 50;
+
 /**
- * Hourly library scan - finds stable files (>4h old) that need ingestion
+ * Hourly library scan using disk-vs-database comparison.
  *
- * This is the primary ingestion mechanism. Files must be:
- * 1. At least 4 hours old (stable, not being actively edited)
- * 2. Modified since the last scan (new or changed)
+ * Compares file_hash of every .md file on disk against the docs table:
+ *   - On disk, not in DB          → ingest (new file)
+ *   - On disk, in DB, hash differs → re-ingest (content changed)
+ *   - In DB, not on disk          → soft-delete (removed file)
+ *   - On disk, in DB, same hash   → skip (unchanged)
+ *
+ * This correctly handles Dropbox-synced files that arrive with old mtimes.
  */
 async function scanLibraryForIngestion() {
   const scanStartTime = Date.now();
-  logger.info('Starting hourly library scan for stable files');
+  logger.info('Starting library scan (disk-vs-database comparison)');
 
   try {
     const basePath = config.library.basePath;
@@ -385,89 +375,99 @@ async function scanLibraryForIngestion() {
       return;
     }
 
-    // Get timestamp of last successful scan
-    const lastScanTimestamp = await getLastScanTimestamp();
-    const stableThreshold = scanStartTime - REINGEST_COOLDOWN_MS;
+    // Step 1: Scan all .md files on disk
+    const diskFiles = await scanDirectoryForMarkdown(basePath, basePath);
+    watcherStats.lastScanFilesFound = diskFiles.length;
+    const diskByPath = new Map(diskFiles.map(f => [f.relativePath, f]));
 
-    logger.debug({
-      lastScan: lastScanTimestamp ? new Date(lastScanTimestamp).toISOString() : 'never',
-      stableThreshold: new Date(stableThreshold).toISOString()
-    }, 'Scan parameters');
-
-    // Scan all .md files in the library
-    const allFiles = await scanDirectoryForMarkdown(basePath, basePath);
-    watcherStats.lastScanFilesFound = allFiles.length;
-
-    // Filter to files that:
-    // 1. Are stable (mtime > 4h ago)
-    // 2. Were modified after the last scan
-    const filesToProcess = allFiles.filter(file => {
-      const isStable = file.mtime < stableThreshold;
-      const isNew = file.mtime > lastScanTimestamp;
-      return isStable && isNew;
-    });
+    // Step 2: Load all active DB docs (file_path + file_hash)
+    const db = await getDb();
+    const dbResult = await db.execute('SELECT id, file_path, file_hash FROM docs WHERE deleted_at IS NULL');
+    const dbByPath = new Map(dbResult.rows.map(r => [r.file_path, r]));
 
     logger.info({
-      totalFiles: allFiles.length,
-      stableAndNew: filesToProcess.length,
-      lastScan: lastScanTimestamp ? new Date(lastScanTimestamp).toISOString() : 'never'
-    }, 'Library scan found files to process');
+      diskFiles: diskFiles.length,
+      dbDocs: dbByPath.size
+    }, 'Scan: loaded disk and database state');
 
     let ingestedCount = 0;
+    let reingestedCount = 0;
+    let deletedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
 
-    for (const file of filesToProcess) {
-      try {
-        const content = await readFile(file.absolutePath, 'utf-8');
-        const { content: bodyContent } = parseMarkdownFrontmatter(content);
-        const bodyHash = hashContent(bodyContent);
+    // Step 3a: Find files to ingest or re-ingest (on disk, compare against DB)
+    // Process in batches to avoid overwhelming the system
+    const diskPathsSorted = [...diskByPath.keys()];
+    for (let batchStart = 0; batchStart < diskPathsSorted.length; batchStart += SCAN_BATCH_SIZE) {
+      const batch = diskPathsSorted.slice(batchStart, batchStart + SCAN_BATCH_SIZE);
 
-        // Check if document exists and content changed
-        const existingDoc = await getDocumentByPath(file.relativePath);
-        if (existingDoc && existingDoc.body_hash === bodyHash) {
-          skippedCount++;
-          continue;
+      for (const relativePath of batch) {
+        const diskFile = diskByPath.get(relativePath);
+        try {
+          const content = await readFile(diskFile.absolutePath, 'utf-8');
+          const diskHash = hashContent(content.trim());
+          const dbDoc = dbByPath.get(relativePath);
+
+          if (dbDoc && dbDoc.file_hash === diskHash) {
+            // Unchanged — skip
+            skippedCount++;
+            continue;
+          }
+
+          const isNew = !dbDoc;
+          const fileStat = await stat(diskFile.absolutePath);
+          const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
+
+          if (result.skipped) {
+            skippedCount++;
+          } else if (isNew) {
+            ingestedCount++;
+            watcherStats.filesIngested++;
+            logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: new file ingested');
+          } else {
+            reingestedCount++;
+            watcherStats.reingests++;
+            logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: changed file re-ingested');
+          }
+        } catch (err) {
+          errorCount++;
+          watcherStats.errors++;
+          logger.error({ err: err.message, filePath: relativePath }, 'Library scan: failed to process file');
         }
-
-        // Ingest the document with file mtime for accurate "added" vs "modified" tracking
-        const result = await ingestDocument(content, { file_mtime: new Date(file.mtime).toISOString() }, file.relativePath);
-
-        if (result.skipped) {
-          skippedCount++;
-        } else {
-          ingestedCount++;
-          watcherStats.filesIngested++;
-          logger.info({
-            filePath: file.relativePath,
-            documentId: result.documentId,
-            status: existingDoc ? 're-ingested' : 'new'
-          }, 'Library scan: document ingested');
-        }
-
-      } catch (err) {
-        errorCount++;
-        watcherStats.errors++;
-        logger.error({
-          err: err.message,
-          filePath: file.relativePath
-        }, 'Library scan: failed to ingest file');
       }
     }
 
-    // Update last scan timestamp to the start time of this scan
-    // This ensures files modified during the scan are picked up next time
+    // Step 3b: Find DB docs whose files no longer exist on disk → soft-delete
+    for (const [filePath, dbDoc] of dbByPath) {
+      if (!diskByPath.has(filePath)) {
+        try {
+          await removeDocument(dbDoc.id);
+          deletedCount++;
+          watcherStats.filesRemoved++;
+          logger.info({ filePath, docId: dbDoc.id }, 'Library scan: file removed from disk, soft-deleting');
+        } catch (err) {
+          errorCount++;
+          watcherStats.errors++;
+          logger.error({ err: err.message, filePath, docId: dbDoc.id }, 'Library scan: failed to soft-delete removed file');
+        }
+      }
+    }
+
+    // Record scan time for observability (does not gate future scans)
     await setLastScanTimestamp(scanStartTime);
 
     watcherStats.lastLibraryScan = new Date().toISOString();
-    watcherStats.lastScanFilesIngested = ingestedCount;
+    watcherStats.lastScanFilesIngested = ingestedCount + reingestedCount;
 
     const durationMs = Date.now() - scanStartTime;
     logger.info({
       durationMs,
-      totalFiles: allFiles.length,
-      processed: filesToProcess.length,
+      diskFiles: diskFiles.length,
+      dbDocs: dbByPath.size,
       ingested: ingestedCount,
+      reingested: reingestedCount,
+      deleted: deletedCount,
       skipped: skippedCount,
       errors: errorCount
     }, 'Library scan complete');
@@ -856,7 +856,7 @@ export function getWatcherStats() {
     enabled: isEnabled,
     pendingAdds: pendingAdds.size,
     pendingDeletes: pendingDeletes.size,
-    cooldownHours: Math.round(REINGEST_COOLDOWN_MS / (60 * 60 * 1000)),
+    addEventCooldownHours: Math.round(REINGEST_COOLDOWN_MS / (60 * 60 * 1000)),
     scanIntervalMinutes: Math.round(LIBRARY_SCAN_INTERVAL_MS / (60 * 1000)),
     ...watcherStats
   };
