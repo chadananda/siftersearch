@@ -4,6 +4,7 @@
    * Hero header for religion pages with symbol, name, description, and stats
    */
   import { authenticatedFetch } from '../../lib/api.js';
+  import ReligionIcon from '../ReligionIcon.svelte';
 
   let {
     religion = null,
@@ -20,11 +21,8 @@
   let generatedDescription = $state('');
   let generationError = $state('');
 
-  // Default symbol if none set
-  const symbol = $derived(religion?.symbol || '📚');
   const name = $derived(religion?.name || 'Unknown');
   const description = $derived(generatedDescription || religion?.description || '');
-  const isBahai = $derived(name?.toLowerCase().includes('baha'));
 
   // Generate description with AI
   async function generateDescription() {
@@ -64,12 +62,8 @@
   <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-surface-1/50"></div>
 
   <!-- Large artistic background symbol -->
-  <div class="absolute -right-8 -bottom-8 select-none pointer-events-none">
-    {#if isBahai}
-      <img src="/bahai-star.svg" alt="" class="w-48 h-48 opacity-[0.07] invert" />
-    {:else}
-      <span class="text-[12rem] leading-none text-white/[0.07] font-normal">{symbol}</span>
-    {/if}
+  <div class="absolute -right-8 -bottom-8 select-none pointer-events-none opacity-[0.07] text-white w-48 h-48">
+    <ReligionIcon religion={name} class="w-full h-full" />
   </div>
 
   <div class="relative z-10 p-6 flex flex-col gap-3">
@@ -85,12 +79,8 @@
 
     <!-- Title row with symbol -->
     <div class="flex items-center gap-4">
-      <div class="w-16 h-16 flex items-center justify-center bg-white/15 backdrop-blur rounded-xl border border-white/20 shrink-0">
-        {#if isBahai}
-          <img src="/bahai-star.svg" alt="Baha'i" class="w-9 h-9 invert" />
-        {:else}
-          <span class="text-4xl">{symbol}</span>
-        {/if}
+      <div class="w-16 h-16 flex items-center justify-center bg-white/15 backdrop-blur rounded-xl border border-white/20 shrink-0 text-white">
+        <ReligionIcon religion={name} size="lg" />
       </div>
       <div class="flex-1">
         <div class="flex items-center gap-3">

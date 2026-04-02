@@ -1,4 +1,5 @@
 <script>
+  import ReligionIcon from './ReligionIcon.svelte';
   // Props
   let { religion = '' } = $props();
 
@@ -47,7 +48,10 @@
   {:else}
     <div class="summary-content">
       <div class="summary-header">
-        <div class="summary-title">Knowledge Graph</div>
+        <div class="summary-title flex items-center gap-1.5">
+          <ReligionIcon {religion} size="sm" />
+          Knowledge Graph
+        </div>
         <div class="entity-count">
           <strong>{religionStats().entity_count ?? 0}</strong>
           <span>entities</span>

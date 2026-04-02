@@ -137,15 +137,15 @@
   <!-- Content -->
   <main class="print-content">
     <div class="paragraphs-container">
-      {#each paragraphs as para}
+      {#each paragraphs as para, i}
         <div class="paragraph-block avoid-break">
           <div class="para-number">
             <span class="para-badge">{para.index + 1}</span>
           </div>
 
-          {#if para.heading}
+          {#if para.blocktype === 'heading'}
             <div class="paragraph-heading" class:rtl={isRTL}>
-              {para.heading}
+              {para.text}
             </div>
           {/if}
 

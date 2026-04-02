@@ -1,6 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { authenticatedFetch } from '../../lib/api.js';
+  import ReligionIcon from '../ReligionIcon.svelte';
 
   let { documents = [], selectedId = null, isAdmin = false } = $props();
 
@@ -631,9 +632,12 @@
                   </div>
                 {/if}
                 {#if doc.religion}
-                  <div class="flex gap-2">
+                  <div class="flex gap-2 items-center">
                     <span class="text-accent font-medium">religion:</span>
-                    <span class="text-primary">{doc.religion}</span>
+                    <span class="text-primary flex items-center gap-1">
+                      <ReligionIcon religion={doc.religion} size="sm" />
+                      {doc.religion}
+                    </span>
                   </div>
                 {/if}
                 {#if doc.collection}

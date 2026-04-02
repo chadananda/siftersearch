@@ -354,8 +354,8 @@
         <div class="content-scroll">
           {#each paragraphs as para, i}
             <div class="content-block" data-index={para.paragraph_index}>
-              {#if para.heading}
-                <h3 class="text-base font-semibold text-primary mb-2">{para.heading}</h3>
+              {#if para.blocktype === 'heading'}
+                <h3 class="text-base font-semibold text-primary mb-2">{para.text}</h3>
               {/if}
               <div class="text-sm text-secondary leading-relaxed prose prose-sm max-w-none">{@html renderMarkdown(para.text)}</div>
             </div>

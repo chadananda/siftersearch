@@ -130,7 +130,29 @@ scp chad@<old-server>:~/sifter/siftersearch/.env-public ~/sifter/siftersearch/.e
 scp -r chad@<old-server>:~/.cloudflared/ ~/.cloudflared/
 ```
 
-## Step 4: Verify Database
+## Step 4: Copy Additional Databases
+
+SifterSearch uses three SQLite databases. Copy all three:
+
+```bash
+# embedding_cache.db — deduplicated 512-dim embeddings (large, ~several GB)
+ssh chad@<old-server> 'sqlite3 ~/sifter/siftersearch/data/embedding_cache.db ".backup /tmp/embedding_cache-migrate.db"'
+scp chad@<old-server>:/tmp/embedding_cache-migrate.db /tmp/embedding_cache-migrate.db
+scp /tmp/embedding_cache-migrate.db chad@<new-server>:~/sifter/siftersearch/data/embedding_cache.db
+rm /tmp/embedding_cache-migrate.db
+ssh chad@<old-server> 'rm /tmp/embedding_cache-migrate.db'
+
+# graph.db — entity/concept graph
+ssh chad@<old-server> 'sqlite3 ~/sifter/siftersearch/data/graph.db ".backup /tmp/graph-migrate.db"'
+scp chad@<old-server>:/tmp/graph-migrate.db /tmp/graph-migrate.db
+scp /tmp/graph-migrate.db chad@<new-server>:~/sifter/siftersearch/data/graph.db
+rm /tmp/graph-migrate.db
+ssh chad@<old-server> 'rm /tmp/graph-migrate.db'
+```
+
+If `embedding_cache.db` does not exist on the old server (fresh deployment), it will be created automatically on first use. Re-populating it requires re-embedding all paragraphs — this takes significant time and API cost, so always copy it if available.
+
+## Step 5: Verify Databases
 
 ```bash
 sqlite3 data/sifter.db "SELECT COUNT(*) FROM docs WHERE deleted_at IS NULL;"
@@ -141,9 +163,14 @@ sqlite3 data/sifter.db "SELECT religion, COUNT(*) FROM docs WHERE deleted_at IS 
 
 sqlite3 data/sifter.db "SELECT COUNT(*) FROM content WHERE deleted_at IS NULL;"
 # Expected: ~3.6M+
+
+sqlite3 data/embedding_cache.db "SELECT COUNT(*) FROM embedding_cache;" 2>/dev/null || echo "embedding_cache.db not present (will be created on first use)"
+# Expected: ~2.5M+ rows if copied
+
+sqlite3 data/graph.db "SELECT COUNT(*) FROM graph_entities;" 2>/dev/null || echo "graph.db not present (will be created on first use)"
 ```
 
-## Step 5: Update Configuration
+## Step 6: Update Configuration
 
 Check `.env-secrets` and `.env-public` for paths that need updating:
 
@@ -151,7 +178,7 @@ Check `.env-secrets` and `.env-public` for paths that need updating:
 - **LMSTUDIO_HOST / AI endpoints**: Update to point to the AI server via Tailscale IP.
 - **MEILI_HOST**: Should be `http://localhost:7700` (Meilisearch runs locally).
 
-## Step 6: Start Meilisearch
+## Step 7: Start Meilisearch
 
 ### As a systemd user service (recommended)
 
@@ -191,7 +218,7 @@ curl -s http://localhost:7700/health
 # Returns: {"status":"available"}
 ```
 
-## Step 7: Start SifterSearch via PM2
+## Step 8: Start SifterSearch via PM2
 
 ```bash
 cd ~/sifter/siftersearch
@@ -215,7 +242,7 @@ pm2 list                    # All services online
 curl -s http://localhost:7839/api/library/stats   # Returns doc counts
 ```
 
-## Step 8: Verify Cloudflare Tunnel
+## Step 9: Verify Cloudflare Tunnel
 
 The tunnel is started by PM2 via `ecosystem.config.cjs`. It reads `~/.cloudflared/config-siftersearch.yml`:
 
@@ -236,7 +263,7 @@ curl -s https://api.siftersearch.com/api/v1/health
 # Returns: {"status":"ok","version":"..."}
 ```
 
-## Step 9: Shut Down Old Server
+## Step 10: Shut Down Old Server
 
 ```bash
 ssh chad@<old-server> 'cd ~/sifter/siftersearch && pm2 stop all && pm2 delete all && pm2 save'
@@ -244,17 +271,21 @@ ssh chad@<old-server> 'cd ~/sifter/siftersearch && pm2 stop all && pm2 delete al
 
 Keep vLLM / AI services running if the old server is the AI server.
 
-## Step 10: Rebuild Meilisearch Index (when ready)
+## Step 11: Rebuild Meilisearch Index (when ready)
 
 Meilisearch will be empty on the new server. When ready to rebuild:
 
 ```bash
+# Reset all three sync layers
+sqlite3 data/sifter.db "UPDATE layer_sync_state SET synced = 0 WHERE deleted_at IS NULL;"
+# Or if layer_sync_state doesn't exist yet (pre-migration-44):
 sqlite3 data/sifter.db "UPDATE content SET synced = 0 WHERE deleted_at IS NULL;"
+
 pm2 restart siftersearch-worker
 pm2 logs siftersearch-worker --lines 20   # Monitor progress
 ```
 
-Note: This can take hours for millions of paragraphs. Consider doing schema refactoring first if planned.
+Note: Base layer rebuild can take hours for millions of paragraphs. Object extraction and enrichment layers require vLLM access to `boss` and will run incrementally as pipeline jobs complete. Consider doing schema migrations first (`POST /api/admin/server/migrate`) before triggering a full rebuild.
 
 ## Current Server Details (as of 2026-04-02)
 
@@ -285,7 +316,9 @@ All machines communicate via Tailscale. Use hostnames (`boss`, `tower-nas`) or I
 - [ ] Dropbox systemd service enabled
 - [ ] Node.js, PM2, Meilisearch, Cloudflared, sqlite3 installed
 - [ ] Repo cloned and `npm install` complete
-- [ ] SQLite database copied (WAL-safe via `.backup`)
+- [ ] sifter.db copied (WAL-safe via `.backup`)
+- [ ] embedding_cache.db copied (or accepted that re-embedding will be needed)
+- [ ] graph.db copied (or accepted that re-extraction will be needed)
 - [ ] `.env-secrets` and `.env-public` copied and paths verified
 - [ ] `~/.cloudflared/` credentials copied
 - [ ] Meilisearch systemd service running

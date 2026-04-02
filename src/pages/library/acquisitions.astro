@@ -1,0 +1,98 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import AcquisitionList from '../../components/AcquisitionList.svelte';
+---
+
+<DocsLayout
+  title="Priority Acquisition Documents"
+  description="A prioritized wish list of 119 texts to procure, scan, and add to the Ocean Library collection — ranked by importance for building a world-class multi-religion digital library."
+  activeSection="acquisitions"
+>
+  <h1>Priority Acquisition Documents</h1>
+  <p class="subtitle">119 texts to procure, scan, and digitize for the collection</p>
+
+  <p>
+    This is a prioritized wish list of texts that are <strong>not freely available online as clean
+    digital text</strong> and would need to be acquired as physical books, scanned, and OCR'd. They
+    represent the most significant gaps in the library — texts whose absence would be noticed by any
+    serious scholar or practitioner of these traditions.
+  </p>
+
+  <p>
+    Texts already in the library (from Sefaria, Gutenberg, Access to Insight, avesta.org,
+    Wikisource, terebess.hu, BaniDB) are excluded from this list.
+  </p>
+
+  <div class="callout callout-info">
+    <strong>Want to help?</strong> If you have access to any of these texts and can help with
+    scanning, OCR, or digital preparation, please <a href="/contribute">contact us</a>. Even a
+    single high-quality scan makes a difference.
+  </div>
+
+  <h2>Tiers at a Glance</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th>Description</th>
+        <th>Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color: #f59e0b">★ Tier 1</strong></td>
+        <td>Absolute Essentials — absence noticed immediately by any serious scholar</td>
+        <td>28</td>
+      </tr>
+      <tr>
+        <td><strong style="color: #94a3b8">◆ Tier 2</strong></td>
+        <td>Major Scholarly Works — complete the core canon or provide essential interpretive context</td>
+        <td>29</td>
+      </tr>
+      <tr>
+        <td><strong style="color: #a78bfa">● Tier 3</strong></td>
+        <td>Deepening the Collections — move each library from good to excellent</td>
+        <td>29</td>
+      </tr>
+      <tr>
+        <td><strong style="color: #6b7280">◉ Tier 4</strong></td>
+        <td>Scholarly Depth — make the library genuinely comprehensive for researchers</td>
+        <td>33</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>The List</h2>
+
+  <AcquisitionList client:load />
+
+  <h2>Acquisition Strategy Notes</h2>
+
+  <h3>Format Priority</h3>
+  <p>
+    Clean scans with good OCR. Prefer recent editions with good typesetting. Avoid reprints of
+    19th-century editions where modern translations exist.
+  </p>
+
+  <h3>Multi-Volume Works</h3>
+  <p>
+    Several items above are multi-volume sets (Bhikkhu Bodhi's Nikayas, Debroy's Mahabharata,
+    Goldman's Ramayana, Boyce's History of Zoroastrianism). Budget for complete sets — partial
+    acquisition of multi-volume works is rarely useful.
+  </p>
+
+  <h3>Language Priority</h3>
+  <p>
+    English translations first, then original language (Sanskrit, Pali, Chinese, Hebrew, Avestan,
+    Pahlavi) where the English is already covered.
+  </p>
+
+  <h3>Copyright Note</h3>
+  <p>
+    Most items in Tiers 1–2 are in-copyright academic translations published by university presses
+    (Oxford, Princeton, Columbia, Wisdom Publications, Penguin Classics). Items in Tier 4 trend
+    toward more recent scholarship. A few texts (Jacobi's Jain translations, older SBE volumes)
+    are already public domain and may just need better-quality versions than what Gutenberg provides.
+  </p>
+</DocsLayout>

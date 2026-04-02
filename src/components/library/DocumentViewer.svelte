@@ -243,8 +243,8 @@
       {:else}
         {#each paragraphs as para, i}
           <div class="paragraph" data-index={para.paragraph_index}>
-            {#if para.heading}
-              <h2 class="paragraph-heading">{para.heading}</h2>
+            {#if para.blocktype === 'heading'}
+              <h2 class="paragraph-heading">{para.text}</h2>
             {/if}
             <div class="paragraph-text">{@html renderMarkdown(para.text)}</div>
           </div>

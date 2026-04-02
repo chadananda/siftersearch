@@ -23,6 +23,7 @@
   import { generateQRCodeUrl } from '../../lib/qrcode.js';
   import { authenticatedFetch } from '../../lib/api.js';
   import AuthModal from '../AuthModal.svelte';
+  import { toCurlyQuotes } from '../../lib/text-utils.js';
 
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
 
@@ -350,19 +351,6 @@
     return text.replace(/⁅\/?[sp]\d+⁆/g, '');
   }
 
-
-  /**
-   * Convert straight quotes to curly/smart quotes
-   * Handles both single and double quotes
-   */
-  function toCurlyQuotes(text) {
-    if (!text) return text;
-    return text
-      .replace(/"/g, '\u201c')  // Opening double quote
-      .replace(/"/g, '\u201d')  // Closing double quote
-      .replace(/'/g, '\u2019')  // Apostrophe/closing single quote
-      .replace(/'/g, '\u2018'); // Opening single quote
-  }
 
   function renderMarkdown(text) {
     if (!text) return '';
@@ -1194,8 +1182,8 @@
             id="p{para.paragraph_index}"
             data-index={para.paragraph_index}
           >
-            {#if para.heading && !para.heading.toLowerCase().includes('by / on behalf') && !para.heading.toLowerCase().includes('by on behalf')}
-              <h2 class="paragraph-heading">{@html renderMarkdown(para.heading)}</h2>
+            {#if para.blocktype === 'heading'}
+              <h2 class="paragraph-heading">{@html renderMarkdown(para.text)}</h2>
             {/if}
 
             <!-- SBS Mode: Side-by-side reading translation (English on LEFT) -->

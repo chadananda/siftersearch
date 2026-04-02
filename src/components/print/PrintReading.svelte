@@ -128,11 +128,11 @@
     </div>
 
     <div class="paragraphs-container">
-      {#each paragraphs as para}
+      {#each paragraphs as para, i}
         <div class="paragraph-row avoid-break">
-          {#if para.heading}
+          {#if para.blocktype === 'heading'}
             <div class="paragraph-heading" class:rtl={isRTL}>
-              {para.heading}
+              {para.text}
             </div>
           {/if}
 

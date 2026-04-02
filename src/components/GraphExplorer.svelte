@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import * as d3 from 'd3';
+  import ReligionIcon from './ReligionIcon.svelte';
 
   // Religion options
   const RELIGIONS = [
@@ -224,7 +225,10 @@
           class="tab-btn"
           class:active={selectedReligion === religion}
           onclick={() => { selectedReligion = religion; }}
-        >{religion}</button>
+        >
+          <ReligionIcon religion={religion} size="sm" />
+          {religion}
+        </button>
       {/each}
     </div>
   </div>
@@ -358,6 +362,9 @@
     flex-wrap: wrap;
   }
   .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     padding: 0.25rem 0.625rem;
     font-size: 0.75rem;
     border-radius: 1rem;

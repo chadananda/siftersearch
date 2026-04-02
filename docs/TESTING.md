@@ -192,6 +192,80 @@ Then('I should see the navigation bar', async function () {
 });
 ```
 
+## API Unit Tests
+
+Unit tests for server-side modules live in `tests/api/`. Run with:
+
+```bash
+npm test
+# or for specific file:
+npx vitest tests/api/embedding-cache.test.js
+```
+
+### Layered Indexing Test Suite (151 tests, 7 files)
+
+These tests cover the three-layer indexing pipeline introduced with the layered architecture:
+
+| File | Tests | Coverage |
+|------|-------|---------|
+| `tests/api/embedding-cache.test.js` | 12 | Embedding KV cache DB: init, insert, get, dedup, batch, truncateAndNormalize512() |
+| `tests/api/graph-db.test.js` | 19 | Graph DB lifecycle, entity CRUD, relation CRUD, conservative merge rules |
+| `tests/api/migration-44.test.js` | 26 | Migration 44 schema: content_objects, content_enrichment, pipeline_versions, pipeline_jobs, layer_sync_state tables |
+| `tests/api/pipeline.test.js` | 23 | Pipeline version registry, invalidation rules (text/metadata/object/context/hype), job scheduler, dedup |
+| `tests/api/object-extraction.test.js` | 26 | Prompt building, JSON parsing, entity resolution, conservative merging |
+| `tests/api/enrichment-layer.test.js` | 29 | Enrichment prompt blocks (instructions, book meta, window, objects, target), deterministic hashing, window sizer |
+| `tests/api/graph-api.test.js` | 17 | Graph API handlers (stats, religion graph, entity detail, search), fused search merge |
+
+**Total new tests:** 152 (counts are per `it()` calls in each file)
+
+### What These Tests Cover
+
+**`embedding-cache.test.js`** — Tests `api/lib/embedding-cache.js`:
+- `initEmbeddingCache(path)` creates DB and table
+- `insertEmbedding()` / `getEmbedding()` round-trip
+- Deduplication: same hash+model+dim increments `source_count` without error
+- `batchInsertEmbeddings()` for bulk insert
+- `truncateAndNormalize512()`: returns exactly 512-element Float32Array, L2 norm ≈ 1.0
+
+**`graph-db.test.js`** — Tests `api/lib/graph-db.js`:
+- `initGraphDb(path)` creates `graph_entities` and `graph_relations` tables
+- Full entity CRUD: upsert, get, filter by religion/type, fuzzy search
+- Relation CRUD: insert, get for entity, get between entities
+- Conservative merge: same religion + same type + same canonical_name merges; cross-religion or cross-type never merges
+
+**`migration-44.test.js`** — Tests `api/lib/migrations.js` migration 44:
+- All 5 new tables exist with correct columns and UNIQUE constraints
+- Validates the layered indexing schema is applied correctly
+
+**`pipeline.test.js`** — Tests `api/lib/pipeline.js` and `api/lib/pipeline-scheduler.js`:
+- Version registration, activation (only one active per pipeline)
+- `invalidateForTextChange()` marks all layers dirty for a content_id
+- `invalidateForMetadataChange()` marks base layer dirty for all doc paragraphs
+- `invalidateForObjectVersionChange()` marks object + enrichment dirty
+- `invalidateForContextPromptChange()` / `invalidateForHypePromptChange()` — enrichment-only invalidation
+- Job scheduler: schedule, dedup pending jobs, get next by layer
+
+**`object-extraction.test.js`** — Tests `api/lib/object-extraction.js` and `api/lib/entity-resolution.js`:
+- `buildObjectExtractionPrompt()` returns system + user prompt with doc metadata
+- `parseObjectResponse()` handles valid JSON, markdown fences, nulls, empty arrays
+- `renderObjectsForPrompt()` is deterministic with sorted keys
+- `renderObjectsForMeili()` returns flat searchable string
+- Entity resolution: conservative cross-tradition-safe merging logic
+
+**`enrichment-layer.test.js`** — Tests `api/lib/enrichment-prompts.js` and `api/lib/window-sizer.js`:
+- Each prompt block builder returns `{ text, hash }` with deterministic output
+- Identical inputs produce byte-identical hashes (required for vLLM prefix cache hits)
+- Fixed field order in book meta block
+- `computeWindowN()` returns conservative N within KV token budget
+- Hard limit and minimum N enforced
+
+**`graph-api.test.js`** — Tests `api/routes/graph.js` handler functions:
+- `getGraphStats()` returns per-religion entity/relation counts
+- `getGraphForReligion()` returns nodes + edges with correct fields, entityTypes filter
+- `searchGraphEntities()` with and without religion filter
+- `getEntityDetail()` returns entity + connected entities + relations + source documents
+- Fused search: `mergeSearchResults()` merges by paragraph ID, preserves both base and enhanced fields
+
 ## Directory Structure
 
 ```
@@ -212,8 +286,15 @@ tests/
 │   ├── navigation.feature
 │   ├── library-browser.feature
 │   └── ...
-└── api/                        # Unit tests
-    └── ...
+└── api/                        # Unit tests (vitest)
+    ├── embedding-cache.test.js # Embedding KV cache
+    ├── graph-db.test.js        # Entity graph DB
+    ├── migration-44.test.js    # Layered indexing schema migration
+    ├── pipeline.test.js        # Pipeline version registry + job scheduler
+    ├── object-extraction.test.js # LLM extraction + entity resolution
+    ├── enrichment-layer.test.js  # Enrichment prompts + window sizer
+    ├── graph-api.test.js       # Graph API handlers + fused search
+    └── ...                     # Existing tests (search, auth, ingester, etc.)
 ```
 
 ## Configuration

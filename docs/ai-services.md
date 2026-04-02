@@ -10,18 +10,19 @@ This document describes the AI service abstraction layer used by SifterSearch. S
 | `balanced` | Good quality + reasonable speed | Passage analysis, re-ranking, summarization |
 | `quality` | Best results, speed less critical | Complex reasoning, translation, librarian tasks |
 | `creative` | More varied, expressive outputs | Welcome messages, conversational responses |
-| `embedding` | Text embeddings for semantic search | Document indexing, memory storage, similarity search |
+| `embedding` | Text embeddings for semantic search | Document indexing, similarity search |
+| `local-llm` | Local vLLM inference | Object extraction, enrichment (prefix-cached) |
 
 ## Current Configuration
 
-*Last updated: December 2024*
+*Last updated: April 2026*
 
 ### Fast Service
 **Purpose:** Quick responses for simple tasks (~1-3s response time)
 
 | Mode | Provider | Model | Notes |
 |------|----------|-------|-------|
-| **Remote** | OpenAI | `gpt-3.5-turbo` | Fastest, cheapest OpenAI chat model |
+| **Remote** | OpenAI | `gpt-4o-mini` | Fast, cheap OpenAI chat model |
 | **Local** | Ollama | `qwen2.5:7b` | Fast, good for simple JSON tasks |
 
 **Used by:**
@@ -84,30 +85,65 @@ For a **classical religious library**, embedding quality matters greatly. Religi
 - Metaphors and allegories
 - Cross-traditional concepts
 
-Remote embeddings (OpenAI) capture wider semantic facets because they're trained on massive, diverse corpora including religious and philosophical works. Higher dimensions = more nuanced meaning representation.
+| Mode | Provider | Model | Source dims | Stored dims | Notes |
+|------|----------|-------|-------------|-------------|-------|
+| **Both** | OpenAI | `text-embedding-3-large` | 3072 | 512 | Matryoshka truncation, L2 normalized |
 
-| Mode | Provider | Model | Dimensions | Notes |
-|------|----------|-------|------------|-------|
-| **Both** | OpenAI | `text-embedding-3-large` | 3072 | Best semantic quality - no local alternative |
+**Stored in:** `embedding_cache.db` (separate database, deduplicated by normalized text hash)
+
+**Why 512-dim instead of 3072?**
+
+512 dimensions via Matryoshka truncation from 3072 provides excellent retrieval quality at 1/6 the storage and bandwidth cost. The truncated dimensions are L2-normalized to preserve cosine similarity. For ~2.5M paragraphs this is a critical efficiency gain with minimal quality loss — Matryoshka models are explicitly trained for this truncation pattern.
+
+**Why `embedding_cache.db` instead of `content.embedding` column?**
+
+1. **Deduplication**: identical paragraphs across traditions share one embedding entry (keyed by `normalized_hash`)
+2. **Separation of concerns**: sifter.db stays focused on content; embedding_cache.db is a pure KV cache
+3. **Rebuild capability**: drop and rebuild embedding_cache.db independently
+4. **Consistency**: same normalized text always maps to the same embedding
 
 **Used by:**
-- Document indexing (building the search corpus)
+- Document indexing (pushed to Meilisearch `paragraphs` index)
 - Search query embedding
-- MemoryAgent (conversation search)
 
-**Why `text-embedding-3-large` with no local option?**
+---
 
-Embedding quality is **foundational**. Poor initial retrieval cannot be fixed by re-ranking or analysis - garbage in, garbage out. For a classical religious library, we need maximum semantic precision to distinguish:
-- Nuanced spiritual concepts ("divine love" vs "human love")
-- Archaic language and terminology
-- Metaphors and allegories across traditions
-- Cross-traditional concepts with similar names but different meanings
+### Local LLM Service (vLLM)
 
-Local embedding models (768-1024 dims) simply don't have the semantic resolution needed for this domain. The cost (~$0.13/1M tokens) is justified.
+**Purpose:** Batch AI processing for layered indexing — object extraction and document enrichment.
 
-**Future consideration:** If better embedding models emerge (OpenAI or otherwise), we will evaluate and re-index if the quality improvement warrants it.
+| Provider | Host | Model | Notes |
+|----------|------|-------|-------|
+| vLLM | `boss` (Tailscale) | `Qwen3-32B-AWQ` | Port 8000, prefix caching enabled |
 
-**Note:** Changing embedding models requires re-indexing all documents.
+**Used by:**
+- Object extraction (`api/lib/object-extraction.js`) — entity/concept extraction from paragraphs
+- Enrichment runner (`api/lib/enrichment-runner.js`) — disambiguation + HyPE questions
+
+**Why a separate local LLM service for indexing?**
+
+The layered indexing pipeline makes thousands of LLM calls per indexing run. Using a local vLLM server:
+- Eliminates per-token API costs for bulk indexing work
+- Enables **prefix caching** — deterministic prompt blocks share KV cache across requests
+- The `boss` server (Strix Halo + GPU) handles this workload without impacting search latency
+
+---
+
+## Prefix Caching Strategy
+
+The enrichment prompts (`api/lib/enrichment-prompts.js`) are engineered for maximum vLLM KV cache hits:
+
+```
+Prompt structure (most stable → least stable):
+1. Instructions block     → never changes (100% cache hit after first call)
+2. Book metadata block    → same for all paragraphs in a document
+3. Window of paragraphs   → changes per window position
+4. Target paragraph block → changes per paragraph
+```
+
+Each block has an MD5 hash. When all hashes match a previous call, the entire prefix is served from the vLLM KV cache with near-zero compute cost.
+
+**Window sizing** (`api/lib/window-sizer.js`): dynamically computes window N based on available KV token budget (default 8K), ensuring prompts never exceed the limit while maximizing context.
 
 ---
 
@@ -121,15 +157,12 @@ const response = await aiService('fast').chat([
   { role: 'user', content: 'Classify this query...' }
 ]);
 
-// Embeddings - same model for both indexing and search
-const docEmbeddings = await aiService('embedding').embed([
-  'paragraph 1 text...',
-  'paragraph 2 text...'
-]);
+// Embeddings — same model for both indexing and search
+// Returns 512-dim Float32Array via embedding_cache.db
 const queryEmbedding = await aiService('embedding').embed('what is divine love');
 
 // Get embedding dimensions for vector storage config
-const dims = getEmbeddingDimensions('embedding'); // 1536 (remote) or 768 (local)
+const dims = getEmbeddingDimensions('embedding'); // 512
 
 // Force local even in dev mode
 const localResponse = await aiService('fast', { forceLocal: true }).chat(messages);
@@ -141,56 +174,46 @@ const remoteEmbedding = await aiService('embedding', { forceRemote: true }).embe
 ## Mode Selection
 
 - **Dev mode** (`DEV_MODE=true`): Uses remote APIs for development
-- **Production** (`DEV_MODE=false`): Uses local Ollama models
+- **Production** (`DEV_MODE=false`): Uses local Ollama models for chat; vLLM for indexing
 
 Override with options:
-- `{ forceLocal: true }` - Force local even in dev
-- `{ forceRemote: true }` - Force remote even in prod
+- `{ forceLocal: true }` — Force local even in dev
+- `{ forceRemote: true }` — Force remote even in prod
+
+## Layered Indexing AI Flow
+
+```
+Object Extraction (per paragraph):
+  → vLLM (Qwen3-32B-AWQ) via api/lib/object-extraction.js
+  → JSON with 6 arrays: people, places, concepts, texts, events, relations
+  → Stored in content_objects (sifter.db) + graph_entities/relations (graph.db)
+
+Enrichment (per paragraph with sliding window context):
+  → vLLM (Qwen3-32B-AWQ) via api/lib/enrichment-runner.js
+  → Two passes per paragraph: 'context' (disambiguation) + 'hype' (hypothetical questions)
+  → Prefix-cached prompt blocks for efficiency
+  → Stored in content_enrichment (sifter.db)
+```
 
 ## Updating Models
 
 When updating models, consider:
 
-1. **Speed vs Quality tradeoff** - Test response times
-2. **Cost** - Check pricing for remote APIs
-3. **Context length** - Ensure model supports your prompt sizes
-4. **Output format** - Test JSON output reliability
-5. **Local availability** - Ensure model runs on target hardware
-
-### Benchmarking
-
-Run the benchmark script to compare options:
-
-```bash
-node scripts/benchmark-search.js
-```
+1. **Speed vs Quality tradeoff** — Test response times
+2. **Cost** — Check pricing for remote APIs
+3. **Context length** — Ensure model supports prompt sizes (enrichment prompts can be large)
+4. **Output format** — Test JSON output reliability (object extraction requires strict JSON)
+5. **Prefix caching compatibility** — vLLM prefix caching requires deterministic prompts
+6. **Embedding dimensions** — Changing embedding model requires re-indexing all documents AND rebuilding embedding_cache.db
 
 ### Model Update Checklist
 
 1. Update `SERVICE_CONFIG` in `api/lib/ai-services.js`
 2. Test with representative queries
 3. Run benchmark to compare speed
-4. Update this documentation
-5. Deploy and monitor
-
-## Alternative Models to Consider
-
-### Fast (alternatives)
-- `gpt-4o-mini` - Slightly better quality, similar speed
-- `mistral-7b` - Good local alternative
-- `phi-3` - Microsoft's fast small model
-
-### Quality (alternatives)
-- `claude-3-5-sonnet` - Excellent reasoning
-- `gpt-4-turbo` - Faster than gpt-4o
-- `llama3:70b` - Large local model
-
-### Embedding (alternatives)
-- `text-embedding-3-large` - Higher quality, more dimensions
-- `mxbai-embed-large` - Good local alternative
-- `bge-large` - Popular open-source option
-
----
+4. For embedding changes: bump pipeline version to trigger re-embedding
+5. Update this documentation
+6. Deploy and monitor
 
 ## Performance Targets
 
@@ -201,8 +224,10 @@ node scripts/benchmark-search.js
 | quality | < 8s | 5-12s |
 | creative | < 3s | 2-5s |
 | embedding | < 1s | 0.5-2s |
+| local-llm (enrichment) | < 5s | 2-10s |
 
 If response times consistently exceed acceptable range, consider:
 1. Switching to a faster model
 2. Reducing prompt complexity
-3. Adding caching layer
+3. Tuning window-sizer KV budget
+4. Verifying vLLM prefix cache hit rate (check boss server logs)

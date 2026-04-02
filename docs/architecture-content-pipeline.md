@@ -2,16 +2,31 @@
 
 ## Overview
 
-SifterSearch uses a **unidirectional content pipeline** where SQLite is the source of truth and Meilisearch is a read-only search index.
+SifterSearch uses a **three-layer indexing pipeline** where SQLite databases are the source of truth and Meilisearch is a read-only search index. Content flows through three progressive enrichment layers, each adding more semantic depth.
 
 ```
-┌─────────────┐     ┌───────────┐     ┌─────────────────┐     ┌─────────────┐
-│ Source File │ ──► │ Ingester  │ ──► │ SQLite (Content │ ──► │ Meilisearch │
-│ (any format)│     │           │     │   DB - truth)   │     │ (index only)│
-└─────────────┘     └───────────┘     └─────────────────┘     └─────────────┘
-     PDF/MD/HTML        converts           docs table            reads from
-     non-segmented      & segments         content table         SQLite only
+┌─────────────┐     ┌───────────────────────────────────────────┐     ┌──────────────────────┐
+│ Source File │ ──► │         SQLite (Three Databases)          │ ──► │     Meilisearch      │
+│ (any format)│     │  sifter.db + embedding_cache.db + graph.db│     │ (paragraphs /        │
+└─────────────┘     └───────────────────────────────────────────┘     │  paragraphs_enhanced)│
+     PDF/MD/HTML        converts, segments, enriches                   └──────────────────────┘
 ```
+
+## Three Databases
+
+| Database | Purpose | Key Tables |
+|----------|---------|------------|
+| **sifter.db** | Main source of truth | `docs`, `content`, `pipeline_jobs`, `pipeline_versions`, `layer_sync_state`, `content_objects`, `content_enrichment` |
+| **embedding_cache.db** | Deduplicated 512-dim embeddings | `embedding_cache` (keyed by `normalized_hash`) |
+| **graph.db** | Persistent entity/concept graph | `graph_entities`, `graph_relations` |
+
+## Three Indexing Layers
+
+| Layer | Purpose | Output |
+|-------|---------|--------|
+| **Base retrieval** | BM25 + semantic (512-dim vectors) in Meilisearch | `paragraphs` index |
+| **Object graph** | Entity/concept extraction via local vLLM, persistent corpus graph | `content_objects` + `graph.db` + `paragraphs_enhanced` index |
+| **Enrichment** | Disambiguation + HyPE questions with prefix-cached prompts | `content_enrichment` + `paragraphs_enhanced` index |
 
 ## Key Principles
 
@@ -19,18 +34,20 @@ SifterSearch uses a **unidirectional content pipeline** where SQLite is the sour
 
 - **`docs` table**: Document metadata (title, author, religion, collection, file_path, etc.)
 - **`content` table**: Processed, searchable paragraphs with sentence markers
+- **`content_objects` table**: Extracted entities/concepts per paragraph
+- **`content_enrichment` table**: Disambiguation + HyPE questions per paragraph
 
-The content table contains **processed, searchable text** - not raw file contents. Original files may be PDF, HTML, markdown, or unpunctuated classical texts that require AI segmentation.
+The content tables contain **processed, searchable text** — not raw file contents. Original files may be PDF, HTML, markdown, or unpunctuated classical texts requiring AI segmentation.
 
 ### 2. Meilisearch is a Search Index Only
 
 Meilisearch:
-- **ONLY reads from SQLite** `content` table
+- **ONLY reads from SQLite** databases
 - **Never touches original files**
-- **Only knows `doc_id`** - no file paths, no raw text input
+- **Only knows `doc_id`** — no file paths, no raw text input
 - Is **rebuildable** from SQLite at any time
 
-If Meilisearch is lost, it can be completely rebuilt from SQLite.
+If Meilisearch is lost, it can be completely rebuilt from the SQLite databases.
 
 ### 3. File Paths are Always Relative
 
@@ -39,44 +56,70 @@ The `file_path` column in `docs` table:
 - Example: `Baha'i/Core Tablets/The Báb/002-tablets.md`
 - **Never absolute** like `/Users/chad/Dropbox/...`
 
-This ensures the library is **portable** across different machines where Dropbox/library may be installed in different locations.
-
-To get the full path:
 ```javascript
 const fullPath = path.join(config.library.basePath, doc.file_path);
 ```
 
-### 4. Ingestion Flow
+### 4. Embeddings are 512-dim, Deduplicated
+
+Embeddings are stored in `embedding_cache.db`, NOT in `sifter.db`. The cache:
+- Uses Matryoshka truncation from 3072-dim OpenAI embeddings to 512-dim
+- L2-normalizes the truncated vector for cosine similarity
+- Keys by `normalized_hash` (normalized text hash) — identical text across documents shares one embedding entry
+- Eliminates redundant storage for repeated paragraphs across traditions
+
+### 5. Pipeline Versioning + Invalidation
+
+The pipeline tracks which content was processed with which prompt versions:
+- `pipeline_versions` table — version registry with invalidation rules
+- `pipeline_jobs` table — layer-aware job queue
+- `layer_sync_state` table — per-layer sync state (replaces old `synced`/`enhanced_synced` booleans)
+
+When a prompt or model changes, the pipeline marks affected content dirty and schedules re-processing.
+
+## Full Pipeline Flow
 
 ```
-1. Read source file (PDF, HTML, MD, etc.)
-2. Convert to markdown if needed
-3. Parse frontmatter for metadata
-4. Detect language (Arabic, Farsi, English, etc.)
-5. Segment into paragraphs:
-   - Punctuated text: split on sentence boundaries
-   - Unpunctuated RTL (classical Arabic/Farsi): AI segmentation
-6. Add sentence markers for translation anchoring
-7. Store in SQLite:
-   - docs table: metadata + relative file_path
-   - content table: paragraphs with sentence markers
-8. (Later) Sync worker pushes content → Meilisearch
+1.  Ingest docs + content → sifter.db (docs + content tables)
+2.  Resolve embeddings from embedding_cache.db
+    └─ On miss: generate via OpenAI text-embedding-3-large, truncate+normalize to 512-dim, store
+3.  Sync base layer → Meilisearch paragraphs index
+    └─ paragraph text + 512-dim semantic vectors
+4.  Run object extraction (local vLLM, Qwen3-32B-AWQ)
+    └─ content_objects → sifter.db
+    └─ entities/relations → graph.db (religion-scoped conservative merging)
+5.  Sync object layer → Meilisearch paragraphs_enhanced index
+    └─ objects_rendered, entity arrays
+6.  Run enrichment (local vLLM with prefix-cached prompts)
+    └─ content_enrichment → sifter.db (disambiguation + HyPE questions)
+7.  Sync enrichment layer → Meilisearch paragraphs_enhanced index
+    └─ context, hyp_questions fields
 ```
 
-### 5. Indexing Flow (Meilisearch)
+## Meilisearch Indexes
 
-```
-1. Read from SQLite content table by doc_id
-2. Push paragraphs to Meilisearch paragraphs index
-3. Push document summary to Meilisearch documents index
-```
+| Index | Contents | Purpose |
+|-------|----------|---------|
+| `paragraphs` | base text + 512-dim vectors | BM25 + semantic search |
+| `paragraphs_enhanced` | objects_rendered, context, hyp_questions, entity arrays | Object/enrichment sidecar |
+| `documents` | document metadata | Document-level search |
 
-The indexer:
-- Takes `doc_id` as input
-- Reads processed content from SQLite
-- Pushes to Meilisearch
-- **Never reads source files**
-- **Never receives raw text directly**
+**Fused search**: query both `paragraphs` and `paragraphs_enhanced`, merge results by paragraph ID, apply Voyage reranking.
+
+## Key Modules
+
+| Module | Purpose |
+|--------|---------|
+| `api/lib/embedding-cache.js` | Embedding KV cache (separate DB, Matryoshka 512-dim) |
+| `api/lib/graph-db.js` | Entity graph (separate DB, religion-scoped) |
+| `api/lib/object-extraction.js` | LLM entity/concept extraction |
+| `api/lib/entity-resolution.js` | Conservative cross-tradition-safe entity merging |
+| `api/lib/enrichment-prompts.js` | Deterministic prompt blocks with MD5 hashing for vLLM prefix cache |
+| `api/lib/enrichment-runner.js` | Document-level sliding window enrichment |
+| `api/lib/window-sizer.js` | Dynamic window N from KV token budget |
+| `api/lib/pipeline.js` | Pipeline version registry + invalidation rules |
+| `api/lib/pipeline-scheduler.js` | Layer-aware job scheduling |
+| `api/routes/graph.js` | Graph API endpoints |
 
 ## Component Responsibilities
 
@@ -85,48 +128,164 @@ The indexer:
 - Reads source files
 - Converts/processes content
 - Handles AI segmentation for unpunctuated texts
-- Writes to SQLite `docs` and `content` tables
+- Writes to `sifter.db` `docs` and `content` tables
 - Stores **relative** file_path
 
-### Indexer (`api/services/indexer.js`)
+### Embedding Cache (`api/lib/embedding-cache.js`)
 
-- Reads from SQLite `content` table
-- Pushes to Meilisearch
-- **Should not** accept raw text (architectural violation)
-- **Should not** know about file paths
+- Maintains `embedding_cache.db` separately from sifter.db
+- On lookup: returns cached 512-dim blob if hash found
+- On miss: calls OpenAI, truncates 3072 → 512 dims, L2 normalizes, stores
+- Deduplicates identical paragraphs across documents
 
-### Sync Worker (`api/workers/sync.js`)
+### Object Extractor (`api/lib/object-extraction.js`)
 
-- Monitors SQLite for unsynced content
-- Pushes to Meilisearch in batches
-- Marks content as synced
+- Reads paragraphs from sifter.db
+- Calls local vLLM (Qwen3-32B-AWQ on `boss` server)
+- Parses JSON response into 6 entity/concept arrays
+- Writes to `content_objects` in sifter.db
+- Writes entities/relations to `graph.db`
+
+### Entity Resolution (`api/lib/entity-resolution.js`)
+
+- Merges entities within a religion (conservative — never cross-tradition merges)
+- Same religion + same type + exact canonical_name → merge (increment mention_count)
+- Protects cross-traditional integrity (Bahá'í ≠ Sufi ≠ Christian "love")
+
+### Enrichment Runner (`api/lib/enrichment-runner.js`)
+
+- Sliding window over document paragraphs
+- Dynamic window size via `api/lib/window-sizer.js` (fits under 8K KV budget)
+- Deterministic prompt blocks with MD5 hashing for vLLM prefix cache hits
+- Writes disambiguation + HyPE questions to `content_enrichment`
+
+### Pipeline Scheduler (`api/lib/pipeline-scheduler.js`)
+
+- Layer-aware job queue (base → object → enrichment)
+- Reads `layer_sync_state` per paragraph per layer
+- Schedules work based on dirty flags from pipeline invalidation
+
+### Sync Worker (`api/workers/unified-worker.js`)
+
+- Monitors `layer_sync_state` for dirty paragraphs
+- Pushes each layer to appropriate Meilisearch index
+- Maintains consistency across all three indexes
 
 ## Database Schema
 
-### docs table
+### sifter.db — docs table
 ```sql
-- id: INTEGER PRIMARY KEY
-- file_path: TEXT (relative to basePath)
-- file_hash: TEXT (hash of entire file - detects ANY change)
-- body_hash: TEXT (hash of body only - detects CONTENT change)
-- title, author, religion, collection, language, year
-- paragraph_count: INTEGER
-- slug: TEXT (URL-friendly identifier)
+id INTEGER PRIMARY KEY
+file_path TEXT           -- relative to basePath
+file_hash TEXT           -- hash of entire file (skip if unchanged)
+body_hash TEXT           -- hash of body only (metadata-only update if body unchanged)
+title, author, religion, collection, language, year
+paragraph_count INTEGER
+slug TEXT                -- URL-friendly identifier
 ```
 
-### Change Detection Strategy
+### sifter.db — content table
+```sql
+id TEXT PRIMARY KEY
+doc_id INTEGER           -- foreign key to docs
+paragraph_index INTEGER
+text TEXT                -- with sentence markers ⁅s1⁆...⁅/s1⁆
+content_hash TEXT
+heading TEXT
+blocktype TEXT           -- paragraph, verse, prayer, etc.
+```
+
+### sifter.db — content_objects table
+```sql
+content_id TEXT          -- foreign key to content
+object_pipeline_version TEXT
+objects_json TEXT        -- extracted entity/concept arrays
+objects_rendered TEXT    -- flattened string for Meilisearch
+UNIQUE(content_id, object_pipeline_version)
+```
+
+### sifter.db — content_enrichment table
+```sql
+content_id TEXT          -- foreign key to content
+task_mode TEXT           -- 'context' or 'hype'
+pipeline_version TEXT
+result_text TEXT
+UNIQUE(content_id, task_mode, pipeline_version)
+```
+
+### sifter.db — layer_sync_state table
+```sql
+content_id TEXT
+layer TEXT               -- 'base', 'object', 'enrichment'
+synced INTEGER           -- 0 = dirty, 1 = synced
+dirty_reason TEXT
+UNIQUE(content_id, layer)
+```
+
+### sifter.db — pipeline_versions table
+```sql
+pipeline_name TEXT
+version TEXT
+active INTEGER           -- only one active per pipeline
+invalidation_rules JSON
+UNIQUE(pipeline_name, version)
+```
+
+### sifter.db — pipeline_jobs table
+```sql
+id INTEGER PRIMARY KEY
+type TEXT
+doc_id INTEGER
+layer TEXT
+pipeline_version TEXT
+status TEXT              -- 'pending', 'running', 'done', 'failed'
+created_at TEXT
+UNIQUE(type, doc_id, layer, pipeline_version) -- deduplicates pending jobs
+```
+
+### embedding_cache.db — embedding_cache table
+```sql
+normalized_hash TEXT     -- hash of normalized paragraph text
+model TEXT               -- embedding model name
+embedding_dim INTEGER    -- 512
+version TEXT
+embedding BLOB           -- Float32Array, 512 dims, L2 normalized
+source_count INTEGER     -- how many paragraphs share this embedding
+```
+
+### graph.db — graph_entities table
+```sql
+id INTEGER PRIMARY KEY
+name TEXT
+canonical_name TEXT
+entity_type TEXT         -- person, place, concept, text, event, etc.
+religion TEXT            -- scoped per tradition
+mention_count INTEGER
+era TEXT
+description TEXT
+```
+
+### graph.db — graph_relations table
+```sql
+id INTEGER PRIMARY KEY
+source_entity_id INTEGER
+target_entity_id INTEGER
+relation_type TEXT
+weight REAL
+paragraph_id INTEGER
+doc_id INTEGER
+```
+
+## Change Detection Strategy
 
 The ingester uses two hashes for smart change detection:
 
 1. **`file_hash`**: SHA256 of entire file (frontmatter + body)
-   - If unchanged → skip entirely (no DB updates)
+   - If unchanged → skip entirely
 
-2. **`body_hash`**: SHA256 of body content only (after frontmatter)
-   - If file changed but body unchanged → metadata-only update
-   - Skips expensive AI segmentation for content
-   - Updates only the docs table metadata fields
+2. **`body_hash`**: SHA256 of body content only
+   - If file changed but body unchanged → metadata-only update, skip content re-processing
 
-This allows editing frontmatter (title, author, etc.) without re-processing content:
 ```
 Scenario: User edits document title in frontmatter
   file_hash: changed (file modified)
@@ -134,52 +293,12 @@ Scenario: User edits document title in frontmatter
   Result: UPDATE docs metadata, skip content re-processing
 ```
 
-### content table
-```sql
-- id: TEXT PRIMARY KEY
-- doc_id: INTEGER (foreign key to docs)
-- paragraph_index: INTEGER
-- text: TEXT (with sentence markers like ⁅s1⁆...⁅/s1⁆)
-- content_hash: TEXT
-- heading: TEXT (section heading if any)
-- blocktype: TEXT (paragraph, verse, prayer, etc.)
-- embedding: BLOB (vector embedding for semantic search)
-- embedding_model: TEXT (e.g., "text-embedding-3-large")
-- synced: INTEGER (0/1 - pushed to Meilisearch?)
-```
+## Infrastructure
 
-## Embeddings Strategy
-
-Embeddings are stored in SQLite `content.embedding` column, NOT generated on-the-fly.
-
-### Why store embeddings in SQLite?
-
-1. **Cost**: Embedding generation is expensive (OpenAI API calls)
-2. **Rebuild capability**: If Meilisearch is cleared/corrupted, we can re-index without regenerating embeddings
-3. **Consistency**: Same embeddings are always used for the same content
-4. **Quality**: We always use the best available model (currently `text-embedding-3-large` with 3072 dimensions)
-
-### Embedding flow
-
-Embeddings are generated **separately** from ingestion to decouple expensive API calls:
-
-```
-1. Ingestion: Parse/segment text → store in content table (NO embeddings yet)
-2. Embedding worker: Find unembedded paragraphs → generate via OpenAI → store in content.embedding
-3. Indexing: Read content + embeddings from SQLite → push to Meilisearch
-4. Rebuild: Read existing embeddings from SQLite → push to Meilisearch (no API calls)
-```
-
-This separation allows:
-- Fast ingestion without waiting for embedding API calls
-- Batch embedding generation for efficiency
-- Retry failed embeddings without re-ingesting
-
-### When embeddings are regenerated
-
-- Only when `content_hash` changes (text was modified)
-- Never on Meilisearch rebuild
-- Never on re-indexing unchanged content
+- **tower-nas** (App server): Xeon 80-core, 188GB RAM — API, Meilisearch, workers, Cloudflare tunnel
+- **boss** (AI server): Strix Halo + GPU — vLLM (Qwen3-32B-AWQ) for object extraction + enrichment
+- Servers communicate via Tailscale
+- Zero-downtime deploys via PM2 wait_ready + graceful reload
 
 ## Common Operations
 
@@ -188,20 +307,28 @@ This separation allows:
 node scripts/reingest-document.js <doc-id>
 ```
 
-### Re-ingest all documents missing content
+### Rebuild Meilisearch base layer from SQLite
 ```bash
-MEILISEARCH_ENABLED=false node scripts/reindex-missing-content.js
+sqlite3 data/sifter.db "UPDATE layer_sync_state SET synced = 0 WHERE layer = 'base';"
+pm2 restart siftersearch-worker
 ```
 
-### Rebuild Meilisearch from SQLite
+### Re-run object extraction for a document
 ```bash
-node scripts/rebuild-meilisearch-from-sqlite.js
+node scripts/run-object-extraction.js --doc-id <id>
+```
+
+### Re-run enrichment for a document
+```bash
+node scripts/run-enhancement.js --doc-id <id>
 ```
 
 ## Anti-Patterns (Don't Do This)
 
-1. **Don't store absolute file paths** - breaks portability
-2. **Don't pass raw text to indexer** - bypasses SQLite source of truth
-3. **Don't read files from indexer** - indexer only reads SQLite
-4. **Don't sync Meilisearch → SQLite** - data flows one direction only
-5. **Don't assume original file format** - content table has processed text
+1. **Don't store absolute file paths** — breaks portability
+2. **Don't pass raw text to indexer** — bypasses SQLite source of truth
+3. **Don't read files from indexer** — indexer only reads SQLite
+4. **Don't sync Meilisearch → SQLite** — data flows one direction only
+5. **Don't store embeddings in sifter.db** — use embedding_cache.db for deduplication
+6. **Don't merge entities across traditions** — entity resolution is religion-scoped
+7. **Don't use synced/enhanced_synced booleans** — use layer_sync_state table

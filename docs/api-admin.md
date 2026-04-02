@@ -495,6 +495,170 @@ Get file watcher status and statistics.
 
 ---
 
+## Graph API
+
+The Graph API exposes the entity/concept graph built by the object extraction layer. Entities are religion-scoped — merging is conservative and never crosses tradition boundaries.
+
+Graph data lives in `graph.db` (separate from sifter.db). These endpoints are read-only and do not require admin authentication unless otherwise noted.
+
+### GET /api/graph/stats
+
+Overview of entity and relation counts across all religions.
+
+**Response:**
+```json
+{
+  "religions": [
+    {
+      "religion": "Baha'i",
+      "entityCount": 1240,
+      "relationCount": 890,
+      "topEntities": ["Baháʼu'lláh", "ʻAbdu'l-Bahá", "Most Great Peace", "Kitáb-i-Aqdas", "Bahá'í Faith"]
+    },
+    {
+      "religion": "Islam",
+      "entityCount": 980,
+      "relationCount": 720,
+      "topEntities": ["Muhammad", "Quran", "Allah", "Mecca", "Medina"]
+    }
+  ]
+}
+```
+
+### GET /api/graph/:religion
+
+Get the entity graph for a specific religion — nodes and edges suitable for visualization.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| limit | integer | 100 | Max entities to return |
+| entityTypes | string | - | Comma-separated types to filter (e.g. `person,concept`) |
+
+**Response:**
+```json
+{
+  "nodes": [
+    {
+      "id": 42,
+      "name": "Baháʼu'lláh",
+      "type": "person",
+      "mentionCount": 4820,
+      "religion": "Baha'i"
+    }
+  ],
+  "edges": [
+    {
+      "source": 42,
+      "target": 87,
+      "type": "authored",
+      "weight": 1.0
+    }
+  ],
+  "stats": {
+    "totalEntities": 100,
+    "totalRelations": 83
+  }
+}
+```
+
+**Node fields:**
+| Field | Description |
+|-------|-------------|
+| `id` | Entity ID in graph.db |
+| `name` | Display name |
+| `type` | Entity type: `person`, `place`, `concept`, `text`, `event`, etc. |
+| `mentionCount` | Times mentioned across the corpus |
+| `religion` | Tradition this entity belongs to |
+
+**Edge fields:**
+| Field | Description |
+|-------|-------------|
+| `source` | Source entity ID |
+| `target` | Target entity ID |
+| `type` | Relation type (e.g. `authored`, `mentioned_in`, `related_to`) |
+| `weight` | Relation strength (0.0–1.0) |
+
+### GET /api/graph/:religion/entity/:id
+
+Get detailed information about a specific entity including connected entities, all relations, and source documents.
+
+**Response:**
+```json
+{
+  "entity": {
+    "id": 42,
+    "name": "Baháʼu'lláh",
+    "canonicalName": "Baháʼu'lláh",
+    "type": "person",
+    "religion": "Baha'i",
+    "mentionCount": 4820,
+    "era": "19th century",
+    "description": "Founder of the Bahá'í Faith"
+  },
+  "connectedEntities": [
+    {
+      "id": 87,
+      "name": "Kitáb-i-Aqdas",
+      "type": "text",
+      "religion": "Baha'i",
+      "mentionCount": 1200
+    }
+  ],
+  "relations": [
+    {
+      "source": 42,
+      "target": 87,
+      "type": "authored",
+      "weight": 1.0,
+      "paragraphId": 15023,
+      "docId": 112
+    }
+  ],
+  "sourceDocuments": [
+    { "docId": 112 }
+  ]
+}
+```
+
+Returns `null` (404) if entity ID does not exist.
+
+### GET /api/graph/search
+
+Search for entities by name across the graph.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| q | string | Search query (partial name match) |
+| religion | string | Filter by religion (optional) |
+
+**Example:**
+```bash
+GET /api/graph/search?q=Bah&religion=Baha%27i
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 42,
+    "name": "Baháʼu'lláh",
+    "canonicalName": "Baháʼu'lláh",
+    "type": "person",
+    "religion": "Baha'i",
+    "mentionCount": 4820,
+    "description": "Founder of the Bahá'í Faith"
+  }
+]
+```
+
+Results are ordered by `mention_count` descending. Returns up to 50 results.
+
+**Cross-religion search:** Omit the `religion` parameter to search across all traditions.
+
+---
+
 ## Error Responses
 
 All endpoints return consistent error format:
