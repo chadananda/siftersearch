@@ -174,8 +174,14 @@ async function runDisambiguation(doc, batchLimit) {
     if (parsed) {
       await content.updateContextOnly(para.id, parsed, 'local-qwen3-32b');
       done++;
+    } else if (response && (response.trim() === 'NONE' || response.includes('NONE'))) {
+      // NONE = nothing to disambiguate, mark as done with empty context
+      await content.updateContextOnly(para.id, '', 'local-qwen3-32b');
+      done++;
     } else {
       failed++;
+      // Log first few failures for debugging
+      if (failed <= 3) console.log(`  ⚠ Parse failed, raw: ${JSON.stringify((response || '').slice(0, 100))}`);
     }
 
     // Progress every 10 — include timing stats
