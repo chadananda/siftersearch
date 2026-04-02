@@ -35,18 +35,16 @@ describe('Disambiguation Prompt', () => {
 
     const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex);
 
-    // System prompt includes doc metadata
+    // System prompt includes doc metadata (static, cached by vLLM)
     expect(systemPrompt).toContain('Kitab-i-Iqan');
     expect(systemPrompt).toContain("Baha'u'llah");
     // System prompt includes entities
     expect(systemPrompt).toContain("Baha'u'llah (1817-1892)");
     expect(systemPrompt).toContain('progressive revelation');
-    // Window includes preceding paragraphs (at least ~20)
-    expect(systemPrompt).toContain('[P');
-    expect(systemPrompt).toContain('[TARGET]');
-    // Target paragraph is included
-    expect(systemPrompt).toContain('Paragraph 22 text content here');
-    // User prompt asks to disambiguate
+    // User prompt includes sliding window + target (dynamic, changes per paragraph)
+    expect(userPrompt).toContain('[P');
+    expect(userPrompt).toContain('[TARGET]');
+    expect(userPrompt).toContain('Paragraph 22 text content here');
     expect(userPrompt).toContain('Disambiguate');
   });
 
@@ -59,13 +57,13 @@ describe('Disambiguation Prompt', () => {
       text: `Short paragraph ${i}.`
     }));
 
-    const { systemPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, 3);
+    const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entities, paragraphs, 3);
 
-    // All available preceding paragraphs should be included
-    expect(systemPrompt).toContain('Short paragraph 0');
-    expect(systemPrompt).toContain('Short paragraph 1');
-    expect(systemPrompt).toContain('Short paragraph 2');
-    expect(systemPrompt).toContain('[TARGET]');
+    // All available preceding paragraphs should be in user prompt (dynamic window)
+    expect(userPrompt).toContain('Short paragraph 0');
+    expect(userPrompt).toContain('Short paragraph 1');
+    expect(userPrompt).toContain('Short paragraph 2');
+    expect(userPrompt).toContain('[TARGET]');
   });
 
   it('should instruct to draw only from document text, not general knowledge', async () => {

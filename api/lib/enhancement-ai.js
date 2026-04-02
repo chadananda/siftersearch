@@ -17,34 +17,26 @@ const WINDOW_SIZE = 20;
  * Build system + user prompts for paragraph disambiguation.
  * Includes ~20 preceding paragraphs as context window, document metadata, and entities.
  */
-export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
+/**
+ * Build the STATIC system prompt for a document (cached across all paragraphs).
+ * Call once per document, reuse for every paragraph.
+ */
+export function buildDisambiguationSystemPrompt(doc, entities) {
   const { title, author, religion, collection, year, description, language } = doc;
-  // Build book metadata block — gives the LLM essential context about what this work IS
   const metaLines = [`"${title}" by ${author}`, `${religion} / ${collection}`];
   if (year) metaLines.push(`Year: ${year}`);
   if (language && language !== 'en') metaLines.push(`Language: ${language}`);
   if (description) metaLines.push(`About: ${description.slice(0, 300)}`);
   const metaBlock = metaLines.join('\n');
-  // Build entity lines
   const entityLines = [];
   if (entities?.people?.length) entityLines.push(`People: ${entities.people.join(', ')}`);
   if (entities?.organizations?.length) entityLines.push(`Organizations: ${entities.organizations.join(', ')}`);
   if (entities?.concepts?.length) entityLines.push(`Concepts: ${entities.concepts.join(', ')}`);
   if (entities?.time_periods?.length) entityLines.push(`Time periods: ${entities.time_periods.join(', ')}`);
-  const entitySection = entityLines.length
-    ? `\nEntities:\n${entityLines.join('\n')}`
-    : '';
-  // Collect preceding paragraphs sorted by index, up to WINDOW_SIZE
-  const preceding = paragraphs
-    .filter(p => p.paragraph_index < targetIndex)
-    .sort((a, b) => a.paragraph_index - b.paragraph_index)
-    .slice(-WINDOW_SIZE);
-  const targetParagraph = paragraphs.find(p => p.paragraph_index === targetIndex)
-    || { text: '' };
-  // Build window lines
-  const windowLines = preceding.map((p, i) => `[P${i + 1}] ${p.text}`).join('\n');
-  const targetLine = `[TARGET] ${targetParagraph.text}`;
-  const systemPrompt = `Disambiguate references in sacred texts. Output ONLY key→value pairs.
+  const entitySection = entityLines.length ? `\nEntities:\n${entityLines.join('\n')}` : '';
+
+  // This prompt is IDENTICAL for every paragraph in the document → prefix cached by vLLM
+  return `Disambiguate references in sacred texts. Output ONLY key→value pairs.
 
 ${metaBlock}${entitySection}
 
@@ -53,12 +45,28 @@ EXAMPLE: He→Mullá Husayn | the city→Shíráz, Iran | dawn→May 23, 1844
 
 Resolve: pronouns, conceptual refs (this teaching, that station), temporal, spatial, textual refs.
 Use ONLY document text. No general knowledge. No prose. No explanation. Just key→value pairs.
-If nothing needs disambiguation, output: NONE
+If nothing needs disambiguation, output: NONE`;
+}
 
-${windowLines}
+/**
+ * Build the per-paragraph user prompt (window + target).
+ * The system prompt stays constant → vLLM prefix caches it.
+ */
+export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
+  // Collect preceding paragraphs for context window
+  const preceding = paragraphs
+    .filter(p => p.paragraph_index < targetIndex)
+    .sort((a, b) => a.paragraph_index - b.paragraph_index)
+    .slice(-WINDOW_SIZE);
+  const targetParagraph = paragraphs.find(p => p.paragraph_index === targetIndex)
+    || { text: '' };
+  const windowLines = preceding.map((p, i) => `[P${i + 1}] ${p.text}`).join('\n');
+  const targetLine = `[TARGET] ${targetParagraph.text}`;
 
-${targetLine}`;
-  const userPrompt = `Disambiguate [TARGET]:`;
+  // System prompt is static per document (built once, cached by vLLM)
+  const systemPrompt = buildDisambiguationSystemPrompt(doc, entities);
+  // User prompt contains the sliding window — changes each call
+  const userPrompt = `${windowLines}\n\n${targetLine}\n\nDisambiguate [TARGET]:`;
   return { systemPrompt, userPrompt };
 }
 
@@ -203,12 +211,19 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
     }
     // Log usage for tracking (cost = 0 for local)
     const usage = data.usage || {};
+    const cachedTokens = usage.prompt_tokens_details?.cached_tokens || 0;
+    const totalPrompt = usage.prompt_tokens || 0;
     logger.debug({
       model,
-      promptTokens: usage.prompt_tokens,
+      promptTokens: totalPrompt,
+      cachedTokens,
       completionTokens: usage.completion_tokens,
-      cacheHit: usage.prompt_tokens_details?.cached_tokens > 0
+      cacheHitPct: totalPrompt > 0 ? Math.round(cachedTokens / totalPrompt * 100) : 0
     }, 'Local LLM call');
+    // Return content + usage metadata
+    if (options.returnUsage) {
+      return { content: content || null, usage: { promptTokens: totalPrompt, cachedTokens, completionTokens: usage.completion_tokens } };
+    }
     return content || null;
   } catch (err) {
     logger.warn({ err: err.message, endpoint }, 'Local LLM call error');

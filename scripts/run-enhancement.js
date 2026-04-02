@@ -157,9 +157,13 @@ async function runDisambiguation(doc, batchLimit) {
   let done = 0;
   let failed = 0;
 
+  let totalCached = 0, totalPrompt = 0;
   for (const para of paras) {
     const { systemPrompt, userPrompt } = buildDisambiguationPrompt(doc, entityData, allParas, para.paragraph_index);
-    const response = await callLocalLLM(systemPrompt, userPrompt, { maxTokens: 80, temperature: 0.2 });
+    const result = await callLocalLLM(systemPrompt, userPrompt, { maxTokens: 80, temperature: 0.2, returnUsage: true });
+    const response = result?.content ?? result;
+    const usage = result?.usage;
+    if (usage) { totalCached += usage.cachedTokens || 0; totalPrompt += usage.promptTokens || 0; }
     const parsed = parseDisambiguationResponse(response);
 
     if (parsed) {
@@ -169,11 +173,14 @@ async function runDisambiguation(doc, batchLimit) {
       failed++;
     }
 
-    // Progress every 10
+    // Progress every 10 — include cache hit rate
     if ((done + failed) % 10 === 0) {
-      process.stdout.write(`  ... ${done + failed}/${paras.length} (${failed} failed)\r`);
+      const cachePct = totalPrompt > 0 ? Math.round(totalCached / totalPrompt * 100) : 0;
+      process.stdout.write(`  ... ${done + failed}/${paras.length} (${failed} failed, ${cachePct}% cache)\r`);
     }
   }
+  const cachePct = totalPrompt > 0 ? Math.round(totalCached / totalPrompt * 100) : 0;
+  console.log(`  ✓ Disambiguated ${done}/${paras.length} (${failed} failed, ${cachePct}% prefix cache)            `);
   console.log(`  ✓ Disambiguated ${done}/${paras.length} (${failed} failed)            `);
 }
 
