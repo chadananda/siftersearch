@@ -721,9 +721,10 @@ async function getDirtyParagraphsBatch(limit = 50) {
  * Get dirty paragraphs for a specific document.
  */
 async function getDirtyParagraphsForDoc(docId, limit = 500) {
+  // embedding column excluded — worker reads 512-dim vectors from embedding_cache.db
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
-           embedding, embedding_model, content_hash, normalized_hash,
+           embedding_model, content_hash, normalized_hash,
            translation, translation_segments, context
     FROM content
     WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL
