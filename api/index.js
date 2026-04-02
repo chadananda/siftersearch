@@ -1,7 +1,8 @@
 /**
  * SifterSearch API Entry Point
  *
- * Validates environment and starts the Fastify server.
+ * Validates environment, starts the Fastify server, and signals PM2
+ * readiness for zero-downtime reloads.
  * Run with: node api/index.js
  */
 

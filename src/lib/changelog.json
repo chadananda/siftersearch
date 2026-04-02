@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-02T18:00:39.784Z",
+  "generated": "2026-04-02T18:06:40.748Z",
   "entries": [
+    {
+      "hash": "de002b1",
+      "date": "2026-04-02",
+      "type": "Test",
+      "description": "Version bump to verify zero-downtime deploy",
+      "scope": null
+    },
     {
       "hash": "5f9157c",
       "date": "2026-04-02",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Translation service now reads from LibSQL, not Meilisearch",
       "scope": null
-    },
-    {
-      "hash": "fb1308b",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Resegment endpoint now uses reingest from source file",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-02": [
+      {
+        "hash": "de002b1",
+        "date": "2026-04-02",
+        "type": "Test",
+        "description": "Version bump to verify zero-downtime deploy",
+        "scope": null
+      },
       {
         "hash": "5f9157c",
         "date": "2026-04-02",
@@ -7045,13 +7052,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Translation service now reads from LibSQL, not Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "fb1308b",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Resegment endpoint now uses reingest from source file",
         "scope": null
       }
     ]
