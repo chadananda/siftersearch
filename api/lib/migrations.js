@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 45;
+const CURRENT_VERSION = 46;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1783,6 +1783,30 @@ const migrations = {
     await query("UPDATE docs SET religion = 'Buddhist' WHERE religion = 'Buddhism'");
     await query("UPDATE library_nodes SET name = 'Buddhist' WHERE node_type = 'religion' AND name = 'Buddhism'");
     logger.info('Migration 45 complete: Buddhism renamed to Buddhist');
+  },
+  // Version 46: Add partial indexes for embedding migration and worker queries
+  // These enable fast lookups without full table scans on multi-million row tables
+  46: async () => {
+    logger.info('Starting migration 46: Content table indexes');
+    // Check which columns exist (test DBs may not have all columns)
+    const cols = (await queryAll(`PRAGMA table_info(content)`)).map(c => c.name);
+    if (cols.includes('embedding')) {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_has_embedding
+        ON content(rowid) WHERE embedding IS NOT NULL AND deleted_at IS NULL`);
+    }
+    if (cols.includes('synced')) {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_unsynced
+        ON content(synced) WHERE synced = 0 AND deleted_at IS NULL`);
+    }
+    if (cols.includes('enhanced_synced')) {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_unsynced_enhanced
+        ON content(enhanced_synced) WHERE enhanced_synced = 0 AND deleted_at IS NULL`);
+    }
+    if (cols.includes('normalized_hash')) {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_normalized_hash
+        ON content(normalized_hash) WHERE normalized_hash IS NOT NULL`);
+    }
+    logger.info('Migration 46 complete: Content table indexes added');
   },
 };
 

@@ -2,9 +2,11 @@
 /**
  * Migrate Embeddings to Cache
  *
- * Reads distinct (normalized_hash, embedding_model) pairs from sifter.db content table,
- * truncates each 3072-dim embedding to 512-dim (L2-normalized), and inserts into
- * the deduplicated embedding_cache.db.
+ * Reads content rows with 3072-dim embeddings from sifter.db,
+ * deduplicates by (normalized_hash, embedding_model), truncates to 512-dim
+ * (L2-normalized), and inserts into embedding_cache.db.
+ *
+ * Uses cursor-based iteration (rowid > lastId) instead of OFFSET for O(n) performance.
  *
  * Usage:
  *   node scripts/migrate-embeddings-to-cache.js
@@ -33,8 +35,8 @@ import {
   closeEmbeddingCache,
 } from '../api/lib/embedding-cache.js';
 
-const BATCH_SIZE = 1000;
-const SOURCE_BYTES = 3072 * 4;
+const BATCH_SIZE = 5000;
+const SOURCE_BYTES = 3072 * 4; // 12288
 const TARGET_DIM = 512;
 const CACHE_DB_PATH = join(PROJECT_ROOT, 'data', 'embedding_cache.db');
 
@@ -62,74 +64,109 @@ function blobToFloat32Array(blob) {
   return new Float32Array(aligned.buffer, aligned.byteOffset, SOURCE_BYTES / 4);
 }
 
-function countSourceRows(sourceDb) {
-  return Number(sourceDb.prepare(`SELECT COUNT(*) as count FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL AND LENGTH(embedding) = ${SOURCE_BYTES}`).get().count);
-}
-
-function countDistinctHashes(sourceDb) {
-  return Number(sourceDb.prepare(`SELECT COUNT(*) as count FROM (SELECT normalized_hash, embedding_model FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL AND LENGTH(embedding) = ${SOURCE_BYTES} GROUP BY normalized_hash, embedding_model)`).get().count);
-}
-
 async function runMigration(sourceDb) {
   const startTime = Date.now();
   console.log('=== Migrate Embeddings to Cache ===');
   if (dryRun) console.log('DRY RUN — no writes to embedding_cache.db\n');
 
-  const totalRows = countSourceRows(sourceDb);
-  const totalDistinct = countDistinctHashes(sourceDb);
-  console.log(`Source rows with 3072-dim embeddings: ${totalRows.toLocaleString()}`);
-  console.log(`Distinct (hash, model) groups:        ${totalDistinct.toLocaleString()}`);
-  console.log(`Dedup ratio: ${totalRows > 0 ? (totalRows / totalDistinct).toFixed(2) : 'N/A'}x\n`);
-
   if (!dryRun) await initEmbeddingCache(CACHE_DB_PATH);
   const cacheCountBefore = dryRun ? 0 : await getEmbeddingCount();
   if (!dryRun) console.log(`Cache entries before migration: ${cacheCountBefore.toLocaleString()}\n`);
 
+  // Scan ALL rows by rowid (no WHERE on embedding — avoids full BLOB scan).
+  // Skip nulls and wrong-size blobs in JS. This is O(n) sequential scan.
+  const seen = new Set();
   let processed = 0;
-  let errors = 0;
+  let skippedDupes = 0;
+  let skippedBadBlob = 0;
+  let skippedNull = 0;
+  let scanned = 0;
+  let lastRowId = 0;
   let batchNum = 0;
-  let offset = 0;
 
-  const batchStmt = sourceDb.prepare(`SELECT normalized_hash, embedding_model, embedding FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL AND LENGTH(embedding) = ${SOURCE_BYTES} GROUP BY normalized_hash, embedding_model LIMIT ${BATCH_SIZE} OFFSET ?`);
+  const fetchStmt = sourceDb.prepare(`
+    SELECT rowid, normalized_hash, embedding_model, embedding
+    FROM content
+    WHERE rowid > ? AND deleted_at IS NULL
+    ORDER BY rowid
+    LIMIT ?
+  `);
 
   while (true) {
-    const rows = batchStmt.all(offset);
+    const rows = fetchStmt.all(lastRowId, BATCH_SIZE);
     if (!rows.length) break;
     batchNum++;
+
     const entries = [];
     for (const row of rows) {
-      const floats = blobToFloat32Array(row.embedding);
-      if (!floats) { errors++; continue; }
-      entries.push({ normalizedHash: row.normalized_hash, model: row.embedding_model, dim: TARGET_DIM, version: 'v1', blob: Buffer.from(truncateAndNormalize512(floats).buffer) });
+      scanned++;
+      lastRowId = row.rowid;
+
+      // Skip rows without embeddings (most rows)
+      if (!row.embedding) { skippedNull++; continue; }
+
+      const key = `${row.normalized_hash}\0${row.embedding_model}`;
+      if (seen.has(key)) { skippedDupes++; continue; }
+      seen.add(key);
+
+      const buf = Buffer.isBuffer(row.embedding) ? row.embedding : null;
+      if (!buf || buf.length !== SOURCE_BYTES) { skippedBadBlob++; continue; }
+
+      const aligned = Buffer.alloc(SOURCE_BYTES);
+      buf.copy(aligned);
+      const floats = new Float32Array(aligned.buffer, aligned.byteOffset, 3072);
+      const truncated = truncateAndNormalize512(floats);
+
+      entries.push({
+        normalizedHash: row.normalized_hash,
+        model: row.embedding_model,
+        dim: TARGET_DIM,
+        version: 'v1',
+        blob: Buffer.from(truncated.buffer),
+      });
     }
+
     if (!dryRun && entries.length > 0) await batchInsertEmbeddings(entries);
     processed += entries.length;
-    offset += rows.length;
-    process.stdout.write(`  Batch ${batchNum}: processed ${processed.toLocaleString()} / ~${totalDistinct.toLocaleString()} distinct (${errors} errors)\r`);
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+    process.stdout.write(
+      `  Batch ${batchNum}: scanned ${scanned.toLocaleString()}, ` +
+      `migrated ${processed.toLocaleString()}, dupes ${skippedDupes.toLocaleString()}, ` +
+      `null ${skippedNull.toLocaleString()}, bad ${skippedBadBlob.toLocaleString()}, ${elapsed}s\r`
+    );
+
     if (rows.length < BATCH_SIZE) break;
   }
 
-  console.log();
+  console.log(); // clear \r line
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const cacheCountAfter = dryRun ? 0 : await getEmbeddingCount();
 
   console.log('\n=== Summary ===');
-  console.log(`Distinct hashes migrated: ${processed.toLocaleString()}`);
-  console.log(`Errors (bad blobs):       ${errors}`);
+  console.log(`Rows scanned:             ${scanned.toLocaleString()}`);
+  console.log(`Null embeddings:          ${skippedNull.toLocaleString()}`);
+  console.log(`Unique hashes migrated:   ${processed.toLocaleString()}`);
+  console.log(`Duplicates skipped:       ${skippedDupes.toLocaleString()}`);
+  console.log(`Bad/wrong-size blobs:     ${skippedBadBlob.toLocaleString()}`);
   if (!dryRun) {
     console.log(`Cache entries before:     ${cacheCountBefore.toLocaleString()}`);
     console.log(`Cache entries after:      ${cacheCountAfter.toLocaleString()}`);
     console.log(`New entries inserted:     ${(cacheCountAfter - cacheCountBefore).toLocaleString()}`);
   }
-  console.log(`Total source rows:        ${totalRows.toLocaleString()}`);
-  console.log(`Dedup ratio:              ${processed > 0 ? (totalRows / processed).toFixed(2) : 'N/A'}x`);
+  console.log(`Dedup ratio:              ${processed > 0 ? (scanned / processed).toFixed(2) : 'N/A'}x`);
   console.log(`Time elapsed:             ${elapsed}s`);
 }
 
 async function runVerify(sourceDb) {
   console.log('=== Verify: Spot-checking 100 random hashes ===\n');
   await initEmbeddingCache(CACHE_DB_PATH);
-  const rows = sourceDb.prepare(`SELECT normalized_hash, embedding_model FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL AND LENGTH(embedding) = ${SOURCE_BYTES} GROUP BY normalized_hash, embedding_model ORDER BY RANDOM() LIMIT 100`).all();
+  const rows = sourceDb.prepare(
+    `SELECT normalized_hash, embedding_model FROM content
+     WHERE embedding IS NOT NULL AND deleted_at IS NULL
+     GROUP BY normalized_hash, embedding_model
+     ORDER BY RANDOM() LIMIT 100`
+  ).all();
   if (!rows.length) { console.log('No rows found to verify.'); return; }
   let found = 0;
   let missing = 0;

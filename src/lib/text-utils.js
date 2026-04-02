@@ -24,7 +24,7 @@ export function toCurlyQuotes(text) {
   let prevChar = '';
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    const isStartOrSpace = i === 0 || /\s/.test(prevChar) || /[(\[{\u2014-]/.test(prevChar);
+    const isStartOrSpace = i === 0 || /\s/.test(prevChar) || /[([{\u2014-]/.test(prevChar);
     if (ch === '"') {
       result += isStartOrSpace ? '\u201C' : '\u201D';
     } else if (ch === "'") {
