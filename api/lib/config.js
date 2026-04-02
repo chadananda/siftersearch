@@ -138,10 +138,10 @@ const aiConfig = {
     dimensions: getInt('EMBEDDING_DIMENSIONS', 512)
   },
 
-  // Segmentation (Arabic/Farsi AI segmentation via LM Studio)
+  // Segmentation (Arabic/Farsi/Hebrew AI segmentation via local vLLM)
   segmentation: {
     provider: get('SEGMENTATION_LLM_PROVIDER', 'lmstudio'),
-    model: get('SEGMENTATION_LLM_MODEL', 'qwen2.5-72b-instruct'),
+    model: get('SEGMENTATION_LLM_MODEL', 'Qwen/Qwen3-32B-AWQ'),
     temperature: getFloat('SEGMENTATION_LLM_TEMPERATURE', 0.1),
     maxTokens: getInt('SEGMENTATION_LLM_MAX_TOKENS', 16000),
   },
@@ -149,7 +149,7 @@ const aiConfig = {
   // Provider endpoints
   endpoints: {
     ollama: get('OLLAMA_HOST', 'http://localhost:11434'),
-    lmstudio: get('LMSTUDIO_HOST', 'http://100.103.78.63:1234'),
+    lmstudio: get('LMSTUDIO_HOST', (() => { const llm = get('LOCAL_LLM', 'http://localhost:8000/v1'); return llm.endsWith('/v1') ? llm.slice(0, -3) : llm; })()),
     openai: 'https://api.openai.com/v1',
     anthropic: 'https://api.anthropic.com'
   }
