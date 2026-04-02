@@ -1,6 +1,48 @@
 {
-  "generated": "2026-03-31T16:37:41.103Z",
+  "generated": "2026-04-02T17:50:26.037Z",
   "entries": [
+    {
+      "hash": "26b07c7",
+      "date": "2026-04-02",
+      "type": "Fixed",
+      "description": "NONE is success not failure, dynamic window, log parse failures",
+      "scope": null
+    },
+    {
+      "hash": "b681d0c",
+      "date": "2026-04-02",
+      "type": "Fixed",
+      "description": "Dynamic window size to stay under 8K token limit, log 400 errors",
+      "scope": null
+    },
+    {
+      "hash": "805b48b",
+      "date": "2026-03-31",
+      "type": "Fixed",
+      "description": "Summary should BE the answer, not describe it",
+      "scope": null
+    },
+    {
+      "hash": "104deab",
+      "date": "2026-03-31",
+      "type": "Other",
+      "description": "Add embedder config verification on startup",
+      "scope": null
+    },
+    {
+      "hash": "3490441",
+      "date": "2026-03-31",
+      "type": "Fixed",
+      "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
+      "scope": null
+    },
+    {
+      "hash": "e979eea",
+      "date": "2026-03-31",
+      "type": "Fixed",
+      "description": "Aggressive <think> tag stripping for Qwen3 responses",
+      "scope": null
+    },
     {
       "hash": "dd8e368",
       "date": "2026-03-31",
@@ -3458,52 +3500,54 @@
       "type": "New",
       "description": "Add admin API endpoints for document management",
       "scope": null
-    },
-    {
-      "hash": "0c12b1b",
-      "date": "2026-01-03",
-      "type": "Chore",
-      "description": "Delete one-time migration scripts",
-      "scope": null
-    },
-    {
-      "hash": "539b7f8",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Use gradient highlight to prevent line overlap",
-      "scope": null
-    },
-    {
-      "hash": "893d0a2",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Remove box-shadow from segment highlights to prevent line overlap",
-      "scope": null
-    },
-    {
-      "hash": "452625a",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Remove padding/margin from segment-phrase for tighter highlights",
-      "scope": null
-    },
-    {
-      "hash": "50c6ad9",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Prevent highlight overlap with box-decoration-break",
-      "scope": null
-    },
-    {
-      "hash": "202938d",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Adjust segment highlight height to match line-height",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-02": [
+      {
+        "hash": "26b07c7",
+        "date": "2026-04-02",
+        "type": "Fixed",
+        "description": "NONE is success not failure, dynamic window, log parse failures",
+        "scope": null
+      },
+      {
+        "hash": "b681d0c",
+        "date": "2026-04-02",
+        "type": "Fixed",
+        "description": "Dynamic window size to stay under 8K token limit, log 400 errors",
+        "scope": null
+      }
+    ],
     "2026-03-31": [
+      {
+        "hash": "805b48b",
+        "date": "2026-03-31",
+        "type": "Fixed",
+        "description": "Summary should BE the answer, not describe it",
+        "scope": null
+      },
+      {
+        "hash": "104deab",
+        "date": "2026-03-31",
+        "type": "Other",
+        "description": "Add embedder config verification on startup",
+        "scope": null
+      },
+      {
+        "hash": "3490441",
+        "date": "2026-03-31",
+        "type": "Fixed",
+        "description": "Skip auth for health endpoint (Fastify hook applies to all routes)",
+        "scope": null
+      },
+      {
+        "hash": "e979eea",
+        "date": "2026-03-31",
+        "type": "Fixed",
+        "description": "Aggressive <think> tag stripping for Qwen3 responses",
+        "scope": null
+      },
       {
         "hash": "dd8e368",
         "date": "2026-03-31",
@@ -7008,48 +7052,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add admin API endpoints for document management",
-        "scope": null
-      },
-      {
-        "hash": "0c12b1b",
-        "date": "2026-01-03",
-        "type": "Chore",
-        "description": "Delete one-time migration scripts",
-        "scope": null
-      },
-      {
-        "hash": "539b7f8",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Use gradient highlight to prevent line overlap",
-        "scope": null
-      },
-      {
-        "hash": "893d0a2",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Remove box-shadow from segment highlights to prevent line overlap",
-        "scope": null
-      },
-      {
-        "hash": "452625a",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Remove padding/margin from segment-phrase for tighter highlights",
-        "scope": null
-      },
-      {
-        "hash": "50c6ad9",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Prevent highlight overlap with box-decoration-break",
-        "scope": null
-      },
-      {
-        "hash": "202938d",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Adjust segment highlight height to match line-height",
         "scope": null
       }
     ]

@@ -56,9 +56,11 @@ npm run build   # Build (must pass)
 
 ### Server Deployment
 
+**Production server:** `tower-nas` (Dell Xeon 80-core, 188GB RAM) via Tailscale
+
 ```bash
 # SSH to server
-ssh chad@boss
+ssh chad@tower-nas
 
 # Application directory
 cd ~/sifter/siftersearch
@@ -79,4 +81,17 @@ pm2 list
 - `siftersearch-updater` - Auto-update service
 - `cloudflared-tunnel` - Cloudflare tunnel
 
+**External Services:**
+- `meilisearch` - Runs as systemd user service (not PM2)
+- `dropbox` - Runs as systemd user service, syncs to `/tank/dropbox`
+
 **Database:** `~/sifter/siftersearch/data/sifter.db`
+
+**Storage Layout:**
+- `/tank/dropbox/` - Dropbox sync (symlinked from `~/Dropbox`), includes Ocean Library
+- `/fast/` - NVMe+SSD ZFS pool for indexes and databases
+- `/tank/` - 20TB ZFS pool for bulk storage and backups
+
+**AI Server:** `boss` (Strix Halo, 128GB + GPU) — runs vLLM only, accessed via Tailscale
+
+> Full migration guide: [docs/server-migration.md](docs/server-migration.md)
