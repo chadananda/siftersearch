@@ -145,7 +145,39 @@
     { tier: 4, num: 117, religion: 'Sikh',        title: 'Encyclopedia of Sikhism (4 vols)', author: 'ed. Harbans Singh (Punjabi University, 1992–1998)', why: 'The most comprehensive reference work on Sikhism ever compiled.' },
     { tier: 4, num: 118, religion: 'Sikh',        title: 'Guru Granth Sahib: Canon, Meaning, and Authority', author: 'Pashaura Singh (Oxford, 2000)', why: 'Modern scholarly study of the formation and authority of the Sikh scripture.' },
     { tier: 4, num: 119, religion: 'Jewish',      title: 'Major Trends in Jewish Mysticism', author: 'Gershom Scholem (Schocken, 1941)', why: 'Founded the modern academic study of Kabbalah. Still indispensable.' },
+    // Additional Zoroastrian Yasna/Gathas translations
+    { tier: 2, num: 120, religion: 'Zoroastrian', title: 'The Gathas of Zarathustra', author: 'tr. Stanley Insler (Brill, 1975)', why: 'The critical philological edition of the Gathas with exhaustive linguistic commentary. Insler\'s work is the benchmark for all subsequent Gathic scholarship.' },
+    { tier: 2, num: 121, religion: 'Zoroastrian', title: 'The Hymns of Zoroaster', author: 'tr. M.L. West (Oxford, 2010)', why: 'Accessible modern translation by one of the greatest classicists. Places the Gathas in their Indo-Iranian poetic context alongside Vedic hymns.' },
+    { tier: 3, num: 122, religion: 'Zoroastrian', title: 'The Divine Songs of Zarathushtra', author: 'tr. Irach J.S. Taraporewala (1951)', why: 'Important Parsi scholarly translation with Avestan text and detailed philological notes. Represents the traditional Parsi interpretive tradition.' },
+    { tier: 3, num: 123, religion: 'Zoroastrian', title: 'The Gathas: The Hymns of Zarathushtra', author: 'tr. Piloo Nanavutty (1999)', why: 'Readable modern translation from within the Zoroastrian community. Valuable for its devotional perspective alongside scholarly accuracy.' },
+    { tier: 3, num: 124, religion: 'Zoroastrian', title: 'The Zend-Avesta Part III: The Yasna, Visparad, Afrinagan, Gahs, and Miscellaneous Fragments', author: 'tr. L.H. Mills (SBE vol. 31, 1887)', why: 'The complete Yasna in English — still the only full translation of the entire liturgy including non-Gathic portions. Essential despite its age.' },
   ];
+
+  /**
+   * Build an Amazon search URL from title + author.
+   * Keeps only the main title words and primary author/translator name.
+   */
+  function amazonSearchUrl(title, author) {
+    // Strip parenthetical info from title: "(Majjhima Nikaya)" etc.
+    const cleanTitle = title
+      .replace(/\(.*?\)/g, '')
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Extract primary author name — first name before comma, "tr." prefix, parenthetical, "&"
+    const cleanAuthor = author
+      .replace(/^tr\.\s*/i, '')
+      .replace(/^ed\.\s*/i, '')
+      .split(/[,&(]/)[0]
+      .replace(/\(.*?\)/g, '')
+      .replace(/[^\w\s.]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const query = `${cleanTitle} ${cleanAuthor}`.trim().replace(/\s+/g, '+');
+    return `https://www.amazon.com/s?k=${encodeURIComponent(query).replace(/%2B/g, '+')}`;
+  }
 
   // All unique religions in sorted order
   const ALL_RELIGIONS = [...new Set(ALL_ENTRIES.map(e => e.religion))].sort();
@@ -326,12 +358,30 @@
                   <span class="entry-title">{entry.title}</span>
                   <span class="entry-author">{entry.author}</span>
                 </div>
+                <a
+                  class="amazon-link"
+                  href={amazonSearchUrl(entry.title, entry.author)}
+                  target="_blank"
+                  rel="noopener"
+                  title="Find on Amazon"
+                  onclick={(e) => e.stopPropagation()}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                </a>
                 <span class="expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
               </button>
               {#if expanded}
                 <div class="entry-why">
                   <span class="why-label">Why essential:</span>
                   {entry.why}
+                  <a
+                    class="amazon-text-link"
+                    href={amazonSearchUrl(entry.title, entry.author)}
+                    target="_blank"
+                    rel="noopener"
+                  >Buy on Amazon &rarr;</a>
                 </div>
               {/if}
             </div>
@@ -635,6 +685,37 @@
     font-weight: 600;
     color: var(--text-primary);
     margin-right: 0.375rem;
+  }
+
+  /* Amazon link — inline cart icon next to each entry */
+  .amazon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.375rem;
+    color: var(--text-muted);
+    transition: color 0.15s, background 0.15s;
+  }
+  .amazon-link:hover {
+    color: #ff9900;
+    background: #ff990015;
+  }
+
+  /* Amazon text link in expanded section */
+  .amazon-text-link {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ff9900;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .amazon-text-link:hover {
+    text-decoration: underline;
   }
 
   /* Empty state */
