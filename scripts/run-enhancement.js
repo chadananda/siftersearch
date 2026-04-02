@@ -20,7 +20,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll } from '../api/lib/db.js';
 import { content } from '../api/lib/content.js';
-import { callLocalLLM, localLLMHealthCheck, buildDisambiguationPrompt, buildHyPEPrompt, buildEntityPrompt, parseDisambiguationResponse, parseHyPEResponse, parseEntityResponse } from '../api/lib/enhancement-ai.js';
+import { callLocalLLM, localLLMHealthCheck, buildJumpingWindow, buildDisambiguationUserPrompt, buildHyPEUserPrompt, buildDisambiguationPrompt, buildHyPEPrompt, buildEntityPrompt, parseDisambiguationResponse, parseHyPEResponse, parseEntityResponse } from '../api/lib/enhancement-ai.js';
 import { logger } from '../api/lib/logger.js';
 
 // Priority document IDs — can be overridden with --collection flag

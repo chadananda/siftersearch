@@ -18,10 +18,33 @@ const WINDOW_SIZE = 20;
  * Includes ~20 preceding paragraphs as context window, document metadata, and entities.
  */
 /**
- * Build the STATIC system prompt for a document (cached across all paragraphs).
- * Call once per document, reuse for every paragraph.
+ * Build a JUMPING WINDOW for disambiguation.
+ *
+ * Strategy: Load N paragraphs into the system prompt (cached by vLLM's KV cache).
+ * Disambiguate the BACK HALF of the window (paragraphs that have full preceding context).
+ * Then JUMP: next window starts from the midpoint of the current window.
+ *
+ * For a window of 20 paragraphs:
+ *   Window 1: [P1-P20] → disambiguate P11-P20 (10 calls, same prefix)
+ *   Window 2: [P11-P30] → disambiguate P21-P30 (10 calls, same prefix)
+ *   Window 3: [P21-P40] → disambiguate P31-P40 ...
+ *
+ * The system prompt (instructions + metadata + entities + window text) is
+ * IDENTICAL for all paragraphs in the same window → prefix cached.
+ * Only the user prompt changes: "Disambiguate [P15]:" (~5 tokens).
+ *
+ * With 2TB NVMe KV cache, the full window stays cached across all calls.
  */
-export function buildDisambiguationSystemPrompt(doc, entities) {
+
+const JUMP_WINDOW_SIZE = 20;  // paragraphs per window
+const JUMP_DISAMBIG_START = 10; // start disambiguating from this index in window (0-based)
+const MAX_WINDOW_CHARS = 6000; // hard limit for token safety
+
+/**
+ * Build a jumping window: system prompt with the full window embedded (cached),
+ * plus a tiny user prompt for each paragraph to disambiguate.
+ */
+export function buildJumpingWindow(doc, entities, windowParagraphs) {
   const { title, author, religion, collection, year, description, language } = doc;
   const metaLines = [`"${title}" by ${author}`, `${religion} / ${collection}`];
   if (year) metaLines.push(`Year: ${year}`);
@@ -35,48 +58,56 @@ export function buildDisambiguationSystemPrompt(doc, entities) {
   if (entities?.time_periods?.length) entityLines.push(`Time periods: ${entities.time_periods.join(', ')}`);
   const entitySection = entityLines.length ? `\nEntities:\n${entityLines.join('\n')}` : '';
 
-  // This prompt is IDENTICAL for every paragraph in the document → prefix cached by vLLM
-  return `Disambiguate references in sacred texts. Output ONLY key→value pairs.
+  // Build window text — trim to stay under char budget
+  let windowText = '';
+  let includedCount = 0;
+  for (const p of windowParagraphs) {
+    const line = `[P${includedCount + 1}] ${p.text}\n`;
+    if (windowText.length + line.length > MAX_WINDOW_CHARS && includedCount > 0) break;
+    windowText += line;
+    includedCount++;
+  }
 
-${metaBlock}${entitySection}
+  // System prompt: metadata + window text. Instructions go in user prompt so
+  // the SAME cached window serves both disambiguation AND HyPE tasks.
+  const systemPrompt = `${metaBlock}${entitySection}
 
-FORMAT: ref→resolved | ref→resolved | ref→resolved
-EXAMPLE: He→Mullá Husayn | the city→Shíráz, Iran | dawn→May 23, 1844
+<window>
+${windowText}</window>`;
 
-Resolve: pronouns, conceptual refs (this teaching, that station), temporal, spatial, textual refs.
-Use ONLY document text. No general knowledge. No prose. No explanation. Just key→value pairs.
-If nothing needs disambiguation, output: NONE`;
+  return { systemPrompt, includedCount };
 }
 
 /**
- * Build the per-paragraph user prompt (window + target).
- * The system prompt stays constant → vLLM prefix caches it.
+ * Build user prompts for disambiguation and HyPE. Instructions go HERE (not in system prompt)
+ * so the window in the system prompt stays cached across both tasks.
  */
-export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
-  // Collect preceding paragraphs for context window
-  // Dynamically size window to stay under ~6000 chars (safe for 8K token limit)
-  const MAX_WINDOW_CHARS = 6000;
-  const allPreceding = paragraphs
-    .filter(p => p.paragraph_index < targetIndex)
-    .sort((a, b) => a.paragraph_index - b.paragraph_index);
-  // Take as many preceding paragraphs as fit within the char budget
-  let charBudget = MAX_WINDOW_CHARS;
-  const preceding = [];
-  for (let i = allPreceding.length - 1; i >= 0 && preceding.length < WINDOW_SIZE; i--) {
-    const pLen = (allPreceding[i].text || '').length;
-    if (charBudget - pLen < 0 && preceding.length > 0) break;
-    preceding.unshift(allPreceding[i]);
-    charBudget -= pLen;
-  }
-  const targetParagraph = paragraphs.find(p => p.paragraph_index === targetIndex)
-    || { text: '' };
-  const windowLines = preceding.map((p, i) => `[P${i + 1}] ${p.text}`).join('\n');
-  const targetLine = `[TARGET] ${targetParagraph.text}`;
+export function buildDisambiguationUserPrompt(paragraphIndex) {
+  return `Disambiguate [P${paragraphIndex}]. Output ONLY key→value pairs.
+FORMAT: ref→resolved | ref→resolved
+Resolve: pronouns, conceptual refs, temporal, spatial, short names→full names.
+Use ONLY the document text above. No general knowledge. NONE if nothing to resolve.`;
+}
 
-  // System prompt is static per document (built once, cached by vLLM)
-  const systemPrompt = buildDisambiguationSystemPrompt(doc, entities);
-  // User prompt contains the sliding window — changes each call
-  const userPrompt = `${windowLines}\n\n${targetLine}\n\nDisambiguate [TARGET]:`;
+export function buildHyPEUserPrompt(paragraphIndex, religion) {
+  return `Generate exactly 5 questions [P${paragraphIndex}] answers. One per line. No numbering.
+2 factual (what does it say?), 1 definitional (what concept does it define?), 2 implication (philosophical/spiritual implications).
+Max 15 words per question.${religion ? ` Domain: ${religion}` : ''}`;
+}
+
+/**
+ * Legacy API — still used by tests. Builds a single prompt pair.
+ */
+export function buildDisambiguationSystemPrompt(doc, entities) {
+  const { systemPrompt } = buildJumpingWindow(doc, entities, []);
+  return systemPrompt;
+}
+
+export function buildDisambiguationPrompt(doc, entities, paragraphs, targetIndex) {
+  const windowParas = paragraphs.filter(p => p.paragraph_index <= targetIndex).slice(-JUMP_WINDOW_SIZE);
+  const targetPos = windowParas.findIndex(p => p.paragraph_index === targetIndex) + 1;
+  const { systemPrompt } = buildJumpingWindow(doc, entities, windowParas);
+  const userPrompt = `Disambiguate [P${targetPos}]:`;
   return { systemPrompt, userPrompt };
 }
 
