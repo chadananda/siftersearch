@@ -1,0 +1,15 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NavBar from '../../components/common/NavBar.svelte';
+import GraphExplorer from '../../components/GraphExplorer.svelte';
+
+export const prerender = false;
+---
+
+<Layout
+  title="Knowledge Graph Explorer - SifterSearch"
+  description="Explore the knowledge graph of entities, concepts, and relationships across world religious traditions."
+>
+  <NavBar client:load currentPage="library" />
+  <GraphExplorer client:load />
+</Layout>

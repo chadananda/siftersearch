@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 43;
+const CURRENT_VERSION = 44;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1769,6 +1769,13 @@ const migrations = {
     try { await query('CREATE INDEX IF NOT EXISTS idx_content_enhanced_unsynced ON content(enhanced_synced, deleted_at) WHERE enhanced_synced = 0 AND deleted_at IS NULL'); } catch { /* exists */ }
     logger.info('Migration 43 complete: RAG enhancement layer schema added');
   },
+
+  // Version 44: Layered Indexing Tables
+  44: async () => {
+    logger.info('Starting migration 44: Layered indexing tables');
+    await query(getMigration44SQL());
+    logger.info('Migration 44 complete: Layered indexing tables added');
+  },
 };
 
 /**
@@ -2107,6 +2114,100 @@ async function runUserMigrations() {
  * Run all pending migrations (both content and user databases)
  * @returns {Promise<{content: object, user: object}>}
  */
+/**
+ * Returns the SQL string for migration 44: Layered Indexing Tables.
+ * Exported for testing — allows schema verification against an in-memory DB.
+ */
+export function getMigration44SQL() {
+  return `
+CREATE TABLE IF NOT EXISTS content_objects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  content_id INTEGER NOT NULL,
+  doc_id INTEGER NOT NULL,
+  people_json TEXT,
+  places_json TEXT,
+  documents_json TEXT,
+  events_json TEXT,
+  concepts_json TEXT,
+  relations_json TEXT,
+  rendered TEXT,
+  object_pipeline_version TEXT NOT NULL DEFAULT 'v1',
+  content_hash TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(content_id, object_pipeline_version)
+);
+
+CREATE TABLE IF NOT EXISTS content_enrichment (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  content_id INTEGER NOT NULL,
+  doc_id INTEGER NOT NULL,
+  task_mode TEXT NOT NULL,
+  result TEXT,
+  instructions_hash TEXT,
+  book_meta_hash TEXT,
+  window_hash TEXT,
+  objects_hash TEXT,
+  target_paragraph_id INTEGER,
+  pipeline_version TEXT NOT NULL DEFAULT 'v1',
+  model_id TEXT,
+  prompt_tokens INTEGER,
+  cached_tokens INTEGER,
+  completion_tokens INTEGER,
+  call_ms INTEGER,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(content_id, task_mode, pipeline_version)
+);
+
+CREATE TABLE IF NOT EXISTS pipeline_versions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pipeline_name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  prompt_hash TEXT,
+  model_id TEXT,
+  config_json TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  active INTEGER DEFAULT 0,
+  UNIQUE(pipeline_name, version)
+);
+
+CREATE TABLE IF NOT EXISTS pipeline_jobs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_type TEXT NOT NULL,
+  doc_id INTEGER,
+  layer TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  pipeline_version TEXT,
+  total_items INTEGER DEFAULT 0,
+  completed_items INTEGER DEFAULT 0,
+  failed_items INTEGER DEFAULT 0,
+  error TEXT,
+  worker_id TEXT,
+  started_at TEXT,
+  completed_at TEXT,
+  heartbeat_at TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  config_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS layer_sync_state (
+  content_id INTEGER NOT NULL,
+  layer TEXT NOT NULL,
+  synced INTEGER DEFAULT 0,
+  meili_index TEXT,
+  synced_at TEXT,
+  PRIMARY KEY (content_id, layer)
+);
+
+CREATE INDEX IF NOT EXISTS idx_co_doc ON content_objects(doc_id);
+CREATE INDEX IF NOT EXISTS idx_co_content ON content_objects(content_id);
+CREATE INDEX IF NOT EXISTS idx_ce_doc ON content_enrichment(doc_id);
+CREATE INDEX IF NOT EXISTS idx_ce_content ON content_enrichment(content_id);
+CREATE INDEX IF NOT EXISTS idx_pj_status ON pipeline_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_pj_doc ON pipeline_jobs(doc_id);
+CREATE INDEX IF NOT EXISTS idx_lss_dirty ON layer_sync_state(synced) WHERE synced = 0;
+  `;
+}
+
 export async function runMigrations() {
   const contentResult = await runContentMigrations();
   const userResult = await runUserMigrations();

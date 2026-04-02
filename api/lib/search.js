@@ -1544,6 +1544,29 @@ export function enrichHitsWithExcerpts(hits, options = {}) {
   });
 }
 
+// ─── mergeSearchResults ───────────────────────────────────────────────────────
+
+/**
+ * Merges base search hits with enhanced (AI-enriched) hits by paragraph id.
+ * Base hits come first (preserving ranking), enhanced-only hits appended.
+ * @param {Array} baseHits - hits from keyword/vector search
+ * @param {Array} enhancedHits - hits from AI enhancement pipeline
+ * @returns {Array} merged hits
+ */
+export function mergeSearchResults(baseHits, enhancedHits) {
+  const enhancedMap = new Map(enhancedHits.map(h => [h.id, h]));
+  const seen = new Set();
+  const merged = baseHits.map(hit => {
+    seen.add(hit.id);
+    const enhanced = enhancedMap.get(hit.id);
+    return enhanced ? { ...hit, ...enhanced } : { ...hit };
+  });
+  for (const hit of enhancedHits) {
+    if (!seen.has(hit.id)) merged.push({ ...hit });
+  }
+  return merged;
+}
+
 export const search = {
   getMeili,
   initializeIndexes,
