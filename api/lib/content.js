@@ -20,6 +20,7 @@ import { createHash } from 'crypto';
 import { query, queryOne, queryAll, transaction } from './db.js';
 import { logger } from './logger.js';
 import config from './config.js';
+import { initEmbeddingCache, getEmbedding, insertEmbedding } from './embedding-cache.js';
 
 // ============================================================
 // Constants
@@ -30,6 +31,49 @@ const EXPECTED_EMBEDDING_BYTES = config.ai.embeddings.dimensions * 4;
 
 /** Expected embedding float count */
 const EXPECTED_EMBEDDING_DIMS = config.ai.embeddings.dimensions;
+
+// ============================================================
+// Embedding cache (lazy-initialized)
+// ============================================================
+
+let embeddingCacheReady = false;
+const CACHE_DB_PATH = config.ai?.embeddingCachePath || 'data/embedding_cache.db';
+const CACHE_MODEL = config.ai.embeddings.model;
+const CACHE_DIM = 512;
+
+/**
+ * Lazily initialize the embedding cache DB on first use.
+ * Safe to call multiple times — no-ops after first successful init.
+ */
+async function initEmbeddingCacheIfNeeded() {
+  if (embeddingCacheReady) return;
+  try {
+    await initEmbeddingCache(CACHE_DB_PATH);
+    embeddingCacheReady = true;
+    logger.info({ path: CACHE_DB_PATH }, 'Embedding cache initialized');
+  } catch (err) {
+    logger.warn({ err: err.message, path: CACHE_DB_PATH }, 'Embedding cache unavailable — vectors will fall back to inline blob');
+  }
+}
+
+/**
+ * Batch-fetch 512-dim embeddings from embedding_cache.db.
+ * @param {string[]} normalizedHashes
+ * @returns {Promise<Map<string, number[]>>} Map of hash → float array
+ */
+async function getEmbeddingsFromCache(normalizedHashes) {
+  const result = new Map();
+  if (!embeddingCacheReady || !normalizedHashes.length) return result;
+  await Promise.all(normalizedHashes.map(async (hash) => {
+    if (!hash) return;
+    const buf = await getEmbedding(hash, CACHE_MODEL, CACHE_DIM);
+    if (!buf) return;
+    const fa = new Float32Array(buf.buffer, buf.byteOffset, buf.length / 4);
+    if (fa.some(v => !Number.isFinite(v))) return;
+    result.set(hash, Array.from(fa));
+  }));
+  return result;
+}
 
 // ============================================================
 // Internal helpers
@@ -259,6 +303,7 @@ async function updateText(id, newText) {
 
 /**
  * Update embedding for a paragraph. Validates dimensions.
+ * Also writes 512-dim vector to embedding_cache.db for cache-first sync.
  */
 async function updateEmbedding(id, embedding, model) {
   if (!validateEmbedding(embedding)) {
@@ -267,13 +312,35 @@ async function updateEmbedding(id, embedding, model) {
       'Rejected wrong-dimension embedding');
     return { changes: 0, rejected: true, reason: 'wrong_dimensions' };
   }
-
   const ts = now();
-  return query(`
+  const dbResult = await query(`
     UPDATE content
     SET embedding = ?, embedding_model = ?, synced = 0, updated_at = ?
     WHERE id = ?
   `, [embedding, model, ts, id]);
+  // Also write to embedding_cache.db so sync-worker can read 512-dim vectors from there.
+  // We need the normalized_hash for the cache key — read it back if cache is ready.
+  if (embeddingCacheReady) {
+    try {
+      const row = await queryOne(`SELECT normalized_hash FROM content WHERE id = ?`, [id]);
+      if (row?.normalized_hash) {
+        // embedding is stored as the full-dim blob; extract first 512 dims as the cache entry
+        const buf = Buffer.isBuffer(embedding) ? embedding : Buffer.from(embedding);
+        const fullArray = new Float32Array(buf.buffer, buf.byteOffset, buf.length / 4);
+        const slice512 = fullArray.slice(0, 512);
+        let sumSq = 0;
+        for (let i = 0; i < 512; i++) sumSq += slice512[i] * slice512[i];
+        const scale = sumSq > 0 ? 1 / Math.sqrt(sumSq) : 1;
+        const normalized = new Float32Array(512);
+        for (let i = 0; i < 512; i++) normalized[i] = slice512[i] * scale;
+        const cacheBlob = Buffer.from(normalized.buffer);
+        await insertEmbedding(row.normalized_hash, model, 512, 'v1', cacheBlob);
+      }
+    } catch (err) {
+      logger.warn({ id, err: err.message }, 'Failed to write embedding to cache (non-fatal)');
+    }
+  }
+  return dbResult;
 }
 
 /**
@@ -691,10 +758,11 @@ async function markSynced(ids) {
  * Get paragraphs that need embedding generation.
  * Uses indexed lookup + pagination instead of GROUP BY full-table scan.
  * Deduplicates by normalized_hash in-memory (much cheaper than SQL GROUP BY on 2.5M rows).
+ * Skips paragraphs whose normalized_hash already exists in embedding_cache.db.
  */
 async function getUnembedded(limit = 50, maxChars = 6000) {
-  // Fetch more than needed since we deduplicate in-memory
-  const fetchLimit = limit * 3;
+  // Fetch more than needed since we deduplicate and filter in-memory
+  const fetchLimit = limit * 5;
   const rows = await queryAll(`
     SELECT id, text, normalized_hash
     FROM content
@@ -708,13 +776,30 @@ async function getUnembedded(limit = 50, maxChars = 6000) {
   `, [maxChars, fetchLimit]);
   // Deduplicate by normalized_hash — keep first occurrence per hash
   const seen = new Set();
-  const result = [];
+  const candidates = [];
   for (const row of rows) {
     const key = row.normalized_hash || `id:${row.id}`;
     if (!seen.has(key)) {
       seen.add(key);
+      candidates.push(row);
+    }
+  }
+  // Filter out hashes that already have a cached 512-dim embedding
+  if (!embeddingCacheReady || !candidates.length) return candidates.slice(0, limit);
+  const result = [];
+  for (const row of candidates) {
+    if (result.length >= limit) break;
+    if (!row.normalized_hash) { result.push(row); continue; }
+    const cached = await getEmbedding(row.normalized_hash, CACHE_MODEL, CACHE_DIM);
+    if (cached) {
+      // Cache hit — backfill inline embedding so content table stays consistent, then skip
+      const fa = new Float32Array(cached.buffer, cached.byteOffset, cached.length / 4);
+      const embeddingBuffer = Buffer.from(fa.buffer);
+      query(`UPDATE content SET embedding = ?, embedding_model = ?, updated_at = ? WHERE id = ?`,
+        [embeddingBuffer, CACHE_MODEL, now(), row.id]).catch(err =>
+        logger.warn({ id: row.id, err: err.message }, 'Failed to backfill inline embedding from cache'));
+    } else {
       result.push(row);
-      if (result.length >= limit) break;
     }
   }
   return result;
@@ -894,6 +979,10 @@ export const content = {
   getDirtyParagraphsBatch,
   getDirtyParagraphsForDoc,
   markSynced,
+
+  // Embedding cache helpers
+  initEmbeddingCacheIfNeeded,
+  getEmbeddingsFromCache,
 
   // Embedding-worker
   getUnembedded,

@@ -147,14 +147,20 @@ async function processSyncJob(job) {
       while (!isShuttingDown) {
         const paragraphs = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
         if (paragraphs.length === 0) break;
+        // Fetch 512-dim vectors from embedding cache in batch
+        const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
+        const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
         const meiliParas = [];
         const paraIds = [];
-        let wrongDimBatch = 0;
+        let cacheHits = 0, cacheMisses = 0;
         for (const p of paragraphs) {
-          let embedding = blobToFloatArray(p.embedding);
-          if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
-            embedding = null;
-            wrongDimBatch++;
+          // Prefer cached 512-dim vector; fall back to null (FTS-only) if missing
+          let embedding = null;
+          if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
+            embedding = cachedVectors.get(p.normalized_hash);
+            cacheHits++;
+          } else {
+            cacheMisses++;
           }
           meiliParas.push({
             id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
@@ -165,12 +171,12 @@ async function processSyncJob(job) {
             year: doc.year ? parseInt(doc.year, 10) : null, authority,
             heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
             created_at: new Date().toISOString(),
-            _vectors: { default: embedding || null }
+            _vectors: { default: embedding }
           });
           paraIds.push(p.id);
         }
-        if (wrongDimBatch > 0) {
-          logger.warn({ wrongDimBatch, batchSize: meiliParas.length }, 'Wrong-dimension embeddings in batch (FTS-only)');
+        if (cacheMisses > 0) {
+          logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
         }
         // Submit paragraph batch to Meilisearch (fire-and-forget)
         // Meilisearch is eventually consistent — no need to wait for task completion.
@@ -401,6 +407,8 @@ async function workerLoop() {
     logger.error({ err: err.message }, 'Migration failed — aborting');
     process.exit(1);
   }
+  // Initialize embedding cache (non-fatal if unavailable)
+  await content.initEmbeddingCacheIfNeeded();
   // Skip initializeIndexes() — settings updates are idempotent but queue
   // Meilisearch tasks on every restart, backing up the queue and blocking sync.
   // The API runs initializeIndexes() on startup; the worker doesn't need to.
