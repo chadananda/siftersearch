@@ -70,9 +70,15 @@ describe('toCurlyQuotes', () => {
       expect(toCurlyQuotes("Bahá'u'lláh")).toBe('Bah\u00E1\u2019u\u2019ll\u00E1h');
     });
 
-    it("handles 'Abdu'l-Bahá — apostrophe before capital letter", () => {
-      // Leading apostrophe in "'Abdu'l-Bahá" is an opening quote; mid-word is closing
-      expect(toCurlyQuotes("'Abdu'l-Bahá")).toBe('\u2018Abdu\u2019l-Bah\u00E1');
+    it("handles 'Abdu'l-Bahá — leading apostrophe is opening, mid-word is apostrophe", () => {
+      // Leading ' before A at start = opening quote; 'l is mid-word = right quote
+      const result = toCurlyQuotes("'Abdu'l-Bahá");
+      expect(result).toBe('\u2018Abdu\u2019l-Bah\u00E1');
+    });
+
+    it("handles 'Abdu'l-Bahá after space — same pattern", () => {
+      const result = toCurlyQuotes("The teachings of 'Abdu'l-Bahá");
+      expect(result).toContain('\u2018Abdu\u2019l');
     });
   });
 

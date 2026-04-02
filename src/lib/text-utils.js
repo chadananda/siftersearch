@@ -18,13 +18,28 @@
  */
 export function toCurlyQuotes(text) {
   if (!text) return text;
-  return text
-    // Double quotes: opening — after start-of-string, whitespace, or opening punctuation
-    .replace(/(^|[\s\u2014\-([{])"(?=\S)/g, '$1\u201C')
-    // Double quotes: closing — all remaining straight double quotes
-    .replace(/"/g, '\u201D')
-    // Single quotes: opening — after start-of-string or whitespace, before a non-whitespace char
-    .replace(/(^|\s)'(?=\S)/g, '$1\u2018')
-    // Single quotes: closing/apostrophe — all remaining straight single quotes
-    .replace(/'/g, '\u2019');
+  // Standard smart quotes: opening = after whitespace/start, closing = after non-space
+  // Process character-by-character for correct context-aware quoting
+  let result = '';
+  let prevChar = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const isStartOrSpace = i === 0 || /\s/.test(prevChar) || /[(\[{\u2014-]/.test(prevChar);
+    if (ch === '"') {
+      result += isStartOrSpace ? '\u201C' : '\u201D';
+    } else if (ch === "'") {
+      // Apostrophe between letters = always right quote (contractions, transliteration)
+      const prevIsLetter = /\p{L}/u.test(prevChar);
+      const nextIsLetter = i + 1 < text.length && /\p{L}/u.test(text[i + 1]);
+      if (prevIsLetter && nextIsLetter) {
+        result += '\u2019'; // mid-word apostrophe
+      } else {
+        result += isStartOrSpace ? '\u2018' : '\u2019';
+      }
+    } else {
+      result += ch;
+    }
+    prevChar = ch;
+  }
+  return result;
 }
