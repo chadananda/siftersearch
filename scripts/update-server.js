@@ -214,7 +214,52 @@ function httpGet(url, timeoutMs = 5000) {
 }
 
 /**
- * Start a test API instance, health check it, return success/failure.
+ * Pre-deploy smoke tests run against the test API instance.
+ * Each test returns { name, pass, detail }. All must pass to proceed.
+ */
+async function runSmokeTests(port) {
+  const base = `http://127.0.0.1:${port}`;
+  const tests = [];
+
+  // 1. Health endpoint responds
+  const health = await httpGet(`${base}/api/search/health`);
+  tests.push({ name: 'health', pass: health.ok, detail: health.body || 'no response' });
+
+  // 2. Public API health
+  const v1Health = await httpGet(`${base}/api/v1/health`);
+  tests.push({ name: 'v1-health', pass: v1Health.ok, detail: v1Health.body || 'no response' });
+
+  // 3. Library stats (verifies DB access + query works)
+  const stats = await httpGet(`${base}/api/library/stats`);
+  let statsOk = false;
+  let statsDetail = 'no response';
+  if (stats.ok) {
+    try {
+      const data = JSON.parse(stats.body);
+      statsOk = data.totalDocuments > 0 && data.religions > 0;
+      statsDetail = `${data.totalDocuments} docs, ${data.religions} religions`;
+    } catch { statsDetail = 'invalid JSON'; }
+  }
+  tests.push({ name: 'library-stats', pass: statsOk, detail: statsDetail });
+
+  // 4. Recent documents (verifies route registration + DB read)
+  const recent = await httpGet(`${base}/api/library/recent?limit=1`);
+  let recentOk = false;
+  let recentDetail = 'no response';
+  if (recent.ok) {
+    try {
+      const data = JSON.parse(recent.body);
+      recentOk = Array.isArray(data.documents) && data.documents.length > 0;
+      recentDetail = `${data.documents?.length || 0} docs returned`;
+    } catch { recentDetail = 'invalid JSON'; }
+  }
+  tests.push({ name: 'recent-docs', pass: recentOk, detail: recentDetail });
+
+  return tests;
+}
+
+/**
+ * Start a test API instance, run smoke tests, return success/failure.
  * Kills the test instance before returning either way.
  */
 async function verifyNewCode() {
@@ -236,10 +281,11 @@ async function verifyNewCode() {
     child.on('exit', (code) => resolve({ crashed: true, code }));
   });
 
+  // Phase 1: Wait for the server to start responding
+  let serverReady = false;
   for (let i = 0; i < HEALTH_CHECK_RETRIES; i++) {
     await new Promise(r => setTimeout(r, HEALTH_CHECK_INTERVAL));
 
-    // Check if process crashed during startup
     const raceResult = await Promise.race([
       earlyExit,
       httpGet(`http://127.0.0.1:${HEALTH_CHECK_PORT}/api/search/health`)
@@ -252,20 +298,40 @@ async function verifyNewCode() {
     }
 
     if (raceResult.ok) {
-      log('info', `Health check passed on attempt ${i + 1}`);
-      child.kill('SIGTERM');
-      await new Promise(r => setTimeout(r, 500)); // Let it shut down
-      return true;
+      log('info', `Server responding on attempt ${i + 1}`);
+      serverReady = true;
+      break;
     }
 
-    log('info', `Health check attempt ${i + 1}/${HEALTH_CHECK_RETRIES} — waiting...`);
+    log('info', `Waiting for server... attempt ${i + 1}/${HEALTH_CHECK_RETRIES}`);
   }
 
-  // All retries exhausted
-  log('error', 'Test API failed health check after all retries');
-  log('error', `Test output: ${testOutput.slice(-500)}`);
+  if (!serverReady) {
+    log('error', 'Test API failed to start after all retries');
+    log('error', `Test output: ${testOutput.slice(-500)}`);
+    child.kill('SIGTERM');
+    return false;
+  }
+
+  // Phase 2: Run smoke tests against the live test instance
+  log('info', 'Running pre-deploy smoke tests...');
+  const results = await runSmokeTests(HEALTH_CHECK_PORT);
+  const failed = results.filter(t => !t.pass);
+
+  for (const t of results) {
+    log(t.pass ? 'info' : 'error', `  ${t.pass ? '✓' : '✗'} ${t.name}: ${t.detail}`);
+  }
+
   child.kill('SIGTERM');
-  return false;
+  await new Promise(r => setTimeout(r, 500));
+
+  if (failed.length > 0) {
+    log('error', `${failed.length}/${results.length} smoke tests failed — aborting deploy`);
+    return false;
+  }
+
+  log('info', `All ${results.length} smoke tests passed`);
+  return true;
 }
 
 /**
