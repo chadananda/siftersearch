@@ -155,6 +155,13 @@ const start = async () => {
       logger.info({ features }, 'Enabled features');
     }
 
+    // Signal PM2 that we're ready to accept connections.
+    // PM2 wait_ready mode holds the old process alive until this fires,
+    // enabling zero-downtime reloads.
+    if (process.send) {
+      process.send('ready');
+    }
+
   } catch (err) {
     logger.fatal(err, 'Failed to start server');
     process.exit(1);

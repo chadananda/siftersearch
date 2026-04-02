@@ -269,10 +269,17 @@ async function verifyNewCode() {
 }
 
 /**
- * Swap a PM2 process: delete old, start new from ecosystem config.
- * pm2 reload/restart does NOT update max_memory_restart, so we must delete+recreate.
+ * Swap a PM2 process using graceful reload for zero-downtime deploys.
+ * For the API (wait_ready=true), PM2 starts the new process, waits for
+ * process.send('ready'), then kills the old one — no gap in service.
+ * Falls back to delete+start if reload fails.
  */
 async function swapPm2Process(name) {
+  const reloadResult = await run(`pm2 reload ${name} --update-env`);
+  if (reloadResult.success) {
+    return true;
+  }
+  log('warn', `Reload failed for ${name}, falling back to delete+start`);
   await run(`pm2 delete ${name}`);
   const result = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
   if (!result.success) {

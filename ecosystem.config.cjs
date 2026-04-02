@@ -18,6 +18,8 @@ const PROJECT_ROOT = __dirname;
 module.exports = {
   apps: [
     // SifterSearch API Server (read-only DB access)
+    // Uses wait_ready for zero-downtime reloads: new process signals 'ready'
+    // after full init, then PM2 kills the old one. Use `pm2 reload` not `restart`.
     {
       name: 'siftersearch-api',
       script: 'api/index.js',
@@ -26,11 +28,12 @@ module.exports = {
       exec_mode: 'fork',
       watch: false,
       max_memory_restart: '500M',
+      wait_ready: true,
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
-      listen_timeout: 10000,
+      listen_timeout: 30000,
       kill_timeout: 5000,
       exp_backoff_restart_delay: 100,
       max_restarts: 10,

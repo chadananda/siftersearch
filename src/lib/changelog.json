@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-02T17:54:01.198Z",
+  "generated": "2026-04-02T17:58:07.466Z",
   "entries": [
+    {
+      "hash": "5f9157c",
+      "date": "2026-04-02",
+      "type": "Fixed",
+      "description": "Update disambiguation tests to match refactored KV-cache prompt architecture",
+      "scope": null
+    },
     {
       "hash": "26b07c7",
       "date": "2026-04-02",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Resegment endpoint now uses reingest from source file",
       "scope": null
-    },
-    {
-      "hash": "699c5f1",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add admin API endpoints for document management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-02": [
+      {
+        "hash": "5f9157c",
+        "date": "2026-04-02",
+        "type": "Fixed",
+        "description": "Update disambiguation tests to match refactored KV-cache prompt architecture",
+        "scope": null
+      },
       {
         "hash": "26b07c7",
         "date": "2026-04-02",
@@ -7045,13 +7052,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Resegment endpoint now uses reingest from source file",
-        "scope": null
-      },
-      {
-        "hash": "699c5f1",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add admin API endpoints for document management",
         "scope": null
       }
     ]
