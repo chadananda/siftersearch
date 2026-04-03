@@ -358,7 +358,7 @@ export default async function libraryRoutes(fastify) {
       religionCounts,
       collectionCounts,
       languageCounts,
-      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running' || embeddingsNeeded > 0 || cachedCounts.unsyncedParagraphs > 100,
+      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running' || (pipelineCache.data?.paragraphsNeedingEmbeddings > 0) || cachedCounts.unsyncedParagraphs > 100,
       ingestionQueue: indexingStats,
       indexingProgress: meiliProgress,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
