@@ -1946,11 +1946,34 @@
                   </div>
                 </div>
               {/if}
-              <!-- Search index progress - show active job or overall sync status -->
-              {#if indexingInterpolated}
-                <div class="ingestion-progress indexing active-job" role="region" aria-label="Indexing job progress">
+              <!-- Embedding progress (shown prominently when embeddings are being generated) -->
+              {#if libraryStats?.pipelineStatus?.paragraphsNeedingEmbeddings > 0}
+                {@const total = libraryStats.totalParagraphs || 1}
+                {@const needed = libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
+                {@const done = total - needed}
+                {@const pct = Math.round((done / total) * 100)}
+                {@const estimatedMinutes = Math.ceil(needed / 7000)}
+                {@const hours = Math.floor(estimatedMinutes / 60)}
+                {@const minutes = estimatedMinutes % 60}
+                {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
+                <div class="ingestion-progress embedding">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Indexing</span>
+                    <span class="ingestion-label">Generating embeddings</span>
+                    <span class="ingestion-percent">{pct}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {pct}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(done)} / {formatWithCommas(total)} paragraphs · ~{timeStr} remaining
+                  </div>
+                </div>
+              {/if}
+              <!-- Search index progress -->
+              {#if indexingInterpolated}
+                <div class="ingestion-progress indexing active-job" role="region" aria-label="Search index progress">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Search indexing</span>
                     <span class="ingestion-percent">{indexingInterpolated.pct}%</span>
                   </div>
                   <div class="ingestion-bar" role="progressbar" aria-valuenow={indexingInterpolated.pct} aria-valuemin="0" aria-valuemax="100">
@@ -1963,7 +1986,7 @@
               {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
                 <div class="ingestion-progress indexing" role="region" aria-label="Search index progress">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Indexing</span>
+                    <span class="ingestion-label">Search indexing</span>
                     <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
                   </div>
                   <div class="ingestion-bar" role="progressbar" aria-valuenow={libraryStats.indexingProgress.percentComplete} aria-valuemin="0" aria-valuemax="100">
@@ -1995,29 +2018,7 @@
                         <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.ingestionQueuePending)} pending</span>
                       </div>
                     {/if}
-                    {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
-                      {@const total = libraryStats.totalParagraphs || 1}
-                      {@const needed = libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
-                      {@const done = total - needed}
-                      {@const pct = Math.round((done / total) * 100)}
-                      {@const estimatedMinutes = Math.ceil(needed / 7000)}
-                      {@const hours = Math.floor(estimatedMinutes / 60)}
-                      {@const minutes = estimatedMinutes % 60}
-                      {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
-                      <div class="ingestion-progress embedding">
-                        <div class="ingestion-header">
-                          <span class="ingestion-label">Generating embeddings</span>
-                          <span class="ingestion-percent">{pct}%</span>
-                        </div>
-                        <div class="ingestion-bar">
-                          <div class="ingestion-fill" style="width: {pct}%"></div>
-                        </div>
-                        <div class="ingestion-detail">
-                          {formatWithCommas(done)} / {formatWithCommas(total)} paragraphs · ~{timeStr} remaining
-                        </div>
-                      </div>
-                    {/if}
-                    <!-- Search sync count is shown in the "Search ready" progress bar above -->
+                    <!-- Embedding progress shown as main progress bar above -->
                     {#if libraryStats.pipelineStatus.oversizedSkipped > 0}
                       <div class="pipeline-item warning">
                         <span class="pipeline-icon">⚠️</span>
