@@ -25,7 +25,7 @@ import { relative, dirname, basename, join } from 'path';
 import { ingestDocument, removeDocument, purgeOldDeletedContent, getDocumentByPath, getMovedDocumentByBodyHash, hashContent, parseMarkdownFrontmatter } from './ingester.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
-import { getDb, query, queryOne } from '../lib/db.js';
+import { getDb, query, queryOne, queryAll } from '../lib/db.js';
 import { getMeili, INDEXES } from '../lib/search.js';
 import { invalidateCache, getAuthority } from '../lib/authority.js';
 
@@ -229,8 +229,7 @@ async function cleanupOrphanedDocuments() {
     const basePath = config.library.basePath;
 
     // Get all ACTIVE documents from DB (exclude already soft-deleted)
-    const result = await db.execute('SELECT id, file_path, title FROM docs WHERE deleted_at IS NULL');
-    const docs = result.rows;
+    const docs = await queryAll('SELECT id, file_path, title FROM docs WHERE deleted_at IS NULL');
 
     let orphansFound = 0;
     const orphanIds = [];
@@ -381,9 +380,8 @@ async function scanLibraryForIngestion() {
     const diskByPath = new Map(diskFiles.map(f => [f.relativePath, f]));
 
     // Step 2: Load all active DB docs (file_path + file_hash)
-    const db = await getDb();
-    const dbResult = await db.execute('SELECT id, file_path, file_hash FROM docs WHERE deleted_at IS NULL');
-    const dbByPath = new Map(dbResult.rows.map(r => [r.file_path, r]));
+    const dbRows = await queryAll('SELECT id, file_path, file_hash FROM docs WHERE deleted_at IS NULL');
+    const dbByPath = new Map(dbRows.map(r => [r.file_path, r]));
 
     logger.info({
       diskFiles: diskFiles.length,
@@ -635,17 +633,16 @@ async function handleMetaYamlChange(filePath) {
     // Note: SQLite doesn't store authority - it's calculated from meta.yaml
     // We only need to update Meilisearch where authority is indexed for search ranking
     // Exclude soft-deleted documents
-    let query, params;
+    let sql, params;
     if (collection) {
-      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND collection = ? AND deleted_at IS NULL`;
+      sql = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND collection = ? AND deleted_at IS NULL`;
       params = [religion, collection];
     } else {
-      query = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND deleted_at IS NULL`;
+      sql = `SELECT id, file_path, author, religion, collection FROM docs WHERE religion = ? AND deleted_at IS NULL`;
       params = [religion];
     }
 
-    const result = await db.execute({ sql: query, args: params });
-    const docs = result.rows;
+    const docs = await queryAll(sql, params);
 
     if (docs.length === 0) {
       logger.info({ religion, collection }, 'No documents found to update');

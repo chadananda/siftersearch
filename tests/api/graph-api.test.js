@@ -1,52 +1,44 @@
 /**
- * Graph API + Fused Search Tests (TDD RED)
+ * Graph API + Fused Search Tests
  *
  * Tests for:
  *   api/routes/graph.js  — route handler functions (pure, not HTTP)
  *   api/lib/search.js    — mergeSearchResults addition
  *
- * TDD: All tests MUST be RED (failing) before any implementation exists.
- * Do NOT create implementation files.
- *
- * Graph route handlers are tested as pure functions that accept a db handle
- * so they can be tested without a running HTTP server.
- *
+ * Graph route handlers accept an optional db handle for test injection.
  * In-memory better-sqlite3 is used for graph DB fixtures.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Database from 'better-sqlite3';
 
-// ─── better-sqlite3 in-memory wrapper (libsql-compatible API) ────────────────
+// ─── better-sqlite3 in-memory wrapper (queryAll/queryOne/query API) ───────────
 
 function createInMemoryDb() {
   const db = new Database(':memory:');
   db.pragma('journal_mode = WAL');
+  function runQuery(sql, params = []) {
+    const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
+    if (isWrite) {
+      const info = db.prepare(sql).run(...params);
+      return { rows: [{ lastInsertRowid: info.lastInsertRowid, changes: info.changes }], lastInsertRowid: info.lastInsertRowid };
+    }
+    return { rows: db.prepare(sql).all(...params) };
+  }
   return {
     _db: db,
+    // New API used by production code
+    queryAll(sql, params = []) { return Promise.resolve(runQuery(sql, params).rows); },
+    queryOne(sql, params = []) { return Promise.resolve(runQuery(sql, params).rows[0] || null); },
+    query(sql, params = []) { return Promise.resolve(runQuery(sql, params)); },
+    // Legacy execute for test setup convenience
     execute(sqlOrObj, argsArr) {
       const sql = typeof sqlOrObj === 'string' ? sqlOrObj : sqlOrObj.sql;
       const args = typeof sqlOrObj === 'string' ? (argsArr || []) : (sqlOrObj.args || []);
-      const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
-      if (isWrite) {
-        const info = db.prepare(sql).run(...args);
-        return Promise.resolve({ rows: [], lastInsertRowid: info.lastInsertRowid, changes: info.changes });
-      }
-      const rows = db.prepare(sql).all(...args);
-      return Promise.resolve({ rows, lastInsertRowid: null });
+      return Promise.resolve(runQuery(sql, args));
     },
-    executeMultiple(sql) {
-      db.exec(sql);
-      return Promise.resolve();
-    },
-    batch(stmts) {
-      const txn = db.transaction((s) => s.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
-      return Promise.resolve(txn(stmts));
-    },
-    close() {
-      db.close();
-      return Promise.resolve();
-    }
+    executeMultiple(sql) { db.exec(sql); return Promise.resolve(); },
+    close() { db.close(); return Promise.resolve(); }
   };
 }
 

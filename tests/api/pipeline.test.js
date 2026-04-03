@@ -1,57 +1,60 @@
 /**
- * Pipeline Version Manager + Job Scheduler Tests (TDD RED)
+ * Pipeline Version Manager + Job Scheduler Tests
  *
- * Tests are written FIRST — all must fail until implementation files exist:
+ * Tests for:
  *   api/lib/pipeline.js
  *   api/lib/pipeline-scheduler.js
  *
  * Uses an in-memory better-sqlite3 DB with the required tables created in beforeAll.
- * Both modules receive the db client via a setDb() / init() interface so
- * tests can inject the in-memory instance instead of the real sifter.db.
+ * The api/lib/db.js module is mocked so production functions use the in-memory instance.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Database from 'better-sqlite3';
 
 // ---------------------------------------------------------------------------
-// better-sqlite3 in-memory wrapper with libsql-compatible API
+// In-memory DB setup
 // ---------------------------------------------------------------------------
 
-function createInMemoryDb() {
-  const db = new Database(':memory:');
-  db.pragma('journal_mode = WAL');
-  return {
-    _db: db,
-    execute(sqlOrObj, argsArr) {
-      const sql = typeof sqlOrObj === 'string' ? sqlOrObj : sqlOrObj.sql;
-      const args = typeof sqlOrObj === 'string' ? (argsArr || []) : (sqlOrObj.args || []);
-      const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
-      if (isWrite) {
-        const info = db.prepare(sql).run(...args);
-        return Promise.resolve({ rows: [], lastInsertRowid: info.lastInsertRowid, changes: info.changes });
-      }
-      const rows = db.prepare(sql).all(...args);
-      return Promise.resolve({ rows, lastInsertRowid: null });
-    },
-    executeMultiple(sql) {
-      db.exec(sql);
-      return Promise.resolve();
-    },
-    batch(stmts) {
-      const txn = db.transaction((s) => s.map(({ sql, args = [] }) => db.prepare(sql).run(...args)));
-      return Promise.resolve(txn(stmts));
-    },
-    close() {
-      db.close();
+const rawDb = new Database(':memory:');
+rawDb.pragma('journal_mode = WAL');
+
+// ---------------------------------------------------------------------------
+// Mock api/lib/db.js before importing production modules
+// ---------------------------------------------------------------------------
+
+vi.mock('../../api/lib/db.js', () => {
+  function runQuery(sql, params = []) {
+    const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
+    if (isWrite) {
+      const info = rawDb.prepare(sql).run(...params);
+      return { rows: [{ lastInsertRowid: info.lastInsertRowid, changes: info.changes }], lastInsertRowid: info.lastInsertRowid };
     }
-  };
-}
+    return { rows: rawDb.prepare(sql).all(...params) };
+  }
+  async function query(sql, params = []) { return runQuery(sql, params); }
+  async function queryOne(sql, params = []) { const r = runQuery(sql, params); return r.rows[0] || null; }
+  async function queryAll(sql, params = []) { return runQuery(sql, params).rows; }
+  return { query, queryOne, queryAll };
+});
 
 // ---------------------------------------------------------------------------
-// Shared in-memory DB + schema bootstrap
+// Shared execute helper for test setup (direct in-memory access)
 // ---------------------------------------------------------------------------
 
-let db;
+const db = {
+  execute(sqlOrObj, argsArr) {
+    const sql = typeof sqlOrObj === 'string' ? sqlOrObj : sqlOrObj.sql;
+    const args = typeof sqlOrObj === 'string' ? (argsArr || []) : (sqlOrObj.args || []);
+    const isWrite = /^\s*(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|PRAGMA)\b/i.test(sql);
+    if (isWrite) {
+      const info = rawDb.prepare(sql).run(...args);
+      return Promise.resolve({ rows: [], lastInsertRowid: info.lastInsertRowid, changes: info.changes });
+    }
+    const rows = rawDb.prepare(sql).all(...args);
+    return Promise.resolve({ rows, lastInsertRowid: null });
+  }
+};
 
 const CREATE_PIPELINE_VERSIONS = `
   CREATE TABLE IF NOT EXISTS pipeline_versions (
@@ -99,14 +102,13 @@ const CREATE_LAYER_SYNC_STATE = `
 `;
 
 beforeAll(async () => {
-  db = createInMemoryDb();
-  await db.execute(CREATE_PIPELINE_VERSIONS);
-  await db.execute(CREATE_PIPELINE_JOBS);
-  await db.execute(CREATE_LAYER_SYNC_STATE);
+  rawDb.exec(CREATE_PIPELINE_VERSIONS);
+  rawDb.exec(CREATE_PIPELINE_JOBS);
+  rawDb.exec(CREATE_LAYER_SYNC_STATE);
 });
 
-afterAll(async () => {
-  db.close();
+afterAll(() => {
+  rawDb.close();
 });
 
 // ===========================================================================
@@ -119,7 +121,6 @@ describe('Pipeline Version Manager', () => {
   it('registerVersion() inserts a row and returns a version object', async () => {
     const { registerVersion } = await getModule();
     const result = await registerVersion(
-      db,
       'embedding',
       'v1',
       { promptHash: 'abc123', modelId: 'text-embedding-3-large', config: { dim: 3072 } }
@@ -136,7 +137,6 @@ describe('Pipeline Version Manager', () => {
     let result;
     try {
       result = await registerVersion(
-        db,
         'embedding',
         'v1',
         { promptHash: 'xyz999', modelId: 'text-embedding-3-large', config: {} }
@@ -153,12 +153,12 @@ describe('Pipeline Version Manager', () => {
 
   it('getActiveVersion() returns the version marked active=1', async () => {
     const { registerVersion, getActiveVersion } = await getModule();
-    await registerVersion(db, 'segmentation', 'v1', { promptHash: 'seg1', modelId: 'model-a', config: {} });
+    await registerVersion('segmentation', 'v1', { promptHash: 'seg1', modelId: 'model-a', config: {} });
     await db.execute({
       sql: `UPDATE pipeline_versions SET active=1 WHERE pipeline='segmentation' AND version='v1'`,
       args: []
     });
-    const active = await getActiveVersion(db, 'segmentation');
+    const active = await getActiveVersion('segmentation');
     expect(active).toBeTruthy();
     expect(active.version).toBe('v1');
     expect(active.active).toBe(1);
@@ -166,12 +166,12 @@ describe('Pipeline Version Manager', () => {
 
   it('only one version is active per pipeline at a time', async () => {
     const { registerVersion, getActiveVersion } = await getModule();
-    await registerVersion(db, 'hype', 'v1', { promptHash: 'h1', modelId: 'model-b', config: {} });
-    await registerVersion(db, 'hype', 'v2', { promptHash: 'h2', modelId: 'model-b', config: {} });
+    await registerVersion('hype', 'v1', { promptHash: 'h1', modelId: 'model-b', config: {} });
+    await registerVersion('hype', 'v2', { promptHash: 'h2', modelId: 'model-b', config: {} });
     await db.execute({ sql: `UPDATE pipeline_versions SET active=1 WHERE pipeline='hype' AND version='v1'`, args: [] });
     await db.execute({ sql: `UPDATE pipeline_versions SET active=0 WHERE pipeline='hype' AND version='v1'`, args: [] });
     await db.execute({ sql: `UPDATE pipeline_versions SET active=1 WHERE pipeline='hype' AND version='v2'`, args: [] });
-    const active = await getActiveVersion(db, 'hype');
+    const active = await getActiveVersion('hype');
     expect(active.version).toBe('v2');
     const rows = await db.execute({
       sql: `SELECT COUNT(*) as cnt FROM pipeline_versions WHERE pipeline='hype' AND active=1`,
@@ -182,10 +182,10 @@ describe('Pipeline Version Manager', () => {
 
   it('deactivateVersion() sets active=0 for the specified version', async () => {
     const { registerVersion, deactivateVersion, getActiveVersion } = await getModule();
-    await registerVersion(db, 'context', 'v1', { promptHash: 'c1', modelId: 'model-c', config: {} });
+    await registerVersion('context', 'v1', { promptHash: 'c1', modelId: 'model-c', config: {} });
     await db.execute({ sql: `UPDATE pipeline_versions SET active=1 WHERE pipeline='context' AND version='v1'`, args: [] });
-    await deactivateVersion(db, 'context', 'v1');
-    const active = await getActiveVersion(db, 'context');
+    await deactivateVersion('context', 'v1');
+    const active = await getActiveVersion('context');
     expect(active).toBeNull();
   });
 
@@ -194,7 +194,7 @@ describe('Pipeline Version Manager', () => {
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (42, 'object', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (42, 'enrichment', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (42, 'embedding', 0)`, args: [] });
-    await invalidateForTextChange(db, 42);
+    await invalidateForTextChange(42);
     const rows = await db.execute({
       sql: `SELECT layer, dirty FROM layer_sync_state WHERE content_id=42`,
       args: []
@@ -211,7 +211,7 @@ describe('Pipeline Version Manager', () => {
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, doc_id, layer, dirty) VALUES (101, 10, 'embedding', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, doc_id, layer, dirty) VALUES (102, 10, 'object', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, doc_id, layer, dirty) VALUES (102, 10, 'enrichment', 0)`, args: [] });
-    await invalidateForMetadataChange(db, 10);
+    await invalidateForMetadataChange(10);
     const dirtyRows = await db.execute({
       sql: `SELECT layer, dirty FROM layer_sync_state WHERE doc_id=10 AND dirty=1`,
       args: []
@@ -231,7 +231,7 @@ describe('Pipeline Version Manager', () => {
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (200, 'object', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (200, 'enrichment', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (200, 'embedding', 0)`, args: [] });
-    await invalidateForObjectVersionChange(db, 'v2');
+    await invalidateForObjectVersionChange('v2');
     const objectRow = await db.execute({
       sql: `SELECT dirty FROM layer_sync_state WHERE content_id=200 AND layer='object'`,
       args: []
@@ -254,7 +254,7 @@ describe('Pipeline Version Manager', () => {
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (300, 'object', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (300, 'enrichment', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (300, 'context', 0)`, args: [] });
-    await invalidateForContextPromptChange(db);
+    await invalidateForContextPromptChange();
     const dirtyRows = await db.execute({
       sql: `SELECT layer FROM layer_sync_state WHERE content_id=300 AND dirty=1`,
       args: []
@@ -273,7 +273,7 @@ describe('Pipeline Version Manager', () => {
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (400, 'object', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (400, 'enrichment', 0)`, args: [] });
     await db.execute({ sql: `INSERT INTO layer_sync_state (content_id, layer, dirty) VALUES (400, 'hype', 0)`, args: [] });
-    await invalidateForHypePromptChange(db);
+    await invalidateForHypePromptChange();
     const dirtyRows = await db.execute({
       sql: `SELECT layer FROM layer_sync_state WHERE content_id=400 AND dirty=1`,
       args: []
@@ -297,7 +297,7 @@ describe('Pipeline Job Scheduler', () => {
 
   it('scheduleJob() creates a pending job and returns a job object with id', async () => {
     const { scheduleJob } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'object_extract',
       docId: 1,
       layer: 'object',
@@ -312,13 +312,13 @@ describe('Pipeline Job Scheduler', () => {
 
   it('scheduleJob() returns existing job for duplicate (type, docId, layer, pipelineVersion) when pending', async () => {
     const { scheduleJob } = await getModule();
-    const first = await scheduleJob(db, {
+    const first = await scheduleJob({
       type: 'object_extract',
       docId: 2,
       layer: 'object',
       pipelineVersion: 'v1'
     });
-    const second = await scheduleJob(db, {
+    const second = await scheduleJob({
       type: 'object_extract',
       docId: 2,
       layer: 'object',
@@ -329,9 +329,9 @@ describe('Pipeline Job Scheduler', () => {
 
   it('getNextJob(layer) returns the oldest pending job for that layer', async () => {
     const { scheduleJob, getNextJob } = await getModule();
-    await scheduleJob(db, { type: 'object_extract', docId: 10, layer: 'embedding', pipelineVersion: 'v1' });
-    await scheduleJob(db, { type: 'object_extract', docId: 11, layer: 'embedding', pipelineVersion: 'v1' });
-    const next = await getNextJob(db, 'embedding');
+    await scheduleJob({ type: 'object_extract', docId: 10, layer: 'embedding', pipelineVersion: 'v1' });
+    await scheduleJob({ type: 'object_extract', docId: 11, layer: 'embedding', pipelineVersion: 'v1' });
+    const next = await getNextJob('embedding');
     expect(next).toBeTruthy();
     expect(next.layer).toBe('embedding');
     expect(next.status).toBe('pending');
@@ -340,19 +340,19 @@ describe('Pipeline Job Scheduler', () => {
 
   it('getNextJob() returns null when no pending jobs exist for that layer', async () => {
     const { getNextJob } = await getModule();
-    const next = await getNextJob(db, 'nonexistent_layer_xyz');
+    const next = await getNextJob('nonexistent_layer_xyz');
     expect(next).toBeNull();
   });
 
   it('claimJob(jobId, workerId) sets status=running with timestamps', async () => {
     const { scheduleJob, claimJob } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'hype_generate',
       docId: 20,
       layer: 'hype',
       pipelineVersion: 'v1'
     });
-    const claimed = await claimJob(db, job.id, 'worker-1');
+    const claimed = await claimJob(job.id, 'worker-1');
     expect(claimed.status).toBe('running');
     expect(claimed.worker_id).toBe('worker-1');
     expect(claimed.started_at).toBeTruthy();
@@ -361,26 +361,26 @@ describe('Pipeline Job Scheduler', () => {
 
   it('claimJob() throws when job is already claimed/running', async () => {
     const { scheduleJob, claimJob } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'hype_generate',
       docId: 21,
       layer: 'hype',
       pipelineVersion: 'v1'
     });
-    await claimJob(db, job.id, 'worker-1');
-    await expect(claimJob(db, job.id, 'worker-2')).rejects.toThrow();
+    await claimJob(job.id, 'worker-1');
+    await expect(claimJob(job.id, 'worker-2')).rejects.toThrow();
   });
 
   it('completeJob() sets status=completed, completed_at, and item counts', async () => {
     const { scheduleJob, claimJob, completeJob } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'object_extract',
       docId: 30,
       layer: 'object',
       pipelineVersion: 'v1'
     });
-    await claimJob(db, job.id, 'worker-1');
-    const done = await completeJob(db, job.id, { completedItems: 100, failedItems: 2 });
+    await claimJob(job.id, 'worker-1');
+    const done = await completeJob(job.id, { completedItems: 100, failedItems: 2 });
     expect(done.status).toBe('completed');
     expect(done.completed_at).toBeTruthy();
     expect(Number(done.completed_items)).toBe(100);
@@ -389,48 +389,48 @@ describe('Pipeline Job Scheduler', () => {
 
   it('failJob(jobId, errorMessage) sets status=failed and stores error', async () => {
     const { scheduleJob, claimJob, failJob } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'object_extract',
       docId: 31,
       layer: 'object',
       pipelineVersion: 'v1'
     });
-    await claimJob(db, job.id, 'worker-1');
-    const failed = await failJob(db, job.id, 'Connection timeout after 30s');
+    await claimJob(job.id, 'worker-1');
+    const failed = await failJob(job.id, 'Connection timeout after 30s');
     expect(failed.status).toBe('failed');
     expect(failed.error).toContain('Connection timeout');
   });
 
   it('heartbeat(jobId) updates heartbeat_at to a more recent timestamp', async () => {
     const { scheduleJob, claimJob, heartbeat } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'context_enrich',
       docId: 40,
       layer: 'enrichment',
       pipelineVersion: 'v1'
     });
-    const claimed = await claimJob(db, job.id, 'worker-1');
+    const claimed = await claimJob(job.id, 'worker-1');
     const originalHeartbeat = claimed.heartbeat_at;
     await new Promise(r => setTimeout(r, 10));
-    const updated = await heartbeat(db, job.id);
+    const updated = await heartbeat(job.id);
     expect(updated.heartbeat_at).toBeTruthy();
     expect(updated.heartbeat_at >= originalHeartbeat).toBe(true);
   });
 
   it('getStaleJobs(timeoutMs) returns running jobs with stale heartbeats', async () => {
     const { scheduleJob, claimJob, getStaleJobs } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'object_extract',
       docId: 50,
       layer: 'object',
       pipelineVersion: 'v1'
     });
-    await claimJob(db, job.id, 'worker-stale');
+    await claimJob(job.id, 'worker-stale');
     await db.execute({
       sql: `UPDATE pipeline_jobs SET heartbeat_at=datetime('now', '-10 minutes') WHERE id=?`,
       args: [job.id]
     });
-    const stale = await getStaleJobs(db, 60_000);
+    const stale = await getStaleJobs(60_000);
     expect(Array.isArray(stale)).toBe(true);
     const found = stale.find(j => j.id === job.id);
     expect(found).toBeTruthy();
@@ -439,7 +439,7 @@ describe('Pipeline Job Scheduler', () => {
 
   it('getJobStats() returns an array of { layer, status, count } aggregates', async () => {
     const { getJobStats } = await getModule();
-    const stats = await getJobStats(db);
+    const stats = await getJobStats();
     expect(Array.isArray(stats)).toBe(true);
     for (const entry of stats) {
       expect(typeof entry.layer).toBe('string');
@@ -450,15 +450,15 @@ describe('Pipeline Job Scheduler', () => {
 
   it('updateCheckpoint(jobId, data) stores JSON checkpoint and is readable back', async () => {
     const { scheduleJob, claimJob, updateCheckpoint } = await getModule();
-    const job = await scheduleJob(db, {
+    const job = await scheduleJob({
       type: 'object_extract',
       docId: 60,
       layer: 'object',
       pipelineVersion: 'v1'
     });
-    await claimJob(db, job.id, 'worker-1');
+    await claimJob(job.id, 'worker-1');
     const checkpointData = { lastProcessedId: 500, offset: 42, batchSize: 100 };
-    const updated = await updateCheckpoint(db, job.id, checkpointData);
+    const updated = await updateCheckpoint(job.id, checkpointData);
     expect(updated).toBeTruthy();
     const parsed = typeof updated.checkpoint === 'string'
       ? JSON.parse(updated.checkpoint)

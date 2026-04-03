@@ -1,36 +1,49 @@
 /**
  * Graph API — pure route handler functions
  *
- * Each function accepts a libsql db client as first argument so they can be
- * tested without a running HTTP server.
+ * Each function accepts an optional db handle for test injection.
+ * When db is omitted, uses module-level queryAll/queryOne from db.js.
  */
+
+import { queryAll as _queryAll, queryOne as _queryOne } from '../lib/db.js';
+
+// ─── DB helpers (support injected db for tests or module-level for production) ──
+
+function qa(db, sql, params = []) {
+  if (db?.queryAll) return db.queryAll(sql, params);
+  return _queryAll(sql, params);
+}
+function qo(db, sql, params = []) {
+  if (db?.queryOne) return db.queryOne(sql, params);
+  return _queryOne(sql, params);
+}
 
 // ─── getGraphStats ────────────────────────────────────────────────────────────
 
 export async function getGraphStats(db) {
-  const entityRows = await db.execute(`
+  const entityRows = await qa(db, `
     SELECT religion, COUNT(*) AS entityCount
     FROM graph_entities
     GROUP BY religion
   `);
-  const relationRows = await db.execute(`
+  const relationRows = await qa(db, `
     SELECT ge.religion, COUNT(*) AS relationCount
     FROM graph_relations gr
     JOIN graph_entities ge ON gr.source_entity_id = ge.id
     GROUP BY ge.religion
   `);
-  const topRows = await db.execute(`
+  const topRows = await qa(db, `
     SELECT religion, name, mention_count
     FROM graph_entities
     ORDER BY religion, mention_count DESC
   `);
-  const relationMap = new Map(relationRows.rows.map(r => [r.religion, Number(r.relationCount)]));
+  const relationMap = new Map(relationRows.map(r => [r.religion, Number(r.relationCount)]));
   const topMap = new Map();
-  for (const row of topRows.rows) {
+  for (const row of topRows) {
     if (!topMap.has(row.religion)) topMap.set(row.religion, []);
     topMap.get(row.religion).push(row.name);
   }
-  const religions = entityRows.rows.map(r => ({
+  const religions = entityRows.map(r => ({
     religion: r.religion,
     entityCount: Number(r.entityCount),
     relationCount: relationMap.get(r.religion) ?? 0,
@@ -44,30 +57,30 @@ export async function getGraphStats(db) {
 export async function getGraphForReligion(db, religion, options = {}) {
   const { limit = 100, entityTypes } = options;
   let entitySql = `SELECT id, name, entity_type, mention_count, religion FROM graph_entities WHERE religion = ?`;
-  const entityArgs = [religion];
+  const entityParams = [religion];
   if (entityTypes?.length) {
     entitySql += ` AND entity_type IN (${entityTypes.map(() => '?').join(', ')})`;
-    entityArgs.push(...entityTypes);
+    entityParams.push(...entityTypes);
   }
   entitySql += ` LIMIT ?`;
-  entityArgs.push(limit);
-  const entityRows = await db.execute({ sql: entitySql, args: entityArgs });
-  const nodeIds = new Set(entityRows.rows.map(r => Number(r.id)));
-  const nodes = entityRows.rows.map(r => ({
+  entityParams.push(limit);
+  const entityRows = await qa(db, entitySql, entityParams);
+  const nodeIds = new Set(entityRows.map(r => Number(r.id)));
+  const nodes = entityRows.map(r => ({
     id: Number(r.id),
     name: r.name,
     type: r.entity_type,
     mentionCount: Number(r.mention_count),
     religion: r.religion
   }));
-  const relRows = await db.execute({
-    sql: `SELECT source_entity_id, target_entity_id, relation_type, weight
-          FROM graph_relations
-          WHERE source_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
-            AND target_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)`,
-    args: [religion, religion]
-  });
-  const edges = relRows.rows
+  const relRows = await qa(db,
+    `SELECT source_entity_id, target_entity_id, relation_type, weight
+     FROM graph_relations
+     WHERE source_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
+       AND target_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)`,
+    [religion, religion]
+  );
+  const edges = relRows
     .filter(r => nodeIds.has(Number(r.source_entity_id)) && nodeIds.has(Number(r.target_entity_id)))
     .map(r => ({
       source: Number(r.source_entity_id),
@@ -89,11 +102,11 @@ export async function searchGraphEntities(db, query, options = {}) {
   let sql = `SELECT id, name, canonical_name, entity_type, religion, mention_count, description
              FROM graph_entities
              WHERE name LIKE ?`;
-  const args = [`%${query}%`];
-  if (religion) { sql += ` AND religion = ?`; args.push(religion); }
+  const params = [`%${query}%`];
+  if (religion) { sql += ` AND religion = ?`; params.push(religion); }
   sql += ` ORDER BY mention_count DESC LIMIT 50`;
-  const rows = await db.execute({ sql, args });
-  return rows.rows.map(r => ({
+  const rows = await qa(db, sql, params);
+  return rows.map(r => ({
     id: Number(r.id),
     name: r.name,
     canonicalName: r.canonical_name,
@@ -107,13 +120,12 @@ export async function searchGraphEntities(db, query, options = {}) {
 // ─── getEntityDetail ──────────────────────────────────────────────────────────
 
 export async function getEntityDetail(db, entityId) {
-  const entityRow = await db.execute({
-    sql: `SELECT id, name, canonical_name, entity_type, religion, mention_count, era, description
-          FROM graph_entities WHERE id = ?`,
-    args: [entityId]
-  });
-  if (!entityRow.rows.length) return null;
-  const e = entityRow.rows[0];
+  const e = await qo(db,
+    `SELECT id, name, canonical_name, entity_type, religion, mention_count, era, description
+     FROM graph_entities WHERE id = ?`,
+    [entityId]
+  );
+  if (!e) return null;
   const entity = {
     id: Number(e.id),
     name: e.name,
@@ -124,13 +136,13 @@ export async function getEntityDetail(db, entityId) {
     era: e.era,
     description: e.description
   };
-  const relRows = await db.execute({
-    sql: `SELECT source_entity_id, target_entity_id, relation_type, weight, paragraph_id, doc_id
-          FROM graph_relations
-          WHERE source_entity_id = ? OR target_entity_id = ?`,
-    args: [entityId, entityId]
-  });
-  const relations = relRows.rows.map(r => ({
+  const relRows = await qa(db,
+    `SELECT source_entity_id, target_entity_id, relation_type, weight, paragraph_id, doc_id
+     FROM graph_relations
+     WHERE source_entity_id = ? OR target_entity_id = ?`,
+    [entityId, entityId]
+  );
+  const relations = relRows.map(r => ({
     source: Number(r.source_entity_id),
     target: Number(r.target_entity_id),
     type: r.relation_type,
@@ -144,12 +156,11 @@ export async function getEntityDetail(db, entityId) {
   let connectedEntities = [];
   if (connectedIds.size) {
     const placeholders = [...connectedIds].map(() => '?').join(', ');
-    const connRows = await db.execute({
-      sql: `SELECT id, name, entity_type, religion, mention_count
-            FROM graph_entities WHERE id IN (${placeholders})`,
-      args: [...connectedIds]
-    });
-    connectedEntities = connRows.rows.map(r => ({
+    const connRows = await qa(db,
+      `SELECT id, name, entity_type, religion, mention_count FROM graph_entities WHERE id IN (${placeholders})`,
+      [...connectedIds]
+    );
+    connectedEntities = connRows.map(r => ({
       id: Number(r.id),
       name: r.name,
       type: r.entity_type,
