@@ -144,19 +144,30 @@ async function runEmbeddingCycle() {
     logger.info({ count: rows.length, subBatches: subBatches.length }, 'Generating embeddings');
 
     for (const batch of subBatches) {
-      const texts = batch.map(row => row.text || '');
-      const result = await createEmbeddings(texts, { caller: 'embedding-worker' });
-      await storeEmbeddings(batch, result.embeddings);
+      try {
+        const texts = batch.map(row => row.text || '');
+        const result = await createEmbeddings(texts, { caller: 'embedding-worker' });
+        await storeEmbeddings(batch, result.embeddings);
 
-      embeddingStats.embeddingsGenerated += batch.length;
-      embeddingStats.batchesProcessed++;
-      embeddingStats.lastSuccess = new Date().toISOString();
+        embeddingStats.embeddingsGenerated += batch.length;
+        embeddingStats.batchesProcessed++;
+        embeddingStats.lastSuccess = new Date().toISOString();
 
-      logger.info({
-        generated: batch.length,
-        totalGenerated: embeddingStats.embeddingsGenerated,
-        tokens: result.usage?.totalTokens
-      }, 'Embedding sub-batch complete');
+        logger.info({
+          generated: batch.length,
+          totalGenerated: embeddingStats.embeddingsGenerated,
+          tokens: result.usage?.totalTokens
+        }, 'Embedding sub-batch complete');
+      } catch (batchErr) {
+        // Log and skip this batch — never let a bad batch kill the worker
+        embeddingStats.errors++;
+        embeddingStats.lastError = batchErr.message;
+        logger.warn({
+          err: batchErr.message,
+          batchSize: batch.length,
+          firstId: batch[0]?.id
+        }, 'Embedding sub-batch failed, skipping');
+      }
     }
 
     // Success — reset backoff
