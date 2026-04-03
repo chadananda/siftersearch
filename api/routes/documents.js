@@ -12,6 +12,7 @@
  */
 
 import { getMeili, INDEXES } from '../lib/search.js';
+import { queryOne, queryAll } from '../lib/db.js';
 import { ApiError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { nanoid } from 'nanoid';
@@ -197,40 +198,29 @@ export default async function documentsRoutes(fastify) {
     }
   }, async (request) => {
     const { id } = request.params;
-    const { limit = 100, offset = 0, includeEmbeddings = false } = request.query;
-    const meili = getMeili();
+    const { limit = 100, offset = 0 } = request.query;
 
-    // Verify document exists
-    try {
-      await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
-    }
+    // Read directly from SQLite — Meilisearch is for search, not document viewing
+    const doc = await queryOne('SELECT id FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
+    if (!doc) throw ApiError.notFound('Document not found');
 
-    // Get segments for this document
-    const results = await meili.index(INDEXES.PARAGRAPHS).search('', {
-      filter: `doc_id = ${id}`,
-      limit,
-      offset,
-      sort: ['paragraph_index:asc']
-    });
+    const segments = await queryAll(`
+      SELECT id, doc_id, paragraph_index, text, heading, blocktype,
+             translation, translation_segments, context, language
+      FROM content
+      WHERE doc_id = ? AND deleted_at IS NULL
+      ORDER BY paragraph_index
+      LIMIT ? OFFSET ?
+    `, [id, limit, offset]);
 
-    // Optionally strip embeddings to reduce payload
-    const segments = results.hits.map(hit => {
-      if (!includeEmbeddings) {
-        const { _vectors, ...rest } = hit;
-        return rest;
-      }
-      return hit;
-    });
+    const countRow = await queryOne(
+      'SELECT COUNT(*) as total FROM content WHERE doc_id = ? AND deleted_at IS NULL', [id]
+    );
 
     return {
       documentId: id,
       segments,
-      total: results.estimatedTotalHits,
+      total: countRow?.total || 0,
       limit,
       offset
     };
