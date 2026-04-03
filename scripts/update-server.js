@@ -21,7 +21,7 @@
  *   (Replace STAR with asterisk)
  */
 
-import { exec, spawn } from 'child_process';
+import { exec, execSync, spawn } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -264,6 +264,11 @@ async function runSmokeTests(port) {
  */
 async function verifyNewCode() {
   log('info', `Starting test API on port ${HEALTH_CHECK_PORT}...`);
+
+  // Kill any orphan process from a previous failed test run
+  try {
+    execSync(`lsof -ti :${HEALTH_CHECK_PORT} | xargs kill -9 2>/dev/null`, { stdio: 'ignore' });
+  } catch { /* no process on port */ }
 
   const child = spawn('node', ['api/index.js'], {
     cwd: PROJECT_ROOT,
