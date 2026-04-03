@@ -125,7 +125,8 @@ async function processSyncJob(job) {
       const docs = await content.getDocsWithDirtyParagraphs(1);
       if (docs.length === 0) break;
       const doc = docs[0];
-      const authority = getAuthority(doc);
+      let authority;
+      try { authority = getAuthority(doc); } catch { authority = 0; }
       // Submit the doc metadata (fire-and-forget — Meilisearch is eventually consistent)
       try {
         const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
