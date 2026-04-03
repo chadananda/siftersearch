@@ -154,7 +154,7 @@ function buildLeapfrogWindows(paragraphs) {
 
 async function callVLLM(systemPrompt, userPrompt) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000);
+  const timeout = setTimeout(() => controller.abort(), 300000); // 5 min (Qwen3 thinks slowly)
   try {
     const response = await fetch(`${VLLM_URL}/v1/chat/completions`, {
       method: 'POST',
@@ -163,10 +163,12 @@ async function callVLLM(systemPrompt, userPrompt) {
         model: VLLM_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          // /no_think disables Qwen3's extended reasoning for faster responses
+          { role: 'user', content: '/no_think\n' + userPrompt }
         ],
         temperature: 0.1,
-        max_tokens: RESERVED_DECODE
+        max_tokens: RESERVED_DECODE,
+        chat_template_kwargs: { enable_thinking: false }
       }),
       signal: controller.signal
     });
