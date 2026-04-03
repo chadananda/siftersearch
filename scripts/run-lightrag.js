@@ -40,7 +40,7 @@ import { logger } from '../api/lib/logger.js';
 // Configuration
 // ============================================================================
 
-const VLLM_URL = process.env.VLLM_URL || 'http://100.77.148.41:8000';
+const VLLM_URL = process.env.VLLM_URL || 'http://boss:8000';
 const VLLM_MODEL = 'Qwen/Qwen3-32B-AWQ';
 const BATCH_SIZE = 10;           // Paragraphs per batch (sequential LLM calls)
 const MAX_PARAGRAPH_CHARS = 4000; // Skip paragraphs longer than this
