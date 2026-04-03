@@ -158,7 +158,11 @@
     if (!isBrowser) return null;
     try {
       const cached = localStorage.getItem(STATS_CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
+      if (!cached) return null;
+      const parsed = JSON.parse(cached);
+      // Never show cached server version — must come from live response
+      delete parsed.serverVersion;
+      return parsed;
     } catch { return null; }
   }
   function setCachedStats(stats) {
