@@ -164,7 +164,9 @@
   function setCachedStats(stats) {
     if (!isBrowser) return;
     try {
-      localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(stats));
+      // Never cache serverVersion — it must always reflect the live server
+      const { serverVersion: _, ...cacheable } = stats;
+      localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(cacheable));
     } catch { /* ignore storage errors */ }
   }
 
