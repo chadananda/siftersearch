@@ -1996,15 +1996,25 @@
                       </div>
                     {/if}
                     {#if libraryStats.pipelineStatus.paragraphsNeedingEmbeddings > 0}
-                      {@const uniqueNeeded = libraryStats.pipelineStatus.uniqueEmbeddingsNeeded || libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
-                      {@const estimatedSeconds = Math.ceil(uniqueNeeded / 6)}
-                      {@const hours = Math.floor(estimatedSeconds / 3600)}
-                      {@const minutes = Math.floor((estimatedSeconds % 3600) / 60)}
+                      {@const total = libraryStats.totalParagraphs || 1}
+                      {@const needed = libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
+                      {@const done = total - needed}
+                      {@const pct = Math.round((done / total) * 100)}
+                      {@const estimatedMinutes = Math.ceil(needed / 7000)}
+                      {@const hours = Math.floor(estimatedMinutes / 60)}
+                      {@const minutes = estimatedMinutes % 60}
                       {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
-                      <div class="pipeline-item">
-                        <span class="pipeline-icon">🔢</span>
-                        <span class="pipeline-label">Embeddings:</span>
-                        <span class="pipeline-count">{formatWithCommas(libraryStats.pipelineStatus.paragraphsNeedingEmbeddings)} needed, ~{timeStr} remaining</span>
+                      <div class="ingestion-progress embedding">
+                        <div class="ingestion-header">
+                          <span class="ingestion-label">Generating embeddings</span>
+                          <span class="ingestion-percent">{pct}%</span>
+                        </div>
+                        <div class="ingestion-bar">
+                          <div class="ingestion-fill" style="width: {pct}%"></div>
+                        </div>
+                        <div class="ingestion-detail">
+                          {formatWithCommas(done)} / {formatWithCommas(total)} paragraphs · ~{timeStr} remaining
+                        </div>
                       </div>
                     {/if}
                     <!-- Search sync count is shown in the "Search ready" progress bar above -->
@@ -3235,6 +3245,10 @@
   /* Ingesting variant - shows content parsing progress */
   .ingestion-progress.ingesting .ingestion-fill {
     background: var(--warning);
+  }
+
+  .ingestion-progress.embedding .ingestion-fill {
+    background: var(--accent-primary);
   }
 
   .ingestion-detail .pending-count {
