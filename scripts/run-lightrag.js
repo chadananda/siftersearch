@@ -261,9 +261,20 @@ Rules:
         // Store for each extraction target paragraph
         for (const p of window.extractParas) {
           await query(`
-            INSERT OR REPLACE INTO content_objects (content_id, doc_id, objects_json, objects_rendered, model)
-            VALUES (?, ?, ?, ?, ?)
-          `, [p.id, doc.id, JSON.stringify(objects), entityNames.join(', '), VLLM_MODEL]);
+            INSERT OR REPLACE INTO content_objects
+              (content_id, doc_id, people_json, places_json, documents_json, events_json, concepts_json, relations_json, rendered, object_pipeline_version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            p.id, doc.id,
+            JSON.stringify(objects.people),
+            JSON.stringify(objects.places),
+            JSON.stringify(objects.documents),
+            JSON.stringify(objects.events),
+            JSON.stringify(objects.concepts),
+            JSON.stringify(objects.relations),
+            entityNames.join(', '),
+            'v1-leapfrog'
+          ]);
         }
 
         stats.entitiesFound += entityNames.length;
@@ -283,10 +294,10 @@ Rules:
       if (stats.errors <= 10 || stats.errors % 100 === 0) {
         logger.warn({ err: err.message, docId: doc.id }, 'Window extraction failed');
       }
-      // Mark extraction targets as processed (with null) to avoid infinite retry
+      // Mark extraction targets as processed to avoid infinite retry
       for (const p of window.extractParas) {
-        await query(`INSERT OR IGNORE INTO content_objects (content_id, doc_id, objects_json, objects_rendered, model) VALUES (?, ?, NULL, NULL, ?)`,
-          [p.id, doc.id, VLLM_MODEL]);
+        await query(`INSERT OR IGNORE INTO content_objects (content_id, doc_id, rendered, object_pipeline_version) VALUES (?, ?, ?, ?)`,
+          [p.id, doc.id, 'ERROR', 'v1-leapfrog']);
       }
     }
   }
@@ -310,16 +321,7 @@ async function main() {
 
   await runMigrations();
 
-  await query(`CREATE TABLE IF NOT EXISTS content_objects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    content_id INTEGER NOT NULL,
-    doc_id INTEGER NOT NULL,
-    objects_json TEXT,
-    objects_rendered TEXT,
-    extracted_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    model TEXT,
-    UNIQUE(content_id)
-  )`);
+  // content_objects table created by migration 44 with per-entity columns
 
   // Count docs
   let docWhere = 'WHERE d.deleted_at IS NULL';

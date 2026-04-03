@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-03T23:09:16.432Z",
+  "generated": "2026-04-03T23:20:08.067Z",
   "entries": [
+    {
+      "hash": "29ab1fc",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Leapfrog windows with token-budget sizing and cache metrics",
+      "scope": null
+    },
     {
       "hash": "b97ea8c",
       "date": "2026-04-03",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Optimize translation for 6-10x speedup with TOON format",
       "scope": null
-    },
-    {
-      "hash": "357fb51",
-      "date": "2026-01-04",
-      "type": "Chore",
-      "description": "Bump version for PWA cache bust",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-03": [
+      {
+        "hash": "29ab1fc",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Leapfrog windows with token-budget sizing and cache metrics",
+        "scope": null
+      },
       {
         "hash": "b97ea8c",
         "date": "2026-04-03",
@@ -7045,13 +7052,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Optimize translation for 6-10x speedup with TOON format",
-        "scope": null
-      },
-      {
-        "hash": "357fb51",
-        "date": "2026-01-04",
-        "type": "Chore",
-        "description": "Bump version for PWA cache bust",
         "scope": null
       }
     ]
