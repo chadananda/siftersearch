@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-03T20:10:13.988Z",
+  "generated": "2026-04-03T20:12:01.760Z",
   "entries": [
+    {
+      "hash": "e06d719",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Clear-Site-Data header to fix broken service workers",
+      "scope": null
+    },
     {
       "hash": "7b1461a",
       "date": "2026-04-03",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
       "scope": null
-    },
-    {
-      "hash": "041746c",
-      "date": "2026-01-03",
-      "type": "New",
-      "description": "Add ingest-file endpoint for ingesting from file path",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-03": [
+      {
+        "hash": "e06d719",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Clear-Site-Data header to fix broken service workers",
+        "scope": null
+      },
       {
         "hash": "7b1461a",
         "date": "2026-04-03",
@@ -7047,13 +7054,6 @@
         "date": "2026-01-03",
         "type": "Fixed",
         "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
-        "scope": null
-      },
-      {
-        "hash": "041746c",
-        "date": "2026-01-03",
-        "type": "New",
-        "description": "Add ingest-file endpoint for ingesting from file path",
         "scope": null
       }
     ]
