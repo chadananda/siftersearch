@@ -112,11 +112,24 @@ async function runEmbeddingCycle() {
       return;
     }
 
+    // Skip individual paragraphs that are too large for a single API call
+    const MAX_SINGLE_TOKENS = 8000; // OpenAI max per text is 8191 tokens
+    const validRows = rows.filter(row => {
+      const estTokens = Math.ceil((row.text || '').length / CHARS_PER_TOKEN);
+      if (estTokens > MAX_SINGLE_TOKENS) {
+        logger.warn({ id: row.id, chars: (row.text || '').length, estTokens }, 'Skipping oversized paragraph');
+        return false;
+      }
+      return true;
+    });
+
+    if (validRows.length === 0) { isRunning = false; return; }
+
     // Split into token-safe sub-batches to stay under OpenAI's per-request limit
     const subBatches = [];
     let currentBatch = [];
     let currentTokens = 0;
-    for (const row of rows) {
+    for (const row of validRows) {
       const estTokens = Math.ceil((row.text || '').length / CHARS_PER_TOKEN);
       if (currentBatch.length > 0 && currentTokens + estTokens > MAX_TOKENS_PER_REQUEST) {
         subBatches.push(currentBatch);

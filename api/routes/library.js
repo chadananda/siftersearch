@@ -126,9 +126,17 @@ async function refreshPipelineCache() {
 
 export default async function libraryRoutes(fastify) {
 
-  // Pipeline cache refresh disabled — the COUNT queries on 2.5M rows block the
-  // event loop for several seconds, causing health check timeouts.
-  logger.info('Pipeline cache refresh disabled (blocks event loop)');
+  // Start background pipeline cache refresh after a 10s delay (let server finish starting)
+  // Runs every 60s — the COUNT queries take a few seconds but run in the background,
+  // never in a request handler.
+  setTimeout(() => {
+    refreshPipelineCache();
+    pipelineRefreshTimer = setInterval(refreshPipelineCache, 60000);
+  }, 10000);
+
+  fastify.addHook('onClose', () => {
+    if (pipelineRefreshTimer) clearInterval(pipelineRefreshTimer);
+  });
 
   // ============================================
   // Public Routes
@@ -323,23 +331,12 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
-    // Pipeline status — inline queries (partial indexes make these fast, ~50ms each)
-    let embeddingsNeeded = 0;
-    let oversizedSkipped = 0;
-    try {
-      const embRow = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= 6000');
-      embeddingsNeeded = embRow?.c || 0;
-      const overRow = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > 6000');
-      oversizedSkipped = overRow?.c || 0;
-      logger.info({ embeddingsNeeded, oversizedSkipped }, 'Pipeline embedding counts');
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Pipeline embedding count failed');
-    }
+    // Pipeline status — use background-refreshed cache (COUNT queries can take 10s+ during bulk embedding)
     const pipelineStatus = {
       ingestionQueuePending: indexingStats.pending + indexingStats.processing,
-      paragraphsNeedingEmbeddings: embeddingsNeeded,
+      paragraphsNeedingEmbeddings: pipelineCache.data?.paragraphsNeedingEmbeddings ?? 0,
       paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-      oversizedSkipped
+      oversizedSkipped: pipelineCache.data?.oversizedSkipped ?? 0
     };
 
     // Calculate ingestion progress
