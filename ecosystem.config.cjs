@@ -5,12 +5,11 @@ const path = require('path');
 /**
  * PM2 Ecosystem Configuration for SifterSearch
  *
- * Single-writer architecture: only siftersearch-worker writes to SQLite.
- * API is read-only (reads + queues jobs). No watchdog needed (PM2 handles restarts).
- *
- * Start all services: pm2 start ecosystem.config.cjs --env production
- * View status: pm2 status
- * View logs: pm2 logs
+ * Design principles:
+ * - NEVER stop trying to restart. max_restarts: -1 (unlimited)
+ * - NO wait_ready — it causes death spirals when startup is slow
+ * - Exponential backoff prevents CPU thrashing on persistent failures
+ * - Single-writer: only siftersearch-worker writes to SQLite
  */
 
 const PROJECT_ROOT = __dirname;
@@ -18,8 +17,6 @@ const PROJECT_ROOT = __dirname;
 module.exports = {
   apps: [
     // SifterSearch API Server (read-only DB access)
-    // Uses wait_ready for zero-downtime reloads: new process signals 'ready'
-    // after full init, then PM2 kills the old one. Use `pm2 reload` not `restart`.
     {
       name: 'siftersearch-api',
       script: 'api/index.js',
@@ -28,15 +25,15 @@ module.exports = {
       exec_mode: 'fork',
       watch: false,
       max_memory_restart: '500M',
-      wait_ready: true,
+      // NO wait_ready — it caused death spirals when Meilisearch was slow
+      wait_ready: false,
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
-      listen_timeout: 60000,
       kill_timeout: 5000,
-      exp_backoff_restart_delay: 100,
-      max_restarts: 10,
+      exp_backoff_restart_delay: 1000, // 1s, 2s, 4s, ... up to 15s
+      max_restarts: -1,       // NEVER stop trying
       min_uptime: '10s',
       error_file: './logs/api-error.log',
       out_file: './logs/api-out.log',
@@ -58,9 +55,9 @@ module.exports = {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
-      exp_backoff_restart_delay: 5000,
-      max_restarts: 10,
-      min_uptime: '30s',
+      exp_backoff_restart_delay: 2000, // 2s, 4s, 8s, ... up to 15s
+      max_restarts: -1,       // NEVER stop trying
+      min_uptime: '10s',
       error_file: './logs/worker-error.log',
       out_file: './logs/worker-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
@@ -82,14 +79,14 @@ module.exports = {
         UPDATE_INTERVAL: '300000'
       },
       exp_backoff_restart_delay: 5000,
-      max_restarts: 10,
+      max_restarts: -1,       // NEVER stop trying
       min_uptime: '60s',
       error_file: './logs/updater-error.log',
       out_file: './logs/updater-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
 
-    // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:3000)
+    // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:7839)
     {
       name: 'cloudflared-tunnel',
       script: 'cloudflared',
@@ -99,7 +96,7 @@ module.exports = {
       watch: false,
       autorestart: true,
       exp_backoff_restart_delay: 1000,
-      max_restarts: 50,
+      max_restarts: -1,       // NEVER stop trying
       min_uptime: '30s',
       error_file: './logs/tunnel-error.log',
       out_file: './logs/tunnel-out.log',
