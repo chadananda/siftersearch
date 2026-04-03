@@ -44,7 +44,13 @@
       "WebFetch(domain:bytemd.js.org)",
       "Skill(commit)",
       "WebFetch(domain:siftersearch.com)",
-      "WebFetch(domain:xswarm.ai)"
+      "WebFetch(domain:xswarm.ai)",
+      "WebFetch(domain:fontawesome.com)",
+      "WebFetch(domain:api.iconify.design)",
+      "WebFetch(domain:freesvg.org)",
+      "WebFetch(domain:commons.wikimedia.org)",
+      "WebFetch(domain:upload.wikimedia.org)",
+      "WebFetch(domain:fontawesome.cc)"
     ]
   }
 }
