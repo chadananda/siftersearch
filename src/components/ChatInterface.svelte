@@ -739,31 +739,47 @@
   let indexingInterpolated = $state(null);
   let _indexTickId = null;
 
+  let _lastSynced = 0;
+  let _lastSyncedAt = 0;
+  let _syncRate = 150000 / 60; // default estimate: 150K/min = 2500/s
+
   function startIndexTicker() {
-    if (_indexTickId) return; // already running
+    if (_indexTickId) return;
     _indexTickId = setInterval(() => {
       const progress = libraryStats?.indexingProgress;
       if (!progress || progress.percentComplete >= 100) { indexingInterpolated = null; return; }
-      // Use overall sync progress (syncedParagraphs / totalParagraphs) — more reliable than activeJob
+
       const synced = progress.syncedParagraphs || 0;
       const total = progress.totalParagraphs || 1;
       const pending = progress.pending || 0;
-      const pct = Math.min(Math.round((synced / total) * 100), 100);
-      // Estimate time from rate (paragraphs synced per second since job started)
-      const job = progress.activeJob;
-      let eta = '';
-      if (job?.startedAt && job.completedItems > 100) {
-        const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
-        const rate = job.completedItems / elapsed;
-        if (rate > 0) {
-          const remaining = pending / rate;
-          if (remaining < 60) eta = 'less than a minute';
-          else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
-          else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
-        }
+      const now = Date.now();
+
+      // Update rate when we get a new poll with different synced count
+      if (synced !== _lastSynced && _lastSyncedAt > 0) {
+        const dt = (now - _lastSyncedAt) / 1000;
+        if (dt > 0) _syncRate = Math.abs(synced - _lastSynced) / dt;
       }
-      indexingInterpolated = { items: synced, pct, eta, totalItems: total };
-    }, 1000);
+      if (synced !== _lastSynced) {
+        _lastSynced = synced;
+        _lastSyncedAt = now;
+      }
+
+      // Interpolate between polls: estimate current position
+      const secsSincePoll = (now - (libraryStats._fetchedAt || now)) / 1000;
+      const interpolated = Math.min(synced + Math.round(_syncRate * secsSincePoll), total);
+      const pct = Math.min(Math.round((interpolated / total) * 100), 100);
+
+      // ETA from rate
+      let eta = '';
+      if (_syncRate > 0 && pending > 0) {
+        const remaining = (total - interpolated) / _syncRate;
+        if (remaining < 60) eta = 'less than a minute';
+        else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
+        else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
+      }
+
+      indexingInterpolated = { items: interpolated, pct, eta, totalItems: total };
+    }, 200);
   }
 
   function stopIndexTicker() {
