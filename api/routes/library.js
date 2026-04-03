@@ -40,11 +40,9 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 // In-memory cache for library stats
 // Counter table makes main counts instant; pipeline status queries still need caching
-const statsCache = { data: null, timestamp: 0, ttl: 30000, activeTtl: 5000 }; // 30s idle, 5s during indexing
-// Pipeline status cache — refreshed by background timer, NEVER by request handlers.
-// Heavy COUNT queries on 2.5M row content table block the event loop; keeping them
-// out of the request path prevents health check timeouts.
-const pipelineCache = { data: null, timestamp: 0, ttl: 300000 }; // 5 min TTL
+const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s cache — short enough for responsive progress bars
+// Pipeline status cache — refreshed by background timer every 60s.
+const pipelineCache = { data: null, timestamp: 0, ttl: 60000 };
 
 /**
  * Parse translation field from paragraph
@@ -219,10 +217,8 @@ export default async function libraryRoutes(fastify) {
 
     const now = Date.now();
 
-    // Return cached stats if fresh
-    // Always fetch fresh sync job progress (tiny table, fast query)
-    const effectiveTtl = statsCache.data?.indexing ? statsCache.activeTtl : statsCache.ttl;
-    if (statsCache.data && (now - statsCache.timestamp) < effectiveTtl) {
+    // Return cached stats if fresh (10s cache for responsive progress bars)
+    if (statsCache.data && (now - statsCache.timestamp) < statsCache.ttl) {
       let freshJob = null;
       try {
         const job = await queryOne(`
@@ -242,10 +238,18 @@ export default async function libraryRoutes(fastify) {
       } catch { /* sync_jobs may not exist */ }
 
       const cached = { ...statsCache.data, isAdmin };
+      // Always overlay fresh progress data from background caches
       if (cached.indexingProgress) {
         cached.indexingProgress = { ...cached.indexingProgress, activeJob: freshJob };
       }
-      cached.indexing = (cached.ingestionQueue?.pending > 0 || cached.ingestionQueue?.processing > 0 || freshJob?.status === 'running');
+      if (pipelineCache.data) {
+        cached.pipelineStatus = {
+          ...cached.pipelineStatus,
+          paragraphsNeedingEmbeddings: pipelineCache.data.paragraphsNeedingEmbeddings ?? cached.pipelineStatus?.paragraphsNeedingEmbeddings ?? 0,
+          oversizedSkipped: pipelineCache.data.oversizedSkipped ?? cached.pipelineStatus?.oversizedSkipped ?? 0
+        };
+      }
+      cached.indexing = (cached.ingestionQueue?.pending > 0 || cached.ingestionQueue?.processing > 0 || freshJob?.status === 'running' || (cached.pipelineStatus?.paragraphsNeedingEmbeddings > 0) || (cached.pipelineStatus?.paragraphsPendingSync > 100));
       return cached;
     }
 
@@ -354,7 +358,7 @@ export default async function libraryRoutes(fastify) {
       religionCounts,
       collectionCounts,
       languageCounts,
-      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running',
+      indexing: indexingStats.pending > 0 || indexingStats.processing > 0 || meiliProgress?.activeJob?.status === 'running' || embeddingsNeeded > 0 || cachedCounts.unsyncedParagraphs > 100,
       ingestionQueue: indexingStats,
       indexingProgress: meiliProgress,
       translating: translationStats.pending > 0 || translationStats.processing > 0,
