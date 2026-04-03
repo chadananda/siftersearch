@@ -33,7 +33,7 @@ module.exports = {
       },
       kill_timeout: 5000,
       exp_backoff_restart_delay: 1000, // 1s, 2s, 4s, ... up to 15s
-      max_restarts: -1,       // NEVER stop trying
+      max_restarts: 999999,   // effectively unlimited
       min_uptime: '10s',
       error_file: './logs/api-error.log',
       out_file: './logs/api-out.log',
@@ -56,7 +56,7 @@ module.exports = {
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
       exp_backoff_restart_delay: 2000, // 2s, 4s, 8s, ... up to 15s
-      max_restarts: -1,       // NEVER stop trying
+      max_restarts: 999999,   // effectively unlimited
       min_uptime: '10s',
       error_file: './logs/worker-error.log',
       out_file: './logs/worker-out.log',
@@ -79,7 +79,7 @@ module.exports = {
         UPDATE_INTERVAL: '300000'
       },
       exp_backoff_restart_delay: 5000,
-      max_restarts: -1,       // NEVER stop trying
+      max_restarts: 999999,   // effectively unlimited
       min_uptime: '60s',
       error_file: './logs/updater-error.log',
       out_file: './logs/updater-out.log',
@@ -96,7 +96,7 @@ module.exports = {
       watch: false,
       autorestart: true,
       exp_backoff_restart_delay: 1000,
-      max_restarts: -1,       // NEVER stop trying
+      max_restarts: 999999,   // effectively unlimited
       min_uptime: '30s',
       error_file: './logs/tunnel-error.log',
       out_file: './logs/tunnel-out.log',
