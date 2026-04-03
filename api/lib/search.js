@@ -272,24 +272,41 @@ export async function initializeIndexes() {
     pagination: { maxTotalHits: 50000 }
   };
 
-  // Fire-and-forget via native fetch — bypasses meilisearch-js client entirely
-  fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings`, {
-    method: 'PATCH', headers, body: JSON.stringify(paragraphSettings)
-  }).then(r => r.json()).then(task => {
-    logger.info({ taskUid: task.taskUid }, 'Paragraphs settings update enqueued');
-  }).catch(err => {
+  // Ensure indexes exist with correct primary key before applying settings.
+  // This prevents the race where documents get submitted before settings are applied,
+  // which would trigger a full re-index when filterable attributes are added later.
+  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id']]) {
+    try {
+      await fetch(`${meiliUrl}/indexes`, {
+        method: 'POST', headers, body: JSON.stringify({ uid: indexUid, primaryKey: pk })
+      });
+    } catch { /* index may already exist */ }
+  }
+
+  // Apply settings and WAIT for them to be enqueued (not fire-and-forget).
+  // We don't wait for processing (that can take minutes on large indexes),
+  // but we do ensure the tasks are accepted before returning.
+  try {
+    const pRes = await fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings`, {
+      method: 'PATCH', headers, body: JSON.stringify(paragraphSettings)
+    });
+    const pTask = await pRes.json();
+    logger.info({ taskUid: pTask.taskUid }, 'Paragraphs settings update enqueued');
+  } catch (err) {
     logger.warn({ err: err.message }, 'Failed to enqueue paragraphs settings update');
-  });
+  }
 
-  fetch(`${meiliUrl}/indexes/${INDEXES.DOCUMENTS}/settings`, {
-    method: 'PATCH', headers, body: JSON.stringify(documentSettings)
-  }).then(r => r.json()).then(task => {
-    logger.info({ taskUid: task.taskUid }, 'Documents settings update enqueued');
-  }).catch(err => {
+  try {
+    const dRes = await fetch(`${meiliUrl}/indexes/${INDEXES.DOCUMENTS}/settings`, {
+      method: 'PATCH', headers, body: JSON.stringify(documentSettings)
+    });
+    const dTask = await dRes.json();
+    logger.info({ taskUid: dTask.taskUid }, 'Documents settings update enqueued');
+  } catch (err) {
     logger.warn({ err: err.message }, 'Failed to enqueue documents settings update');
-  });
+  }
 
-  logger.info('Search indexes initialized (settings updates queued)');
+  logger.info('Search indexes initialized (settings enqueued)');
 
   // CRITICAL: Verify embedder config was actually applied after a delay.
   // A partial PATCH to /settings can silently clear the embedder config,
