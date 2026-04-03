@@ -143,6 +143,7 @@
   // Research chat mode: conversational multi-turn with library search
   let researchMode = $state(false);
   let researchMessages = $state([]); // [{role, content, citations?, isSearching?}]
+  let researchContext = $state(null); // Background research context for next turn
   let researchLoading = $state(false);
   let researchInput = $state('');
   let researchInputEl;
@@ -1250,10 +1251,15 @@
       let streamedContent = '';
       let pendingCitations = [];
 
-      for await (const event of chat.stream(history)) {
-        if (event.type === 'search_start') {
+      for await (const event of chat.stream(history, researchContext)) {
+        if (event.type === 'search_start' || event.type === 'tool_call') {
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isSearching: true, searchQuery: event.query } : m
+          );
+        } else if (event.type === 'research') {
+          // Background research status — shown subtly
+          researchMessages = researchMessages.map((m, i) =>
+            i === assistantIdx ? { ...m, researchStatus: event.status } : m
           );
         } else if (event.type === 'citations') {
           pendingCitations = event.citations || [];
@@ -1268,6 +1274,8 @@
           // Auto-scroll during streaming
           researchMessagesEl?.scrollTo({ top: researchMessagesEl.scrollHeight, behavior: 'smooth' });
         } else if (event.type === 'complete') {
+          // Store research context for the next turn
+          if (event.researchContext) researchContext = event.researchContext;
           researchMessages = researchMessages.map((m, i) =>
             i === assistantIdx ? { ...m, isStreaming: false, content: streamedContent || 'Done.' } : m
           );

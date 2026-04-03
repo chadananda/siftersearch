@@ -3,16 +3,20 @@
  *
  * POST /api/chat/stream - Streaming conversational research assistant
  *
- * Uses OpenAI tool-calling: the AI decides when to search the library
- * and which search type to use. No pre-search step — the AI converses
- * naturally and reaches for the library when it needs to.
+ * Architecture: Two parallel tracks
+ * 1. INSTANT: AI responds immediately from conversation context + any
+ *    previously gathered research
+ * 2. BACKGROUND: Research agent searches the library in parallel. Results
+ *    are sent to the client and injected into the next turn's context.
  *
- * Event types (SSE): chunk | tool_call | citations | complete | error
+ * The user never waits for search. The conversation flows naturally,
+ * and library citations appear as the research agent finds them.
+ *
+ * Event types (SSE): chunk | research | citations | complete | error
  */
 
 import OpenAI from 'openai';
-import { hybridSearch, keywordSearch, semanticSearch } from '../lib/search.js';
-import { queryOne, queryAll } from '../lib/db.js';
+import { hybridSearch, keywordSearch } from '../lib/search.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { getAnonymousUserId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
@@ -43,136 +47,104 @@ You are shaped by a Bahá'í perspective, which you hold with philosophical nuan
 
 **Handle tension gracefully.** Acknowledge what's true in what they said, surface the deeper principle, offer your perspective as one lens — let the library make the case, not you.
 
-## Using the Library
+## Using Library Context
 
-You have search tools available. Use them when a conversation would benefit from actual passages — a specific quote, a citation to support a point, or to find something the user is looking for. Do NOT search for every message. Greetings, follow-ups, and general discussion don't need search.
+A research agent searches the library in the background as you converse. When relevant passages are provided in your context, weave them naturally into your response — cite inline as (*Title* — Author). Pick the 2-4 most illuminating passages. If you don't have library context yet, respond from your own knowledge and the research will catch up on the next turn.
 
-When you do search, choose the right tool:
-- **quick_search**: Fast keyword + semantic search. Good for finding specific passages, quotes, or concepts. Use this most of the time.
-- **keyword_search**: Pure text matching. Use when looking for exact phrases, names, or titles.
-- **deep_search**: Full semantic search. Use for abstract concepts, thematic exploration, or cross-tradition comparisons.
-- **lookup_document**: Get a specific document's content by ID. Use when you already know which document to reference.
-
-Cite sources inline: (*Title* — Author). Pick the 2-4 most illuminating passages, not everything.
+Never fabricate citations. If you reference a passage, it must come from the provided context.
 
 ## Formatting
 
-Write in flowing prose. Use markdown emphasis for key terms. Avoid bullet-point lists as your default. End with a question or invitation to go deeper when it feels natural.
+Write in flowing prose. Use markdown emphasis (*italics*, **bold**) for key terms. Avoid bullet-point lists as your default. End with a question or invitation to go deeper when it feels natural.
 
 You are not a chatbot. You are a well-read companion who loves these texts and loves helping people discover what's in them.`;
 
 // ============================================================================
-// TOOLS
+// BACKGROUND RESEARCH
 // ============================================================================
 
-const TOOLS = [
-  {
-    type: 'function',
-    function: {
-      name: 'quick_search',
-      description: 'Search the library using both keyword matching and semantic understanding. Best for most queries — finds relevant passages quickly.',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Search query (2-10 words focusing on the core concept)' },
-          religion: { type: 'string', description: 'Optional: filter by religion (e.g. "Baha\'i", "Buddhist", "Islam")' },
-          limit: { type: 'number', description: 'Number of results (default 5, max 10)' }
-        },
-        required: ['query']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'keyword_search',
-      description: 'Pure text/keyword search. Use for exact phrases, specific names, book titles, or when you need precise text matching.',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Exact text or phrase to find' },
-          religion: { type: 'string', description: 'Optional: filter by religion' },
-          limit: { type: 'number', description: 'Number of results (default 5, max 10)' }
-        },
-        required: ['query']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'deep_search',
-      description: 'Semantic-only search for abstract concepts and thematic exploration. Better for "what do traditions say about X" type questions.',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Conceptual query describing what you\'re looking for' },
-          religion: { type: 'string', description: 'Optional: filter by religion' },
-          limit: { type: 'number', description: 'Number of results (default 5, max 10)' }
-        },
-        required: ['query']
-      }
-    }
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'lookup_document',
-      description: 'Get metadata and sample content from a specific document by ID. Use when you already know which document to reference.',
-      parameters: {
-        type: 'object',
-        properties: {
-          document_id: { type: 'number', description: 'The document ID to look up' }
-        },
-        required: ['document_id']
-      }
-    }
+/**
+ * Determine search queries for background research based on the conversation.
+ * Returns 0-2 search queries. Fast heuristic — no AI call.
+ */
+function planResearch(messages) {
+  const lastUser = messages.filter(m => m.role === 'user').slice(-1)[0]?.content || '';
+  const msg = lastUser.trim();
+
+  // Skip research for very short messages, greetings, meta-questions
+  if (msg.length < 12) return [];
+  if (/^(hi|hello|hey|how are you|thanks|thank you|ok|okay|sure|yes|no|bye|goodbye|what's up)/i.test(msg)) return [];
+  if (/^(who are you|what are you|what can you do|help me)/i.test(msg)) return [];
+  if (/^(interesting|i see|that makes sense|go on|continue|wow|cool|great)/i.test(msg)) return [];
+
+  const queries = [];
+
+  // Primary: use the user's message as a search query (trimmed)
+  queries.push(msg.replace(/[?!.]+$/, '').substring(0, 80));
+
+  // Secondary: if the message mentions a specific tradition, add a focused query
+  const traditions = ['baha', 'buddhis', 'christian', 'confuc', 'hindu', 'islam', 'muslim', 'jain', 'judai', 'jewish', 'sikh', 'tao', 'zoroastr'];
+  const mentionedTradition = traditions.find(t => msg.toLowerCase().includes(t));
+  if (mentionedTradition && msg.length > 30) {
+    // Extract the core concept without the tradition name
+    const concept = msg.replace(new RegExp(mentionedTradition + '\\w*', 'gi'), '').trim().replace(/[?!.]+$/, '').substring(0, 60);
+    if (concept.length > 10) queries.push(concept);
   }
-];
 
-// ============================================================================
-// TOOL EXECUTION
-// ============================================================================
-
-function formatHits(hits) {
-  if (!hits || hits.length === 0) return 'No results found.';
-  return hits.map((hit, i) =>
-    `[${i + 1}] "${(hit.text || '').substring(0, 500)}${(hit.text || '').length > 500 ? '...' : ''}"\n   — *${hit.title || 'Unknown'}*${hit.author ? `, ${hit.author}` : ''} (${hit.religion || 'Unknown'}) [doc:${hit.doc_id || hit.document_id}, para:${hit.paragraph_index}]`
-  ).join('\n\n');
+  return queries;
 }
 
-async function executeTool(name, args) {
-  const limit = Math.min(args.limit || 5, 10);
-  const filterOpts = {};
-  if (args.religion) filterOpts.religion = args.religion;
+/**
+ * Run background research. Returns formatted context string + citations array.
+ * Runs both keyword and hybrid search in parallel for speed.
+ */
+async function runResearch(queries) {
+  if (queries.length === 0) return { context: '', citations: [] };
 
   try {
-    switch (name) {
-      case 'quick_search': {
-        const results = await hybridSearch(args.query, { limit, ...filterOpts });
-        return { text: formatHits(results?.hits), citations: results?.hits?.slice(0, limit) || [] };
-      }
-      case 'keyword_search': {
-        const results = await keywordSearch(args.query, { limit, ...filterOpts });
-        return { text: formatHits(results?.hits), citations: results?.hits?.slice(0, limit) || [] };
-      }
-      case 'deep_search': {
-        const results = await semanticSearch(args.query, { limit, ...filterOpts });
-        return { text: formatHits(results?.hits), citations: results?.hits?.slice(0, limit) || [] };
-      }
-      case 'lookup_document': {
-        const doc = await queryOne('SELECT id, title, author, religion, collection, description, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL', [args.document_id]);
-        if (!doc) return { text: 'Document not found.', citations: [] };
-        const sample = await queryAll('SELECT text, paragraph_index FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3', [args.document_id]);
-        const sampleText = sample.map(p => p.text.substring(0, 200)).join('\n...\n');
-        return { text: `**${doc.title}** by ${doc.author || 'Unknown'} (${doc.religion})\n${doc.description || ''}\n${doc.paragraph_count} paragraphs\n\nSample:\n${sampleText}`, citations: [] };
-      }
-      default:
-        return { text: 'Unknown tool.', citations: [] };
+    // Run all searches in parallel
+    const searches = [];
+    for (const q of queries) {
+      searches.push(hybridSearch(q, { limit: 5 }).catch(() => ({ hits: [] })));
+      searches.push(keywordSearch(q, { limit: 3 }).catch(() => ({ hits: [] })));
     }
+    const results = await Promise.all(searches);
+
+    // Merge and deduplicate by paragraph ID
+    const seen = new Set();
+    const allHits = [];
+    for (const result of results) {
+      for (const hit of (result?.hits || [])) {
+        const key = `${hit.doc_id || hit.document_id}:${hit.paragraph_index}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          allHits.push(hit);
+        }
+      }
+    }
+
+    // Take top 8 results
+    const top = allHits.slice(0, 8);
+    if (top.length === 0) return { context: '', citations: [] };
+
+    const citations = top.map(hit => ({
+      document_id: hit.doc_id || hit.document_id,
+      paragraph_index: hit.paragraph_index,
+      text: hit.text || '',
+      title: hit.title || 'Unknown',
+      author: hit.author || '',
+      religion: hit.religion || '',
+      collection: hit.collection || ''
+    }));
+
+    const context = citations
+      .map((c, i) => `[${i + 1}] "${c.text.substring(0, 500)}${c.text.length > 500 ? '...' : ''}"\n   — *${c.title}*${c.author ? `, ${c.author}` : ''} (${c.religion})`)
+      .join('\n\n');
+
+    return { context, citations };
   } catch (err) {
-    logger.warn({ err: err.message, tool: name, args }, 'Tool execution failed');
-    return { text: `Search failed: ${err.message}`, citations: [] };
+    logger.warn({ err: err.message }, 'Background research failed');
+    return { context: '', citations: [] };
   }
 }
 
@@ -201,12 +173,14 @@ export default async function chatRoutes(fastify) {
               }
             }
           },
-          conversationId: { type: 'string' }
+          conversationId: { type: 'string' },
+          // Client can pass research context from the previous turn
+          researchContext: { type: 'string' }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages } = request.body;
+    const { messages, researchContext } = request.body;
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
     reply.raw.writeHead(200, {
@@ -222,103 +196,54 @@ export default async function chatRoutes(fastify) {
 
     try {
       const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
-      const allCitations = [];
 
-      // Build message array with system prompt
+      // Build system prompt with any research context from previous turn
+      let systemContent = SYSTEM_PROMPT;
+      if (researchContext) {
+        systemContent += `\n\n## Library Context (from background research)\n\n${researchContext}`;
+      }
+
       const aiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemContent },
         ...messages.map(m => ({ role: m.role, content: m.content }))
       ];
 
-      // First call — may return tool calls or direct response
-      let response = await openai.chat.completions.create({
+      // Start TWO things in parallel:
+      // 1. Stream the AI response immediately
+      // 2. Run background research for the NEXT turn
+
+      const researchQueries = planResearch(messages);
+      const researchPromise = runResearch(researchQueries);
+
+      // Stream AI response — user sees it immediately
+      const stream = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: aiMessages,
-        tools: TOOLS,
-        tool_choice: 'auto',
-        stream: false, // first call non-streaming to check for tool calls
+        stream: true,
         max_tokens: 2500,
         temperature: 0.7
       });
 
-      let choice = response.choices[0];
-
-      // Tool call loop — execute tools and feed results back (max 3 rounds)
-      let rounds = 0;
-      while (choice.finish_reason === 'tool_calls' && rounds < 3) {
-        rounds++;
-        const toolCalls = choice.message.tool_calls || [];
-
-        // Add assistant message with tool calls
-        aiMessages.push(choice.message);
-
-        // Execute each tool call
-        for (const tc of toolCalls) {
-          const args = JSON.parse(tc.function.arguments);
-          sendEvent({ type: 'tool_call', tool: tc.function.name, query: args.query || args.document_id });
-
-          const result = await executeTool(tc.function.name, args);
-          if (result.citations?.length > 0) {
-            allCitations.push(...result.citations.map(h => ({
-              document_id: h.doc_id || h.document_id,
-              paragraph_index: h.paragraph_index,
-              text: h.text || '',
-              title: h.title || 'Unknown',
-              author: h.author || '',
-              religion: h.religion || '',
-              collection: h.collection || ''
-            })));
-          }
-
-          // Add tool result
-          aiMessages.push({
-            role: 'tool',
-            tool_call_id: tc.id,
-            content: result.text
-          });
-        }
-
-        // Send citations to client
-        if (allCitations.length > 0) {
-          sendEvent({ type: 'citations', citations: allCitations });
-        }
-
-        // Call again with tool results
-        response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: aiMessages,
-          tools: TOOLS,
-          tool_choice: 'auto',
-          stream: false,
-          max_tokens: 2500,
-          temperature: 0.7
-        });
-        choice = response.choices[0];
+      for await (const chunk of stream) {
+        const text = chunk.choices?.[0]?.delta?.content || '';
+        if (text) sendEvent({ type: 'chunk', text });
       }
 
-      // Now stream the final response
-      const finalMessages = [...aiMessages];
-      if (choice.message?.content) {
-        // Already have content from non-streaming call — send it
-        sendEvent({ type: 'chunk', text: choice.message.content });
-      } else {
-        // Stream the final response
-        finalMessages.push(choice.message);
-        const stream = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: finalMessages,
-          stream: true,
-          max_tokens: 2500,
-          temperature: 0.7
-        });
+      // By now the background research has likely finished (or will very soon)
+      const { context: newResearch, citations } = await researchPromise;
 
-        for await (const chunk of stream) {
-          const text = chunk.choices?.[0]?.delta?.content || '';
-          if (text) sendEvent({ type: 'chunk', text });
-        }
+      // Send research results to client — client stores these for the next turn
+      if (citations.length > 0) {
+        sendEvent({ type: 'citations', citations });
       }
 
-      sendEvent({ type: 'complete', citations: allCitations });
+      // Send the research context for the client to pass back on the next turn
+      sendEvent({
+        type: 'complete',
+        citations,
+        researchContext: newResearch || null
+      });
+
       reply.raw.end();
 
     } catch (err) {

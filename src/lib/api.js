@@ -518,7 +518,7 @@ export const chat = {
    *   chunk | search_start | citations | complete | error
    * @param {Array} messages - [{role: 'user'|'assistant', content: string}]
    */
-  async *stream(messages) {
+  async *stream(messages, researchContext = null) {
     const url = `${API_URL}/api/chat/stream`;
     const headers = { 'Content-Type': 'application/json' };
     const uid = getUserId();
@@ -526,10 +526,13 @@ export const chat = {
     if (CLIENT_VERSION) headers['X-Client-Version'] = CLIENT_VERSION;
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
 
+    const body = { messages };
+    if (researchContext) body.researchContext = researchContext;
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages })
+      body: JSON.stringify(body)
     });
 
     if (!response.ok) {
