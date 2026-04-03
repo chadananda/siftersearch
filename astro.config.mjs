@@ -2,7 +2,6 @@ import { defineConfig } from 'astro/config';
 import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import AstroPWA from '@vite-pwa/astro';
 import cloudflare from '@astrojs/cloudflare';
 import { readFileSync } from 'fs';
 
@@ -11,7 +10,6 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
   site: 'https://siftersearch.com',
-  // Server mode for Cloudflare Pages - allows SSR routes like /library/[...path]
   output: 'server',
   adapter: cloudflare({
     platformProxy: {
@@ -19,149 +17,51 @@ export default defineConfig({
     }
   }),
 
-  // Disable noisy dev toolbar audits
   devToolbar: {
     enabled: false
+  },
+
+  // Prefetch links on hover for instant navigation
+  prefetch: {
+    defaultStrategy: 'hover',
+    prefetchAll: false
   },
 
   integrations: [
     svelte(),
     sitemap({
-      // Filter out pages that shouldn't be in the main sitemap
-      // - /api/ routes are server-side
-      // - /library/* dynamic routes are handled by sitemap-library.xml
-      // - /sitemap-library.xml is the custom sitemap endpoint
       filter: (page) => {
         if (page.includes('/api/')) return false;
         if (page.includes('/sitemap-library')) return false;
-        // Exclude catch-all library routes (handled by sitemap-library.xml)
         if (page.match(/\/library\/[^/]+\/[^/]+\/[^/]+/)) return false;
         return true;
       },
-      // Customize sitemap entries
       serialize: (item) => ({
         ...item,
         changefreq: item.url === 'https://siftersearch.com/' ? 'weekly' : 'monthly',
         priority: item.url === 'https://siftersearch.com/' ? 1.0 : 0.8,
       }),
-      // Reference the custom library sitemap
       customPages: [
         'https://siftersearch.com/sitemap-library.xml'
       ]
     }),
-    AstroPWA({
-      registerType: 'autoUpdate',  // Auto-update without user prompt
-      devOptions: {
-        enabled: false
-      },
-      includeAssets: ['favicon.ico', 'ocean.svg', 'logo.svg', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'SifterSearch',
-        short_name: 'Sifter',
-        description: 'AI-powered interfaith library search',
-        theme_color: '#1e293b',
-        background_color: '#0f172a',
-        display: 'standalone',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
-      workbox: {
-        // Only precache the shell (HTML, icons, fonts) — NOT JS/CSS.
-        // JS/CSS files have content hashes and are cached by the browser natively.
-        // Precaching JS causes "bad-precaching-response" 404s on Cloudflare Pages
-        // when a new deploy changes hashes before the SW manifest updates.
-        globPatterns: ['**/*.{html,ico,png,svg,woff2}'],
-        // Exclude Cloudflare Workers runtime files
-        globIgnores: ['**/_worker.js/**', '**/_worker.js', '**/worker.js'],
-        // Clean up old caches when new SW activates
-        cleanupOutdatedCaches: true,
-        // Auto-activate new SW immediately - no waiting for tab close
-        skipWaiting: true,
-        clientsClaim: true,
-        // IMPORTANT: Disable navigation fallback for SSR routes
-        navigateFallback: null,
-        // Runtime caching
-        runtimeCaching: [
-          {
-            // Don't cache stats endpoint - need fresh version info
-            urlPattern: /^https:\/\/api\.siftersearch\.com\/api\/search\/stats/,
-            handler: 'NetworkOnly'
-          },
-          {
-            // Document content - NetworkFirst for immediate updates after editing
-            urlPattern: /^https:\/\/api\.siftersearch\.com\/api\/library\/by-path\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'document-cache',
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 3600 // 1 hour fallback cache
-              },
-              cacheableResponse: {
-                statuses: [0, 200] // Only cache successful responses
-              }
-            }
-          },
-          {
-            // Cache other API responses - but ONLY successful ones
-            urlPattern: /^https:\/\/api\.siftersearch\.com\/api\//,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 86400 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200] // Only cache successful responses
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-stylesheets'
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              }
-            }
-          }
-        ]
-      }
-    })
+    // No PWA — SSR + Cloudflare edge caching + browser prefetch handles performance.
+    // The service worker caused more problems than it solved.
   ],
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss()
+    ],
     define: {
       '__APP_VERSION__': JSON.stringify(pkg.version),
-      '__APP_DESCRIPTION__': JSON.stringify(pkg.description),
-      'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(pkg.version),
-      'import.meta.env.PUBLIC_API_URL': JSON.stringify(process.env.PUBLIC_API_URL || 'https://api.siftersearch.com'),
-      'import.meta.env.PUBLIC_DEPLOY_SECRET': JSON.stringify(process.env.PUBLIC_DEPLOY_SECRET || '')
+      '__APP_DESCRIPTION__': JSON.stringify(pkg.description)
     },
-    optimizeDeps: {
-      exclude: ['@libsql/client']
+    build: {
+      sourcemap: false
+    },
+    ssr: {
+      external: ['node:path', 'node:url']
     }
   }
 });

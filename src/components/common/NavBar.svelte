@@ -1,7 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   import { initAuth, logout, getAuthState } from '../../lib/auth.svelte.js';
-  import { performUpdate, getPWAState } from '../../lib/pwa.svelte.js';
   import { getConnectionStatus, onConnectionStatusChange } from '../../lib/api.js';
   import TierBadge from '../TierBadge.svelte';
   import AuthModal from '../AuthModal.svelte';
@@ -12,9 +11,7 @@
   const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
   const SHORT_VERSION = APP_VERSION.replace(/^0\./, '');
 
-  // Auth and PWA state
   const auth = getAuthState();
-  const pwa = getPWAState();
 
   // Initialize auth on mount (restores session from refresh token cookie)
   onMount(() => {
@@ -114,11 +111,7 @@
         <span class="navbar-title">
           <span class="title-full">SifterSearch</span>
           <span class="title-short">Sifter</span>
-          {#if pwa.updateAvailable}
-            <button class="version version-update" onclick={performUpdate} title="Click to update">UPDATE</button>
-          {:else}
-            <a href="/changelog" class="version" title="View version history">v.{SHORT_VERSION}</a>
-          {/if}
+          <span class="version" title="v.{SHORT_VERSION}">v.{SHORT_VERSION}</span>
         </span>
       </a>
     {/if}

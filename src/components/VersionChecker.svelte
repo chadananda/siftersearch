@@ -1,32 +1,24 @@
 <script>
   import { onMount } from 'svelte';
-  import { initPWA } from '../lib/pwa.svelte.js';
   import pkg from '../../package.json';
 
   const CLIENT_VERSION = pkg.version;
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
-  const CHECK_INTERVAL = 30000; // Check every 30 seconds
+  const CHECK_INTERVAL = 30000;
 
   let updateTriggered = false;
 
   onMount(() => {
-    // Initialize PWA service worker
-    initPWA();
-
-    // Start version checking
     checkVersion();
     const interval = setInterval(checkVersion, CHECK_INTERVAL);
-
     return () => clearInterval(interval);
   });
 
   async function checkVersion() {
     if (updateTriggered) return;
-
     try {
       const res = await fetch(`${API_BASE}/api/library/stats`);
       if (!res.ok) return;
-
       const stats = await res.json();
 
       if (stats.serverVersion && stats.serverVersion !== CLIENT_VERSION) {
@@ -37,30 +29,20 @@
           (serverParts[0] === clientParts[0] && serverParts[1] === clientParts[1] && serverParts[2] > clientParts[2]);
 
         if (serverNewer) {
-          // Check cooldown to allow CDN propagation
           const reloadKey = `reload_attempted_${stats.serverVersion}`;
           const lastAttempt = sessionStorage.getItem(reloadKey);
-          const cooldownMs = 30 * 1000;
-          const cooldownExpired = !lastAttempt || (Date.now() - parseInt(lastAttempt, 10)) > cooldownMs;
+          const cooldownExpired = !lastAttempt || (Date.now() - parseInt(lastAttempt, 10)) > 30000;
 
           if (cooldownExpired) {
             sessionStorage.setItem(reloadKey, Date.now().toString());
-            console.log(`[Update] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), updating...`);
+            console.log(`[Update] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading...`);
             updateTriggered = true;
-
-            // Trigger service worker update
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-              const registration = await navigator.serviceWorker.ready;
-              await registration.update();
-            }
-
-            // Reload to get new version
             window.location.reload();
           }
         }
       }
-    } catch (err) {
-      // Silently fail - version check is not critical
+    } catch {
+      // Version check is not critical
     }
   }
 </script>

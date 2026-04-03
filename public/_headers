@@ -1,18 +1,21 @@
-# Service workers fixed via inline script in Layout.astro
-
-# Service worker should never be cached
-/sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-# Workbox chunks also shouldn't be cached long
-/workbox-*.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-# Library pages - no caching
-/library/*
-  Cache-Control: no-cache, no-store, must-revalidate
-  CDN-Cache-Control: no-cache
-
-# Static assets - long cache (content-hashed filenames)
+# Static assets with content hashes — cache forever
 /_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML pages — always revalidate with edge
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/library/*
+  Cache-Control: public, max-age=0, must-revalidate
+/docs/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Images and fonts — long cache
+/*.png
+  Cache-Control: public, max-age=86400
+/*.svg
+  Cache-Control: public, max-age=86400
+/*.ico
+  Cache-Control: public, max-age=86400
+/*.woff2
   Cache-Control: public, max-age=31536000, immutable

@@ -10,7 +10,6 @@
   // App description - baked in at build time
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
   import { initAuth, getAuthState } from '../lib/auth.svelte.js';
-  import { getPWAState, setConversationChecker } from '../lib/pwa.svelte.js';
   import NavBar from './common/NavBar.svelte';
   import { setThinking } from '../lib/stores/thinking.svelte.js';
   import { updateUsage } from '../lib/usage.svelte.js';
@@ -135,8 +134,6 @@
     return result;
   }
 
-  // PWA update state
-  const pwa = getPWAState();
 
   let messages = $state([]);
   let input = $state('');
@@ -1469,8 +1466,6 @@
 
   onMount(async () => {
     initAuth();
-    // Register conversation checker for PWA - allows auto-update only when no conversation is active
-    setConversationChecker(() => messages.length > 0);
     loadLibraryStats();
 
     // Load AI usage for admins (after short delay to ensure auth is ready)
