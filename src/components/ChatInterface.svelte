@@ -5,6 +5,7 @@
   import { marked } from 'marked';
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
   import ReligionIcon from './ReligionIcon.svelte';
+  import { toCurlyQuotes } from '../lib/text-utils.js';
 
   // App description - baked in at build time
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
@@ -1391,8 +1392,11 @@
       }
     );
 
+    // Smart quotes + transliteration cleanup
+    result = toCurlyQuotes(result);
+    result = result.replace(/_([stkdzcSCDTZG]h)/g, '$1');
+
     // Parse with marked.parseInline to avoid wrapping in <p> tags
-    // (outer element is already a <p>, so nested <p> would be invalid HTML)
     result = marked.parseInline(result);
 
     // Make all links open in new tab

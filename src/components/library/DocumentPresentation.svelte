@@ -352,17 +352,27 @@
   }
 
 
+  function cleanDisplayText(text) {
+    if (!text) return '';
+    let clean = stripMarkers(text);
+    // Fix transliteration underscores: _sh → sh, _dh → dh, _th → th, _kh → kh, _zh → zh
+    clean = clean.replace(/_([stkdzcSCDTZG]h)/g, '$1');
+    // Also fix standalone underscore before single consonants in transliteration
+    clean = clean.replace(/_([STKDZGC])(?=[aeiouáíú])/g, '$1');
+    // Smart quotes
+    clean = toCurlyQuotes(clean);
+    return clean;
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
-    // Strip sentence markers before rendering
-    const clean = stripMarkers(text);
-    return marked.parse(clean);
+    return marked.parse(cleanDisplayText(text));
   }
 
   // Render markdown content - the text already contains proper markdown syntax
   function renderBlockContent(text, blocktype) {
     if (!text) return '';
-    const clean = stripMarkers(text);
+    const clean = cleanDisplayText(text);
     return marked.parse(clean);
   }
 

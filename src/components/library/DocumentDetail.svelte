@@ -3,6 +3,7 @@
   import { marked } from 'marked';
   import markedFootnote from 'marked-footnote';
   import { authenticatedFetch } from '../../lib/api.js';
+  import { toCurlyQuotes } from '../../lib/text-utils.js';
 
   // Enable footnote extension for markdown
   marked.use(markedFootnote());
@@ -170,7 +171,11 @@
 
   function renderMarkdown(text) {
     if (!text) return '';
-    return marked.parse(stripMarkers(text));
+    let clean = stripMarkers(text);
+    clean = clean.replace(/_([stkdzcSCDTZG]h)/g, '$1');
+    clean = clean.replace(/_([STKDZGC])(?=[aeiouáíú])/g, '$1');
+    clean = toCurlyQuotes(clean);
+    return marked.parse(clean);
   }
 
   // Load compare content when tab changes to compare
