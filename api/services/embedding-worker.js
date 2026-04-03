@@ -16,11 +16,11 @@ import { config } from '../lib/config.js';
 import { content } from '../lib/content.js';
 
 // Configuration - tuned for throughput while yielding event loop
-const EMBEDDING_INTERVAL_MS = 5000;   // Poll every 5 seconds (batch takes ~2-3s)
-const BATCH_SIZE = 50;                // Texts per OpenAI batch (API supports up to 2048)
+const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
+const BATCH_SIZE = 2000;              // Texts per OpenAI batch (API supports up to 2048)
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
-const DB_WRITE_DELAY_MS = 10;         // Small delay between DB writes to yield event loop
+const DB_WRITE_DELAY_MS = 0;          // No delay — standalone process, no event loop contention
 const PROPAGATE_INTERVAL_MS = 10 * 60 * 1000; // Propagate embeddings to duplicates every 10 min
 
 // Backoff: on quota/rate errors, wait longer instead of hammering OpenAI every 5s

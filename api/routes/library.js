@@ -174,7 +174,7 @@ export default async function libraryRoutes(fastify) {
       }
       const religion = religionMap.get(row.religion);
       religion.count += row.count;
-      if (row.collection) {
+      if (row.collection && !row.collection.startsWith('.')) {
         religion.collections.push({
           name: row.collection,
           count: row.count,

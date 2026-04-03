@@ -7,16 +7,19 @@
   const dispatch = createEventDispatcher();
   let expandedReligion = $state(null);
 
-  function toggleReligion(religionName) {
-    expandedReligion = expandedReligion === religionName ? null : religionName;
-  }
-
-  function selectReligion(religion) {
-    dispatch('select', {
-      religion: religion.name,
-      collection: null,
-      node: { node_type: 'religion', name: religion.name, slug: religion.slug }
-    });
+  function handleReligionClick(religion) {
+    if (expandedReligion === religion.name) {
+      // Already expanded — collapse it
+      expandedReligion = null;
+    } else {
+      // Expand and select
+      expandedReligion = religion.name;
+      dispatch('select', {
+        religion: religion.name,
+        collection: null,
+        node: { node_type: 'religion', name: religion.name, slug: religion.slug }
+      });
+    }
   }
 
   function selectCollection(religion, collection) {
@@ -32,12 +35,6 @@
       }
     });
   }
-
-  $effect(() => {
-    if (selectedReligion && expandedReligion !== selectedReligion) {
-      expandedReligion = selectedReligion;
-    }
-  });
 </script>
 
 <div class="flex-1 overflow-y-auto py-2">
@@ -48,7 +45,7 @@
       <button
         class="w-full py-1.5 px-3 border-l-2 border-l-accent flex justify-between items-center text-[0.8125rem] font-medium text-left cursor-pointer transition-all
                {isExpanded ? 'bg-accent text-white' : isSelected ? 'bg-accent/20' : 'bg-surface-2 hover:bg-surface-3 text-primary'}"
-        onclick={() => { toggleReligion(religion.name); selectReligion(religion); }}
+        onclick={() => handleReligionClick(religion)}
       >
         <span class="flex items-center gap-1.5 flex-1 truncate">
           <span class="w-5 h-5 flex items-center justify-center shrink-0 {isExpanded ? 'text-white' : 'text-accent'}">
