@@ -1750,6 +1750,25 @@
           </div>
           <h2 class="research-title">Ocean Library</h2>
           <p class="research-subtitle">Your companion for exploring the world's sacred texts. Ask anything.</p>
+          <!-- Library stats -->
+          {#if displayStats.totalDocuments > 0}
+            <div class="stats-grid" style="margin: 1rem 0; justify-content: center;">
+              <div class="stat"><span class="stat-label">Religions</span><span class="stat-value">{displayStats.religions || 0}</span></div>
+              <div class="stat"><span class="stat-label">Documents</span><span class="stat-value">{formatNumber(displayStats.totalDocuments)}</span></div>
+              <div class="stat"><span class="stat-label">Paragraphs</span><span class="stat-value">{formatNumber(displayStats.totalPassages)}</span></div>
+            </div>
+            {#if displayStats.religionCounts && Object.keys(displayStats.religionCounts).length > 0}
+              <div class="religion-tags" style="margin-bottom: 1.5rem;">
+                {#each Object.entries(displayStats.religionCounts) as [religion, count]}
+                  <span class="religion-tag">
+                    <ReligionIcon {religion} size="sm" />
+                    {religion}
+                    <span class="tag-count">{count}</span>
+                  </span>
+                {/each}
+              </div>
+            {/if}
+          {/if}
           <div class="research-suggestions">
             {#each ['How does the concept of the self differ across Buddhism and Hinduism?', 'What do the Abrahamic traditions say about forgiveness?', 'Explain the relationship between science and religion in the Bahá\'í writings'] as suggestion}
               <button class="research-suggestion-btn" onclick={() => { researchInput = suggestion; sendResearchMessage(); }}>
