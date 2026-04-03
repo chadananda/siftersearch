@@ -33,7 +33,7 @@ module.exports = {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
-      listen_timeout: 30000,
+      listen_timeout: 60000,
       kill_timeout: 5000,
       exp_backoff_restart_delay: 100,
       max_restarts: 10,

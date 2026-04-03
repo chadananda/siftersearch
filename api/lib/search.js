@@ -272,38 +272,33 @@ export async function initializeIndexes() {
     pagination: { maxTotalHits: 50000 }
   };
 
-  // Ensure indexes exist with correct primary key before applying settings.
-  // This prevents the race where documents get submitted before settings are applied,
-  // which would trigger a full re-index when filterable attributes are added later.
+  // Ensure indexes exist and settings are applied. Non-blocking — if Meilisearch
+  // is busy (processing a settings rebuild on millions of docs), we don't block startup.
+  const fetchWithTimeout = (url, opts, ms = 5000) => {
+    const controller = new globalThis.AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+  };
+
   for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id']]) {
     try {
-      await fetch(`${meiliUrl}/indexes`, {
+      await fetchWithTimeout(`${meiliUrl}/indexes`, {
         method: 'POST', headers, body: JSON.stringify({ uid: indexUid, primaryKey: pk })
       });
-    } catch { /* index may already exist */ }
+    } catch { /* index may already exist or Meilisearch busy */ }
   }
 
-  // Apply settings and WAIT for them to be enqueued (not fire-and-forget).
-  // We don't wait for processing (that can take minutes on large indexes),
-  // but we do ensure the tasks are accepted before returning.
-  try {
-    const pRes = await fetch(`${meiliUrl}/indexes/${INDEXES.PARAGRAPHS}/settings`, {
-      method: 'PATCH', headers, body: JSON.stringify(paragraphSettings)
-    });
-    const pTask = await pRes.json();
-    logger.info({ taskUid: pTask.taskUid }, 'Paragraphs settings update enqueued');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to enqueue paragraphs settings update');
-  }
-
-  try {
-    const dRes = await fetch(`${meiliUrl}/indexes/${INDEXES.DOCUMENTS}/settings`, {
-      method: 'PATCH', headers, body: JSON.stringify(documentSettings)
-    });
-    const dTask = await dRes.json();
-    logger.info({ taskUid: dTask.taskUid }, 'Documents settings update enqueued');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Failed to enqueue documents settings update');
+  // Enqueue settings (5s timeout — just needs to accept the task, not process it)
+  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings]]) {
+    try {
+      const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
+        method: 'PATCH', headers, body: JSON.stringify(settings)
+      });
+      const task = await res.json();
+      logger.info({ taskUid: task.taskUid, index: indexName }, 'Settings update enqueued');
+    } catch (err) {
+      logger.warn({ err: err.message, index: indexName }, 'Settings enqueue failed (Meilisearch may be busy)');
+    }
   }
 
   logger.info('Search indexes initialized (settings enqueued)');
