@@ -330,7 +330,10 @@ export default async function libraryRoutes(fastify) {
       embeddingsNeeded = embRow?.c || 0;
       const overRow = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > 6000');
       oversizedSkipped = overRow?.c || 0;
-    } catch { /* content table may not have embedding column yet */ }
+      logger.info({ embeddingsNeeded, oversizedSkipped }, 'Pipeline embedding counts');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Pipeline embedding count failed');
+    }
     const pipelineStatus = {
       ingestionQueuePending: indexingStats.pending + indexingStats.processing,
       paragraphsNeedingEmbeddings: embeddingsNeeded,
