@@ -38,9 +38,10 @@ import { logger } from '../api/lib/logger.js';
 const VLLM_URL = process.env.VLLM_URL || 'http://boss:8000';
 const VLLM_MODEL = 'Qwen/Qwen3-32B-AWQ';
 const MAX_CONTEXT = 8192;         // vLLM max_model_len
-const RESERVED_DECODE = 2000;     // Reserve for output
-const SYSTEM_PROMPT_TOKENS = 300; // Estimated system prompt size
-const CHARS_PER_TOKEN = 3;        // Conservative for mixed-language
+const RESERVED_DECODE = 1500;     // Reserve for output (entity JSON)
+const SYSTEM_PROMPT_TOKENS = 400; // Estimated system prompt size
+const SAFETY_MARGIN = 500;        // Buffer for tokenizer estimation errors
+const CHARS_PER_TOKEN = 2.5;      // Conservative — Hebrew/Arabic is ~2, English ~4
 const MAX_PARAGRAPH_CHARS = 4000;
 const STATE_FILE = join(PROJECT_ROOT, 'tmp', 'lightrag-state.json');
 const CONCURRENCY = parseInt(process.env.LIGHTRAG_CONCURRENCY || '1', 10); // Sequential per doc for prefix reuse
@@ -83,7 +84,7 @@ function estimateTokens(text) {
 }
 
 // Available tokens for paragraph content per window
-const AVAILABLE_TOKENS = MAX_CONTEXT - RESERVED_DECODE - SYSTEM_PROMPT_TOKENS;
+const AVAILABLE_TOKENS = MAX_CONTEXT - RESERVED_DECODE - SYSTEM_PROMPT_TOKENS - SAFETY_MARGIN;
 
 // ============================================================================
 // Build windows from paragraphs using token budget
