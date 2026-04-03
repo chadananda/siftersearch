@@ -141,8 +141,9 @@
   let messages = $state([]);
   let input = $state('');
   let loading = $state(false);
-  // Research chat mode: conversational multi-turn with library search
-  let researchMode = $state(false);
+  // Chat mode — the default user experience. Uses /api/chat/stream.
+  // Instant search and research modes are accessible from admin dashboard.
+  let researchMode = $state(true);
   let researchMessages = $state([]); // [{role, content, citations?, isSearching?}]
   let researchContext = $state(null); // Background research context for next turn
   let researchLoading = $state(false);
@@ -1747,8 +1748,8 @@
           <div class="research-avatar">
             <img src="/ocean.svg" alt="Research Assistant" class="research-logo" />
           </div>
-          <h2 class="research-title">Research Assistant</h2>
-          <p class="research-subtitle">Ask anything about ideas, traditions, or scriptures. I can search the library and discuss what we find.</p>
+          <h2 class="research-title">Ocean Library</h2>
+          <p class="research-subtitle">Your companion for exploring the world's sacred texts. Ask anything.</p>
           <div class="research-suggestions">
             {#each ['How does the concept of the self differ across Buddhism and Hinduism?', 'What do the Abrahamic traditions say about forgiveness?', 'Explain the relationship between science and religion in the Bahá\'í writings'] as suggestion}
               <button class="research-suggestion-btn" onclick={() => { researchInput = suggestion; sendResearchMessage(); }}>
@@ -2429,23 +2430,12 @@
       <form onsubmit={(e) => { e.preventDefault(); sendResearchMessage(); }} class="input-form" aria-label="Research chat form">
         <label for="research-input" class="sr-only">Ask the research assistant</label>
         <div class="input-wrapper">
-          <!-- Research mode indicator button (toggles off) -->
-          <button
-            type="button"
-            class="chat-toggle-btn active research-active"
-            onclick={toggleResearchMode}
-            title="Exit Research Chat"
-            aria-label="Exit Research Chat mode"
-            aria-pressed={true}
-          >
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-          </button>
           <textarea
             id="research-input"
             bind:this={researchInputEl}
             bind:value={researchInput}
             onkeydown={handleResearchKeydown}
-            placeholder="Ask anything — I can search the library and discuss what we find..."
+            placeholder="Ask anything about the world's sacred texts..."
             disabled={researchLoading}
             class="search-input research-textarea"
             rows="1"
