@@ -29,6 +29,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 import { query, queryOne, queryAll } from '../api/lib/db.js';
 import { runMigrations } from '../api/lib/migrations.js';
 import { parseObjectResponse } from '../api/lib/object-extraction.js';
+import { detectLanguageFeatures } from '../api/services/segmenter.js';
 import { logger } from '../api/lib/logger.js';
 
 // ============================================================================
@@ -41,7 +42,6 @@ const MAX_CONTEXT = 8192;         // vLLM max_model_len
 const RESERVED_DECODE = 1500;     // Reserve for output (entity JSON)
 const SYSTEM_PROMPT_TOKENS = 400; // Estimated system prompt size
 const SAFETY_MARGIN = 500;        // Buffer for tokenizer estimation errors
-const CHARS_PER_TOKEN = 2.5;      // Conservative — Hebrew/Arabic is ~2, English ~4
 const MAX_PARAGRAPH_CHARS = 4000;
 const STATE_FILE = join(PROJECT_ROOT, 'tmp', 'lightrag-state.json');
 const CONCURRENCY = parseInt(process.env.LIGHTRAG_CONCURRENCY || '1', 10); // Sequential per doc for prefix reuse
@@ -80,7 +80,10 @@ function saveState() {
 
 function estimateTokens(text) {
   if (!text) return 0;
-  return Math.ceil(text.length / CHARS_PER_TOKEN);
+  const features = detectLanguageFeatures(text);
+  // Hebrew ~2 chars/token, Arabic ~2, Farsi ~2, English ~4, mixed ~3
+  const charsPerToken = features.isRTL ? 2 : (features.rtlRatio > 0.1 ? 2.5 : 4);
+  return Math.ceil(text.length / charsPerToken);
 }
 
 // Available tokens for paragraph content per window
