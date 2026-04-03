@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-03T13:10:07.690Z",
+  "generated": "2026-04-03T13:12:44.807Z",
   "entries": [
+    {
+      "hash": "7b1461a",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Catch getAuthority errors in sync worker",
+      "scope": null
+    },
     {
       "hash": "de002b1",
       "date": "2026-04-02",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Add ingest-file endpoint for ingesting from file path",
       "scope": null
-    },
-    {
-      "hash": "23e9ca5",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Translation service now reads from LibSQL, not Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-03": [
+      {
+        "hash": "7b1461a",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Catch getAuthority errors in sync worker",
+        "scope": null
+      }
+    ],
     "2026-04-02": [
       {
         "hash": "de002b1",
@@ -7045,13 +7054,6 @@
         "date": "2026-01-03",
         "type": "New",
         "description": "Add ingest-file endpoint for ingesting from file path",
-        "scope": null
-      },
-      {
-        "hash": "23e9ca5",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Translation service now reads from LibSQL, not Meilisearch",
         "scope": null
       }
     ]

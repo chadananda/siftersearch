@@ -125,77 +125,86 @@ async function processSyncJob(job) {
       const docs = await content.getDocsWithDirtyParagraphs(1);
       if (docs.length === 0) break;
       const doc = docs[0];
-      let authority;
-      try { authority = getAuthority(doc); } catch { authority = 0; }
-      // Submit the doc metadata (fire-and-forget — Meilisearch is eventually consistent)
+
       try {
-        const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
-        await documentsIndex.addDocuments([{
-          id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
-          collection: doc.collection, language: doc.language,
-          year: doc.year ? parseInt(doc.year, 10) : null,
-          description: doc.description, filename: doc.filename, authority,
-          chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
-        }]);
-      } catch (err) {
-        logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document');
-      }
-      // Process paragraphs in small batches (200 paragraphs × 12KB ≈ 2.4MB per batch)
-      let docParasProcessed = 0;
-      while (!isShuttingDown) {
-        const paragraphs = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
-        if (paragraphs.length === 0) break;
-        // Fetch 512-dim vectors from embedding cache in batch
-        const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
-        const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
-        const meiliParas = [];
-        const paraIds = [];
-        let cacheHits = 0, cacheMisses = 0;
-        for (const p of paragraphs) {
-          // Prefer cached 512-dim vector; fall back to null (FTS-only) if missing
-          let embedding = null;
-          if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
-            embedding = cachedVectors.get(p.normalized_hash);
-            cacheHits++;
-          } else {
-            cacheMisses++;
-          }
-          meiliParas.push({
-            id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
-            text: p.text, context: p.context || null,
-            translation: p.translation || null, translation_segments: p.translation_segments || null,
-            title: doc.title, author: doc.author, filename: doc.filename,
-            religion: doc.religion, collection: doc.collection, language: doc.language,
-            year: doc.year ? parseInt(doc.year, 10) : null, authority,
-            heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
-            created_at: new Date().toISOString(),
-            _vectors: { default: embedding }
-          });
-          paraIds.push(p.id);
-        }
-        if (cacheMisses > 0) {
-          logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
-        }
-        // Submit paragraph batch to Meilisearch (fire-and-forget)
-        // Meilisearch is eventually consistent — no need to wait for task completion.
-        // Waiting blocks the worker for minutes when the Meilisearch queue is backed up.
+        let authority;
+        try { authority = getAuthority(doc); } catch { authority = 0; }
+
+        // Submit doc metadata
         try {
-          await paragraphsIndex.addDocuments(meiliParas);
+          const totalDirty = await queryOne(`SELECT COUNT(*) as cnt FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL`, [doc.id]);
+          await documentsIndex.addDocuments([{
+            id: doc.id, title: doc.title, author: doc.author, religion: doc.religion,
+            collection: doc.collection, language: doc.language,
+            year: doc.year ? parseInt(doc.year, 10) : null,
+            description: doc.description, filename: doc.filename, authority,
+            chunk_count: totalDirty?.cnt || 0, created_at: new Date().toISOString()
+          }]);
         } catch (err) {
-          logger.error({ err: err.message, docId: doc.id, batchSize: meiliParas.length }, 'Paragraph batch failed');
-          failedItems += meiliParas.length;
+          logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document metadata');
         }
-        // Mark synced — data has been submitted to Meilisearch
-        await content.markSynced(paraIds);
-        completedItems += paraIds.length;
-        docParasProcessed += paraIds.length;
-        // Free memory before next batch
-        meiliParas.length = 0;
-        paraIds.length = 0;
-        await delay(YIELD_DELAY_MS);
+
+        // Process paragraphs in batches
+        let docParasProcessed = 0;
+        while (!isShuttingDown) {
+          const paragraphs = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
+          if (paragraphs.length === 0) break;
+          const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
+          const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
+          const meiliParas = [];
+          const paraIds = [];
+          let cacheHits = 0, cacheMisses = 0;
+          for (const p of paragraphs) {
+            let embedding = null;
+            if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
+              embedding = cachedVectors.get(p.normalized_hash);
+              cacheHits++;
+            } else {
+              cacheMisses++;
+            }
+            meiliParas.push({
+              id: p.id, doc_id: p.doc_id, paragraph_index: p.paragraph_index,
+              text: p.text, context: p.context || null,
+              translation: p.translation || null, translation_segments: p.translation_segments || null,
+              title: doc.title, author: doc.author, filename: doc.filename,
+              religion: doc.religion, collection: doc.collection, language: doc.language,
+              year: doc.year ? parseInt(doc.year, 10) : null, authority,
+              heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
+              created_at: new Date().toISOString(),
+              _vectors: { default: embedding }
+            });
+            paraIds.push(p.id);
+          }
+          if (cacheMisses > 0) {
+            logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
+          }
+          try {
+            await paragraphsIndex.addDocuments(meiliParas);
+          } catch (err) {
+            logger.error({ err: err.message, docId: doc.id, batchSize: meiliParas.length }, 'Paragraph batch failed');
+            failedItems += meiliParas.length;
+          }
+          // Always mark synced — even on Meilisearch failure, don't retry the same batch forever
+          await content.markSynced(paraIds);
+          completedItems += paraIds.length;
+          docParasProcessed += paraIds.length;
+          meiliParas.length = 0;
+          paraIds.length = 0;
+          await delay(YIELD_DELAY_MS);
+        }
+        docsProcessed++;
+        logger.info({ docId: doc.id, docTitle: doc.title, docParasProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
+      } catch (docErr) {
+        // A bad document should NEVER stop the sync of other documents.
+        // Mark all its paragraphs as synced so we don't get stuck retrying it.
+        logger.error({ err: docErr.message, docId: doc.id, docTitle: doc.title }, 'Document sync failed — skipping');
+        try {
+          const paraIds = (await queryAll('SELECT id FROM content WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL', [doc.id])).map(r => r.id);
+          if (paraIds.length > 0) await content.markSynced(paraIds);
+          failedItems += paraIds.length;
+        } catch { /* best effort */ }
       }
-      docsProcessed++;
-      logger.info({ docId: doc.id, docTitle: doc.title, docParasProcessed, completedItems, failedItems, remaining: job.total_items - completedItems }, 'Sync job progress');
+
       await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
       await delay(DOC_DELAY_MS);
     }
