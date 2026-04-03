@@ -416,14 +416,7 @@ async function getNextPendingJob() {
  * Count unsynced paragraphs
  */
 async function countUnsyncedParagraphs() {
-  // Use counter table (trigger-maintained) to avoid blocking full table scan on 2.5M rows
-  try {
-    const row = await queryOne(`SELECT row_count as count FROM table_counts WHERE table_name = 'content_unsynced'`);
-    if (row) return row.count || 0;
-  } catch {
-    // Counter table may not exist yet
-  }
-  // Fallback to COUNT query
+  // Direct COUNT query — partial index (idx_content_unsynced) keeps this fast
   const row = await queryOne(`SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL`);
   return row?.count || 0;
 }

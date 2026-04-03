@@ -7,7 +7,7 @@
  * Indexing Progress: Documents indexed in Meilisearch vs total with content
  */
 
-import { queryOne, queryAll } from '../lib/db.js';
+import { queryOne } from '../lib/db.js';
 import { config } from '../lib/config.js';
 import { logger } from '../lib/logger.js';
 
@@ -26,9 +26,8 @@ async function getMeiliClient() {
 // In-memory tracking for current import batch
 let importJob = null;
 
-// Cache for count queries — now backed by trigger-maintained table_counts (instant lookups)
-// Short TTL since the queries are sub-millisecond now
-const countCache = { data: null, timestamp: 0, ttl: 5000 }; // 5s TTL (queries are instant)
+// Cache for count queries — 5s TTL; partial indexes make COUNT queries fast
+const countCache = { data: null, timestamp: 0, ttl: 5000 };
 
 const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0 };
 
@@ -43,48 +42,28 @@ async function getCachedCounts() {
   }
 
   try {
-    // Read from trigger-maintained counter table — single row lookups, sub-millisecond
-    const rows = await queryAll('SELECT table_name, row_count FROM table_counts');
-    const counts = {};
-    for (const r of rows) counts[r.table_name] = r.row_count;
+    // Direct COUNT queries — partial indexes make these fast
+    const [totalDocs, totalParagraphs, unsyncedParagraphs, docsWithContent] = await Promise.all([
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
+      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL')
+    ]);
 
     const result = {
-      totalDocs: counts.docs || 0,
-      docsWithContent: counts.docs_with_content || 0,
-      totalParagraphs: counts.content || 0,
-      unsyncedParagraphs: counts.content_unsynced || 0
+      totalDocs: totalDocs?.count || 0,
+      docsWithContent: docsWithContent?.count || 0,
+      totalParagraphs: totalParagraphs?.count || 0,
+      unsyncedParagraphs: unsyncedParagraphs?.count || 0
     };
 
     countCache.data = result;
     countCache.timestamp = Date.now();
     return result;
   } catch (err) {
-    // table_counts may not exist yet (pre-migration 39) — fall back to COUNT queries
-    if (err.message?.includes('no such table') || err.message?.includes('table_counts')) {
-      logger.warn('table_counts not found, falling back to COUNT queries');
-      return getCachedCountsFallback();
-    }
+    logger.warn({ err: err.message }, 'Failed to get content counts');
     throw err;
   }
-}
-
-// Fallback for pre-migration-39 databases
-async function getCachedCountsFallback() {
-  const totalDocs = await queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL');
-  const totalParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL');
-  const unsyncedParagraphs = await queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL');
-  const docsWithContent = await queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL');
-
-  const result = {
-    totalDocs: totalDocs?.count || 0,
-    docsWithContent: docsWithContent?.count || 0,
-    totalParagraphs: totalParagraphs?.count || 0,
-    unsyncedParagraphs: unsyncedParagraphs?.count || 0
-  };
-
-  countCache.data = result;
-  countCache.timestamp = Date.now();
-  return result;
 }
 
 /**

@@ -808,13 +808,9 @@ async function getUnembedded(limit = 50, maxChars = 6000) {
 
 /**
  * Count paragraphs needing embeddings.
- * Uses counter table (trigger-maintained) when available, falls back to COUNT query.
+ * Direct COUNT query — partial index keeps this fast.
  */
 async function getUnembeddedCount(maxChars = 6000) {
-  try {
-    const row = await queryOne(`SELECT row_count as total FROM table_counts WHERE table_name = 'content_unembedded'`);
-    if (row) return { total: row.total, unique_hashes: null };
-  } catch { /* counter table may not exist */ }
   return queryOne(`
     SELECT
       COUNT(*) as total,
@@ -828,13 +824,9 @@ async function getUnembeddedCount(maxChars = 6000) {
 
 /**
  * Count oversized paragraphs (skipped by embedding worker).
- * Uses counter table when available.
+ * Direct COUNT query — partial index keeps this fast.
  */
 async function getOversizedCount(maxChars = 6000) {
-  try {
-    const row = await queryOne(`SELECT row_count as total FROM table_counts WHERE table_name = 'content_oversized'`);
-    if (row) return { total: row.total, unique_hashes: null };
-  } catch { /* counter table may not exist */ }
   return queryOne(`
     SELECT
       COUNT(*) as total,

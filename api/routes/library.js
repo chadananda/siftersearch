@@ -125,11 +125,9 @@ refreshPipelineCache();
 
 export default async function libraryRoutes(fastify) {
 
-  // Pipeline cache refresh disabled — the 3 COUNT queries on 2.5M rows block the
-  // event loop for 6-9s total, causing health check timeouts. Pipeline status will
-  // show zeros until these counts are added to the counter table (trigger-maintained).
-  // TODO: Add content_unembedded and content_oversized to table_counts via migration 40
-  logger.info('Pipeline cache refresh disabled (blocks event loop), needs counter table');
+  // Pipeline cache refresh disabled — the COUNT queries on 2.5M rows block the
+  // event loop for several seconds, causing health check timeouts.
+  logger.info('Pipeline cache refresh disabled (blocks event loop)');
 
   // ============================================
   // Public Routes
