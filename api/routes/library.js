@@ -108,18 +108,20 @@ let pipelineRefreshTimer = null;
 async function refreshPipelineCache() {
   try {
     const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
-    const uniqueEmbeddingCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
-    const oversizedCount = await queryOne(`SELECT COUNT(DISTINCT normalized_hash) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
+    const oversizedCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
     pipelineCache.data = {
       paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-      uniqueEmbeddingsNeeded: uniqueEmbeddingCount?.count || 0,
+      uniqueEmbeddingsNeeded: 0, // expensive DISTINCT query removed
       oversizedSkipped: oversizedCount?.count || 0
     };
     pipelineCache.timestamp = Date.now();
-  } catch {
-    // Columns may not exist yet
+    logger.debug({ needsEmbedding: pipelineCache.data.paragraphsNeedingEmbeddings }, 'Pipeline cache refreshed');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Pipeline cache refresh failed');
   }
 }
+// Run immediately on module load so first /stats request has data
+refreshPipelineCache();
 
 export default async function libraryRoutes(fastify) {
 
