@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 46;
+const CURRENT_VERSION = 47;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1807,6 +1807,17 @@ const migrations = {
         ON content(normalized_hash) WHERE normalized_hash IS NOT NULL`);
     }
     logger.info('Migration 46 complete: Content table indexes added');
+  },
+  // Version 47: Add per-paragraph language column
+  // Falls back to doc.language when NULL. Enables proper language-specific
+  // segmentation and search for mixed-language documents.
+  47: async () => {
+    logger.info('Starting migration 47: Add language column to content');
+    const cols = (await queryAll('PRAGMA table_info(content)')).map(c => c.name);
+    if (!cols.includes('language')) {
+      await query('ALTER TABLE content ADD COLUMN language TEXT DEFAULT NULL');
+    }
+    logger.info('Migration 47 complete: language column added to content');
   },
 };
 

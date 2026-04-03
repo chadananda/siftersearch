@@ -39,39 +39,40 @@ export function detectLanguageFeatures(text) {
   }
 
   // Count characters by script type to determine MAJORITY language
+  // Hebrew Unicode range: \u0590-\u05FF (includes vowel marks, cantillation)
+  const hebrewChars = (text.match(/[\u0590-\u05FF]/g) || []).length;
   // Arabic Unicode ranges: \u0600-\u06FF, \u0750-\u077F, \uFB50-\uFDFF, \uFE70-\uFEFF
   const arabicChars = (text.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
   // Latin characters (basic + extended)
   const latinChars = (text.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
-
   // Farsi-specific characters: پ چ ژ گ ی
   const farsiChars = (text.match(/[\u067E\u0686\u0698\u06AF\u06CC]/g) || []).length;
 
-  const totalAlpha = arabicChars + latinChars;
+  const totalAlpha = hebrewChars + arabicChars + latinChars;
   if (totalAlpha === 0) {
     return { isRTL: false, language: 'en', textLength: text.length };
   }
 
-  // Calculate ratio - document is RTL only if MAJORITY (>50%) is Arabic script
-  const arabicRatio = arabicChars / totalAlpha;
-  const isRTL = arabicRatio > 0.5;
+  const rtlChars = hebrewChars + arabicChars;
+  const rtlRatio = rtlChars / totalAlpha;
+  const isRTL = rtlRatio > 0.5;
 
-  // Determine primary language based on majority
   let language = 'en';
   if (isRTL) {
-    // Among RTL, check if Farsi-specific chars (پ چ ژ گ ی) are present
-    // Threshold: 10% Farsi-specific chars among all Arabic-script chars = Farsi document
-    // Farsi shares most chars with Arabic, only these 5 are unique
-    // 10% threshold prevents Arabic docs with occasional Farsi quotes from being misclassified
-    const farsiRatio = arabicChars > 0 ? farsiChars / arabicChars : 0;
-    language = farsiRatio > 0.10 ? 'fa' : 'ar';
+    if (hebrewChars > arabicChars) {
+      language = 'he';
+    } else {
+      // Among Arabic-script, check for Farsi-specific chars (پ چ ژ گ ی)
+      const farsiRatio = arabicChars > 0 ? farsiChars / arabicChars : 0;
+      language = farsiRatio > 0.10 ? 'fa' : 'ar';
+    }
   }
 
   return {
     isRTL,
     language,
     textLength: text.length,
-    arabicRatio  // Include for debugging
+    rtlRatio
   };
 }
 

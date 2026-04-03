@@ -17,7 +17,9 @@ import { content } from '../lib/content.js';
 
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
-const BATCH_SIZE = 2000;              // Texts per OpenAI batch (API supports up to 2048)
+const BATCH_SIZE = 500;               // Max texts to fetch from DB per cycle
+const MAX_TOKENS_PER_REQUEST = 250000; // Stay under OpenAI's 300K limit with margin
+const CHARS_PER_TOKEN = 4;            // Conservative estimate (English ~4, Arabic ~2)
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
 const DB_WRITE_DELAY_MS = 0;          // No delay — standalone process, no event loop contention
@@ -110,37 +112,45 @@ async function runEmbeddingCycle() {
       return;
     }
 
-    logger.info({ count: rows.length }, 'Generating embeddings for content batch');
+    // Split into token-safe sub-batches to stay under OpenAI's per-request limit
+    const subBatches = [];
+    let currentBatch = [];
+    let currentTokens = 0;
+    for (const row of rows) {
+      const estTokens = Math.ceil((row.text || '').length / CHARS_PER_TOKEN);
+      if (currentBatch.length > 0 && currentTokens + estTokens > MAX_TOKENS_PER_REQUEST) {
+        subBatches.push(currentBatch);
+        currentBatch = [];
+        currentTokens = 0;
+      }
+      currentBatch.push(row);
+      currentTokens += estTokens;
+    }
+    if (currentBatch.length > 0) subBatches.push(currentBatch);
 
-    // Texts are pre-filtered by query to be <= MAX_CHARS, no truncation needed
-    const texts = rows.map(row => row.text || '');
+    logger.info({ count: rows.length, subBatches: subBatches.length }, 'Generating embeddings');
 
-    // Generate embeddings via OpenAI
-    const result = await createEmbeddings(texts, {
-      caller: 'embedding-worker'
-    });
+    for (const batch of subBatches) {
+      const texts = batch.map(row => row.text || '');
+      const result = await createEmbeddings(texts, { caller: 'embedding-worker' });
+      await storeEmbeddings(batch, result.embeddings);
 
-    // Store embeddings via content API (validates dimensions, sets synced=0)
-    await storeEmbeddings(rows, result.embeddings);
+      embeddingStats.embeddingsGenerated += batch.length;
+      embeddingStats.batchesProcessed++;
+      embeddingStats.lastSuccess = new Date().toISOString();
 
-    // NOTE: propagateEmbeddings() runs on a separate 10-minute timer (schedulePropagation)
-    // to avoid blocking the event loop every 5 seconds with a full-table correlated UPDATE
+      logger.info({
+        generated: batch.length,
+        totalGenerated: embeddingStats.embeddingsGenerated,
+        tokens: result.usage?.totalTokens
+      }, 'Embedding sub-batch complete');
+    }
 
     // Success — reset backoff
     backoffMs = 0;
     backoffUntil = 0;
     embeddingStats.consecutiveErrors = 0;
     embeddingStats.backoffUntil = null;
-
-    embeddingStats.embeddingsGenerated += rows.length;
-    embeddingStats.batchesProcessed++;
-    embeddingStats.lastSuccess = new Date().toISOString();
-
-    logger.info({
-      generated: rows.length,
-      totalGenerated: embeddingStats.embeddingsGenerated,
-      tokens: result.usage?.totalTokens
-    }, 'Embedding batch complete');
 
   } catch (err) {
     embeddingStats.errors++;
