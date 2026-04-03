@@ -772,10 +772,12 @@ export default async function libraryRoutes(fastify) {
     const collectionCounts = {};
     for (const row of docCounts) {
       const religion = row.religion || 'Uncategorized';
-      const collection = row.collection || 'General';
       religionCounts[religion] = (religionCounts[religion] || 0) + row.count;
-      if (!collectionCounts[religion]) collectionCounts[religion] = {};
-      collectionCounts[religion][collection] = (collectionCounts[religion][collection] || 0) + row.count;
+      // Skip metadata folders (.religion, .collection) and null collections
+      if (row.collection && !row.collection.startsWith('.')) {
+        if (!collectionCounts[religion]) collectionCounts[religion] = {};
+        collectionCounts[religion][row.collection] = (collectionCounts[religion][row.collection] || 0) + row.count;
+      }
     }
 
     // If library_nodes is empty, build tree from docs table facets

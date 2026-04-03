@@ -29,6 +29,7 @@
   const isJain       = $derived(key === 'jain' || key === 'jainism');
   const isJudaism    = $derived(key === 'judaism' || key === 'jewish');
   const isTao        = $derived(key === 'tao' || key === 'taoism' || key === 'taoist');
+  const isSikh       = $derived(key === 'sikh' || key === 'sikhism');
   const isZoroastrian = $derived(key === 'zoroastrian' || key === 'zoroastrianism');
 </script>
 
@@ -87,10 +88,10 @@
 <!-- Islam: crescent and star -->
 {:else if isIslam}
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Islam" role="img" fill="currentColor">
-    <!-- Wide crescent: large outer circle minus offset inner circle for thick crescent -->
-    <path d="M10 2a10 10 0 1 0 0 20A8 8 0 0 1 10 2z"/>
-    <!-- Five-pointed star centered in the crescent opening -->
-    <polygon points="17,8 18,10.5 20.5,10.5 18.5,12.2 19.2,14.8 17,13 14.8,14.8 15.5,12.2 13.5,10.5 16,10.5"/>
+    <!-- Thick crescent moon -->
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.82 0 3.53-.49 5-1.35C14.35 19.42 12.5 16.9 12.5 14c0-3.94 2.67-7.25 6.3-8.23C17.19 3.38 14.76 2 12 2zM12.5 14c0 2.34 1.28 4.39 3.18 5.47C14.56 20.44 13.32 21 12 21c-4.97 0-9-4.03-9-9s4.03-9 9-9c1.07 0 2.09.19 3.04.53C12.72 5.28 11 8.03 11 11.2c0 .96.15 1.89.42 2.76.03.01.05.02.08.04z"/>
+    <!-- Five-pointed star -->
+    <polygon points="19,7 20,9.5 22.5,9.5 20.5,11 21.2,13.5 19,12 16.8,13.5 17.5,11 15.5,9.5 18,9.5"/>
   </svg>
 
 <!-- Jain: open hand with ahimsa wheel -->
@@ -122,6 +123,18 @@
     <circle cx="12" cy="7" r="1.8" fill="none" stroke="currentColor" stroke-width="1"/>
     <!-- Small circle bottom (dark) -->
     <circle cx="12" cy="17" r="1.8" fill="currentColor"/>
+  </svg>
+
+<!-- Sikh: Khanda symbol -->
+{:else if isSikh}
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="{sizeClass} {cls}" aria-label="Sikh" role="img" fill="currentColor">
+    <!-- Central double-edged sword (Khanda) -->
+    <rect x="11.25" y="2" width="1.5" height="20" rx="0.5"/>
+    <!-- Chakkar (circle) -->
+    <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <!-- Two kirpans (curved swords) -->
+    <path d="M6 4c0 0 2 3 2 8s-2 8-2 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M18 4c0 0-2 3-2 8s2 8 2 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
 
 <!-- Zoroastrian: faravahar / fire altar -->
