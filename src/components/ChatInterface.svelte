@@ -742,24 +742,28 @@
   function startIndexTicker() {
     if (_indexTickId) return; // already running
     _indexTickId = setInterval(() => {
-      const job = libraryStats?.indexingProgress?.activeJob;
-      if (!job || job.status !== 'running') { indexingInterpolated = null; return; }
-      if (!job.startedAt || !job.completedItems || job.completedItems < 100) {
-        indexingInterpolated = { items: job.completedItems || 0, pct: job.percentComplete || 0, eta: '', totalItems: job.totalItems };
-        return;
-      }
-      const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
-      const rate = job.completedItems / elapsed;
-      const sinceLastPoll = (Date.now() - (libraryStats._fetchedAt || Date.now())) / 1000;
-      const estimated = Math.min(job.completedItems + Math.round(rate * sinceLastPoll), job.totalItems);
-      const pct = job.totalItems > 0 ? Math.round((estimated / job.totalItems) * 100) : 0;
-      const remaining = (job.totalItems - estimated) / rate;
+      const progress = libraryStats?.indexingProgress;
+      if (!progress || progress.percentComplete >= 100) { indexingInterpolated = null; return; }
+      // Use overall sync progress (syncedParagraphs / totalParagraphs) — more reliable than activeJob
+      const synced = progress.syncedParagraphs || 0;
+      const total = progress.totalParagraphs || 1;
+      const pending = progress.pending || 0;
+      const pct = Math.min(Math.round((synced / total) * 100), 100);
+      // Estimate time from rate (paragraphs synced per second since job started)
+      const job = progress.activeJob;
       let eta = '';
-      if (remaining < 60) eta = 'less than a minute';
-      else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
-      else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
-      indexingInterpolated = { items: estimated, pct, eta, totalItems: job.totalItems };
-    }, 200);
+      if (job?.startedAt && job.completedItems > 100) {
+        const elapsed = (Date.now() - new Date(job.startedAt + 'Z').getTime()) / 1000;
+        const rate = job.completedItems / elapsed;
+        if (rate > 0) {
+          const remaining = pending / rate;
+          if (remaining < 60) eta = 'less than a minute';
+          else if (remaining < 3600) eta = `~${Math.round(remaining / 60)}m`;
+          else { const hrs = Math.floor(remaining / 3600); const mins = Math.round((remaining % 3600) / 60); eta = `~${hrs}h ${mins}m`; }
+        }
+      }
+      indexingInterpolated = { items: synced, pct, eta, totalItems: total };
+    }, 1000);
   }
 
   function stopIndexTicker() {
