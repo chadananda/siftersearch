@@ -411,7 +411,29 @@ export function parseDocument(text, options = {}) {
     }
   }
 
-  return chunks;
+  // BACKSTOP: Force-split any chunk still over maxChunkSize by word boundaries.
+  // This catches cases where sentence splitting failed (e.g. Hebrew/Arabic with
+  // no Latin punctuation). No paragraph should ever exceed the embedding limit.
+  const result = [];
+  for (const chunk of chunks) {
+    if (chunk.length <= maxChunkSize) {
+      result.push(chunk);
+    } else {
+      const words = chunk.split(/\s+/);
+      let current = '';
+      for (const word of words) {
+        if (current.length + word.length + 1 > maxChunkSize && current.length >= minChunkSize) {
+          result.push(current);
+          current = word;
+        } else {
+          current += (current ? ' ' : '') + word;
+        }
+      }
+      if (current.length >= minChunkSize) result.push(current);
+    }
+  }
+
+  return result;
 }
 
 /**
