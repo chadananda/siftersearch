@@ -34,15 +34,31 @@ function saveState() {
 export async function initPWA() {
   if (typeof window === 'undefined') return;
 
-  // Check for stale service worker and force unregister if needed
-  if (navigator.serviceWorker?.controller) {
+  // Check for stale/broken service worker
+  if (navigator.serviceWorker) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
-      const currentVersion = import.meta.env.PUBLIC_APP_VERSION;
 
-      // Force check for updates on every page load
       for (const registration of registrations) {
         console.log('[PWA] Checking for service worker updates...');
+
+        // Listen for install failures — if the new SW fails to install
+        // (e.g. precache 404s), unregister the broken SW entirely
+        registration.addEventListener('updatefound', () => {
+          const newSW = registration.installing;
+          if (newSW) {
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'redundant') {
+                console.warn('[PWA] New service worker became redundant (install failed). Unregistering...');
+                registration.unregister().then(() => {
+                  console.log('[PWA] Broken service worker unregistered. Reloading...');
+                  window.location.reload();
+                });
+              }
+            });
+          }
+        });
+
         await registration.update();
       }
     } catch (e) {

@@ -76,8 +76,11 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Precache static assets
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Only precache the shell (HTML, icons, fonts) — NOT JS/CSS.
+        // JS/CSS files have content hashes and are cached by the browser natively.
+        // Precaching JS causes "bad-precaching-response" 404s on Cloudflare Pages
+        // when a new deploy changes hashes before the SW manifest updates.
+        globPatterns: ['**/*.{html,ico,png,svg,woff2}'],
         // Exclude Cloudflare Workers runtime files
         globIgnores: ['**/_worker.js/**', '**/_worker.js', '**/worker.js'],
         // Clean up old caches when new SW activates
@@ -86,7 +89,6 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         // IMPORTANT: Disable navigation fallback for SSR routes
-        // The default navigateFallback "/" breaks dynamic routes like /library/*
         navigateFallback: null,
         // Runtime caching
         runtimeCaching: [
