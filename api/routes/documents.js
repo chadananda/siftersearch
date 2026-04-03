@@ -57,28 +57,17 @@ function validateDownloadToken(token) {
 /**
  * Handle bulk download of multiple documents
  */
-async function handleBulkDownload(meili, documentIds, format, options, reply) {
+async function handleBulkDownload(documentIds, format, options, reply) {
   const allDocuments = [];
 
   for (const docId of documentIds) {
     try {
-      const [document, segmentsResult] = await Promise.all([
-        meili.index(INDEXES.DOCUMENTS).getDocument(docId),
-        meili.index(INDEXES.PARAGRAPHS).search('', {
-          filter: `doc_id = ${docId}`,
-          limit: 10000,
-          sort: ['paragraph_index:asc']
-        })
-      ]);
-
-      const segments = segmentsResult.hits.map(hit => {
-        if (!options.includeEmbeddings) {
-          const { _vectors, ...rest } = hit;
-          return rest;
-        }
-        return hit;
-      });
-
+      const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [docId]);
+      if (!document) { logger.warn({ docId }, 'Document not found for bulk export'); continue; }
+      const segments = await queryAll(
+        'SELECT id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index',
+        [docId]
+      );
       allDocuments.push({ document, segments });
     } catch (err) {
       logger.warn({ docId, err: err.message }, 'Failed to fetch document for bulk export');
@@ -137,51 +126,42 @@ export default async function documentsRoutes(fastify) {
     }
   }, async (request) => {
     const { limit = 20, offset = 0, religion, collection, language, search } = request.query;
-    const meili = getMeili();
-    const index = meili.index(INDEXES.DOCUMENTS);
 
-    // Build filter
-    const filters = [];
-    if (religion) filters.push(`religion = "${religion}"`);
-    if (collection) filters.push(`collection = "${collection}"`);
-    if (language) filters.push(`language = "${language}"`);
-
-    const searchParams = {
-      limit,
-      offset,
-      filter: filters.length > 0 ? filters.join(' AND ') : undefined
-    };
-
-    let results;
     if (search) {
-      results = await index.search(search, searchParams);
-    } else {
-      // Get all documents (empty search)
-      results = await index.search('', searchParams);
+      // Text search — Meilisearch is appropriate here
+      const meili = getMeili();
+      const index = meili.index(INDEXES.DOCUMENTS);
+      const filters = [];
+      if (religion) filters.push(`religion = "${religion}"`);
+      if (collection) filters.push(`collection = "${collection}"`);
+      if (language) filters.push(`language = "${language}"`);
+      const results = await index.search(search, {
+        limit, offset,
+        filter: filters.length > 0 ? filters.join(' AND ') : undefined
+      });
+      return { documents: results.hits, total: results.estimatedTotalHits, limit, offset };
     }
 
-    return {
-      documents: results.hits,
-      total: results.estimatedTotalHits,
-      limit,
-      offset
-    };
+    // Listing/browsing — read from SQLite
+    const conditions = ['deleted_at IS NULL'];
+    const params = [];
+    if (religion) { conditions.push('religion = ?'); params.push(religion); }
+    if (collection) { conditions.push('collection = ?'); params.push(collection); }
+    if (language) { conditions.push('language = ?'); params.push(language); }
+    const where = conditions.join(' AND ');
+    const [countRow, documents] = await Promise.all([
+      queryOne(`SELECT COUNT(*) as total FROM docs WHERE ${where}`, params),
+      queryAll(`SELECT id, title, author, religion, collection, language, year, description, paragraph_count, cover_url, created_at, updated_at FROM docs WHERE ${where} ORDER BY title LIMIT ? OFFSET ?`, [...params, limit, offset])
+    ]);
+    return { documents, total: countRow?.total || 0, limit, offset };
   });
 
   // Get document metadata by ID
   fastify.get('/:id', async (request) => {
     const { id } = request.params;
-    const meili = getMeili();
-
-    try {
-      const document = await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-      return { document };
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
-    }
+    const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
+    if (!document) throw ApiError.notFound('Document not found');
+    return { document };
   });
 
   // Get document segments/chunks
@@ -245,17 +225,10 @@ export default async function documentsRoutes(fastify) {
   }, async (request) => {
     const { id } = request.params;
     const { format = 'json', includeEmbeddings = false, includeMetadata = true } = request.query;
-    const meili = getMeili();
 
-    // Verify document exists
-    try {
-      await meili.index(INDEXES.DOCUMENTS).getDocument(id);
-    } catch (err) {
-      if (err.code === 'document_not_found') {
-        throw ApiError.notFound('Document not found');
-      }
-      throw err;
-    }
+    // Verify document exists in SQLite
+    const docExists = await queryOne('SELECT id FROM docs WHERE id = ? AND deleted_at IS NULL', [id]);
+    if (!docExists) throw ApiError.notFound('Document not found');
 
     // Generate download token
     const token = generateDownloadToken(id, format, { includeEmbeddings, includeMetadata });
@@ -283,30 +256,22 @@ export default async function documentsRoutes(fastify) {
     }
 
     const { documentId, format, options } = tokenData;
-    const meili = getMeili();
 
     // Handle bulk download
     if (documentId === 'bulk' && options.documentIds) {
-      return handleBulkDownload(meili, options.documentIds, format, options, reply);
+      return handleBulkDownload(options.documentIds, format, options, reply);
     }
 
-    // Get document and all segments
-    const [document, segmentsResult] = await Promise.all([
-      meili.index(INDEXES.DOCUMENTS).getDocument(documentId),
-      meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: `doc_id = ${documentId}`,
-        limit: 10000,
-        sort: ['paragraph_index:asc']
-      })
-    ]);
-
-    const segments = segmentsResult.hits.map(hit => {
-      if (!options.includeEmbeddings) {
-        const { _vectors, ...rest } = hit;
-        return rest;
-      }
-      return hit;
-    });
+    // Get document and all segments from SQLite
+    const document = await queryOne('SELECT * FROM docs WHERE id = ? AND deleted_at IS NULL', [documentId]);
+    if (!document) throw ApiError.notFound('Document not found');
+    const segmentCols = options.includeEmbeddings
+      ? 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language, embedding'
+      : 'id, doc_id, paragraph_index, text, heading, blocktype, translation, context, language';
+    const segments = await queryAll(
+      `SELECT ${segmentCols} FROM content WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index`,
+      [documentId]
+    );
 
     // Format the response based on requested format
     let content;
@@ -444,22 +409,18 @@ export default async function documentsRoutes(fastify) {
     return reply.redirect(`${baseUrl}/api/documents/download/${token}`);
   });
 
-  // Get available filters (for UI dropdowns)
+  // Get available filters (for UI dropdowns) — read from SQLite, not Meilisearch
   fastify.get('/filters', async () => {
-    const meili = getMeili();
-    const index = meili.index(INDEXES.DOCUMENTS);
-
-    // Get facet distribution
-    const results = await index.search('', {
-      limit: 0,
-      facets: ['religion', 'collection', 'language']
-    });
-
+    const [religions, collections, languages] = await Promise.all([
+      queryAll('SELECT DISTINCT religion FROM docs WHERE religion IS NOT NULL AND deleted_at IS NULL ORDER BY religion'),
+      queryAll('SELECT DISTINCT collection FROM docs WHERE collection IS NOT NULL AND deleted_at IS NULL ORDER BY collection'),
+      queryAll('SELECT DISTINCT language FROM docs WHERE language IS NOT NULL AND deleted_at IS NULL ORDER BY language')
+    ]);
     return {
       filters: {
-        religions: Object.keys(results.facetDistribution?.religion || {}),
-        collections: Object.keys(results.facetDistribution?.collection || {}),
-        languages: Object.keys(results.facetDistribution?.language || {})
+        religions: religions.map(r => r.religion),
+        collections: collections.map(c => c.collection),
+        languages: languages.map(l => l.language)
       }
     };
   });
