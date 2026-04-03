@@ -122,7 +122,7 @@ async function searchLibrary(query, limit = 5) {
     }));
 
     const context = citations
-      .map((c, i) => `[${i + 1}] "${c.text.substring(0, 300)}${c.text.length > 300 ? '...' : ''}"\n   — ${c.title}${c.author ? `, ${c.author}` : ''} (${c.religion || 'Unknown tradition'})`)
+      .map((c, i) => `[${i + 1}] "${c.text.substring(0, 500)}${c.text.length > 500 ? '...' : ''}"\n   — *${c.title}*${c.author ? `, ${c.author}` : ''} (${c.religion || 'Unknown tradition'})`)
       .join('\n\n');
 
     return { context, citations };
@@ -193,7 +193,7 @@ export default async function chatRoutes(fastify) {
       // Step 2: Optionally search the library
       if (searchQuery) {
         sendEvent({ type: 'search_start', query: searchQuery });
-        const { context, citations: found } = await searchLibrary(searchQuery, 6);
+        const { context, citations: found } = await searchLibrary(searchQuery, 8);
         searchContext = context;
         citations = found;
         if (citations.length > 0) {
@@ -230,7 +230,7 @@ export default async function chatRoutes(fastify) {
         // Use streaming if supported by the provider
         streamResponse = await aiService('quality').chat(aiMessages, {
           stream: true,
-          maxTokens: 1500,
+          maxTokens: 2500,
           temperature: 0.7,
           caller: 'chat:research-assistant',
           userId
@@ -240,7 +240,7 @@ export default async function chatRoutes(fastify) {
         logger.warn({ err: streamErr.message }, 'Streaming not available, falling back to non-streaming');
         const nonStreamResponse = await aiService('quality').chat(aiMessages, {
           stream: false,
-          maxTokens: 1500,
+          maxTokens: 2500,
           temperature: 0.7,
           caller: 'chat:research-assistant',
           userId
