@@ -322,15 +322,20 @@ export default async function libraryRoutes(fastify) {
       // Table may not exist yet
     }
 
-    // Pipeline status — always from cache (refreshed by background timer, never in request path)
-    // Heavy COUNT queries on 2.5M rows block the event loop; keeping them out of request
-    // handlers prevents health check timeouts and watchdog restart loops.
+    // Pipeline status — inline queries (partial indexes make these fast, ~50ms each)
+    let embeddingsNeeded = 0;
+    let oversizedSkipped = 0;
+    try {
+      const embRow = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= 6000');
+      embeddingsNeeded = embRow?.c || 0;
+      const overRow = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > 6000');
+      oversizedSkipped = overRow?.c || 0;
+    } catch { /* content table may not have embedding column yet */ }
     const pipelineStatus = {
       ingestionQueuePending: indexingStats.pending + indexingStats.processing,
-      paragraphsNeedingEmbeddings: pipelineCache.data?.paragraphsNeedingEmbeddings || 0,
-      uniqueEmbeddingsNeeded: pipelineCache.data?.uniqueEmbeddingsNeeded || 0,
+      paragraphsNeedingEmbeddings: embeddingsNeeded,
       paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-      oversizedSkipped: pipelineCache.data?.oversizedSkipped || 0
+      oversizedSkipped
     };
 
     // Calculate ingestion progress
