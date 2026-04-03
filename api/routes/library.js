@@ -120,8 +120,9 @@ async function refreshPipelineCache() {
     logger.warn({ err: err.message }, 'Pipeline cache refresh failed');
   }
 }
-// Run immediately on module load so first /stats request has data
-refreshPipelineCache();
+// Note: refreshPipelineCache() NOT called at module load — the 3s COUNT queries
+// block startup and prevent PM2 wait_ready from succeeding. The inline queries
+// in the stats endpoint handle this instead.
 
 export default async function libraryRoutes(fastify) {
 
