@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-03T21:38:53.169Z",
+  "generated": "2026-04-03T23:09:16.432Z",
   "entries": [
+    {
+      "hash": "b97ea8c",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Add concurrency, cursor-based doc loading, LEFT JOIN",
+      "scope": null
+    },
     {
       "hash": "e06d719",
       "date": "2026-04-03",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version for PWA cache bust",
       "scope": null
-    },
-    {
-      "hash": "bcfa25a",
-      "date": "2026-01-03",
-      "type": "Fixed",
-      "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-03": [
+      {
+        "hash": "b97ea8c",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Add concurrency, cursor-based doc loading, LEFT JOIN",
+        "scope": null
+      },
       {
         "hash": "e06d719",
         "date": "2026-04-03",
@@ -7045,15 +7052,6 @@
         "date": "2026-01-04",
         "type": "Chore",
         "description": "Bump version for PWA cache bust",
-        "scope": null
-      }
-    ],
-    "2026-01-03": [
-      {
-        "hash": "bcfa25a",
-        "date": "2026-01-03",
-        "type": "Fixed",
-        "description": "Correct ingest-file endpoint to use getDocumentByPath instead of non-existent generateDocumentId",
         "scope": null
       }
     ]
