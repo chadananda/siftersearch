@@ -1,3 +1,10 @@
+# TEMPORARY: Force all browsers to unregister broken service workers.
+# The old SW precached JS files that no longer exist, causing 404s
+# that prevent the client from loading ANY new code.
+# Remove this header after ~1 week (by 2026-04-10).
+/*
+  Clear-Site-Data: "storage"
+
 # Service worker should never be cached
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
@@ -6,14 +13,11 @@
 /workbox-*.js
   Cache-Control: no-cache, no-store, must-revalidate
 
-# Library pages - NO CACHING during development
-# TODO: Re-enable for production:
-# Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
-# CDN-Cache-Control: max-age=3600
+# Library pages - no caching
 /library/*
   Cache-Control: no-cache, no-store, must-revalidate
   CDN-Cache-Control: no-cache
 
-# Static assets - long cache
+# Static assets - long cache (content-hashed filenames)
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
