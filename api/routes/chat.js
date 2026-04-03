@@ -64,40 +64,31 @@ You are not a chatbot. You are a well-read companion who loves these texts and l
 
 /**
  * Decide whether a message warrants a library search.
+ * Uses fast heuristics — no AI call needed.
  * Returns a search query string, or null if no search needed.
  */
-async function planSearch(messages, userMessage) {
-  const planPrompt = `You are helping a research assistant decide whether to search an interfaith library.
+function planSearch(messages, userMessage) {
+  const msg = userMessage.trim().toLowerCase();
 
-Given this conversation, does the latest user message warrant searching the library for relevant passages?
-If yes, provide a concise search query (2-8 words focusing on the core concept).
-If no, respond with null.
+  // Skip search for short conversational messages
+  if (msg.length < 15) return null;
 
-Conversation (last 3 messages):
-${messages.slice(-3).map(m => `${m.role}: ${m.content}`).join('\n')}
+  // Skip search for greetings and pleasantries
+  const greetings = /^(hi|hello|hey|how are you|thanks|thank you|ok|okay|sure|yes|no|bye|goodbye|good morning|good evening|what's up|sup)/i;
+  if (greetings.test(msg)) return null;
 
-Latest message: "${userMessage}"
+  // Skip search for meta-questions about the chatbot itself
+  const meta = /^(who are you|what are you|what can you do|help|how do you work)/i;
+  if (meta.test(msg)) return null;
 
-Respond with JSON only: {"search": "query"} or {"search": null}`;
+  // Skip search for follow-up acknowledgments
+  const followUp = /^(interesting|i see|that makes sense|tell me more|go on|continue|explain|can you elaborate)/i;
+  if (followUp.test(msg)) return null;
 
-  try {
-    const response = await aiService('fast').chat([
-      { role: 'user', content: planPrompt }
-    ], {
-      temperature: 0.1,
-      maxTokens: 100,
-      caller: 'chat:search-planning'
-    });
-    const text = response.content?.trim() || '';
-    // Extract JSON from response
-    const match = text.match(/\{[^}]+\}/);
-    if (!match) return null;
-    const parsed = JSON.parse(match[0]);
-    return parsed.search || null;
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Chat search planning failed, skipping search');
-    return null;
-  }
+  // For substantive questions/topics, use the message as the search query
+  // Trim to key concepts (first 60 chars, strip question marks)
+  const query = userMessage.trim().replace(/[?!.]+$/, '').substring(0, 80);
+  return query;
 }
 
 /**
@@ -184,13 +175,13 @@ export default async function chatRoutes(fastify) {
     };
 
     try {
-      // Step 1: Plan whether to search the library
-      const searchQuery = await planSearch(messages.slice(0, -1), userMessage);
+      // Step 1: Decide if we should search (instant heuristic, no AI call)
+      const searchQuery = planSearch(messages.slice(0, -1), userMessage);
 
       let searchContext = '';
       let citations = [];
 
-      // Step 2: Optionally search the library
+      // Step 2: Optionally search the library (only for substantive questions)
       if (searchQuery) {
         sendEvent({ type: 'search_start', query: searchQuery });
         const { context, citations: found } = await searchLibrary(searchQuery, 8);
@@ -201,25 +192,18 @@ export default async function chatRoutes(fastify) {
         }
       }
 
-      // Step 3: Build messages for the AI
-      // Inject search results as a system-style user turn before the final user message
+      // Step 3: Build messages for the AI — conversation first, search context as background
+      const systemPrompt = searchContext
+        ? RESEARCH_ASSISTANT_SYSTEM_PROMPT + `\n\n[The following library passages may be relevant to the conversation. Use them naturally if helpful, but respond to the user's message first — don't just summarize search results.]\n\n${searchContext}`
+        : RESEARCH_ASSISTANT_SYSTEM_PROMPT;
+
       const aiMessages = [
-        { role: 'system', content: RESEARCH_ASSISTANT_SYSTEM_PROMPT }
+        { role: 'system', content: systemPrompt }
       ];
 
-      // Include conversation history (skip last user message — added after search context)
-      for (const msg of messages.slice(0, -1)) {
+      // Include full conversation history
+      for (const msg of messages) {
         aiMessages.push({ role: msg.role, content: msg.content });
-      }
-
-      // Add search context and user message together if we have results
-      if (searchContext) {
-        aiMessages.push({
-          role: 'user',
-          content: `[Library search for "${searchQuery}" returned these passages:\n\n${searchContext}]\n\n${userMessage}`
-        });
-      } else {
-        aiMessages.push({ role: 'user', content: userMessage });
       }
 
       // Step 4: Stream AI response
