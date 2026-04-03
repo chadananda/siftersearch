@@ -1,17 +1,4 @@
-# TEMPORARY: Force all browsers to unregister broken service workers.
-# Remove after 2026-04-10.
-/
-  Clear-Site-Data: "storage"
-/index.html
-  Clear-Site-Data: "storage"
-/library
-  Clear-Site-Data: "storage"
-/library/*
-  Clear-Site-Data: "storage"
-/docs
-  Clear-Site-Data: "storage"
-/docs/*
-  Clear-Site-Data: "storage"
+# Service workers fixed via inline script in Layout.astro
 
 # Service worker should never be cached
 /sw.js
