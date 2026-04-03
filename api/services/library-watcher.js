@@ -330,11 +330,14 @@ async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
         // Recurse into subdirectory
         await scanDirectoryForMarkdown(fullPath, basePath, results);
       } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        // Skip .md files inside dot-folders (.religion, .collection) — those are metadata, not content
+        const relPath = relative(basePath, fullPath);
+        if (/[/\\]\.(?:religion|collection)[/\\]/.test(relPath)) continue;
         try {
           const fileStat = await stat(fullPath);
           results.push({
             absolutePath: fullPath,
-            relativePath: relative(basePath, fullPath),
+            relativePath: relPath,
             mtime: fileStat.mtimeMs
           });
         } catch (statErr) {

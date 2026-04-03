@@ -4,6 +4,7 @@
   import { fade, slide } from 'svelte/transition';
   import { marked } from 'marked';
   import { search, session, documents, chat, triggerServerUpdate, authenticatedFetch, admin } from '../lib/api.js';
+  import ReligionIcon from './ReligionIcon.svelte';
 
   // App description - baked in at build time
   const APP_DESCRIPTION = __APP_DESCRIPTION__;
@@ -1902,6 +1903,7 @@
               <div class="religion-tags">
                 {#each Object.entries(displayStats.religionCounts) as [religion, count]}
                   <span class="religion-tag">
+                    <ReligionIcon {religion} size="sm" />
                     {religion}
                     <span class="tag-count">{count}</span>
                   </span>
