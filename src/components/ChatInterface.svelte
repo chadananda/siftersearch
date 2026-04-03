@@ -1750,25 +1750,95 @@
           </div>
           <h2 class="research-title">Ocean Library</h2>
           <p class="research-subtitle">Your companion for exploring the world's sacred texts. Ask anything.</p>
-          <!-- Library stats -->
-          {#if displayStats.totalDocuments > 0}
-            <div class="stats-grid" style="margin: 1rem 0; justify-content: center;">
-              <div class="stat"><span class="stat-label">Religions</span><span class="stat-value">{displayStats.religions || 0}</span></div>
-              <div class="stat"><span class="stat-label">Documents</span><span class="stat-value">{formatNumber(displayStats.totalDocuments)}</span></div>
-              <div class="stat"><span class="stat-label">Paragraphs</span><span class="stat-value">{formatNumber(displayStats.totalPassages)}</span></div>
-            </div>
-            {#if displayStats.religionCounts && Object.keys(displayStats.religionCounts).length > 0}
-              <div class="religion-tags" style="margin-bottom: 1.5rem;">
-                {#each Object.entries(displayStats.religionCounts) as [religion, count]}
-                  <span class="religion-tag">
-                    <ReligionIcon {religion} size="sm" />
-                    {religion}
-                    <span class="tag-count">{count}</span>
-                  </span>
-                {/each}
+          <!-- Library stats card (same design as the original) -->
+          <div class="stats-container">
+            <div class="stats-card" role="region" aria-label="Library Contents statistics">
+              {#if displayStats.serverVersion}
+                <span class="version-pill">v{displayStats.serverVersion}</span>
+              {/if}
+              <h3 class="stats-title">Library Contents</h3>
+              <div class="stats-grid">
+                <div class="stat" aria-label="Religions count">
+                  <span class="stat-label">Religions</span>
+                  <span class="stat-value">{displayStats.religions || 0}</span>
+                </div>
+                <div class="stat" aria-label="Collections count">
+                  <span class="stat-label">Collections</span>
+                  <span class="stat-value">{displayStats.collections || 0}</span>
+                </div>
+                <div class="stat" aria-label="Documents count">
+                  <span class="stat-label">Documents</span>
+                  <span class="stat-value">{formatNumber(displayStats.totalDocuments)}</span>
+                </div>
+                <div class="stat" aria-label="Paragraphs count">
+                  <span class="stat-label">Paragraphs</span>
+                  <span class="stat-value">{formatNumber(displayStats.totalPassages)}</span>
+                </div>
               </div>
-            {/if}
-          {/if}
+              {#if displayStats.religionCounts && Object.keys(displayStats.religionCounts).length > 0}
+                <div class="religion-tags">
+                  {#each Object.entries(displayStats.religionCounts) as [religion, count]}
+                    <span class="religion-tag">
+                      <ReligionIcon {religion} size="sm" />
+                      {religion}
+                      <span class="tag-count">{count}</span>
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+              <!-- Embedding progress -->
+              {#if libraryStats?.pipelineStatus?.paragraphsNeedingEmbeddings > 0}
+                {@const total = libraryStats.totalParagraphs || 1}
+                {@const needed = libraryStats.pipelineStatus.paragraphsNeedingEmbeddings}
+                {@const done = total - needed}
+                {@const pct = Math.round((done / total) * 100)}
+                {@const estimatedMinutes = Math.ceil(needed / 7000)}
+                {@const hours = Math.floor(estimatedMinutes / 60)}
+                {@const minutes = estimatedMinutes % 60}
+                {@const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
+                <div class="ingestion-progress embedding">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Generating embeddings</span>
+                    <span class="ingestion-percent">{pct}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {pct}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(done)} / {formatWithCommas(total)} paragraphs · ~{timeStr} remaining
+                  </div>
+                </div>
+              {/if}
+              <!-- Search indexing progress -->
+              {#if indexingInterpolated}
+                <div class="ingestion-progress indexing active-job">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Search indexing</span>
+                    <span class="ingestion-percent">{indexingInterpolated.pct}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill active" style="width: {indexingInterpolated.pct}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(indexingInterpolated.items)} / {formatWithCommas(indexingInterpolated.totalItems)} paragraphs{#if indexingInterpolated.eta} · {indexingInterpolated.eta} remaining{/if}
+                  </div>
+                </div>
+              {:else if libraryStats?.indexingProgress?.percentComplete != null && libraryStats.indexingProgress.totalParagraphs > 0 && libraryStats.indexingProgress.percentComplete < 100}
+                <div class="ingestion-progress indexing">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Search indexing</span>
+                    <span class="ingestion-percent">{libraryStats.indexingProgress.percentComplete}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {libraryStats.indexingProgress.percentComplete}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(libraryStats.indexingProgress.syncedParagraphs || 0)} / {formatWithCommas(libraryStats.indexingProgress.totalParagraphs)} paragraphs
+                  </div>
+                </div>
+              {/if}
+            </div>
+          </div>
           <div class="research-suggestions">
             {#each ['How does the concept of the self differ across Buddhism and Hinduism?', 'What do the Abrahamic traditions say about forgiveness?', 'Explain the relationship between science and religion in the Bahá\'í writings'] as suggestion}
               <button class="research-suggestion-btn" onclick={() => { researchInput = suggestion; sendResearchMessage(); }}>
