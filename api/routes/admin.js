@@ -3854,4 +3854,57 @@ Collection: ${paragraph.collection || 'Unknown'}
       limit, offset, days
     };
   });
+
+  // ============================================
+  // Pipeline Health Report
+  // ============================================
+
+  /**
+   * GET /api/admin/pipeline/health
+   * Returns a summary of what failed at each pipeline stage
+   */
+  fastify.get('/pipeline/health', { preHandler: requireInternal }, async () => {
+    const total = await queryOne('SELECT COUNT(*) as c FROM content WHERE deleted_at IS NULL');
+    const hasEmbed = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NOT NULL AND deleted_at IS NULL');
+    const unsynced = await queryOne('SELECT COUNT(*) as c FROM content WHERE synced = 0 AND deleted_at IS NULL');
+
+    // Oversized paragraphs (too big for embedding)
+    const oversized = await queryAll(`
+      SELECT c.doc_id, d.title, d.religion, COUNT(*) as count, MAX(LENGTH(c.text)) as maxChars
+      FROM content c JOIN docs d ON c.doc_id = d.id
+      WHERE c.embedding IS NULL AND c.deleted_at IS NULL AND LENGTH(c.text) > 6000
+      GROUP BY c.doc_id ORDER BY MAX(LENGTH(c.text)) DESC
+    `);
+
+    // Under 6K but still no embedding (should have been embedded)
+    const missedEmbedding = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= 6000 AND LENGTH(text) > 0');
+
+    // Documents with 0 paragraphs
+    const emptyDocs = await queryAll(`
+      SELECT d.id, d.title, d.religion FROM docs d
+      WHERE d.deleted_at IS NULL
+      AND (SELECT COUNT(*) FROM content c WHERE c.doc_id = d.id AND c.deleted_at IS NULL) = 0
+    `);
+
+    // Recent failed sync jobs
+    const failedJobs = await queryAll(`
+      SELECT id, job_type, error, failed_items, created_at FROM sync_jobs
+      WHERE status = 'failed' ORDER BY id DESC LIMIT 10
+    `);
+
+    return {
+      summary: {
+        totalParagraphs: total?.c || 0,
+        embedded: hasEmbed?.c || 0,
+        embeddedPercent: total?.c > 0 ? ((hasEmbed?.c / total?.c) * 100).toFixed(1) + '%' : '0%',
+        unsyncedToMeilisearch: unsynced?.c || 0,
+        oversizedParagraphs: oversized.reduce((s, r) => s + r.count, 0),
+        missedEmbedding: missedEmbedding?.c || 0,
+        emptyDocuments: emptyDocs.length
+      },
+      oversizedByDocument: oversized,
+      emptyDocuments: emptyDocs,
+      failedSyncJobs: failedJobs
+    };
+  });
 }
