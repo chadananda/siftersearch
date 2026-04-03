@@ -626,12 +626,13 @@
       // Version is now sent in X-Client-Version header on all requests
       const stats = await search.stats();
 
-      // Check if stats actually changed (compare lastUpdated or counts)
+      // Check if stats actually changed
       const hasChanged = !libraryStats ||
-        libraryStats.lastUpdated !== stats.lastUpdated ||
         libraryStats.totalDocuments !== stats.totalDocuments ||
         libraryStats.totalPassages !== stats.totalPassages ||
-        libraryStats.indexingProgress?.activeJob?.completedItems !== stats.indexingProgress?.activeJob?.completedItems;
+        libraryStats.indexingProgress?.syncedParagraphs !== stats.indexingProgress?.syncedParagraphs ||
+        libraryStats.indexingProgress?.percentComplete !== stats.indexingProgress?.percentComplete ||
+        libraryStats.pipelineStatus?.paragraphsNeedingEmbeddings !== stats.pipelineStatus?.paragraphsNeedingEmbeddings;
 
       // Mark server as connected
       serverOffline = false;
