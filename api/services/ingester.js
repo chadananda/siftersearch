@@ -177,6 +177,33 @@ export function hashContentWords(text) {
   return createHash('sha256').update(stripped).digest('hex');
 }
 
+/**
+ * Normalize document body for duplicate detection.
+ * Strips markdown formatting, HTML, punctuation, and collapses whitespace
+ * so that insignificant differences (reformatting, heading style changes,
+ * whitespace cleanup) don't produce different hashes.
+ */
+export function normalizeBodyForDedup(text) {
+  return text
+    .replace(/⁅\/?(?:s|ph)\d+⁆/g, '')   // Strip sentence/phrase markers
+    .replace(/<[^>]+>/g, '')              // Strip HTML tags
+    .replace(/^#{1,6}\s+/gm, '')          // Strip markdown heading markers
+    .replace(/(\*{1,3}|_{1,3}|~~)/g, '')  // Strip bold/italic/strikethrough
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1') // Links/images → text
+    .replace(/[^\p{L}\p{N}]/gu, ' ')      // Non-letter/number → space
+    .replace(/\s+/g, ' ')                 // Collapse whitespace
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Hash document body with normalization for duplicate detection.
+ * Two documents with the same words but different formatting will match.
+ */
+export function hashBodyNormalized(text) {
+  return createHash('sha256').update(normalizeBodyForDedup(text)).digest('hex');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Marker Writeback Functions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1084,6 +1111,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   const fileHash = hashContent(text.trim());           // Hash of entire file (detects ANY change)
   const bodyHash = hashContent(bodyContent.trim());    // Hash of body only (detects CONTENT change)
+  const bodyHashNorm = hashBodyNormalized(bodyContent); // Normalized hash (for dedup, ignores formatting)
 
   let existingDoc = null;
   let existingParagraphs = new Map(); // content_hash -> paragraph data
@@ -1612,6 +1640,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         file_path = ?,
         file_hash = ?,
         body_hash = ?,
+        body_hash_normalized = ?,
         filename = ?,
         title = ?,
         author = ?,
@@ -1631,6 +1660,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       relativePath,
       fileHash,
       bodyHash,
+      bodyHashNorm,
       filename,
       finalMeta.title,
       finalMeta.author,
@@ -1647,15 +1677,39 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       finalDocId
     ]);
   } else {
+    // Guard: skip if an active doc with identical normalized body content already exists
+    if (bodyHashNorm) {
+      const bodyDupe = await queryOne(
+        `SELECT id, title, file_path FROM docs WHERE body_hash_normalized = ? AND deleted_at IS NULL LIMIT 1`,
+        [bodyHashNorm]
+      );
+      if (bodyDupe) {
+        logger.warn({
+          existingId: bodyDupe.id,
+          existingPath: bodyDupe.file_path,
+          newPath: relativePath,
+          bodyHashNorm
+        }, 'Skipping duplicate document — identical body_hash_normalized already exists');
+        return {
+          documentId: bodyDupe.id,
+          paragraphCount: 0,
+          status: 'duplicate',
+          skipped: true,
+          duplicateOf: bodyDupe.id
+        };
+      }
+    }
+
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, body_hash, filename, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, body_hash_normalized, filename, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
       bodyHash,
+      bodyHashNorm,
       filename,
       finalMeta.title,
       finalMeta.author,
