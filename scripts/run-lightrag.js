@@ -56,6 +56,21 @@ const stats = {
   totalCachedTokens: 0, cacheHitRate: 0, rate: 0
 };
 
+async function fetchVLLMCacheRate() {
+  try {
+    const res = await fetch(`${VLLM_URL.replace(':8000', ':8004')}/metrics`);
+    const text = await res.text();
+    const queries = text.match(/prefix_cache_queries_total\{[^}]*\}\s+([\d.e+]+)/);
+    const hits = text.match(/prefix_cache_hits_total\{[^}]*\}\s+([\d.e+]+)/);
+    if (queries && hits) {
+      const q = parseFloat(queries[1]);
+      const h = parseFloat(hits[1]);
+      return q > 0 ? parseFloat(((h / q) * 100).toFixed(1)) : 0;
+    }
+  } catch { /* metrics endpoint may not be available */ }
+  return null;
+}
+
 function saveState() {
   try { writeFileSync(STATE_FILE, JSON.stringify(stats, null, 2)); } catch {}
 }
@@ -310,8 +325,10 @@ async function main() {
       if (now - lastLogTime > 60000) {
         const elapsed = (now - startTime) / 60000;
         stats.rate = Math.round(stats.paragraphsExtracted / elapsed);
-        const cacheRate = stats.totalPromptTokens > 0 ? ((stats.totalCachedTokens / stats.totalPromptTokens) * 100).toFixed(1) : '0';
-        console.log(`  ${stats.docsProcessed} docs, ${stats.paragraphsExtracted.toLocaleString()} paras, ${stats.entitiesFound.toLocaleString()} entities, ${stats.errors} errors, ~${stats.rate}/min, cache: ${cacheRate}% [${idx+1}/${workQueue.length}]`);
+        // Fetch live cache rate from vLLM Prometheus metrics
+        const liveRate = await fetchVLLMCacheRate();
+        if (liveRate !== null) stats.cacheHitRate = liveRate;
+        console.log(`  ${stats.docsProcessed} docs, ${stats.paragraphsExtracted.toLocaleString()} paras, ${stats.entitiesFound.toLocaleString()} entities, ${stats.errors} errors, ~${stats.rate}/min, cache: ${stats.cacheHitRate}% [${idx+1}/${workQueue.length}]`);
         saveState();
         lastLogTime = now;
       }

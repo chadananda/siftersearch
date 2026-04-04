@@ -1894,9 +1894,10 @@
               {#if libraryStats?.pipelineStatus?.knowledgeGraph?.extracted > 0 && libraryStats.pipelineStatus.knowledgeGraph.percent < 100}
                 {@const kg = libraryStats.pipelineStatus.knowledgeGraph}
                 {@const etaMin = kg.rate > 0 ? Math.ceil(kg.remaining / kg.rate) : 0}
-                {@const etaHrs = Math.floor(etaMin / 60)}
+                {@const etaDays = Math.floor(etaMin / 1440)}
+                {@const etaHrs = Math.floor((etaMin % 1440) / 60)}
                 {@const etaMins = etaMin % 60}
-                {@const etaStr = etaHrs > 0 ? `~${etaHrs}h ${etaMins}m` : etaMin > 0 ? `~${etaMins}m` : ''}
+                {@const etaStr = etaDays > 0 ? `~${etaDays}d ${etaHrs}h` : etaHrs > 0 ? `~${etaHrs}h ${etaMins}m` : etaMin > 0 ? `~${etaMins}m` : ''}
                 <div class="ingestion-progress embedding">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Knowledge graph</span>
@@ -1906,9 +1907,22 @@
                     <div class="ingestion-fill" style="width: {Math.max(kg.percent, 0.5)}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs · {formatWithCommas(kg.entitiesFound || 0)} entities{#if etaStr} · {etaStr} remaining{/if}
+                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs · {formatWithCommas(kg.entitiesFound || 0)} entities · {kg.cacheHitRate || 0}% cache hit{#if kg.savedVsCloud > 0} · ${kg.savedVsCloud.toFixed(0)} saved vs cloud{/if}{#if etaStr} · {etaStr}{/if}
                   </div>
                 </div>
+              {/if}
+              <!-- AI Cost reporting -->
+              {#if aiUsageStatus?.today}
+                <a href="/admin/ai-usage" class="ai-cost-ticker">
+                  <span class="ticker-label">AI 24h:</span>
+                  <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
+                  {#if topCallers?.length > 0}
+                    {#each topCallers as caller}
+                      <span class="ticker-caller">{caller.caller}</span>
+                      <span class="ticker-value">${(caller.cost || 0).toFixed(2)}</span>
+                    {/each}
+                  {/if}
+                </a>
               {/if}
             </div>
           </div>

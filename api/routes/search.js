@@ -361,12 +361,21 @@ export default async function searchRoutes(fastify) {
       const state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
       const extracted = state.paragraphsExtracted || 0;
       const total = 3554000;
+      // Calculate equivalent cost if done on Claude Sonnet
+      // Sonnet: $3/1M input, $15/1M output. Avg ~5000 input + ~200 output per call
+      const totalCalls = state.windowCalls || 0;
+      const equivalentCostSonnet = totalCalls * (5000 * 3 + 200 * 15) / 1e6;
+
       kgData = {
         extracted, total,
         remaining: total - extracted,
         percent: parseFloat(((extracted / total) * 100).toFixed(2)),
         entitiesFound: state.entitiesFound || 0,
-        rate: state.rate || 0
+        rate: state.rate || 0,
+        cacheHitRate: state.cacheHitRate || 0,
+        totalCalls,
+        totalPromptTokens: state.totalPromptTokens || 0,
+        savedVsCloud: parseFloat(equivalentCostSonnet.toFixed(2))
       };
     } catch { /* state file may not exist */ }
 
