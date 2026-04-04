@@ -652,7 +652,6 @@
         stats._fetchedAt = Date.now();
         libraryStats = stats;
         setCachedStats(stats); // Cache for instant display on next visit
-        if (silent) console.log('[Library] Stats updated:', stats.totalDocuments, 'docs,', stats.totalPassages, 'passages');
         // Reset backoff when stats change
         currentBackoffInterval = MIN_REFRESH_INTERVAL;
       } else if (silent) {
@@ -728,9 +727,7 @@
 
   function startRetryPolling() {
     if (retryInterval) return; // Already polling
-    console.log('[Library] Starting connection retry polling...');
     retryInterval = setInterval(() => {
-      console.log('[Library] Retrying connection...');
       loadLibraryStats();
     }, RETRY_DELAY);
   }
@@ -806,7 +803,6 @@
     // If user was idle and is now active, reset backoff and trigger immediate refresh
     if (wasIdle && currentBackoffInterval > MIN_REFRESH_INTERVAL) {
       currentBackoffInterval = MIN_REFRESH_INTERVAL;
-      console.log('[Library] User active - resetting backoff to', MIN_REFRESH_INTERVAL / 1000, 's');
     }
   }
 
@@ -840,11 +836,9 @@
         clearTimeout(refreshTimeoutId);
         refreshTimeoutId = null;
       }
-      console.log('[Library] Tab hidden - polling paused');
     } else {
       // Tab visible again - reset backoff and resume polling
       currentBackoffInterval = MIN_REFRESH_INTERVAL;
-      console.log('[Library] Tab visible - resuming polling');
       loadLibraryStats(true); // Immediate refresh on return
     }
   }
@@ -1135,7 +1129,6 @@
         } else if (event.type === 'progress') {
           // Progress updates during search (e.g., "Pass 1 complete...")
           // Could show in a status indicator or append to thinking message
-          console.log('Search progress:', event.phase, event.message);
         } else if (event.type === 'plan') {
           // Store the research plan for display
           researchPlan = event.plan;

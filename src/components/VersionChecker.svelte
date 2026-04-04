@@ -35,7 +35,6 @@
 
           if (cooldownExpired) {
             sessionStorage.setItem(reloadKey, Date.now().toString());
-            console.log(`[Update] Server newer (${stats.serverVersion} > ${CLIENT_VERSION}), reloading...`);
             updateTriggered = true;
             window.location.reload();
           }

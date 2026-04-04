@@ -160,15 +160,6 @@
 
   // Load translation stats for non-English docs when documents change
   $effect(() => {
-    // Debug: log all documents with their languages
-    const nonEnglish = documents.filter(d => d.language && d.language !== 'en');
-    console.log('[TranslationStats] Effect triggered', {
-      totalDocs: documents.length,
-      nonEnglishCount: nonEnglish.length,
-      sampleLanguages: documents.slice(0, 5).map(d => ({ id: d.id, title: d.title?.slice(0, 20), lang: d.language })),
-      statsLoaded: Object.keys(docTranslationStats).length
-    });
-
     // Find non-English docs that need stats loaded
     const docsNeedingStats = documents.filter(doc =>
       doc.language && doc.language !== 'en' &&
@@ -177,9 +168,6 @@
     );
 
     if (docsNeedingStats.length > 0) {
-      console.log('[TranslationStats] Loading stats for:', docsNeedingStats.slice(0, 10).map(d => ({
-        id: d.id, title: d.title?.slice(0, 20), lang: d.language
-      })));
       // Load stats for each (limit to first 10 to avoid overwhelming API)
       docsNeedingStats.slice(0, 10).forEach(doc => {
         loadTranslationStats(doc);
@@ -196,11 +184,9 @@
     try {
       // Fetch translation stats directly
       const url = `${API_BASE}/api/library/documents/${doc.id}/translation-stats`;
-      console.log('[TranslationStats] Fetching:', url, 'for doc:', doc.title);
       const statsRes = await authenticatedFetch(url);
       if (statsRes.ok) {
         const stats = await statsRes.json();
-        console.log('[TranslationStats] Response for', doc.id, ':', stats);
         docTranslationStats = {
           ...docTranslationStats,
           [doc.id]: {
@@ -209,7 +195,6 @@
           }
         };
       } else {
-        console.warn('[TranslationStats] Failed for', doc.id, '- status:', statsRes.status);
         // Mark as checked but no stats available
         docTranslationStats = { ...docTranslationStats, [doc.id]: { translated: 0, total: 0 } };
       }
@@ -226,11 +211,8 @@
   // Get translation percentage for a doc
   function getTranslationPercent(docId) {
     const stats = docTranslationStats[docId];
-    console.log('[TranslationStats] getTranslationPercent for', docId, '→ stats:', stats);
     if (!stats || !stats.total) return null;
-    const percent = Math.round((stats.translated / stats.total) * 100);
-    console.log('[TranslationStats] Returning percent:', percent);
-    return percent;
+    return Math.round((stats.translated / stats.total) * 100);
   }
 
 
@@ -241,7 +223,6 @@
     }
 
     reingesting = docId;
-    console.log(`[Re-Import] Starting re-ingestion for document: ${docId}`);
 
     try {
       const res = await authenticatedFetch(`${API_BASE}/api/admin/server/reingest-document`, {
@@ -255,9 +236,7 @@
         throw new Error(errorData.message || errorData.error || `HTTP ${res.status}`);
       }
 
-      const data = await res.json();
-      console.log('[Re-Import] Task started:', data);
-
+      await res.json();
       // Poll for completion
       await pollReingestStatus(docId);
 
@@ -282,10 +261,7 @@
         if (!res.ok) continue;
 
         const status = await res.json();
-        console.log('[Re-Import] Status:', status);
-
         if (status.status === 'completed') {
-          console.log('[Re-Import] ✅ Complete!');
 
           // Parse JSON summary from output if available
           let summary = null;
@@ -303,23 +279,12 @@
           }
 
           if (summary) {
-            console.log('[Re-Import] Summary:', summary);
-            console.log(`  📄 Document: ${summary.title}`);
-            console.log(`  🌐 Language: ${summary.language}`);
-            console.log(`  📊 Total paragraphs: ${summary.paragraphCount}`);
-            console.log(`  ♻️  Reused (unchanged): ${summary.reusedParagraphs}`);
-            console.log(`  ✨ New/changed: ${summary.newParagraphs}`);
-            console.log(`  🗑️  Deleted: ${summary.deletedParagraphs}`);
-            console.log(`  📏 Avg chars/paragraph: ${summary.avgCharsPerParagraph}`);
-
             alert(`Re-import complete!\n\n` +
               `Total paragraphs: ${summary.paragraphCount}\n` +
               `Reused: ${summary.reusedParagraphs}\n` +
               `New/changed: ${summary.newParagraphs}\n` +
               `Deleted: ${summary.deletedParagraphs}`);
           } else {
-            // Fallback - log all output
-            console.log('[Re-Import] Full output:', status.output);
             alert('Re-import complete!\n\nCheck browser console for details.');
           }
           // Tell parent to refresh document list
@@ -334,10 +299,6 @@
         }
 
         // Still running...
-        if (status.output) {
-          // Log any new output
-          console.log('[Re-Import] Output:', status.output);
-        }
 
       } catch (err) {
         console.warn('[Re-Import] Poll error:', err);
@@ -382,7 +343,6 @@
         startPolling();
       }
 
-      console.log('Translation queued:', data);
     } catch (err) {
       console.error('Translation queue error:', err);
       alert(`Failed to queue translation: ${err.message}`);

@@ -1074,7 +1074,6 @@ export async function healthCheck() {
  */
 export async function triggerServerUpdate(clientVersion) {
   if (!accessToken) {
-    console.log('[Deploy] Not authenticated, skipping update trigger');
     return { skipped: true, reason: 'not_authenticated' };
   }
 
@@ -1090,10 +1089,8 @@ export async function triggerServerUpdate(clientVersion) {
     });
 
     if (response.ok) {
-      console.log('[Deploy] Server update triggered via admin auth');
       return await response.json();
     } else if (response.status === 403) {
-      console.log('[Deploy] Not an admin, skipping update trigger');
       return { skipped: true, reason: 'not_admin' };
     } else {
       console.warn('[Deploy] Update trigger failed:', response.status);

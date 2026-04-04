@@ -624,7 +624,6 @@
           total: status.totalItems ?? 0,
           status: status.status
         };
-        console.log('Translation status:', translationProgress);
 
         // Job completed - reload document and stop polling
         if (status.status === 'completed') {

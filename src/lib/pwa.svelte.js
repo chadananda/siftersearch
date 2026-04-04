@@ -40,8 +40,6 @@ export async function initPWA() {
       const registrations = await navigator.serviceWorker.getRegistrations();
 
       for (const registration of registrations) {
-        console.log('[PWA] Checking for service worker updates...');
-
         // Listen for install failures — if the new SW fails to install
         // (e.g. precache 404s), unregister the broken SW entirely
         registration.addEventListener('updatefound', () => {
@@ -49,9 +47,7 @@ export async function initPWA() {
           if (newSW) {
             newSW.addEventListener('statechange', () => {
               if (newSW.state === 'redundant') {
-                console.warn('[PWA] New service worker became redundant (install failed). Unregistering...');
                 registration.unregister().then(() => {
-                  console.log('[PWA] Broken service worker unregistered. Reloading...');
                   window.location.reload();
                 });
               }
@@ -76,7 +72,6 @@ export async function initPWA() {
     // Save any important state before reload
     saveState();
 
-    console.log('[PWA] New service worker activated, reloading...');
     window.location.reload();
   });
 
@@ -86,12 +81,10 @@ export async function initPWA() {
     updateSW = registerSW({
       immediate: true,
       onRegisteredSW(swUrl, r) {
-        console.log(`[PWA] Service worker registered: ${swUrl}`);
         // Check for updates periodically
         if (r) {
           // Immediate update check
           setTimeout(() => {
-            console.log('[PWA] Initial update check...');
             r.update();
           }, 100);
 
@@ -116,19 +109,15 @@ export async function initPWA() {
       onRegisterError(error) {
         console.error('[PWA] Service worker registration error:', error);
       },
-      onOfflineReady() {
-        console.log('[PWA] Assets cached for performance');
-      },
       onNeedRefresh() {
         // With skipWaiting:true, the new SW will activate immediately
         // and controllerchange will handle the reload
-        console.log('[PWA] New version available!');
         updateAvailable = true;
         // Don't call performUpdate() here - let controllerchange handle it
       }
     });
   } catch (e) {
-    console.log('[PWA] Service worker not available:', e.message);
+    // Service worker not available
   }
 }
 
@@ -138,11 +127,7 @@ export async function initPWA() {
 export async function performUpdate() {
   if (updateSW) {
     saveState();
-    console.log('[PWA] Triggering update...');
     await updateSW(true);
-    // Force reload after service worker updates
-    // This ensures the new SW takes control and serves fresh content
-    console.log('[PWA] Reloading page...');
     window.location.reload();
   }
 }

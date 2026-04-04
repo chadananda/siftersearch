@@ -108,27 +108,11 @@
 
   // Batch translation function
   async function startTranslation() {
-    if (!document?.id || !bilingualContent?.paragraphs) {
-      console.log('[Translation] No document or paragraphs', { docId: document?.id, hasParagraphs: !!bilingualContent?.paragraphs });
-      return;
-    }
-
-    // Debug: log all paragraphs
-    console.log('[Translation] All paragraphs:', bilingualContent.paragraphs.slice(0, 3).map(p => ({
-      id: p.id,
-      index: p.index,
-      hasTranslation: !!p.translation,
-      original: p.original?.substring(0, 50)
-    })));
+    if (!document?.id || !bilingualContent?.paragraphs) return;
 
     // Find paragraphs that need translation
     const untranslatedParas = bilingualContent.paragraphs.filter(p => p && !p.translation && p.id);
-    console.log('[Translation] Untranslated paragraphs:', untranslatedParas.length, 'sample IDs:', untranslatedParas.slice(0, 3).map(p => p.id));
-
-    if (untranslatedParas.length === 0) {
-      console.log('[Translation] No paragraphs need translation');
-      return;
-    }
+    if (untranslatedParas.length === 0) return;
 
     translating = true;
     translationProgress = { completed: 0, total: untranslatedParas.length };
@@ -154,15 +138,11 @@
           // Continue with next batch even if this one fails
         } else {
           const data = await res.json();
-          console.log('[Translation] Batch response:', data);
           // Update live translations as they come in
           if (data.translations && data.translations.length > 0) {
             const newTranslations = { ...liveTranslations };
             data.translations.forEach(t => {
-              if (t.success && t.translation) {
-                newTranslations[t.id] = t.translation;
-                console.log('[Translation] Added translation for paragraph', t.id);
-              }
+              if (t.success && t.translation) newTranslations[t.id] = t.translation;
             });
             liveTranslations = newTranslations;
             const batchSuccess = data.successCount ?? data.translations.filter(t => t.success).length;
@@ -170,9 +150,6 @@
               ...translationProgress,
               completed: translationProgress.completed + batchSuccess
             };
-            console.log('[Translation] Progress:', translationProgress.completed, '/', translationProgress.total);
-          } else {
-            console.log('[Translation] No translations in response:', data);
           }
         }
       } catch (err) {
