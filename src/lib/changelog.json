@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-04T22:14:35.971Z",
+  "generated": "2026-04-04T22:28:50.368Z",
   "entries": [
+    {
+      "hash": "ff7e330",
+      "date": "2026-04-04",
+      "type": "Fixed",
+      "description": "Passage search filters were not being passed to hybridSearch/keywordSearch",
+      "scope": null
+    },
     {
       "hash": "5bd675c",
       "date": "2026-04-03",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Improve study translation prompt - readable literal, theological notes",
       "scope": null
-    },
-    {
-      "hash": "b229fe5",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-04": [
+      {
+        "hash": "ff7e330",
+        "date": "2026-04-04",
+        "type": "Fixed",
+        "description": "Passage search filters were not being passed to hybridSearch/keywordSearch",
+        "scope": null
+      }
+    ],
     "2026-04-03": [
       {
         "hash": "5bd675c",
@@ -7045,13 +7054,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Improve study translation prompt - readable literal, theological notes",
-        "scope": null
-      },
-      {
-        "hash": "b229fe5",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
         "scope": null
       }
     ]
