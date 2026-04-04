@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 48;
+const CURRENT_VERSION = 49;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1831,6 +1831,16 @@ const migrations = {
       await query('CREATE INDEX IF NOT EXISTS idx_docs_body_hash_norm ON docs(body_hash_normalized) WHERE deleted_at IS NULL');
     }
     logger.info('Migration 48 complete: body_hash_normalized column added to docs');
+  },
+
+  // Version 49: Add purchase_url for linking to external purchase pages (Amazon, publisher, etc.)
+  49: async () => {
+    logger.info('Starting migration 49: Add purchase_url column to docs');
+    const cols = (await queryAll('PRAGMA table_info(docs)')).map(c => c.name);
+    if (!cols.includes('purchase_url')) {
+      await query('ALTER TABLE docs ADD COLUMN purchase_url TEXT');
+    }
+    logger.info('Migration 49 complete: purchase_url column added to docs');
   },
 };
 

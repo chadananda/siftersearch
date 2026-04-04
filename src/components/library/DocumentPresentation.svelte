@@ -1346,15 +1346,20 @@
           </div>
         {/if}
 
-        <!-- Auth gate for encumbered content -->
+        <!-- Copyright notice for encumbered content -->
         {#if requiresAuth}
           <div class="auth-gate">
             <div class="auth-gate-content">
-              <h3>Continue Reading</h3>
-              <p>Sign in to access the full document</p>
+              <h3>Copyrighted Material</h3>
+              <p>This document is under copyright. The preview above is provided under fair use for research purposes.</p>
               <p class="progress-text">Showing {paragraphs.length} of {total} paragraphs</p>
-              <button class="sign-in-btn" onclick={() => showLoginModal = true}>
-                Sign In to Continue
+              {#if document.purchase_url}
+                <a href={document.purchase_url} target="_blank" rel="noopener noreferrer" class="purchase-btn">
+                  Purchase This Book
+                </a>
+              {/if}
+              <button class="sign-in-btn editor-login" onclick={() => showLoginModal = true}>
+                Editor Sign In
               </button>
             </div>
           </div>
@@ -2741,6 +2746,35 @@
 
   .auth-gate-content p {
     margin: 0 0 0.5rem 0;
+    color: #333;
+  }
+
+  .purchase-btn {
+    display: inline-block;
+    margin: 1rem 0 0.5rem;
+    padding: 0.6rem 1.5rem;
+    background: var(--accent-primary, #4a6741);
+    color: white;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .purchase-btn:hover {
+    background: var(--accent-hover, #3d5636);
+  }
+
+  .editor-login {
+    background: transparent;
+    color: #666;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+  }
+
+  .editor-login:hover {
+    background: #f0ede6;
     color: #333;
   }
 

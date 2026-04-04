@@ -109,10 +109,21 @@ The system prompt is the most critical piece. Key learnings:
 5. **Markdown permission must be explicit** or the model avoids formatting.
 6. **The tool description matters as much as the prompt.** Rich descriptions with examples help the model choose the right mode.
 
+## Encumbered Document Handling
+
+All documents get URLs and links in Jafar responses — including encumbered (copyrighted) ones. The difference is in what the user sees when they click:
+
+- **Non-encumbered:** Full document content for everyone
+- **Encumbered (anonymous/regular user):** Fair-use preview (first 5 paragraphs), copyright notice, optional purchase link
+- **Encumbered (editor/admin):** Full content access
+
+The `purchase_url` field on docs (added migration 49) will eventually link to Amazon/publisher pages. For now it's unpopulated — a future value-add phase will resolve ISBNs and cover images.
+
 ## Roadmap
 
 - [ ] Expose search as public API endpoint for external chatbots
 - [ ] Conversational memory — retain + compress conversations across sessions
+- [ ] Populate purchase_url with ISBN/Amazon links and cover images for encumbered docs
 - [ ] User preferences and reading history for personalized responses
 - [ ] Voice output optimization (SSML hints, pronunciation guides for transliterated names)
 - [ ] Multi-turn research — Jafar remembers what was discussed and builds on it

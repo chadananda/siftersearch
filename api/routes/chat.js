@@ -22,7 +22,6 @@ import { slugifyPath } from '../lib/slug.js';
 const SITE_URL = 'https://oceanlibrary.com';
 
 function docUrl(doc) {
-  if (doc.encumbered) return null;
   const relSlug = (doc.religion || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
   const colSlug = (doc.collection || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
   const slug = doc.slug || doc.id;
@@ -50,7 +49,7 @@ Bahá'í lens: all religions as chapters of one story. Hold it as perspective, n
 
 Markdown is fine: **bold**, *italic*, lists, tables — when they serve clarity. Cite as (*Title* — Author).
 
-When search results include a "url" field, link the title: [*Title*](url). Only non-encumbered (freely available) documents have URLs. For encumbered documents, just mention the title without a link.`;
+When search results include a "url" field, link the title: [*Title*](url). All documents have URLs — encumbered ones link to a preview page.`;
 
 // ─── Tool definitions for OpenAI function calling ─────────────────────────
 
