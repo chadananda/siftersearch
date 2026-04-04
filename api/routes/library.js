@@ -1459,33 +1459,46 @@ Return ONLY the description text, no quotes or formatting.`;
       params.push(yearTo);
     }
 
-    const whereClause = `WHERE ${conditions.join(' AND ')}`;
+    const whereClause = `WHERE ${conditions.map(c => `d.${c}`).join(' AND ')}`;
 
     // Build ORDER BY clause
-    let orderBy = 'title ASC';
+    // Default sort: collection authority (highest first), then collection name, then title
+    // This matches the religion page sort so users see the most important documents first
+    let orderBy;
+    let useAuthorityJoin = false;
     if (sort === 'authority') {
-      orderBy = `authority ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+      orderBy = `COALESCE(ln.authority_default, 5) ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.collection, d.title ASC`;
+      useAuthorityJoin = true;
     } else if (sort === 'year') {
-      orderBy = `year ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+      orderBy = `d.year ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.title ASC`;
     } else if (sort === 'author') {
-      orderBy = `author ${sortDir === 'desc' ? 'DESC' : 'ASC'}, title ASC`;
+      orderBy = `d.author ${sortDir === 'desc' ? 'DESC' : 'ASC'}, d.title ASC`;
     } else {
-      orderBy = `title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
+      // Default: authority DESC, then collection, then title
+      orderBy = `COALESCE(ln.authority_default, 5) DESC, d.collection, d.title ${sortDir === 'desc' ? 'DESC' : 'ASC'}`;
+      useAuthorityJoin = true;
     }
+
+    // JOIN library_nodes for authority-based sorting
+    const authorityJoin = useAuthorityJoin
+      ? `LEFT JOIN library_nodes ln ON ln.name = d.collection AND ln.node_type = 'collection'
+         LEFT JOIN library_nodes rn ON rn.id = ln.parent_id AND rn.name = d.religion`
+      : '';
 
     // Get documents and total count (include preview paragraphs for instant accordion, exclude soft-deleted)
     const [documents, countResult] = await Promise.all([
       queryAll(`
-        SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, created_at, updated_at, cover_url, encumbered, filename, file_path,
+        SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description,
+               d.paragraph_count, d.created_at, d.updated_at, d.cover_url, d.encumbered, d.filename, d.file_path,
                (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
-                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = docs.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
-        FROM docs
+                FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
+        FROM docs d
+        ${authorityJoin}
         ${whereClause}
         ORDER BY ${orderBy}
         LIMIT ? OFFSET ?
       `, [...params, limit, offset]),
-      queryOne(`SELECT COUNT(*) as count FROM docs ${whereClause}`, params)
+      queryOne(`SELECT COUNT(*) as count FROM docs d ${whereClause}`, params)
     ]);
 
     // Get processing status for documents if requested
