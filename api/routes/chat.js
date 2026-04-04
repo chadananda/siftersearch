@@ -103,6 +103,10 @@ export default async function chatRoutes(fastify) {
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
     // Use Fastify's reply API for headers, then raw for SSE data
+    // CORS headers must be set explicitly — reply.raw.flushHeaders() bypasses Fastify's CORS plugin
+    const origin = request.headers.origin;
+    if (origin) reply.header('Access-Control-Allow-Origin', origin);
+    reply.header('Access-Control-Allow-Credentials', 'true');
     reply.header('Content-Type', 'text/event-stream');
     reply.header('Cache-Control', 'no-cache');
     reply.header('Connection', 'keep-alive');

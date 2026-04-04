@@ -532,6 +532,8 @@ export const chat = {
     const response = await fetch(url, {
       method: 'POST',
       headers,
+      credentials: 'include',
+      cache: 'no-store',
       body: JSON.stringify(body)
     });
 
