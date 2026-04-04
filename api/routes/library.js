@@ -957,15 +957,17 @@ export default async function libraryRoutes(fastify) {
     `, [node.name, node.id]);
 
     // Get all documents for this religion (for listing) with preview paragraphs (exclude soft-deleted)
+    // Sort by collection authority (highest first), then collection name, then title
     const rawDocuments = await queryAll(`
-      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.paragraph_count, d.filename, d.slug,
+      SELECT d.id, d.title, d.author, d.religion, d.collection, d.language, d.year, d.description, d.paragraph_count, d.filename, d.slug,
         (SELECT json_group_array(json_object('i', paragraph_index, 't', text))
          FROM (SELECT paragraph_index, text FROM content WHERE doc_id = d.id AND deleted_at IS NULL ORDER BY paragraph_index LIMIT 3)) as preview_json
       FROM docs d
+      LEFT JOIN library_nodes ln ON ln.name = d.collection AND ln.parent_id = ?
       WHERE d.religion = ? AND d.deleted_at IS NULL
-      ORDER BY d.collection, d.title
+      ORDER BY COALESCE(ln.authority_default, 5) DESC, d.collection, d.title
       LIMIT 500
-    `, [node.name]);
+    `, [node.id, node.name]);
 
     // Parse preview JSON and fix title if it equals author (data quality issue)
     const documents = rawDocuments.map(doc => {
