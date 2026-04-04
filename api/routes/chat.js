@@ -141,24 +141,56 @@ async function executeLibraryStats() {
 }
 
 async function executeFindDocuments({ title, author, religion, collection, limit = 10 }) {
+  const safeLimit = Math.min(limit || 10, 30);
+
+  // Build a search query from title/author (Meilisearch handles typos and fuzzy matching)
+  const searchTerms = [title, author].filter(Boolean).join(' ');
+
+  if (searchTerms) {
+    // Use Meilisearch for fuzzy search — handles misspellings, transliteration variants
+    try {
+      const { getMeili, INDEXES } = await import('../lib/search.js');
+      const meili = getMeili();
+      if (meili) {
+        const filters = [];
+        if (religion) filters.push(`religion = "${religion}"`);
+        if (collection) filters.push(`collection = "${collection}"`);
+
+        const result = await meili.index(INDEXES.DOCUMENTS).search(searchTerms, {
+          limit: safeLimit,
+          attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count'],
+          ...(filters.length > 0 ? { filter: filters.join(' AND ') } : {})
+        });
+
+        return {
+          totalMatches: result.estimatedTotalHits || result.hits.length,
+          showing: result.hits.length,
+          documents: result.hits.map(d => ({
+            id: d.id, title: d.title, author: d.author, religion: d.religion,
+            collection: d.collection, year: d.year, description: d.description,
+            paragraphs: d.paragraph_count
+          }))
+        };
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Meilisearch find_documents fallback to SQL');
+    }
+  }
+
+  // Fallback: SQL for exact filters (or when Meilisearch unavailable)
   const conditions = ['deleted_at IS NULL'];
   const params = [];
-
   if (title) { conditions.push('title LIKE ?'); params.push(`%${title}%`); }
   if (author) { conditions.push('author LIKE ?'); params.push(`%${author}%`); }
   if (religion) { conditions.push('religion = ?'); params.push(religion); }
   if (collection) { conditions.push('collection LIKE ?'); params.push(`%${collection}%`); }
 
-  const safeLimit = Math.min(limit || 10, 30);
-
   const countResult = await queryOne(
     `SELECT COUNT(*) as count FROM docs WHERE ${conditions.join(' AND ')}`, params
   );
-
   const docs = await queryAll(
     `SELECT id, title, author, religion, collection, year, description, paragraph_count
-     FROM docs WHERE ${conditions.join(' AND ')}
-     ORDER BY title LIMIT ?`,
+     FROM docs WHERE ${conditions.join(' AND ')} ORDER BY title LIMIT ?`,
     [...params, safeLimit]
   );
 
