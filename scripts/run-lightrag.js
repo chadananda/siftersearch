@@ -199,10 +199,18 @@ async function callVLLM(systemPrompt, userPrompt) {
 // ============================================================================
 
 async function processDocument(doc) {
-  // Load all paragraphs for this document
-  const paragraphs = await queryAll(`
+  // Load ALL paragraphs for this document (including already-extracted, for context)
+  const allParas = await queryAll(`
     SELECT c.id, c.doc_id, c.paragraph_index, c.text
     FROM content c
+    WHERE c.doc_id = ? AND c.deleted_at IS NULL
+      AND LENGTH(c.text) > 20 AND LENGTH(c.text) <= ?
+    ORDER BY c.paragraph_index
+  `, [doc.id, MAX_PARAGRAPH_CHARS]);
+
+  // Find which paragraphs still need extraction
+  const needsExtraction = await queryAll(`
+    SELECT c.id FROM content c
     LEFT JOIN content_objects co ON c.id = co.content_id
     WHERE c.doc_id = ? AND c.deleted_at IS NULL
       AND LENGTH(c.text) > 20 AND LENGTH(c.text) <= ?
@@ -210,9 +218,27 @@ async function processDocument(doc) {
     ORDER BY c.paragraph_index
   `, [doc.id, MAX_PARAGRAPH_CHARS]);
 
-  if (paragraphs.length === 0) return;
+  const needsIds = new Set(needsExtraction.map(r => r.id));
+  if (needsIds.size === 0) return;
 
-  // System prompt — constant per document, maximizes prefix cache reuse
+  // Build the document content block — this stays CONSTANT for every call on this document.
+  // It's the prefix that gets cached in vLLM's KV cache.
+  // Fit as many paragraphs as possible within the token budget.
+  let docContent = '';
+  let docTokens = 0;
+  const includedParas = [];
+
+  for (const p of allParas) {
+    const paraTokens = estimateTokens(p.text);
+    if (docTokens + paraTokens > AVAILABLE_TOKENS) break;
+    docContent += `[P${p.paragraph_index}] ${p.text}\n\n`;
+    docTokens += paraTokens;
+    includedParas.push(p);
+  }
+
+  if (includedParas.length === 0) return;
+
+  // System prompt + document content = FIXED PREFIX (cached after first call)
   const systemPrompt = `You are an entity extraction assistant for the Ocean Library.
 
 Document: "${doc.title}"
@@ -222,7 +248,7 @@ Collection: ${doc.collection || 'Unknown'}
 Year: ${doc.year || 'Unknown'}
 Language: ${doc.language || 'en'}
 
-Extract named entities from the EXTRACTION TARGET paragraphs below. Context paragraphs are provided for understanding but should NOT be extracted from.
+Below is the document content. You will be asked to extract entities from one specific paragraph at a time.
 
 Return ONLY valid JSON:
 {"people":[{"name":"...","description":"..."}],"places":[{"name":"...","description":"..."}],"documents":[{"name":"...","description":"..."}],"events":[{"name":"...","description":"..."}],"concepts":[{"name":"...","description":"..."}],"relations":[{"from":"...","to":"...","description":"..."}]}
@@ -230,27 +256,21 @@ Return ONLY valid JSON:
 Rules:
 - Scope to ${doc.religion || 'the given'} tradition
 - Return empty arrays for categories with no entities
-- relations must reference names from other arrays`;
+- relations must reference names from other arrays
 
-  // Build leapfrog windows
-  const windows = buildLeapfrogWindows(paragraphs);
+=== DOCUMENT CONTENT ===
+${docContent}`;
 
-  for (const window of windows) {
+  // Now step through ONE PARAGRAPH AT A TIME.
+  // Each call has the same system prompt (cached) + tiny user prompt (just the paragraph number).
+  // After the first call, every subsequent call should get near-100% prefix cache hits.
+
+  for (const p of includedParas) {
+    if (!needsIds.has(p.id)) continue; // Already extracted
+
     try {
-      // Build user prompt with context and extraction targets
-      let userPrompt = '';
-
-      if (window.contextParas.length > 0) {
-        userPrompt += '=== CONTEXT (for understanding only) ===\n';
-        for (const p of window.contextParas) {
-          userPrompt += `[P${p.paragraph_index}] ${p.text}\n\n`;
-        }
-      }
-
-      userPrompt += '=== EXTRACTION TARGETS (extract entities from these) ===\n';
-      for (const p of window.extractParas) {
-        userPrompt += `[P${p.paragraph_index}] ${p.text}\n\n`;
-      }
+      // Tiny user prompt — only this changes between calls
+      const userPrompt = `/no_think\nExtract all named entities from paragraph [P${p.paragraph_index}] above.`;
 
       const { content } = await callVLLM(systemPrompt, userPrompt);
       const objects = parseObjectResponse(content);
@@ -264,49 +284,47 @@ Rules:
           ...objects.documents.map(e => e.name)
         ].filter(Boolean);
 
-        // Store for each extraction target paragraph
-        for (const p of window.extractParas) {
-          await query(`
-            INSERT OR REPLACE INTO content_objects
-              (content_id, doc_id, people_json, places_json, documents_json, events_json, concepts_json, relations_json, rendered, object_pipeline_version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            p.id, doc.id,
-            JSON.stringify(objects.people),
-            JSON.stringify(objects.places),
-            JSON.stringify(objects.documents),
-            JSON.stringify(objects.events),
-            JSON.stringify(objects.concepts),
-            JSON.stringify(objects.relations),
-            entityNames.join(', '),
-            'v1-leapfrog'
-          ]);
-        }
+        await query(`
+          INSERT OR REPLACE INTO content_objects
+            (content_id, doc_id, people_json, places_json, documents_json, events_json, concepts_json, relations_json, rendered, object_pipeline_version)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          p.id, doc.id,
+          JSON.stringify(objects.people),
+          JSON.stringify(objects.places),
+          JSON.stringify(objects.documents),
+          JSON.stringify(objects.events),
+          JSON.stringify(objects.concepts),
+          JSON.stringify(objects.relations),
+          entityNames.join(', '),
+          'v2-docload'
+        ]);
 
         stats.entitiesFound += entityNames.length;
       }
 
-      stats.paragraphsExtracted += window.extractParas.length;
+      stats.paragraphsExtracted++;
       stats.windowCalls++;
 
-      // Self-tune every 50 calls
+      // Log cache metrics every 50 calls
       if (stats.windowCalls % 50 === 0 && stats.totalPromptTokens > 0) {
         stats.cacheHitRate = ((stats.totalCachedTokens / stats.totalPromptTokens) * 100).toFixed(1);
-        console.log(`  [cache] ${stats.cacheHitRate}% hit rate (${stats.totalCachedTokens.toLocaleString()} cached / ${stats.totalPromptTokens.toLocaleString()} prompt tokens)`);
+        console.log(`  [cache] ${stats.cacheHitRate}% hit rate (${stats.totalCachedTokens.toLocaleString()} / ${stats.totalPromptTokens.toLocaleString()} tokens)`);
       }
 
     } catch (err) {
       stats.errors++;
       if (stats.errors <= 10 || stats.errors % 100 === 0) {
-        logger.warn({ err: err.message, docId: doc.id }, 'Window extraction failed');
+        logger.warn({ err: err.message, paraId: p.id, docId: doc.id }, 'Extraction failed');
       }
-      // Mark extraction targets as processed to avoid infinite retry
-      for (const p of window.extractParas) {
-        await query(`INSERT OR IGNORE INTO content_objects (content_id, doc_id, rendered, object_pipeline_version) VALUES (?, ?, ?, ?)`,
-          [p.id, doc.id, 'ERROR', 'v1-leapfrog']);
-      }
+      await query(`INSERT OR IGNORE INTO content_objects (content_id, doc_id, rendered, object_pipeline_version) VALUES (?, ?, ?, ?)`,
+        [p.id, doc.id, 'ERROR', 'v2-docload']);
     }
   }
+
+  // For documents larger than the token budget, we need additional passes
+  // with shifted context windows. But the first pass covers the most important content.
+  // TODO: Implement sliding window for remaining paragraphs in large documents.
 
   stats.docsProcessed++;
 }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-03T23:49:45.246Z",
+  "generated": "2026-04-04T03:01:36.681Z",
   "entries": [
+    {
+      "hash": "0930348",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Language-aware token estimation per paragraph",
+      "scope": null
+    },
     {
       "hash": "29ab1fc",
       "date": "2026-04-03",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add pattern-based translation clearing for batch operations",
       "scope": null
-    },
-    {
-      "hash": "4eea663",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Optimize translation for 6-10x speedup with TOON format",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-03": [
+      {
+        "hash": "0930348",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Language-aware token estimation per paragraph",
+        "scope": null
+      },
       {
         "hash": "29ab1fc",
         "date": "2026-04-03",
@@ -7045,13 +7052,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add pattern-based translation clearing for batch operations",
-        "scope": null
-      },
-      {
-        "hash": "4eea663",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Optimize translation for 6-10x speedup with TOON format",
         "scope": null
       }
     ]
