@@ -107,10 +107,23 @@ async function refreshPipelineCache() {
   try {
     const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
     const oversizedCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
+    // Knowledge graph progress (content_objects table)
+    let graphExtracted = 0, graphTotal = 0;
+    try {
+      const ge = await queryOne('SELECT COUNT(*) as c FROM content_objects');
+      const gt = await queryOne('SELECT COUNT(*) as c FROM content WHERE deleted_at IS NULL AND LENGTH(text) > 20 AND LENGTH(text) <= 4000');
+      graphExtracted = ge?.c || 0;
+      graphTotal = gt?.c || 0;
+    } catch { /* content_objects may not exist */ }
+
     pipelineCache.data = {
       paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-      uniqueEmbeddingsNeeded: 0, // expensive DISTINCT query removed
-      oversizedSkipped: oversizedCount?.count || 0
+      oversizedSkipped: oversizedCount?.count || 0,
+      knowledgeGraph: {
+        extracted: graphExtracted,
+        total: graphTotal,
+        percent: graphTotal > 0 ? Math.round((graphExtracted / graphTotal) * 100) : 0
+      }
     };
     pipelineCache.timestamp = Date.now();
     logger.debug({ needsEmbedding: pipelineCache.data.paragraphsNeedingEmbeddings }, 'Pipeline cache refreshed');
@@ -340,7 +353,8 @@ export default async function libraryRoutes(fastify) {
       ingestionQueuePending: indexingStats.pending + indexingStats.processing,
       paragraphsNeedingEmbeddings: pipelineCache.data?.paragraphsNeedingEmbeddings ?? 0,
       paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-      oversizedSkipped: pipelineCache.data?.oversizedSkipped ?? 0
+      oversizedSkipped: pipelineCache.data?.oversizedSkipped ?? 0,
+      knowledgeGraph: pipelineCache.data?.knowledgeGraph ?? { extracted: 0, total: 0, percent: 0 }
     };
 
     // Calculate ingestion progress

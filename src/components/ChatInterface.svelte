@@ -1890,6 +1890,22 @@
                   </div>
                 </div>
               {/if}
+              <!-- Knowledge Graph progress -->
+              {#if libraryStats?.pipelineStatus?.knowledgeGraph?.percent > 0 && libraryStats.pipelineStatus.knowledgeGraph.percent < 100}
+                {@const kg = libraryStats.pipelineStatus.knowledgeGraph}
+                <div class="ingestion-progress embedding">
+                  <div class="ingestion-header">
+                    <span class="ingestion-label">Knowledge graph</span>
+                    <span class="ingestion-percent">{kg.percent}%</span>
+                  </div>
+                  <div class="ingestion-bar">
+                    <div class="ingestion-fill" style="width: {kg.percent}%"></div>
+                  </div>
+                  <div class="ingestion-detail">
+                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs
+                  </div>
+                </div>
+              {/if}
             </div>
           </div>
           <div class="research-suggestions">
