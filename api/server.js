@@ -68,7 +68,8 @@ export async function createServer(opts = {}) {
       'X-User-Id',
       'X-Client-Version',
       'X-Request-Id'
-    ]
+    ],
+    exposedHeaders: ['X-Server-Version']
   });
 
   // Cookies (for refresh tokens)
