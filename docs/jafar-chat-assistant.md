@@ -1,6 +1,6 @@
 # Jafar — Ocean Library Research Assistant
 
-> Last updated: 2026-04-04 | Code: `api/routes/chat.js`
+> Last updated: 2026-04-04 (v5) | Code: `api/routes/chat.js`
 
 ## Personality
 
@@ -108,6 +108,22 @@ The system prompt is the most critical piece. Key learnings:
 4. **"Don't guess — look it up"** prevents hallucinated citations.
 5. **Markdown permission must be explicit** or the model avoids formatting.
 6. **The tool description matters as much as the prompt.** Rich descriptions with examples help the model choose the right mode.
+7. **"ALWAYS cite with quotes" works.** When enforced as the #2 rule, the model reliably includes blockquoted citations with source attribution.
+8. **"Never supplement with general knowledge"** prevents the model from falling back to training data when search returns empty.
+9. **Religion filter must be explicitly instructed.** The tool description must say "use religion filter when asking about a specific religion's texts" or the model won't filter.
+10. **Read mode needs explicit instruction.** "When users say 'read me' or 'show me,' use mode read" triggers the correct behavior.
+
+## Quality Assessment
+
+A 100-scenario test suite lives in `tests/chat/`. Run with:
+```bash
+OPENAI_API_KEY=<key> node tests/chat/run-scenarios.js
+```
+
+**Baseline (v1 prompt, pre-filter fix):** 27% pass, avg 3.51, citations 2.54
+**v5 (mandatory citations + filter fix + read mode):** ~50% pass, avg 3.85, citations 3.20
+
+Key improvement: fixing the search filter bug (religion filter was silently dropped) had the biggest impact on citation quality.
 
 ## Encumbered Document Handling
 
