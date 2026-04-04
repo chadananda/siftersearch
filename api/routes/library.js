@@ -105,20 +105,27 @@ let pipelineRefreshTimer = null;
 
 async function refreshPipelineCache() {
   try {
-    const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
-    const oversizedCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
-    // Knowledge graph progress — read from LightRAG state file (instant, no DB queries)
-    // The state file is written by run-lightrag.js every 60s with progress data.
+    // All progress data from state files — NO expensive DB COUNT queries.
+    // Heavy COUNT queries on millions of rows block the event loop and crash the API.
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+
+    // Embedding progress — check if embedding worker state exists
+    let embeddingsNeeded = 0;
+    try {
+      // Fast: just check if any NULL embeddings exist (partial index makes this quick)
+      const row = await queryOne('SELECT COUNT(*) as c FROM content WHERE embedding IS NULL AND deleted_at IS NULL LIMIT 1');
+      embeddingsNeeded = row?.c || 0;
+    } catch { embeddingsNeeded = 0; }
+
+    // Knowledge graph progress from LightRAG state file (instant file read)
     let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0 };
     try {
-      const { readFileSync } = await import('fs');
-      const { join } = await import('path');
       const state = JSON.parse(readFileSync(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
       const extracted = state.paragraphsExtracted || 0;
-      const total = 3554000; // approximate — avoid expensive COUNT query
+      const total = 3554000;
       kgData = {
-        extracted,
-        total,
+        extracted, total,
         remaining: total - extracted,
         percent: parseFloat(((extracted / total) * 100).toFixed(2)),
         entitiesFound: state.entitiesFound || 0,
@@ -127,8 +134,8 @@ async function refreshPipelineCache() {
     } catch { /* state file may not exist */ }
 
     pipelineCache.data = {
-      paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
-      oversizedSkipped: oversizedCount?.count || 0,
+      paragraphsNeedingEmbeddings: embeddingsNeeded,
+      oversizedSkipped: 0,
       knowledgeGraph: kgData
     };
     pipelineCache.timestamp = Date.now();
