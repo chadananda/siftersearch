@@ -5169,6 +5169,19 @@
   .research-bubble .prose strong { font-weight: 600; }
   .research-bubble .prose em { font-style: italic; }
   .research-bubble .prose a { color: var(--accent-primary); }
+  .research-bubble .prose ul, .research-bubble .prose ol { margin: 0.4em 0; padding-left: 1.5em; }
+  .research-bubble .prose li { margin: 0.2em 0; }
+  .research-bubble .prose ul li { list-style: disc; }
+  .research-bubble .prose ol li { list-style: decimal; }
+  .research-bubble .prose table { border-collapse: collapse; margin: 0.5em 0; width: 100%; font-size: 0.9em; }
+  .research-bubble .prose th, .research-bubble .prose td { border: 1px solid var(--border-default); padding: 0.3em 0.6em; text-align: left; }
+  .research-bubble .prose th { background: rgba(255,255,255,0.05); font-weight: 600; }
+  .research-bubble .prose blockquote { border-left: 3px solid var(--accent-primary); margin: 0.5em 0; padding: 0.3em 0.8em; opacity: 0.9; }
+  .research-bubble .prose h1, .research-bubble .prose h2, .research-bubble .prose h3, .research-bubble .prose h4 { margin: 0.6em 0 0.3em; font-weight: 600; }
+  .research-bubble .prose h3 { font-size: 1.05em; }
+  .research-bubble .prose h4 { font-size: 1em; }
+  .research-bubble .prose code { background: rgba(255,255,255,0.08); padding: 0.1em 0.3em; border-radius: 0.2em; font-size: 0.9em; }
+  .research-bubble .prose hr { border: none; border-top: 1px solid var(--border-default); margin: 0.6em 0; }
 
   .research-searching {
     display: flex;
