@@ -1927,8 +1927,14 @@
                     <div class="research-msg-text prose">{@html formatResearchText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {#if !msg.isStreaming && msg.content && !msg.error}
                       <button class="copy-btn" title="Copy response" onclick={(e) => {
-                        const text = msg.content + '\n\n— Jafar, Ocean Library research assistant\n   siftersearch.com';
-                        navigator.clipboard.writeText(text);
+                        const suffix = '\n\n— Jafar, Ocean Library research assistant\n   siftersearch.com';
+                        const plainText = msg.content + suffix;
+                        const htmlContent = formatResearchText(msg.content) + '<p style="color:#888;font-size:0.85em;margin-top:1em;">— Jafar, Ocean Library research assistant · <a href="https://siftersearch.com">siftersearch.com</a></p>';
+                        const blob = new Blob([htmlContent], { type: 'text/html' });
+                        const textBlob = new Blob([plainText], { type: 'text/plain' });
+                        navigator.clipboard.write([new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob })]).catch(() => {
+                          navigator.clipboard.writeText(plainText);
+                        });
                         e.currentTarget.classList.add('copied');
                         setTimeout(() => e.currentTarget.classList.remove('copied'), 1500);
                       }}>
@@ -5169,25 +5175,30 @@
     word-break: break-word;
   }
 
-  /* markdown prose inside research bubbles */
-  .research-bubble .prose p { margin: 0 0 0.5em 0; }
-  .research-bubble .prose p:last-child { margin-bottom: 0; }
-  .research-bubble .prose strong { font-weight: 600; }
-  .research-bubble .prose em { font-style: italic; }
-  .research-bubble .prose a { color: var(--accent-primary); }
-  .research-bubble .prose ul, .research-bubble .prose ol { margin: 0.4em 0; padding-left: 1.5em; }
-  .research-bubble .prose li { margin: 0.2em 0; }
-  .research-bubble .prose ul li { list-style: disc; }
-  .research-bubble .prose ol li { list-style: decimal; }
-  .research-bubble .prose table { border-collapse: collapse; margin: 0.5em 0; width: 100%; font-size: 0.9em; }
-  .research-bubble .prose th, .research-bubble .prose td { border: 1px solid var(--border-default); padding: 0.3em 0.6em; text-align: left; }
-  .research-bubble .prose th { background: rgba(255,255,255,0.05); font-weight: 600; }
-  .research-bubble .prose blockquote { border-left: 3px solid var(--accent-primary); margin: 0.5em 0; padding: 0.3em 0.8em; opacity: 0.9; }
-  .research-bubble .prose h1, .research-bubble .prose h2, .research-bubble .prose h3, .research-bubble .prose h4 { margin: 0.6em 0 0.3em; font-weight: 600; }
-  .research-bubble .prose h3 { font-size: 1.05em; }
-  .research-bubble .prose h4 { font-size: 1em; }
-  .research-bubble .prose code { background: rgba(255,255,255,0.08); padding: 0.1em 0.3em; border-radius: 0.2em; font-size: 0.9em; }
-  .research-bubble .prose hr { border: none; border-top: 1px solid var(--border-default); margin: 0.6em 0; }
+  /* markdown prose inside research bubbles — :global needed because {@html} content has no Svelte scope attributes */
+  .research-bubble .prose :global(p) { margin: 0 0 0.5em 0; }
+  .research-bubble .prose :global(p:last-child) { margin-bottom: 0; }
+  .research-bubble .prose :global(strong) { font-weight: 600; }
+  .research-bubble .prose :global(em) { font-style: italic; }
+  .research-bubble .prose :global(a) { color: var(--accent-primary); text-decoration: underline; text-underline-offset: 2px; }
+  .research-bubble .prose :global(ul), .research-bubble .prose :global(ol) { margin: 0.4em 0; padding-left: 1.5em; }
+  .research-bubble .prose :global(li) { margin: 0.25em 0; line-height: 1.5; }
+  .research-bubble .prose :global(ul li) { list-style-type: disc; }
+  .research-bubble .prose :global(ol li) { list-style-type: decimal; }
+  .research-bubble .prose :global(ul ul li) { list-style-type: circle; }
+  .research-bubble .prose :global(table) { border-collapse: collapse; margin: 0.6em 0; width: 100%; font-size: 0.9em; }
+  .research-bubble .prose :global(th), .research-bubble .prose :global(td) { border: 1px solid var(--border-default); padding: 0.35em 0.7em; text-align: left; }
+  .research-bubble .prose :global(th) { background: rgba(255,255,255,0.06); font-weight: 600; }
+  .research-bubble .prose :global(tr:nth-child(even) td) { background: rgba(255,255,255,0.02); }
+  .research-bubble .prose :global(blockquote) { border-left: 3px solid var(--accent-primary); margin: 0.5em 0; padding: 0.3em 0.8em; opacity: 0.85; font-style: italic; }
+  .research-bubble .prose :global(h1), .research-bubble .prose :global(h2), .research-bubble .prose :global(h3), .research-bubble .prose :global(h4) { margin: 0.7em 0 0.3em; font-weight: 600; }
+  .research-bubble .prose :global(h3) { font-size: 1.05em; }
+  .research-bubble .prose :global(h4) { font-size: 1em; }
+  .research-bubble .prose :global(code) { background: rgba(255,255,255,0.08); padding: 0.15em 0.35em; border-radius: 0.25em; font-size: 0.88em; font-family: monospace; }
+  .research-bubble .prose :global(pre) { background: rgba(0,0,0,0.2); padding: 0.6em 0.8em; border-radius: 0.4em; overflow-x: auto; margin: 0.5em 0; }
+  .research-bubble .prose :global(pre code) { background: none; padding: 0; }
+  .research-bubble .prose :global(hr) { border: none; border-top: 1px solid var(--border-default); margin: 0.7em 0; }
+  .research-bubble .prose :global(input[type="checkbox"]) { margin-right: 0.4em; vertical-align: middle; }
 
   .research-searching {
     display: flex;
