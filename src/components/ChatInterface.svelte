@@ -1912,16 +1912,10 @@
                 </div>
               {/if}
               <!-- AI Cost reporting -->
-              {#if aiUsageStatus?.today}
+              {#if aiUsageStatus?.today?.cost > 0}
                 <a href="/admin/ai-usage" class="ai-cost-ticker">
                   <span class="ticker-label">AI 24h:</span>
-                  <span class="ticker-value">${(aiUsageStatus.today?.cost || 0).toFixed(2)}</span>
-                  {#if topCallers?.length > 0}
-                    {#each topCallers as caller}
-                      <span class="ticker-caller">{caller.caller}</span>
-                      <span class="ticker-value">${(caller.cost || 0).toFixed(2)}</span>
-                    {/each}
-                  {/if}
+                  <span class="ticker-value">${(aiUsageStatus.today.cost || 0).toFixed(2)}</span>
                 </a>
               {/if}
             </div>
