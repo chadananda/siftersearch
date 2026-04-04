@@ -1425,6 +1425,16 @@
     return result;
   }
 
+  // Format Jafar's research messages with full markdown (lists, tables, bold, italic, etc.)
+  function formatResearchText(text) {
+    if (!text) return '';
+    let result = toCurlyQuotes(text);
+    result = result.replace(/_([stkdzcSCDTZG]h)/g, '$1');
+    result = marked.parse(result);
+    result = result.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" class="text-link" href="');
+    return result;
+  }
+
   async function initSession() {
     try {
       const sessionData = await session.init();
@@ -1517,24 +1527,25 @@
     initSession();
     inputEl?.focus();
 
-    // Keep chat input focused at all times — refocus on any click or blur
-    // Speech-to-text engines and clipboard paste need the input to hold focus
-    function refocusChatInput() {
+    // Refocus chat input on printable keystrokes (not modifiers, not when selecting text)
+    function handleGlobalKeydown(e) {
       handleUserActivity();
-      const el = researchMode ? researchInputEl : inputEl;
-      if (el && document.activeElement !== el) {
-        // Don't steal focus from other inputs (e.g. search filter in library)
-        const active = document.activeElement;
-        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
-        el.focus();
+      // Don't interfere with copy/paste/select-all or any modifier combos
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Don't steal from other inputs
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+      // Only refocus on printable characters
+      if (e.key.length === 1) {
+        const el = researchMode ? researchInputEl : inputEl;
+        if (el) el.focus();
       }
     }
 
     // Track user activity to reset polling backoff
     // Use passive listeners for better scroll performance
     window.addEventListener('mousemove', handleUserActivity, { passive: true });
-    window.addEventListener('keydown', refocusChatInput);
-    window.addEventListener('click', refocusChatInput);
+    window.addEventListener('keydown', handleGlobalKeydown);
     window.addEventListener('scroll', handleUserActivity, { passive: true });
     window.addEventListener('touchstart', handleUserActivity, { passive: true });
 
@@ -1913,7 +1924,12 @@
                   {#if msg.isStreaming && !msg.content}
                     <span class="research-typing"><span></span><span></span><span></span></span>
                   {:else}
-                    <div class="research-msg-text prose">{@html formatText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    <div class="research-msg-text prose">{@html formatResearchText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
+                    {#if !msg.isStreaming && msg.content && !msg.error}
+                      <button class="copy-btn" title="Copy response" onclick={() => { navigator.clipboard.writeText(msg.content); }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                      </button>
+                    {/if}
                   {/if}
                 </div>
                 <!-- Citations (collapsed by default) -->
@@ -5125,6 +5141,16 @@
     backdrop-filter: blur(8px);
     max-width: 95%;
   }
+
+  .research-bubble-assistant { position: relative; }
+  .copy-btn {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); opacity: 0; transition: opacity 0.15s;
+    padding: 0.25rem; border-radius: 0.25rem;
+  }
+  .copy-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.1); }
+  .research-bubble-assistant:hover .copy-btn { opacity: 1; }
 
   .research-bubble-assistant.error {
     background: light-dark(rgba(239,68,68,0.1), rgba(239,68,68,0.15));
