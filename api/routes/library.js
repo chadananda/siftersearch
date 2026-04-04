@@ -42,7 +42,7 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // Counter table makes main counts instant; pipeline status queries still need caching
 const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s cache — short enough for responsive progress bars
 // Pipeline status cache — refreshed by background timer every 60s.
-const pipelineCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s during active processing
+const pipelineCache = { data: null, timestamp: 0, ttl: 30000 }; // 30s — state file updates every 60s
 
 /**
  * Parse translation field from paragraph
@@ -107,35 +107,29 @@ async function refreshPipelineCache() {
   try {
     const embeddingCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) <= ?`, [MAX_CHARS_PIPELINE]);
     const oversizedCount = await queryOne(`SELECT COUNT(*) as count FROM content WHERE embedding IS NULL AND deleted_at IS NULL AND LENGTH(text) > ?`, [MAX_CHARS_PIPELINE]);
-    // Knowledge graph progress (content_objects table)
-    let graphExtracted = 0, graphTotal = 0;
-    try {
-      const ge = await queryOne('SELECT COUNT(*) as c FROM content_objects');
-      const gt = await queryOne('SELECT COUNT(*) as c FROM content WHERE deleted_at IS NULL AND LENGTH(text) > 20 AND LENGTH(text) <= 4000');
-      graphExtracted = ge?.c || 0;
-      graphTotal = gt?.c || 0;
-    } catch { /* content_objects may not exist */ }
-
-    // Read LightRAG state file for cache metrics
-    let lightragState = null;
+    // Knowledge graph progress — read from LightRAG state file (instant, no DB queries)
+    // The state file is written by run-lightrag.js every 60s with progress data.
+    let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0 };
     try {
       const { readFileSync } = await import('fs');
       const { join } = await import('path');
-      lightragState = JSON.parse(readFileSync(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+      const state = JSON.parse(readFileSync(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+      const extracted = state.paragraphsExtracted || 0;
+      const total = 3554000; // approximate — avoid expensive COUNT query
+      kgData = {
+        extracted,
+        total,
+        remaining: total - extracted,
+        percent: parseFloat(((extracted / total) * 100).toFixed(2)),
+        entitiesFound: state.entitiesFound || 0,
+        rate: state.rate || 0
+      };
     } catch { /* state file may not exist */ }
 
     pipelineCache.data = {
       paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
       oversizedSkipped: oversizedCount?.count || 0,
-      knowledgeGraph: {
-        extracted: graphExtracted,
-        total: graphTotal,
-        remaining: graphTotal - graphExtracted,
-        percent: graphTotal > 0 ? parseFloat(((graphExtracted / graphTotal) * 100).toFixed(2)) : 0,
-        entitiesFound: lightragState?.entitiesFound || 0,
-        cacheHitRate: lightragState?.cacheHitRate || null,
-        rate: lightragState?.rate || 0
-      }
+      knowledgeGraph: kgData
     };
     pipelineCache.timestamp = Date.now();
     logger.debug({ needsEmbedding: pipelineCache.data.paragraphsNeedingEmbeddings }, 'Pipeline cache refreshed');
@@ -154,7 +148,7 @@ export default async function libraryRoutes(fastify) {
   // never in a request handler.
   setTimeout(() => {
     refreshPipelineCache();
-    pipelineRefreshTimer = setInterval(refreshPipelineCache, 10000);
+    pipelineRefreshTimer = setInterval(refreshPipelineCache, 30000);
   }, 10000);
 
   fastify.addHook('onClose', () => {
