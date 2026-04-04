@@ -138,9 +138,11 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
   if (mode === 'passages') {
     const filters = {};
     if (religion) filters.religion = religion;
+    if (collection) filters.collection = collection;
+    const searchOpts = { limit: 5, filters };
     const [hybridResults, keywordResults] = await Promise.all([
-      hybridSearch(query, { limit: 5, ...filters }).catch(() => ({ hits: [] })),
-      keywordSearch(query, { limit: 3, ...filters }).catch(() => ({ hits: [] }))
+      hybridSearch(query, searchOpts).catch(() => ({ hits: [] })),
+      keywordSearch(query, { limit: 3, filters }).catch(() => ({ hits: [] }))
     ]);
 
     const seen = new Set();
