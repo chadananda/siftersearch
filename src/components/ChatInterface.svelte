@@ -1926,7 +1926,12 @@
                   {:else}
                     <div class="research-msg-text prose">{@html formatResearchText(msg.content)}{#if msg.isStreaming}<span class="streaming-cursor"></span>{/if}</div>
                     {#if !msg.isStreaming && msg.content && !msg.error}
-                      <button class="copy-btn" title="Copy response" onclick={() => { navigator.clipboard.writeText(msg.content); }}>
+                      <button class="copy-btn" title="Copy response" onclick={(e) => {
+                        const text = msg.content + '\n\n— Jafar, Ocean Library research assistant\n   siftersearch.com';
+                        navigator.clipboard.writeText(text);
+                        e.currentTarget.classList.add('copied');
+                        setTimeout(() => e.currentTarget.classList.remove('copied'), 1500);
+                      }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                       </button>
                     {/if}
@@ -5143,13 +5148,14 @@
   }
 
   .research-bubble-assistant { position: relative; }
-  .copy-btn {
-    position: absolute; top: 0.5rem; right: 0.5rem;
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted); opacity: 0; transition: opacity 0.15s;
-    padding: 0.25rem; border-radius: 0.25rem;
+  .research-bubble-assistant .copy-btn {
+    position: absolute; top: -0.6rem; right: -0.4rem;
+    background: var(--surface-2, #2a2a3e); border: 1px solid var(--border-default);
+    cursor: pointer; color: var(--text-muted); opacity: 0; transition: opacity 0.15s;
+    padding: 0.3rem; border-radius: 0.35rem; z-index: 1;
   }
-  .copy-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.1); }
+  .research-bubble-assistant .copy-btn:hover { color: var(--text-primary); background: var(--surface-3, #333); }
+  .research-bubble-assistant .copy-btn.copied { color: var(--success, #4ade80); }
   .research-bubble-assistant:hover .copy-btn { opacity: 1; }
 
   .research-bubble-assistant.error {
