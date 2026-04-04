@@ -7,6 +7,8 @@
  * GET /api/search/health - Search health check
  */
 
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 import { hybridSearch, keywordSearch, semanticSearch, getStats, healthCheck, highlightBestSentence } from '../lib/search.js';
 import { userQuery } from '../lib/db.js';
 import { getCachedContentCounts } from '../services/progress.js';
@@ -358,13 +360,14 @@ export default async function searchRoutes(fastify) {
     try {
       // Try NER state first (CPU pipeline), fall back to LightRAG (LLM pipeline)
       let state = null;
+      const cwd = process.cwd();
       try {
-        state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'ner-state.json'), 'utf8'));
+        state = JSON.parse(await readFile(join(cwd, 'tmp', 'ner-state.json'), 'utf8'));
         if (state.stage === 'complete') state = null; // NER done, check LightRAG
       } catch { /* */ }
       if (!state) {
         try {
-          state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+          state = JSON.parse(await readFile(join(cwd, 'tmp', 'lightrag-state.json'), 'utf8'));
           state._source = 'lightrag';
         } catch { /* */ }
       }
