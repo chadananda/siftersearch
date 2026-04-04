@@ -1517,23 +1517,24 @@
     initSession();
     inputEl?.focus();
 
-    // Auto-focus chat input when user starts typing anywhere on the page
-    // Skip if they're already in an input, or pressing modifier/navigation keys
-    function handleGlobalKeydown(e) {
+    // Keep chat input focused at all times — refocus on any click or blur
+    // Speech-to-text engines and clipboard paste need the input to hold focus
+    function refocusChatInput() {
       handleUserActivity();
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key.length === 1) {
-        const el = researchMode ? researchInputEl : inputEl;
-        if (el) el.focus();
+      const el = researchMode ? researchInputEl : inputEl;
+      if (el && document.activeElement !== el) {
+        // Don't steal focus from other inputs (e.g. search filter in library)
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        el.focus();
       }
     }
 
     // Track user activity to reset polling backoff
     // Use passive listeners for better scroll performance
     window.addEventListener('mousemove', handleUserActivity, { passive: true });
-    window.addEventListener('keydown', handleGlobalKeydown);
-    window.addEventListener('click', handleUserActivity, { passive: true });
+    window.addEventListener('keydown', refocusChatInput);
+    window.addEventListener('click', refocusChatInput);
     window.addEventListener('scroll', handleUserActivity, { passive: true });
     window.addEventListener('touchstart', handleUserActivity, { passive: true });
 
