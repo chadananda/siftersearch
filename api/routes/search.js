@@ -353,13 +353,29 @@ export default async function searchRoutes(fastify) {
       getCachedContentCounts()
     ]);
 
-    // Pipeline status — always from cache, never computed in request path
+    // Pipeline status — lightweight, no heavy DB queries
+    let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0 };
+    try {
+      const { readFile } = await import('fs/promises');
+      const { join } = await import('path');
+      const state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+      const extracted = state.paragraphsExtracted || 0;
+      const total = 3554000;
+      kgData = {
+        extracted, total,
+        remaining: total - extracted,
+        percent: parseFloat(((extracted / total) * 100).toFixed(2)),
+        entitiesFound: state.entitiesFound || 0,
+        rate: state.rate || 0
+      };
+    } catch { /* state file may not exist */ }
+
     const pipelineStatus = {
       ingestionQueuePending: 0,
       paragraphsNeedingEmbeddings: 0,
-      uniqueEmbeddingsNeeded: 0,
       paragraphsPendingSync: cachedCounts.unsyncedParagraphs,
-      oversizedSkipped: 0
+      oversizedSkipped: 0,
+      knowledgeGraph: kgData
     };
 
     const result = {
