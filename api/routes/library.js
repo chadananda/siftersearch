@@ -148,10 +148,11 @@ export default async function libraryRoutes(fastify) {
   // Start background pipeline cache refresh after a 10s delay (let server finish starting)
   // Runs every 60s — the COUNT queries take a few seconds but run in the background,
   // never in a request handler.
-  setTimeout(() => {
-    refreshPipelineCache();
-    pipelineRefreshTimer = setInterval(refreshPipelineCache, 30000);
-  }, 10000);
+  // Pipeline cache refresh disabled temporarily to diagnose crash loop
+  // setTimeout(() => {
+  //   refreshPipelineCache();
+  //   pipelineRefreshTimer = setInterval(refreshPipelineCache, 30000);
+  // }, 10000);
 
   fastify.addHook('onClose', () => {
     if (pipelineRefreshTimer) clearInterval(pipelineRefreshTimer);
