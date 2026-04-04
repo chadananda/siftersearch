@@ -100,8 +100,11 @@ export async function createServer(opts = {}) {
   });
 
   // Add server version to every response for client-side auto-reload detection
+  // Skip if headers already flushed (SSE streaming routes use reply.raw.flushHeaders)
   server.addHook('onSend', (request, reply, payload, done) => {
-    reply.header('X-Server-Version', SERVER_VERSION);
+    if (!reply.raw.headersSent) {
+      reply.header('X-Server-Version', SERVER_VERSION);
+    }
     done();
   });
 
