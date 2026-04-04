@@ -1517,10 +1517,22 @@
     initSession();
     inputEl?.focus();
 
+    // Auto-focus chat input when user starts typing anywhere on the page
+    // Skip if they're already in an input, or pressing modifier/navigation keys
+    function handleGlobalKeydown(e) {
+      handleUserActivity();
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length === 1) {
+        const el = researchMode ? researchInputEl : inputEl;
+        if (el) el.focus();
+      }
+    }
+
     // Track user activity to reset polling backoff
     // Use passive listeners for better scroll performance
     window.addEventListener('mousemove', handleUserActivity, { passive: true });
-    window.addEventListener('keydown', handleUserActivity, { passive: true });
+    window.addEventListener('keydown', handleGlobalKeydown);
     window.addEventListener('click', handleUserActivity, { passive: true });
     window.addEventListener('scroll', handleUserActivity, { passive: true });
     window.addEventListener('touchstart', handleUserActivity, { passive: true });
