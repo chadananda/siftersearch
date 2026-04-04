@@ -357,21 +357,21 @@ async function main() {
   console.log(`Documents: ${docCount?.c || 0}`);
   if (dryRun) return;
 
+  // Process largest documents first — more paragraphs = higher cache hit rate
+  // A 100-paragraph doc gets 99% hits vs a 3-paragraph doc at 33%
+  const allDocs = await queryAll(`
+    SELECT d.id, d.title, d.author, d.religion, d.collection, d.year, d.language,
+           d.paragraph_count
+    FROM docs d ${docWhere}
+    ORDER BY d.paragraph_count DESC
+  `, docParams);
+
+  console.log(`Processing ${allDocs.length} documents (largest first for max cache reuse)\n`);
+
   const startTime = Date.now();
   let lastLogTime = startTime;
-  let lastDocId = 0;
 
-  while (true) {
-    const docs = await queryAll(`
-      SELECT d.id, d.title, d.author, d.religion, d.collection, d.year, d.language
-      FROM docs d ${docWhere} AND d.id > ?
-      ORDER BY d.id LIMIT 50
-    `, [...docParams, lastDocId]);
-
-    if (docs.length === 0) break;
-
-    for (const doc of docs) {
-      lastDocId = doc.id;
+  for (const doc of allDocs) {
       await processDocument(doc);
 
       const now = Date.now();
@@ -383,7 +383,6 @@ async function main() {
         saveState();
         lastLogTime = now;
       }
-    }
   }
 
   stats.cacheHitRate = stats.totalPromptTokens > 0 ? ((stats.totalCachedTokens / stats.totalPromptTokens) * 100).toFixed(1) : '0';
