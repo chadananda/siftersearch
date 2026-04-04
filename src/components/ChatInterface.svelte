@@ -631,6 +631,7 @@
     try {
       // Version is now sent in X-Client-Version header on all requests
       const stats = await search.stats();
+      if (!silent) console.log('[Library] Stats loaded, serverVersion:', stats.serverVersion, 'totalDocs:', stats.totalDocuments);
 
       // Check if stats actually changed
       const hasChanged = !libraryStats ||
