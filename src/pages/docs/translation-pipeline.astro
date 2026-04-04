@@ -1,5 +1,25 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let stats = null;
+try {
+  const res = await fetch(`${API_BASE}/api/search/stats`);
+  if (res.ok) stats = await res.json();
+} catch {}
+const rc = stats?.religionCounts || {};
+const fmt = (n) => n?.toLocaleString() ?? '—';
+const fmtM = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' million';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
+const fmtShort = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
 ---
 
 <DocsLayout
@@ -65,7 +85,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
   <p>
     SifterSearch — the research engine behind <a href="https://oceanlibrary.com">OceanLibrary.com</a> —
-    indexes more than 5,800 texts across three faith traditions. Among them are hundreds of Arabic
+    indexes more than {fmt(stats?.totalDocuments)} texts across {stats?.religions ?? 11} faith traditions. Among them are hundreds of Arabic
     and Persian documents: classical Islamic jurisprudence, Quranic commentary, Sufi treatises,
     early Baha'i tablets, and handwritten manuscripts that have never been widely available to
     English-speaking readers.

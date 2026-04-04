@@ -1,5 +1,25 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let stats = null;
+try {
+  const res = await fetch(`${API_BASE}/api/search/stats`);
+  if (res.ok) stats = await res.json();
+} catch {}
+const rc = stats?.religionCounts || {};
+const fmt = (n) => n?.toLocaleString() ?? '—';
+const fmtM = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' million';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
+const fmtShort = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
 ---
 
 <DocsLayout
@@ -21,11 +41,11 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <!-- By the Numbers -->
   <div class="stats-grid">
     <div class="stat-card">
-      <span class="stat-number">8,390</span>
+      <span class="stat-number">{fmt(stats?.totalDocuments)}</span>
       <span class="stat-label">Documents</span>
     </div>
     <div class="stat-card">
-      <span class="stat-number">3.68M</span>
+      <span class="stat-number">{fmtShort(stats?.totalPassages)}</span>
       <span class="stat-label">Passages</span>
     </div>
     <div class="stat-card">
@@ -74,7 +94,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
   <h3>Comprehensive Library</h3>
   <p>
-    8,390 documents and 3.68 million passages spanning 11 religious traditions
+    {fmt(stats?.totalDocuments)} documents and {fmtM(stats?.totalPassages)} passages spanning {stats?.religions ?? 11} religious traditions
     in 8 languages. <a href="/docs/library">Explore the library &rarr;</a>
   </p>
 

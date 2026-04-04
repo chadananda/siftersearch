@@ -1,24 +1,44 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let stats = null;
+try {
+  const res = await fetch(`${API_BASE}/api/search/stats`);
+  if (res.ok) stats = await res.json();
+} catch {}
+const rc = stats?.religionCounts || {};
+const fmt = (n) => n?.toLocaleString() ?? '—';
+const fmtM = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' million';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
+const fmtShort = (n) => {
+  if (!n) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+};
 ---
 
 <DocsLayout
   title="Search & Research Strategy"
-  description="How SifterSearch uses contextual disambiguation, hypothetical question pre-indexing, cross-language semantic search, and prompt caching to make 3.68 million religious text passages searchable with genuine nuance."
+  description={`How SifterSearch uses contextual disambiguation, hypothetical question pre-indexing, cross-language semantic search, and prompt caching to make ${fmtM(stats?.totalPassages)} religious text passages searchable with genuine nuance.`}
   activeSection="research-strategy"
 >
   <h1>Search &amp; Research Strategy</h1>
-  <p class="subtitle">How SifterSearch makes 3.68 million passages — across 8 languages and 11 traditions — searchable with the nuance religious texts deserve</p>
+  <p class="subtitle">How SifterSearch makes {fmtM(stats?.totalPassages)} passages — across 8 languages and 11 traditions — searchable with the nuance religious texts deserve</p>
 
   <h2>The Scale of the Problem</h2>
 
   <p>
     SifterSearch — the search and research intelligence behind
-    <a href="https://oceanlibrary.com">OceanLibrary.com</a> — indexes 8,390 religious
+    <a href="https://oceanlibrary.com">OceanLibrary.com</a> — indexes {fmt(stats?.totalDocuments)} religious
     and philosophical texts across three faith traditions:
-    5,540 Baha'i documents, 293 Islamic texts (most in Arabic), and a growing collection of
+    {fmt(rc["Baha'i"])} Bahá'í documents, {fmt(rc["Islam"])} Islamic texts (most in Arabic), and a growing collection of
     Buddhist and other writings. Across these traditions, the library contains roughly
-    3.68 million individual passages in 8 languages — each a window into centuries of human
+    {fmtM(stats?.totalPassages)} individual passages in 8 languages — each a window into centuries of human
     spiritual inquiry.
   </p>
   <p>
@@ -263,7 +283,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <h2>Problem 3: The Arabic Library Is Invisible to English Searchers</h2>
 
   <p>
-    <strong>The Problem.</strong> Of SifterSearch's 8,390 documents, 293 are Islamic texts —
+    <strong>The Problem.</strong> Of SifterSearch's {fmt(stats?.totalDocuments)} documents, {fmt(rc["Islam"])} are Islamic texts —
     most of them in Arabic. This is a rich body of classical scholarship: hadith collections,
     tafsir (Quranic commentary), Sufi treatises, works of Islamic jurisprudence and philosophy.
     For an English-speaking researcher, these texts might as well not exist. Keyword search
@@ -272,7 +292,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   </p>
   <p>
     The same barrier runs in reverse. An Arabic-speaking researcher exploring Baha'i theology
-    or Buddhist philosophy faces 5,541 documents in languages they may not read. The library
+    or Buddhist philosophy faces {fmt(stats?.totalDocuments)} documents in languages they may not read. The library
     is multilingual; the search, until now, has not been.
   </p>
   <p>
@@ -343,10 +363,10 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     enrichment is honest about what the text actually says.
   </p>
 
-  <h2>Problem 5: Processing 2.57 Million Passages Costs Too Much</h2>
+  <h2>Problem 5: Processing {fmtShort(stats?.totalPassages)} Passages Costs Too Much</h2>
 
   <p>
-    <strong>The Problem.</strong> Processing 3.68 million passages requires millions of AI API
+    <strong>The Problem.</strong> Processing {fmtM(stats?.totalPassages)} passages requires millions of AI API
     calls. Without optimization, the cost for disambiguation alone (using a model like Claude
     Sonnet) would be roughly $25,000 — and adding HyPE generation pushes the total past
     $42,000. This puts comprehensive enhancement out of reach for most projects.
@@ -371,7 +391,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     by approximately 60–65%.
   </p>
   <p>
-    <strong>Priority-based processing.</strong> Not all 3.68 million passages need enhancement
+    <strong>Priority-based processing.</strong> Not all {fmtM(stats?.totalPassages)} passages need enhancement
     simultaneously. SifterSearch processes documents in order of authority and scholarly
     importance — core scripture first, then major commentary, then supporting texts. The
     dual-index architecture means un-enhanced texts remain fully searchable through the
