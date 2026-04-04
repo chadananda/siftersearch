@@ -5070,7 +5070,7 @@
     width: 4rem;
     height: 4rem;
     border-radius: 50%;
-    background: #1a3a4a;
+    background: #0a557c;
     display: flex;
     align-items: center;
     justify-content: center;
