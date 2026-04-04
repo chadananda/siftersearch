@@ -116,13 +116,25 @@ async function refreshPipelineCache() {
       graphTotal = gt?.c || 0;
     } catch { /* content_objects may not exist */ }
 
+    // Read LightRAG state file for cache metrics
+    let lightragState = null;
+    try {
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      lightragState = JSON.parse(readFileSync(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+    } catch { /* state file may not exist */ }
+
     pipelineCache.data = {
       paragraphsNeedingEmbeddings: embeddingCount?.count || 0,
       oversizedSkipped: oversizedCount?.count || 0,
       knowledgeGraph: {
         extracted: graphExtracted,
         total: graphTotal,
-        percent: graphTotal > 0 ? Math.round((graphExtracted / graphTotal) * 100) : 0
+        remaining: graphTotal - graphExtracted,
+        percent: graphTotal > 0 ? parseFloat(((graphExtracted / graphTotal) * 100).toFixed(2)) : 0,
+        entitiesFound: lightragState?.entitiesFound || 0,
+        cacheHitRate: lightragState?.cacheHitRate || null,
+        rate: lightragState?.rate || 0
       }
     };
     pipelineCache.timestamp = Date.now();
@@ -1689,7 +1701,7 @@ Return ONLY the description text, no quotes or formatting.`;
     // Try direct lookup by stored slug first (efficient)
     let document = await queryOne(`
       SELECT id, title, author, religion, collection, language, year, description,
-             paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
+             paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
       FROM docs
       WHERE slug = ?
     `, [slug]);
@@ -1709,7 +1721,7 @@ Return ONLY the description text, no quotes or formatting.`;
       const { baseSlug, language: slugLang } = parseDocSlug(slug);
       const candidates = await queryAll(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
+               paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
         FROM docs
         WHERE religion IS NOT NULL AND collection IS NOT NULL
       `);
@@ -1761,7 +1773,7 @@ Return ONLY the description text, no quotes or formatting.`;
       const escapedSlug = slug.replace(/_/g, '\\_');
       const partialMatch = await queryOne(`
         SELECT id, title, author, religion, collection, language, year, description,
-               paragraph_count, encumbered, file_path, filename, slug, created_at, updated_at
+               paragraph_count, encumbered, purchase_url, file_path, filename, slug, created_at, updated_at
         FROM docs
         WHERE slug LIKE ? ESCAPE '\\' AND slug != ?
       `, [`%\\_${escapedSlug}`, slug]);
@@ -1789,13 +1801,12 @@ Return ONLY the description text, no quotes or formatting.`;
 
     const isEncumbered = document.encumbered === 1;
 
-    // For encumbered docs, check if user can access full content
-    // For now: logged in = full access. Future: check sponsorship status
-    const canAccessFull = !isEncumbered || isAuthenticated;
+    // For encumbered docs, only editors and admins see full content
+    const canAccessFull = !isEncumbered || canEdit;
 
-    // If encumbered and not authenticated and requesting beyond initial content, deny
-    const PREVIEW_LIMIT = 20; // Initial paragraphs shown to everyone
-    if (isEncumbered && !isAuthenticated && offset >= PREVIEW_LIMIT) {
+    // Preview limit for encumbered docs — enough for fair-use preview
+    const PREVIEW_LIMIT = 5;
+    if (isEncumbered && !canEdit && offset >= PREVIEW_LIMIT) {
       return {
         document: {
           id: document.id,
@@ -1808,6 +1819,7 @@ Return ONLY the description text, no quotes or formatting.`;
           description: document.description,
           paragraphCount: document.paragraph_count,
           encumbered: true,
+          purchase_url: document.purchase_url || null,
           slug: document.slug || generateDocSlug(document)
         },
         paragraphs: [],
@@ -1816,15 +1828,15 @@ Return ONLY the description text, no quotes or formatting.`;
         offset,
         requiresAuth: true,
         canEdit: false,
-        message: 'Sign in to continue reading'
+        message: 'This document is under copyright and is available for search and preview only.'
       };
     }
 
     // Determine effective limit for encumbered preview
     let effectiveLimit = limit;
     let effectiveOffset = offset;
-    if (isEncumbered && !isAuthenticated) {
-      // Only return up to PREVIEW_LIMIT paragraphs for unauthenticated users
+    if (isEncumbered && !canEdit) {
+      // Only return up to PREVIEW_LIMIT paragraphs for non-editor users
       effectiveLimit = Math.min(limit, PREVIEW_LIMIT - offset);
       if (effectiveLimit <= 0) effectiveLimit = 0;
     }
@@ -1861,6 +1873,7 @@ Return ONLY the description text, no quotes or formatting.`;
         description: document.description,
         paragraphCount: total,
         encumbered: isEncumbered,
+        purchase_url: document.purchase_url || null,
         slug: document.slug || generateDocSlug(document),
         isRTL
       },
@@ -1869,7 +1882,7 @@ Return ONLY the description text, no quotes or formatting.`;
       limit: effectiveLimit,
       offset: effectiveOffset,
       hasMore: offset + paragraphs.length < total,
-      requiresAuth: isEncumbered && !isAuthenticated && (offset + paragraphs.length >= PREVIEW_LIMIT || offset + limit > PREVIEW_LIMIT),
+      requiresAuth: isEncumbered && !canEdit && (offset + paragraphs.length >= PREVIEW_LIMIT || offset + limit > PREVIEW_LIMIT),
       canAccessFull,
       canEdit,
       previewLimit: isEncumbered ? PREVIEW_LIMIT : null

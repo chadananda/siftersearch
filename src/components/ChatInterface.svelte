@@ -1891,18 +1891,22 @@
                 </div>
               {/if}
               <!-- Knowledge Graph progress -->
-              {#if libraryStats?.pipelineStatus?.knowledgeGraph?.percent > 0 && libraryStats.pipelineStatus.knowledgeGraph.percent < 100}
+              {#if libraryStats?.pipelineStatus?.knowledgeGraph?.extracted > 0 && libraryStats.pipelineStatus.knowledgeGraph.percent < 100}
                 {@const kg = libraryStats.pipelineStatus.knowledgeGraph}
+                {@const etaMin = kg.rate > 0 ? Math.ceil(kg.remaining / kg.rate) : 0}
+                {@const etaHrs = Math.floor(etaMin / 60)}
+                {@const etaMins = etaMin % 60}
+                {@const etaStr = etaHrs > 0 ? `~${etaHrs}h ${etaMins}m` : etaMin > 0 ? `~${etaMins}m` : ''}
                 <div class="ingestion-progress embedding">
                   <div class="ingestion-header">
                     <span class="ingestion-label">Knowledge graph</span>
                     <span class="ingestion-percent">{kg.percent}%</span>
                   </div>
                   <div class="ingestion-bar">
-                    <div class="ingestion-fill" style="width: {kg.percent}%"></div>
+                    <div class="ingestion-fill" style="width: {Math.max(kg.percent, 0.5)}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs
+                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs · {formatWithCommas(kg.entitiesFound || 0)} entities{#if etaStr} · {etaStr} remaining{/if}
                   </div>
                 </div>
               {/if}
