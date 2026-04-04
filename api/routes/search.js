@@ -353,31 +353,43 @@ export default async function searchRoutes(fastify) {
       getCachedContentCounts()
     ]);
 
-    // Pipeline status — lightweight, no heavy DB queries
-    let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0 };
+    // Pipeline status — read from NER or LightRAG state files (whichever is active)
+    let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0, stage: '' };
     try {
-      const { readFile } = await import('fs/promises');
-      const { join } = await import('path');
-      const state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
-      const extracted = state.paragraphsExtracted || 0;
-      const total = 3554000;
-      // Calculate equivalent cost if done on Claude Sonnet
-      // Sonnet: $3/1M input, $15/1M output. Avg ~5000 input + ~200 output per call
-      const totalCalls = state.windowCalls || 0;
-      const equivalentCostSonnet = totalCalls * (5000 * 3 + 200 * 15) / 1e6;
+      // Try NER state first (CPU pipeline), fall back to LightRAG (LLM pipeline)
+      let state = null;
+      try {
+        state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'ner-state.json'), 'utf8'));
+        if (state.stage === 'complete') state = null; // NER done, check LightRAG
+      } catch { /* */ }
+      if (!state) {
+        try {
+          state = JSON.parse(await readFile(join(process.cwd(), 'tmp', 'lightrag-state.json'), 'utf8'));
+          state._source = 'lightrag';
+        } catch { /* */ }
+      }
 
-      kgData = {
-        extracted, total,
-        remaining: total - extracted,
-        percent: parseFloat(((extracted / total) * 100).toFixed(2)),
-        entitiesFound: state.entitiesFound || 0,
-        rate: state.rate || 0,
-        cacheHitRate: state.cacheHitRate || 0,
-        totalCalls,
-        totalPromptTokens: state.totalPromptTokens || 0,
-        savedVsCloud: parseFloat(equivalentCostSonnet.toFixed(2))
-      };
-    } catch { /* state file may not exist */ }
+      if (state) {
+        const extracted = state.processed || state.paragraphsExtracted || 0;
+        const total = state.total || 3554000;
+        const entitiesFound = state.entities_found || state.entitiesFound || 0;
+        const rate = state.rate || 0;
+        const stage = state.stage || (state._source === 'lightrag' ? 'llm' : '');
+
+        kgData = {
+          extracted, total,
+          remaining: total - extracted,
+          percent: parseFloat(((extracted / total) * 100).toFixed(2)),
+          entitiesFound,
+          rate,
+          stage,
+          cacheHitRate: state.cacheHitRate || null,
+          savedVsCloud: state._source === 'lightrag'
+            ? parseFloat(((state.windowCalls || 0) * (5000 * 3 + 200 * 15) / 1e6).toFixed(2))
+            : 0
+        };
+      }
+    } catch { /* state files may not exist */ }
 
     const pipelineStatus = {
       ingestionQueuePending: 0,

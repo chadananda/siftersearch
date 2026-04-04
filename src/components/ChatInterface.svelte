@@ -1900,14 +1900,14 @@
                 {@const etaStr = etaDays > 0 ? `~${etaDays}d ${etaHrs}h` : etaHrs > 0 ? `~${etaHrs}h ${etaMins}m` : etaMin > 0 ? `~${etaMins}m` : ''}
                 <div class="ingestion-progress embedding">
                   <div class="ingestion-header">
-                    <span class="ingestion-label">Knowledge graph</span>
+                    <span class="ingestion-label">Knowledge graph{#if kg.stage} ({kg.stage}){/if}</span>
                     <span class="ingestion-percent">{kg.percent}%</span>
                   </div>
                   <div class="ingestion-bar">
                     <div class="ingestion-fill" style="width: {Math.max(kg.percent, 0.5)}%"></div>
                   </div>
                   <div class="ingestion-detail">
-                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} paragraphs · {formatWithCommas(kg.entitiesFound || 0)} entities · {kg.cacheHitRate || 0}% cache hit{#if kg.savedVsCloud > 0} · ${kg.savedVsCloud.toFixed(0)} saved vs cloud{/if}{#if etaStr} · {etaStr}{/if}
+                    {formatWithCommas(kg.extracted)} / {formatWithCommas(kg.total)} · {formatWithCommas(kg.entitiesFound || 0)} entities · ~{formatWithCommas(kg.rate || 0)}/min{#if kg.cacheHitRate} · {kg.cacheHitRate}% cache{/if}{#if kg.savedVsCloud > 0} · ${kg.savedVsCloud.toFixed(0)} saved{/if}{#if etaStr} · {etaStr}{/if}
                   </div>
                 </div>
               {/if}
