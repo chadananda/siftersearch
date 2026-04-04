@@ -32,9 +32,11 @@ const VLLM_URL = process.env.VLLM_URL || 'http://boss:8000';
 const VLLM_MODEL = 'Qwen/Qwen3-32B-AWQ';
 const MAX_CONTEXT = 8192;
 const RESERVED_DECODE = 800;      // Terse output needs fewer tokens
-const SYSTEM_PROMPT_TOKENS = 300;
-const SAFETY_MARGIN = 500;
-const AVAILABLE_TOKENS = MAX_CONTEXT - RESERVED_DECODE - SYSTEM_PROMPT_TOKENS - SAFETY_MARGIN;
+const USER_PROMPT_TOKENS = 30;    // "Extract entities from [docId:P123]."
+const OVERHEAD_PER_PARA = 15;     // [docId:Pindex] marker + newlines per paragraph
+const INSTRUCTION_TOKENS = 200;   // Fixed instruction text in system prompt
+const SAFETY_MARGIN = 300;        // Buffer for tokenizer estimation errors
+const AVAILABLE_TOKENS = MAX_CONTEXT - RESERVED_DECODE - USER_PROMPT_TOKENS - INSTRUCTION_TOKENS - SAFETY_MARGIN;
 const MAX_PARAGRAPH_CHARS = 4000;
 const CONCURRENCY = 2;            // Two parallel document streams
 const SMALL_DOC_THRESHOLD = 10;   // Docs with <= 10 paragraphs are "small" and get batched
@@ -104,7 +106,12 @@ async function callVLLM(systemPrompt, userPrompt) {
       }),
       signal: controller.signal
     });
-    if (!response.ok) throw new Error(`vLLM ${response.status}`);
+    if (!response.ok) {
+      const errBody = (await response.text()).substring(0, 200);
+      const err = new Error(`vLLM ${response.status}: ${errBody}`);
+      err.status = response.status;
+      throw err;
+    }
     const data = await response.json();
     const usage = data.usage || {};
     stats.totalPromptTokens += usage.prompt_tokens || 0;
@@ -176,10 +183,10 @@ async function processBatch(docs) {
     const needsIds = new Set(needs.map(r => r.id));
     if (needsIds.size === 0) continue;
 
-    // Fit as many paragraphs as the budget allows
+    // Fit as many paragraphs as the budget allows (include per-paragraph overhead)
     const included = [];
     for (const p of allParas) {
-      const t = estimateTokens(p.text);
+      const t = estimateTokens(p.text) + OVERHEAD_PER_PARA;
       if (totalTokens + t > AVAILABLE_TOKENS) break;
       included.push(p);
       totalTokens += t;
@@ -215,6 +222,12 @@ async function processBatch(docs) {
         }
       } catch (err) {
         stats.errors++;
+        if (err.status === 400) {
+          // Prompt too long — skip remaining paragraphs in this batch,
+          // they'll be retried with a smaller window on the next run
+          logger.warn({ docId, paraCount: paras.length }, 'Prompt too long (400) — skipping rest of batch for retry');
+          break;
+        }
         if (stats.errors <= 10 || stats.errors % 100 === 0)
           logger.warn({ err: err.message, paraId: p.id, docId }, 'Extraction failed');
         await storeError(p.id, docId);
@@ -261,8 +274,8 @@ async function main() {
   let currentBatchTokens = 0;
 
   for (const doc of smallDocs) {
-    const estTokens = (doc.paragraph_count || 1) * 100; // rough estimate
-    if (currentBatch.length > 0 && currentBatchTokens + estTokens > AVAILABLE_TOKENS * 0.8) {
+    const estTokens = (doc.paragraph_count || 1) * (100 + OVERHEAD_PER_PARA); // text + markers
+    if (currentBatch.length > 0 && currentBatchTokens + estTokens > AVAILABLE_TOKENS * 0.7) {
       smallBatches.push(currentBatch);
       currentBatch = [];
       currentBatchTokens = 0;

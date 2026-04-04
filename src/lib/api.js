@@ -171,7 +171,8 @@ async function request(path, options = {}) {
         if (serverNewer && !sessionStorage.getItem(`reload_${sv}`)) {
           sessionStorage.setItem(`reload_${sv}`, '1');
           window.location.reload();
-          return;
+          // Return a never-resolving promise — page is reloading, don't let callers proceed
+          return new Promise(() => {});
         }
       }
 
