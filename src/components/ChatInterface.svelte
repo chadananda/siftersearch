@@ -644,6 +644,11 @@
       // Mark server as connected
       serverOffline = false;
 
+      // Always update serverVersion from live response (never cached)
+      if (libraryStats && !hasChanged && stats.serverVersion) {
+        libraryStats = { ...libraryStats, serverVersion: stats.serverVersion };
+      }
+
       if (hasChanged) {
         stats._fetchedAt = Date.now();
         libraryStats = stats;
