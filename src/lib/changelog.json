@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-04T04:35:37.142Z",
+  "generated": "2026-04-04T04:45:03.745Z",
   "entries": [
+    {
+      "hash": "5bd675c",
+      "date": "2026-04-03",
+      "type": "Other",
+      "description": "Process largest documents first for max cache reuse",
+      "scope": null
+    },
     {
       "hash": "0930348",
       "date": "2026-04-03",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
       "scope": null
-    },
-    {
-      "hash": "1b2d3af",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add pattern-based translation clearing for batch operations",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-03": [
+      {
+        "hash": "5bd675c",
+        "date": "2026-04-03",
+        "type": "Other",
+        "description": "Process largest documents first for max cache reuse",
+        "scope": null
+      },
       {
         "hash": "0930348",
         "date": "2026-04-03",
@@ -7045,13 +7052,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Use optimized combined translation in admin endpoint (reading+study in one API call)",
-        "scope": null
-      },
-      {
-        "hash": "1b2d3af",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add pattern-based translation clearing for batch operations",
         "scope": null
       }
     ]

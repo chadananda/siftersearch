@@ -1465,6 +1465,16 @@
   }
 
   onMount(async () => {
+    // Unregister any stale service workers (PWA was removed)
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (const reg of registrations) {
+          reg.unregister();
+          console.log('[SW] Unregistered stale service worker');
+        }
+      });
+    }
+
     initAuth();
     loadLibraryStats();
 
