@@ -17,6 +17,28 @@ import { getAnonymousUserId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 import { queryOne, queryAll } from '../lib/db.js';
+import { slugifyPath } from '../lib/slug.js';
+
+const SITE_URL = 'https://oceanlibrary.com';
+
+function docUrl(doc) {
+  if (doc.encumbered) return null;
+  const relSlug = (doc.religion || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+  const colSlug = (doc.collection || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+  const slug = doc.slug || doc.id;
+  return `${SITE_URL}/library/${relSlug}/${colSlug}/${slug}`;
+}
+
+function docResult(d) {
+  const result = {
+    id: d.id, title: d.title, author: d.author, religion: d.religion,
+    collection: d.collection, year: d.year, description: d.description,
+    paragraphs: d.paragraph_count, encumbered: !!d.encumbered
+  };
+  const url = docUrl(d);
+  if (url) result.url = url;
+  return result;
+}
 
 const SYSTEM_PROMPT = `You are Jafar — a wise, warm research companion for the Ocean Library. You choose words the way a jeweler sets stones: each one deliberate, none wasted.
 
@@ -26,7 +48,9 @@ Use your tools. Never guess what's in the library — look it up. Share what you
 
 Bahá'í lens: all religions as chapters of one story. Hold it as perspective, never lecture.
 
-Markdown is fine: **bold**, *italic*, lists, tables — when they serve clarity. Cite as (*Title* — Author).`;
+Markdown is fine: **bold**, *italic*, lists, tables — when they serve clarity. Cite as (*Title* — Author).
+
+When search results include a "url" field, link the title: [*Title*](url). Only non-encumbered (freely available) documents have URLs. For encumbered documents, just mention the title without a link.`;
 
 // ─── Tool definitions for OpenAI function calling ─────────────────────────
 
@@ -52,7 +76,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
           collection: { type: 'string', description: 'Filter by collection name' },
           document_id: { type: 'integer', description: 'For mode "read" — the document ID to fetch content from' },
           start: { type: 'integer', description: 'For mode "read" — starting paragraph index', default: 0 },
-          limit: { type: 'integer', description: 'Max results (default 10)', default: 10 }
+          limit: { type: 'integer', description: 'Max results (default 10, max 100). Use higher limits when user asks for a complete list.', default: 10 }
         },
         required: ['query']
       }
@@ -71,7 +95,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
 // ─── Tool implementations ─────────────────────────────────────────────────
 
 async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10 }) {
-  const safeLimit = Math.min(limit || 10, 30);
+  const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
   if (mode === 'read' && document_id) {
@@ -134,7 +158,7 @@ async function executeSearch({ query, mode = 'passages', religion, collection, d
 
       const result = await meili.index(INDEXES.DOCUMENTS).search(query || '', {
         limit: mode === 'count' ? 1 : safeLimit,
-        attributesToRetrieve: mode === 'count' ? ['id'] : ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count'],
+        attributesToRetrieve: mode === 'count' ? ['id'] : ['id', 'title', 'author', 'religion', 'collection', 'year', 'description', 'paragraph_count', 'encumbered', 'slug'],
         ...(meiliFilters.length > 0 ? { filter: meiliFilters.join(' AND ') } : {})
       });
 
@@ -145,11 +169,7 @@ async function executeSearch({ query, mode = 'passages', religion, collection, d
       return {
         totalMatches: result.estimatedTotalHits || result.hits.length,
         showing: result.hits.length,
-        documents: result.hits.map(d => ({
-          id: d.id, title: d.title, author: d.author, religion: d.religion,
-          collection: d.collection, year: d.year, description: d.description,
-          paragraphs: d.paragraph_count
-        }))
+        documents: result.hits.map(docResult)
       };
     }
   } catch (err) {
@@ -169,15 +189,12 @@ async function executeSearch({ query, mode = 'passages', religion, collection, d
   }
 
   const docs = await queryAll(
-    `SELECT id, title, author, religion, collection, year, description, paragraph_count
+    `SELECT id, title, author, religion, collection, year, description, paragraph_count, encumbered, slug
      FROM docs WHERE ${conditions.join(' AND ')} ORDER BY title LIMIT ?`, [...params, safeLimit]
   );
   return {
     totalMatches: docs.length,
-    documents: docs.map(d => ({
-      id: d.id, title: d.title, author: d.author, religion: d.religion,
-      collection: d.collection, year: d.year, description: d.description, paragraphs: d.paragraph_count
-    }))
+    documents: docs.map(docResult)
   };
 }
 
