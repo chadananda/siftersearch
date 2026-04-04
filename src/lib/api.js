@@ -162,6 +162,19 @@ async function request(path, options = {}) {
     try {
       const response = await fetch(url, { ...options, headers, credentials: 'include' });
 
+      // Check server version — reload if server is newer than client
+      const sv = response.headers.get('x-server-version');
+      if (sv && CLIENT_VERSION && sv !== CLIENT_VERSION) {
+        const svParts = sv.split('.').map(Number);
+        const cvParts = CLIENT_VERSION.split('.').map(Number);
+        const serverNewer = svParts[0] > cvParts[0] || (svParts[0] === cvParts[0] && svParts[1] > cvParts[1]) || (svParts[0] === cvParts[0] && svParts[1] === cvParts[1] && svParts[2] > cvParts[2]);
+        if (serverNewer && !sessionStorage.getItem(`reload_${sv}`)) {
+          sessionStorage.setItem(`reload_${sv}`, '1');
+          window.location.reload();
+          return;
+        }
+      }
+
       if (response.status === 401 && accessToken) {
         const refreshed = await refreshToken();
         if (refreshed) {

@@ -99,6 +99,12 @@ export async function createServer(opts = {}) {
     });
   });
 
+  // Add server version to every response for client-side auto-reload detection
+  server.addHook('onSend', (request, reply, payload, done) => {
+    reply.header('X-Server-Version', SERVER_VERSION);
+    done();
+  });
+
   // Disable caching during alpha - ensures fresh data on every request
   // Exception: /api/search/quick has its own caching headers for performance
   server.addHook('onSend', async (request, reply) => {

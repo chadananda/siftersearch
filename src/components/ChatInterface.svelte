@@ -148,6 +148,10 @@
   let researchInputEl;
   let researchMessagesEl;
 
+  // Chat message persistence keys
+  const CHAT_STORAGE_KEY = 'sifter_chat_messages';
+  const RESEARCH_STORAGE_KEY = 'sifter_research_messages';
+
   // Initialize library stats from cache for instant display
   const STATS_CACHE_KEY = 'sifter_library_stats';
   const isBrowser = typeof window !== 'undefined';
@@ -605,6 +609,20 @@
     if (isAdmin) loadAIUsageStatus();
   });
 
+  // Persist chat messages to localStorage for reload survival
+  $effect(() => {
+    try {
+      if (messages.length > 0) localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+      else localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch {}
+  });
+  $effect(() => {
+    try {
+      if (researchMessages.length > 0) localStorage.setItem(RESEARCH_STORAGE_KEY, JSON.stringify(researchMessages));
+      else localStorage.removeItem(RESEARCH_STORAGE_KEY);
+    } catch {}
+  });
+
   // Check if user can access AI-powered research (approved+ only)
   let canUseResearcher = $derived(
     auth.isAuthenticated &&
@@ -668,7 +686,7 @@
         }
       }
 
-      // Version checking is now handled by VersionChecker component
+      // Version checking handled by api.js on every response
 
       // Connected - stop retry polling if running
       if (retryInterval) {
@@ -1472,6 +1490,14 @@
         }
       });
     }
+
+    // Restore persisted chat messages (clear any streaming state from interrupted sessions)
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (saved) messages = JSON.parse(saved).map(m => ({ ...m, isStreaming: false }));
+      const savedResearch = localStorage.getItem(RESEARCH_STORAGE_KEY);
+      if (savedResearch) researchMessages = JSON.parse(savedResearch).map(m => ({ ...m, isStreaming: false }));
+    } catch {}
 
     initAuth();
     loadLibraryStats();

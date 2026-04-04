@@ -1,6 +1,5 @@
 ---
 import { SEO } from 'astro-seo';
-import VersionChecker from '../components/VersionChecker.svelte';
 
 interface Props {
   title: string;
@@ -115,7 +114,6 @@ const organizationSchema = {
     <slot name="head" />
   </head>
   <body>
-    <VersionChecker client:load />
     <slot />
   </body>
 </html>
