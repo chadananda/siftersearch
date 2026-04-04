@@ -14,6 +14,7 @@
  */
 
 import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
+import { executeSearch, executeLibraryOverview } from './chat.js';
 import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
 import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
@@ -318,6 +319,52 @@ export default async function publicApiRoutes(fastify) {
       languages: stats.languages || 0,
       lastUpdated: new Date().toISOString()
     };
+  });
+
+  /**
+   * POST /api/v1/tools/search
+   *
+   * Unified search tool — same interface that Jafar uses internally.
+   * Designed for external AI agents and chatbots.
+   *
+   * Modes:
+   * - passages: hybrid search for relevant quotes/citations (default)
+   * - documents: find/list books by metadata (fuzzy matching)
+   * - count: return match count
+   * - read: fetch paragraphs from a specific document
+   */
+  fastify.post('/tools/search', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['query'],
+        properties: {
+          query: { type: 'string', maxLength: 500 },
+          mode: { type: 'string', enum: ['passages', 'documents', 'count', 'read'], default: 'passages' },
+          religion: { type: 'string' },
+          collection: { type: 'string' },
+          document_id: { type: 'integer' },
+          start: { type: 'integer', default: 0 },
+          limit: { type: 'integer', default: 10, maximum: 100 }
+        }
+      }
+    }
+  }, async (request) => {
+    const startTime = Date.now();
+    const result = await executeSearch(request.body);
+    const durationMs = Date.now() - startTime;
+    logApiSearch({ query: request.body.query, apiKeyId: request.apiKeyId, resultCount: result.totalMatches || result.passages?.length || 0, durationMs, searchType: 'tools_search', filters: { mode: request.body.mode, religion: request.body.religion, collection: request.body.collection } });
+    if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'tools_search', false).catch(() => {});
+    return { ...result, processingTimeMs: durationMs };
+  });
+
+  /**
+   * GET /api/v1/tools/library
+   *
+   * Library overview — total documents, passages, religions, collections.
+   */
+  fastify.get('/tools/library', async () => {
+    return executeLibraryOverview();
   });
 
   // Health endpoint registered above (before auth hook) so it's public

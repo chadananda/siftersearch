@@ -172,6 +172,37 @@ export function getAuthorityBatch(docs) {
 }
 
 /**
+ * Get encumbered status for a document
+ * Priority: document frontmatter > collection meta.yaml > religion meta.yaml > default (false)
+ *
+ * @param {Object} doc - Document metadata
+ * @param {boolean} [doc.encumbered] - Explicit frontmatter override
+ * @param {string} doc.religion - Document religion/tradition
+ * @param {string} doc.collection - Document collection
+ * @returns {boolean} Whether the document is encumbered (copyrighted)
+ */
+export function getEncumbered(doc) {
+  // 1. Explicit frontmatter override (true or false)
+  if (doc.encumbered !== null && doc.encumbered !== undefined) {
+    return !!doc.encumbered;
+  }
+  const libAuth = loadLibraryAuthority();
+  const { religion, collection } = doc;
+  // 2. Collection meta.yaml
+  if (religion && collection) {
+    const colMeta = libAuth.collectionMeta[religion]?.[collection];
+    if (colMeta?.encumbered !== undefined) return !!colMeta.encumbered;
+  }
+  // 3. Religion meta.yaml
+  if (religion) {
+    const relMeta = libAuth.religionMeta[religion];
+    if (relMeta?.encumbered !== undefined) return !!relMeta.encumbered;
+  }
+  // 4. Default: not encumbered
+  return false;
+}
+
+/**
  * Get metadata for a religion from its .religion/meta.yaml
  *
  * @param {string} religion - Religion name

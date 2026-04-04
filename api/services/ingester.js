@@ -21,6 +21,7 @@ import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
 import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
 import config from '../lib/config.js';
 import { content } from '../lib/content.js';
+import { getEncumbered } from '../lib/authority.js';
 
 /**
  * Normalize text for embedding deduplication
@@ -1283,6 +1284,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const effectivePath = relativePath || existingDoc.file_path;
     const newFilename = effectivePath ? effectivePath.split('/').pop()?.replace(/\.md$/i, '') : null;
 
+    // Resolve encumbered: frontmatter > collection meta.yaml > religion meta.yaml > existing
+    const metaEncumbered = getEncumbered({
+      encumbered: frontmatterMeta.encumbered,
+      religion: newReligion,
+      collection: newCollection
+    }) ? 1 : 0;
+
     await query(`
       UPDATE docs SET
         file_path = ?,
@@ -1295,6 +1303,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         language = ?,
         year = ?,
         description = ?,
+        encumbered = ?,
         metadata = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -1309,6 +1318,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       frontmatterMeta.language || existingDoc.language || null,
       safeParseYear(frontmatterMeta.year) ?? existingDoc.year ?? null,
       frontmatterMeta.description || existingDoc.description || null,
+      metaEncumbered,
       metaJson,
       existingDoc.id
     ]);
@@ -1408,6 +1418,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   if (extractedMeta.publicationName) extraMeta.publicationName = extractedMeta.publicationName;
   if (extractedMeta.documentType) extraMeta.documentType = extractedMeta.documentType;
   const metadataJson = Object.keys(extraMeta).length > 0 ? JSON.stringify(extraMeta) : null;
+
+  // Resolve encumbered status: frontmatter > collection meta.yaml > religion meta.yaml > false
+  const isEncumbered = getEncumbered({
+    encumbered: extractedMeta.encumbered,
+    religion: finalMeta.religion,
+    collection: finalMeta.collection
+  }) ? 1 : 0;
 
   // Skip Arabic documents - ingestion is paused until cost is addressed
   // But still ensure library nodes exist so the collection shows up in the library tree
@@ -1652,6 +1669,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
         paragraph_count = ?,
         slug = ?,
         auto_segmented = ?,
+        encumbered = ?,
         metadata = ?,
         file_mtime = COALESCE(?, file_mtime),
         updated_at = CURRENT_TIMESTAMP
@@ -1672,6 +1690,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       chunks.length,
       finalSlug,
       autoSegmented ? 1 : 0,
+      isEncumbered,
       metadataJson,
       fileMtime,
       finalDocId
@@ -1703,8 +1722,8 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     // INSERT new document (let SQLite generate the INTEGER id)
     const result = await query(`
       INSERT INTO docs
-      (file_path, file_hash, body_hash, body_hash_normalized, filename, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, metadata, file_mtime, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (file_path, file_hash, body_hash, body_hash_normalized, filename, title, author, religion, collection, language, year, description, paragraph_count, slug, auto_segmented, encumbered, metadata, file_mtime, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       relativePath,
       fileHash,
@@ -1721,6 +1740,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       chunks.length,
       finalSlug,
       autoSegmented ? 1 : 0,
+      isEncumbered,
       metadataJson,
       fileMtime
     ]);

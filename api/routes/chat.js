@@ -93,7 +93,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10 }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10 }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -197,7 +197,7 @@ async function executeSearch({ query, mode = 'passages', religion, collection, d
   };
 }
 
-async function executeLibraryOverview() {
+export async function executeLibraryOverview() {
   const [docCount, paraCount, religions, collections] = await Promise.all([
     queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
     queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),

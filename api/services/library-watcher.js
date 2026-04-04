@@ -27,7 +27,7 @@ import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 import { getDb, query, queryOne, queryAll } from '../lib/db.js';
 import { getMeili, INDEXES } from '../lib/search.js';
-import { invalidateCache, getAuthority } from '../lib/authority.js';
+import { invalidateCache, getAuthority, getEncumbered } from '../lib/authority.js';
 
 // Configuration
 const DEBOUNCE_MS = 1000;  // Wait for file writes to complete
@@ -677,7 +677,7 @@ async function handleMetaYamlChange(filePath) {
         continue;
       }
 
-      // Calculate new authority using the refreshed cache
+      // Calculate new authority and encumbered using the refreshed cache
       const newAuthority = getAuthority({
         author: doc.author,
         religion: doc.religion,
@@ -685,12 +685,25 @@ async function handleMetaYamlChange(filePath) {
         authority: null  // Pass null to get calculated value (not explicit override)
       });
 
-      meiliDocUpdates.push({ id: doc.id, authority: newAuthority });
+      // Resolve encumbered: skip if document has explicit frontmatter override
+      const hasExplicitEncumbered = metadata.encumbered !== undefined && metadata.encumbered !== null;
+      const newEncumbered = getEncumbered({
+        encumbered: hasExplicitEncumbered ? metadata.encumbered : undefined,
+        religion: doc.religion,
+        collection: doc.collection
+      }) ? 1 : 0;
+
+      meiliDocUpdates.push({ id: doc.id, authority: newAuthority, encumbered: newEncumbered });
     }
 
     if (meiliDocUpdates.length === 0) {
       logger.info({ religion, collection }, 'No documents to update in Meilisearch');
       return;
+    }
+
+    // Update encumbered in SQLite (authority is calculated on-the-fly, but encumbered is stored)
+    for (const update of meiliDocUpdates) {
+      await query('UPDATE docs SET encumbered = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [update.encumbered, update.id]);
     }
 
     // Update Meilisearch documents
@@ -707,7 +720,8 @@ async function handleMetaYamlChange(filePath) {
       if (parasResult.hits.length > 0) {
         const paraUpdates = parasResult.hits.map(p => ({
           id: p.id,
-          authority: update.authority
+          authority: update.authority,
+          encumbered: update.encumbered
         }));
         meiliParaUpdates.push(...paraUpdates);
       }

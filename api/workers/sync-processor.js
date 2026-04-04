@@ -128,6 +128,9 @@ async function syncDocument(docId) {
     year: doc.year ? parseInt(doc.year, 10) : null,
     description: doc.description,
     filename: doc.filename,
+    slug: doc.slug,
+    paragraph_count: doc.paragraph_count,
+    encumbered: doc.encumbered ? 1 : 0,
     authority,
     chunk_count: paragraphs.length,
     created_at: new Date().toISOString()
@@ -154,6 +157,7 @@ async function syncDocument(docId) {
       language: doc.language,
       year: doc.year ? parseInt(doc.year, 10) : null,
       authority,
+      encumbered: doc.encumbered ? 1 : 0,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
       created_at: new Date().toISOString()
@@ -463,6 +467,8 @@ async function processJob(job) {
             language: p.language,
             year: p.year ? parseInt(p.year, 10) : null,
             description: p.description, filename: p.filename,
+            slug: p.slug, paragraph_count: p.paragraph_count,
+            encumbered: p.encumbered ? 1 : 0,
             authority: getAuthority(p),
             created_at: new Date().toISOString()
           };
@@ -494,6 +500,7 @@ async function processJob(job) {
           language: p.language,
           year: p.year ? parseInt(p.year, 10) : null,
           authority: getAuthority(p),
+          encumbered: p.encumbered ? 1 : 0,
           heading: p.heading || '',
           blocktype: p.blocktype || 'paragraph',
           created_at: new Date().toISOString(),

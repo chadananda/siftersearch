@@ -254,7 +254,7 @@ export async function initializeIndexes() {
     searchableAttributes: ['text', 'context', 'heading', 'title', 'author'],
     filterableAttributes: [
       'doc_id', 'religion', 'collection', 'language', 'year',
-      'paragraph_index', 'blocktype', 'author', 'title', 'authority'
+      'paragraph_index', 'blocktype', 'author', 'title', 'authority', 'encumbered'
     ],
     sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority'],
     rankingRules: buildRankingRules(),
@@ -266,7 +266,7 @@ export async function initializeIndexes() {
 
   const documentSettings = {
     searchableAttributes: ['title', 'author', 'description'],
-    filterableAttributes: ['religion', 'collection', 'language', 'year', 'author', 'authority'],
+    filterableAttributes: ['religion', 'collection', 'language', 'year', 'author', 'authority', 'encumbered'],
     sortableAttributes: ['year', 'title', 'created_at', 'authority'],
     rankingRules: buildRankingRules(),
     pagination: { maxTotalHits: 50000 }
