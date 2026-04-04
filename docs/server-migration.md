@@ -156,10 +156,10 @@ If `embedding_cache.db` does not exist on the old server (fresh deployment), it 
 
 ```bash
 sqlite3 data/sifter.db "SELECT COUNT(*) FROM docs WHERE deleted_at IS NULL;"
-# Expected: ~8400+
+# Expected: ~7,900+
 
 sqlite3 data/sifter.db "SELECT religion, COUNT(*) FROM docs WHERE deleted_at IS NULL GROUP BY religion;"
-# Expected: 10 religions
+# Expected: 11 religions
 
 sqlite3 data/sifter.db "SELECT COUNT(*) FROM content WHERE deleted_at IS NULL;"
 # Expected: ~3.6M+
