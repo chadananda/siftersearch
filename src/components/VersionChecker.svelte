@@ -17,7 +17,7 @@
   async function checkVersion() {
     if (updateTriggered) return;
     try {
-      const res = await fetch(`${API_BASE}/api/library/stats`);
+      const res = await fetch(`${API_BASE}/api/search/stats`);
       if (!res.ok) return;
       const stats = await res.json();
 
