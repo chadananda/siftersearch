@@ -5070,10 +5070,11 @@
     width: 4rem;
     height: 4rem;
     border-radius: 50%;
-    background: transparent;
+    background: #1a3a4a;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1);
     padding: 0.5rem;
   }
 
