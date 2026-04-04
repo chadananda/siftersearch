@@ -42,7 +42,7 @@ const COOLDOWN_MS = 4 * 60 * 60 * 1000;
 // Counter table makes main counts instant; pipeline status queries still need caching
 const statsCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s cache — short enough for responsive progress bars
 // Pipeline status cache — refreshed by background timer every 60s.
-const pipelineCache = { data: null, timestamp: 0, ttl: 60000 };
+const pipelineCache = { data: null, timestamp: 0, ttl: 10000 }; // 10s during active processing
 
 /**
  * Parse translation field from paragraph
@@ -154,7 +154,7 @@ export default async function libraryRoutes(fastify) {
   // never in a request handler.
   setTimeout(() => {
     refreshPipelineCache();
-    pipelineRefreshTimer = setInterval(refreshPipelineCache, 60000);
+    pipelineRefreshTimer = setInterval(refreshPipelineCache, 10000);
   }, 10000);
 
   fastify.addHook('onClose', () => {
