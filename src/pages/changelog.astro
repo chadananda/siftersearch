@@ -2,8 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import NavBar from '../components/common/NavBar.svelte';
 import changelog from '../lib/changelog.json';
+import pkg from '../../package.json';
 
-const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
+const APP_VERSION = pkg.version;
 
 // Type badge colors
 const typeColors: Record<string, string> = {

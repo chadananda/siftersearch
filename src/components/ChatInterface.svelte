@@ -30,8 +30,8 @@
     gfm: true
   });
 
-  // App version - injected at build time, formatted as v.0.x (drops leading 0.)
-  const APP_VERSION = import.meta.env.PUBLIC_APP_VERSION || '0.0.1';
+  // App version (set by Vite define from package.json)
+  const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.1';
   const SHORT_VERSION = APP_VERSION.replace(/^0\./, '');
 
   // Format milliseconds for display: >1000ms as X.XXs, otherwise Xms
