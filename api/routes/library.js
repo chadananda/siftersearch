@@ -953,7 +953,7 @@ export default async function libraryRoutes(fastify) {
              (SELECT COUNT(*) FROM docs d WHERE d.religion = ? AND d.collection = ln.name AND d.deleted_at IS NULL) as document_count
       FROM library_nodes ln
       WHERE ln.parent_id = ?
-      ORDER BY ln.display_order, ln.name
+      ORDER BY COALESCE(ln.authority_default, 5) DESC, ln.display_order, ln.name
     `, [node.name, node.id]);
 
     // Get all documents for this religion (for listing) with preview paragraphs (exclude soft-deleted)
