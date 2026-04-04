@@ -27,7 +27,7 @@ async function getMeiliClient() {
 let importJob = null;
 
 // Cache for count queries — 5s TTL; partial indexes make COUNT queries fast
-const countCache = { data: null, timestamp: 0, ttl: 5000 };
+const countCache = { data: null, timestamp: 0, ttl: 30000 };
 
 const EMPTY_COUNTS = { totalDocs: 0, docsWithContent: 0, totalParagraphs: 0, unsyncedParagraphs: 0 };
 
@@ -47,7 +47,7 @@ async function getCachedCounts() {
       queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
       queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
       queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
-      queryOne('SELECT COUNT(DISTINCT doc_id) as count FROM content WHERE deleted_at IS NULL')
+      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL AND paragraph_count > 0')
     ]);
 
     const result = {
