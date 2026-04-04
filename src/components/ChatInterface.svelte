@@ -1802,7 +1802,7 @@
             <img src="/ocean.svg" alt="Research Assistant" class="research-logo" />
           </div>
           <h2 class="research-title">Ocean Library</h2>
-          <p class="research-subtitle">Development and testing site for Ocean Interfaith Library content and search technology.</p>
+          <p class="research-subtitle">Development and testing site for <a href="https://oceanlibrary.com" class="text-accent hover:text-accent-hover" target="_blank" rel="noopener">Ocean Interfaith Library</a> content and search technology.</p>
           <!-- Library stats card (same design as the original) -->
           <div class="stats-container">
             <div class="stats-card" role="region" aria-label="Library Contents statistics">
