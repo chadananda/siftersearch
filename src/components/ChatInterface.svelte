@@ -1802,7 +1802,7 @@
             <img src="/ocean.svg" alt="Research Assistant" class="research-logo" />
           </div>
           <h2 class="research-title">Ocean Library</h2>
-          <p class="research-subtitle">Your companion for exploring the world's sacred texts. Ask anything.</p>
+          <p class="research-subtitle">Development and testing site for Ocean Interfaith Library content and search technology.</p>
           <!-- Library stats card (same design as the original) -->
           <div class="stats-container">
             <div class="stats-card" role="region" aria-label="Library Contents statistics">
@@ -5070,12 +5070,10 @@
     width: 4rem;
     height: 4rem;
     border-radius: 50%;
-    background: light-dark(rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border-default);
-    backdrop-filter: blur(8px);
     padding: 0.5rem;
   }
 
