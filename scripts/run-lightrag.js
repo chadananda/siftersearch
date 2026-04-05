@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global AbortController */
 /**
  * LightRAG Entity Extraction v3
  *
@@ -72,7 +73,7 @@ async function fetchVLLMCacheRate() {
 }
 
 function saveState() {
-  try { writeFileSync(STATE_FILE, JSON.stringify(stats, null, 2)); } catch {}
+  try { writeFileSync(STATE_FILE, JSON.stringify(stats, null, 2)); } catch { /* non-critical */ }
 }
 
 function estimateTokens(text) {

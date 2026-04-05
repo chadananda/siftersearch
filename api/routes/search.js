@@ -358,13 +358,13 @@ export default async function searchRoutes(fastify) {
     // Pipeline status — read from NER or LightRAG state files (whichever is active)
     let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0, stage: '' };
     try {
-      // Try NER state first (CPU pipeline), fall back to LightRAG (LLM pipeline)
       let state = null;
       const cwd = process.cwd();
+      // Try NER state first (CPU pipeline)
       try {
         state = JSON.parse(await readFile(join(cwd, 'tmp', 'ner-state.json'), 'utf8'));
-        if (state.stage === 'complete') state = null; // NER done, check LightRAG
       } catch { /* */ }
+      // Only fall back to LightRAG if NER state doesn't exist at all
       if (!state) {
         try {
           state = JSON.parse(await readFile(join(cwd, 'tmp', 'lightrag-state.json'), 'utf8'));

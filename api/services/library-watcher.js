@@ -661,14 +661,16 @@ async function handleMetaYamlChange(filePath) {
     for (const doc of docs) {
       // Check if document has explicit authority override in frontmatter
       // If so, skip it - explicit overrides should not be affected by meta.yaml changes
+      let docMetadata = {};
       try {
         const docFilePath = `${config.library.basePath}/${doc.file_path}`;
         const content = await readFile(docFilePath, 'utf-8');
         const { metadata } = parseMarkdownFrontmatter(content);
+        docMetadata = metadata || {};
 
         // Skip if document has explicit authority override
-        if (metadata.authority !== undefined && metadata.authority !== null) {
-          logger.debug({ docId: doc.id, explicitAuthority: metadata.authority }, 'Skipping doc with explicit authority');
+        if (docMetadata.authority !== undefined && docMetadata.authority !== null) {
+          logger.debug({ docId: doc.id, explicitAuthority: docMetadata.authority }, 'Skipping doc with explicit authority');
           continue;
         }
       } catch (err) {
@@ -686,9 +688,9 @@ async function handleMetaYamlChange(filePath) {
       });
 
       // Resolve encumbered: skip if document has explicit frontmatter override
-      const hasExplicitEncumbered = metadata.encumbered !== undefined && metadata.encumbered !== null;
+      const hasExplicitEncumbered = docMetadata.encumbered !== undefined && docMetadata.encumbered !== null;
       const newEncumbered = getEncumbered({
-        encumbered: hasExplicitEncumbered ? metadata.encumbered : undefined,
+        encumbered: hasExplicitEncumbered ? docMetadata.encumbered : undefined,
         religion: doc.religion,
         collection: doc.collection
       }) ? 1 : 0;
