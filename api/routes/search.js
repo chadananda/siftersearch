@@ -344,16 +344,30 @@ export default async function searchRoutes(fastify) {
   // Pipeline status: reuse library.js background timer via shared pipelineCache import
   // No heavy queries in request path — always return cached/zero data
 
-  fastify.get('/stats', async () => {
+  fastify.get('/stats', async (request) => {
     const now = Date.now();
     if (searchStatsCache.data && (now - searchStatsCache.timestamp) < searchStatsCache.ttl) {
       return searchStatsCache.data;
     }
 
-    const [stats, cachedCounts] = await Promise.all([
-      getStats(),
-      getCachedContentCounts()
-    ]);
+    const startMs = Date.now();
+    let stats, cachedCounts;
+    try {
+      [stats, cachedCounts] = await Promise.all([
+        getStats(),
+        getCachedContentCounts()
+      ]);
+    } catch (err) {
+      const elapsed = Date.now() - startMs;
+      request.log.error({ err: err.message, elapsed }, 'Stats endpoint failed');
+      // Return stale cache if available, otherwise minimal response
+      if (searchStatsCache.data) return searchStatsCache.data;
+      return { totalDocuments: 0, totalParagraphs: 0, error: 'Stats temporarily unavailable' };
+    }
+    const queryMs = Date.now() - startMs;
+    if (queryMs > 1000) {
+      request.log.warn({ queryMs }, 'Stats endpoint slow');
+    }
 
     // Pipeline status — read from NER or LightRAG state files (whichever is active)
     let kgData = { extracted: 0, total: 0, remaining: 0, percent: 0, entitiesFound: 0, rate: 0, stage: '' };
