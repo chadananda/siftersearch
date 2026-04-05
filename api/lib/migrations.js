@@ -1842,6 +1842,51 @@ const migrations = {
     }
     logger.info('Migration 49 complete: purchase_url column added to docs');
   },
+
+  // Version 50: Graph entity and relation tables for knowledge graph visualization
+  50: async () => {
+    logger.info('Starting migration 50: Create graph_entities and graph_relations tables');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS graph_entities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        canonical_name TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        religion TEXT,
+        mention_count INTEGER DEFAULT 1,
+        doc_count INTEGER DEFAULT 1,
+        era TEXT,
+        description TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(canonical_name, entity_type, religion)
+      )
+    `);
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS graph_relations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_entity_id INTEGER NOT NULL,
+        target_entity_id INTEGER NOT NULL,
+        relation_type TEXT NOT NULL DEFAULT 'co-occurs',
+        weight INTEGER DEFAULT 1,
+        source_doc_id INTEGER,
+        source_content_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(source_entity_id, target_entity_id, relation_type),
+        FOREIGN KEY (source_entity_id) REFERENCES graph_entities(id),
+        FOREIGN KEY (target_entity_id) REFERENCES graph_entities(id)
+      )
+    `);
+
+    await query('CREATE INDEX IF NOT EXISTS idx_ge_religion ON graph_entities(religion)');
+    await query('CREATE INDEX IF NOT EXISTS idx_ge_type ON graph_entities(entity_type)');
+    await query('CREATE INDEX IF NOT EXISTS idx_ge_mention ON graph_entities(mention_count DESC)');
+    await query('CREATE INDEX IF NOT EXISTS idx_gr_source ON graph_relations(source_entity_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_gr_target ON graph_relations(target_entity_id)');
+
+    logger.info('Migration 50 complete: graph tables created');
+  },
 };
 
 /**

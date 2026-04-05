@@ -50,7 +50,8 @@
       "WebFetch(domain:freesvg.org)",
       "WebFetch(domain:commons.wikimedia.org)",
       "WebFetch(domain:upload.wikimedia.org)",
-      "WebFetch(domain:fontawesome.cc)"
+      "WebFetch(domain:fontawesome.cc)",
+      "WebFetch(domain:qwenlm.github.io)"
     ]
   }
 }

@@ -32,15 +32,17 @@ STATE_FILE = PROJECT_ROOT / "tmp" / "ner-state.json"
 MAX_PARAGRAPH_CHARS = 6000
 BATCH_SIZE = 500
 
-# GLiNER custom entity types for religious/interfaith texts
+# GLiNER custom entity types — fewer labels = faster inference
+# Each label multiplies inference time, so keep it tight
 GLINER_LABELS = [
-    "religious figure", "prophet", "messenger",
-    "holy book", "scripture", "sacred text",
-    "religious concept", "spiritual teaching",
-    "prayer", "ritual", "ceremony",
-    "religious community", "faith tradition",
-    "temple", "shrine", "holy place",
-    "covenant", "revelation", "dispensation"
+    "religious figure",
+    "sacred text",
+    "religious concept",
+    "holy place",
+    "religious community",
+    "prayer",
+    "revelation",
+    "ceremony"
 ]
 
 # spaCy → our entity type mapping
@@ -333,8 +335,8 @@ def main():
         print("Stage 2: GLiNER (custom religious entities)...")
 
         gliner_start = time.time()
-        # GLiNER is heavier — use fewer workers to avoid OOM
-        gliner_workers = max(1, args.workers // 4)
+        # GLiNER uses ~4GB per worker. Cap at 12 to avoid swap on 188GB RAM
+        gliner_workers = min(12, max(1, args.workers // 6))
         print(f"  Using {gliner_workers} workers for GLiNER")
 
         with Pool(gliner_workers, initializer=init_gliner) as pool:

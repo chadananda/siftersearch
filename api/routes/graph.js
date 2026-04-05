@@ -1,174 +1,195 @@
 /**
- * Graph API — pure route handler functions
+ * Graph API Routes — Knowledge Graph visualization endpoints
  *
- * Each function accepts an optional db handle for test injection.
- * When db is omitted, uses module-level queryAll/queryOne from db.js.
+ * GET /api/graph/stats           — per-religion entity/relation counts
+ * GET /api/graph/:religion       — nodes + edges for a religion
+ * GET /api/graph/:religion/search?q=...  — search entities within a religion
+ * GET /api/graph/entity/:id      — single entity detail
  */
 
-import { queryAll as _queryAll, queryOne as _queryOne } from '../lib/db.js';
+import { queryAll, queryOne } from '../lib/db.js';
 
-// ─── DB helpers (support injected db for tests or module-level for production) ──
+export default async function graphRoutes(server) {
 
-function qa(db, sql, params = []) {
-  if (db?.queryAll) return db.queryAll(sql, params);
-  return _queryAll(sql, params);
-}
-function qo(db, sql, params = []) {
-  if (db?.queryOne) return db.queryOne(sql, params);
-  return _queryOne(sql, params);
-}
+  // GET /stats — overview of all religions in the graph
+  server.get('/stats', async () => {
+    const entityRows = await queryAll(`
+      SELECT religion, COUNT(*) AS entityCount
+      FROM graph_entities
+      GROUP BY religion
+      ORDER BY entityCount DESC
+    `);
+    const relationRows = await queryAll(`
+      SELECT ge.religion, COUNT(*) AS relationCount
+      FROM graph_relations gr
+      JOIN graph_entities ge ON gr.source_entity_id = ge.id
+      GROUP BY ge.religion
+    `);
+    const topRows = await queryAll(`
+      SELECT religion, name, entity_type, mention_count
+      FROM graph_entities
+      ORDER BY religion, mention_count DESC
+    `);
 
-// ─── getGraphStats ────────────────────────────────────────────────────────────
+    const relationMap = new Map(relationRows.map(r => [r.religion, Number(r.relationCount)]));
+    const topMap = new Map();
+    for (const row of topRows) {
+      if (!topMap.has(row.religion)) topMap.set(row.religion, []);
+      const list = topMap.get(row.religion);
+      if (list.length < 5) list.push({ name: row.name, type: row.entity_type, mentions: row.mention_count });
+    }
 
-export async function getGraphStats(db) {
-  const entityRows = await qa(db, `
-    SELECT religion, COUNT(*) AS entityCount
-    FROM graph_entities
-    GROUP BY religion
-  `);
-  const relationRows = await qa(db, `
-    SELECT ge.religion, COUNT(*) AS relationCount
-    FROM graph_relations gr
-    JOIN graph_entities ge ON gr.source_entity_id = ge.id
-    GROUP BY ge.religion
-  `);
-  const topRows = await qa(db, `
-    SELECT religion, name, mention_count
-    FROM graph_entities
-    ORDER BY religion, mention_count DESC
-  `);
-  const relationMap = new Map(relationRows.map(r => [r.religion, Number(r.relationCount)]));
-  const topMap = new Map();
-  for (const row of topRows) {
-    if (!topMap.has(row.religion)) topMap.set(row.religion, []);
-    topMap.get(row.religion).push(row.name);
-  }
-  const religions = entityRows.map(r => ({
-    religion: r.religion,
-    entityCount: Number(r.entityCount),
-    relationCount: relationMap.get(r.religion) ?? 0,
-    topEntities: (topMap.get(r.religion) ?? []).slice(0, 5)
-  }));
-  return { religions };
-}
+    return {
+      religions: entityRows.map(r => ({
+        religion: r.religion,
+        entityCount: Number(r.entityCount),
+        relationCount: relationMap.get(r.religion) ?? 0,
+        topEntities: topMap.get(r.religion) ?? []
+      }))
+    };
+  });
 
-// ─── getGraphForReligion ──────────────────────────────────────────────────────
+  // GET /:religion — full graph data for a religion
+  server.get('/:religion', async (request) => {
+    const { religion: slug } = request.params;
+    const { limit = 200, types } = request.query;
 
-export async function getGraphForReligion(db, religion, options = {}) {
-  const { limit = 100, entityTypes } = options;
-  let entitySql = `SELECT id, name, entity_type, mention_count, religion FROM graph_entities WHERE religion = ?`;
-  const entityParams = [religion];
-  if (entityTypes?.length) {
-    entitySql += ` AND entity_type IN (${entityTypes.map(() => '?').join(', ')})`;
-    entityParams.push(...entityTypes);
-  }
-  entitySql += ` LIMIT ?`;
-  entityParams.push(limit);
-  const entityRows = await qa(db, entitySql, entityParams);
-  const nodeIds = new Set(entityRows.map(r => Number(r.id)));
-  const nodes = entityRows.map(r => ({
-    id: Number(r.id),
-    name: r.name,
-    type: r.entity_type,
-    mentionCount: Number(r.mention_count),
-    religion: r.religion
-  }));
-  const relRows = await qa(db,
-    `SELECT source_entity_id, target_entity_id, relation_type, weight
-     FROM graph_relations
-     WHERE source_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)
-       AND target_entity_id IN (SELECT id FROM graph_entities WHERE religion = ?)`,
-    [religion, religion]
-  );
-  const edges = relRows
-    .filter(r => nodeIds.has(Number(r.source_entity_id)) && nodeIds.has(Number(r.target_entity_id)))
-    .map(r => ({
+    // Convert slug back to religion name
+    const religionRow = await queryOne(`
+      SELECT DISTINCT religion FROM graph_entities
+      WHERE LOWER(REPLACE(REPLACE(religion, "'", ''), ' ', '-')) = ?
+      LIMIT 1
+    `, [slug.toLowerCase()]);
+
+    if (!religionRow) {
+      return { nodes: [], edges: [], stats: { totalEntities: 0, totalRelations: 0 } };
+    }
+
+    const religion = religionRow.religion;
+
+    let entitySql = `
+      SELECT id, name, entity_type, mention_count, religion
+      FROM graph_entities
+      WHERE religion = ?
+    `;
+    const params = [religion];
+
+    if (types) {
+      const typeList = types.split(',');
+      entitySql += ` AND entity_type IN (${typeList.map(() => '?').join(', ')})`;
+      params.push(...typeList);
+    }
+
+    entitySql += ` ORDER BY mention_count DESC LIMIT ?`;
+    params.push(Number(limit));
+
+    const entityRows = await queryAll(entitySql, params);
+    const nodeIds = new Set(entityRows.map(r => Number(r.id)));
+
+    const nodes = entityRows.map(r => ({
+      id: Number(r.id),
+      name: r.name,
+      type: r.entity_type,
+      mentionCount: Number(r.mention_count),
+      religion: r.religion
+    }));
+
+    // Get relations between visible nodes
+    if (nodeIds.size === 0) {
+      return { nodes, edges: [], stats: { totalEntities: 0, totalRelations: 0 } };
+    }
+
+    const placeholders = [...nodeIds].map(() => '?').join(',');
+    const relRows = await queryAll(`
+      SELECT source_entity_id, target_entity_id, relation_type, weight
+      FROM graph_relations
+      WHERE source_entity_id IN (${placeholders})
+        AND target_entity_id IN (${placeholders})
+      ORDER BY weight DESC
+      LIMIT 1000
+    `, [...nodeIds, ...nodeIds]);
+
+    const edges = relRows.map(r => ({
       source: Number(r.source_entity_id),
       target: Number(r.target_entity_id),
       type: r.relation_type,
       weight: Number(r.weight)
     }));
-  return {
-    nodes,
-    edges,
-    stats: { totalEntities: nodes.length, totalRelations: edges.length }
-  };
-}
 
-// ─── searchGraphEntities ──────────────────────────────────────────────────────
+    return {
+      nodes,
+      edges,
+      stats: { totalEntities: nodes.length, totalRelations: edges.length }
+    };
+  });
 
-export async function searchGraphEntities(db, query, options = {}) {
-  const { religion } = options;
-  let sql = `SELECT id, name, canonical_name, entity_type, religion, mention_count, description
-             FROM graph_entities
-             WHERE name LIKE ?`;
-  const params = [`%${query}%`];
-  if (religion) { sql += ` AND religion = ?`; params.push(religion); }
-  sql += ` ORDER BY mention_count DESC LIMIT 50`;
-  const rows = await qa(db, sql, params);
-  return rows.map(r => ({
-    id: Number(r.id),
-    name: r.name,
-    canonicalName: r.canonical_name,
-    type: r.entity_type,
-    religion: r.religion,
-    mentionCount: Number(r.mention_count),
-    description: r.description
-  }));
-}
+  // GET /:religion/search?q=... — search entities within a religion
+  server.get('/:religion/search', async (request) => {
+    const { religion: slug } = request.params;
+    const { q } = request.query;
+    if (!q) return [];
 
-// ─── getEntityDetail ──────────────────────────────────────────────────────────
+    const rows = await queryAll(`
+      SELECT id, name, canonical_name, entity_type, religion, mention_count
+      FROM graph_entities
+      WHERE name LIKE ?
+        AND LOWER(REPLACE(REPLACE(religion, "'", ''), ' ', '-')) = ?
+      ORDER BY mention_count DESC
+      LIMIT 20
+    `, [`%${q}%`, slug.toLowerCase()]);
 
-export async function getEntityDetail(db, entityId) {
-  const e = await qo(db,
-    `SELECT id, name, canonical_name, entity_type, religion, mention_count, era, description
-     FROM graph_entities WHERE id = ?`,
-    [entityId]
-  );
-  if (!e) return null;
-  const entity = {
-    id: Number(e.id),
-    name: e.name,
-    canonicalName: e.canonical_name,
-    type: e.entity_type,
-    religion: e.religion,
-    mentionCount: Number(e.mention_count),
-    era: e.era,
-    description: e.description
-  };
-  const relRows = await qa(db,
-    `SELECT source_entity_id, target_entity_id, relation_type, weight, paragraph_id, doc_id
-     FROM graph_relations
-     WHERE source_entity_id = ? OR target_entity_id = ?`,
-    [entityId, entityId]
-  );
-  const relations = relRows.map(r => ({
-    source: Number(r.source_entity_id),
-    target: Number(r.target_entity_id),
-    type: r.relation_type,
-    weight: Number(r.weight),
-    paragraphId: r.paragraph_id ? Number(r.paragraph_id) : null,
-    docId: r.doc_id ? Number(r.doc_id) : null
-  }));
-  const connectedIds = new Set(
-    relations.flatMap(r => [r.source, r.target]).filter(id => id !== Number(entityId))
-  );
-  let connectedEntities = [];
-  if (connectedIds.size) {
-    const placeholders = [...connectedIds].map(() => '?').join(', ');
-    const connRows = await qa(db,
-      `SELECT id, name, entity_type, religion, mention_count FROM graph_entities WHERE id IN (${placeholders})`,
-      [...connectedIds]
-    );
-    connectedEntities = connRows.map(r => ({
+    return rows.map(r => ({
       id: Number(r.id),
       name: r.name,
       type: r.entity_type,
       religion: r.religion,
       mentionCount: Number(r.mention_count)
     }));
-  }
-  const docIds = [...new Set(relations.map(r => r.docId).filter(Boolean))];
-  const sourceDocuments = docIds.map(id => ({ docId: id }));
-  return { entity, connectedEntities, relations, sourceDocuments };
+  });
+
+  // GET /entity/:id — detailed entity with connections
+  server.get('/entity/:id', async (request) => {
+    const { id } = request.params;
+    const e = await queryOne(
+      `SELECT id, name, canonical_name, entity_type, religion, mention_count, doc_count, era, description
+       FROM graph_entities WHERE id = ?`,
+      [id]
+    );
+    if (!e) return null;
+
+    const entity = {
+      id: Number(e.id),
+      name: e.name,
+      canonicalName: e.canonical_name,
+      type: e.entity_type,
+      religion: e.religion,
+      mentionCount: Number(e.mention_count),
+      docCount: Number(e.doc_count || 0),
+      era: e.era,
+      description: e.description
+    };
+
+    const relRows = await queryAll(`
+      SELECT gr.source_entity_id, gr.target_entity_id, gr.relation_type, gr.weight,
+             ge.name AS other_name, ge.entity_type AS other_type, ge.mention_count AS other_mentions
+      FROM graph_relations gr
+      JOIN graph_entities ge ON ge.id = CASE
+        WHEN gr.source_entity_id = ? THEN gr.target_entity_id
+        ELSE gr.source_entity_id
+      END
+      WHERE gr.source_entity_id = ? OR gr.target_entity_id = ?
+      ORDER BY gr.weight DESC
+      LIMIT 50
+    `, [id, id, id]);
+
+    const connected = relRows.map(r => ({
+      id: Number(r.source_entity_id == id ? r.target_entity_id : r.source_entity_id),
+      name: r.other_name,
+      type: r.other_type,
+      mentionCount: Number(r.other_mentions),
+      relationWeight: Number(r.weight)
+    }));
+
+    return { entity, connected };
+  });
 }

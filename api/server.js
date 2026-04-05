@@ -32,6 +32,7 @@ import donationRoutes from './routes/donations.js';
 import apiKeyRoutes from './routes/api-keys.js';
 import libraryRoutes from './routes/library.js';
 import chatRoutes from './routes/chat.js';
+import graphRoutes from './routes/graph.js';
 import { config } from './lib/config.js';
 
 export async function createServer(opts = {}) {
@@ -193,6 +194,7 @@ export async function createServer(opts = {}) {
   await server.register(apiKeyRoutes, { prefix: '/api/api-keys' });
   await server.register(libraryRoutes, { prefix: '/api/library' });
   await server.register(chatRoutes, { prefix: '/api/chat' });
+  await server.register(graphRoutes, { prefix: '/api/graph' });
 
   // Error handling
   server.setErrorHandler(errorHandler);
