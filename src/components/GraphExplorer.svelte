@@ -330,6 +330,15 @@
     enabledTypes = next;
   }
 
+  function soloType(t) {
+    // If already solo'd on this type, show all
+    if (enabledTypes.size === 1 && enabledTypes.has(t)) {
+      enabledTypes = new Set(ALL_TYPES);
+    } else {
+      enabledTypes = new Set([t]);
+    }
+  }
+
   function focusEntity(entity) {
     selectedNode = entity;
     if (graphInstance && entity) {
@@ -409,18 +418,18 @@
       </div>
 
       <div class="panel">
-        <div class="panel-label">Entity Types</div>
+        <div class="panel-label">Entity Types <span class="panel-hint">(click name to solo)</span></div>
         {#each ALL_TYPES as t}
-          <label class="type-filter">
+          <div class="type-filter">
             <input
               type="checkbox"
               checked={enabledTypes.has(t)}
               onchange={() => toggleType(t)}
             />
             <span class="type-dot" style="background:{TYPE_COLORS[t]}"></span>
-            <span class="type-name">{TYPE_LABELS[t] || t}</span>
+            <button class="type-name-btn" class:solo={enabledTypes.size === 1 && enabledTypes.has(t)} onclick={() => soloType(t)}>{TYPE_LABELS[t] || t}</button>
             <span class="type-count">{typeCounts[t] ?? 0}</span>
-          </label>
+          </div>
         {/each}
       </div>
 
@@ -637,7 +646,19 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .type-name { flex: 1; }
+  .type-name-btn {
+    flex: 1;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .type-name-btn:hover { color: var(--text-primary, #f1f5f9); text-decoration: underline; }
+  .type-name-btn.solo { color: var(--accent-primary, #3b82f6); font-weight: 600; }
+  .panel-hint { font-weight: 400; opacity: 0.5; text-transform: none; letter-spacing: 0; }
   .type-count { font-size: 0.65rem; color: var(--text-muted, #64748b); }
   .stats-panel { margin-top: auto; }
   .stat-row {
