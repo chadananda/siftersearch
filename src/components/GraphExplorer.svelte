@@ -282,18 +282,19 @@
       // Physics
       .d3AlphaDecay(0.02)
       .d3VelocityDecay(0.3)
-      .d3Force('charge', null) // remove default, add custom
-      .d3Force('link', null)
       .cooldownTime(3000)
       .warmupTicks(50);
 
-    // Custom forces
+    // Configure forces (use force-graph's built-in link force, don't replace it)
     const d3 = await import('d3');
-    graph
-      .d3Force('charge', d3.forceManyBody().strength(-120))
-      .d3Force('link', d3.forceLink(links).id(d => d.id).distance(60).strength(l => 0.05 + (l.weight || 1) / maxWeight * 0.15))
-      .d3Force('center', d3.forceCenter(0, 0).strength(0.03))
-      .d3Force('collision', d3.forceCollide().radius(n => nodeRadius(n) + 4));
+    graph.d3Force('charge', d3.forceManyBody().strength(-120));
+    graph.d3Force('center', d3.forceCenter(0, 0).strength(0.03));
+    graph.d3Force('collision', d3.forceCollide().radius(n => nodeRadius(n) + 4));
+    // Configure the existing link force (don't create a new one)
+    const linkForce = graph.d3Force('link');
+    if (linkForce) {
+      linkForce.distance(60).strength(l => 0.05 + (l.weight || 1) / maxWeight * 0.15);
+    }
 
     // Initial zoom to fit
     setTimeout(() => graph.zoomToFit(800, 40), 500);
@@ -314,7 +315,8 @@
   $effect(() => {
     const _q = searchQuery;
     if (graphInstance) {
-      graphInstance.refresh();
+      // Trigger a re-render by nudging nodeColor
+      graphInstance.nodeColor(graphInstance.nodeColor());
     }
   });
 
