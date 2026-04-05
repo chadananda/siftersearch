@@ -544,6 +544,17 @@
       </svg>
       Recent Activity
     </button>
+    <a
+      href="/library/graph"
+      class="mx-4 mb-1 flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-surface-2 text-secondary hover:bg-surface-3 hover:text-primary no-underline"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/>
+        <path d="M6 8v2a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4V8"/>
+        <line x1="12" y1="14" x2="12" y2="16"/>
+      </svg>
+      Knowledge Graph
+    </a>
     <TreeView
       religions={treeData}
       selectedReligion={filters.religion}
