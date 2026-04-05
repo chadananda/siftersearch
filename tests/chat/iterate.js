@@ -187,21 +187,29 @@ Return your response as JSON:
   "newPrompt": "<the complete new system prompt — everything between the backticks>"
 }`;
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 3000
-    })
-  });
-
-  const data = await res.json();
+  let data;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 3000
+        })
+      });
+      data = await res.json();
+      break;
+    } catch (err) {
+      if (attempt < 2) { console.log(`  Retry analysis (attempt ${attempt + 2})...`); await new Promise(r => setTimeout(r, 5000)); continue; }
+      throw err;
+    }
+  }
   const content = data.choices?.[0]?.message?.content || '{}';
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Improvement analysis returned no JSON');
@@ -273,8 +281,16 @@ async function main() {
       score: assessment.avgScore
     });
 
-    // 3. Apply the new prompt
+    // 3. Apply the new prompt if it looks safe
     if (improvement.newPrompt) {
+      // Safety check: new prompt must be within reasonable length
+      if (improvement.newPrompt.length > 3000) {
+        console.log('  New prompt too long (' + improvement.newPrompt.length + ' chars) — skipping.');
+        state.history[state.history.length - 1].change = 'skipped (too long)';
+        saveState(state);
+        continue;
+      }
+
       writePrompt(improvement.newPrompt);
       state.history[state.history.length - 1].change = improvement.changes?.join('; ') || 'prompt updated';
       saveState(state);
@@ -286,6 +302,31 @@ async function main() {
         console.error('  Deploy failed — reverting prompt');
         writePrompt(currentPrompt);
         break;
+      }
+
+      // 5. Quick smoke test — run 5 key scenarios to catch regressions
+      console.log('  Running smoke test (5 scenarios)...');
+      try {
+        const smokeOutput = execSync(
+          `OPENAI_API_KEY=${OPENAI_API_KEY} node tests/chat/run-scenarios.js --ids 1,26,51,71,93 --tag smoke-${iterTag} --concurrency 1 2>&1`,
+          { cwd: join(__dirname, '..', '..'), timeout: 300000, maxBuffer: 5 * 1024 * 1024 }
+        ).toString();
+        const smokeMatch = smokeOutput.match(/Avg: ([\d.]+)/);
+        const smokeAvg = smokeMatch ? parseFloat(smokeMatch[1]) : 0;
+        console.log(`  Smoke test avg: ${smokeAvg}`);
+        if (smokeAvg < state.bestScore * 0.85) {
+          console.log('  Smoke test regression detected — reverting prompt.');
+          writePrompt(currentPrompt);
+          deploy(i + 1);
+          state.history[state.history.length - 1].change += ' (REVERTED - smoke test regression)';
+          saveState(state);
+          continue;
+        }
+      } catch (err) {
+        console.log('  Smoke test failed — reverting prompt.');
+        writePrompt(currentPrompt);
+        deploy(i + 1);
+        continue;
       }
     } else {
       console.log('  No prompt change suggested — stopping.');
