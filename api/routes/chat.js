@@ -19,13 +19,13 @@ import { config } from '../lib/config.js';
 import { queryOne, queryAll } from '../lib/db.js';
 import { slugifyPath } from '../lib/slug.js';
 
-const SITE_URL = 'https://oceanlibrary.com';
+const SITE_URL = 'https://siftersearch.com';
 
 function docUrl(doc) {
-  const relSlug = (doc.religion || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
-  const colSlug = (doc.collection || '').toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
-  const slug = doc.slug || doc.id;
-  return `${SITE_URL}/library/${relSlug}/${colSlug}/${slug}`;
+  if (!doc.slug || !doc.religion || !doc.collection) return null;
+  const relSlug = slugifyPath(doc.religion);
+  const colSlug = slugifyPath(doc.collection);
+  return `${SITE_URL}/library/${relSlug}/${colSlug}/${doc.slug}`;
 }
 
 function docResult(d) {
