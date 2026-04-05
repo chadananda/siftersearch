@@ -77,7 +77,7 @@
 
     try {
       const slug = religion.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-');
-      const res = await fetch(`${API_BASE}/api/graph/${slug}`);
+      const res = await fetch(`${API_BASE}/api/graph/${slug}?limit=100`);
       if (!res.ok) {
         if (res.status === 404) throw new Error('No graph data available yet');
         throw new Error(`HTTP ${res.status}`);
@@ -94,7 +94,8 @@
 
   function nodeRadius(n) {
     const count = n.mentionCount ?? 1;
-    return Math.max(3, Math.min(24, 3 + Math.log2(count + 1) * 3));
+    // Tight log scale: 1→3px, 100→6px, 1000→8px, 10000→10px, 100000→12px
+    return Math.max(3, Math.min(14, 3 + Math.log10(count + 1) * 2.2));
   }
 
   function nodeColor(n) {
@@ -288,10 +289,10 @@
     // Custom forces
     const d3 = await import('d3');
     graph
-      .d3Force('charge', d3.forceManyBody().strength(n => -30 - nodeRadius(n) * 5))
-      .d3Force('link', d3.forceLink(links).id(d => d.id).distance(50).strength(l => 0.1 + (l.weight || 1) / maxWeight * 0.3))
-      .d3Force('center', d3.forceCenter(0, 0).strength(0.05))
-      .d3Force('collision', d3.forceCollide().radius(n => nodeRadius(n) + 2));
+      .d3Force('charge', d3.forceManyBody().strength(-120))
+      .d3Force('link', d3.forceLink(links).id(d => d.id).distance(60).strength(l => 0.05 + (l.weight || 1) / maxWeight * 0.15))
+      .d3Force('center', d3.forceCenter(0, 0).strength(0.03))
+      .d3Force('collision', d3.forceCollide().radius(n => nodeRadius(n) + 4));
 
     // Initial zoom to fit
     setTimeout(() => graph.zoomToFit(800, 40), 500);
