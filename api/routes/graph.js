@@ -49,10 +49,38 @@ export default async function graphRoutes(server) {
     };
   });
 
+  // GET /:religion/filters — available collections and authors for filtering
+  server.get('/:religion/filters', async (request) => {
+    const { religion: slug } = request.params;
+    const slugLower = slug.toLowerCase();
+    const allReligions = await queryAll('SELECT DISTINCT religion FROM docs');
+    const religionRow = allReligions.find(r =>
+      r.religion.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') === slugLower
+    );
+    if (!religionRow) return { collections: [], authors: [] };
+
+    const collections = await queryAll(`
+      SELECT collection, COUNT(*) as docCount
+      FROM docs WHERE religion = ? AND collection IS NOT NULL
+      GROUP BY collection ORDER BY docCount DESC
+    `, [religionRow.religion]);
+
+    const authors = await queryAll(`
+      SELECT author, COUNT(*) as docCount
+      FROM docs WHERE religion = ? AND author IS NOT NULL AND author != ''
+      GROUP BY author ORDER BY docCount DESC LIMIT 30
+    `, [religionRow.religion]);
+
+    return {
+      collections: collections.map(r => ({ name: r.collection, docCount: r.docCount })),
+      authors: authors.map(r => ({ name: r.author, docCount: r.docCount }))
+    };
+  });
+
   // GET /:religion — full graph data for a religion
   server.get('/:religion', async (request) => {
     const { religion: slug } = request.params;
-    const { limit = 200, types } = request.query;
+    const { limit = 100, types, collection, author } = request.query;
 
     // Convert slug back to religion name (e.g. "bahai" → "Baha'i")
     const slugLower = slug.toLowerCase();

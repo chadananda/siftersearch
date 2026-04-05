@@ -42,6 +42,19 @@ function canonicalize(name) {
     .replace(/[''`]/g, "'");        // normalize quotes
 }
 
+// Stoplist of garbage entities from NER noise
+const STOPLIST = new Set([
+  'mss', 'trans', 'none', 'mss: none', 'per', 'rev', 'vol', 'ed', 'eds',
+  'fig', 'cf', 'ibid', 'op', 'cit', 'etc', 'vs', 'viz', 'ie', 'eg',
+  'no', 'nos', 'pt', 'ch', 'sec', 'par', 'pp', 'p', 'n', 'ill',
+  'ms', 'mr', 'mrs', 'dr', 'st', 'sr', 'jr', 'esq',
+  'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+  'today', 'yesterday', 'tomorrow', 'daily', 'weekly', 'monthly',
+  'the days', 'this day', 'that day', 'one day', 'the day',
+  'aat', 'tay', 'ii', 'iii', 'iv', 'vi', 'vii', 'viii', 'ix', 'xi', 'xii',
+  'first', 'second', 'third', 'fourth', 'fifth',
+]);
+
 // Filter out garbage entities
 function isValidEntity(name) {
   if (!name || name.length < 2 || name.length > 100) return false;
@@ -52,6 +65,10 @@ function isValidEntity(name) {
   // Skip entities that are mostly punctuation
   const alphaRatio = (name.match(/[\p{L}]/gu) || []).length / name.length;
   if (alphaRatio < 0.4) return false;
+  // Skip stoplist entries
+  if (STOPLIST.has(name.toLowerCase())) return false;
+  // Skip very short Latin-only names (likely abbreviations)
+  if (name.length <= 3 && /^[A-Za-z]+$/.test(name)) return false;
   return true;
 }
 
