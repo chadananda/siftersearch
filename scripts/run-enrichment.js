@@ -155,12 +155,70 @@ function buildSystemPrompt(doc, windowParagraphs, contentObjectsMap) {
 
 // ─── User prompts ────────────────────────────────────────────────────────────
 
+function buildCombinedUserPrompt(pIndex, religion) {
+  return `/no_think\n[P${pIndex}] Two tasks:
+
+DISAMBIGUATE: Resolve every ambiguous reference. Output as: short_ref = full_name | short_ref = full_name
+Resolve pronouns, abbreviations, partial names, "this/that/it" references. If nothing ambiguous, write: CLEAR
+
+---
+
+QUESTIONS: Generate 7 search queries someone might type to find this passage. One per line.
+3 factual (who/what/when), 2 conceptual (themes/ideas), 2 exploratory (why/how/implications).
+Max 15 words each.${religion ? ` Domain: ${religion}.` : ''}`;
+}
+
+// Legacy single-task prompts (used as fallback)
 function buildDisambigUserPrompt(pIndex) {
   return `/no_think\n[P${pIndex}] Identify every ambiguous reference. For each, give the full resolved name or meaning.\nOutput: short_ref = full_name | short_ref = full_name\nResolve: "He/She/They" = who exactly, "it/this/that" = what exactly, abbreviations = full form, partial names = complete names with dates/roles if known.\nIf nothing is ambiguous, output: CLEAR`;
 }
 
 function buildHyPEUserPrompt(pIndex, religion) {
   return `/no_think\n[P${pIndex}] Generate 7 diverse search queries someone might use to find this passage. One per line. No numbering.\n3 factual (who/what/when), 2 conceptual (themes/ideas explored), 2 exploratory (why/how/implications).\nMax 15 words each. Write as natural search queries, not formal questions.${religion ? ` Domain: ${religion}.` : ''}`;
+}
+
+// Parse combined response into disambig + HyPE parts
+function parseCombinedResponse(response) {
+  if (!response) return { context: null, questions: null };
+  let text = response.trim();
+  // Strip think tags
+  text = text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*/g, '').trim();
+
+  // Split on --- separator
+  const parts = text.split(/\n---\n|\n-{3,}\n/);
+  let contextPart = parts[0]?.trim() || '';
+  let questionsPart = parts[1]?.trim() || '';
+
+  // If no separator found, try to find QUESTIONS: marker
+  if (parts.length === 1) {
+    const qMatch = text.match(/(?:QUESTIONS?:|SEARCH QUERIES?:)\s*\n([\s\S]+)/i);
+    if (qMatch) {
+      contextPart = text.slice(0, qMatch.index).trim();
+      questionsPart = qMatch[1].trim();
+    }
+  }
+
+  // Parse disambiguation
+  let context = null;
+  if (contextPart && !contextPart.match(/^CLEAR$/i)) {
+    // Remove "DISAMBIGUATE:" prefix if present
+    context = contextPart.replace(/^(?:DISAMBIGUATE|DISAMBIGUATION):?\s*/i, '').trim();
+    if (context.length > 500) context = context.slice(0, 500);
+    if (!context || context.match(/^CLEAR$/i)) context = '';
+  } else {
+    context = '';
+  }
+
+  // Parse questions
+  const questions = questionsPart
+    ? questionsPart
+        .replace(/^(?:QUESTIONS?|SEARCH QUERIES?):?\s*/i, '')
+        .split('\n')
+        .map(l => l.replace(/^[\d]+\.\s*/, '').replace(/^[-•*]\s*/, '').trim())
+        .filter(l => l.length > 5)
+    : null;
+
+  return { context, questions: questions?.length ? questions : null };
 }
 
 // ─── Database ────────────────────────────────────────────────────────────────
@@ -229,75 +287,85 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
   let windowDisambig = 0;
   let windowHype = 0;
 
-  // Phase A: Disambiguation
+  // Combined: 1 call per paragraph does both disambiguation + HyPE
   for (let i = 0; i < targets.length; i++) {
     const para = targets[i];
-    if (para.context !== null) continue; // already done
+    const needsDisambig = para.context === null;
+    const needsHype = para.hyp_questions === null;
+    if (!needsDisambig && !needsHype) continue;
 
     const pIndex = N + i + 1; // 1-based position in window
-    const userPrompt = buildDisambigUserPrompt(pIndex);
 
-    try {
-      const result = await callLocalLLM(systemPrompt, userPrompt, {
-        maxTokens: 80, temperature: 0.2, returnUsage: true, timeout: 30000
-      });
+    // If both are needed, use combined prompt (1 call instead of 2)
+    if (needsDisambig && needsHype) {
+      const userPrompt = buildCombinedUserPrompt(pIndex, doc.religion);
+      try {
+        const result = await callLocalLLM(systemPrompt, userPrompt, {
+          maxTokens: 300, temperature: 0.3, returnUsage: true, timeout: 45000
+        });
+        const response = result?.content ?? result;
+        const usage = result?.usage;
+        if (usage) {
+          stats._callTimes.push(usage.callMs || 0);
+          stats._cachedTokens += usage.cachedTokens || 0;
+          stats._totalPromptTokens += usage.promptTokens || 0;
+        }
 
-      const response = result?.content ?? result;
-      const usage = result?.usage;
-
-      if (usage) {
-        stats._callTimes.push(usage.callMs || 0);
-        stats._cachedTokens += usage.cachedTokens || 0;
-        stats._totalPromptTokens += usage.promptTokens || 0;
+        const { context, questions } = parseCombinedResponse(response);
+        if (context !== null) {
+          updateContext(db, para.id, context, model);
+          windowDisambig++;
+        }
+        if (questions) {
+          updateHypQuestions(db, para.id, questions.join('\n'));
+          windowHype++;
+        }
+      } catch (err) {
+        stats.errors++;
+        if (stats.errors <= 20) console.error(`    Combined error P${para.id}: ${err.message}`);
       }
-
-      const parsed = parseDisambiguationResponse(response);
-      if (parsed) {
-        updateContext(db, para.id, parsed, model);
+    } else if (needsDisambig) {
+      // Only disambiguation needed
+      const userPrompt = buildDisambigUserPrompt(pIndex);
+      try {
+        const result = await callLocalLLM(systemPrompt, userPrompt, {
+          maxTokens: 80, temperature: 0.2, returnUsage: true, timeout: 30000
+        });
+        const response = result?.content ?? result;
+        const usage = result?.usage;
+        if (usage) {
+          stats._callTimes.push(usage.callMs || 0);
+          stats._cachedTokens += usage.cachedTokens || 0;
+          stats._totalPromptTokens += usage.promptTokens || 0;
+        }
+        const parsed = parseDisambiguationResponse(response);
+        updateContext(db, para.id, parsed || '', model);
         windowDisambig++;
-      } else {
-        // NONE or empty = nothing to disambiguate
-        updateContext(db, para.id, '', model);
-        windowDisambig++;
-      }
-    } catch (err) {
-      stats.errors++;
-      if (stats.errors <= 10) console.error(`    Disambig error P${para.id}: ${err.message}`);
-    }
-  }
-
-  // Phase B: HyPE questions
-  for (let i = 0; i < targets.length; i++) {
-    const para = targets[i];
-    if (para.hyp_questions !== null) continue; // already done
-
-    const pIndex = N + i + 1;
-    const userPrompt = buildHyPEUserPrompt(pIndex, doc.religion);
-
-    try {
-      const result = await callLocalLLM(systemPrompt, userPrompt, {
-        maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
-      });
-
-      const response = result?.content ?? result;
-      const usage = result?.usage;
-
-      if (usage) {
-        stats._callTimes.push(usage.callMs || 0);
-        stats._cachedTokens += usage.cachedTokens || 0;
-        stats._totalPromptTokens += usage.promptTokens || 0;
-      }
-
-      const questions = parseHyPEResponse(response);
-      if (questions && questions.length > 0) {
-        updateHypQuestions(db, para.id, questions.join('\n'));
-        windowHype++;
-      } else {
+      } catch (err) {
         stats.errors++;
       }
-    } catch (err) {
-      stats.errors++;
-      if (stats.errors <= 10) console.error(`    HyPE error P${para.id}: ${err.message}`);
+    } else if (needsHype) {
+      // Only HyPE needed
+      const userPrompt = buildHyPEUserPrompt(pIndex, doc.religion);
+      try {
+        const result = await callLocalLLM(systemPrompt, userPrompt, {
+          maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
+        });
+        const response = result?.content ?? result;
+        const usage = result?.usage;
+        if (usage) {
+          stats._callTimes.push(usage.callMs || 0);
+          stats._cachedTokens += usage.cachedTokens || 0;
+          stats._totalPromptTokens += usage.promptTokens || 0;
+        }
+        const questions = parseHyPEResponse(response);
+        if (questions?.length) {
+          updateHypQuestions(db, para.id, questions.join('\n'));
+          windowHype++;
+        }
+      } catch (err) {
+        stats.errors++;
+      }
     }
   }
 
