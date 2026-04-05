@@ -287,85 +287,58 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
   let windowDisambig = 0;
   let windowHype = 0;
 
-  // Combined: 1 call per paragraph does both disambiguation + HyPE
+  // Two-call approach: disambig then HyPE, sharing the same cached prefix
+  // Phase A: All disambiguation calls
   for (let i = 0; i < targets.length; i++) {
     const para = targets[i];
-    const needsDisambig = para.context === null;
-    const needsHype = para.hyp_questions === null;
-    if (!needsDisambig && !needsHype) continue;
+    if (para.context !== null) continue;
 
-    const pIndex = N + i + 1; // 1-based position in window
-
-    // If both are needed, use combined prompt (1 call instead of 2)
-    if (needsDisambig && needsHype) {
-      const userPrompt = buildCombinedUserPrompt(pIndex, doc.religion);
-      try {
-        const result = await callLocalLLM(systemPrompt, userPrompt, {
-          maxTokens: 300, temperature: 0.3, returnUsage: true, timeout: 45000
-        });
-        const response = result?.content ?? result;
-        const usage = result?.usage;
-        if (usage) {
-          stats._callTimes.push(usage.callMs || 0);
-          stats._cachedTokens += usage.cachedTokens || 0;
-          stats._totalPromptTokens += usage.promptTokens || 0;
-        }
-
-        const { context, questions } = parseCombinedResponse(response);
-        if (context !== null) {
-          updateContext(db, para.id, context, model);
-          windowDisambig++;
-        }
-        if (questions) {
-          updateHypQuestions(db, para.id, questions.join('\n'));
-          windowHype++;
-        }
-      } catch (err) {
-        stats.errors++;
-        if (stats.errors <= 20) console.error(`    Combined error P${para.id}: ${err.message}`);
+    const pIndex = N + i + 1;
+    try {
+      const result = await callLocalLLM(systemPrompt, buildDisambigUserPrompt(pIndex), {
+        maxTokens: 80, temperature: 0.2, returnUsage: true, timeout: 30000
+      });
+      const response = result?.content ?? result;
+      if (result?.usage) {
+        stats._callTimes.push(result.usage.callMs || 0);
+        stats._cachedTokens += result.usage.cachedTokens || 0;
+        stats._totalPromptTokens += result.usage.promptTokens || 0;
       }
-    } else if (needsDisambig) {
-      // Only disambiguation needed
-      const userPrompt = buildDisambigUserPrompt(pIndex);
-      try {
-        const result = await callLocalLLM(systemPrompt, userPrompt, {
-          maxTokens: 80, temperature: 0.2, returnUsage: true, timeout: 30000
-        });
-        const response = result?.content ?? result;
-        const usage = result?.usage;
-        if (usage) {
-          stats._callTimes.push(usage.callMs || 0);
-          stats._cachedTokens += usage.cachedTokens || 0;
-          stats._totalPromptTokens += usage.promptTokens || 0;
-        }
-        const parsed = parseDisambiguationResponse(response);
-        updateContext(db, para.id, parsed || '', model);
-        windowDisambig++;
-      } catch (err) {
+      const parsed = parseDisambiguationResponse(response);
+      updateContext(db, para.id, parsed || '', model);
+      windowDisambig++;
+    } catch (err) {
+      stats.errors++;
+      if (stats.errors <= 20) console.error(`    Disambig error P${para.id}: ${err.message}`);
+    }
+  }
+
+  // Phase B: All HyPE calls (same cached prefix)
+  for (let i = 0; i < targets.length; i++) {
+    const para = targets[i];
+    if (para.hyp_questions !== null) continue;
+
+    const pIndex = N + i + 1;
+    try {
+      const result = await callLocalLLM(systemPrompt, buildHyPEUserPrompt(pIndex, doc.religion), {
+        maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
+      });
+      const response = result?.content ?? result;
+      if (result?.usage) {
+        stats._callTimes.push(result.usage.callMs || 0);
+        stats._cachedTokens += result.usage.cachedTokens || 0;
+        stats._totalPromptTokens += result.usage.promptTokens || 0;
+      }
+      const questions = parseHyPEResponse(response);
+      if (questions?.length) {
+        updateHypQuestions(db, para.id, questions.join('\n'));
+        windowHype++;
+      } else {
         stats.errors++;
       }
-    } else if (needsHype) {
-      // Only HyPE needed
-      const userPrompt = buildHyPEUserPrompt(pIndex, doc.religion);
-      try {
-        const result = await callLocalLLM(systemPrompt, userPrompt, {
-          maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
-        });
-        const response = result?.content ?? result;
-        const usage = result?.usage;
-        if (usage) {
-          stats._callTimes.push(usage.callMs || 0);
-          stats._cachedTokens += usage.cachedTokens || 0;
-          stats._totalPromptTokens += usage.promptTokens || 0;
-        }
-        const questions = parseHyPEResponse(response);
-        if (questions?.length) {
-          updateHypQuestions(db, para.id, questions.join('\n'));
-          windowHype++;
-        }
-      } catch (err) {
-        stats.errors++;
-      }
+    } catch (err) {
+      stats.errors++;
+      if (stats.errors <= 20) console.error(`    HyPE error P${para.id}: ${err.message}`);
     }
   }
 
