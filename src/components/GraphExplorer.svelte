@@ -68,7 +68,7 @@
     } catch { /* */ }
   }
 
-  async function loadGraph(religion) {
+  async function loadGraph(religion, types = null) {
     loading = true;
     error = null;
     rawData = null;
@@ -77,7 +77,8 @@
 
     try {
       const slug = religion.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-');
-      const res = await fetch(`${API_BASE}/api/graph/${slug}?limit=100`);
+      const typeParam = types ? `&types=${[...types].join(',')}` : '';
+      const res = await fetch(`${API_BASE}/api/graph/${slug}?limit=200${typeParam}`);
       if (!res.ok) {
         if (res.status === 404) throw new Error('No graph data available yet');
         throw new Error(`HTTP ${res.status}`);
@@ -309,20 +310,18 @@
     }
   }
 
-  // Re-render when filters change
+  // Re-render when search changes (client-side highlight only)
   $effect(() => {
-    // Track enabledTypes and searchQuery
-    const _types = enabledTypes;
     const _q = searchQuery;
     if (graphInstance) {
-      graphInstance.nodeColor(nodeColor);
       graphInstance.refresh();
     }
   });
 
-  // Load on religion change
+  // Re-fetch when religion or enabled types change
   $effect(() => {
-    loadGraph(selectedReligion);
+    const types = enabledTypes.size === ALL_TYPES.length ? null : enabledTypes;
+    loadGraph(selectedReligion, types);
   });
 
   function toggleType(t) {
