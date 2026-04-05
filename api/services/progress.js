@@ -42,18 +42,21 @@ async function getCachedCounts() {
   }
 
   try {
-    // Direct COUNT queries — partial indexes make these fast
-    const [totalDocs, totalParagraphs, unsyncedParagraphs, docsWithContent] = await Promise.all([
-      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL'),
-      queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL AND paragraph_count > 0')
+    // Use docs table for totals (tiny table, instant) — never scan the 3.5M-row content table
+    // paragraph_count on docs is maintained by the ingester, so SUM is authoritative
+    // Only hit content table for unsynced count (partial index makes it fast)
+    const [docAgg, unsyncedParagraphs] = await Promise.all([
+      queryOne(`SELECT COUNT(*) as total_docs,
+                       SUM(CASE WHEN paragraph_count > 0 THEN 1 ELSE 0 END) as docs_with_content,
+                       SUM(paragraph_count) as total_paragraphs
+                FROM docs WHERE deleted_at IS NULL`),
+      queryOne('SELECT COUNT(*) as count FROM content WHERE synced = 0 AND deleted_at IS NULL')
     ]);
 
     const result = {
-      totalDocs: totalDocs?.count || 0,
-      docsWithContent: docsWithContent?.count || 0,
-      totalParagraphs: totalParagraphs?.count || 0,
+      totalDocs: docAgg?.total_docs || 0,
+      docsWithContent: docAgg?.docs_with_content || 0,
+      totalParagraphs: docAgg?.total_paragraphs || 0,
       unsyncedParagraphs: unsyncedParagraphs?.count || 0
     };
 
@@ -62,7 +65,8 @@ async function getCachedCounts() {
     return result;
   } catch (err) {
     logger.warn({ err: err.message }, 'Failed to get content counts');
-    throw err;
+    if (countCache.data) return countCache.data;
+    return EMPTY_COUNTS;
   }
 }
 
