@@ -171,62 +171,34 @@ export async function getIndexingProgress() {
   }
 
   try {
-    // Use shared cached counts — avoids hammering 2.5M row table every request
     const counts = await getCachedCounts();
     const totalParagraphs = counts.totalParagraphs;
     const pendingParagraphs = counts.unsyncedParagraphs;
     const syncedParagraphs = totalParagraphs - pendingParagraphs;
-    const docsWithContent = counts.docsWithContent;
 
-    // Also get Meilisearch counts for verification
-    let meiliDocs = 0;
-    let meiliParagraphs = 0;
-    try {
-      const { getMeili, INDEXES } = await getMeiliClient();
-      const meili = await getMeili();
-      if (meili) {
-        const docStats = await meili.index(INDEXES.DOCUMENTS).getStats();
-        meiliDocs = docStats.numberOfDocuments || 0;
-        const paraStats = await meili.index(INDEXES.PARAGRAPHS).getStats();
-        meiliParagraphs = paraStats.numberOfDocuments || 0;
-      }
-    } catch {
-      // Meilisearch not available
-    }
-
-    // Get active sync job from sync_jobs table (if available)
+    // Active sync job (single row lookup, trivial)
     let activeJob = null;
     try {
       const job = await queryOne(`
-        SELECT id, job_type, status, total_items, completed_items, failed_items,
-               created_at, started_at, completed_at
-        FROM sync_jobs
-        WHERE status IN ('running', 'pending')
-        ORDER BY created_at DESC
-        LIMIT 1
+        SELECT id, status, total_items, completed_items, failed_items, started_at
+        FROM sync_jobs WHERE status IN ('running', 'pending')
+        ORDER BY created_at DESC LIMIT 1
       `);
       if (job) {
         activeJob = {
-          id: job.id,
-          status: job.status,
-          totalItems: job.total_items || 0,
-          completedItems: job.completed_items || 0,
-          failedItems: job.failed_items || 0,
-          startedAt: job.started_at,
-          percentComplete: job.total_items > 0
-            ? Math.round((job.completed_items / job.total_items) * 100) : 0
+          id: job.id, status: job.status,
+          totalItems: job.total_items || 0, completedItems: job.completed_items || 0,
+          failedItems: job.failed_items || 0, startedAt: job.started_at,
+          percentComplete: job.total_items > 0 ? Math.round((job.completed_items / job.total_items) * 100) : 0
         };
       }
-    } catch {
-      // sync_jobs table may not exist yet (pre-migration 38)
-    }
+    } catch { /* sync_jobs table may not exist yet */ }
 
     return {
-      totalWithContent: docsWithContent,
-      indexed: meiliDocs,
-      indexedParagraphs: meiliParagraphs,
-      totalParagraphs,
-      syncedParagraphs,
+      totalWithContent: counts.docsWithContent,
+      indexed: counts.totalDocs,
+      indexedParagraphs: syncedParagraphs,
+      totalParagraphs, syncedParagraphs,
       pending: pendingParagraphs,
       percentComplete: totalParagraphs > 0 ? Math.round((syncedParagraphs / totalParagraphs) * 100) : 100,
       activeJob

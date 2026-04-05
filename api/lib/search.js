@@ -832,52 +832,8 @@ export async function getStats() {
     // Estimate total words (~100 words per paragraph average)
     const totalWords = totalPassages * 100;
 
-    // Check Meilisearch indexing status (only if enabled)
-    let meilisearchIndexing = false;
-    let meiliTaskProgress = null;
-
-    if (config.search.enabled) {
-      try {
-        const meili = getMeili();
-        const [docStats, paraStats] = await Promise.all([
-          meili.index(INDEXES.DOCUMENTS).getStats(),
-          meili.index(INDEXES.PARAGRAPHS).getStats()
-        ]);
-
-        meilisearchIndexing = docStats.isIndexing || paraStats.isIndexing;
-
-        // Check pending/processing tasks and recently completed tasks
-        const [pendingTasks, recentSucceeded] = await Promise.all([
-          meili.tasks.getTasks({
-            statuses: ['enqueued', 'processing'],
-            limit: 100
-          }),
-          meili.tasks.getTasks({
-            statuses: ['succeeded'],
-            types: ['documentAdditionOrUpdate'],
-            afterEnqueuedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // Last 5 minutes
-            limit: 100
-          })
-        ]);
-
-        const enqueuedCount = pendingTasks.results.filter(t => t.status === 'enqueued').length;
-        const processingCount = pendingTasks.results.filter(t => t.status === 'processing').length;
-        const completedCount = recentSucceeded.results.length;
-        const hasActiveTasks = enqueuedCount > 0 || processingCount > 0;
-
-        if (hasActiveTasks || completedCount > 0) {
-          meilisearchIndexing = hasActiveTasks;
-          meiliTaskProgress = {
-            pending: enqueuedCount,
-            processing: processingCount,
-            completed: completedCount,
-            total: enqueuedCount + processingCount + completedCount
-          };
-        }
-      } catch {
-        // Meilisearch not available - stats still valid from SQLite
-      }
-    }
+    // Indexing status derived from SQLite — no Meilisearch HTTP calls needed
+    const meilisearchIndexing = (indexingProgress?.pending || 0) > 0;
 
     return {
       totalDocuments,
@@ -889,7 +845,6 @@ export async function getStats() {
       collectionCounts,
       meilisearchEnabled: config.search.enabled,
       meilisearchIndexing,
-      meiliTaskProgress,
       importProgress,
       ingestionProgress,
       indexingProgress,
