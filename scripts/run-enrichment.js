@@ -36,21 +36,31 @@ import { detectLanguageFeatures } from '../api/services/segmenter.js';
 const DB_PATH = join(PROJECT_ROOT, 'data', 'sifter.db');
 const STATE_FILE = join(PROJECT_ROOT, 'tmp', 'enrichment-state.json');
 const PIPELINE_VERSION = 'v2-sliding';
-const MAX_CONTEXT = 8192;
-const RESERVED_DECODE = 200;
+const MAX_CONTEXT = 16384; // Qwen3-30B-A3B MoE context window
+const RESERVED_DECODE = 250;
 const USER_PROMPT_TOKENS = 60;
-const SAFETY_MARGIN = 400;
-const MAX_WINDOW_CHARS = 12000; // hard limit for system prompt chars
-const DEFAULT_N = 10;
+const SAFETY_MARGIN = 500;
+const MAX_WINDOW_CHARS = 24000; // hard limit for system prompt chars
+const DEFAULT_N = 15;
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
-const args = process.argv.slice(2);
-const dryRun = args.includes('--dry-run');
-const resume = args.includes('--resume');
-const docIdArg = args.find(a => a.startsWith('--doc-id'))?.split(/[= ]/)[1] || args[args.indexOf('--doc-id') + 1];
-const religionArg = args.find(a => a.startsWith('--religion'))?.split(/[= ]/)[1] || args[args.indexOf('--religion') + 1];
-const maxDocsArg = parseInt(args.find(a => a.startsWith('--max-docs'))?.split(/[= ]/)[1] || '999999');
+import { parseArgs } from 'util';
+const { values: cliArgs } = parseArgs({
+  options: {
+    'dry-run': { type: 'boolean', default: false },
+    'resume': { type: 'boolean', default: false },
+    'doc-id': { type: 'string' },
+    'religion': { type: 'string' },
+    'max-docs': { type: 'string', default: '999999' },
+  },
+  strict: false,
+});
+const dryRun = cliArgs['dry-run'];
+const resume = cliArgs['resume'];
+const docIdArg = cliArgs['doc-id'];
+const religionArg = cliArgs['religion'];
+const maxDocsArg = parseInt(cliArgs['max-docs']);
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -112,7 +122,7 @@ function computeN(paragraphs) {
   const metaTokens = 80; // book metadata block
   const twoN = Math.floor((available - metaTokens) / tokensPerPara);
   const N = Math.max(3, Math.floor(twoN / 2));
-  return Math.min(N, 15); // cap at 15 to avoid overly large windows
+  return Math.min(N, 30); // cap at 30 — 60-paragraph windows with 16K context
 }
 
 // ─── System prompt builder ───────────────────────────────────────────────────
@@ -124,51 +134,33 @@ function buildSystemPrompt(doc, windowParagraphs, contentObjectsMap) {
   if (doc.language && doc.language !== 'en') metaLines.push(`Language: ${doc.language}`);
   if (doc.description) metaLines.push(`About: ${doc.description.slice(0, 300)}`);
 
-  // Entities from content_objects (deduplicated across window)
-  const entitySets = { people: new Set(), places: new Set(), concepts: new Set(), events: new Set(), documents: new Set() };
-  for (const p of windowParagraphs) {
-    const co = contentObjectsMap.get(p.id);
-    if (!co?.rendered) continue;
-    // Parse rendered field (comma-separated names)
-    for (const name of co.rendered.split(', ').filter(n => n.length > 1)) {
-      // Use the type from content_objects if available
-      if (co.people_json?.includes(name)) entitySets.people.add(name);
-      else if (co.places_json?.includes(name)) entitySets.places.add(name);
-      else if (co.concepts_json?.includes(name)) entitySets.concepts.add(name);
-      else if (co.events_json?.includes(name)) entitySets.events.add(name);
-      else if (co.documents_json?.includes(name)) entitySets.documents.add(name);
-      else entitySets.concepts.add(name); // fallback
-    }
-  }
-
-  const entityLines = [];
-  for (const [type, names] of Object.entries(entitySets)) {
-    if (names.size > 0) {
-      const label = type.charAt(0).toUpperCase() + type.slice(1);
-      entityLines.push(`${label}: ${[...names].slice(0, 30).join(', ')}`);
-    }
-  }
-  const entitySection = entityLines.length ? `\nEntities:\n${entityLines.join('\n')}` : '';
-
-  // Window paragraphs
+  // Window paragraphs with inline entities per paragraph
   let windowText = '';
   for (let i = 0; i < windowParagraphs.length; i++) {
-    const line = `[P${i + 1}] ${windowParagraphs[i].text}\n`;
+    const p = windowParagraphs[i];
+    let line = `[P${i + 1}] ${p.text}\n`;
+
+    // Inline entity annotations from content_objects
+    const co = contentObjectsMap.get(p.id);
+    if (co?.rendered && co.rendered.length > 2) {
+      line += `  ↳ ${co.rendered.slice(0, 200)}\n`;
+    }
+
     if (windowText.length + line.length > MAX_WINDOW_CHARS && i > 0) break;
     windowText += line;
   }
 
-  return `${metaLines.join('\n')}${entitySection}\n\n<window>\n${windowText}</window>`;
+  return `${metaLines.join('\n')}\n\n<window>\n${windowText}</window>`;
 }
 
 // ─── User prompts ────────────────────────────────────────────────────────────
 
 function buildDisambigUserPrompt(pIndex) {
-  return `/no_think\nDisambiguate [P${pIndex}]. Output ONLY key→value pairs.\nFORMAT: ref→resolved | ref→resolved\nResolve: pronouns, conceptual refs, temporal, spatial, short names→full names.\nUse ONLY the document text above. No general knowledge. NONE if nothing to resolve.`;
+  return `/no_think\n[P${pIndex}] Identify every ambiguous reference. For each, give the full resolved name or meaning.\nOutput: short_ref = full_name | short_ref = full_name\nResolve: "He/She/They" = who exactly, "it/this/that" = what exactly, abbreviations = full form, partial names = complete names with dates/roles if known.\nIf nothing is ambiguous, output: CLEAR`;
 }
 
 function buildHyPEUserPrompt(pIndex, religion) {
-  return `/no_think\nGenerate exactly 5 questions [P${pIndex}] answers. One per line. No numbering.\n2 factual (what does it say?), 1 definitional (what concept does it define?), 2 implication (philosophical/spiritual implications).\nMax 15 words per question.${religion ? ` Domain: ${religion}` : ''}`;
+  return `/no_think\n[P${pIndex}] Generate 7 diverse search queries someone might use to find this passage. One per line. No numbering.\n3 factual (who/what/when), 2 conceptual (themes/ideas explored), 2 exploratory (why/how/implications).\nMax 15 words each. Write as natural search queries, not formal questions.${religion ? ` Domain: ${religion}.` : ''}`;
 }
 
 // ─── Database ────────────────────────────────────────────────────────────────
@@ -204,7 +196,7 @@ function getDocParagraphs(db, docId) {
   return db.prepare(`
     SELECT id, paragraph_index, text, context, hyp_questions
     FROM content
-    WHERE doc_id = ? AND deleted_at IS NULL AND LENGTH(text) > 20
+    WHERE doc_id = ? AND deleted_at IS NULL AND LENGTH(text) > 50
     ORDER BY paragraph_index
   `).all(docId);
 }
@@ -284,7 +276,7 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
 
     try {
       const result = await callLocalLLM(systemPrompt, userPrompt, {
-        maxTokens: 150, temperature: 0.5, returnUsage: true, timeout: 30000
+        maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
       });
 
       const response = result?.content ?? result;

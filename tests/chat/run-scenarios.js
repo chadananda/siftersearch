@@ -45,7 +45,7 @@ async function callJafar(query, retries = 2) {
   const startTime = Date.now();
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const controller = new AbortController();
+      const controller = new globalThis.AbortController();
       const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
 
       const response = await fetch(API_URL, {
