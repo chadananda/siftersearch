@@ -54,12 +54,13 @@ export default async function graphRoutes(server) {
     const { religion: slug } = request.params;
     const { limit = 200, types } = request.query;
 
-    // Convert slug back to religion name
-    const religionRow = await queryOne(`
-      SELECT DISTINCT religion FROM graph_entities
-      WHERE LOWER(REPLACE(REPLACE(religion, "'", ''), ' ', '-')) = ?
-      LIMIT 1
-    `, [slug.toLowerCase()]);
+    // Convert slug back to religion name (e.g. "bahai" → "Baha'i")
+    const slugLower = slug.toLowerCase();
+    const allReligions = await queryAll('SELECT DISTINCT religion FROM graph_entities');
+    const religionRow = allReligions.find(r => {
+      const s = r.religion.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-');
+      return s === slugLower;
+    });
 
     if (!religionRow) {
       return { nodes: [], edges: [], stats: { totalEntities: 0, totalRelations: 0 } };
@@ -129,14 +130,19 @@ export default async function graphRoutes(server) {
     const { q } = request.query;
     if (!q) return [];
 
+    // Resolve religion from slug
+    const allRels = await queryAll('SELECT DISTINCT religion FROM graph_entities');
+    const relMatch = allRels.find(r => r.religion.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') === slug.toLowerCase());
+    if (!relMatch) return [];
+
     const rows = await queryAll(`
       SELECT id, name, canonical_name, entity_type, religion, mention_count
       FROM graph_entities
       WHERE name LIKE ?
-        AND LOWER(REPLACE(REPLACE(religion, "'", ''), ' ', '-')) = ?
+        AND religion = ?
       ORDER BY mention_count DESC
       LIMIT 20
-    `, [`%${q}%`, slug.toLowerCase()]);
+    `, [`%${q}%`, relMatch.religion]);
 
     return rows.map(r => ({
       id: Number(r.id),

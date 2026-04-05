@@ -100,10 +100,10 @@ function main() {
     CREATE INDEX IF NOT EXISTS idx_gr_target ON graph_relations(target_entity_id);
   `);
 
-  // Phase 1: Read all content_objects and aggregate entities
+  // Phase 1: Stream content_objects and aggregate entities
   console.log('Phase 1: Aggregating entities from content_objects...');
 
-  let query = `
+  let sql = `
     SELECT co.content_id, co.doc_id,
            co.people_json, co.places_json, co.documents_json,
            co.events_json, co.concepts_json,
@@ -113,22 +113,20 @@ function main() {
   `;
   const params = [];
   if (religionFilter) {
-    query += ' WHERE d.religion = ?';
+    sql += ' WHERE d.religion = ?';
     params.push(religionFilter);
   }
 
-  const rows = db.prepare(query).all(...params);
-  console.log(`  Content objects: ${rows.length.toLocaleString()}`);
-
-  // entityKey → { name, canonical, type, religion, mentions, docs: Set }
+  // entityKey → { name, canonical, type, religion, mentions, docCount }
   const entityMap = new Map();
-  // co-occurrence: paragraphId → [entityKey, ...]
-  const cooccurrences = [];
   let totalEntities = 0;
+  let rowCount = 0;
 
-  for (const row of rows) {
+  // Phase 1a: First pass — aggregate entity mentions only
+  const stmt = db.prepare(sql);
+  for (const row of stmt.iterate(...params)) {
+    rowCount++;
     const religion = row.religion || 'Unknown';
-    const paraEntities = [];
 
     for (const { column, type } of ENTITY_COLUMNS) {
       let entities;
@@ -145,7 +143,7 @@ function main() {
 
         if (!entityMap.has(key)) {
           entityMap.set(key, {
-            name: name,  // keep first-seen display name
+            name: name,
             canonical,
             type,
             religion,
@@ -158,19 +156,17 @@ function main() {
         entry.mentions++;
         entry.docs.add(row.doc_id);
         totalEntities++;
-        paraEntities.push(key);
       }
     }
 
-    // Track co-occurrences for this paragraph
-    if (paraEntities.length >= 2) {
-      cooccurrences.push(paraEntities);
+    if (rowCount % 500000 === 0) {
+      console.log(`  Processed ${rowCount.toLocaleString()} rows, ${entityMap.size.toLocaleString()} unique entities...`);
     }
   }
 
+  console.log(`  Content objects: ${rowCount.toLocaleString()}`);
   console.log(`  Unique entities: ${entityMap.size.toLocaleString()}`);
   console.log(`  Total mentions: ${totalEntities.toLocaleString()}`);
-  console.log(`  Paragraphs with co-occurrences: ${cooccurrences.length.toLocaleString()}`);
 
   // Filter by minimum mentions
   const filtered = new Map();
@@ -236,32 +232,55 @@ function main() {
   }
   console.log(`  Inserted: ${entityIdMap.size.toLocaleString()} entities`);
 
-  // Phase 3: Build co-occurrence relations
-  console.log('\nPhase 3: Building co-occurrence relations...');
+  // Phase 3: Second pass — compute co-occurrence relations between filtered entities only
+  console.log('\nPhase 3: Building co-occurrence relations (second pass)...');
 
-  // Count co-occurrences between entity pairs
+  const filteredKeySet = new Set(entityIdMap.keys());
   const pairCounts = new Map();
-  let totalPairs = 0;
+  let cooccurrenceParas = 0;
+  let pass2Count = 0;
 
-  for (const paraKeys of cooccurrences) {
-    // Only use entities that passed the filter
-    const validKeys = paraKeys.filter(k => entityIdMap.has(k));
-    // Deduplicate within paragraph
-    const unique = [...new Set(validKeys)];
+  const stmt2 = db.prepare(sql);
+  for (const row of stmt2.iterate(...params)) {
+    pass2Count++;
+    const religion = row.religion || 'Unknown';
+    const paraKeys = [];
 
-    // Create pairs (sorted to avoid duplicates)
-    for (let i = 0; i < unique.length && i < 20; i++) { // cap at 20 to avoid N^2 explosion
-      for (let j = i + 1; j < unique.length && j < 20; j++) {
-        const pair = unique[i] < unique[j] ? `${unique[i]}|||${unique[j]}` : `${unique[j]}|||${unique[i]}`;
-        pairCounts.set(pair, (pairCounts.get(pair) || 0) + 1);
-        totalPairs++;
+    for (const { column, type } of ENTITY_COLUMNS) {
+      let entities;
+      try {
+        entities = JSON.parse(row[column] || '[]');
+      } catch { continue; }
+
+      for (const ent of entities) {
+        const name = ent?.name;
+        if (!name || !isValidEntity(name)) continue;
+        const canonical = canonicalize(name);
+        const key = `${type}::${canonical}::${religion}`;
+        // Only track entities that made it through the filter
+        if (filteredKeySet.has(key)) paraKeys.push(key);
       }
+    }
+
+    if (paraKeys.length >= 2) {
+      cooccurrenceParas++;
+      const unique = [...new Set(paraKeys)];
+      for (let i = 0; i < unique.length && i < 10; i++) {
+        for (let j = i + 1; j < unique.length && j < 10; j++) {
+          const pair = unique[i] < unique[j] ? `${unique[i]}|||${unique[j]}` : `${unique[j]}|||${unique[i]}`;
+          pairCounts.set(pair, (pairCounts.get(pair) || 0) + 1);
+        }
+      }
+    }
+
+    if (pass2Count % 500000 === 0) {
+      console.log(`  Pass 2: ${pass2Count.toLocaleString()} rows, ${pairCounts.size.toLocaleString()} pairs...`);
     }
   }
 
-  console.log(`  Raw co-occurrence pairs: ${pairCounts.size.toLocaleString()}`);
+  console.log(`  Co-occurrence paragraphs: ${cooccurrenceParas.toLocaleString()}`);
+  console.log(`  Raw pairs: ${pairCounts.size.toLocaleString()}`);
 
-  // Filter to relations with weight >= 2 (co-occur in at least 2 paragraphs)
   const minWeight = 2;
   const validRelations = [...pairCounts.entries()].filter(([, w]) => w >= minWeight);
   console.log(`  After filtering (weight >= ${minWeight}): ${validRelations.length.toLocaleString()}`);
