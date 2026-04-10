@@ -13,7 +13,13 @@
  *   node scripts/run-enrichment.js --doc-id 123           # single document
  *   node scripts/run-enrichment.js --max-docs 50          # limit documents
  *   node scripts/run-enrichment.js --dry-run              # estimate work
- *   node scripts/run-enrichment.js --resume               # continue from checkpoint
+ *   node scripts/run-enrichment.js --resume               # skip docs already fully done
+ *   node scripts/run-enrichment.js --content-ids 1,2,3    # regenerate specific paragraphs
+ *
+ * Recovery model: every run scans each doc's windows from the start. The per-
+ * window target filter only calls the LLM for paragraphs where context or
+ * hyp_questions is still NULL, so completed work is fast-skipped and any gaps
+ * (from a prior outage or a --content-ids force) are filled in automatically.
  */
 
 import dotenv from 'dotenv';
@@ -35,13 +41,13 @@ import { detectLanguageFeatures } from '../api/services/segmenter.js';
 
 const DB_PATH = join(PROJECT_ROOT, 'data', 'sifter.db');
 const STATE_FILE = join(PROJECT_ROOT, 'tmp', 'enrichment-state.json');
-const PIPELINE_VERSION = 'v2-sliding';
-const MAX_CONTEXT = 16384; // Qwen3-30B-A3B MoE context window
-const RESERVED_DECODE = 250;
-const USER_PROMPT_TOKENS = 60;
+const PIPELINE_VERSION = 'v3-batched';
+const MAX_CONTEXT = 32768; // Qwen3-30B-A3B MoE with expanded context
+const RESERVED_DECODE = 2000; // larger output for batched responses
+const USER_PROMPT_TOKENS = 100;
 const SAFETY_MARGIN = 500;
-const MAX_WINDOW_CHARS = 24000; // hard limit for system prompt chars
-const DEFAULT_N = 15;
+const MAX_WINDOW_CHARS = 50000; // hard limit for system prompt chars
+const DEFAULT_N = 20;
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
@@ -53,6 +59,7 @@ const { values: cliArgs } = parseArgs({
     'doc-id': { type: 'string' },
     'religion': { type: 'string' },
     'max-docs': { type: 'string', default: '999999' },
+    'content-ids': { type: 'string' },
   },
   strict: false,
 });
@@ -61,6 +68,9 @@ const resume = cliArgs['resume'];
 const docIdArg = cliArgs['doc-id'];
 const religionArg = cliArgs['religion'];
 const maxDocsArg = parseInt(cliArgs['max-docs']);
+const contentIdsArg = cliArgs['content-ids']
+  ? cliArgs['content-ids'].split(',').map(s => parseInt(s.trim())).filter(Number.isFinite)
+  : null;
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -122,7 +132,7 @@ function computeN(paragraphs) {
   const metaTokens = 80; // book metadata block
   const twoN = Math.floor((available - metaTokens) / tokensPerPara);
   const N = Math.max(3, Math.floor(twoN / 2));
-  return Math.min(N, 30); // cap at 30 — 60-paragraph windows with 16K context
+  return Math.min(N, 50); // cap at 50 — 100-paragraph windows with 32K context
 }
 
 // ─── System prompt builder ───────────────────────────────────────────────────
@@ -155,73 +165,99 @@ function buildSystemPrompt(doc, windowParagraphs, contentObjectsMap) {
 
 // ─── User prompts ────────────────────────────────────────────────────────────
 
-function buildCombinedUserPrompt(pIndex, religion) {
-  return `/no_think\n[P${pIndex}] Two tasks:
+// Batched prompts: process ALL target paragraphs in one call
+function buildBatchDisambigPrompt(targetIndices) {
+  const pList = targetIndices.map(i => `[P${i}]`).join(', ');
+  return `/no_think\nDisambiguate each of these paragraphs: ${pList}
 
-DISAMBIGUATE: Resolve every ambiguous reference. Output as: short_ref = full_name | short_ref = full_name
-Resolve pronouns, abbreviations, partial names, "this/that/it" references. If nothing ambiguous, write: CLEAR
+For EACH paragraph, output one line:
+[P#] ambiguous_ref = specific_identity | ambiguous_ref = specific_identity
+If nothing ambiguous: [P#] CLEAR
 
----
-
-QUESTIONS: Generate 7 search queries someone might type to find this passage. One per line.
-3 factual (who/what/when), 2 conceptual (themes/ideas), 2 exploratory (why/how/implications).
-Max 15 words each.${religion ? ` Domain: ${religion}.` : ''}`;
+RULES:
+- Read the paragraph AS IF IT STANDS ALONE with no surrounding context
+- If a reference would be unclear to someone reading ONLY that paragraph, disambiguate it
+- This includes pronouns (He, She, They), titles (the Guardian, the Master), descriptions (the city, the holy book, the teacher), and any vague reference
+- Resolve each to its SPECIFIC name using the surrounding paragraphs as context
+- NEVER echo a name back to itself — "Bahá'u'lláh = Bahá'u'lláh" is WRONG, skip it
+- NEVER repeat the same disambiguation twice in one paragraph
+- If the paragraph already names the person/place/thing explicitly, do NOT disambiguate it
+- Use ONLY information from the document text, never general knowledge`;
 }
 
-// Legacy single-task prompts (used as fallback)
-function buildDisambigUserPrompt(pIndex) {
-  return `/no_think\n[P${pIndex}] Identify every ambiguous reference. For each, give the full resolved name or meaning.\nOutput: short_ref = full_name | short_ref = full_name\nResolve: "He/She/They" = who exactly, "it/this/that" = what exactly, abbreviations = full form, partial names = complete names with dates/roles if known.\nIf nothing is ambiguous, output: CLEAR`;
+function buildBatchHyPEPrompt(targetIndices, religion) {
+  const pList = targetIndices.map(i => `[P${i}]`).join(', ');
+  return `/no_think\nGenerate search queries for each paragraph: ${pList}
+
+For EACH paragraph, output:
+[P#]
+- 3-5 natural search queries someone would type to find this specific passage
+- Each query should be a real question or search phrase (max 15 words)
+- Include the specific names, concepts, and topics from the paragraph
+- Make queries specific enough that THIS paragraph would be the best result
+
+${religion ? `Domain: ${religion}.` : ''}`;
 }
 
-function buildHyPEUserPrompt(pIndex, religion) {
-  return `/no_think\n[P${pIndex}] Generate 7 diverse search queries someone might use to find this passage. One per line. No numbering.\n3 factual (who/what/when), 2 conceptual (themes/ideas explored), 2 exploratory (why/how/implications).\nMax 15 words each. Write as natural search queries, not formal questions.${religion ? ` Domain: ${religion}.` : ''}`;
-}
+// Parse batched disambiguation response — one line per paragraph
+function parseBatchDisambig(response, targetIndices) {
+  if (!response) return new Map();
+  let text = response.trim().replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*/g, '').trim();
 
-// Parse combined response into disambig + HyPE parts
-function parseCombinedResponse(response) {
-  if (!response) return { context: null, questions: null };
-  let text = response.trim();
-  // Strip think tags
-  text = text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*/g, '').trim();
-
-  // Split on --- separator
-  const parts = text.split(/\n---\n|\n-{3,}\n/);
-  let contextPart = parts[0]?.trim() || '';
-  let questionsPart = parts[1]?.trim() || '';
-
-  // If no separator found, try to find QUESTIONS: marker
-  if (parts.length === 1) {
-    const qMatch = text.match(/(?:QUESTIONS?:|SEARCH QUERIES?:)\s*\n([\s\S]+)/i);
-    if (qMatch) {
-      contextPart = text.slice(0, qMatch.index).trim();
-      questionsPart = qMatch[1].trim();
+  const results = new Map();
+  for (const idx of targetIndices) {
+    // Find the line for this paragraph
+    const pattern = new RegExp(`\\[P${idx}\\]\\s*(.+?)(?=\\n\\[P\\d|$)`, 's');
+    const match = text.match(pattern);
+    if (match) {
+      const content = match[1].trim();
+      results.set(idx, content.match(/^CLEAR$/i) ? '' : content.slice(0, 500));
     }
   }
+  return results;
+}
 
-  // Parse disambiguation
-  let context = null;
-  if (contextPart && !contextPart.match(/^CLEAR$/i)) {
-    // Remove "DISAMBIGUATE:" prefix if present
-    context = contextPart.replace(/^(?:DISAMBIGUATE|DISAMBIGUATION):?\s*/i, '').trim();
-    if (context.length > 500) context = context.slice(0, 500);
-    if (!context || context.match(/^CLEAR$/i)) context = '';
-  } else {
-    context = '';
+// Parse batched HyPE response — questions grouped by [P#]
+function parseBatchHyPE(response, targetIndices) {
+  if (!response) return new Map();
+  let text = response.trim().replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*/g, '').trim();
+
+  const results = new Map();
+  for (let i = 0; i < targetIndices.length; i++) {
+    const idx = targetIndices[i];
+    const nextIdx = targetIndices[i + 1];
+    // Extract section between [P#] markers
+    const startPattern = new RegExp(`\\[P${idx}\\]`);
+    const startMatch = text.match(startPattern);
+    if (!startMatch) continue;
+
+    const startPos = startMatch.index + startMatch[0].length;
+    let endPos = text.length;
+    if (nextIdx) {
+      const endPattern = new RegExp(`\\[P${nextIdx}\\]`);
+      const endMatch = text.slice(startPos).match(endPattern);
+      if (endMatch) endPos = startPos + endMatch.index;
+    }
+
+    const section = text.slice(startPos, endPos).trim();
+    const questions = section
+      .split('\n')
+      .map(l => l.replace(/^[\d]+\.\s*/, '').replace(/^[-•*]\s*/, '').trim())
+      .filter(l => l.length > 5 && !l.startsWith('[P'));
+
+    if (questions.length > 0) {
+      results.set(idx, questions);
+    }
   }
-
-  // Parse questions
-  const questions = questionsPart
-    ? questionsPart
-        .replace(/^(?:QUESTIONS?|SEARCH QUERIES?):?\s*/i, '')
-        .split('\n')
-        .map(l => l.replace(/^[\d]+\.\s*/, '').replace(/^[-•*]\s*/, '').trim())
-        .filter(l => l.length > 5)
-    : null;
-
-  return { context, questions: questions?.length ? questions : null };
+  return results;
 }
 
 // ─── Database ────────────────────────────────────────────────────────────────
+
+// Skip catalog/index documents that don't benefit from enrichment
+const SKIP_TITLES = new Set([
+  'a partial inventory of the works of the central figures',
+]);
 
 function getDocumentsInOrder(db, religion, docId, maxDocs) {
   let sql = `
@@ -229,6 +265,7 @@ function getDocumentsInOrder(db, religion, docId, maxDocs) {
            d.year, d.language, d.description, d.paragraph_count
     FROM docs d
     WHERE d.deleted_at IS NULL AND d.paragraph_count > 0
+      AND d.paragraph_count < 10000
   `;
   const params = [];
 
@@ -240,14 +277,27 @@ function getDocumentsInOrder(db, religion, docId, maxDocs) {
     params.push(religion);
   }
 
-  sql += ' ORDER BY d.paragraph_count DESC';
+  // Priority: core collections first, then by paragraph count (larger = more cache reuse)
+  sql += ` ORDER BY
+    CASE d.collection
+      WHEN 'Core Tablets' THEN 1
+      WHEN 'Core Publications' THEN 2
+      WHEN 'Core Talks' THEN 3
+      WHEN 'Baha''i Books' THEN 4
+      WHEN 'Tablet Translations' THEN 5
+      WHEN 'Compilations' THEN 6
+      WHEN 'Pilgrim Notes' THEN 7
+      WHEN 'Papers' THEN 8
+      ELSE 9
+    END, d.paragraph_count DESC`;
 
   if (maxDocs < 999999) {
     sql += ' LIMIT ?';
     params.push(maxDocs);
   }
 
-  return db.prepare(sql).all(...params);
+  const docs = db.prepare(sql).all(...params);
+  return docs.filter(d => !SKIP_TITLES.has(d.title?.toLowerCase()?.trim()));
 }
 
 function getDocParagraphs(db, docId) {
@@ -279,6 +329,51 @@ function updateHypQuestions(db, contentId, questions) {
     .run(questions, contentId);
 }
 
+// ─── LLM call with retry + health poll ──────────────────────────────────────
+
+// Wraps a single LLM call so transient errors (network, 5xx, timeouts) don't
+// silently advance the sliding window. On error, waits for the endpoint to
+// become healthy again via localLLMHealthCheck, then retries. Throws after
+// MAX_ATTEMPTS or if the endpoint stays unhealthy longer than HEALTH_TIMEOUT.
+const RETRY_MAX_ATTEMPTS = 8;
+const RETRY_BASE_DELAY_MS = 2000;
+const RETRY_MAX_DELAY_MS = 30000;
+const HEALTH_POLL_INTERVAL_MS = 10000;
+const HEALTH_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
+
+async function callLLMWithRetry(label, fn) {
+  let delay = RETRY_BASE_DELAY_MS;
+  let lastErr;
+  for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      console.error(`    ${label} attempt ${attempt}/${RETRY_MAX_ATTEMPTS} failed: ${err.message}`);
+      if (attempt === RETRY_MAX_ATTEMPTS) break;
+
+      await new Promise(r => setTimeout(r, delay));
+      delay = Math.min(delay * 2, RETRY_MAX_DELAY_MS);
+
+      // Poll health until LLM is back (bounded).
+      const healthStart = Date.now();
+      let waited = false;
+      while (!(await localLLMHealthCheck())) {
+        if (!waited) {
+          console.error(`    Waiting for local LLM to become healthy...`);
+          waited = true;
+        }
+        if (Date.now() - healthStart > HEALTH_TIMEOUT_MS) {
+          throw new Error(`Local LLM unhealthy for >${HEALTH_TIMEOUT_MS / 60000}min, giving up`);
+        }
+        await new Promise(r => setTimeout(r, HEALTH_POLL_INTERVAL_MS));
+      }
+      if (waited) console.log(`    Local LLM healthy again after ${Math.round((Date.now() - healthStart) / 1000)}s, retrying`);
+    }
+  }
+  throw lastErr;
+}
+
 // ─── Process a single window ─────────────────────────────────────────────────
 
 async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
@@ -287,71 +382,96 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
   let windowDisambig = 0;
   let windowHype = 0;
 
-  // Two-call approach: disambig then HyPE, sharing the same cached prefix
-  // Phase A: All disambiguation calls
+  // Batched: 2 calls per window instead of 2N calls
+  // Collect targets that need work
+  const disambigTargets = [];
+  const hypeTargets = [];
   for (let i = 0; i < targets.length; i++) {
-    const para = targets[i];
-    if (para.context !== null) continue;
-
     const pIndex = N + i + 1;
+    if (targets[i].context === null) disambigTargets.push({ para: targets[i], pIndex });
+    if (targets[i].hyp_questions === null) hypeTargets.push({ para: targets[i], pIndex });
+  }
+
+  // Call 1: Batch disambiguation for all targets
+  let disambigOk = true;
+  if (disambigTargets.length > 0) {
+    const indices = disambigTargets.map(t => t.pIndex);
+    const maxTokens = Math.min(2000, disambigTargets.length * 60);
     try {
-      const result = await callLocalLLM(systemPrompt, buildDisambigUserPrompt(pIndex), {
-        maxTokens: 80, temperature: 0.2, returnUsage: true, timeout: 30000
-      });
+      const result = await callLLMWithRetry('Batch disambig', () =>
+        callLocalLLM(systemPrompt, buildBatchDisambigPrompt(indices), {
+          maxTokens, temperature: 0.2, returnUsage: true, timeout: 120000, throwOnError: true
+        })
+      );
       const response = result?.content ?? result;
       if (result?.usage) {
         stats._callTimes.push(result.usage.callMs || 0);
         stats._cachedTokens += result.usage.cachedTokens || 0;
         stats._totalPromptTokens += result.usage.promptTokens || 0;
       }
-      const parsed = parseDisambiguationResponse(response);
-      updateContext(db, para.id, parsed || '', model);
-      windowDisambig++;
+      const parsed = parseBatchDisambig(response, indices);
+      for (const { para, pIndex } of disambigTargets) {
+        const ctx = parsed.get(pIndex);
+        if (ctx !== undefined) {
+          updateContext(db, para.id, ctx, model);
+          windowDisambig++;
+        }
+      }
     } catch (err) {
+      disambigOk = false;
       stats.errors++;
-      if (stats.errors <= 20) console.error(`    Disambig error P${para.id}: ${err.message}`);
+      console.error(`    Batch disambig FAILED after retries: ${err.message}`);
     }
   }
 
-  // Phase B: All HyPE calls (same cached prefix)
-  for (let i = 0; i < targets.length; i++) {
-    const para = targets[i];
-    if (para.hyp_questions !== null) continue;
-
-    const pIndex = N + i + 1;
+  // Call 2: Batch HyPE for all targets
+  let hypeOk = true;
+  if (hypeTargets.length > 0) {
+    const indices = hypeTargets.map(t => t.pIndex);
+    const maxTokens = Math.min(3000, hypeTargets.length * 120);
     try {
-      const result = await callLocalLLM(systemPrompt, buildHyPEUserPrompt(pIndex, doc.religion), {
-        maxTokens: 200, temperature: 0.5, returnUsage: true, timeout: 30000
-      });
+      const result = await callLLMWithRetry('Batch HyPE', () =>
+        callLocalLLM(systemPrompt, buildBatchHyPEPrompt(indices, doc.religion), {
+          maxTokens, temperature: 0.5, returnUsage: true, timeout: 120000, throwOnError: true
+        })
+      );
       const response = result?.content ?? result;
       if (result?.usage) {
         stats._callTimes.push(result.usage.callMs || 0);
         stats._cachedTokens += result.usage.cachedTokens || 0;
         stats._totalPromptTokens += result.usage.promptTokens || 0;
       }
-      const questions = parseHyPEResponse(response);
-      if (questions?.length) {
-        updateHypQuestions(db, para.id, questions.join('\n'));
-        windowHype++;
-      } else {
-        stats.errors++;
+      const parsed = parseBatchHyPE(response, indices);
+      for (const { para, pIndex } of hypeTargets) {
+        const questions = parsed.get(pIndex);
+        if (questions?.length) {
+          updateHypQuestions(db, para.id, questions.join('\n'));
+          windowHype++;
+        }
       }
     } catch (err) {
+      hypeOk = false;
       stats.errors++;
-      if (stats.errors <= 20) console.error(`    HyPE error P${para.id}: ${err.message}`);
+      console.error(`    Batch HyPE FAILED after retries: ${err.message}`);
     }
   }
 
   stats.disambigDone += windowDisambig;
   stats.hypeDone += windowHype;
-  stats.paragraphsProcessed += targets.length;
+  // Only count paragraphs as "processed" when the window's calls succeeded.
+  // Targets that stayed NULL will be picked up naturally on the next run.
+  if (disambigOk && hypeOk) {
+    stats.paragraphsProcessed += targets.length;
+  } else {
+    stats.paragraphsProcessed += Math.max(windowDisambig, windowHype);
+  }
 
-  return { disambig: windowDisambig, hype: windowHype };
+  return { disambig: windowDisambig, hype: windowHype, ok: disambigOk && hypeOk };
 }
 
 // ─── Process a document ──────────────────────────────────────────────────────
 
-async function processDocument(db, doc, resumeOffset = 0) {
+async function processDocument(db, doc) {
   const paragraphs = getDocParagraphs(db, doc.id);
   if (paragraphs.length === 0) return;
 
@@ -369,8 +489,10 @@ async function processDocument(db, doc, resumeOffset = 0) {
 
   console.log(`  Paragraphs: ${paragraphs.length}, N=${N}, needs: ${needsDisambig} disambig, ${needsHype} HyPE`);
 
-  // Build sliding windows
-  let windowStart = resumeOffset;
+  // Always walk from the start. Windows whose targets are all already-done
+  // fast-skip (no LLM calls). Any NULL gaps get picked up in their original
+  // window, so nothing is ever orphaned by a mid-run outage or a force-null.
+  let windowStart = 0;
   let windowCount = 0;
 
   while (windowStart < paragraphs.length) {
@@ -431,8 +553,28 @@ async function main() {
   db.pragma('journal_mode = WAL');
   db.pragma('synchronous = NORMAL');
 
-  // Get documents in priority order
-  const docs = getDocumentsInOrder(db, religionArg, docIdArg, maxDocsArg);
+  // --content-ids: null out the specified paragraphs, then process only their
+  // parent docs. This is the "regenerate any portion of a book" path.
+  // Bypasses the paragraph_count filter in getDocumentsInOrder since we know
+  // exactly which docs we want.
+  let docs;
+  if (contentIdsArg?.length) {
+    const placeholders = contentIdsArg.map(() => '?').join(',');
+    const cleared = db.prepare(
+      `UPDATE content SET context = NULL, hyp_questions = NULL, enhanced_synced = 0 WHERE id IN (${placeholders})`
+    ).run(...contentIdsArg);
+    const forcedDocIds = db.prepare(
+      `SELECT DISTINCT doc_id FROM content WHERE id IN (${placeholders})`
+    ).all(...contentIdsArg).map(r => r.doc_id);
+    console.log(`Force-regenerate: cleared ${cleared.changes} paragraphs across ${forcedDocIds.length} doc(s)`);
+    const docPlaceholders = forcedDocIds.map(() => '?').join(',');
+    docs = db.prepare(
+      `SELECT id, title, author, religion, collection, year, language, description, paragraph_count
+       FROM docs WHERE id IN (${docPlaceholders}) AND deleted_at IS NULL`
+    ).all(...forcedDocIds);
+  } else {
+    docs = getDocumentsInOrder(db, religionArg, docIdArg, maxDocsArg);
+  }
   console.log(`Documents to process: ${docs.length}`);
 
   // Count total paragraphs
@@ -457,23 +599,20 @@ async function main() {
   stats.docsTotal = docs.length;
   stats.paragraphsTotal = totalParas;
 
-  // Resume from checkpoint
+  // Resume: skip docs that are already fully enriched. We walk each remaining
+  // doc from windowStart=0 and let the per-window NULL filter skip completed
+  // paragraphs. This is fast (no LLM calls for done work) and guarantees any
+  // gaps from a prior outage get filled — no trust in a stale checkpoint.
   let startDocIndex = 0;
-  let resumeWindowOffset = 0;
   if (resume) {
     const saved = loadState();
-    if (saved?.currentDocId) {
-      const idx = docs.findIndex(d => d.id === saved.currentDocId);
-      if (idx >= 0) {
-        startDocIndex = idx;
-        resumeWindowOffset = saved.currentWindowStart || 0;
-        stats.docsCompleted = saved.docsCompleted || 0;
-        stats.paragraphsProcessed = saved.paragraphsProcessed || 0;
-        stats.disambigDone = saved.disambigDone || 0;
-        stats.hypeDone = saved.hypeDone || 0;
-        stats.errors = saved.errors || 0;
-        console.log(`Resuming from doc ${saved.currentDocId} (${saved.currentDocTitle}), window offset ${resumeWindowOffset}`);
-      }
+    if (saved) {
+      stats.docsCompleted = saved.docsCompleted || 0;
+      stats.paragraphsProcessed = saved.paragraphsProcessed || 0;
+      stats.disambigDone = saved.disambigDone || 0;
+      stats.hypeDone = saved.hypeDone || 0;
+      stats.errors = saved.errors || 0;
+      console.log(`Resuming with prior stats; scanning all docs for NULL paragraphs`);
     }
   }
 
@@ -487,8 +626,7 @@ async function main() {
 
     console.log(`\n[${i + 1}/${docs.length}] ${doc.title} by ${doc.author} (${doc.paragraph_count} paragraphs)`);
 
-    const offset = (i === startDocIndex) ? resumeWindowOffset : 0;
-    await processDocument(db, doc, offset);
+    await processDocument(db, doc);
 
     stats.docsCompleted++;
     saveState();

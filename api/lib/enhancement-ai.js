@@ -237,6 +237,11 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
     if (!response.ok) {
       const errBody = await response.text().catch(() => '');
       logger.warn({ status: response.status, endpoint, error: errBody.slice(0, 200) }, 'Local LLM request failed');
+      if (options.throwOnError) {
+        const e = new Error(`Local LLM HTTP ${response.status}: ${errBody.slice(0, 200)}`);
+        e.status = response.status;
+        throw e;
+      }
       return null;
     }
     const data = await response.json();
@@ -275,6 +280,9 @@ export async function callLocalLLM(systemPrompt, userPrompt, options = {}) {
     return content || null;
   } catch (err) {
     logger.warn({ err: err.message, endpoint }, 'Local LLM call error');
+    // Opt-in: surface network/timeout errors so callers can retry with backoff.
+    // Default stays null to preserve legacy fire-and-forget callers.
+    if (options.throwOnError) throw err;
     return null;
   }
 }
