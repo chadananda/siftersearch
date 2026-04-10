@@ -376,9 +376,13 @@ async function callLLMWithRetry(label, fn) {
 
 // ─── Process a single window ─────────────────────────────────────────────────
 
-async function processWindow(db, doc, systemPrompt, windowParas, N, model) {
-  // Targets are the back half of the window
-  const targets = windowParas.slice(N);
+async function processWindow(db, doc, systemPrompt, windowParas, N, model, isFirstWindow = false) {
+  // Targets are the back half of the window — EXCEPT on the first window of
+  // a document, where we target every paragraph in view. Without this, the
+  // first N paragraphs of every doc (and all paragraphs of any doc shorter
+  // than 2N) are never in the back half and never get enriched. This bug
+  // predates the batching rewrite; leaving docs with NULL-at-front paragraphs.
+  const targets = isFirstWindow ? windowParas : windowParas.slice(N);
   let windowDisambig = 0;
   let windowHype = 0;
 
@@ -494,6 +498,7 @@ async function processDocument(db, doc) {
   // window, so nothing is ever orphaned by a mid-run outage or a force-null.
   let windowStart = 0;
   let windowCount = 0;
+  let isFirstWindow = true;
 
   while (windowStart < paragraphs.length) {
     const windowEnd = Math.min(windowStart + 2 * N, paragraphs.length);
@@ -508,7 +513,8 @@ async function processDocument(db, doc) {
     saveState();
 
     const model = 'local-qwen3';
-    const result = await processWindow(db, doc, systemPrompt, windowParas, Math.min(N, Math.floor(windowParas.length / 2) || 1), model);
+    const result = await processWindow(db, doc, systemPrompt, windowParas, Math.min(N, Math.floor(windowParas.length / 2) || 1), model, isFirstWindow);
+    isFirstWindow = false;
 
     windowCount++;
 
