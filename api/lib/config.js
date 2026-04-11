@@ -182,7 +182,16 @@ const searchConfig = {
   // Authority ranking position (1-7):
   // 4 = HIGH weight (after proximity), 5 = MEDIUM (after attribute),
   // 6 = LOW (after sort), 7 = TIEBREAKER only (after exactness)
-  authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4)
+  authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4),
+  // Authority post-hoc boost applied on every hybridSearch result.
+  // final = relevance * (1 + boost * (authority - 5) / 5)
+  // At boost=0.3, authority 10 gets +30%, authority 1 gets -24%, authority 5 is neutral.
+  // Ranking rules alone don't fight through hybrid vector scores (scores are unique,
+  // so authority:desc rarely tiebreaks); this boost makes canonical sources actually surface.
+  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '0.3')),
+  // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
+  // hits that were just outside the top N can move in.
+  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '3'))
 };
 
 // Server configuration

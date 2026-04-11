@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T14:47:23.107Z",
+  "generated": "2026-04-11T18:15:37.520Z",
   "entries": [
+    {
+      "hash": "d2931ad",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Raise LLM call timeout to 5min (was 2min)",
+      "scope": null
+    },
     {
       "hash": "c33d3b8",
       "date": "2026-04-10",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Include Arabic terms in study translation for difficult words",
       "scope": null
-    },
-    {
-      "hash": "996891f",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Robust TOON parser that strips LLM explanatory text",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-11": [
+      {
+        "hash": "d2931ad",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Raise LLM call timeout to 5min (was 2min)",
+        "scope": null
+      }
+    ],
     "2026-04-10": [
       {
         "hash": "c33d3b8",
@@ -7049,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Include Arabic terms in study translation for difficult words",
-        "scope": null
-      },
-      {
-        "hash": "996891f",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Robust TOON parser that strips LLM explanatory text",
         "scope": null
       }
     ]

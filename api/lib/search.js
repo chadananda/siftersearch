@@ -195,19 +195,23 @@ export const INDEXES = {
 };
 
 /**
- * Build ranking rules with authority at the configured position
- * Base rules: words, typo, proximity, attribute, sort, exactness
- * authority:desc is inserted at config.search.authorityRankPosition (1-7)
- * Position 4 = HIGH weight, 5 = MEDIUM, 6 = LOW, 7 = TIEBREAKER
+ * Build ranking rules with authority at the configured position.
+ * Modern Meilisearch (v1.11+) rules: words, typo, proximity, attributeRank,
+ * sort, wordPosition, exactness. Older names like 'attribute' are rejected
+ * silently via a failed PATCH, which is how the authority rule vanished from
+ * the live index.
+ *
+ * authority:desc is inserted at config.search.authorityRankPosition (1-7).
+ * Note: for hybrid (vector) search, ranking rules only matter as tiebreakers,
+ * which rarely fires. See authorityBoost post-hoc reranking below for the
+ * mechanism that actually moves canonical sources to the top.
  */
 function buildRankingRules() {
-  const baseRules = ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'];
-  const position = Math.min(7, Math.max(1, config.search.authorityRankPosition || 4));
+  const baseRules = ['words', 'typo', 'proximity', 'attributeRank', 'sort', 'wordPosition', 'exactness'];
+  const position = Math.min(baseRules.length, Math.max(1, config.search.authorityRankPosition || 4));
 
-  // Insert authority:desc at the configured position (1-indexed, so subtract 1)
-  const insertIndex = position - 1;
   const rules = [...baseRules];
-  rules.splice(insertIndex, 0, 'authority:desc');
+  rules.splice(position - 1, 0, 'authority:desc');
 
   logger.info({ position, rules }, 'Built ranking rules with authority position');
   return rules;
@@ -390,11 +394,19 @@ export async function hybridSearch(query, options = {}) {
     }
   }
 
+  // Over-fetch so authority reranking can pull canonical sources up from just
+  // outside the requested window. Capped at maxResults to keep latency bounded.
+  const multiplier = config.search.authorityRerankMultiplier || 3;
+  const internalLimit = Math.min(
+    config.search.maxResults || 100,
+    Math.max(limit, Math.ceil((offset + limit) * multiplier))
+  );
+
   // Perform search
   const searchParams = {
     q: query,
-    limit,
-    offset,
+    limit: internalLimit,
+    offset: 0,
     filter: filterString,
     attributesToRetrieve,
     attributesToHighlight,
@@ -416,8 +428,25 @@ export async function hybridSearch(query, options = {}) {
 
   const results = await index.search(query, searchParams);
 
+  // Authority reranking: blend Meilisearch relevance with the per-doc authority
+  // score so canonical sources surface above citing/derivative works at the
+  // same relevance tier. This runs unconditionally — callers don't opt in.
+  const boost = config.search.authorityBoost ?? 0.3;
+  const reranked = results.hits
+    .map(hit => {
+      const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
+      const auth = typeof hit.authority === 'number' ? hit.authority : 5;
+      // final = relevance * (1 + boost * (authority - 5) / 5)
+      // authority 5 is neutral; 10 boosts, 1 penalizes.
+      const authorityMultiplier = 1 + boost * ((auth - 5) / 5);
+      hit._authorityScore = rel * authorityMultiplier;
+      return hit;
+    })
+    .sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0))
+    .slice(offset, offset + limit);
+
   return {
-    hits: results.hits,
+    hits: reranked,
     query: results.query,
     processingTimeMs: results.processingTimeMs,
     estimatedTotalHits: results.estimatedTotalHits,
