@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T19:20:48.685Z",
+  "generated": "2026-04-11T22:44:52.783Z",
   "entries": [
+    {
+      "hash": "c0316a3",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Add vitest search authority ranking evaluation",
+      "scope": "api"
+    },
     {
       "hash": "e8ea4c3",
       "date": "2026-04-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Cap batch translation max_tokens at 16000",
       "scope": null
-    },
-    {
-      "hash": "7aa93fd",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Prefer Shoghi Effendi translations for terminology",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-11": [
+      {
+        "hash": "c0316a3",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Add vitest search authority ranking evaluation",
+        "scope": "api"
+      },
       {
         "hash": "e8ea4c3",
         "date": "2026-04-11",
@@ -7051,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Cap batch translation max_tokens at 16000",
-        "scope": null
-      },
-      {
-        "hash": "7aa93fd",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Prefer Shoghi Effendi translations for terminology",
         "scope": null
       }
     ]

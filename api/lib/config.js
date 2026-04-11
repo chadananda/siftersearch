@@ -185,13 +185,16 @@ const searchConfig = {
   authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4),
   // Authority post-hoc boost applied on every hybridSearch result.
   // final = relevance * (1 + boost * (authority - 5) / 5)
-  // At boost=0.3, authority 10 gets +30%, authority 1 gets -24%, authority 5 is neutral.
+  // At boost=0.5, authority 10 gets +50%, authority 1 gets -40%, authority 5 is neutral.
   // Ranking rules alone don't fight through hybrid vector scores (scores are unique,
   // so authority:desc rarely tiebreaks); this boost makes canonical sources actually surface.
-  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '0.3')),
+  // Default tuned via tests/api/search-authority-ranking.test.js: 0.5 hits 96.9%
+  // primary-source retrieval vs 90.8% at 0.3.
+  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '0.5')),
   // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
-  // hits that were just outside the top N can move in.
-  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '3'))
+  // hits that were just outside the top N can move in. Wider window = more chances for
+  // primary sources to surface; default tuned to 6 (was 3) per the same test.
+  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '6'))
 };
 
 // Server configuration
