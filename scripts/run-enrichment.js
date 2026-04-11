@@ -48,6 +48,11 @@ const USER_PROMPT_TOKENS = 100;
 const SAFETY_MARGIN = 500;
 const MAX_WINDOW_CHARS = 50000; // hard limit for system prompt chars
 const DEFAULT_N = 20;
+// vLLM generates at ~25 tok/s on boss. A full HyPE batch (max 3000 output
+// tokens) needs ~120s just to generate, plus prompt prefill, plus any
+// time waiting behind other clients for a seq slot. 120s was catching
+// legitimate long calls as "timeouts". Give them real headroom.
+const LLM_TIMEOUT_MS = 300000; // 5 minutes per call
 
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
@@ -404,7 +409,7 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model, isFir
     try {
       const result = await callLLMWithRetry('Batch disambig', () =>
         callLocalLLM(systemPrompt, buildBatchDisambigPrompt(indices), {
-          maxTokens, temperature: 0.2, returnUsage: true, timeout: 120000, throwOnError: true
+          maxTokens, temperature: 0.2, returnUsage: true, timeout: LLM_TIMEOUT_MS, throwOnError: true
         })
       );
       const response = result?.content ?? result;
@@ -436,7 +441,7 @@ async function processWindow(db, doc, systemPrompt, windowParas, N, model, isFir
     try {
       const result = await callLLMWithRetry('Batch HyPE', () =>
         callLocalLLM(systemPrompt, buildBatchHyPEPrompt(indices, doc.religion), {
-          maxTokens, temperature: 0.5, returnUsage: true, timeout: 120000, throwOnError: true
+          maxTokens, temperature: 0.5, returnUsage: true, timeout: LLM_TIMEOUT_MS, throwOnError: true
         })
       );
       const response = result?.content ?? result;

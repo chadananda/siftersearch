@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-10T17:30:24.996Z",
+  "generated": "2026-04-11T14:47:23.107Z",
   "entries": [
+    {
+      "hash": "c33d3b8",
+      "date": "2026-04-10",
+      "type": "Other",
+      "description": "Target all paragraphs on first window of each doc",
+      "scope": null
+    },
     {
       "hash": "ff7e330",
       "date": "2026-04-04",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Robust TOON parser that strips LLM explanatory text",
       "scope": null
-    },
-    {
-      "hash": "3b7f8be",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Improve study translation prompt - readable literal, theological notes",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-10": [
+      {
+        "hash": "c33d3b8",
+        "date": "2026-04-10",
+        "type": "Other",
+        "description": "Target all paragraphs on first window of each doc",
+        "scope": null
+      }
+    ],
     "2026-04-04": [
       {
         "hash": "ff7e330",
@@ -7047,13 +7056,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Robust TOON parser that strips LLM explanatory text",
-        "scope": null
-      },
-      {
-        "hash": "3b7f8be",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Improve study translation prompt - readable literal, theological notes",
         "scope": null
       }
     ]
