@@ -148,17 +148,21 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       keywordSearch(query, { limit: 3, filters }).catch(() => ({ hits: [] }))
     ]);
 
+    // Merge and dedupe, then resort by authority-weighted score so canonical
+    // sources surface above citing works regardless of which search path
+    // found them first.
     const seen = new Set();
-    const hits = [];
+    const merged = [];
     for (const result of [hybridResults, keywordResults]) {
       for (const hit of (result?.hits || [])) {
         const key = `${hit.doc_id || hit.document_id}:${hit.paragraph_index}`;
-        if (!seen.has(key)) { seen.add(key); hits.push(hit); }
+        if (!seen.has(key)) { seen.add(key); merged.push(hit); }
       }
     }
+    merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
 
     return {
-      passages: hits.slice(0, 6).map(hit => ({
+      passages: merged.slice(0, 6).map(hit => ({
         text: (hit.text || '').substring(0, 500),
         title: hit.title || 'Unknown',
         author: hit.author || '',

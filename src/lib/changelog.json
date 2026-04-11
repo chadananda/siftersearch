@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T18:19:40.726Z",
+  "generated": "2026-04-11T18:21:41.061Z",
   "entries": [
+    {
+      "hash": "5f559f9",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Apply authority reranking to keyword and federated paths",
+      "scope": null
+    },
     {
       "hash": "8244ae8",
       "date": "2026-04-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Move translation notes to paragraph footnotes",
       "scope": null
-    },
-    {
-      "hash": "bbb1b5e",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Improve Study view layout and translation prompts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-11": [
+      {
+        "hash": "5f559f9",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Apply authority reranking to keyword and federated paths",
+        "scope": null
+      },
       {
         "hash": "8244ae8",
         "date": "2026-04-11",
@@ -7051,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Move translation notes to paragraph footnotes",
-        "scope": null
-      },
-      {
-        "hash": "bbb1b5e",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Improve Study view layout and translation prompts",
         "scope": null
       }
     ]
