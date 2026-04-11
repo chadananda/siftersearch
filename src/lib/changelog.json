@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T18:21:41.061Z",
+  "generated": "2026-04-11T19:20:48.685Z",
   "entries": [
+    {
+      "hash": "e8ea4c3",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Resort merged passages by authority after dedupe",
+      "scope": null
+    },
     {
       "hash": "5f559f9",
       "date": "2026-04-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Prefer Shoghi Effendi translations for terminology",
       "scope": null
-    },
-    {
-      "hash": "27bfd11",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Move translation notes to paragraph footnotes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-11": [
+      {
+        "hash": "e8ea4c3",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Resort merged passages by authority after dedupe",
+        "scope": null
+      },
       {
         "hash": "5f559f9",
         "date": "2026-04-11",
@@ -7051,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Prefer Shoghi Effendi translations for terminology",
-        "scope": null
-      },
-      {
-        "hash": "27bfd11",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Move translation notes to paragraph footnotes",
         "scope": null
       }
     ]
