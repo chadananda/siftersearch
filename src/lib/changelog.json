@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T18:15:37.520Z",
+  "generated": "2026-04-11T18:19:40.726Z",
   "entries": [
+    {
+      "hash": "8244ae8",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Authority-weighted reranking on every hybrid query",
+      "scope": null
+    },
     {
       "hash": "d2931ad",
       "date": "2026-04-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Improve Study view layout and translation prompts",
       "scope": null
-    },
-    {
-      "hash": "644b813",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Include Arabic terms in study translation for difficult words",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-11": [
+      {
+        "hash": "8244ae8",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Authority-weighted reranking on every hybrid query",
+        "scope": null
+      },
       {
         "hash": "d2931ad",
         "date": "2026-04-11",
@@ -7051,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Improve Study view layout and translation prompts",
-        "scope": null
-      },
-      {
-        "hash": "644b813",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Include Arabic terms in study translation for difficult words",
         "scope": null
       }
     ]

@@ -218,6 +218,39 @@ function buildRankingRules() {
 }
 
 /**
+ * Compute the authority-weighted score for a single hit.
+ * final = relevance * (1 + boost * (authority - 5) / 5)
+ * authority 5 is neutral; 10 boosts (+boost*100%), 1 penalizes.
+ * Missing authority defaults to 5 so undecorated hits are unaffected.
+ */
+function computeAuthorityScore(hit) {
+  const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
+  const auth = typeof hit.authority === 'number' ? hit.authority : 5;
+  const boost = config.search.authorityBoost ?? 0.3;
+  return rel * (1 + boost * ((auth - 5) / 5));
+}
+
+/**
+ * Annotate each hit with `_authorityScore` and return them sorted by it.
+ * Every search path in this module runs results through here so canonical
+ * sources consistently outrank derivative works at the same relevance tier.
+ */
+function rerankByAuthority(hits) {
+  for (const hit of hits) hit._authorityScore = computeAuthorityScore(hit);
+  return [...hits].sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
+}
+
+/**
+ * Compute internal fetch size so authority reranking has room to pull canonical
+ * hits up from just outside the requested window. Capped at maxResults.
+ */
+function overFetchForRerank(targetCount) {
+  const multiplier = config.search.authorityRerankMultiplier || 3;
+  const maxResults = config.search.maxResults || 100;
+  return Math.min(maxResults, Math.max(targetCount, Math.ceil(targetCount * multiplier)));
+}
+
+/**
  * Initialize indexes with proper settings
  */
 export async function initializeIndexes() {
@@ -396,11 +429,7 @@ export async function hybridSearch(query, options = {}) {
 
   // Over-fetch so authority reranking can pull canonical sources up from just
   // outside the requested window. Capped at maxResults to keep latency bounded.
-  const multiplier = config.search.authorityRerankMultiplier || 3;
-  const internalLimit = Math.min(
-    config.search.maxResults || 100,
-    Math.max(limit, Math.ceil((offset + limit) * multiplier))
-  );
+  const internalLimit = overFetchForRerank(offset + limit);
 
   // Perform search
   const searchParams = {
@@ -430,20 +459,8 @@ export async function hybridSearch(query, options = {}) {
 
   // Authority reranking: blend Meilisearch relevance with the per-doc authority
   // score so canonical sources surface above citing/derivative works at the
-  // same relevance tier. This runs unconditionally — callers don't opt in.
-  const boost = config.search.authorityBoost ?? 0.3;
-  const reranked = results.hits
-    .map(hit => {
-      const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
-      const auth = typeof hit.authority === 'number' ? hit.authority : 5;
-      // final = relevance * (1 + boost * (authority - 5) / 5)
-      // authority 5 is neutral; 10 boosts, 1 penalizes.
-      const authorityMultiplier = 1 + boost * ((auth - 5) / 5);
-      hit._authorityScore = rel * authorityMultiplier;
-      return hit;
-    })
-    .sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0))
-    .slice(offset, offset + limit);
+  // same relevance tier. Runs unconditionally — callers don't opt in.
+  const reranked = rerankByAuthority(results.hits).slice(offset, offset + limit);
 
   return {
     hits: reranked,
@@ -623,16 +640,17 @@ export async function keywordSearch(query, options = {}) {
       return hasAllTermMatches(hit, queryTerms);
     });
 
-    // Re-rank by phrase score (exact phrase matches first)
+    // Re-rank: exact phrase matches first, then authority-weighted score so
+    // canonical sources outrank citing works at the same phrase-match tier.
+    // _authorityScore is already set by the hybridSearch call above.
     rankedHits = filteredHits.map(hit => ({
       ...hit,
       _phraseScore: calculatePhraseScore(hit.text || '', query, queryTerms)
     })).sort((a, b) => {
-      // Sort by phrase score first, then by original ranking score
       if (b._phraseScore !== a._phraseScore) {
         return b._phraseScore - a._phraseScore;
       }
-      return (b._rankingScore || 0) - (a._rankingScore || 0);
+      return (b._authorityScore || 0) - (a._authorityScore || 0);
     });
   }
 
@@ -727,15 +745,19 @@ export async function federatedSearch(queries, options = {}) {
     matchingStrategy: 'all'  // Require ALL words to match
   }));
 
-  // Federated search: merges and deduplicates results across all queries
-  // Pagination goes on federation object, not individual queries
+  // Federated search: merges and deduplicates results across all queries.
+  // Over-fetch so authority reranking has material, then trim to the requested
+  // window after reranking.
+  const federationLimit = overFetchForRerank(offset + limit);
   const response = await meili.multiSearch({
-    federation: { limit, offset },
+    federation: { limit: federationLimit, offset: 0 },
     queries: searchQueries
   });
 
+  const reranked = rerankByAuthority(response.hits || []).slice(offset, offset + limit);
+
   return {
-    hits: response.hits || [],  // Single merged array, duplicates removed
+    hits: reranked,
     processingTimeMs: response.processingTimeMs
   };
 }
