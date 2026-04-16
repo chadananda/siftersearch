@@ -4,7 +4,7 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 ---
 
-<Layout title="Thank You!">
+<Layout title="Thank You!" description="Thank you for supporting SifterSearch." noindex={true}>
   <LiquidBackground client:only="svelte" />
   <NavBar currentPage="support" client:load />
   <main class="success-page">

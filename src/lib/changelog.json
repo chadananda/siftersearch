@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-11T22:44:52.783Z",
+  "generated": "2026-04-16T21:07:50.815Z",
   "entries": [
+    {
+      "hash": "5d926ed",
+      "date": "2026-04-11",
+      "type": "Other",
+      "description": "Tune authority reranking defaults (boost 0.3->0.5, mult 3->6)",
+      "scope": null
+    },
     {
       "hash": "c0316a3",
       "date": "2026-04-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add AI usage tracking and cost dashboard",
       "scope": null
-    },
-    {
-      "hash": "4975c08",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Cap batch translation max_tokens at 16000",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-11": [
+      {
+        "hash": "5d926ed",
+        "date": "2026-04-11",
+        "type": "Other",
+        "description": "Tune authority reranking defaults (boost 0.3->0.5, mult 3->6)",
+        "scope": null
+      },
       {
         "hash": "c0316a3",
         "date": "2026-04-11",
@@ -7051,13 +7058,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add AI usage tracking and cost dashboard",
-        "scope": null
-      },
-      {
-        "hash": "4975c08",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Cap batch translation max_tokens at 16000",
         "scope": null
       }
     ]

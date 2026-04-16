@@ -5,7 +5,7 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
 import PostEditor from '../../components/forum/PostEditor.svelte';
 ---
 
-<Layout title="Create Post - SifterSearch">
+<Layout title="Create Post - SifterSearch" description="Start a new discussion in the SifterSearch community." noindex={true}>
   <LiquidBackground slot="background" client:only="svelte" />
   <NavBar client:load currentPage="community" />
   <div class="new-post-page">

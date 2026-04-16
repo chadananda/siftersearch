@@ -404,7 +404,7 @@
 
 </script>
 
-<div class="flex flex-col gap-1 w-full">
+<div class="flex flex-col gap-1 w-full" role="list" aria-label="Document list">
   {#each documents as doc (doc.id)}
     {@const isExpanded = expandedDocId === doc.id}
     {@const langName = getLangName(doc.language)}
@@ -415,9 +415,11 @@
     {@const statsLoading = !!loadingStats[doc.id]}
 
     <div class="group border rounded-lg overflow-hidden transition-colors
-                {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}">
+                {isExpanded ? 'border-accent' : 'border-border-subtle hover:border-border'}" role="listitem">
       <!-- Title row - full row clickable -->
       <div
+        aria-label="{doc.title || 'Untitled'}{doc.author ? ' by ' + doc.author : ''}"
+        aria-expanded={isExpanded}
         class="w-full flex items-center gap-2 py-2.5 px-3 transition-colors cursor-pointer
                {isExpanded ? 'bg-accent/10 border-b border-border-subtle' : 'bg-surface-1 hover:bg-surface-2'}"
         onclick={() => toggleDocument(doc)}
@@ -511,6 +513,7 @@
             rel="noopener"
             onclick={(e) => e.stopPropagation()}
             title="View document"
+            aria-label="View {doc.title || 'document'}"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -527,6 +530,7 @@
               rel="noopener"
               onclick={(e) => e.stopPropagation()}
               title="Edit document"
+              aria-label="Edit {doc.title || 'document'}"
             >
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -540,6 +544,7 @@
               onclick={(e) => { e.stopPropagation(); requestReingest(doc.id, doc.title); }}
               disabled={reingesting === doc.id}
               title="Re-import document (force re-ingestion)"
+              aria-label="Re-import {doc.title || 'document'}"
             >
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>

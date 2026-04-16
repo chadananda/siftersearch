@@ -32,6 +32,7 @@ export default defineConfig({
     sitemap({
       filter: (page) => {
         if (page.includes('/api/')) return false;
+        if (page.includes('/admin')) return false;
         if (page.includes('/sitemap-library')) return false;
         if (page.match(/\/library\/[^/]+\/[^/]+\/[^/]+/)) return false;
         return true;

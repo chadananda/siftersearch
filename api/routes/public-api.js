@@ -1,27 +1,58 @@
 /**
- * Public Search API v1
+ * Public API v1
  *
- * Clean, well-documented API for external applications.
+ * Three services: Library, Search, Chat.
  * Requires API key authentication via X-API-Key header.
- * Keys are managed per-user via database (see api/lib/api-keys.js).
  *
- * Endpoints:
- *   POST /api/v1/search - Hybrid search with AI analysis
- *   POST /api/v1/search/quick - Fast keyword search (no AI)
- *   GET /api/v1/collections - List available collections
- *   GET /api/v1/paragraph/:id - Get a specific paragraph
- *   GET /api/v1/health - API health check
+ * Library:
+ *   GET  /api/v1/library/documents      - Search/browse documents by title, author, metadata
+ *   GET  /api/v1/library/documents/:id  - Get single document metadata + canonical URL
+ *   GET  /api/v1/library/authors        - List all authors with document counts
+ *   GET  /api/v1/library/religions      - Religion/collection tree with counts
+ *
+ * Search:
+ *   POST /api/v1/search        - Hybrid search (semantic + keyword) with AI analysis
+ *   POST /api/v1/search/quick  - Fast keyword-only search (no AI)
+ *   GET  /api/v1/paragraph/:id - Get a specific paragraph
+ *
+ * Chat:
+ *   POST /api/v1/chat          - AI research assistant (SSE streaming)
+ *
+ * Tools (for AI agents):
+ *   POST /api/v1/tools/search  - Unified search tool (passages/documents/count/read modes)
+ *   GET  /api/v1/tools/library - Library overview stats
+ *
+ * System:
+ *   GET  /api/v1/collections   - List religions and collections
+ *   GET  /api/v1/health        - API health check
  */
 
-import { hybridSearch, keywordSearch, getStats } from '../lib/search.js';
-import { executeSearch, executeLibraryOverview } from './chat.js';
+import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
+import { executeSearch, executeLibraryOverview, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
 import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
-import { queryOne, userQuery, userQueryOne } from '../lib/db.js';
+import { queryOne, queryAll, userQuery, userQueryOne } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
+import { slugifyPath, generateDocSlug } from '../lib/slug.js';
+
+const SITE_URL = 'https://siftersearch.com';
+
+/** Build canonical siftersearch.com URL for a document */
+function getDocumentUrl(doc) {
+  const docSlug = doc.slug || generateDocSlug(doc);
+  if (!docSlug || !doc.religion || !doc.collection) {
+    return `${SITE_URL}/library/view?doc=${doc.id}`;
+  }
+  return `${SITE_URL}/library/${slugifyPath(doc.religion)}/${slugifyPath(doc.collection)}/${docSlug}`;
+}
+
+/** Build canonical URL for a paragraph within a document */
+function getParagraphUrl(doc, paragraphIndex) {
+  return `${getDocumentUrl(doc)}#p${paragraphIndex}`;
+}
 
 /** Log search to search_log table (fire-and-forget) */
 function logApiSearch({ query, apiKeyId, resultCount, durationMs, searchType, filters }) {
@@ -98,6 +129,9 @@ export default async function publicApiRoutes(fastify) {
    */
   fastify.post('/search', {
     schema: {
+      description: 'Full hybrid search combining BM25 keyword matching and semantic search with AI-powered analysis, scoring, and highlighting. Best for research queries.',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
       body: {
         type: 'object',
         required: ['query'],
@@ -191,7 +225,9 @@ export default async function publicApiRoutes(fastify) {
       religion: result.religion,
       collection: result.collection,
       score: result.score,
-      summary: result.summary || result.briefAnswer || ''
+      summary: result.summary || result.briefAnswer || '',
+      url: getParagraphUrl(result, result.paragraph_index),
+      documentUrl: getDocumentUrl(result)
     }));
 
     const durationMs = Date.now() - startTime;
@@ -210,6 +246,9 @@ export default async function publicApiRoutes(fastify) {
    */
   fastify.post('/search/quick', {
     schema: {
+      description: 'Fast keyword-only search without AI analysis. Returns results instantly. Cached results are free.',
+      tags: ['Search'],
+      security: [{ apiKey: [] }],
       body: {
         type: 'object',
         required: ['query'],
@@ -246,7 +285,9 @@ export default async function publicApiRoutes(fastify) {
       author: hit.author,
       religion: hit.religion,
       collection: hit.collection,
-      score: hit._rankingScore
+      score: hit._rankingScore,
+      url: getParagraphUrl(hit, hit.paragraph_index),
+      documentUrl: getDocumentUrl(hit)
     }));
 
     const durationMs = Date.now() - startTime;
@@ -279,6 +320,11 @@ export default async function publicApiRoutes(fastify) {
       throw new ApiError('Paragraph not found', 404);
     }
 
+    const docInfo = {
+      title: paragraph.title, author: paragraph.author,
+      religion: paragraph.religion, collection: paragraph.collection,
+      language: paragraph.language, year: paragraph.year
+    };
     return {
       id: paragraph.id,
       documentId: paragraph.doc_id,
@@ -288,14 +334,9 @@ export default async function publicApiRoutes(fastify) {
       blockType: paragraph.blocktype,
       translation: paragraph.translation,
       context: paragraph.context,
-      document: {
-        title: paragraph.title,
-        author: paragraph.author,
-        religion: paragraph.religion,
-        collection: paragraph.collection,
-        language: paragraph.language,
-        year: paragraph.year
-      }
+      url: getParagraphUrl({ id: paragraph.doc_id, ...docInfo }, paragraph.paragraph_index),
+      documentUrl: getDocumentUrl({ id: paragraph.doc_id, ...docInfo }),
+      document: docInfo
     };
   });
 
@@ -365,6 +406,441 @@ export default async function publicApiRoutes(fastify) {
    */
   fastify.get('/tools/library', async () => {
     return executeLibraryOverview();
+  });
+
+  // ============================================
+  // Library Service
+  // ============================================
+
+  /**
+   * GET /api/v1/library/documents
+   *
+   * Search and browse the document library. Returns metadata and canonical URLs.
+   * Supports full-text search by title/author/description, plus metadata filters.
+   */
+  fastify.get('/library/documents', {
+    schema: {
+      description: 'Search and browse the document library. Returns metadata and canonical URLs for each document.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          q: { type: 'string', description: 'Search by title, author, or description' },
+          author: { type: 'string', description: 'Filter by author name (partial match)' },
+          religion: { type: 'string', description: 'Filter by religion (exact match)' },
+          collection: { type: 'string', description: 'Filter by collection (exact match)' },
+          language: { type: 'string', description: 'Filter by language code (e.g. en, ar, fa)' },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          offset: { type: 'integer', minimum: 0, default: 0 }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            documents: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  title: { type: 'string' },
+                  author: { type: 'string' },
+                  religion: { type: 'string' },
+                  collection: { type: 'string' },
+                  language: { type: 'string' },
+                  year: { type: 'integer' },
+                  description: { type: 'string' },
+                  paragraphCount: { type: 'integer' },
+                  url: { type: 'string', description: 'Canonical URL on siftersearch.com' }
+                }
+              }
+            },
+            total: { type: 'integer' },
+            limit: { type: 'integer' },
+            offset: { type: 'integer' }
+          }
+        }
+      }
+    }
+  }, async (request) => {
+    const { q, author, religion, collection, language, limit = 20, offset = 0 } = request.query;
+
+    // Try Meilisearch for text search
+    if (q && q.trim()) {
+      try {
+        const meili = getMeili();
+        const filters = [];
+        const esc = (s) => s.replace(/"/g, '\\"');
+        if (religion) filters.push(`religion = "${esc(religion)}"`);
+        if (collection) filters.push(`collection = "${esc(collection)}"`);
+        if (language) filters.push(`language = "${esc(language)}"`);
+        if (author) filters.push(`author CONTAINS "${esc(author)}"`);
+
+        const result = await meili.index(INDEXES.DOCUMENTS).search(q, {
+          limit, offset,
+          filter: filters.length > 0 ? filters.join(' AND ') : undefined,
+          attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'language', 'year', 'description', 'paragraph_count']
+        });
+
+        return {
+          documents: result.hits.map(doc => ({
+            id: doc.id, title: doc.title, author: doc.author,
+            religion: doc.religion, collection: doc.collection,
+            language: doc.language, year: doc.year,
+            description: doc.description, paragraphCount: doc.paragraph_count,
+            url: getDocumentUrl(doc)
+          })),
+          total: result.estimatedTotalHits || 0, limit, offset
+        };
+      } catch (meiliErr) {
+        logger.warn('Meilisearch library search failed, falling back to SQLite:', meiliErr.message);
+      }
+    }
+
+    // SQLite fallback / pure browse
+    const conditions = ['deleted_at IS NULL'];
+    const params = [];
+
+    if (q && q.trim()) {
+      conditions.push('(title LIKE ? OR author LIKE ? OR description LIKE ?)');
+      const term = `%${q.trim()}%`;
+      params.push(term, term, term);
+    }
+    if (author) { conditions.push('author LIKE ?'); params.push(`%${author}%`); }
+    if (religion) { conditions.push('religion = ?'); params.push(religion); }
+    if (collection) { conditions.push('collection = ?'); params.push(collection); }
+    if (language) { conditions.push('language = ?'); params.push(language); }
+
+    const where = `WHERE ${conditions.join(' AND ')}`;
+
+    const [documents, countResult] = await Promise.all([
+      queryAll(`SELECT id, title, author, religion, collection, language, year, description, paragraph_count, filename, file_path
+               FROM docs ${where} ORDER BY title ASC LIMIT ? OFFSET ?`, [...params, limit, offset]),
+      queryOne(`SELECT COUNT(*) as count FROM docs ${where}`, params)
+    ]);
+
+    return {
+      documents: documents.map(doc => ({
+        id: doc.id, title: doc.title, author: doc.author,
+        religion: doc.religion, collection: doc.collection,
+        language: doc.language, year: doc.year,
+        description: doc.description, paragraphCount: doc.paragraph_count,
+        url: getDocumentUrl(doc)
+      })),
+      total: countResult?.count || 0, limit, offset
+    };
+  });
+
+  /**
+   * GET /api/v1/library/documents/:id
+   *
+   * Get a single document's full metadata and canonical URL.
+   */
+  fastify.get('/library/documents/:id', {
+    schema: {
+      description: 'Get detailed metadata for a single document including canonical URL.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      params: {
+        type: 'object',
+        properties: { id: { type: 'integer' } },
+        required: ['id']
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            title: { type: 'string' },
+            author: { type: 'string' },
+            religion: { type: 'string' },
+            collection: { type: 'string' },
+            language: { type: 'string' },
+            year: { type: 'integer' },
+            description: { type: 'string' },
+            paragraphCount: { type: 'integer' },
+            url: { type: 'string' },
+            createdAt: { type: 'string' },
+            updatedAt: { type: 'string' }
+          }
+        }
+      }
+    }
+  }, async (request) => {
+    const doc = await queryOne(
+      `SELECT id, title, author, religion, collection, language, year, description,
+              paragraph_count, filename, file_path, created_at, updated_at
+       FROM docs WHERE id = ? AND deleted_at IS NULL`, [request.params.id]
+    );
+    if (!doc) throw new ApiError(404, 'Document not found');
+
+    return {
+      id: doc.id, title: doc.title, author: doc.author,
+      religion: doc.religion, collection: doc.collection,
+      language: doc.language, year: doc.year,
+      description: doc.description, paragraphCount: doc.paragraph_count,
+      url: getDocumentUrl(doc),
+      createdAt: doc.created_at, updatedAt: doc.updated_at
+    };
+  });
+
+  /**
+   * GET /api/v1/library/authors
+   *
+   * List all authors with document counts. Optionally filter by religion.
+   */
+  fastify.get('/library/authors', {
+    schema: {
+      description: 'List all authors in the library with document counts. Optionally filter by religion.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          religion: { type: 'string', description: 'Filter authors by religion' },
+          q: { type: 'string', description: 'Search authors by name' },
+          limit: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+          offset: { type: 'integer', minimum: 0, default: 0 }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            authors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  documentCount: { type: 'integer' },
+                  religions: { type: 'array', items: { type: 'string' } }
+                }
+              }
+            },
+            total: { type: 'integer' }
+          }
+        }
+      }
+    }
+  }, async (request) => {
+    const { religion, q, limit = 100, offset = 0 } = request.query;
+    const conditions = ['deleted_at IS NULL', 'author IS NOT NULL', "author != ''"];
+    const params = [];
+
+    if (religion) { conditions.push('religion = ?'); params.push(religion); }
+    if (q) { conditions.push('author LIKE ?'); params.push(`%${q}%`); }
+
+    const where = `WHERE ${conditions.join(' AND ')}`;
+
+    const authors = await queryAll(`
+      SELECT author as name, COUNT(*) as documentCount, GROUP_CONCAT(DISTINCT religion) as religions
+      FROM docs ${where}
+      GROUP BY author ORDER BY author ASC LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+
+    const countResult = await queryOne(`
+      SELECT COUNT(DISTINCT author) as count FROM docs ${where}
+    `, params);
+
+    return {
+      authors: authors.map(a => ({
+        name: a.name,
+        documentCount: a.documentCount,
+        religions: a.religions ? a.religions.split(',') : []
+      })),
+      total: countResult?.count || 0
+    };
+  });
+
+  /**
+   * GET /api/v1/library/religions
+   *
+   * Get the full religion/collection tree with document counts.
+   */
+  fastify.get('/library/religions', {
+    schema: {
+      description: 'Get the religion and collection tree structure with document counts.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            religions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  documentCount: { type: 'integer' },
+                  collections: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        documentCount: { type: 'integer' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }, async () => {
+    const stats = await queryAll(`
+      SELECT religion, collection, COUNT(*) as count
+      FROM docs WHERE religion IS NOT NULL AND deleted_at IS NULL
+      GROUP BY religion, collection ORDER BY religion, collection
+    `);
+
+    const religionMap = new Map();
+    for (const row of stats) {
+      if (!religionMap.has(row.religion)) {
+        religionMap.set(row.religion, { name: row.religion, documentCount: 0, collections: [] });
+      }
+      const r = religionMap.get(row.religion);
+      r.documentCount += row.count;
+      if (row.collection && !row.collection.startsWith('.')) {
+        r.collections.push({ name: row.collection, documentCount: row.count });
+      }
+    }
+
+    return { religions: Array.from(religionMap.values()).sort((a, b) => a.name.localeCompare(b.name)) };
+  });
+
+  // ============================================
+  // Chat Service
+  // ============================================
+
+  /**
+   * POST /api/v1/chat
+   *
+   * AI research assistant. Streams responses via Server-Sent Events.
+   * The assistant searches sacred texts and provides cited answers.
+   */
+  fastify.post('/chat', {
+    schema: {
+      description: 'AI research assistant that searches sacred texts and provides cited answers. Streams responses via SSE.',
+      tags: ['Chat'],
+      security: [{ apiKey: [] }],
+      body: {
+        type: 'object',
+        required: ['messages'],
+        properties: {
+          messages: {
+            type: 'array', minItems: 1, maxItems: 50,
+            description: 'Conversation history. Last message is the current query.',
+            items: {
+              type: 'object', required: ['role', 'content'],
+              properties: {
+                role: { type: 'string', enum: ['user', 'assistant'] },
+                content: { type: 'string', maxLength: 4000 }
+              }
+            }
+          },
+          researchContext: { type: 'string', description: 'Optional prior research context to continue from' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { messages, researchContext } = request.body;
+    const startTime = Date.now();
+
+    // Set SSE headers
+    reply.raw.setHeader('Content-Type', 'text/event-stream');
+    reply.raw.setHeader('Cache-Control', 'no-cache');
+    reply.raw.setHeader('Connection', 'keep-alive');
+
+    const origin = request.headers.origin;
+    if (origin) reply.raw.setHeader('Access-Control-Allow-Origin', origin);
+    reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
+    reply.raw.flushHeaders();
+
+    const sendEvent = (data) => {
+      try { reply.raw.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (_) { /* closed */ }
+    };
+
+    try {
+      // Use the same OpenAI + tool-calling flow as the internal chat
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      let systemContent = SYSTEM_PROMPT;
+      if (researchContext) systemContent += `\n\n## Previous research context\n\n${researchContext}`;
+
+      const aiMessages = [
+        { role: 'system', content: systemContent },
+        ...messages.map(m => ({ role: m.role, content: m.content }))
+      ];
+
+      const MAX_TOOL_ROUNDS = 5;
+      let citations = [];
+
+      for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: aiMessages,
+          tools: TOOLS,
+          tool_choice: 'auto',
+          stream: false,
+          max_tokens: 2500,
+          temperature: 0.7
+        });
+
+        const choice = response.choices[0];
+
+        if (choice.finish_reason === 'tool_calls' || choice.message.tool_calls?.length > 0) {
+          aiMessages.push(choice.message);
+          sendEvent({ type: 'status', message: 'Searching sacred texts...' });
+
+          const toolResults = await Promise.all(
+            choice.message.tool_calls.map(async (tc) => {
+              const args = JSON.parse(tc.function.arguments || '{}');
+              let result;
+              if (tc.function.name === 'search') {
+                result = await executeSearch(args);
+                if (result.passages) citations.push(...result.passages.map(p => ({
+                  text: p.text?.slice(0, 200), title: p.title, author: p.author,
+                  religion: p.religion, collection: p.collection
+                })));
+              } else if (tc.function.name === 'library_overview') {
+                result = await executeLibraryOverview();
+              } else {
+                result = { error: `Unknown tool: ${tc.function.name}` };
+              }
+              return { role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) };
+            })
+          );
+
+          aiMessages.push(...toolResults);
+          continue;
+        }
+
+        // Stream the final response
+        const finalContent = choice.message.content || '';
+        const words = finalContent.split(' ');
+        for (let i = 0; i < words.length; i += 3) {
+          sendEvent({ type: 'text', content: words.slice(i, i + 3).join(' ') + ' ' });
+        }
+        if (citations.length > 0) sendEvent({ type: 'citations', citations });
+        sendEvent({ type: 'done', processingTimeMs: Date.now() - startTime });
+        break;
+      }
+    } catch (err) {
+      logger.error({ err }, 'API chat error');
+      sendEvent({ type: 'error', message: err.message || 'Chat failed' });
+    }
+
+    reply.raw.end();
+    logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
+    if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
   });
 
   // Health endpoint registered above (before auth hook) so it's public

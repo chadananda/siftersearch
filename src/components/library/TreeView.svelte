@@ -37,12 +37,15 @@
   }
 </script>
 
-<div class="flex-1 overflow-y-auto py-2">
+<nav class="flex-1 overflow-y-auto py-2" aria-label="Library navigation">
   {#each religions as religion}
     {@const isExpanded = expandedReligion === religion.name}
     {@const isSelected = selectedReligion === religion.name && !selectedCollection}
     <div class="mb-1">
       <button
+        aria-label="Filter by {religion.name} ({religion.count.toLocaleString()} documents)"
+        aria-expanded={isExpanded}
+        aria-pressed={isSelected || isExpanded}
         class="w-full py-1.5 px-3 border-l-2 border-l-accent flex justify-between items-center text-[0.8125rem] font-medium text-left cursor-pointer transition-all
                {isExpanded ? 'bg-accent text-white' : isSelected ? 'bg-accent/20' : 'bg-surface-2 hover:bg-surface-3 text-primary'}"
         onclick={() => handleReligionClick(religion)}
@@ -63,6 +66,8 @@
           {#each religion.collections as collection}
             {@const collSelected = selectedReligion === religion.name && selectedCollection === collection.name}
             <button
+              aria-label="Filter by {collection.name} in {religion.name} ({collection.count} documents)"
+              aria-pressed={collSelected}
               class="w-full flex items-center justify-between py-2 px-3 pl-6 text-[0.8125rem] text-left cursor-pointer transition-all border-b border-border-subtle last:border-b-0
                      {collSelected ? 'bg-accent/10 text-accent' : 'text-secondary hover:bg-surface-2 hover:text-primary'}"
               onclick={() => selectCollection(religion, collection)}
@@ -78,4 +83,4 @@
       {/if}
     </div>
   {/each}
-</div>
+</nav>

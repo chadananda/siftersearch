@@ -21,7 +21,7 @@
 
   <div class="relative z-10 p-6 flex flex-col gap-3">
     <!-- Breadcrumb -->
-    <nav class="flex items-center gap-2 text-[0.8125rem]">
+    <nav class="flex items-center gap-2 text-[0.8125rem]" aria-label="Breadcrumb">
       <span class="flex items-center gap-1.5 text-white font-medium">
         <img src="/ocean-noback.svg" alt="" class="w-4 h-4" />
         Library

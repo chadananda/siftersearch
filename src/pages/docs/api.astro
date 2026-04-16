@@ -16,6 +16,12 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     research tools, or integrate sacred text search into your own applications.
   </p>
 
+  <p>
+    An interactive Swagger UI is available at
+    <a href="https://api.siftersearch.com/api/v1/docs" target="_blank" rel="noopener">https://api.siftersearch.com/api/v1/docs</a>
+    for exploring and testing all endpoints directly in your browser.
+  </p>
+
   <h2>Authentication</h2>
 
   <p>All API requests require an API key passed in the <code>X-API-Key</code> header.</p>
@@ -71,6 +77,18 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   <hr />
 
   <h2>Endpoints</h2>
+
+  <!-- ============================================================ -->
+  <!-- Search Service                                               -->
+  <!-- ============================================================ -->
+
+  <h2>Search Service</h2>
+
+  <p>
+    Search results from both <code>/search</code> and <code>/search/quick</code> include
+    <code>url</code> and <code>documentUrl</code> fields containing canonical
+    siftersearch.com links to the passage and its parent document respectively.
+  </p>
 
   <h3>POST /api/v1/search</h3>
   <p>
@@ -204,7 +222,9 @@ X-API-Key: sk_live_your-key-here
       "religion": "Baha'i",
       "collection": "Pilgrim Notes",
       "score": 92,
-      "summary": "Prayer enables spiritual ascent"
+      "summary": "Prayer enables spiritual ascent",
+      "url": "https://siftersearch.com/read/1907_07_martha_root_reflections#p42",
+      "documentUrl": "https://siftersearch.com/read/1907_07_martha_root_reflections"
     &#125;
   ],
   "query": "meaning of prayer and meditation",
@@ -262,7 +282,9 @@ X-API-Key: sk_live_your-key-here
       "author": "Baha'u'llah",
       "religion": "Baha'i",
       "collection": "Core Publications",
-      "score": 0.98
+      "score": 0.98,
+      "url": "https://siftersearch.com/read/hidden_words#p23",
+      "documentUrl": "https://siftersearch.com/read/hidden_words"
     &#125;
   ],
   "query": "justice",
@@ -294,6 +316,340 @@ X-API-Key: sk_live_your-key-here
   "status": "ok",
   "version": "1.0.0",
   "timestamp": "2024-12-14T22:52:43.717Z"
+&#125;</code></pre>
+
+  <hr />
+
+  <!-- ============================================================ -->
+  <!-- Library Service                                              -->
+  <!-- ============================================================ -->
+
+  <h2>Library Service</h2>
+
+  <p>
+    Browse and query document metadata without consuming search quota. Library endpoints
+    are useful for building browsing interfaces, populating filter dropdowns, or discovering
+    what is available before running searches.
+  </p>
+
+  <h3>GET /api/v1/library/documents</h3>
+  <p>
+    Search and browse the document library. Returns document metadata and canonical URLs.
+  </p>
+
+  <h4>Query Parameters</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>q</code></td>
+        <td>string</td>
+        <td>Search by title, author, or description</td>
+      </tr>
+      <tr>
+        <td><code>author</code></td>
+        <td>string</td>
+        <td>Filter by author name (partial match)</td>
+      </tr>
+      <tr>
+        <td><code>religion</code></td>
+        <td>string</td>
+        <td>Filter by religion (exact match)</td>
+      </tr>
+      <tr>
+        <td><code>collection</code></td>
+        <td>string</td>
+        <td>Filter by collection (exact match)</td>
+      </tr>
+      <tr>
+        <td><code>language</code></td>
+        <td>string</td>
+        <td>Filter by language code (e.g. <code>en</code>, <code>ar</code>, <code>fa</code>)</td>
+      </tr>
+      <tr>
+        <td><code>limit</code></td>
+        <td>integer</td>
+        <td>Max results (1-100, default: 20)</td>
+      </tr>
+      <tr>
+        <td><code>offset</code></td>
+        <td>integer</td>
+        <td>Pagination offset (default: 0)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Example Response</h4>
+  <pre><code>&#123;
+  "documents": [
+    &#123;
+      "id": "hidden_words",
+      "title": "The Hidden Words",
+      "author": "Baha'u'llah",
+      "religion": "Baha'i",
+      "collection": "Core Publications",
+      "language": "en",
+      "year": 1858,
+      "description": "A collection of ethical and mystical utterances...",
+      "paragraphCount": 153,
+      "url": "https://siftersearch.com/read/hidden_words"
+    &#125;
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+&#125;</code></pre>
+
+  <hr />
+
+  <h3>GET /api/v1/library/documents/:id</h3>
+  <p>
+    Get detailed metadata for a single document by its ID.
+  </p>
+
+  <h4>Example Response</h4>
+  <pre><code>&#123;
+  "id": "hidden_words",
+  "title": "The Hidden Words",
+  "author": "Baha'u'llah",
+  "religion": "Baha'i",
+  "collection": "Core Publications",
+  "language": "en",
+  "year": 1858,
+  "description": "A collection of ethical and mystical utterances...",
+  "paragraphCount": 153,
+  "url": "https://siftersearch.com/read/hidden_words",
+  "createdAt": "2024-01-15T00:00:00Z",
+  "updatedAt": "2024-12-14T00:00:00Z"
+&#125;</code></pre>
+
+  <hr />
+
+  <h3>GET /api/v1/library/authors</h3>
+  <p>
+    List all authors with their document counts and associated religions.
+  </p>
+
+  <h4>Query Parameters</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>religion</code></td>
+        <td>string</td>
+        <td>Filter authors by religion</td>
+      </tr>
+      <tr>
+        <td><code>q</code></td>
+        <td>string</td>
+        <td>Search authors by name</td>
+      </tr>
+      <tr>
+        <td><code>limit</code></td>
+        <td>integer</td>
+        <td>Max results (1-500, default: 100)</td>
+      </tr>
+      <tr>
+        <td><code>offset</code></td>
+        <td>integer</td>
+        <td>Pagination offset (default: 0)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Example Response</h4>
+  <pre><code>&#123;
+  "authors": [
+    &#123;
+      "name": "Baha'u'llah",
+      "documentCount": 42,
+      "religions": ["Baha'i"]
+    &#125;,
+    &#123;
+      "name": "Abdu'l-Baha",
+      "documentCount": 31,
+      "religions": ["Baha'i"]
+    &#125;
+  ],
+  "total": 2
+&#125;</code></pre>
+
+  <hr />
+
+  <h3>GET /api/v1/library/religions</h3>
+  <p>
+    Get the full religion and collection tree, including document counts at each level.
+    Useful for building hierarchical navigation or filter components.
+  </p>
+
+  <h4>Example Response</h4>
+  <pre><code>&#123;
+  "religions": [
+    &#123;
+      "name": "Baha'i",
+      "documentCount": 284,
+      "collections": [
+        &#123; "name": "Core Publications", "documentCount": 42 &#125;,
+        &#123; "name": "Pilgrim Notes", "documentCount": 118 &#125;,
+        &#123; "name": "Letters", "documentCount": 124 &#125;
+      ]
+    &#125;,
+    &#123;
+      "name": "Buddhism",
+      "documentCount": 196,
+      "collections": [
+        &#123; "name": "Pali Canon", "documentCount": 89 &#125;,
+        &#123; "name": "Mahayana Sutras", "documentCount": 107 &#125;
+      ]
+    &#125;
+  ]
+&#125;</code></pre>
+
+  <hr />
+
+  <!-- ============================================================ -->
+  <!-- Chat Service                                                 -->
+  <!-- ============================================================ -->
+
+  <h2>Chat Service</h2>
+
+  <p>
+    The Chat API provides access to Jafar, the SifterSearch AI research assistant. Jafar
+    synthesizes passages from across the library to answer questions, identify themes, and
+    support sustained research sessions. Responses stream via Server-Sent Events (SSE).
+  </p>
+
+  <h3>POST /api/v1/chat</h3>
+  <p>
+    Send a message to the AI research assistant. Responses are streamed as Server-Sent Events.
+    Each event carries a <code>type</code> field indicating what kind of data it contains.
+  </p>
+
+  <h4>Request Body</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>messages</code></td>
+        <td>array</td>
+        <td>Yes</td>
+        <td>Conversation history: <code>[&#123; role: "user"|"assistant", content: string &#125;]</code></td>
+      </tr>
+      <tr>
+        <td><code>researchContext</code></td>
+        <td>string</td>
+        <td>No</td>
+        <td>Prior research context to carry forward across turns</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>SSE Event Types</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>status</code></td>
+        <td>Progress update (e.g., "Searching library…")</td>
+      </tr>
+      <tr>
+        <td><code>text</code></td>
+        <td>Incremental response text chunk</td>
+      </tr>
+      <tr>
+        <td><code>citations</code></td>
+        <td>Array of source passages used in the response</td>
+      </tr>
+      <tr>
+        <td><code>done</code></td>
+        <td>Stream complete; no further events will follow</td>
+      </tr>
+      <tr>
+        <td><code>error</code></td>
+        <td>Error detail; stream will terminate after this event</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Example Request</h4>
+  <pre><code>POST /api/v1/chat
+Content-Type: application/json
+X-API-Key: sk_live_your-key-here
+
+&#123;
+  "messages": [
+    &#123; "role": "user", "content": "What do the Baha'i writings say about the oneness of religion?" &#125;
+  ]
+&#125;</code></pre>
+
+  <h4>Example SSE Stream</h4>
+  <pre><code>data: &#123;"type":"status","message":"Searching library..."&#125;
+
+data: &#123;"type":"text","content":"The Baha'i writings consistently affirm that "&#125;
+
+data: &#123;"type":"text","content":"all major religions share a common divine origin..."&#125;
+
+data: &#123;"type":"citations","citations":[
+  &#123;
+    "id": "gleanings_p1",
+    "title": "Gleanings from the Writings of Baha'u'llah",
+    "author": "Baha'u'llah",
+    "text": "This is the Day in which God's most excellent favors...",
+    "url": "https://siftersearch.com/read/gleanings#p1"
+  &#125;
+]&#125;
+
+data: &#123;"type":"done"&#125;</code></pre>
+
+  <h4>JavaScript Streaming Example</h4>
+  <pre><code>const response = await fetch('https://api.siftersearch.com/api/v1/chat', &#123;
+  method: 'POST',
+  headers: &#123;
+    'Content-Type': 'application/json',
+    'X-API-Key': process.env.SIFTER_API_KEY
+  &#125;,
+  body: JSON.stringify(&#123;
+    messages: [&#123; role: 'user', content: 'What is the Baha\'i view on science and religion?' &#125;]
+  &#125;)
+&#125;);
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) &#123;
+  const &#123; done, value &#125; = await reader.read();
+  if (done) break;
+  const chunk = decoder.decode(value);
+  for (const line of chunk.split('\n')) &#123;
+    if (!line.startsWith('data: ')) continue;
+    const event = JSON.parse(line.slice(6));
+    if (event.type === 'text') process.stdout.write(event.content);
+    if (event.type === 'citations') console.log('\nSources:', event.citations);
+  &#125;
 &#125;</code></pre>
 
   <hr />
@@ -404,5 +760,7 @@ for result in data['results']:
     <li><strong>Cache responses</strong> - Results for the same query don't change frequently. Cache for better performance.</li>
     <li><strong>Handle rate limits gracefully</strong> - Check the <code>X-RateLimit-Remaining</code> header and implement backoff.</li>
     <li><strong>Use /search/quick for autocomplete</strong> - The quick endpoint is ~10x faster for simple keyword matches.</li>
+    <li><strong>Stream chat responses</strong> - The chat endpoint uses SSE; consume the stream incrementally rather than waiting for a full response body.</li>
+    <li><strong>Persist researchContext</strong> - Pass the assistant's prior context back on follow-up chat turns to maintain coherent multi-turn research sessions.</li>
   </ul>
 </DocsLayout>

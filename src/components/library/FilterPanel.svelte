@@ -15,12 +15,14 @@
   }
 </script>
 
-<div class="filter-panel">
+<div class="filter-panel" role="group" aria-label="Advanced document filters">
   <div class="filter-grid">
     <!-- Religion filter -->
     <div class="filter-group">
-      <label class="filter-label">Religion</label>
+      <label class="filter-label" for="filter-religion">Religion</label>
       <select
+        id="filter-religion"
+        aria-label="Filter by religion"
         class="filter-select"
         bind:value={filters.religion}
         onchange={handleChange}
@@ -34,8 +36,10 @@
 
     <!-- Collection filter -->
     <div class="filter-group">
-      <label class="filter-label">Collection</label>
+      <label class="filter-label" for="filter-collection">Collection</label>
       <select
+        id="filter-collection"
+        aria-label="Filter by collection"
         class="filter-select"
         bind:value={filters.collection}
         onchange={handleChange}
@@ -49,8 +53,10 @@
 
     <!-- Language filter -->
     <div class="filter-group">
-      <label class="filter-label">Language</label>
+      <label class="filter-label" for="filter-language">Language</label>
       <select
+        id="filter-language"
+        aria-label="Filter by language"
         class="filter-select"
         bind:value={filters.language}
         onchange={handleChange}
@@ -64,8 +70,10 @@
 
     <!-- Author filter -->
     <div class="filter-group">
-      <label class="filter-label">Author</label>
+      <label class="filter-label" for="filter-author">Author</label>
       <input
+        id="filter-author"
+        aria-label="Filter by author"
         type="text"
         class="filter-input"
         placeholder="Filter by author..."
@@ -79,14 +87,16 @@
       <label class="filter-label">Year range</label>
       <div class="year-inputs">
         <input
+          aria-label="Year from"
           type="number"
           class="filter-input year"
           placeholder="From"
           bind:value={filters.yearFrom}
           onchange={handleChange}
         />
-        <span class="year-separator">–</span>
+        <span class="year-separator" aria-hidden="true">–</span>
         <input
+          aria-label="Year to"
           type="number"
           class="filter-input year"
           placeholder="To"
@@ -98,8 +108,10 @@
 
     <!-- Status filter -->
     <div class="filter-group">
-      <label class="filter-label">Status</label>
+      <label class="filter-label" for="filter-status">Status</label>
       <select
+        id="filter-status"
+        aria-label="Filter by status"
         class="filter-select"
         bind:value={filters.status}
         onchange={handleChange}

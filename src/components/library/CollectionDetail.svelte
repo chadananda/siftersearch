@@ -188,6 +188,7 @@
         </svg>
         <input
           type="text"
+          aria-label="Search documents in {node.name}"
           class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           placeholder="Search in {node.name}..."
           bind:value={searchQuery}
@@ -197,7 +198,7 @@
           }}
         />
         {#if searchQuery}
-          <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { searchQuery = ''; handleSearch(); }}>
+          <button aria-label="Clear search" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { searchQuery = ''; handleSearch(); }}>
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         {/if}

@@ -67,7 +67,7 @@
   <div class="relative z-10 p-6 flex flex-col gap-3">
     <!-- Breadcrumb -->
     {#if node?.parent}
-      <nav class="flex items-center gap-2 text-[0.8125rem]">
+      <nav class="flex items-center gap-2 text-[0.8125rem]" aria-label="Breadcrumb">
         <a href="/library" class="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors">
           <img src="/ocean-noback.svg" alt="" class="w-4 h-4" />
           Library
@@ -94,6 +94,7 @@
               class="p-2 bg-white/15 backdrop-blur border border-white/20 rounded-lg text-white cursor-pointer hover:bg-white/25 hover:border-white/40 transition-all shrink-0"
               onclick={onEdit}
               title="Edit collection"
+              aria-label="Edit {node?.name || 'collection'} details"
             >
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

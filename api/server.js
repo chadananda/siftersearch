@@ -7,6 +7,8 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import { spawn } from 'child_process';
 import { join } from 'path';
 import { createRequire } from 'module';
@@ -176,6 +178,34 @@ export async function createServer(opts = {}) {
     timestamp: new Date().toISOString(),
     version: SERVER_VERSION
   }));
+
+  // OpenAPI / Swagger
+  await server.register(swagger, {
+    openapi: {
+      info: {
+        title: 'SifterSearch API',
+        description: 'AI-powered interfaith sacred text search. Search passages, browse the library, and chat with an AI research assistant.',
+        version: SERVER_VERSION,
+        contact: { name: 'SifterSearch', url: 'https://siftersearch.com' }
+      },
+      servers: [{ url: 'https://api.siftersearch.com', description: 'Production' }],
+      components: {
+        securitySchemes: {
+          apiKey: { type: 'apiKey', name: 'X-API-Key', in: 'header', description: 'API key from Settings → API Keys' }
+        }
+      },
+      tags: [
+        { name: 'Search', description: 'Content search across sacred texts' },
+        { name: 'Library', description: 'Browse and search the document library' },
+        { name: 'Chat', description: 'AI-powered research assistant' },
+        { name: 'System', description: 'Health checks and metadata' }
+      ]
+    }
+  });
+  await server.register(swaggerUi, {
+    routePrefix: '/api/v1/docs',
+    uiConfig: { docExpansion: 'list', deepLinking: true, defaultModelsExpandDepth: 1 }
+  });
 
   // API routes
   await server.register(authRoutes, { prefix: '/api/auth' });

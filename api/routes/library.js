@@ -1413,48 +1413,60 @@ Return ONLY the description text, no quotes or formatting.`;
       offset = 0
     } = request.query;
 
-    // If there's a search term, use Meilisearch for full-text search
-    // Otherwise use libsql for pure listing (faster for browsing)
+    // If there's a search term, try Meilisearch for full-text search
+    // Falls back to SQLite LIKE if Meilisearch is unavailable
     if (search && search.trim()) {
-      const meili = getMeili();
+      try {
+        const meili = getMeili();
 
-      // Build Meilisearch filter array
-      const filters = [];
-      if (religion) filters.push(`religion = "${religion}"`);
-      if (collection) filters.push(`collection = "${collection}"`);
-      if (language) filters.push(`language = "${language}"`);
-      if (author) filters.push(`author = "${author}"`);
-      if (yearFrom) filters.push(`year >= ${yearFrom}`);
-      if (yearTo) filters.push(`year <= ${yearTo}`);
+        // Build Meilisearch filter array
+        const filters = [];
+        if (religion) filters.push(`religion = "${religion}"`);
+        if (collection) filters.push(`collection = "${collection}"`);
+        if (language) filters.push(`language = "${language}"`);
+        if (author) filters.push(`author = "${author}"`);
+        if (yearFrom) filters.push(`year >= ${yearFrom}`);
+        if (yearTo) filters.push(`year <= ${yearTo}`);
 
-      const searchOptions = {
-        limit,
-        offset,
-        attributesToRetrieve: [
-          'id', 'title', 'author', 'religion', 'collection',
-          'language', 'year', 'description', 'paragraph_count',
-          'authority', 'created_at', 'updated_at', 'cover_url'
-        ]
-      };
+        const searchOptions = {
+          limit,
+          offset,
+          attributesToRetrieve: [
+            'id', 'title', 'author', 'religion', 'collection',
+            'language', 'year', 'description', 'paragraph_count',
+            'authority', 'created_at', 'updated_at', 'cover_url'
+          ]
+        };
 
-      if (filters.length > 0) {
-        searchOptions.filter = filters.join(' AND ');
+        if (filters.length > 0) {
+          searchOptions.filter = filters.join(' AND ');
+        }
+
+        const result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
+
+        return {
+          documents: result.hits.map(doc => ({ ...doc, status: 'indexed' })),
+          total: result.estimatedTotalHits || 0,
+          limit,
+          offset
+        };
+      } catch (meiliErr) {
+        logger.warn('Meilisearch documents search failed, falling back to SQLite:', meiliErr.message);
+        // Fall through to SQLite query below with search added as LIKE filter
       }
-
-      const result = await meili.index(INDEXES.DOCUMENTS).search(search, searchOptions);
-
-      return {
-        documents: result.hits.map(doc => ({ ...doc, status: 'indexed' })),
-        total: result.estimatedTotalHits || 0,
-        limit,
-        offset
-      };
     }
 
-    // Pure listing - use libsql for browsing (source of truth)
+    // Pure listing (or Meilisearch fallback) - use SQLite for browsing
     // Build SQL WHERE clauses (always exclude soft-deleted)
     const conditions = ['deleted_at IS NULL'];
     const params = [];
+
+    // SQLite fallback for text search (when Meilisearch is unavailable or no search term)
+    if (search && search.trim()) {
+      conditions.push('(title LIKE ? OR author LIKE ? OR description LIKE ?)');
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
 
     if (religion) {
       conditions.push('religion = ?');

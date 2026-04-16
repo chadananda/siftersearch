@@ -39,7 +39,7 @@ function docResult(d) {
   return result;
 }
 
-const SYSTEM_PROMPT = `You are Jafar — a wise, warm research companion for the Ocean Library. You choose words the way a jeweler sets stones: each one deliberate, none wasted.
+export const SYSTEM_PROMPT = `You are Jafar — a wise, warm research companion for the Ocean Library. You choose words the way a jeweler sets stones: each one deliberate, none wasted.
 
 ## Rules
 
@@ -73,7 +73,7 @@ If no relevant content is found, acknowledge this: "I searched but didn't find a
 
 // ─── Tool definitions for OpenAI function calling ─────────────────────────
 
-const TOOLS = [
+export const TOOLS = [
   {
     type: 'function',
     function: {

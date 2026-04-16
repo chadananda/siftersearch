@@ -517,12 +517,13 @@
 
 <div class="flex h-[calc(100vh-3.5rem)] bg-surface-0">
   <!-- Sidebar -->
-  <aside class="w-64 flex-shrink-0 border-r border-border bg-surface-1 flex flex-col overflow-hidden">
+  <aside class="w-64 flex-shrink-0 border-r border-border bg-surface-1 flex flex-col overflow-hidden" aria-label="Library sidebar">
     <div class="p-4 border-b border-border flex items-center justify-between gap-2">
       <button
         class="flex items-center gap-2 text-lg font-semibold text-primary hover:text-accent transition-colors cursor-pointer bg-transparent border-none p-0"
         onclick={() => { clearFilters(); switchToDocumentsView(); }}
         title="View all documents"
+        aria-label="View all documents"
       >
         <img src="/ocean-noback.svg" alt="" class="w-5 h-5" />
         Library
@@ -535,6 +536,8 @@
     </div>
     <!-- Recent Activity button -->
     <button
+      aria-label="Recent Activity"
+      aria-pressed={viewMode === 'recent'}
       class="mx-4 mt-3 mb-1 flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors
              {viewMode === 'recent' ? 'bg-accent text-white' : 'bg-surface-2 text-secondary hover:bg-surface-3 hover:text-primary'}"
       onclick={switchToRecentView}
@@ -564,7 +567,7 @@
   </aside>
 
   <!-- Main content -->
-  <main class="flex-1 flex flex-col overflow-hidden min-w-0">
+  <main class="flex-1 flex flex-col overflow-hidden min-w-0" aria-label="Library content">
     {#if viewMode === 'recent'}
       <!-- Recent Activity View -->
       <div class="flex-1 overflow-y-auto p-4">
@@ -575,24 +578,32 @@
 
         <!-- Recent activity filters -->
         <div class="mb-4 flex items-center gap-3 flex-wrap">
-          <div class="flex items-center gap-1 bg-surface-1 rounded-lg p-1">
+          <div class="flex items-center gap-1 bg-surface-1 rounded-lg p-1" role="group" aria-label="Activity type filter">
             <button
+              aria-label="Show all recent activity"
+              aria-pressed={recentType === 'all'}
               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
                      {recentType === 'all' ? 'bg-accent text-white' : 'text-secondary hover:bg-surface-2'}"
               onclick={() => { recentType = 'all'; fetchRecentDocuments(true); }}
             >All</button>
             <button
+              aria-label="Show recently added documents"
+              aria-pressed={recentType === 'added'}
               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
                      {recentType === 'added' ? 'bg-success text-white' : 'text-secondary hover:bg-surface-2'}"
               onclick={() => { recentType = 'added'; fetchRecentDocuments(true); }}
             >Added</button>
             <button
+              aria-label="Show recently modified documents"
+              aria-pressed={recentType === 'modified'}
               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
                      {recentType === 'modified' ? 'bg-warning text-white' : 'text-secondary hover:bg-surface-2'}"
               onclick={() => { recentType = 'modified'; fetchRecentDocuments(true); }}
             >Modified</button>
             {#if isAdmin}
               <button
+                aria-label="Show pending documents"
+                aria-pressed={recentType === 'pending'}
                 class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors
                        {recentType === 'pending' ? 'bg-info text-white' : 'text-secondary hover:bg-surface-2'}"
                 onclick={() => { recentType = 'pending'; fetchPendingDocuments(); }}
@@ -602,6 +613,7 @@
 
           {#if recentType !== 'pending'}
             <select
+              aria-label="Time range for recent activity"
               class="px-3 py-2 text-sm border border-border rounded-lg bg-surface-0 text-primary"
               bind:value={recentDays}
               onchange={() => fetchRecentDocuments(true)}
@@ -649,6 +661,8 @@
                     class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors cursor-pointer"
                     role="button"
                     tabindex="0"
+                    aria-label="Toggle preview for {doc.title || filename}"
+                    aria-expanded={isExpanded}
                     onclick={() => togglePendingPreview(doc.file_path)}
                     onkeydown={(e) => e.key === 'Enter' && togglePendingPreview(doc.file_path)}
                   >
@@ -780,6 +794,8 @@
                   class="w-full p-4 text-left hover:bg-surface-2/50 transition-colors cursor-pointer"
                   role="button"
                   tabindex="0"
+                  aria-label="Toggle preview for {doc.title || 'Untitled'}"
+                  aria-expanded={isExpanded}
                   onclick={() => expandedRecentId = isExpanded ? null : doc.id}
                   onkeydown={(e) => e.key === 'Enter' && (expandedRecentId = isExpanded ? null : doc.id)}
                 >
@@ -959,6 +975,7 @@
             </svg>
             <input
               type="text"
+              aria-label="Search documents by title or author"
               class="w-full py-2 pl-9 pr-8 text-sm border border-border rounded-lg bg-surface-0 text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Search by title or author..."
               bind:value={filters.search}
@@ -968,13 +985,15 @@
               }}
             />
             {#if filters.search}
-              <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { filters.search = ''; fetchDocuments(true); }}>
+              <button aria-label="Clear search" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-primary rounded" onclick={() => { filters.search = ''; fetchDocuments(true); }}>
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             {/if}
           </div>
 
           <button
+            aria-label="Toggle advanced filters"
+            aria-expanded={showFilters}
             class="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border rounded-lg transition-colors
                    {showFilters ? 'bg-accent text-white border-accent' : 'bg-surface-1 text-secondary border-border hover:bg-surface-2'}"
             onclick={() => showFilters = !showFilters}
@@ -989,7 +1008,7 @@
           </button>
 
           {#if hasActiveFilters}
-            <button class="px-3 py-2 text-sm font-medium text-error hover:bg-error/10 rounded-lg" onclick={clearFilters}>Clear all</button>
+            <button aria-label="Clear all filters" class="px-3 py-2 text-sm font-medium text-error hover:bg-error/10 rounded-lg" onclick={clearFilters}>Clear all</button>
           {/if}
 
           <span class="ml-auto text-sm text-muted">{totalDocuments.toLocaleString()} documents</span>
