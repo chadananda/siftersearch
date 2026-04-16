@@ -22,6 +22,35 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
     for exploring and testing all endpoints directly in your browser.
   </p>
 
+  <h2>API Endpoints</h2>
+
+  <table>
+    <thead>
+      <tr><th>Service</th><th>Endpoint</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="3"><strong>Search</strong> — Full-text + semantic search across sacred texts</td></tr>
+      <tr><td></td><td><code>POST /api/v1/search</code></td><td>Hybrid search with AI analysis and scoring</td></tr>
+      <tr><td></td><td><code>POST /api/v1/search/quick</code></td><td>Fast keyword-only search (no AI, cacheable)</td></tr>
+      <tr><td></td><td><code>GET /api/v1/paragraph/:id</code></td><td>Get a specific paragraph by ID</td></tr>
+      <tr><td></td><td><code>GET /api/v1/collections</code></td><td>List religions and collections with counts</td></tr>
+      <tr><td colspan="3"><strong>Library</strong> — Browse and search the document catalog</td></tr>
+      <tr><td></td><td><code>GET /api/v1/library/documents</code></td><td>Search documents by title, author, metadata</td></tr>
+      <tr><td></td><td><code>GET /api/v1/library/documents/:id</code></td><td>Get single document metadata + canonical URL</td></tr>
+      <tr><td></td><td><code>GET /api/v1/library/authors</code></td><td>List authors with document counts</td></tr>
+      <tr><td></td><td><code>GET /api/v1/library/religions</code></td><td>Religion/collection tree with counts</td></tr>
+      <tr><td colspan="3"><strong>Chat</strong> — AI research assistant</td></tr>
+      <tr><td></td><td><code>POST /api/v1/chat</code></td><td>Conversational AI search (SSE streaming)</td></tr>
+      <tr><td colspan="3"><strong>Tools</strong> — For AI agents and chatbots</td></tr>
+      <tr><td></td><td><code>POST /api/v1/tools/search</code></td><td>Unified search tool (passages/documents/count/read)</td></tr>
+      <tr><td></td><td><code>GET /api/v1/tools/library</code></td><td>Library overview stats</td></tr>
+      <tr><td colspan="3"><strong>System</strong></td></tr>
+      <tr><td></td><td><code>GET /api/v1/health</code></td><td>API health check (no auth required)</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
   <h2>Authentication</h2>
 
   <p>All API requests require an API key passed in the <code>X-API-Key</code> header.</p>
@@ -75,8 +104,6 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
   </p>
 
   <hr />
-
-  <h2>Endpoints</h2>
 
   <!-- ============================================================ -->
   <!-- Search Service                                               -->
