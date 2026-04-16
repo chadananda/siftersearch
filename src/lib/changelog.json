@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-16T21:16:45.847Z",
+  "generated": "2026-04-16T21:22:00.399Z",
   "entries": [
+    {
+      "hash": "600263c",
+      "date": "2026-04-16",
+      "type": "Docs",
+      "description": "Add endpoint table of contents to API reference page",
+      "scope": null
+    },
     {
       "hash": "5d926ed",
       "date": "2026-04-11",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Move ai_usage migration to correct directory",
       "scope": null
-    },
-    {
-      "hash": "5265338",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add AI usage tracking and cost dashboard",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-16": [
+      {
+        "hash": "600263c",
+        "date": "2026-04-16",
+        "type": "Docs",
+        "description": "Add endpoint table of contents to API reference page",
+        "scope": null
+      }
+    ],
     "2026-04-11": [
       {
         "hash": "5d926ed",
@@ -7051,13 +7060,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Move ai_usage migration to correct directory",
-        "scope": null
-      },
-      {
-        "hash": "5265338",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add AI usage tracking and cost dashboard",
         "scope": null
       }
     ]

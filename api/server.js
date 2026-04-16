@@ -179,7 +179,7 @@ export async function createServer(opts = {}) {
     version: SERVER_VERSION
   }));
 
-  // OpenAPI / Swagger
+  // OpenAPI / Swagger — only expose /api/v1/ public endpoints
   await server.register(swagger, {
     openapi: {
       info: {
@@ -200,6 +200,11 @@ export async function createServer(opts = {}) {
         { name: 'Chat', description: 'AI-powered research assistant' },
         { name: 'System', description: 'Health checks and metadata' }
       ]
+    },
+    transform: ({ schema, url, ...rest }) => {
+      // Only include /api/v1/ routes in the OpenAPI spec
+      if (!url.startsWith('/api/v1/')) return { schema: { ...schema, hide: true }, url, ...rest };
+      return { schema, url, ...rest };
     }
   });
   await server.register(swaggerUi, {
