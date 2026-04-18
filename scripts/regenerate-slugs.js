@@ -118,8 +118,7 @@ async function main() {
          VALUES (?, ?, ?)
          ON CONFLICT(old_path) DO UPDATE SET
            new_path = excluded.new_path,
-           doc_id = excluded.doc_id,
-           cf_synced = 0`,
+           doc_id = excluded.doc_id`,
         [oldPath, newPath, String(c.id)]
       );
       redirected++;

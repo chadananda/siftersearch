@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-18T14:24:27.856Z",
+  "generated": "2026-04-18T14:38:01.064Z",
   "entries": [
+    {
+      "hash": "f0674f7",
+      "date": "2026-04-18",
+      "type": "Fixed",
+      "description": "Slug diacritics via NFD; regenerate existing slugs",
+      "scope": null
+    },
     {
       "hash": "ec84e48",
       "date": "2026-04-16",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Correct checkpoint boundary bug in translation resume logic",
       "scope": null
-    },
-    {
-      "hash": "43d06e3",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "SBS English text styling - larger font, proper LTR direction",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-18": [
+      {
+        "hash": "f0674f7",
+        "date": "2026-04-18",
+        "type": "Fixed",
+        "description": "Slug diacritics via NFD; regenerate existing slugs",
+        "scope": null
+      }
+    ],
     "2026-04-16": [
       {
         "hash": "ec84e48",
@@ -7053,13 +7062,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Correct checkpoint boundary bug in translation resume logic",
-        "scope": null
-      },
-      {
-        "hash": "43d06e3",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "SBS English text styling - larger font, proper LTR direction",
         "scope": null
       }
     ]
