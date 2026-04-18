@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-16T21:22:00.399Z",
+  "generated": "2026-04-18T14:24:27.856Z",
   "entries": [
+    {
+      "hash": "ec84e48",
+      "date": "2026-04-16",
+      "type": "Fixed",
+      "description": "Scope Swagger UI to only show /api/v1/ public endpoints",
+      "scope": null
+    },
     {
       "hash": "600263c",
       "date": "2026-04-16",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "SBS English text styling - larger font, proper LTR direction",
       "scope": null
-    },
-    {
-      "hash": "a563a00",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Move ai_usage migration to correct directory",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-16": [
+      {
+        "hash": "ec84e48",
+        "date": "2026-04-16",
+        "type": "Fixed",
+        "description": "Scope Swagger UI to only show /api/v1/ public endpoints",
+        "scope": null
+      },
       {
         "hash": "600263c",
         "date": "2026-04-16",
@@ -7053,13 +7060,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "SBS English text styling - larger font, proper LTR direction",
-        "scope": null
-      },
-      {
-        "hash": "a563a00",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Move ai_usage migration to correct directory",
         "scope": null
       }
     ]
