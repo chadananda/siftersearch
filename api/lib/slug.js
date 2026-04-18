@@ -3,57 +3,18 @@
  *
  * Generates URL-safe slugs from titles by:
  * - Converting to lowercase
- * - Removing diacritics (Báb → bab, Bahá'u'lláh → bahaullah)
+ * - Removing diacritics via Unicode NFD (Báb → bab, Rúḥíyyih → ruhiyyih)
  * - Replacing non-alphanumeric chars with hyphens
  * - Collapsing multiple hyphens
  */
 
-// Diacritics mapping - maps accented characters to their base form
-const DIACRITICS_MAP = {
-  // A variants
-  'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ā': 'a', 'ã': 'a', 'å': 'a', 'ą': 'a',
-  'Á': 'a', 'À': 'a', 'Ä': 'a', 'Â': 'a', 'Ā': 'a', 'Ã': 'a', 'Å': 'a', 'Ą': 'a',
-
-  // E variants
-  'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e', 'ē': 'e', 'ę': 'e', 'ě': 'e',
-  'É': 'e', 'È': 'e', 'Ë': 'e', 'Ê': 'e', 'Ē': 'e', 'Ę': 'e', 'Ě': 'e',
-
-  // I variants
-  'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i', 'ī': 'i', 'ı': 'i',
-  'Í': 'i', 'Ì': 'i', 'Ï': 'i', 'Î': 'i', 'Ī': 'i', 'İ': 'i',
-
-  // O variants
-  'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'ō': 'o', 'õ': 'o', 'ø': 'o',
-  'Ó': 'o', 'Ò': 'o', 'Ö': 'o', 'Ô': 'o', 'Ō': 'o', 'Õ': 'o', 'Ø': 'o',
-
-  // U variants
-  'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u', 'ū': 'u', 'ů': 'u',
-  'Ú': 'u', 'Ù': 'u', 'Ü': 'u', 'Û': 'u', 'Ū': 'u', 'Ů': 'u',
-
-  // Other consonants
-  'ñ': 'n', 'Ñ': 'n', 'ń': 'n', 'Ń': 'n',
-  'ç': 'c', 'Ç': 'c', 'č': 'c', 'Č': 'c', 'ć': 'c', 'Ć': 'c',
-  'ş': 's', 'Ş': 's', 'š': 's', 'Š': 's', 'ś': 's', 'Ś': 's',
-  'ž': 'z', 'Ž': 'z', 'ź': 'z', 'Ź': 'z', 'ż': 'z', 'Ż': 'z',
-  'ř': 'r', 'Ř': 'r',
-  'ý': 'y', 'Ý': 'y',
-  'ł': 'l', 'Ł': 'l',
-  'đ': 'd', 'Đ': 'd',
-  'ğ': 'g', 'Ğ': 'g',
-
-  // Ligatures
-  'æ': 'ae', 'Æ': 'ae',
-  'œ': 'oe', 'Œ': 'oe',
-  'ß': 'ss',
-};
-
 /**
- * Remove diacritics from a string
- * @param {string} str - Input string
- * @returns {string} String with diacritics removed
+ * Remove diacritics from a string using Unicode NFD normalization.
+ * Decomposes accented characters (á → a + ́) then strips combining marks.
+ * Handles all standard diacritics including dot-below (ḥ, ḍ, ṭ, ṣ, ẓ).
  */
 export function removeDiacritics(str) {
-  return str.split('').map(c => DIACRITICS_MAP[c] || c).join('');
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /**
@@ -69,13 +30,11 @@ export function removeDiacritics(str) {
 export function generateSlug(title) {
   if (!title) return '';
 
-  return title
-    .toLowerCase()
-    .split('').map(c => DIACRITICS_MAP[c] || c).join('')  // Remove diacritics
-    .replace(/[''`']/g, '')                                // Remove apostrophes
-    .replace(/[^a-z0-9]+/g, '-')                           // Non-alphanumeric to hyphens
-    .replace(/^-+|-+$/g, '')                               // Trim leading/trailing hyphens
-    .replace(/-+/g, '-');                                  // Collapse multiple hyphens
+  return removeDiacritics(title.toLowerCase())
+    .replace(/[\u0027\u0060\u2018\u2019\u02BB\u02BC\u02BD]/g, '')  // Apostrophes, backtick, curly quotes, Arabic ayn/hamza
+    .replace(/[^a-z0-9]+/g, '-')         // Non-alphanumeric to hyphens
+    .replace(/^-+|-+$/g, '')             // Trim leading/trailing hyphens
+    .replace(/-+/g, '-');                // Collapse multiple hyphens
 }
 
 /**
