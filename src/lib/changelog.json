@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-18T14:38:01.064Z",
+  "generated": "2026-04-18T14:40:05.445Z",
   "entries": [
+    {
+      "hash": "1365ca4",
+      "date": "2026-04-18",
+      "type": "Fixed",
+      "description": "Drop cf_synced from slug migration redirect upsert",
+      "scope": null
+    },
     {
       "hash": "f0674f7",
       "date": "2026-04-18",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Concurrent rolling queue for translation + mandatory segments",
       "scope": null
-    },
-    {
-      "hash": "41fffd9",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Correct checkpoint boundary bug in translation resume logic",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-18": [
+      {
+        "hash": "1365ca4",
+        "date": "2026-04-18",
+        "type": "Fixed",
+        "description": "Drop cf_synced from slug migration redirect upsert",
+        "scope": null
+      },
       {
         "hash": "f0674f7",
         "date": "2026-04-18",
@@ -7055,13 +7062,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Concurrent rolling queue for translation + mandatory segments",
-        "scope": null
-      },
-      {
-        "hash": "41fffd9",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Correct checkpoint boundary bug in translation resume logic",
         "scope": null
       }
     ]
