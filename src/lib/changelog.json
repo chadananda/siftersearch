@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-25T18:34:18.645Z",
+  "generated": "2026-04-25T19:02:15.533Z",
   "entries": [
+    {
+      "hash": "681c755",
+      "date": "2026-04-25",
+      "type": "Fixed",
+      "description": "Cursor-based pagination in truncate-embeddings",
+      "scope": null
+    },
     {
       "hash": "47ba4ff",
       "date": "2026-04-25",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
       "scope": null
-    },
-    {
-      "hash": "ee6e494",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Enforce max paragraph size with force-split fallback for translation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-25": [
+      {
+        "hash": "681c755",
+        "date": "2026-04-25",
+        "type": "Fixed",
+        "description": "Cursor-based pagination in truncate-embeddings",
+        "scope": null
+      },
       {
         "hash": "47ba4ff",
         "date": "2026-04-25",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-04",
         "type": "New",
         "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
-        "scope": null
-      },
-      {
-        "hash": "ee6e494",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Enforce max paragraph size with force-split fallback for translation",
         "scope": null
       }
     ]

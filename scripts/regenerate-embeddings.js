@@ -74,7 +74,7 @@ async function main() {
   let countWrongQuery = `
     SELECT COUNT(*) as count
     FROM content
-    WHERE embedding IS NOT NULL
+    WHERE deleted_at IS NULL AND embedding IS NOT NULL
   `;
   if (!force) {
     countWrongQuery += ` AND (embedding_model != ? OR embedding_model IS NULL)`;
@@ -92,7 +92,7 @@ async function main() {
   const { count: needsRegeneration } = await queryOne(countWrongQuery, countWrongParams);
 
   // Count paragraphs without any embedding
-  let countMissingQuery = `SELECT COUNT(*) as count FROM content WHERE embedding IS NULL`;
+  let countMissingQuery = `SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL AND embedding IS NULL`;
   if (language) {
     countMissingQuery += ` AND doc_id IN (SELECT id FROM docs WHERE language = ?)`;
   }
@@ -108,7 +108,7 @@ async function main() {
   const { count: alreadyCorrect } = await queryOne(`
     SELECT COUNT(*) as count
     FROM content
-    WHERE embedding IS NOT NULL
+    WHERE deleted_at IS NULL AND embedding IS NOT NULL
       AND embedding_model = ?
   `, [TARGET_MODEL]);
 
@@ -161,7 +161,7 @@ async function main() {
       SELECT c.id, c.text, c.doc_id, d.language
       FROM content c
       JOIN docs d ON d.id = c.doc_id
-      WHERE (
+      WHERE c.deleted_at IS NULL AND (
     `;
 
     const conditions = [];
