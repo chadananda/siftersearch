@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-25T18:23:58.970Z",
+  "generated": "2026-04-25T18:34:18.645Z",
   "entries": [
+    {
+      "hash": "47ba4ff",
+      "date": "2026-04-25",
+      "type": "Fixed",
+      "description": "Keep canonical embedding_model tag in truncate script",
+      "scope": null
+    },
     {
       "hash": "06f0a47",
       "date": "2026-04-18",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Enforce max paragraph size with force-split fallback for translation",
       "scope": null
-    },
-    {
-      "hash": "31c1289",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-25": [
+      {
+        "hash": "47ba4ff",
+        "date": "2026-04-25",
+        "type": "Fixed",
+        "description": "Keep canonical embedding_model tag in truncate script",
+        "scope": null
+      }
+    ],
     "2026-04-18": [
       {
         "hash": "06f0a47",
@@ -7055,13 +7064,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Enforce max paragraph size with force-split fallback for translation",
-        "scope": null
-      },
-      {
-        "hash": "31c1289",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
         "scope": null
       }
     ]

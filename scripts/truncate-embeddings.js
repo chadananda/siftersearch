@@ -98,15 +98,20 @@ async function main() {
 
   let processed = 0;
   let errors = 0;
-  let offset = 0;
+  let lastId = 0;
 
   while (processed < toProcess) {
+    // Cursor-based pagination on id. UPDATEs move rows out of the eligible set,
+    // so OFFSET would skip un-processed rows. Walking forward by id is stable.
+    // For dry-run, the eligible set doesn't shrink, so we still need lastId
+    // to advance past already-seen rows.
     const rows = await queryAll(
       `SELECT id, embedding FROM content
        WHERE embedding IS NOT NULL AND embedding_model = 'text-embedding-3-large'
        AND deleted_at IS NULL AND LENGTH(embedding) = ?
-       ORDER BY id LIMIT ? OFFSET ?`,
-      [SOURCE_BYTES, batchSize, offset]
+       AND id > ?
+       ORDER BY id LIMIT ?`,
+      [SOURCE_BYTES, lastId, batchSize]
     );
 
     if (rows.length === 0) break;
@@ -115,6 +120,7 @@ async function main() {
       const truncated = truncateAndNormalize(row.embedding);
       if (!truncated) {
         errors++;
+        lastId = row.id;
         continue;
       }
 
@@ -126,13 +132,12 @@ async function main() {
         );
       }
       processed++;
+      lastId = row.id;
 
       if (processed % 500 === 0) {
         process.stdout.write(`  ${processed} / ${toProcess} (${errors} errors)\r`);
       }
     }
-
-    offset += rows.length;
   }
 
   console.log(`\n✓ Truncated ${processed} embeddings (${errors} errors)`);
