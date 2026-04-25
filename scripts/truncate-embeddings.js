@@ -34,7 +34,9 @@ const TARGET_DIMS = 512;
 const SOURCE_DIMS = 3072;
 const SOURCE_BYTES = SOURCE_DIMS * 4; // Float32
 const TARGET_BYTES = TARGET_DIMS * 4;
-const NEW_MODEL = `text-embedding-3-large-${TARGET_DIMS}`;
+// Keep canonical tag — search/sync code keys off this exact string.
+// 512 vs 3072 is distinguished by LENGTH(embedding), not by tag.
+const NEW_MODEL = `text-embedding-3-large`;
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');

@@ -1,6 +1,20 @@
 {
-  "generated": "2026-04-18T14:40:05.445Z",
+  "generated": "2026-04-25T18:23:58.970Z",
   "entries": [
+    {
+      "hash": "06f0a47",
+      "date": "2026-04-18",
+      "type": "Other",
+      "description": "V2.2.8 — slug diacritics + redirect fixes",
+      "scope": null
+    },
+    {
+      "hash": "3fe25a4",
+      "date": "2026-04-18",
+      "type": "Other",
+      "description": "Push-slugs-to-meili companion script",
+      "scope": null
+    },
     {
       "hash": "1365ca4",
       "date": "2026-04-18",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
       "scope": null
-    },
-    {
-      "hash": "2bbefa2",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add test translation API endpoint",
-      "scope": null
-    },
-    {
-      "hash": "4e1a79a",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Concurrent rolling queue for translation + mandatory segments",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-18": [
+      {
+        "hash": "06f0a47",
+        "date": "2026-04-18",
+        "type": "Other",
+        "description": "V2.2.8 — slug diacritics + redirect fixes",
+        "scope": null
+      },
+      {
+        "hash": "3fe25a4",
+        "date": "2026-04-18",
+        "type": "Other",
+        "description": "Push-slugs-to-meili companion script",
+        "scope": null
+      },
       {
         "hash": "1365ca4",
         "date": "2026-04-18",
@@ -7048,20 +7062,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Split oversized paragraphs during ingestion (max 1500 chars)",
-        "scope": null
-      },
-      {
-        "hash": "2bbefa2",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add test translation API endpoint",
-        "scope": null
-      },
-      {
-        "hash": "4e1a79a",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Concurrent rolling queue for translation + mandatory segments",
         "scope": null
       }
     ]
