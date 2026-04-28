@@ -6,6 +6,7 @@ import LiquidBackground from '../../../components/LiquidBackground.svelte';
 import NavBar from '../../../components/common/NavBar.svelte';
 import { getCollection } from 'astro:content';
 import { smartQuotes as sq } from '../../../lib/smart-quotes.js';
+import { cardUrl } from '../../../lib/imagekit.js';
 
 export const prerender = true;
 
@@ -58,7 +59,7 @@ const description = `${dialogs.length} long-form ${label.toLowerCase()} dialogue
       {dialogs.map(d => (
         <a class="card" href={`/dialogue/${d.id.replace(/\.md$/, '')}/`}>
           {d.data.heroImage && (
-            <img class="card-image" src={d.data.heroImage} alt={d.data.title} loading="lazy" />
+            <img class="card-image" src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
           )}
           <div class="card-body">
             <h3>{sq(d.data.title)}</h3>

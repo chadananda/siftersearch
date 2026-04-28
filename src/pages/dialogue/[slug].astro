@@ -6,6 +6,7 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { getCollection, render } from 'astro:content';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
+import { heroUrl, cardUrl } from '../../lib/imagekit.js';
 
 // Prerender all dialog pages at build time. Required in Astro `output: 'server'`
 // mode for getStaticPaths to actually generate routes. Without this the
@@ -113,7 +114,7 @@ const TOPIC_LABELS: Record<string, string> = {
   <article class="dialog-page">
     <div class="dialog-hero">
       {data.heroImage ? (
-        <img class="hero-image" src={data.heroImage} alt={data.title} />
+        <img class="hero-image" src={heroUrl(data.heroImage)} alt={data.title} />
       ) : (
         <div class="hero-watercolor" aria-hidden="true">
           <svg viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid slice">
@@ -207,7 +208,7 @@ const TOPIC_LABELS: Record<string, string> = {
               {related.map(r => (
                 <li>
                   <a href={`/dialogue/${r.slug}/`} class="related-card">
-                    {r.heroImage && <img src={r.heroImage} alt="" loading="lazy" />}
+                    {r.heroImage && <img src={cardUrl(r.heroImage)} alt="" loading="lazy" />}
                     <span class="related-text">
                       <span class="related-title">{sq(r.title)}</span>
                       <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>

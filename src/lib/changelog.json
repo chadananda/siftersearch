@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T17:36:17.701Z",
+  "generated": "2026-04-28T17:41:24.697Z",
   "entries": [
+    {
+      "hash": "867823d",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Round-summary h3 headers in dialog body — TOC auto-builds from them; tiny styling so they don't fight the prose",
+      "scope": null
+    },
     {
       "hash": "e544f46",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Wait for auth before loading document in editor",
       "scope": null
-    },
-    {
-      "hash": "009aa5b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use padding-right for Arabic continuation indent",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "867823d",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Round-summary h3 headers in dialog body — TOC auto-builds from them; tiny styling so they don't fight the prose",
+        "scope": null
+      },
       {
         "hash": "e544f46",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Wait for auth before loading document in editor",
-        "scope": null
-      },
-      {
-        "hash": "009aa5b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use padding-right for Arabic continuation indent",
         "scope": null
       }
     ]
