@@ -230,8 +230,10 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
     const u = history[i];
     const a = history[i + 1];
     if (!u || !a) break;
-    parts.push('## You', '', u.content, '', '## Jafar', '', a.content, '');
-    if (i + 2 < history.length - 1) parts.push('---', '');
+    // Wrap each turn in a div so the detail page can style speakers visually
+    // (italic+indent for user, avatar+normal for Jafar) without "You"/"Jafar" labels.
+    parts.push(`<div class="user-turn">`, '', u.content, '', '</div>', '');
+    parts.push(`<div class="jafar-turn">`, '', a.content, '', '</div>', '');
   }
 
   // Hero image already on disk at /images/dialog/{slug}-hero.jpg
@@ -314,7 +316,7 @@ async function runOne(idx, q) {
   console.log(`  plan: ${judgeResult.improvement_plan || '(none)'}`);
 
   // Write dialog markdown
-  const md = dialogMarkdown(q, history, score, judgeResult);
+  const md = dialogMarkdown(q, history, score, judgeResult, slug);
   writeFileSync(mdPath, md);
   console.log(`  wrote ${mdPath}`);
 
