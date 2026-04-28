@@ -5,6 +5,7 @@ import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { getCollection } from 'astro:content';
+import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 
 // Prerender at build time — content is static between deploys.
 export const prerender = true;
@@ -150,8 +151,8 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                   </div>
                 )}
                 <div class="card-body">
-                  <h3>{d.data.title}</h3>
-                  <p class="card-summary">{d.data.description}</p>
+                  <h3>{sq(d.data.title)}</h3>
+                  <p class="card-summary">{sq(d.data.description)}</p>
                   <div class="card-meta">
                     {typeof d.data.qualityScore === 'number' && (
                       <span class="score" data-score={d.data.qualityScore}>{d.data.qualityScore}%</span>

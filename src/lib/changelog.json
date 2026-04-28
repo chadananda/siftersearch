@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T08:35:51.822Z",
+  "generated": "2026-04-28T12:11:27.039Z",
   "entries": [
+    {
+      "hash": "94fb8ec",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
+      "scope": null
+    },
     {
       "hash": "e15c1ef",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Increase content max-width to 900px",
       "scope": null
-    },
-    {
-      "hash": "80421ca",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "SBS phrase highlighting uses composite keys + styling improvements",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "94fb8ec",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "101 hand-drawn-watercolor hero images for all dialogs (gpt-image-1, ~$10)",
+        "scope": null
+      },
       {
         "hash": "e15c1ef",
         "date": "2026-04-28",
@@ -7059,15 +7066,6 @@
         "date": "2026-01-05",
         "type": "Style",
         "description": "Increase content max-width to 900px",
-        "scope": null
-      }
-    ],
-    "2026-01-04": [
-      {
-        "hash": "80421ca",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "SBS phrase highlighting uses composite keys + styling improvements",
         "scope": null
       }
     ]

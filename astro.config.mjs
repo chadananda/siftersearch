@@ -3,6 +3,7 @@ import svelte from '@astrojs/svelte';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import cloudflare from '@astrojs/cloudflare';
+import remarkSmartypants from 'remark-smartypants';
 import { readFileSync } from 'fs';
 
 // Read version from package.json
@@ -25,6 +26,12 @@ export default defineConfig({
   prefetch: {
     defaultStrategy: 'hover',
     prefetchAll: false
+  },
+
+  // Smart-quote transformation for all markdown content (dialogs, docs, agents).
+  // " → " " and ' → ' ', em-dashes, ellipses. Never display straight quotes.
+  markdown: {
+    remarkPlugins: [remarkSmartypants],
   },
 
   integrations: [

@@ -5,6 +5,7 @@ import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { getCollection, render } from 'astro:content';
+import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 
 // Prerender all dialog pages at build time. Required in Astro `output: 'server'`
 // mode for getStaticPaths to actually generate routes. Without this the
@@ -62,8 +63,8 @@ const TOPIC_LABELS: Record<string, string> = {
 ---
 
 <Layout
-  title={`${data.title} — Dialog`}
-  description={data.description}
+  title={`${sq(data.title)} — Dialog`}
+  description={sq(data.description)}
   image={data.heroImage ?? '/og-image.png'}
   type="article"
 >
@@ -110,10 +111,10 @@ const TOPIC_LABELS: Record<string, string> = {
     <div class="dialog-container">
       <header class="dialog-header">
         <a href="/dialog" class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</a>
-        <h1>{data.title}</h1>
+        <h1>{sq(data.title)}</h1>
         <blockquote class="seed-question">
           <span class="quote-mark" aria-hidden="true">&ldquo;</span>
-          {data.question}
+          {sq(data.question)}
         </blockquote>
         <div class="dialog-meta">
           {typeof data.qualityScore === 'number' && (
