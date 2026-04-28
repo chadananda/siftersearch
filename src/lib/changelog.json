@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T22:50:44.717Z",
+  "generated": "2026-04-28T22:55:26.788Z",
   "entries": [
+    {
+      "hash": "5b47747",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Post-filter religion (apostrophe-safe), penalize commentary titles",
+      "scope": null
+    },
     {
       "hash": "979aef6",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add auto_segmented flag to track AI-segmented documents",
       "scope": null
-    },
-    {
-      "hash": "ddc9c14",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Strip collection/religion from source document frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "5b47747",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Post-filter religion (apostrophe-safe), penalize commentary titles",
+        "scope": null
+      },
       {
         "hash": "979aef6",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add auto_segmented flag to track AI-segmented documents",
-        "scope": null
-      },
-      {
-        "hash": "ddc9c14",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Strip collection/religion from source document frontmatter",
         "scope": null
       }
     ]

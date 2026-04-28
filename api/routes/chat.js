@@ -105,12 +105,14 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**Specific named works — use the citation pipeline.** When the conversation is about a specific named scripture or work (*the Tablet of Wisdom, the Iqán, the Hidden Words, the Gospel of John, the Bhagavad Gita, a specific Upanishad*) — that is, when the user is asking what a particular text says — use this two-step pipeline:
+**Specific named works — use the two-step citation pipeline. ALWAYS BOTH STEPS.** When the conversation is about a specific named scripture or work (*the Tablet of Wisdom, the Iqán, the Hidden Words, the Gospel of John, the Bhagavad Gita, a specific Upanishad*) — that is, when the user is asking what a particular text says — use this pipeline:
 
-1. \`find_document_for_citation\` with the work's name and the religion. This is the citation lookup. It applies an authority boost so canonical scriptures rank above commentaries that happen to share the title (e.g. "Tablet of Wisdom: Questions and Answers" loses to the Tablet itself). Returns up to 5 candidates with \`document_id\`, \`paragraph_count\`, and an \`is_primary\` flag.
-2. \`read_document_for_question\` with the \`document_id\` of the primary match and the user's question. A sub-agent reads the document and returns ONLY a tailored summary plus 2-3 verbatim excerpts — the document body never enters your context. If it errors, fall back to \`search\` with \`mode: "read"\` on the same \`document_id\`.
+1. **STEP 1:** \`find_document_for_citation\` with the work's name and the religion. Returns up to 5 candidates ranked by authority. The candidate with \`is_primary: true\` is the actual canonical scripture. Take its \`document_id\`.
+2. **STEP 2 (REQUIRED whenever step 1 returns a primary candidate):** \`read_document_for_question\` with that \`document_id\` and the user's question. A sub-agent reads the document and returns a tailored summary plus 2-3 verbatim excerpts. The document body never enters your context.
 
-This pipeline is for the case "what does X say about Y?" Use \`search\` with \`mode: "passages"\` for the case "find me passages on Y." Failing to answer a question about a named small work because keyword search missed the right phrase is a refusal masquerading as research — the citation pipeline is exactly the tool for this.
+You MUST do step 2 if step 1 found a primary candidate. Stopping at step 1 and answering from training memory defeats the entire pipeline. Only skip step 2 if (a) step 1 returned no candidates with \`is_primary: true\`, OR (b) step 2 itself errors — and in case (b), retry once with \`search\` and \`mode: "read"\` on the same \`document_id\`.
+
+This pipeline is for "what does X say about Y?" Use \`search\` with \`mode: "passages"\` for "find me passages on Y."
 
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
@@ -456,14 +458,22 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
         limit: 50, // over-fetch so post-filtering still leaves enough candidates
         attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug']
       });
+      // Normalize apostrophe + diacritic variants — the DB stores Bahá'u'lláh
+      // with curly apostrophe (U+2019); a user typing the same name with a
+      // straight quote (U+0027) shouldn't break matching.
+      const normalize = (s) => (s || '')
+        .toLowerCase()
+        .normalize('NFD')               // decompose diacritics
+        .replace(/[\u0300-\u036f]/g, '') // strip combining marks
+        .replace(/[\u2018\u2019\u02bc\u02bb`]/g, "'"); // unify apostrophes
       let hits = result.hits;
       if (religion) {
-        const r = religion.toLowerCase();
-        hits = hits.filter(h => (h.religion || '').toLowerCase() === r);
+        const r = normalize(religion);
+        hits = hits.filter(h => normalize(h.religion) === r);
       }
       if (author) {
-        const a = author.toLowerCase();
-        hits = hits.filter(h => (h.author || '').toLowerCase().includes(a));
+        const a = normalize(author);
+        hits = hits.filter(h => normalize(h.author).includes(a));
       }
       // Re-rank: authority score first, then Meilisearch position
       hits = hits
