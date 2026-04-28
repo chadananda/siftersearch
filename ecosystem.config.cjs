@@ -24,7 +24,11 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       watch: false,
-      max_memory_restart: '500M',
+      // 188GB RAM box — be generous. The previous 500M (and stale 100M
+      // PM2 runtime) caused 30-second restart loops during normal search
+      // load: any reranking + KV cache spike pushed past the limit and
+      // PM2 killed the process mid-request.
+      max_memory_restart: '1500M',
       // NO wait_ready — it caused death spirals when Meilisearch was slow
       wait_ready: false,
       env: {
@@ -50,7 +54,9 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      max_memory_restart: '500M',
+      // Worker batches LLM calls + holds embedding payloads in memory.
+      // Same reasoning as the API: be generous on a 188GB box.
+      max_memory_restart: '1500M',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''

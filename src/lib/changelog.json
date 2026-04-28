@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-25T19:02:15.533Z",
+  "generated": "2026-04-28T03:18:35.482Z",
   "entries": [
+    {
+      "hash": "f1fb0c1",
+      "date": "2026-04-25",
+      "type": "Fixed",
+      "description": "Regenerate-embeddings filters out soft-deleted rows",
+      "scope": null
+    },
     {
       "hash": "681c755",
       "date": "2026-04-25",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
       "scope": null
-    },
-    {
-      "hash": "34f35ff",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-25": [
+      {
+        "hash": "f1fb0c1",
+        "date": "2026-04-25",
+        "type": "Fixed",
+        "description": "Regenerate-embeddings filters out soft-deleted rows",
+        "scope": null
+      },
       {
         "hash": "681c755",
         "date": "2026-04-25",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
-        "scope": null
-      },
-      {
-        "hash": "34f35ff",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add two-tier sentence validation with AI verification for suspicious lengths",
         "scope": null
       }
     ]
