@@ -26,7 +26,7 @@ const STYLE = ' Square 1:1 composition, the single letter centered and dominatin
 const LETTERS = [
   {
     slug: 'q-watercolor',
-    prompt: 'A single elegant italic capital letter "Q" rendered in deep cool blue watercolor — indigo, cobalt, and steel-blue washes — with subtle gold highlights along the right edge of the stroke. The letter\'s tail (the descender) is a confident curving flourish. Centered on a darker indigo wash background.'
+    prompt: 'A single elegant italic capital letter "Q" rendered in BRIGHT warm gold watercolor — burnished gold, ochre, and amber washes, glowing — with subtle deep-blue shadow on the left edge. The letter\'s tail (the descender) is a confident curving flourish. Bright and luminous, classical Roman proportions with refined serifs. Centered on a darker indigo wash background. Should pair visually with a matching gold "A" letterform of the same style.'
   },
   {
     slug: 'a-watercolor',
