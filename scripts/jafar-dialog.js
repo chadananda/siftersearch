@@ -34,9 +34,16 @@ function arg(name) {
 }
 const convPath = arg('--conv');
 const userMsg = arg('--user');
+const promptFile = arg('--prompt-file');
 if (!convPath || !userMsg) {
-  console.error('Usage: --conv <path.json> --user "<message>"');
+  console.error('Usage: --conv <path.json> --user "<message>" [--prompt-file <path.txt>]');
   process.exit(1);
+}
+
+// Optional system prompt override (for v2 testing without touching production)
+let systemPromptOverride = null;
+if (promptFile) {
+  systemPromptOverride = readFileSync(promptFile, 'utf-8');
 }
 
 // Local copy of executeLibraryOverview if not exported (small helper)
@@ -60,8 +67,9 @@ if (existsSync(convPath)) {
 }
 
 // Build messages array for the API call
+const activePrompt = systemPromptOverride ?? SYSTEM_PROMPT;
 const messages = [
-  { role: 'system', content: SYSTEM_PROMPT },
+  { role: 'system', content: activePrompt },
   ...transcript.messages,
   { role: 'user', content: userMsg }
 ];

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T04:15:21.496Z",
+  "generated": "2026-04-28T04:35:05.925Z",
   "entries": [
+    {
+      "hash": "7329845",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "/dialog section — content schema, listing + detail pages, runner",
+      "scope": null
+    },
     {
       "hash": "a820d79",
       "date": "2026-04-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent sentence overlap in extractSentencesFromEndings",
       "scope": null
-    },
-    {
-      "hash": "1c26fe2",
-      "date": "2026-01-04",
-      "type": "New",
-      "description": "Add strict word-for-word validation for segmentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-27": [
+      {
+        "hash": "7329845",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "/dialog section — content schema, listing + detail pages, runner",
+        "scope": null
+      },
       {
         "hash": "a820d79",
         "date": "2026-04-27",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Prevent sentence overlap in extractSentencesFromEndings",
-        "scope": null
-      },
-      {
-        "hash": "1c26fe2",
-        "date": "2026-01-04",
-        "type": "New",
-        "description": "Add strict word-for-word validation for segmentation",
         "scope": null
       }
     ]
