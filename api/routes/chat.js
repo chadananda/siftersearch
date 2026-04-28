@@ -105,7 +105,7 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**When the topic is a specific small work, READ IT.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), call \`search\` with \`mode: "read"\`, \`document_id: <id>\`, \`limit: 100\` to fetch the actual content. Iterate \`start: 0, 100, 200…\` if needed. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, ingest it. The same applies to any short tablet, letter, or chapter under direct discussion.
+**When the topic is a specific small work, READ IT — but via the sub-agent.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), use the \`read_document_for_question\` tool. A sub-agent will read the full document and return ONLY a tailored summary plus 2-3 verbatim excerpts — the document body never enters this conversation. This keeps the thread clean while you still get grounded, citable answers from the actual text. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, send the sub-agent to read it. The same applies to any short tablet, letter, or chapter under direct discussion.
 
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
@@ -200,6 +200,22 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
       name: 'library_overview',
       description: 'Get a high-level overview of the entire library: total documents, passages, religions, and collections with counts. Use when the user asks about the library scope or size.',
       parameters: { type: 'object', properties: {} }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_document_for_question',
+      description: `When the conversation centers on a specific named document and the document is small enough to ingest (paragraph_count from a prior search ≤ ~150), use this tool instead of mode:"read". A sub-agent reads the full document, then returns ONLY the 2-3 most-relevant verbatim passages plus a brief summary tailored to your question. This keeps the conversation thread clean — full document text never enters your own context. Pass the user's actual question as a complete sentence so the sub-agent can target relevance correctly.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          document_id: { type: 'integer', description: 'The document_id from a prior search result.' },
+          question: { type: 'string', description: 'The full question (in the user\'s own words or yours) the sub-agent should target as it reads.' },
+          max_paragraphs: { type: 'integer', description: 'Cap on how many paragraphs the sub-agent fetches (default 150).', default: 150 }
+        },
+        required: ['document_id', 'question']
+      }
     }
   }
 ];
@@ -338,10 +354,75 @@ export async function executeLibraryOverview() {
   };
 }
 
+// Read-document sub-agent. Fetches the document content paragraph-by-paragraph
+// and runs a single gpt-4o pass to extract verbatim excerpts + a tailored
+// summary. Only the distilled result returns to Jafar — full text never
+// enters the main conversation context.
+async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 150 }) {
+  const doc = await queryOne(
+    'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
+    [document_id]
+  );
+  if (!doc) return { error: 'Document not found' };
+
+  const cap = Math.min(Math.max(max_paragraphs || 150, 1), 300);
+  const paragraphs = await queryAll(
+    `SELECT paragraph_index, text, heading FROM content
+     WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ?`,
+    [document_id, cap]
+  );
+  if (paragraphs.length === 0) return { error: 'Document is empty or unreadable' };
+
+  // Build a compact corpus the sub-agent can read end-to-end. Numbered
+  // paragraphs let it cite indices back to Jafar.
+  const corpus = paragraphs
+    .map(p => `[${p.paragraph_index}]${p.heading ? ` ${p.heading}` : ''} ${p.text}`)
+    .join('\n\n');
+
+  const subSystem = `You are a research sub-agent. You read a single document and return ONLY:
+- a 1-3 sentence summary tailored to the question (concrete, grounded in the document)
+- 2-3 verbatim excerpts most relevant to the question, each with its paragraph index
+
+Respond as JSON: {"summary":"...","excerpts":[{"paragraph_index":N,"text":"..."}]}.
+Do not paraphrase the excerpts — they must be exact text from the document. If the document does not address the question, set summary to a one-line statement of that fact and excerpts to [].`;
+
+  const subUser = `Document: "${doc.title}" by ${doc.author || 'unknown'} (${doc.religion || ''}${doc.collection ? `, ${doc.collection}` : ''}${doc.year ? `, ${doc.year}` : ''})
+
+Question to target: ${question}
+
+Document content (paragraph indices in brackets):
+${corpus}`;
+
+  let parsed = null;
+  try {
+    const subResp = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: subSystem },
+        { role: 'user', content: subUser }
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+      response_format: { type: 'json_object' }
+    });
+    parsed = JSON.parse(subResp.choices[0].message.content);
+  } catch (err) {
+    return { error: `Sub-agent read failed: ${err.message}` };
+  }
+
+  return {
+    document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
+    paragraphs_read: paragraphs.length,
+    summary: parsed?.summary || '',
+    excerpts: Array.isArray(parsed?.excerpts) ? parsed.excerpts.slice(0, 3) : []
+  };
+}
+
 async function executeTool(name, args) {
   switch (name) {
     case 'search': return executeSearch(args);
     case 'library_overview': return executeLibraryOverview();
+    case 'read_document_for_question': return executeReadDocumentForQuestion(args);
     default: return { error: `Unknown tool: ${name}` };
   }
 }
