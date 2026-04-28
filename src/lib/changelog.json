@@ -1,6 +1,20 @@
 {
-  "generated": "2026-04-28T12:18:44.771Z",
+  "generated": "2026-04-28T13:43:48.582Z",
   "entries": [
+    {
+      "hash": "2e7b43d",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
+      "scope": null
+    },
+    {
+      "hash": "5cd0614",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
+      "scope": null
+    },
     {
       "hash": "32b3a72",
       "date": "2026-04-28",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Study view now uses API pre-parsed translation fields",
       "scope": null
-    },
-    {
-      "hash": "ad5bdd5",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view now correctly detects study translations in JSON",
-      "scope": null
-    },
-    {
-      "hash": "3c2d6c0",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Reduce corner icon overlap on mobile to slight overlap",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "2e7b43d",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "BACKUP_DIR is configurable via env (was hardcoded to data/backups, filled OS root partition)",
+        "scope": null
+      },
+      {
+        "hash": "5cd0614",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "Scrub tech-stack/website references from dialog bodies; add darkened backdrop panel for legibility",
+        "scope": null
+      },
       {
         "hash": "32b3a72",
         "date": "2026-04-28",
@@ -7052,20 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Study view now uses API pre-parsed translation fields",
-        "scope": null
-      },
-      {
-        "hash": "ad5bdd5",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view now correctly detects study translations in JSON",
-        "scope": null
-      },
-      {
-        "hash": "3c2d6c0",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Reduce corner icon overlap on mobile to slight overlap",
         "scope": null
       }
     ]
