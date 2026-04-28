@@ -27,7 +27,11 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 const OpenAI = (await import('openai')).default;
-const { SYSTEM_PROMPT, TOOLS, executeSearch } = await import('../api/routes/chat.js');
+// Note: this runner now talks to Jafar via HTTP (api.siftersearch.com/api/chat/stream)
+// instead of importing chat.js in-process. Means the runner can run anywhere
+// (no SSH to tower-nas, no local DB required) and the production prompt is
+// always whatever's deployed.
+const JAFAR_API = process.env.JAFAR_API_URL || 'https://api.siftersearch.com/api/chat/stream';
 
 const args = process.argv.slice(2);
 function arg(n, d = null) { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; }
@@ -39,8 +43,12 @@ const skipExisting = !args.includes('--rerun');
 
 const questions = JSON.parse(readFileSync(questionsPath, 'utf-8'));
 
-let jafarPrompt = SYSTEM_PROMPT;
-if (promptFile) jafarPrompt = readFileSync(promptFile, 'utf-8');
+// Jafar's prompt now lives server-side (in api/routes/chat.js). The runner
+// no longer manages it — whatever's deployed there is what we get.
+// --prompt-file is ignored in HTTP mode.
+if (promptFile) {
+  console.warn('--prompt-file is ignored in HTTP mode; edit api/routes/chat.js + deploy.');
+}
 
 const USER_PROMPT = `You are a thoughtful, curious friend in real conversation with Jafar. You have come to think carefully about a real question, and Jafar is talking it through with you.
 
@@ -111,50 +119,65 @@ const MODEL_USER = 'gpt-4o';
 const MODEL_JAFAR = process.env.CHAT_LLM_MODEL || 'gpt-4o';
 const MODEL_JUDGE = 'gpt-4o';
 
-async function executeLibraryOverview() {
-  const { queryAll, queryOne } = await import('../api/lib/db.js');
-  const totals = await queryOne('SELECT (SELECT COUNT(*) FROM docs WHERE deleted_at IS NULL) AS docs, (SELECT COUNT(*) FROM content WHERE deleted_at IS NULL) AS passages');
-  const religions = await queryAll('SELECT religion, COUNT(*) AS docs FROM docs WHERE deleted_at IS NULL GROUP BY religion ORDER BY docs DESC');
-  return { totals, religions };
-}
-
-async function executeTool(name, args) {
-  if (name === 'search') return executeSearch(args);
-  if (name === 'library_overview') return executeLibraryOverview();
-  return { error: `Unknown tool: ${name}` };
-}
-
+// One Jafar turn = one HTTP POST to /api/chat/stream.
+// The endpoint runs the system prompt + tool calls server-side and streams
+// SSE events. We accumulate type=chunk text events and return the final reply.
 async function jafarTurn(history) {
-  const messages = [
-    { role: 'system', content: jafarPrompt },
-    ...history
-  ];
+  const body = JSON.stringify({
+    messages: history.map(h => ({ role: h.role, content: h.content }))
+  });
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (process.env.SIFTERSEARCH_API_KEY) {
+    headers['X-API-Key'] = process.env.SIFTERSEARCH_API_KEY;
+  }
+
+  const res = await fetch(JAFAR_API, { method: 'POST', headers, body });
+  if (!res.ok) {
+    const err = await res.text().catch(() => '');
+    throw new Error(`chat/stream HTTP ${res.status}: ${err.slice(0, 300)}`);
+  }
+
+  // Parse SSE stream — each line "data: {json}" is an event.
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let text = '';
   const toolCalls = [];
-  let out = '';
-  let safety = 0;
-  while (safety++ < 8) {
-    const r = await client.chat.completions.create({
-      model: MODEL_JAFAR,
-      messages,
-      tools: TOOLS,
-      tool_choice: 'auto',
-      temperature: 0.7
-    });
-    const m = r.choices[0].message;
-    messages.push(m);
-    if (!m.tool_calls?.length) {
-      out = m.content || '';
-      break;
-    }
-    for (const tc of m.tool_calls) {
-      let args;
-      try { args = JSON.parse(tc.function.arguments); } catch { args = {}; }
-      const result = await executeTool(tc.function.name, args);
-      toolCalls.push({ name: tc.function.name, args });
-      messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result).slice(0, 12000) });
+
+  for await (const chunk of res.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === 'chunk' && typeof evt.text === 'string') {
+          text += evt.text;
+        } else if (evt.type === 'tool_call' || evt.type === 'tool') {
+          toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
+        } else if (evt.type === 'error') {
+          throw new Error(evt.message || 'stream error');
+        }
+      } catch (parseErr) {
+        // Non-JSON SSE event — skip
+      }
     }
   }
-  return { text: out, toolCalls };
+  // Flush trailing buffered partial line
+  if (buffer.startsWith('data:')) {
+    const payload = buffer.slice(5).trim();
+    if (payload && payload !== '[DONE]') {
+      try {
+        const evt = JSON.parse(payload);
+        if (evt.type === 'chunk' && typeof evt.text === 'string') text += evt.text;
+      } catch { /* ignore */ }
+    }
+  }
+
+  return { text, toolCalls };
 }
 
 async function userTurn(history, seedQuestion, roundNumber) {
@@ -310,7 +333,7 @@ async function runOne(idx, q) {
 
 const todo = questions.slice(start, start + limit);
 console.log(`Running ${todo.length} conversations (start=${start}, limit=${limit})`);
-console.log(`Using prompt: ${promptFile || 'production SYSTEM_PROMPT'}\n`);
+console.log(`Talking to Jafar at: ${JAFAR_API}\n`);
 
 const results = [];
 for (let i = 0; i < todo.length; i++) {
