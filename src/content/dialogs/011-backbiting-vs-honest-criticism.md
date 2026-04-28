@@ -22,8 +22,7 @@ The Bahá'í writings strongly forbid backbiting. But honest criticism of public
 ## Jafar
 
 The Bahá'í writings do indeed emphasize the importance of avoiding backbiting, which is seen as detrimental to both individual character and community harmony. Backbiting is generally understood as speaking negatively about someone who is not present, often with the intent to harm their reputation or sow discord.
-
-However, the Bahá'í teachings also encourage speaking out against injustice and holding those in power accountable. The key distinction lies in the intention and the manner of the criticism. If the aim is to address injustice, promote truth, and seek improvement, then it is not considered backbiting. The guidance is to speak with fairness, without malice, and to focus on constructive solutions rather than merely denouncing individuals.
+the Bahá'í teachings also encourage speaking out against injustice and holding those in power accountable. The key distinction lies in the intention and the manner of the criticism. If the aim is to address injustice, promote truth, and seek improvement, then it is not considered backbiting. The guidance is to speak with fairness, without malice, and to focus on constructive solutions rather than merely denouncing individuals.
 
 The line between backbiting and necessary criticism can be subtle, and it often depends on the spirit with which one approaches the situation. The writings encourage us to consult with others and seek wisdom in our approach, ensuring that our actions are motivated by a genuine desire to uplift and improve rather than to harm or belittle.
 

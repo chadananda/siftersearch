@@ -65,7 +65,7 @@ Esslemont and Taherzadeh provide interesting perspectives, but I'm curious about
 
 ## Jafar
 
-The search did not yield direct quotes from the primary Bahá'í texts that specifically address why there needed to be two consecutive Manifestations rather than one. The Bahá'í teachings, however, emphasize the complementary roles of the Báb and Bahá'u'lláh in a broader context. While the specific necessity for two separate figures is not explicitly detailed in the foundational texts, the idea of their missions being interconnected and sequential is a recurring theme.
+The Bahá'í teachings, however, emphasize the complementary roles of the Báb and Bahá'u'lláh in a broader context. While the specific necessity for two separate figures is not explicitly detailed in the foundational texts, the idea of their missions being interconnected and sequential is a recurring theme.
 
 The Báb's role was to prepare the world for Bahá'u'lláh's message, acting as a herald. Bahá'u'lláh's revelation then provided the comprehensive teachings aimed at unifying humanity and establishing a new world order. This division can be seen as reflecting the principle of progressive revelation, where divine guidance unfolds in stages according to humanity's capacity to receive it.
 

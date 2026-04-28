@@ -119,7 +119,7 @@ The emphasis on gradual spiritual growth and community support in nurturing an i
 
 ## Jafar
 
-While the search did not yield specific passages directly from Bahá'u'lláh or 'Abdu'l-Bahá on cultivating mindfulness and conscious knowledge in prayer, there are broader teachings and practices within the Bahá'í Faith that provide guidance on these aspects.
+While there are broader teachings and practices within the Bahá'í Faith that provide guidance on these aspects.
 
 The emphasis on meditation and reflection in Bahá'í practice is a key method for developing mindfulness. Bahá'ís are encouraged to engage in daily reflection on their actions and spiritual state, which helps cultivate an awareness that can enhance their prayer life. This reflective practice is seen as a way to deepen one's understanding and keep the spiritual essence alive, preventing routines from becoming mechanical.
 

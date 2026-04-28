@@ -22,8 +22,7 @@ Is Bahá'í 'progressive revelation' a teleological story heading somewhere, or 
 ## Jafar
 
 The concept of progressive revelation in the Bahá'í Faith indeed carries elements of both a teleological progression and a cyclical renewal. At its core, progressive revelation is teleological — it suggests that humanity is moving toward a specific purpose or goal, which is the unification of the human race and the establishment of a peaceful global civilization. This trajectory is seen as guided by successive Messengers from God, each bringing teachings suited to the needs and capacities of their time.
-
-However, there is also a recognition of cyclical patterns within this forward movement. The Bahá'í writings acknowledge periods of decline and renewal, where spiritual teachings may be forgotten or corrupted, necessitating a new revelation to restore and advance human understanding. This cyclical aspect doesn't negate the teleological story but rather highlights the dynamic process through which humanity progresses.
+there is also a recognition of cyclical patterns within this forward movement. The Bahá'í writings acknowledge periods of decline and renewal, where spiritual teachings may be forgotten or corrupted, necessitating a new revelation to restore and advance human understanding. This cyclical aspect doesn't negate the teleological story but rather highlights the dynamic process through which humanity progresses.
 
 The deeper teaching is ultimately teleological, as the Bahá'í Faith envisions a future where the unity of humanity is fully realized, and societies reflect divine principles in their structures. The cycles of decline and renewal are viewed as part of the learning and growing process, essential for the progress toward that ultimate goal.
 

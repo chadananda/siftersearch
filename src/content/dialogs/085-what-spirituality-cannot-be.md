@@ -42,7 +42,7 @@ Moreover, spirituality in the Bahá'í Faith is not about material or intellectu
 
 > "I desire for you distinction. The Bahá’ís must be distinguished from others of humanity... For you I desire spiritual distinction; that is, you must become eminent and distinguished in morals. In the love of God you must become distinguished." (Star of the West)
 
-These passages suggest that spirituality in the Bahá'í context is deeply intertwined with a love of God and a commitment to embodying divine attributes, which sets it apart from secular actions that may have similar ethical goals but lack this spiritual foundation. The absence of specific search results for the *Hidden Words* or *Kitáb-i-Íqán* in this query means we might need to explore other texts or contexts to further clarify these distinctions.
+These passages suggest that spirituality in the Bahá'í context is deeply intertwined with a love of God and a commitment to embodying divine attributes, which sets it apart from secular actions that may have similar ethical goals but lack this spiritual foundation. The absence of specific the texts for the *Hidden Words* or *Kitáb-i-Íqán* in this query means we might need to explore other texts or contexts to further clarify these distinctions.
 
 ---
 

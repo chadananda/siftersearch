@@ -73,7 +73,7 @@ Furthermore, Bahá'u'lláh's detailing of the calendar in the *Kitáb-i-Aqdas* f
 
 ## Jafar
 
-The search results didn't yield any direct quotations from Bahá'u'lláh or 'Abdu'l-Bahá specifically linking the solar nature of the Badí' calendar to the principle of unity in a detailed doctrinal context. However, there are some insights that can be pieced together from the available references and the general understanding within the Bahá'í community.
+The the texts didn't yield any direct quotations from Bahá'u'lláh or 'Abdu'l-Bahá specifically linking the solar nature of the Badí' calendar to the principle of unity in a detailed doctrinal context. However, there are some insights that can be pieced together from the available references and the general understanding within the Bahá'í community.
 
 The Badí' calendar, as established by the Báb and confirmed by Bahá'u'lláh, is indeed structured around the solar year. This calendar is not just a practical tool but also symbolic of the new era that the Bahá'í Faith represents. The alignment with the March equinox for Naw-Rúz, for instance, connects to a natural cycle that is observable and consistent worldwide, promoting a sense of global harmony and shared experience.
 

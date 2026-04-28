@@ -33,8 +33,7 @@ But wouldn't you say that some aspects of the Bahá'í writings are deeply roote
 ## Jafar
 
 You're right that certain aspects of the Bahá'í teachings, like the concept of progressive revelation and the significance of the Covenant, are deeply embedded in the faith's unique theological framework. These concepts can indeed be challenging to grasp fully without some background in Bahá'í history and doctrine.
-
-However, even without being a believer, one can appreciate the underlying principles. Progressive revelation, for example, is the idea that religious truth is revealed progressively and cyclically over time through a succession of divine messengers. This concept can resonate with anyone who sees value in the various world religions and their contributions to human spirituality. Similarly, the Bahá'í Covenant, which ensures the unity and continuity of the faith, can be understood as a mechanism for maintaining coherence and unity within a religious community.
+even without being a believer, one can appreciate the underlying principles. Progressive revelation, for example, is the idea that religious truth is revealed progressively and cyclically over time through a succession of divine messengers. This concept can resonate with anyone who sees value in the various world religions and their contributions to human spirituality. Similarly, the Bahá'í Covenant, which ensures the unity and continuity of the faith, can be understood as a mechanism for maintaining coherence and unity within a religious community.
 
 For those navigating these teachings without the context of belief, it can be helpful to approach them with curiosity and a willingness to explore the broader religious and philosophical implications. Engaging with secondary literature, participating in discussions, and asking questions are also effective ways to gain deeper insight. The Bahá'í community is often open and welcoming to seekers, providing opportunities to learn and engage with these complex ideas in a supportive environment.
 
@@ -50,7 +49,7 @@ Can you point to any specific passages in Bahá'í writings that invite understa
 
 The Bahá'í writings indeed recognize and welcome engagement from seekers and non-believers, inviting them to explore the teachings deeply even without full adherence to the faith. The writings encourage an open and inquisitive approach to spiritual truths, emphasizing that the Bahá'í teachings are for all humanity, not just those who identify as Bahá'í.
 
-While the corpus doesn't provide a specific passage that explicitly addresses non-believers reading the writings, the general tone and guidance of the community indicate a welcoming attitude towards seekers. For instance, the Universal House of Justice frequently discusses the importance of engaging seekers in meaningful conversations about spiritual themes, suggesting that a genuine interest and openness are valued, irrespective of formal belief.
+While the general tone and guidance of the community indicate a welcoming attitude towards seekers. For instance, the Universal House of Justice frequently discusses the importance of engaging seekers in meaningful conversations about spiritual themes, suggesting that a genuine interest and openness are valued, irrespective of formal belief.
 
 > "Engaging them in earnest conversation on themes of spiritual..." ([*Turning Point: Selected Messages of the Universal House of Justice and Supplementary Material 1996–2006*](https://siftersearch.com/document/348/paragraph/6241) — Universal House of Justice)
 

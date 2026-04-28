@@ -37,9 +37,7 @@ You mention the need for linguistic precision and spiritual understanding, which
 
 ## Jafar
 
-It seems that the search did not return specific passages or directives from Shoghi Effendi or the Universal House of Justice discussing the timing or rationale for delaying the translation of the Kitáb-i-Aqdas. This might indicate that the detailed reasoning was more a matter of practice and evolving community capacity rather than explicitly documented instructions.
-
-However, the need for linguistic precision and spiritual understanding in translating such a central text does suggest a risk of misunderstanding or misapplication if translated prematurely. The Bahá'í administrative order, with its emphasis on unity and gradual learning, likely prioritized ensuring that the community was prepared to understand and implement the teachings properly.
+the need for linguistic precision and spiritual understanding in translating such a central text does suggest a risk of misunderstanding or misapplication if translated prematurely. The Bahá'í administrative order, with its emphasis on unity and gradual learning, likely prioritized ensuring that the community was prepared to understand and implement the teachings properly.
 
 Shoghi Effendi's translations of other foundational texts were instrumental in shaping the community's understanding and unity, setting the stage for the eventual translation of the Kitáb-i-Aqdas. His work laid a foundation by focusing on texts that established a broad comprehension of Bahá'í principles and history.
 
@@ -107,7 +105,7 @@ The concept of an international auxiliary language, advocated by 'Abdu'l-Bahá, 
 
 > "Universal Language in the Spiritual World" ([*Pilgrimage in September*](https://siftersearch.com/document/12471)) — Isabella D. Brittingham, Thomas Breakwell, Herbert Hopper
 
-While I couldn't locate specific quotes from 'Abdu'l-Bahá or Shoghi Effendi directly addressing the strategic withholding of translations, their writings consistently emphasize the balance of fostering individual understanding with the need for a cohesive community. The phased translation strategy, while challenging, aimed to uphold the integrity of the teachings and the unity of the global Bahá'í community, reflecting a broader vision of gradual and sustainable spiritual growth.
+While their writings consistently emphasize the balance of fostering individual understanding with the need for a cohesive community. The phased translation strategy, while challenging, aimed to uphold the integrity of the teachings and the unity of the global Bahá'í community, reflecting a broader vision of gradual and sustainable spiritual growth.
 
 ---
 

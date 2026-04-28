@@ -69,8 +69,7 @@ The introduction of the "Primal Will" does seem to add a layer of complexity to 
 ## Jafar
 
 The concept of the "Primal Will" indeed adds a rich dimension to understanding the stations of the Manifestations of God. It serves as the channel through which the divine attributes are expressed, ensuring that each Manifestation of God is imbued with the same spiritual authority and insight. This unity in spiritual capacity underlines the essential oneness of all Manifestations.
-
-However, the distinctions between Manifestations arise from their historical and social contexts. Each Manifestation appears at a time when humanity requires specific guidance and teachings tailored to its developmental needs. This context shapes the laws, social principles, and specific teachings they bring, while the core spiritual truths—such as love, justice, and the oneness of humanity—remain consistent across all dispensations.
+the distinctions between Manifestations arise from their historical and social contexts. Each Manifestation appears at a time when humanity requires specific guidance and teachings tailored to its developmental needs. This context shapes the laws, social principles, and specific teachings they bring, while the core spiritual truths—such as love, justice, and the oneness of humanity—remain consistent across all dispensations.
 
 The Primal Will does not impose limitations on the Manifestations but rather ensures that they convey divine truth in a manner that is understandable and relevant to the people of their time. It allows for the continuity of core spiritual teachings by aligning them with the evolving capacities and needs of humanity. This evolutionary aspect of revelation highlights how divine guidance is both consistent in its essence and adaptable in its application, ensuring that each Manifestation can meet the unique challenges and opportunities of their era while maintaining the integrity of God's eternal message.
 

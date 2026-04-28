@@ -36,8 +36,7 @@ You mentioned that skilled translators like Shoghi Effendi strive to maintain th
 ## Jafar
 
 Shoghi Effendi's translation of Bahá'u'lláh's words is renowned for its eloquence and fidelity to the original spirit. One notable example is the translation of "The Hidden Words," where Shoghi Effendi captures the poetic beauty and deep spiritual truths with remarkable clarity. His translation of the phrase "The earth is but one country, and mankind its citizens" beautifully conveys the unity of humanity, a central theme in Bahá'u'lláh's teachings, with simplicity and power.
-
-However, even Shoghi Effendi's translations, as skillful as they are, may not fully capture the multifaceted richness of the original Arabic and Persian. For instance, the original texts often contain intricate wordplay, rhymes, and allusions that can be challenging to render in English without losing some of the original texture and resonance.
+even Shoghi Effendi's translations, as skillful as they are, may not fully capture the multifaceted richness of the original Arabic and Persian. For instance, the original texts often contain intricate wordplay, rhymes, and allusions that can be challenging to render in English without losing some of the original texture and resonance.
 
 Reconciling the need for accessibility with the risk of oversimplification involves a balance. Translations open the door for many to engage with the teachings who might otherwise be unable to do so. To mitigate the risk of oversimplification, it's helpful to encourage ongoing study, sensitivity to the potential gaps between translation and original, and an openness to multiple interpretations and commentaries. This approach fosters a deeper appreciation of the texts' richness while ensuring they remain accessible to a wide audience.
 

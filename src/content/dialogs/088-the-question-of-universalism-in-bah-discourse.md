@@ -21,8 +21,7 @@ Is the Bahá'í Faith universalist in the strong sense — that all paths reach 
 ## Jafar
 
 The Bahá'í Faith holds a nuanced position that might be seen as a "strong universalism" in its emphasis on the unity of all religions. Bahá'ís believe that all major world religions come from the same divine source and are part of a single unfolding plan, each suited to the time and place of its revelation. This suggests more than just a common root; it implies that each path is a legitimate and necessary expression of humanity's relationship with the divine.
-
-However, the Bahá'í Faith also teaches that while these paths share a divine origin, they are not identical and may not lead to the same spiritual destination in every detail or practice. Each has its own unique contribution to make to the spiritual evolution of humanity. In this sense, there's an acknowledgment of diversity within unity. So, it's not that all paths are interchangeable, but rather that they are different stages in a continuous journey toward God. This perspective seeks to harmonize the truths found in all religions rather than asserting that they are all equivalent in every aspect.
+the Bahá'í Faith also teaches that while these paths share a divine origin, they are not identical and may not lead to the same spiritual destination in every detail or practice. Each has its own unique contribution to make to the spiritual evolution of humanity. In this sense, there's an acknowledgment of diversity within unity. So, it's not that all paths are interchangeable, but rather that they are different stages in a continuous journey toward God. This perspective seeks to harmonize the truths found in all religions rather than asserting that they are all equivalent in every aspect.
 
 ---
 

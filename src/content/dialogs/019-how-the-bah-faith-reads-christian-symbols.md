@@ -54,8 +54,7 @@ But isn't there a tension between this symbolic interpretation and the emphasis 
 Additionally, could you point me to specific passages in Bahá'u'lláh's own writings, like the "Kitáb-i-Íqán," where he addresses the nature of these symbols directly? It's important to understand how Bahá'u'lláh himself frames this reinterpretation, especially in contrast to the Apostles’ Creed, which underscores the physicality of these events. How does he argue that a symbolic reading still upholds the essence of Christian teachings?
 
 ## Jafar
-
-It seems I'm not able to locate specific passages from the "Kitáb-i-Íqán" addressing the resurrection or Second Coming directly through the search tool at the moment. However, I can share the general understanding based on Bahá'u'lláh's teachings and the context of the "Kitáb-i-Íqán."
+I can share the general understanding based on Bahá'u'lláh's teachings and the context of the "Kitáb-i-Íqán."
 
 In the "Kitáb-i-Íqán," Bahá'u'lláh emphasizes the importance of understanding religious texts and symbols through their spiritual meanings. He explains that many of the symbols and stories in religious scriptures are meant to convey deep spiritual truths rather than literal historical facts. This approach encourages believers to look beyond the physical events to grasp the underlying spiritual principles meant to guide humanity.
 

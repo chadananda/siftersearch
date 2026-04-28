@@ -53,7 +53,7 @@ I appreciate the references to the *Star of the West* and George Townshend's wri
 
 ## Jafar
 
-While the search did not yield direct passages from the *Kitáb-i-Íqán* or specific writings of 'Abdu'l-Bahá discussing the difference between Muhammad's original message and later interpretations, the Bahá'í writings do emphasize the principle of progressive revelation and the need for renewal in understanding religious teachings.
+the Bahá'í writings do emphasize the principle of progressive revelation and the need for renewal in understanding religious teachings.
 
 Bahá'u'lláh, in the *Kitáb-i-Íqán*, often speaks to the continuity and change inherent in religious truth. He emphasizes that while the essence of God's message remains the same, each Manifestation of God brings teachings suited to the time and capacity of humanity. This concept is foundational in understanding how Bahá'ís view the authority of the Qur'an and the importance of recognizing the evolving needs of society.
 

@@ -61,8 +61,7 @@ That's an interesting point about the progressive nature of spiritual developmen
 You've touched on an important dynamic within the Bahá'í Faith: the balance between individual responsibility and collective guidance. The Bahá'í principle of progressive revelation does indeed suggest that as humanity's understanding evolves, so too might the application of spiritual teachings.
 
 The Bahá'í writings emphasize the body as the "temple of the spirit," and maintaining health is seen as a spiritual duty. As scientific evidence about the dangers of tobacco became clearer, Bahá'í institutions and leaders have increasingly discouraged its use, aligning with the principle of safeguarding health to ensure one's capacity to contribute to society and fulfill spiritual obligations.
-
-However, the Bahá'í Faith also places a strong emphasis on personal responsibility and the use of reason. Individuals are encouraged to make informed decisions based on current understanding and guidance from institutions. The Universal House of Justice, the governing body of the Bahá'í community, may provide further guidance as necessary, but it often seeks to empower individuals to make wise decisions.
+the Bahá'í Faith also places a strong emphasis on personal responsibility and the use of reason. Individuals are encouraged to make informed decisions based on current understanding and guidance from institutions. The Universal House of Justice, the governing body of the Bahá'í community, may provide further guidance as necessary, but it often seeks to empower individuals to make wise decisions.
 
 The balance between individual choice and institutional guidance is a dynamic process, and this approach allows for personal growth and the gradual internalization of spiritual principles. It's possible that as understanding and consensus around health issues like tobacco continue to evolve, so too will the community's approach, always aiming to harmonize scientific knowledge with spiritual principles.
 
@@ -147,8 +146,7 @@ Could this represent a moment where the faith's institutions need to take a more
 ## Jafar
 
 Your concerns are valid, especially considering the serious public health implications of tobacco use. The Bahá'í Faith's approach to integrating science and spirituality does indeed place importance on aligning spiritual teachings with contemporary knowledge. The strong discouragement of tobacco reflects an acknowledgment of its dangers, but the community's approach has traditionally emphasized education and personal choice.
-
-However, this doesn't mean the Bahá'í community is complacent or inactive. The emphasis on personal responsibility is intended to empower individuals to make informed decisions, supported by a community culture that values health and well-being. The Universal House of Justice and other Bahá'í institutions actively promote education about health and encourage dialogue on such issues, which can lead to collective changes in attitudes and practices.
+this doesn't mean the Bahá'í community is complacent or inactive. The emphasis on personal responsibility is intended to empower individuals to make informed decisions, supported by a community culture that values health and well-being. The Universal House of Justice and other Bahá'í institutions actively promote education about health and encourage dialogue on such issues, which can lead to collective changes in attitudes and practices.
 
 The Bahá'í community continually seeks to find the right balance between respecting individual spiritual growth and addressing urgent collective needs. This balance is not static, and as societal understanding evolves, so too might the guidance from Bahá'í institutions. The principle of progressive revelation allows for adaptation and responsiveness to new challenges, always aiming to harmonize spiritual and material well-being.
 

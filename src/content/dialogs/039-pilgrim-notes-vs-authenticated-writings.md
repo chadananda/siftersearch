@@ -130,8 +130,7 @@ Jafar, I appreciate the emphasis on consultation and individual exploration, but
 The Bahá'í community values unity, but it also respects the diversity of thought and personal spiritual journeys. When an individual's interpretation significantly diverges from the collective understanding, several approaches help balance this tension.
 
 Firstly, continued dialogue and consultation are encouraged. The community recognizes that understanding evolves, and what may initially seem like a divergence could eventually offer valuable insights that enrich the collective perspective. Through ongoing discussions, individuals can explore their views in light of the core teachings and gain feedback from others, fostering mutual growth.
-
-However, if an individual's interpretation consistently conflicts with well-established Bahá'í principles and persists despite extensive consultation, it might be necessary for them to consider realigning with the community's understanding to maintain unity. This does not mean suppressing personal insights but finding a way to express them in harmony with the foundational teachings.
+if an individual's interpretation consistently conflicts with well-established Bahá'í principles and persists despite extensive consultation, it might be necessary for them to consider realigning with the community's understanding to maintain unity. This does not mean suppressing personal insights but finding a way to express them in harmony with the foundational teachings.
 
 The community handles ongoing divergence by fostering an environment that encourages respectful exploration and the sharing of diverse perspectives. The emphasis is on finding common ground rather than enforcing conformity. When minority perspectives arise, they are given space in consultations, as these viewpoints can often illuminate new paths and contribute to a deeper collective understanding.
 

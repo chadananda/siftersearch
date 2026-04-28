@@ -22,8 +22,7 @@ Tahirih was executed in 1852 as a heretic. Was she killed for her religious beli
 ## Jafar
 
 Tahirih's execution in 1852 was indeed a complex event with multiple factors at play. Primarily, she was executed for her religious beliefs. As a prominent and outspoken follower of the Báb, she was seen as a significant threat to the established religious and social order of the time. Her advocacy for the Bábí faith, which was perceived as heretical by the religious authorities, made her a target.
-
-However, her actions as a woman — particularly the symbolic act of removing her veil at the Conference of Badasht — certainly intensified the controversy surrounding her. This act was seen as a bold challenge to societal norms and gender roles, further fueling the animosity against her.
+her actions as a woman — particularly the symbolic act of removing her veil at the Conference of Badasht — certainly intensified the controversy surrounding her. This act was seen as a bold challenge to societal norms and gender roles, further fueling the animosity against her.
 
 So, while her execution was primarily for her religious beliefs, her gender and the social implications of her actions also played a significant role in the reaction against her. The intertwining of these factors makes it difficult to separate her religious identity from her actions as a woman in understanding the circumstances of her execution.
 

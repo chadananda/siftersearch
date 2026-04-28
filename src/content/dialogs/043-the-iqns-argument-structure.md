@@ -47,7 +47,7 @@ Bahá'u'lláh addresses the concern of relativism in the *Kitáb-i-Iqán* by emp
 
 4. **Avoiding Literalism and Extremes**: While symbolic interpretation avoids rigid literalism, it also steers clear of speculative extremes that lack grounding in the teachings.
 
-Although I couldn't locate specific passages from the *Kitáb-i-Iqán* that outline these guidelines verbatim, these principles are drawn from the broader themes and instructions found within Bahá'u'lláh's writings. The emphasis is always on balance — using reason, spiritual insight, and the teachings of the Manifestations as a compass. This approach prevents the texts from meaning anything anyone wants, rooting interpretations in the framework of divine wisdom and purpose.
+Although these principles are drawn from the broader themes and instructions found within Bahá'u'lláh's writings. The emphasis is always on balance — using reason, spiritual insight, and the teachings of the Manifestations as a compass. This approach prevents the texts from meaning anything anyone wants, rooting interpretations in the framework of divine wisdom and purpose.
 
 ---
 

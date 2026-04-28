@@ -85,8 +85,7 @@ Jafar, I appreciate the contextual exploration, but if we truly want to grasp ho
 ## Jafar
 
 It seems that my search didn't turn up specific passages from the foundational texts like the *Hidden Words* or the *Tablets of Bahá'u'lláh* directly addressing children's agency. The results mostly pertain to the contemporary focus on children's classes and moral education in Bahá'í communities, as highlighted by the Universal House of Justice. 
-
-However, the broader teachings of Bahá'u'lláh and 'Abdu'l-Bahá do emphasize inherent nobility and capacity in all human beings, which can be seen as implicitly recognizing the potential agency of children. Bahá'u'lláh's teachings often speak to the nobility of the human soul, suggesting that education should draw out and cultivate these inherent qualities. This reflects a vision where children are active participants in their own development, guided by an education that nurtures their capacities.
+the broader teachings of Bahá'u'lláh and 'Abdu'l-Bahá do emphasize inherent nobility and capacity in all human beings, which can be seen as implicitly recognizing the potential agency of children. Bahá'u'lláh's teachings often speak to the nobility of the human soul, suggesting that education should draw out and cultivate these inherent qualities. This reflects a vision where children are active participants in their own development, guided by an education that nurtures their capacities.
 
 In terms of how radical this view was, the emphasis on moral and spiritual education, the recognition of inherent nobility, and the idea of education as a transformative process were quite advanced compared to the rote learning and hierarchical educational models prevalent at the time. These Bahá'í principles align more closely with modern educational philosophies that value holistic development and the empowerment of students as active learners.
 
@@ -98,7 +97,7 @@ Jafar, while I appreciate your efforts to contextualize the Bahá'í perspective
 
 ## Jafar
 
-It seems that the search did not yield specific passages from 'Abdu'l-Bahá's writings directly addressing children's active roles in their learning. However, the broader framework of the Bahá'í teachings remains consistent in emphasizing the development of innate capacities and virtues, which implies a recognition of children's agency.
+It seems that However, the broader framework of the Bahá'í teachings remains consistent in emphasizing the development of innate capacities and virtues, which implies a recognition of children's agency.
 
 'Abdu'l-Bahá often spoke about education as a means to draw out the inherent nobility and potential within each child. While the search didn't uncover direct quotes from his writings on this specific aspect, his emphasis on the moral and spiritual education of children suggests an approach that encourages active participation in their own development. This aligns with his general philosophy of education, which promotes the cultivation of both intellectual and spiritual qualities in a balanced manner.
 
@@ -114,7 +113,7 @@ Jafar, while the overall framework you describe is valuable, it's crucial for ou
 
 ## Jafar
 
-From the search results, we find that 'Abdu'l-Bahá's teachings indeed underscore the importance of education as a holistic process that involves both moral and intellectual development. While there isn't a direct quote specifically about children's agency, 'Abdu'l-Bahá often used metaphors that imply an active role in their development, such as likening children to "young bushes in a garden of roses." If these young trees are cared for, they grow straight; if neglected, they become crooked. This suggests that while external nurturing is vital, the inherent potential within each child must be activated and developed.
+From the the texts, we find that 'Abdu'l-Bahá's teachings indeed underscore the importance of education as a holistic process that involves both moral and intellectual development. While there isn't a direct quote specifically about children's agency, 'Abdu'l-Bahá often used metaphors that imply an active role in their development, such as likening children to "young bushes in a garden of roses." If these young trees are cared for, they grow straight; if neglected, they become crooked. This suggests that while external nurturing is vital, the inherent potential within each child must be activated and developed.
 
 Additionally, 'Abdu'l-Bahá advocated for parents to instill ideas of peace and righteousness in children, indicating that children are active recipients and participants in their moral and spiritual education. 
 

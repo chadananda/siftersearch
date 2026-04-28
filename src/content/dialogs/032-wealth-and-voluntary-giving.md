@@ -169,9 +169,7 @@ Additionally, regarding the Bahá'í International Community's advocacy at the U
 
 ## Jafar
 
-It seems that the search did not return any specific documents or reports detailing the metrics and outcomes for FUNDAEC, the Baha’i Health Initiative, or the Bahá'í International Community's statements at the UN. This might be due to these reports being shared more internally within the community or through specific academic or development channels rather than widely published.
-
-However, I can provide some general insights based on what is typically known about these initiatives:
+I can provide some general insights based on what is typically known about these initiatives:
 
 1. **FUNDAEC**: This organization is known for its innovative approach to education, particularly in rural and underprivileged areas. While specific reports weren't available in our search, FUNDAEC's success is often attributed to its focus on integrating academic knowledge with practical skills, enabling students to apply their learning directly to improve their communities. This approach generally results in increased literacy rates, better employment opportunities, and enhanced social mobility over time.
 

@@ -74,8 +74,7 @@ But if the Manifestations are perfect mirrors of divine attributes, doesn't that
 You've captured the delicate balance Bahá'u'lláh presents between the hidden and revealed aspects of God. Let's explore these concepts further.
 
 The Manifestations of God indeed provide the clearest insight into God's nature that humanity can access. They reflect divine attributes perfectly and convey God's will and teachings for each age. Through them, we understand what God is like in terms of qualities such as love, justice, compassion, and wisdom. These attributes guide us in our spiritual and moral development.
-
-However, the distinction between God's essence and attributes remains crucial. While the Manifestations reveal God's attributes, they do not unveil God's essence, which remains "everlastingly hidden from the eyes of men." This assertion emphasizes the transcendence and mystery of the Divine, reminding us that no matter how luminous the reflection, the essence itself is beyond human comprehension. 
+the distinction between God's essence and attributes remains crucial. While the Manifestations reveal God's attributes, they do not unveil God's essence, which remains "everlastingly hidden from the eyes of men." This assertion emphasizes the transcendence and mystery of the Divine, reminding us that no matter how luminous the reflection, the essence itself is beyond human comprehension. 
 
 When Bahá'u'lláh states "No man hath ever known Him, except Himself," it underscores the idea that the full reality of God is known only to God. What the Manifestations reveal is indeed a fractional glimpse of the divine reality, tailored to our capacity and needs as human beings. This teaching invites humility and awe, recognizing our limited perspective while encouraging us to engage deeply with what has been revealed.
 
@@ -125,8 +124,6 @@ The inclusion of the mystical pursuit alongside the practical embodiment of divi
 
 ## Jafar
 
-In Bahá'u'lláh's writings, the struggle with doubt and maintaining faith is acknowledged, and he provides guidance to help believers navigate these challenges. While the search did not return a direct quote addressing doubt, the following passages and prayers can offer solace and strength during such times:
-
 1. **The Long Healing Prayer** is a beautiful invocation that can be used to seek spiritual and physical healing. It emphasizes divine attributes like protection and guidance, reinforcing trust in God's care.
 
 2. **The Tablet of Ahmad** is a powerful prayer that Bahá'u'lláh revealed specifically to strengthen the faith of believers and assure them of divine support during trials. It encourages steadfastness and reliance on God amidst difficulties.
@@ -145,7 +142,7 @@ Additionally, you touched upon the idea of meditation as a means to cultivate a 
 
 ## Jafar
 
-It seems the search did not yield the specific lines from the "Tablet of Ahmad" directly addressing steadfastness and trials. However, I can share the essence of its message based on my understanding.
+It seems However, I can share the essence of its message based on my understanding.
 
 The "Tablet of Ahmad" is a powerful text that Bahá'u'lláh revealed, emphasizing the importance of steadfastness and trust in God amidst trials. It assures believers of divine support and encourages them to maintain faith and courage in the face of adversity. The tablet promises spiritual victory and protection for those who remain firm in their beliefs.
 
@@ -162,8 +159,6 @@ It's interesting how the "Tablet of Ahmad" assures believers of spiritual victor
 On meditation, if there are no prescribed techniques, how do Bahá'ís ensure that their meditation is effective or meaningful? Is there guidance in the writings on how to approach meditation, perhaps through suggested themes or focuses during contemplation? And what role does meditation play in fostering the qualities and virtues emphasized by Bahá'u'lláh in His teachings? Can you provide any guidance from the writings that addresses how to balance meditation with action to ensure both are effectively integrated into a believer's spiritual journey?
 
 ## Jafar
-
-It seems that the searches did not yield the specific lines from the "Tablet of Ahmad" directly addressing steadfastness and protection. However, based on my understanding, the "Tablet of Ahmad" is renowned for its powerful assurances to believers facing trials. It emphasizes steadfastness and promises divine support and protection for those who remain firm in their faith.
 
 Regarding meditation in the Bahá'í faith, while there are no prescribed techniques, the writings encourage an approach that is personal and reflective. Believers are advised to focus on the teachings of Bahá'u'lláh and the attributes of God during meditation, using these as themes for contemplation. This practice is meant to deepen one’s understanding and connection with the Divine.
 

@@ -31,8 +31,7 @@ In the Bahá'í Faith, Naw-Rúz is universalized as it takes on a spiritual sign
 But isn't there a risk here of cultural appropriation, where a religious practice is universalized and potentially detached from its cultural roots? How does the Bahá'í Faith ensure that the universalization of Naw-Rúz respects and honors its Persian origins while simultaneously making it relevant to a global community? Can you point to any specific teachings from Bahá'u'lláh or 'Abdu'l-Bahá that address this balance between respecting cultural roots and promoting universal unity?
 
 ## Jafar
-
-I couldn't find specific passages in the Bahá'í writings directly addressing the balance between respecting the cultural roots of Naw-Rúz and promoting its universal significance. However, the Bahá'í teachings emphasize the importance of unity in diversity, which speaks to this balance. Bahá'u'lláh and 'Abdu'l-Bahá have often highlighted how diverse cultural expressions can contribute to the rich tapestry of human civilization while being united under a common spiritual vision.
+the Bahá'í teachings emphasize the importance of unity in diversity, which speaks to this balance. Bahá'u'lláh and 'Abdu'l-Bahá have often highlighted how diverse cultural expressions can contribute to the rich tapestry of human civilization while being united under a common spiritual vision.
 
 The concept of unity in diversity allows for cultural practices like Naw-Rúz to be celebrated in ways that honor their origins while also inviting participation from people of all backgrounds. In practice, this means that while Naw-Rúz is celebrated globally, communities are encouraged to incorporate elements that are meaningful to them locally, creating a celebration that is both respectful of its Persian roots and inclusive of global diversity. 
 
