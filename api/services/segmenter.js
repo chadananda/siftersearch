@@ -14,6 +14,7 @@ import { segmentationService } from '../lib/ai-services.js';
 import { logger } from '../lib/logger.js';
 import { content } from '../lib/content.js';
 import { wrapSentence, stripMarkers, hasMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
+import { segmentHebrew } from '../lib/segmenter-hebrew.js';
 
 /**
  * Configuration for segmentation
@@ -3619,8 +3620,44 @@ Rules:
   const toRemove = [];
 
   for (const para of oversizedParas) {
-    logger.info({ id: para.id, chars: para.text.length, index: para.paragraph_index },
+    logger.info({ id: para.id, chars: para.text.length, index: para.paragraph_index, language },
       'Re-segmenting oversized paragraph');
+
+    // Hebrew uses rule-based recursive splitter — no LLM call.
+    // Hebrew has reliable punctuation and the corpus already has sentence
+    // markers from prior passes, so a deterministic chunker beats the LLM
+    // on speed (sub-ms vs. seconds) and cost ($0 vs. vLLM compute).
+    if (language === 'he') {
+      try {
+        const chunks = segmentHebrew(para.text, { maxChars });
+        if (chunks.length < 2) {
+          errors.push(`Paragraph ${para.id}: Hebrew segmenter produced ${chunks.length} chunk(s)`);
+          continue;
+        }
+        const stillOversized = chunks.filter(c => c.length > maxChars);
+        if (stillOversized.length > 0) {
+          logger.warn({ id: para.id, stillOversized: stillOversized.length,
+            maxLen: Math.max(...stillOversized.map(c => c.length)) },
+            'Hebrew sub-paragraphs still oversized after rule-based split');
+        }
+        toRemove.push(para.id);
+        toInsert.push({
+          afterIndex: para.paragraph_index,
+          paragraphs: chunks.map(text => ({
+            text,
+            heading: para.heading || '',
+            blocktype: para.blocktype || 'paragraph'
+          }))
+        });
+        logger.info({ id: para.id, original: para.text.length,
+          pieces: chunks.length, sizes: chunks.map(c => c.length).join(',') },
+          'Split oversized Hebrew paragraph (rule-based)');
+      } catch (err) {
+        errors.push(`Paragraph ${para.id}: Hebrew segmenter error: ${err.message}`);
+        logger.error({ id: para.id, err: err.message }, 'Hebrew segmenter failed');
+      }
+      continue;
+    }
 
     try {
       // Extract sentences from existing markers (⁅s1⁆...⁅/s1⁆)
