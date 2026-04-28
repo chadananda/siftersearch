@@ -81,7 +81,10 @@ fi
 # ============================================
 
 echo -e "${BLUE}[pre-commit]${NC} Bumping version..."
-NEW_VERSION=$(node scripts/bump-version.js patch 2>&1 | tail -1)
+# Per user convention: every code commit gets a minor bump (content-only commits
+# bypass this hook entirely thanks to the early-exit above when only package.json
+# and changelog.json are staged).
+NEW_VERSION=$(node scripts/bump-version.js minor 2>&1 | tail -1)
 echo -e "${GREEN}[pre-commit]${NC} ✓ Version: ${NEW_VERSION}"
 
 # ============================================

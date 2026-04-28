@@ -1,6 +1,6 @@
 {
   "name": "siftersearch",
-  "version": "2.2.20",
+  "version": "2.4.0",
   "description": "Use agentic AI research to locate information within thousands of books, manuscripts, papers, notes and publications across multiple languages.",
   "type": "module",
   "bin": {
@@ -15,7 +15,7 @@
     "dev:prod": "DEV_MODE=true PUBLIC_API_URL=https://api.siftersearch.com astro dev --port 5173",
     "dev:api": "DEV_MODE=true node --watch api/index.js",
     "dev:ui": "DEV_MODE=true astro dev --port 5173",
-    "build": "astro build",
+    "build": "astro build && node scripts/finalize-sitemap-index.js",
     "build:api": "echo 'API is runtime JS, no build needed'",
     "preview": "astro preview",
     "start": "node api/index.js",

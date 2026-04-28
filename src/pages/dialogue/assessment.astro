@@ -42,6 +42,41 @@ for (const v of soulHistory) {
   }
 }
 
+// Line-level diff (LCS) so each version can show what changed vs its predecessor.
+// SOUL_VERSIONS is newest-first, so v[i+1] is the prior version. Returns an
+// array of { kind: 'same' | 'add' | 'del', text: string } in the order of the
+// merged sequence — old "del" lines appear interleaved at the right spot.
+type DiffLine = { kind: 'same' | 'add' | 'del'; text: string };
+function diffLines(oldText: string, newText: string): DiffLine[] {
+  const a = oldText.split('\n');
+  const b = newText.split('\n');
+  const m = a.length, n = b.length;
+  // LCS table
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const out: DiffLine[] = [];
+  let i = 0, j = 0;
+  while (i < m && j < n) {
+    if (a[i] === b[j]) { out.push({ kind: 'same', text: b[j] }); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push({ kind: 'del', text: a[i] }); i++; }
+    else { out.push({ kind: 'add', text: b[j] }); j++; }
+  }
+  while (i < m) { out.push({ kind: 'del', text: a[i++] }); }
+  while (j < n) { out.push({ kind: 'add', text: b[j++] }); }
+  return out;
+}
+
+// Pre-compute diffs for each version against its predecessor. Oldest version
+// (last in array) has no predecessor — render as plain text.
+const SOUL_DIFFS = SOUL_VERSIONS.map((v, i) => {
+  const prior = SOUL_VERSIONS[i + 1];
+  return prior ? diffLines(prior.text, v.text) : null;
+});
+
 // Assessment criteria version history (judge prompts).
 // For now we describe them in prose since the judge prompt is embedded in
 // scripts/jafar-batch-runner.js. As we iterate, we'll snapshot to versioned files.
@@ -220,7 +255,17 @@ const description = "How dialogs are assessed: the criteria, the pipeline, Jafar
             <span class="vdate">{v.date}</span>
             <span class="vsummary">{v.summary}</span>
           </summary>
-          <pre class="vbody soul-prompt">{v.text}</pre>
+          {SOUL_DIFFS[i] ? (
+            <pre class="vbody soul-prompt diff">
+              {SOUL_DIFFS[i]!.map(l => {
+                if (l.kind === 'add') return <strong class="diff-add">{l.text + '\n'}</strong>;
+                if (l.kind === 'del') return <del class="diff-del">{l.text + '\n'}</del>;
+                return <span>{l.text + '\n'}</span>;
+              })}
+            </pre>
+          ) : (
+            <pre class="vbody soul-prompt">{v.text}</pre>
+          )}
         </details>
       ))}
     </section>
@@ -434,5 +479,23 @@ const description = "How dialogs are assessed: the criteria, the pipeline, Jafar
     margin: 0;
     padding: 1.25rem 1.5rem;
     overflow-x: auto;
+  }
+  .soul-prompt.diff span { color: var(--text-secondary); }
+  .diff-add {
+    background: rgba(120, 200, 130, 0.16);
+    color: rgb(180, 240, 190);
+    font-weight: 600;
+    text-decoration: none;
+    display: inline;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+  .diff-del {
+    background: rgba(220, 100, 100, 0.14);
+    color: rgba(230, 170, 170, 0.7);
+    text-decoration: line-through;
+    display: inline;
+    padding: 0 2px;
+    border-radius: 2px;
   }
 </style>

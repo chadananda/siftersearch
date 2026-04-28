@@ -53,6 +53,10 @@ export default defineConfig({
         if (page.includes('/api/')) return false;
         if (page.includes('/admin')) return false;
         if (page.includes('/sitemap-library')) return false;
+        if (page.includes('/sitemap-dialogue')) return false;
+        // Dialogue pages live in their own sitemap-dialogue.xml so we can
+        // include only published ones. Strip them all from the main index.
+        if (page.match(/\/dialogue\//)) return false;
         if (page.match(/\/library\/[^/]+\/[^/]+\/[^/]+/)) return false;
         return true;
       },
@@ -62,7 +66,8 @@ export default defineConfig({
         priority: item.url === 'https://siftersearch.com/' ? 1.0 : 0.8,
       }),
       customPages: [
-        'https://siftersearch.com/sitemap-library.xml'
+        'https://siftersearch.com/sitemap-library.xml',
+        'https://siftersearch.com/sitemap-dialogue.xml'
       ]
     }),
     // No PWA — SSR + Cloudflare edge caching + browser prefetch handles performance.

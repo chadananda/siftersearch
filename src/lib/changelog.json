@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T17:48:14.118Z",
+  "generated": "2026-04-28T18:17:25.766Z",
   "entries": [
+    {
+      "hash": "979aef6",
+      "date": "2026-04-28",
+      "type": "Style",
+      "description": "Further de-emphasize round h3/h4 — tiny italic muted greys, no borders, minimal margins",
+      "scope": null
+    },
     {
       "hash": "e479e5c",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strip collection/religion from source document frontmatter",
       "scope": null
-    },
-    {
-      "hash": "7227a20",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add tabbed editor with metadata/content tabs and field management",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "979aef6",
+        "date": "2026-04-28",
+        "type": "Style",
+        "description": "Further de-emphasize round h3/h4 — tiny italic muted greys, no borders, minimal margins",
+        "scope": null
+      },
       {
         "hash": "e479e5c",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Strip collection/religion from source document frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "7227a20",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add tabbed editor with metadata/content tabs and field management",
         "scope": null
       }
     ]

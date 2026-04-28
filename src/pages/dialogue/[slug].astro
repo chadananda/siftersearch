@@ -59,6 +59,14 @@ const allRecent = allPublished
   .slice()
   .sort((a, b) => (new Date(b.publishedAt)).getTime() - (new Date(a.publishedAt)).getTime());
 
+// Tag counts across the published corpus. We only render a tag chip if at
+// least two articles share it (otherwise the tag page would be a dead end).
+const tagCounts = new Map<string, number>();
+for (const p of allPublished) {
+  for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+}
+const linkableTags = data.tags.filter(t => (tagCounts.get(t) || 0) >= 2);
+
 // Schema.org structured data — Article with Q&A structure
 const articleSchema = {
   "@context": "https://schema.org",
@@ -166,10 +174,10 @@ const TOPIC_LABELS: Record<string, string> = {
             <strong>{data.publishedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
           </span>
         </div>
-        {data.tags.length > 0 && (
+        {linkableTags.length > 0 && (
           <div class="dialog-tags">
-            {data.tags.map(t => (
-              <a class="dialog-tag" href={`/dialog?tag=${encodeURIComponent(t)}`}>{t}</a>
+            {linkableTags.map(t => (
+              <a class="dialog-tag" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
             ))}
           </div>
         )}
@@ -178,7 +186,7 @@ const TOPIC_LABELS: Record<string, string> = {
       <div class="dialog-layout">
         <!-- LEFT: Table of contents (round-by-round) -->
         <aside class="toc-rail" aria-label="Conversation rounds">
-          <p class="rail-label">Rounds</p>
+          <p class="rail-label">Conversation</p>
           <ol class="toc-list">
             {(() => {
               // Pair each h3 (user question) with its following h4 (Jafar's answer).
@@ -304,12 +312,14 @@ const TOPIC_LABELS: Record<string, string> = {
             <a href="/">Search & chat</a>
             <a href="/about/">About SifterSearch</a>
           </div>
-          <div class="footer-col">
-            <h4>Tags on this dialog</h4>
-            {data.tags.slice(0, 6).map(t => (
-              <a href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
-            ))}
-          </div>
+          {linkableTags.length > 0 && (
+            <div class="footer-col">
+              <h4>Tags on this dialog</h4>
+              {linkableTags.slice(0, 6).map(t => (
+                <a href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+              ))}
+            </div>
+          )}
           {allRecent.length > 0 && (
             <div class="footer-col">
               <h4>Recent dialogs</h4>
@@ -642,9 +652,9 @@ const TOPIC_LABELS: Record<string, string> = {
     .dialog-body { padding: 1.5rem 1.25rem; border-radius: 14px; }
   }
 
-  /* Round summary headers — present for SEO + TOC anchors, but visually
-     quiet enough to recede behind the actual conversation. Tiny, low
-     contrast, no borders, minimal weight. */
+  /* Round summary headers — present for SEO + TOC anchors. Visually they
+     read as a thin decorative label clamped to one line, sitting tight
+     against the bubble/avatar that follows. Almost invisible, but discoverable. */
   .dialog-body :global(h3),
   .dialog-body :global(h4) {
     font-family: 'Libre Caslon Text', serif;
@@ -655,17 +665,26 @@ const TOPIC_LABELS: Record<string, string> = {
     border: none;
     padding: 0;
     scroll-margin-top: 5rem;
+    /* Single line, ellipsis if too long — they're labels, not headlines */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
   }
+  /* All round-rhythm flows through the h3/h4 margins. The bubble that
+     follows the header has zero top-margin so the header sits tight to its
+     own section (33% gap below) while the gap above (66%) separates from
+     the prior section. */
   .dialog-body :global(h3) {
-    font-size: 0.7rem;
-    color: rgba(180, 195, 215, 0.32);
-    margin: 1.75rem 0 0.15rem;
+    font-size: 0.62rem;
+    color: rgba(180, 195, 215, 0.22);
+    margin: 2.4rem 0 0.5rem;
   }
   .dialog-body :global(h3:first-child) { margin-top: 0; }
   .dialog-body :global(h4) {
-    font-size: 0.65rem;
-    color: rgba(186, 160, 82, 0.3);
-    margin: 0.5rem 0 0.15rem;
+    font-size: 0.6rem;
+    color: rgba(186, 160, 82, 0.22);
+    margin: 1.6rem 0 0.4rem;
     padding-left: 3.75rem;
   }
   @media (max-width: 720px) {
@@ -678,7 +697,7 @@ const TOPIC_LABELS: Record<string, string> = {
      from Jafar's full-width reply: smaller width, distinct color, with tail. */
   .dialog-body :global(.user-turn) {
     position: relative;
-    margin: 2rem auto 2rem 0;
+    margin: 0 auto 0 0;
     max-width: 78%;
     padding: 0.95rem 1.25rem 0.85rem;
     background: rgba(56, 114, 184, 0.22);
@@ -712,7 +731,7 @@ const TOPIC_LABELS: Record<string, string> = {
   /* JAFAR TURN — full-width, with floating circular avatar on the left */
   .dialog-body :global(.jafar-turn) {
     position: relative;
-    margin: 1.25rem 0 2.5rem;
+    margin: 0 0 0;
     padding: 0.5rem 0 0.5rem 3.75rem;
     color: var(--text-primary);
     font-style: normal;
@@ -724,7 +743,8 @@ const TOPIC_LABELS: Record<string, string> = {
   }
   .dialog-body :global(.jafar-turn p:last-child) { margin-bottom: 0; }
 
-  /* Jafar avatar — single canonical render (default candidate A: jīm) */
+  /* Jafar avatar — watercolor jīm calligraphy hosted on R2/CDN. Pre-sized to
+     192px so the round 2.5rem render is sharp at 2x without shipping a 1024px source. */
   .dialog-body :global(.jafar-turn::before) {
     content: "";
     position: absolute;
@@ -733,40 +753,21 @@ const TOPIC_LABELS: Record<string, string> = {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background:
-      radial-gradient(circle at 30% 30%, rgba(245, 215, 145, 0.95), rgba(186, 140, 60, 0.85) 55%, rgba(80, 50, 20, 0.92)),
-      linear-gradient(135deg, rgba(40, 25, 0, 0.4), transparent);
+    background-image: url('https://pub-4445d977d3954d72bea3bad656a3fd43.r2.dev/siftersearch.com/avatars/jafar-jim.jpg');
+    background-size: cover;
+    background-position: center;
     box-shadow:
       0 3px 10px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      inset 0 -2px 4px rgba(40, 25, 5, 0.3);
-  }
-  .dialog-body :global(.jafar-turn::after) {
-    content: "ج";  /* Jīm — initial of Jafar in Arabic script */
-    position: absolute;
-    left: 0;
-    top: 0.5rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(35, 22, 5, 0.9);
-    font-family: 'Amiri', serif;
-    font-size: 1.55rem;
-    font-weight: 700;
-    pointer-events: none;
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   @media (max-width: 720px) {
     .dialog-body :global(.user-turn) { max-width: 92%; }
     .dialog-body :global(.jafar-turn) { padding-left: 3rem; }
-    .dialog-body :global(.jafar-turn::before),
-    .dialog-body :global(.jafar-turn::after) {
+    .dialog-body :global(.jafar-turn::before) {
       width: 2rem;
       height: 2rem;
     }
-    .dialog-body :global(.jafar-turn::after) { font-size: 1.2rem; }
   }
 
   .dialog-body :global(p) {
