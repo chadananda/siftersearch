@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T17:45:41.775Z",
+  "generated": "2026-04-28T17:48:14.118Z",
   "entries": [
+    {
+      "hash": "e479e5c",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Question-form h3 + answer-form h4 round headers; nested TOC; left-aligned user bubble",
+      "scope": null
+    },
     {
       "hash": "06a31fb",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add tabbed editor with metadata/content tabs and field management",
       "scope": null
-    },
-    {
-      "hash": "559e7d9",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use $effect to initialize editor when container is ready",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "e479e5c",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Question-form h3 + answer-form h4 round headers; nested TOC; left-aligned user bubble",
+        "scope": null
+      },
       {
         "hash": "06a31fb",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add tabbed editor with metadata/content tabs and field management",
-        "scope": null
-      },
-      {
-        "hash": "559e7d9",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use $effect to initialize editor when container is ready",
         "scope": null
       }
     ]

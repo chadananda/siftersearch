@@ -642,30 +642,31 @@ const TOPIC_LABELS: Record<string, string> = {
     .dialog-body { padding: 1.5rem 1.25rem; border-radius: 14px; }
   }
 
-  /* Round summary headers — tiny, de-emphasized, but real h3/h4 elements
-     so Astro's headings extraction picks them up for the TOC and SEO. */
-  .dialog-body :global(h3) {
+  /* Round summary headers — present for SEO + TOC anchors, but visually
+     quiet enough to recede behind the actual conversation. Tiny, low
+     contrast, no borders, minimal weight. */
+  .dialog-body :global(h3),
+  .dialog-body :global(h4) {
     font-family: 'Libre Caslon Text', serif;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: rgba(140, 180, 220, 0.7);
-    margin: 2.75rem 0 0.5rem;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px dotted rgba(140, 180, 220, 0.2);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    border: none;
+    padding: 0;
     scroll-margin-top: 5rem;
+  }
+  .dialog-body :global(h3) {
+    font-size: 0.7rem;
+    color: rgba(180, 195, 215, 0.32);
+    margin: 1.75rem 0 0.15rem;
   }
   .dialog-body :global(h3:first-child) { margin-top: 0; }
   .dialog-body :global(h4) {
-    font-family: 'Libre Caslon Text', serif;
-    font-size: 0.72rem;
-    font-style: italic;
-    font-weight: 500;
-    color: rgba(186, 160, 82, 0.55);
-    margin: 1.25rem 0 0.4rem;
-    padding-left: 3.75rem;  /* aligns with Jafar's text after the avatar */
-    scroll-margin-top: 5rem;
+    font-size: 0.65rem;
+    color: rgba(186, 160, 82, 0.3);
+    margin: 0.5rem 0 0.15rem;
+    padding-left: 3.75rem;
   }
   @media (max-width: 720px) {
     .dialog-body :global(h4) { padding-left: 3rem; }
