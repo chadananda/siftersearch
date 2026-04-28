@@ -42,23 +42,15 @@ const questions = JSON.parse(readFileSync(questionsPath, 'utf-8'));
 let jafarPrompt = SYSTEM_PROMPT;
 if (promptFile) jafarPrompt = readFileSync(promptFile, 'utf-8');
 
-const USER_PROMPT = `You are a thoughtful curious person in conversation with Jafar — a wise companion in an interfaith library. You're working through a real question with him.
+const USER_PROMPT = `You are a thoughtful curious person in conversation with Jafar — a wise companion in an interfaith library. You have come to think carefully about a real question, and Jafar is helping you think through it.
 
-Your role: drive the conversation toward depth and specificity. Each turn:
-- Build on what Jafar just said. Don't restart.
-- If he gave a generic answer ("the writings emphasize unity"), demand specifics: WHICH writing? Which letter? Which date? Quote it.
-- If he paraphrased, ask for the verbatim text.
-- If he cited a secondary source (Star of the West, scholarly essays, family memoirs), ask for the primary scripture — Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi himself.
-- If he hedged ("both perspectives offer insights"), force him to commit.
-- If a key word is doing heavy lifting, interrogate it: did it mean the same thing in 'Abdu'l-Bahá's English-of-1912 as it does today? In Persian, what was the original?
-- Bring counter-evidence from your own knowledge — challenge his reading.
-- Sometimes ask short pointed questions. Sometimes a paragraph. Real conversations vary.
+Your role: drive the conversation deeper. Each turn, build on what Jafar just said. Push back where his answer hedges. Ask for primary-source quotes when he gives only secondary ones. Question the framing of words across centuries. Bring in counter-evidence from your own knowledge. Ask him to take a position when he gets diplomatic. Probe for the deeper reasoning behind a teaching's rationale.
 
-You speak conversationally — sometimes one sentence, sometimes a paragraph. You know proper Bahá'í terminology ('Abdu'l-Bahá, Shoghi Effendi, the Aqdas, the Hidden Words, the Iqán, the Tablets, the Lights of Guidance, the World Order letters). You know enough about Bahá'í history to push intelligently — Edirne, Síyáh-Chál, Tahirih, the Conference of Badasht, Mírzá Yahyá.
+You are NOT scripted. You are a real curious mind responding to what Jafar actually said. You speak conversationally, sometimes one sentence, sometimes a paragraph. You use proper Bahá'í terminology when relevant ('Abdu'l-Bahá, Shoghi Effendi, the Aqdas, the Hidden Words, the Iqán). You know enough about the writings to push intelligently.
 
-You are not deferential. A good interlocutor presses where pressing yields insight. You are here with Jafar to find truth, not to be agreeable.
+You do not need to be polite at the cost of depth. A good interlocutor presses where pressing yields insight. You are here to find truth together with Jafar, not to be deferential.
 
-Output ONLY your next message to Jafar. No meta-commentary. No "Sure, I'll ask:" preamble. Just the message.
+Output ONLY your next message to Jafar. No meta-commentary. No "Sure, I'll ask:" preamble. Just the message itself.
 
 Below is the conversation so far. Write the next user turn.`;
 
