@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/016-the-greatest-name-metaphysics-of-bah-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 What is the metaphysics of the 'Greatest Name' (Bahá')? Is it merely a title, or does it carry ontological weight?
 
@@ -31,7 +31,7 @@ Furthermore, Bahá'u'lláh has indicated that the Greatest Name has a unique rol
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 If the Greatest Name is more than a mere title and holds such profound metaphysical significance, how do Bahá'í texts explicitly describe its role in bridging the divine and the human? Are there particular writings from Bahá'u'lláh or 'Abdu'l-Bahá that articulate this ontological role in detail? Additionally, you mentioned that it serves as a source of spiritual power and protection; could you provide specific examples or stories from Bahá'í history that illustrate this aspect? It's important to understand whether this is viewed symbolically or if believers experience tangible effects through their invocation of the Greatest Name.
 
@@ -47,7 +47,7 @@ In Bahá'í history, there are numerous stories where the invocation of the Grea
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You mentioned that the texts don't always provide detailed metaphysical theories like philosophical treatises, but are there any specific writings by Bahá'u'lláh or 'Abdu'l-Bahá that delve into the metaphysical aspects of the Greatest Name? How do these writings compare to more abstract theological concepts found in other religious or philosophical traditions? 
 
@@ -69,7 +69,7 @@ Shoghi Effendi, in particular, emphasized the importance of personal experience 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 While it's clear that Bahá'u'lláh and 'Abdu'l-Bahá speak to the transformative power of the Greatest Name, I wonder if this has more to do with the individuals' openness to transformation than the invocation itself. How does the Bahá'í framework address the potential for subjective bias in interpreting spiritual experiences? In other words, could the effects attributed to the invocation of the Greatest Name be explained by psychological factors, rather than metaphysical ones?
 
@@ -91,7 +91,7 @@ Shoghi Effendi's approach to harmony between personal experience and collective 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It seems like there's a delicate balance between personal openness and the metaphysical influence of the Greatest Name. But doesn't this dual-level explanation—both psychological and metaphysical—risk circular reasoning? If an individual's openness is required for the Greatest Name to be effective, how can we distinguish between genuine metaphysical impact and the placebo effect of belief? Are there any specific guidance or criteria in the Bahá'í writings to discern these influences?
 
@@ -113,7 +113,7 @@ As for consultation, while it might seem idealistic, it is a well-established pr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Your explanation of the intertwined spiritual and psychological aspects of invoking the Greatest Name is intriguing, but if the transformative power is measured by its fruits—like increased love and justice—couldn't this be attributed to any sincere practice or belief system that encourages these virtues? How does the Bahá'í Faith uniquely demonstrate that its metaphysical claims have distinct effects compared to other traditions with similar ethical outcomes?
 
@@ -133,7 +133,7 @@ When it comes to consultation and the role of institutional authority, the Bahá
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While the modern applicability of Bahá'u'lláh's teachings is certainly a distinguishing claim, how do Bahá'ís approach the historical critical comparison with other religious frameworks that also propose comprehensive societal and spiritual prescriptions? Do the writings specifically address this kind of comparative theological analysis, and if so, what methodologies are recommended for engaging with it?
 
@@ -153,7 +153,7 @@ Regarding consultation, Bahá'í principles include measures to prevent groupthi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your explanation of how Bahá'ís approach comparative theological analysis by focusing on shared principles while appreciating each tradition's unique aspects is well taken. However, isn't there a tension between the universality claimed by Bahá'í teachings and the inherent contextuality of each religious revelation? How do Bahá'í writings reconcile this, given that each revelation is supposed to be suited to its own time and place?
 
@@ -173,7 +173,7 @@ Regarding consultation and ensuring genuine diversity, the Bahá'í Faith places
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The concept of progressive revelation indeed provides a framework for reconciling universality with contextual differences, but how does this translate into practical guidance for Bahá'ís when engaging with people of other faiths who might see this stance as relativizing their sacred texts? Is there guidance in Bahá'í writings on how to navigate such interfaith dialogues without appearing to undermine the absolute truth claims of other traditions?
 
@@ -195,7 +195,7 @@ Addressing power imbalances is an ongoing effort, and the Bahá'í community con
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 While the emphasis on humility and mutual understanding is foundational in interfaith dialogues, how do Bahá'ís specifically engage with traditions that assert exclusivity in their truth claims, which can often be a stumbling block in conversations about unity and progressive revelation? In such contexts, does the Bahá'í Faith have strategies or teachings that help navigate these more challenging discussions without compromising its principles?
 

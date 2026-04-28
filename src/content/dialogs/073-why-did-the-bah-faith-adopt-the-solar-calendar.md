@@ -15,7 +15,7 @@ excerpt: "Explores symbolic and practical aspects of the calendar"
 featured: false
 heroImage: /images/dialog/073-why-did-the-bah-faith-adopt-the-solar-calendar-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í calendar is solar, not lunar like the Islamic calendar. What's the rationale, and what does the choice say about the Bahá'í relationship to Islamic tradition?
 
@@ -31,7 +31,7 @@ In terms of the relationship to Islamic tradition, the adoption of a solar calen
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 The idea of a "global, unified perspective" is compelling, but let's dig deeper into why a solar calendar is seen as more universal than a lunar one. The Gregorian calendar, while widely used, has its roots in Christian tradition. How does adopting a solar calendar specifically align more closely with the Bahá'í principle of unity? Also, while the Bahá'í Faith does represent a new cycle of revelation, I’m curious how Bahá'u'lláh himself framed the shift. Are there primary sources that discuss the rationale for the solar calendar, possibly in contrast to the lunar?
 
@@ -49,7 +49,7 @@ If you'd like, I can continue searching for more detailed references from Bahá'
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of a new cycle is fascinating, but I'm curious about how this shift is justified in terms of the Faith's principles and teachings, beyond just symbolism. Lady Blomfield's reference is intriguing, but it's still a secondary source. Can we find something more direct from Bahá'u'lláh or 'Abdu'l-Bahá about how the Badí' calendar's solar nature serves the purpose of establishing a unified global society? Moreover, if the lunar calendar is not inherently less universal, what distinguishes the solar calendar in fulfilling the Bahá'í vision? How does the Faith articulate this in its primary texts, and are there teachings or tools within the Bahá'í writings that specifically address the calendar as a mechanism of unity? Let's dig even deeper into the doctrinal reasoning behind this choice.
 
@@ -71,7 +71,7 @@ The adoption of a solar calendar thus aligns with the Bahá'í principle of unit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The references you provided highlight the significance of the calendar's solar orientation, yet they raise further questions about the practical and doctrinal aspects behind this choice. The mention of Naw-Rúz aligning with the March equinox suggests a symbolic alignment with natural cycles, but how does this translate into real-world application in terms of unity? Is there a direct connection made in the primary writings between observing these solar cycles and achieving global unity, beyond the symbolism of starting a new era? 
 
@@ -93,7 +93,7 @@ While the specific doctrinal reasoning for the solar nature over a lunar one may
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The idea that the Badí' calendar is both a practical tool and symbolic of a new era is compelling, but I'm still struggling to see how the solar aspect goes beyond symbolism to actively foster unity. You mention that the writings of Shoghi Effendi and the Universal House of Justice discuss the calendar in terms of the administrative order. Could you provide more details about how the Badí' calendar functions within this structure and how it might facilitate unity in practice, not just in theory? Additionally, are there any teachings from Bahá'u'lláh or 'Abdu'l-Bahá that address how the observance of this calendar creates a shared identity or experience among Bahá'ís, thereby reinforcing unity? It feels like we're circling around the answer, but I'm looking for something more concrete about how the solar aspect directly promotes unity within the community and beyond.
 
@@ -115,7 +115,7 @@ While the solar aspect of the calendar may not be explicitly linked to unity in 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 I appreciate the practical role the Badí' calendar plays in synchronizing Bahá'í activities worldwide, as you describe from the works of Adib Taherzadeh and Shoghi Effendi. However, I'm still curious about whether this practical synchronization transcends into a doctrinal explanation for choosing a solar system over a lunar one. 
 
@@ -139,7 +139,7 @@ While there may not be explicit doctrinal texts detailing the spiritual implicat
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Your explanation about the practical benefits of the Badí' calendar, particularly in synchronizing global observances like the Nineteen Day Feast and Naw-Rúz, is quite clear. Yet, it seems we're still left with an implication rather than a direct doctrinal statement on the solar calendar's spiritual impact. The notion of Naw-Rúz symbolizing balance and renewal is intriguing, but without explicit primary sources linking this to the calendar's solar nature, we're left interpreting symbolism.
 
@@ -163,7 +163,7 @@ In essence, while the solar nature of the calendar might not be explicitly linke
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It seems we've reached a nuanced understanding: the Badí' calendar serves both symbolic and practical functions within the Bahá'í Faith, fostering unity through synchronized global observances while reflecting harmony with natural cycles. Yet, there's still an element of intrigue regarding 'Abdu'l-Bahá's or Shoghi Effendi's thoughts on how this calendar choice might directly influence individual spiritual development or moral progress.
 
@@ -189,7 +189,7 @@ Through regular participation in these calendar-governed events, Bahá'ís not o
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While the Nineteen Day Feast clearly plays a crucial role in fostering community unity and spiritual development, as 'Abdu’l-Bahá and the Universal House of Justice have highlighted, I'm still curious about the specific spiritual dynamics at play. You mention the Feast includes prayer, consultation, and socializing, but how do these components interact to nurture individual spiritual growth? Is there a deeper spiritual rationale provided in the writings for why these specific elements are emphasized?
 
@@ -215,7 +215,7 @@ In essence, while the calendar's solar nature primarily serves as a practical to
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanation of the Nineteen Day Feast's components—prayer, consultation, and socializing—highlights important mechanisms through which spiritual and moral growth are fostered within the Bahá'í community. I see how these elements are designed to work synergistically to nurture spiritual virtues, such as humility and fellowship. However, I'm curious if there's more detailed guidance from Bahá'u'lláh or 'Abdu’l-Bahá on the specific outcomes they envisioned from these practices. Are there writings that articulate how these experiences are expected to manifest in an individual's daily life or contribute to broader societal transformation?
 

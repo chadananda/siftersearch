@@ -15,7 +15,7 @@ excerpt: "Explains dynamic infallibility well"
 featured: false
 heroImage: /images/dialog/009-the-infallibility-of-the-uhj-what-kind-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 When Bahá'ís say the Universal House of Justice is 'infallible,' what kind of infallibility do they mean? It can't mean infallible in the same way Bahá'u'lláh's revelation is infallible. Make the distinction precise.
 
@@ -33,7 +33,7 @@ So, while both forms of infallibility involve divine protection from error, Bah�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 So, if the infallibility of the Universal House of Justice is limited to its collective decisions and legislative functions, how does that play out in practice? Are there examples where their infallibility has been clearly demonstrated in real situations? And how does this collective guidance interact with the individual insights of its members? Can members disagree during consultations, and if so, how is the final decision deemed infallible? I'm trying to understand the mechanics of this process and what safeguards ensure that their decisions truly reflect divine guidance.
 
@@ -55,7 +55,7 @@ In essence, the infallibility of the Universal House of Justice is a matter of f
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 I understand that the process of consultation and the structural safeguards of the Universal House of Justice are essential to its functioning. However, isn't there an inherent tension between the idea of infallibility and the possibility of human error or misunderstanding in interpretation and implementation? For example, if a decision is later found to need revision or adaptation due to new circumstances, how is that reconciled with the notion of infallibility? And does recognizing the possibility of change over time imply any limitation on the initial claims of divine guidance? How do Bahá'ís navigate the balance between holding to infallible decisions and adapting to evolving contexts?
 
@@ -77,7 +77,7 @@ In summary, the infallibility of the Universal House of Justice is about the ass
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The way you've described the dynamic nature of infallibility reminds me a bit of how scientific understanding evolves—always refining with new data. But doesn't that analogy conflict with the idea of divine guidance, which one might expect to provide absolute clarity from the outset? How do Bahá'ís reconcile the belief that decisions are divinely guided with the need to revise those decisions, especially if divine guidance implies a level of certainty beyond human reasoning? And what about decisions that don't just adapt to new contexts but seem to shift directions altogether? Are there specific examples where a decision by the Universal House of Justice was significantly revised, and how was this understood and accepted within the community?
 
@@ -101,7 +101,7 @@ In essence, Bahá'ís view the evolving nature of decisions as a testament to th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Your explanation of divine guidance as a living, adaptable process is insightful, but I'm still grappling with whether this adaptability undermines the notion of infallibility. If divine guidance is about offering principles applicable to circumstances, does this mean that the initial decisions are provisional, expecting revision? How do we differentiate between a decision that inherently holds divine truth from one that is situational and subject to change? Moreover, how do Bahá'ís reconcile any potential discomfort or cognitive dissonance that might arise when witnessing significant shifts in policy or practice? Are there mechanisms within the community to process and integrate such changes without feeling like foundational beliefs are being challenged?
 
@@ -123,7 +123,7 @@ In summary, Bahá'ís understand that the adaptability of decisions is not a wea
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The distinction you make between eternal principles and the situational application of those principles by the Universal House of Justice clarifies how adaptability is not seen as a contradiction to infallibility. However, I'm curious about how this plays out on the ground. How do Bahá'ís individually and collectively handle instances where a decision doesn't immediately seem aligned with their understanding of those eternal principles? What role does personal interpretation play in reconciling personal beliefs with institutional decisions, especially when there's tension? Are there teachings or writings that guide individuals in how to navigate such conflicts between personal understanding and collective decisions? I'm interested in how Bahá'í practice supports this balance between individual conscience and collective unity.
 
@@ -147,7 +147,7 @@ In practice, Bahá'ís work to integrate these teachings by actively participati
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 I appreciate your explanation of how Bahá'í teachings guide the reconciliation of personal understanding with collective decisions. However, I'm curious about the tension between obedience and personal growth. For instance, if a Bahá'í deeply feels that a decision by the Universal House of Justice might conflict with their interpretation of Bahá'u'lláh's teachings, are they simply expected to acquiesce, or is there room within the Faith for such an individual to explore and discuss these concerns openly? Are there mechanisms within the Bahá'í community for addressing dissent or deep-seated disagreements without disrupting unity? Can you point to any specific writings or examples where such a balance between obedience and personal conscience has been addressed directly?
 
@@ -171,7 +171,7 @@ In practice, Bahá'ís navigate this balance by fostering an environment of open
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While the mechanisms for consultation and open expression within the Bahá'í community seem to allow for individual exploration of concerns, I'm curious about the extent to which this openness is actually practiced, especially in cases of profound disagreement. For instance, are there instances where dissenting views have directly influenced or resulted in a revision of decisions by the Universal House of Justice? And when individuals express concerns, how does the community ensure that these voices are heard and genuinely considered, rather than simply being seen as a challenge to unity? Can you provide examples or writings that demonstrate this dynamic interaction between individual conscience and institutional authority in action?
 
@@ -195,7 +195,7 @@ In essence, while the authority of the Universal House of Justice is respected, 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The consultative process within the Bahá'í administrative order indeed seems robust in theory, but I'm interested in understanding how this works in practice, especially when the stakes are high. How do you ensure that the necessary balance is maintained between deep respect for institutional decisions and the genuine exploration of individual conscience? Is there a mechanism in place that allows for revisiting decisions if significant concerns arise from the community, or is the expectation purely towards acceptance and adaptation? I'd like to see if there are existing examples that highlight how the Bahá'í community navigates such situations without undermining unity or the perceived integrity of divine guidance. Are there specific historical instances where community feedback has visibly shaped or refined the application of a decision by the Universal House of Justice?
 
@@ -219,7 +219,7 @@ In practice, this means that while the authority of the Universal House of Justi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 You've articulated how the process of consultation serves as a mechanism for adaptation, allowing for the flexible application of decisions across diverse cultural landscapes. However, what about cases where the initial decision itself seems controversial or raises significant ethical concerns? In such situations, how do Bahá'ís reconcile the tension between personal moral convictions and institutional decisions presumed to be divinely guided? Is there a point at which personal conscience might legitimately challenge institutional guidance without being seen as a threat to unity? I'm also curious whether there are any particular writings or teachings that explicitly address how ethical discernment should be exercised when institutional decisions seem to conflict with personal or communal moral understandings.
 

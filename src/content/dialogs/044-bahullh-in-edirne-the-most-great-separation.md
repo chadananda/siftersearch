@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/044-bahullh-in-edirne-the-most-great-separation-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The break between Bahá'u'lláh and his half-brother Mírzá Yahyá in Edirne is called 'the Most Great Separation.' What was actually at stake, and why does it matter for how the Bahá'í Faith understands itself?
 
@@ -31,7 +31,7 @@ For the Bahá'í Faith, this event is significant because it represents the mome
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But Jafar, if the crux of the matter was about the recognition of Bahá'u'lláh's station, why was there such a strong resistance from Mírzá Yahyá and his followers? Was there something in Bahá'u'lláh's claim or his approach that made it particularly challenging for them to accept? And how do the writings of Bahá'u'lláh, like the Kitáb-i-Íqán, address the issue of spiritual authority and succession, especially in contrast to Subh-i-Azal's position? I'm curious to understand if this was more about theological differences or personal loyalties.
 
@@ -51,7 +51,7 @@ The resistance was thus both theological and personal. It involved deep-seated b
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, it seems that the Kitáb-i-Íqán serves as a crucial text to articulate Bahá'u'lláh's vision of progressive revelation and to differentiate his claim from that of Mírzá Yahyá. But I'm curious about how this text directly addresses other themes, like the concept of tests or trials. Does Bahá'u'lláh suggest that the followers were undergoing a form of spiritual testing during this period of separation? And how does he explain the necessity and purpose of such tests in the broader context of faith development? I'm interested in understanding how these trials fit into the narrative of spiritual growth and recognition of true divine authority.
 
@@ -69,7 +69,7 @@ In the narrative of the Bahá'í Faith, such trials are seen as both a means of 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, Bahá'u'lláh's framing of tests and trials as a means of spiritual purification and growth is indeed compelling, but I'm curious about how this idea plays out practically within the community. While the *Kitáb-i-Íqán* suggests that these tests separate sincere believers from those with superficial allegiance, how does the text or other primary sources address the aftermath for those who don't pass these tests? Are they offered a path back into the fold, or are they permanently set apart from the community? Furthermore, how do the writings reconcile this process of exclusion with the Bahá'í emphasis on unity and inclusivity? 
 
@@ -91,7 +91,7 @@ Thus, the Bahá'í teachings harmonize the concepts of individual testing and co
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, the idea that those who falter during spiritual tests can return to the community is reassuring, and it reflects the themes of forgiveness and redemption. But I wonder how this process of returning is actually facilitated within the Bahá'í community. Are there specific teachings or mechanisms in place that guide this reintegration? How are individuals supported in their journey back to the fold, especially if their doubts or failures were publicly known?
 
@@ -113,7 +113,7 @@ In earlier religious traditions, similar concepts of repentance and acceptance a
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while it's clear that mercy and forgiveness are integral to the Bahá'í community's approach, it seems we're left without specific texts from Bahá'u'lláh or 'Abdu'l-Bahá explicitly detailing this reintegration process. This leaves room for interpretation, but could it also present challenges in practice? How do communities ensure consistency in applying these principles without explicit guidance?
 
@@ -135,7 +135,7 @@ In navigating the potential tensions between forgiveness and accountability, the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, while it's reassuring that the Bahá'í administrative structures provide a framework for maintaining unity and inclusivity, I'm curious about how these principles are practically implemented at the community level. For instance, when a local spiritual assembly encounters a member who has struggled with their faith, how do they balance providing support with maintaining the community's cohesive spiritual standards? Is there a specific consultative or educational approach they employ to help individuals realign with the community's values without feeling marginalized?
 
@@ -157,7 +157,7 @@ These practical examples from the early Bahá'í community illustrate how the te
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, I'm intrigued by the practical application of consultation and education in supporting individuals while maintaining community standards. But how do these principles prevent the creation of a hierarchy of belief or lead to conformity? Given that consultation encourages dialogue, is there room for dissenting voices or differing interpretations of the teachings within the community? How are these addressed without compromising the unity that Bahá'í communities strive for?
 
@@ -177,7 +177,7 @@ Continuous learning and adaptation are facilitated through regular study session
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It's encouraging to hear that consultation fosters an inclusive environment for diverse perspectives, but I still wonder about the balance between supporting community unity and allowing for genuine diversity in thought. When it comes to dissenting voices, especially those that might challenge core interpretations of the teachings, how do Bahá'í communities distinguish between constructive dialogue and potentially divisive dissent? Is there a threshold at which certain views are considered inconsistent with the community's principles, and if so, how is this handled without stifling intellectual exploration?
 
@@ -201,7 +201,7 @@ By promoting a culture of learning and open dialogue, the Bahá'í Faith seeks t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, it's valuable to see how the Bahá'í system of consultation is designed to nurture both unity and diversity, but I'm still curious about how this works in practice when challenging issues arise. You mentioned that dissent is addressed through consultation and education, but I'm interested in how local assemblies manage situations where a member continues to hold views that might be considered divisive, even after efforts to guide them. 
 

@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/030-tahirih-qudds-and-the-conference-of-badasht-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 What actually happened at Badasht when Tahirih removed her veil, and why is it considered a foundational moment in the Bahá'í tradition? What does the gesture mean?
 
@@ -33,7 +33,7 @@ This moment is considered foundational in the Bahá'í tradition because it exem
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Your description of Tahirih's act suggests it was a deliberate signal of a new dispensation, but wouldn't the act of unveiling carry multiple layers of meaning beyond just a break from the past laws? How did her act resonate with the broader social and religious changes at the time, especially considering the significant risks she took? Also, are there any specific writings or accounts from the Báb or Bahá'u'lláh that directly comment on her act at Badasht, to illuminate its spiritual implications more deeply?
 
@@ -51,7 +51,7 @@ Tahirih's unveiling continues to resonate as a symbol of courage, progress, and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The quote from "The Dawn-Breakers" frames the event as a decisive rupture with the past, but it seems like there's a tension here between the symbolic act and the actual reception by those present. In the broader Islamic context of the time, unveiling would have been seen as scandalous, possibly even sacrilegious. How did Tahirih's fellow attendees react to her act, and how did that reaction contribute to the perception of Badasht's significance?
 
@@ -69,7 +69,7 @@ The historical narrative of Badasht and Tahirih's unveiling is constructed from 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The mixed reactions at Badasht are intriguing, as they suggest an internal conflict within the Bábí movement itself regarding how far to push against established norms. The fact that some considered her act scandalous reveals deeper fractures in their shared vision. Can we delve more into how these tensions were resolved, or if they persisted as the movement evolved into the Bahá'í Faith?
 
@@ -91,7 +91,7 @@ Regarding the historiography of events like Badasht, Bahá'í scholars today app
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It's valuable to consider Bahá’u’lláh's emphasis on unity amidst the upheaval at Badasht, yet it seems that the challenge lay in balancing progressive change with cohesive community building. How did Bahá’u’lláh's later teachings specifically address these early tensions about reform and tradition? Are there particular passages that illuminate how he envisioned the community reconciling such conflicts?
 
@@ -113,7 +113,7 @@ Regarding scholarly reassessment, Bahá'í scholars have increasingly turned to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Bahá’u’lláh’s approach to unity and progressive revelation certainly seems to provide a philosophical foundation for reconciling tensions within the early movement. Could you point to passages from Bahá’u’lláh's key texts, like the Kitáb-i-Aqdas or the Kitáb-i-Íqán, that specifically highlight how he envisioned this balance between tradition and reform being achieved?
 
@@ -133,7 +133,7 @@ In contemporary scholarship, gender perspectives have become increasingly import
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The texts you mentioned, the *Kitáb-i-Aqdas* and the *Kitáb-i-Íqán*, are indeed central to understanding Bahá’u’lláh's vision for societal transformation. Yet, I'm curious about specific excerpts where he addresses the notion of abandoning outdated customs or the principle of progressive revelation in more concrete terms. Could you provide a couple of examples from these texts that illustrate how Bahá’u’lláh envisioned the community navigating the tension between tradition and reform?
 
@@ -161,7 +161,7 @@ On the subject of gender dynamics, contemporary scholars like Moojan Momen and N
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The excerpts you provided highlight Bahá’u’lláh's teachings on progressive revelation and the abandonment of outdated customs, offering a clear theological foundation for reform. However, they also raise the question of how these abstract principles were applied in the concrete decisions and practices of the early Bahá'í community. Are there documented instances or specific actions from Bahá’u’lláh or his close followers that demonstrate how these teachings were implemented practically, especially in reconciling community tensions?
 
@@ -181,7 +181,7 @@ Regarding gender dynamics, modern re-evaluations of Tahirih's role have signific
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The practical application of Bahá’u’lláh's teachings, like the administrative order and gender equality, demonstrates a tangible shift from tradition to reform in the Bahá'í community. However, I'm keen to know how these principles and structures were received by the early believers. Did these changes face pushback, and how were potential conflicts managed? Are there specific examples where Bahá’u’lláh or his followers had to address resistance to these new systems?
 
@@ -201,7 +201,7 @@ In terms of contemporary Bahá'í initiatives drawing on Tahirih's legacy, there
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The practical challenges in implementing Bahá’u’lláh's teachings reflect a rich part of the faith's history, especially regarding issues like the administrative order and gender equality. I'm curious about specific instances where Bahá’u’lláh or 'Abdu'l-Bahá had to directly intervene to resolve conflicts or guide the community through resistance to these changes. Are there any notable examples or stories that capture these interventions?
 

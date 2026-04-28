@@ -14,7 +14,7 @@ excerpt: "Addresses complex issues thoughtfully"
 featured: false
 heroImage: /images/dialog/057-the-question-of-gender-in-spiritual-reality-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 If the soul has no gender (as some Bahá'í teachings suggest), why does earthly gender carry the weight it does in Bahá'í institutional structure? Is gender a feature of bodies only, or of souls too?
 
@@ -30,7 +30,7 @@ Gender in this world is primarily a feature of bodies and the social constructs 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned that the exclusion of women from the Universal House of Justice is based on instructions from Bahá'u'lláh and 'Abdu'l-Bahá. Could you point me to specific writings or quotes that outline this instruction? It's hard to reconcile this exclusion with the principle of gender equality. Also, if the wisdom behind this decision is not explicitly detailed, how do we critically engage with or even challenge a practice when its rationale isn't fully explained? Isn't it important to scrutinize such practices, especially when they seem to conflict with core teachings of equality?
 
@@ -56,7 +56,7 @@ The rationale for this specific practice is not fully explained in the available
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea that the wisdom will become "as manifest as the sun" in the future feels like a call for patience rather than an explanation. But isn't it a bit of a paradox to promote gender equality while maintaining structures that exclude women from certain roles without clearly articulated reasons? It seems that asking followers to rely on faith without providing a comprehensible rationale risks undermining the very commitment to equality. 
 
@@ -78,7 +78,7 @@ Ultimately, while the challenge is real, the ongoing commitment to equality and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The emphasis on consultation and open dialogue is crucial, but how does that translate into practical steps that address these tensions? If community discussions raise significant concerns about this exclusionary practice, what mechanisms within the Bahá'í administrative framework allow for adaptation or re-evaluation of traditions that seem misaligned with fundamental principles like equality? 
 
@@ -102,7 +102,7 @@ While the practice regarding the Universal House of Justice may not change, the 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It seems like the mechanisms for re-evaluation, particularly through the authority of the Universal House of Justice, are somewhat restricted when it comes to foundational decisions like the composition of the House itself. This raises another question: If the exclusion of women is based on a specific provision of Bahá'í law, could the Universal House of Justice, with its legislative authority, choose to reinterpret or amend this provision as societies evolve towards a deeper understanding of equality?
 
@@ -126,7 +126,7 @@ While some aspects of Bahá'í law are fixed, the community's approach to consul
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 These points about authority and adaptation within the Bahá'í framework underline a significant complexity: balancing respect for foundational teachings with the need for progress in social norms. However, if the Universal House of Justice cannot override explicit provisions, how does the Bahá'í community reconcile this with the progressive revelation principle, which suggests that divine guidance evolves with societal needs? Could this tension imply that future manifestations will address such limitations more directly?
 
@@ -150,7 +150,7 @@ Ultimately, the Bahá'í community seeks to balance respect for its foundational
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The approach of integrating discussions into educational programs is commendable, yet it seems these efforts might still fall short if they don't address the root tensions directly. How can educational programs be structured to do more than just contextualize and instead critically analyze and question these teachings? Are there current examples within Bahá'í communities where such progressive educational initiatives have led to a tangible shift in understanding or practice?
 
@@ -174,7 +174,7 @@ The balance between immediate action and anticipation of future guidance is main
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your points about critical engagement in educational programs and the active application of Bahá'í teachings are crucial. However, how can the community ensure these educational initiatives don't just remain at the level of theory but are effectively translated into systemic change within the structure itself, especially where it seems most rigid?
 
@@ -202,7 +202,7 @@ By fostering a culture of learning, action, and reflection, the Bahá'í communi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Your explanation about the transition from theory to practice in Bahá'í educational initiatives is insightful. However, it seems that despite these efforts, there is still a gap when it comes to making systemic changes within the institutional framework, particularly regarding gender equality at high leadership levels. How can the community better leverage the mechanisms of consultation and innovation to address this gap?
 
@@ -228,7 +228,7 @@ While certain aspects of the Bahá'í administrative framework are fixed, the br
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 While the emphasis on consultation and the scaling of successful models in other areas is clear, it seems there remains a disconnect when it comes to addressing the most symbolic and visible structures of inequality in the Bahá'í framework. You mentioned the creative problem-solving aspect of consultation but if it's not able to address the exclusion at the level of the Universal House of Justice, doesn’t it risk being perceived as sidestepping the heart of the issue? 
 

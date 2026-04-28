@@ -14,7 +14,7 @@ excerpt: "Balanced believer voice"
 featured: false
 heroImage: /images/dialog/098-reading-the-writings-as-a-non-bah-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Can someone who is not a Bahá'í read the Bahá'í writings on their own terms — engaged but not committed? Or does the corpus only fully open up to a believer?
 
@@ -28,7 +28,7 @@ The Bahá'í writings are intended for all humanity, not just for those who iden
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But wouldn't you say that some aspects of the Bahá'í writings are deeply rooted in the faith's unique theological framework, which might be difficult to fully appreciate without an insider's perspective? For instance, the Bahá'í concept of progressive revelation or the significance of the Covenant could be challenging to grasp in their entirety without a broader understanding of Bahá'í history and doctrine. How does one navigate these more intricate teachings without the context that comes from being a believer?
 
@@ -43,7 +43,7 @@ For those navigating these teachings without the context of belief, it can be he
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 But isn't there a risk of diluting the intricacies of these teachings if someone approaches them purely from a philosophical or academic standpoint without the spiritual commitment that believers bring to their study? For instance, the principle of progressive revelation isn't just an intellectual concept—it's a living belief that informs how Bahá'ís view the evolution of religion and their own spiritual journey. Similarly, the Covenant isn't merely a structural or historical artifact—it's considered a pivotal spiritual force within the faith.
 
@@ -65,7 +65,7 @@ In essence, while full comprehension of certain teachings might be enriched by a
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The openness you describe is certainly a valuable aspect of the Bahá'í community's approach to seekers. But I'm curious about how this openness interacts with the notion of authority and interpretation within the faith. You mentioned the role of the Universal House of Justice in guiding engagement with seekers. But isn't there a tension between encouraging an open dialogue and maintaining the authoritative interpretations provided by the leaders of the faith? 
 
@@ -89,7 +89,7 @@ In essence, while there is a framework of authoritative interpretation to mainta
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The balance you describe between independent investigation and adherence to authoritative interpretation is fascinating, but it seems like a delicate dance. How does the Bahá'í community ensure that this balance doesn't tip in favor of either extreme — either stifling personal exploration or allowing interpretations that might stray too far from the core teachings?
 
@@ -115,7 +115,7 @@ The Bahá'í community is designed to prevent the extremes of either stifling pe
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 It seems like consultation plays a key role in preserving both unity and individual exploration. Yet, doesn't this process inherently privilege voices that are more aligned with the authoritative interpretation? How does the Bahá'í community ensure that dissenting voices—those potentially offering valuable perspectives that diverge from the mainstream—are genuinely heard and integrated into the dialogue, rather than simply being redirected towards established interpretations?
 
@@ -139,7 +139,7 @@ This balance of authority and personal exploration remains a living dynamic with
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 It's evident that the Bahá'í community has mechanisms in place to maintain unity while honoring individual exploration. However, I can't help but wonder about the practical effectiveness of these mechanisms, particularly consultation, in truly integrating dissenting perspectives without defaulting to established interpretations. Are there documented cases where consultation led to a significant shift in understanding or practice within the community, perhaps influenced by dissenting voices? How do these cases illustrate the potential for genuine integration of diverse perspectives?
 
@@ -165,7 +165,7 @@ These historical precedents help illustrate how the Bahá'í community today str
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The process of consultation sounds ideal in fostering a culture of open dialogue while maintaining unity. However, I remain curious about the practical outcomes. The lack of specific examples where consultation led to a significant shift raises some questions about the real extent of change influenced by diverse perspectives. Are there any documented decisions or statements from the Universal House of Justice or other institutions that resulted from or were notably influenced by diverse or dissenting voices in consultation settings? 
 
@@ -185,7 +185,7 @@ While specific, documented cases might not be readily available in the public do
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It seems like the Bahá'í community operates on a principle of evolving collective understanding rather than documenting individual influences in decision-making, which might make it hard to pinpoint how dissenting voices specifically shape outcomes. Does this lack of documentation ever cause concern within the community about transparency or the potential for diverse perspectives to be overshadowed by established interpretations? How are community members encouraged to trust in this process?
 
@@ -205,7 +205,7 @@ These anecdotes, while not always formally documented, are shared within the com
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 These stories about 'Abdu'l-Bahá are indeed illuminating, as they show how personal engagement and kindness can be powerful tools for maintaining unity in the face of dissent. However, the reliance on oral tradition and community trust raises questions about how these values translate in today's context, where transparency and documentation are often seen as crucial for accountability and inclusivity. How does the Bahá'í community navigate these modern expectations while staying true to its principles? 
 

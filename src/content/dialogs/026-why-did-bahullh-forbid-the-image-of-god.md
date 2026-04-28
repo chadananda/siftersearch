@@ -15,7 +15,7 @@ excerpt: "Explores complex theological concepts"
 featured: false
 heroImage: /images/dialog/026-why-did-bahullh-forbid-the-image-of-god-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh affirms that God is unknowable in essence and that representations are false. But he also gives many names for God in the Long Obligatory Prayer. How do these fit?
 
@@ -31,7 +31,7 @@ Thus, while God's essence remains unknowable, these names allow us to draw neare
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But isn't there a tension between saying representations of God are false and then using those very representations in the form of names and attributes? If these names are merely bridges, as you say, doesn't that mean they are inherently limited and perhaps even misleading in their representation of the Divine? And how do these names relate to Bahá'u'lláh's concept of the Manifestation of God, which is supposed to be a more direct reflection of divine attributes? How can we reconcile the unknowability of God's essence with the Manifestation's role as an intermediary?
 
@@ -51,7 +51,7 @@ In this framework, the unknowability of God's essence is not in conflict with th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 This idea of Manifestations as mirrors reflecting divine attributes is fascinating, but doesn't it still leave us with a kind of paradox? If the Manifestation perfectly reflects divine attributes, are we not getting a clearer representation of God's essence than through mere names and attributes? How does Bahá'u'lláh distinguish between the reflection in the Manifestation and a genuine representation of divine essence? And what implications does this have for how we understand and relate to God through the Manifestation versus through prayer and the names? Can we really separate God's essence from God's attributes, or is this separation more a conceptual tool for us to understand the limitations of our approach?
 
@@ -71,7 +71,7 @@ In practice, this means that while we may never fully comprehend God's essence, 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 But if the Manifestations are perfect mirrors of divine attributes, doesn't that suggest they give us the clearest possible insight into God's nature, even if not into God's essence? Are we getting the fullest revelation of what God is like through these Manifestations? And how do we reconcile the Manifestation's role with Bahá'u'lláh's assertion that "He Who is everlastingly hidden from the eyes of men"? Does this not create a kind of duality or tension between the hidden and the revealed aspects of God? Moreover, what does Bahá'u'lláh really mean when he says "No man hath ever known Him, except Himself"? Isn't there an implicit teaching here that even what the Manifestations reveal is only a fractional glimpse of the divine reality? How do these nuances affect a believer's personal journey and understanding of God through Bahá'í teachings?
 
@@ -90,7 +90,7 @@ For a believer, this duality—between the hidden essence and the revealed attri
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It's intriguing how Bahá'u'lláh navigates this balance between the unknowable essence and the perceivable attributes of God. While the Manifestations offer us the clearest insight into the divine attributes, does this not suggest a sort of hierarchy or gradation in how we understand the divine? If everything we perceive is ultimately a "fractional glimpse," how do we prioritize our spiritual practices—prayer, meditation, study of scriptures—within this framework? Are there specific writings from Bahá'u'lláh that illustrate how believers should engage with these dual aspects of God in daily life? And does this focus on the attributes over essence influence the moral and ethical teachings in Bahá'í practice?
 
@@ -110,7 +110,7 @@ In daily life, engaging with these dual aspects involves a continual effort to r
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 While it makes sense that Bahá'í teachings emphasize the attributes as a key focus for spiritual growth, doesn't this approach risk neglecting the contemplative aspect of God’s unknowable essence? If the essence is always beyond reach, should believers still strive for that deeper, mystical connection, or is that seen as a distraction from embodying divine attributes? Also, how does this framework address moments of doubt or spiritual crisis, where one might feel disconnected from both the attributes and the essence? Are there specific prayers or passages where Bahá'u'lláh addresses these struggles, providing guidance on maintaining faith and devotion amidst such challenges?
 
@@ -130,7 +130,7 @@ Thus, while the focus is on embodying divine attributes, the Bahá'í teachings 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The inclusion of the mystical pursuit alongside the practical embodiment of divine attributes is an intriguing balance. While you mention the "Long Healing Prayer" and the "Tablet of Ahmad," can you provide specific excerpts from these or other writings where Bahá'u'lláh acknowledges doubt or the struggle to maintain faith? I’d like to see how he directly addresses these challenges. Furthermore, in terms of mystical connection, how do Bahá'í practices cultivate this aspect? Are there particular teachings or methods that encourage this deeper union with the Divine, especially when the essence is acknowledged as unknowable? How do these mystical elements coexist with the more actionable, attribute-focused aspects of the faith, ensuring they don't overshadow one another?
 
@@ -148,7 +148,7 @@ The mystical elements coexist with the practical focus on attributes by deepenin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The mention of the "Tablet of Ahmad" as a source of strength and reassurance is compelling. While I understand that the search didn't yield a direct quote about doubt, I'd be interested in any specific lines you can recall that particularly emphasize steadfastness or dealing with trials. How does Bahá'u'lláh frame these struggles within the broader spiritual journey, and what promises or assurances does he offer to those who are facing them? 
 
@@ -168,7 +168,7 @@ Bahá'u'lláh guides believers to balance the mystical pursuit with the embodime
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It's interesting how the "Tablet of Ahmad" assures believers of spiritual victory and protection amidst trials. But without direct quotes, how can we appreciate the nuances of Bahá'u'lláh's assurance? Is there a specific line or phrase that encapsulates this promise of steadfastness or spiritual support in adversity?
 
@@ -184,7 +184,7 @@ Meditation plays a vital role in fostering qualities and virtues by allowing ind
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 I'm intrigued by the idea that Bahá'u'lláh presents spiritual victory and protection for the steadfast. While an exact quote wasn't available, you've highlighted the "Tablet of Ahmad" as a key text for reassurance. Could you delve deeper into its structure or themes to give us a better sense of how it conveys this assurance? How does Bahá'u'lláh construct the promise of divine support within this tablet?
 

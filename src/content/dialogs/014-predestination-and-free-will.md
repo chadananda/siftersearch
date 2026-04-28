@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/014-predestination-and-free-will-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 How do the Bahá'í writings handle the ancient question of predestination and free will? They seem to affirm both — but on what terms?
 
@@ -30,7 +30,7 @@ In this view, the apparent paradox is resolved by understanding that God's knowl
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 That metaphor of the ship and the ocean is insightful, but it raises further questions. If the ocean represents God's all-encompassing will, does this imply that our choices are ultimately predetermined within the parameters of divine laws? How does this framework account for human actions that seem to go against divine will, like injustice or evil? Are these actions somehow accounted for within God's plan, or do they signify a misuse of the free will granted to humans? Could you reference any passages from Bahá'u'lláh or 'Abdu'l-Bahá that directly address this tension between human choice and divine will, particularly in the context of actions that defy moral or spiritual laws?
 
@@ -44,7 +44,7 @@ Shoghi Effendi touches on this in *Bahá’í Administration*, where he notes th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The explanation seems to hinge on the idea that evil and injustice are consequences of misusing free will, which is a classic argument. But if God's will is truly all-encompassing, wouldn't it also encompass the possibility and reality of evil actions? It seems like a contradiction to say such actions are not part of God's will, yet they occur within a world governed by divine laws. How do the Bahá'í writings reconcile this apparent contradiction? Could you provide a specific passage from Bahá'u'lláh or 'Abdu'l-Bahá that addresses how the divine framework accounts for human error or malevolence? How is divine justice perceived when considering those who suffer due to others' misuse of free will?
 
@@ -62,7 +62,7 @@ In terms of divine justice, Bahá'í teachings hold that while suffering may occ
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The passage from *Some Answered Questions* is revealing, particularly in emphasizing human dependency on divine assistance, even in exercising free will. But it still leaves open how exactly God's sovereignty allows for the existence of evil without it being seen as part of divine will. If human error and malevolence are permitted within this framework, isn't there an implicit acceptance of their potential occurrence as part of the divine tapestry? 
 
@@ -82,7 +82,7 @@ This teaching encourages believers to maintain faith and purity of heart, trusti
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The explanation of evil as the absence of good, akin to darkness being the absence of light, is intriguing. However, this seems to imply a passive role on the part of God in terms of evil's existence. If God allows for both good and evil to enable moral choice and growth, does that mean every instance of suffering or injustice serves a divine purpose? This framing can be problematic, as it risks justifying suffering as inherently beneficial or necessary. 
 
@@ -102,7 +102,7 @@ The Bahá'í approach to social justice is deeply rooted in the belief that huma
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The explanation of the afterlife as a continuation of spiritual growth and the emphasis on accountability and redemption is helpful. However, the idea that suffering and injustice result from human actions, while aligned with free will, challenges the notion of divine omnipotence. If God is omnipotent, why does He not intervene to prevent the most egregious injustices and sufferings, particularly those affecting innocent individuals? This leads to questions about divine intervention and the limits of human agency.
 
@@ -122,7 +122,7 @@ These endeavors are rooted in the belief that true social transformation require
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 I understand the emphasis on human autonomy and the moral imperative it creates. However, if God's non-intervention is framed as respect for human choice, doesn't that seem to prioritize free will over the prevention of suffering, potentially at odds with a conception of a benevolent deity? How does this reconcile with the idea that God is all-loving and merciful? 
 
@@ -148,7 +148,7 @@ The Bahá'í faith instills hope by emphasizing the transformative power of coll
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While I appreciate the emphasis on collective action and the transformative power of community efforts, there's still a tension in the narrative of divine love and non-intervention. If moral choice is a profound expression of God's love, how do we reconcile this with the suffering of those who haven't chosen such conditions, like children born into poverty or conflict? Doesn't this challenge the idea of a benevolent deity who is also all-powerful?
 
@@ -168,7 +168,7 @@ To maintain the balance between idealism and pragmatism, Bahá'ís are encourage
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The emphasis on trials as opportunities for spiritual growth is a recurring theme in many religious traditions, but it still leaves open the question of divine benevolence in the face of innocent suffering. If the material world is a place of tests, what does that say about the nature of God who designed such a world? Are there passages in the Bahá'í writings where Bahá'u'lláh or 'Abdu'l-Bahá directly address the divine rationale behind creating a world filled with such inherent challenges? 
 
@@ -194,7 +194,7 @@ To maintain momentum and avoid disillusionment, Bahá'í teachings emphasize the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The analogy of trials as a means for spiritual refinement is meaningful, yet it doesn't fully address the issue of a benevolent, omnipotent God permitting such suffering, especially for innocents, as part of divine design. If God's purpose is to test and refine, does that not suggest a level of intention behind every challenge? This seems to conflict with the concept of an all-loving deity. Are there any specific writings where Bahá'u'lláh or 'Abdu'l-Bahá directly address this apparent contradiction?
 

@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/045-why-do-bahs-not-have-clergy-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith deliberately abolished clergy. What's the rationale, and what fills the function — pastoral care, theology, ritual leadership — that clergy provide in other traditions?
 
@@ -32,7 +32,7 @@ Ritual leadership is minimized, as Bahá'í practices are simple and designed to
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mention the individual investigation of truth and a direct relationship with God. How do these principles address the potential for misinterpretation or fragmentation without a clergy? Doesn't the absence of clergy risk a lack of cohesive theological interpretation or unity in understanding Bahá'í teachings? It seems like the administrative structures could provide order, but how do they really manage theological unity compared to traditional clergy roles? Can you point to any writings of Bahá'u'lláh or 'Abdu'l-Bahá that specifically address this concern?
 
@@ -50,7 +50,7 @@ The administrative structure, including Local Spiritual Assemblies and the Natio
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea that the Universal House of Justice can legislate on matters not explicitly covered in the texts seems to offer a balance against fragmentation. However, the absence of authoritative interpretation by the House on scriptural matters means there is still room for individual interpretation. How does the Bahá'í community ensure that personal interpretations align with the broader teachings without becoming rigidly dogmatic? You refer to Shoghi Effendi’s interpretations as a foundation; could you give an example of how his interpretations have helped maintain cohesion? Additionally, how do community members handle differences in understanding that arise at the grassroots level, especially when they might not have access to the same depth of knowledge about the writings?
 
@@ -68,7 +68,7 @@ Local Spiritual Assemblies play an essential role in guiding community members a
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Consultation sounds like a key mechanism for handling diversity of thought while maintaining unity. However, in practice, can this process really manage tensions that could arise from deeply held, divergent interpretations? How does the community ensure that this consultation process doesn't suppress minority viewpoints or critical questioning? Also, in the absence of clergy, how are Local Spiritual Assemblies equipped to handle complex theological disputes that might require in-depth knowledge of the writings? Could you provide an example of a situation where consultation successfully resolved a significant theological disagreement within a community?
 
@@ -86,7 +86,7 @@ An example of consultation resolving a significant disagreement might be less ab
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 While the values of mutual respect and collective truth-seeking sound admirable in theory, they seem to rely heavily on the assumption that all participants are equally equipped in terms of knowledge and confidence to engage meaningfully. In practice, how does the Bahá'í community support individuals who may feel marginalized or less knowledgeable to ensure their voices are genuinely integrated into the consultation process? Additionally, you mention that Assemblies can consult experts or higher bodies, but doesn't this introduce a layer of hierarchy that could inadvertently recreate a form of clergy? How does the community navigate the potential for perceived power imbalances, especially when some individuals or groups consistently defer more to these 'experts' in discussions?
 
@@ -106,7 +106,7 @@ By prioritizing these principles and practices, the Bahá'í community strives t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The emphasis on creating an inclusive environment through education and capacity-building sounds valuable, but it seems like there's still a potential gap between these ideals and the lived experiences of individuals who might feel marginalized due to factors like language barriers, cultural differences, or even personal introversion. How does the Bahá'í community specifically address these kinds of disparities in the consultation process to ensure genuine inclusivity? Additionally, you describe a system that rotates Assembly membership and values ideas based on merit, but in practice, are there examples or strategies you can share where this has effectively prevented entrenched authority or ensured diverse participation? How do these systems work to build trust among community members who may be wary of hierarchical dynamics?
 
@@ -130,7 +130,7 @@ These practices build trust by demonstrating a commitment to equity, transparenc
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While the strategies you mentioned for fostering inclusivity are commendable, the real challenge often lies in their implementation. For instance, ensuring language inclusivity through translation can be resource-intensive and might not always capture the nuances of the original discussion. How does the Bahá'í community prioritize which resources to allocate, and are there any particular successes or challenges that illustrate this balance? 
 
@@ -152,7 +152,7 @@ These teachings help guide individuals in electing those who are best suited to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The guidance from Bahá'u'lláh and 'Abdu'l-Bahá on valuing spiritual qualities over ambition in leadership is definitely significant. However, human dynamics can be complex, and even with the best intentions, communities might struggle with unconscious biases or favoritism during elections. How does the Bahá'í community address these potential pitfalls? Are there any specific practices or teachings that help members become more aware of and counteract these biases during the election process?
 
@@ -182,7 +182,7 @@ Ultimately, the goal is to maintain unity by ensuring that decisions reflect the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While prayer and reflection before elections are undoubtedly valuable, they rely on individuals’ personal sincerity and self-awareness, which can vary greatly among community members. How does the community ensure that these processes aren’t just rituals but lead to genuine introspection and unbiased decision-making? Are there mechanisms in place to provide feedback or assess the effectiveness of these practices over time?
 
@@ -212,7 +212,7 @@ While there may not be many publicized examples of specific interventions by hig
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The integration of prayer and reflection into community life sounds aspirational, but without any formal mechanisms to assess their effectiveness, how can the community be confident that these approaches are having the desired impact over time? While informal feedback might work in some contexts, doesn't this lack of evaluation risk perpetuating practices that may not be as effective as assumed?
 

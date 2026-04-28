@@ -12,14 +12,17 @@ export const prerender = true;
 
 const all = await getCollection('dialogs');
 
-// Sort by featured first, then quality score desc, then date desc
-const dialogs = all.sort((a, b) => {
-  if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
-  const qa = a.data.qualityScore ?? 0;
-  const qb = b.data.qualityScore ?? 0;
-  if (qa !== qb) return qb - qa;
-  return b.data.publishedAt.getTime() - a.data.publishedAt.getTime();
-});
+// Only published dialogs. New + recently-updated float to the top so the
+// reader always lands on the freshest content.
+const dialogs = all
+  .filter(d => d.data.published === true)
+  .sort((a, b) => {
+    const da = (a.data.updatedAt ?? a.data.publishedAt).getTime();
+    const db = (b.data.updatedAt ?? b.data.publishedAt).getTime();
+    if (da !== db) return db - da;
+    if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+    return (b.data.qualityScore ?? 0) - (a.data.qualityScore ?? 0);
+  });
 
 // Group by topic
 const TOPIC_LABELS: Record<string, string> = {
@@ -44,14 +47,18 @@ for (const d of dialogs) {
   byTopic.set(d.data.topic, arr);
 }
 
-// Aggregate all tags across all dialogs for the tag cloud
+// Tag-cloud: only tags shared by ≥2 published dialogs are surfaced.
+// Below that threshold the tag isn't useful as a navigation handle.
 const tagCounts = new Map<string, number>();
 for (const d of dialogs) {
   for (const t of d.data.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
 }
 const tagList = Array.from(tagCounts.entries())
+  .filter(([, n]) => n >= 2)
   .sort((a, b) => b[1] - a[1])
   .slice(0, 40);
+// Set of multi-article tags so card tag chips can decide whether to link.
+const multiTagSet = new Set(tagList.map(([t]) => t));
 
 const totalDialogs = dialogs.length;
 const totalRounds = dialogs.reduce((s, d) => s + d.data.rounds, 0);
@@ -93,8 +100,8 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
           <path d="M 50 160 Q 200 130 380 150 T 580 145" stroke="rgba(20,52,98,0.3)" stroke-width="1.5" fill="none" stroke-linecap="round" />
         </svg>
       </div>
-      <h1>Dialog</h1>
-      <p class="hero-tag">Long-form conversations on the questions that don't have one-sentence answers. <a class="meta-link" href="/dialog/assessment">How these are assessed →</a></p>
+      <h1>Dialogue with the Ocean</h1>
+      <p class="hero-tag">Meaningful interfaith conversations with the Ocean library. <a class="meta-link" href="/dialogue/assessment">How these are assessed →</a></p>
       <div class="hero-stats">
         <div><strong>{totalDialogs}</strong><span>conversations</span></div>
         <div><strong>{totalRounds}</strong><span>rounds of follow-up</span></div>
@@ -107,7 +114,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
         <h2 class="section-label">Tags</h2>
         <div class="tags">
           {tagList.map(([tag, count]) => (
-            <a class="tag-pill" href={`/dialog?tag=${encodeURIComponent(tag)}`} data-count={count}>
+            <a class="tag-pill" href={`/dialogue/tag/${encodeURIComponent(tag)}/`} data-count={count}>
               <span class="tag-text">{tag}</span>
               <span class="tag-count">{count}</span>
             </a>
@@ -116,16 +123,14 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
       </section>
     )}
 
-    <section class="topics">
-      {Array.from(byTopic.entries()).map(([topic, items]) => (
-        <div class="topic-block">
-          <header class="topic-header">
-            <h2>{TOPIC_LABELS[topic] ?? topic}</h2>
-            <span class="topic-count">{items.length}</span>
-          </header>
-          <div class="cards">
-            {items.map(d => (
-              <a class="card" href={`/dialog/${d.id.replace(/\.md$/, '')}`} data-featured={d.data.featured}>
+    <section class="recent-block">
+      <header class="topic-header">
+        <h2>Most recent</h2>
+        <span class="topic-count">{dialogs.length}</span>
+      </header>
+      <div class="cards">
+        {dialogs.map(d => (
+              <a class="card" href={`/dialogue/${d.id.replace(/\.md$/, '')}`} data-featured={d.data.featured}>
                 {d.data.heroImage && (
                   <div class="card-image">
                     <img src={d.data.heroImage} alt={d.data.title} loading="lazy" />
@@ -151,6 +156,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                   </div>
                 )}
                 <div class="card-body">
+                  <a class="card-topic" href={`/dialogue/category/${d.data.topic}/`}>{TOPIC_LABELS[d.data.topic] ?? d.data.topic}</a>
                   <h3>{sq(d.data.title)}</h3>
                   <p class="card-summary">{sq(d.data.description)}</p>
                   <div class="card-meta">
@@ -159,15 +165,15 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                     )}
                     <span class="rounds">{d.data.rounds} rounds</span>
                     {d.data.tags.slice(0, 3).map(t => (
-                      <span class="card-tag">{t}</span>
+                      multiTagSet.has(t)
+                        ? <a class="card-tag link" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+                        : <span class="card-tag">{t}</span>
                     ))}
                   </div>
                 </div>
               </a>
             ))}
-          </div>
-        </div>
-      ))}
+      </div>
     </section>
 
     {dialogs.length === 0 && (
@@ -402,12 +408,36 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
     flex: 1;
   }
 
+  .card-topic {
+    display: inline-block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid rgba(186,160,82,0.25);
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    align-self: flex-start;
+  }
+  .card-topic:hover {
+    background: rgba(186,160,82,0.12);
+  }
+
   .card-body h3 {
     font-family: 'Libre Caslon Text', serif;
     font-size: 1.25rem;
     font-weight: 400;
     line-height: 1.3;
     margin: 0;
+    color: var(--text-primary);
+  }
+
+  a.card-tag.link {
+    text-decoration: none;
+  }
+  a.card-tag.link:hover {
+    background: rgba(140,180,220,0.2);
     color: var(--text-primary);
   }
 

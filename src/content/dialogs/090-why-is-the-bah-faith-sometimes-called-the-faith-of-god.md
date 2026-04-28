@@ -14,7 +14,7 @@ excerpt: "Engages with complex theological topics"
 featured: false
 heroImage: /images/dialog/090-why-is-the-bah-faith-sometimes-called-the-faith-of-god-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'ís sometimes refer to the Bahá'í Faith as 'the Faith of God' — an unusual phrasing. What does this naming actually claim?
 
@@ -26,7 +26,7 @@ Referring to the Bahá'í Faith as "the Faith of God" is a way of emphasizing it
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But isn't there a tension between calling it "the Faith of God" and acknowledging it as just another chapter in a series of revelations? How do Bahá'ís reconcile the claim of divine exclusivity in this era with the continuity of previous faiths? Also, how does this framing affect the Bahá'í view of other contemporary religious movements that also claim divine inspiration? Could you point me to specific writings by Bahá'u'lláh or 'Abdu'l-Bahá that address these nuanced aspects of identity and exclusivity?
 
@@ -50,7 +50,7 @@ The writings of Bahá'u'lláh and 'Abdu'l-Bahá often address these nuances, aff
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of progressive revelation is fascinating, but it still leaves questions about how Bahá'ís interact with claims of finality or exclusivity in other contemporary faiths. For instance, many religious traditions today also perceive their teachings as the ultimate or most relevant expression of divine will. How does the Bahá'í Faith address these overlapping claims of finality? Are there specific instances in Bahá'u'lláh's writings where he directly contends with teachings from contemporary religions, especially those that emerged around the same time as the Bahá'í Faith? If Bahá'u'lláh's revelation is seen as the most complete for this age, what criteria determine when a new revelation might be needed or arise?
 
@@ -74,7 +74,7 @@ This perspective allows Bahá'ís to maintain respect for other religious claims
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The idea that future revelations will emerge "under His shadow" is intriguing. It suggests both continuity and a kind of finality—final not in revelation itself but perhaps in the overarching framework established by Bahá'u'lláh. But how do Bahá'ís interpret "under His shadow"? Does this mean future Manifestations will explicitly reference Bahá'u'lláh's teachings, or does it suggest a broader alignment with his principles without direct citation? In terms of concrete impact, how do Bahá'í communities engage with other religious groups that claim current revelations, like certain New Age or indigenous spiritual movements? Are there examples of how these interactions play out in practice, perhaps documented in Bahá'í writings or community experiences?
 
@@ -94,7 +94,7 @@ The emphasis is on unity in diversity, recognizing that while different paths ma
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The notion that future revelations will align with Bahá'u'lláh's principles without requiring explicit citation is interesting, yet it leaves open how Bahá'ís perceive the authority or authenticity of these future revelations. How can Bahá'ís discern if a new revelation truly aligns with Bahá'u'lláh's framework, especially if it doesn't directly cite his teachings? Could this lead to divergent interpretations of what it means to be "under His shadow"? 
 
@@ -118,7 +118,7 @@ In practice, this means Bahá'í communities aim to build bridges through cooper
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The reliance on the Universal House of Justice for guiding interpretations is interesting, as it centralizes authority within the Bahá'í Faith. However, doesn't this central authority risk stifling individual interpretations or diverse understandings that naturally arise within any spiritual community? How do Bahá'ís balance individual insights with institutional guidance, especially when future revelations might challenge current frameworks? 
 
@@ -142,7 +142,7 @@ The balance between highlighting common ground and engaging with differences is 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 It's interesting how the Bahá'í Faith maintains this tension between unity and individual insight through the principle of consultation. However, doesn't the concept of the Universal House of Justice being divinely guided create a kind of orthodoxy that might limit personal interpretations, especially with future revelations that might disrupt established frameworks? How do Bahá'ís navigate when personal insights or interpretations seem at odds with institutional guidance?
 
@@ -164,7 +164,7 @@ The commitment to sincere exploration is maintained by focusing on common goals,
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The process of reconciling personal insights with institutional guidance seems critical, especially when considering the possibility of future revelations. How do Bahá'ís interpret the scope of "independent investigation of truth" when it might lead to interpretations that diverge from the consensus upheld by the Universal House of Justice? Can you point to any specific examples or writings where such tensions have been addressed or resolved within the community?
 
@@ -186,7 +186,7 @@ While explicit examples of resolving specific theological tensions aren't always
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The emphasis on humility and openness in reconciling personal insights with institutional guidance is interesting, but it still seems to leave room for potential conflict, especially if personal interpretations feel deeply significant to an individual. Is there a historical or contemporary example where a Bahá'í's personal interpretation led to significant community discussion or adaptation? How does the community ensure that such discussions are genuinely open and not simply a path to conformity?
 
@@ -206,7 +206,7 @@ In dialogue, Bahá'ís often use the method of consultation to explore these dif
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The example of Mason Remey is a compelling instance of how personal interpretation can lead to significant community discussions and even schism. It also highlights the challenges of maintaining unity without stifling individual expression. But doesn't the reliance on institutional authority, in this case, the Universal House of Justice, risk creating an environment where divergent views are eventually marginalized? How does the Bahá'í community genuinely ensure that diverse perspectives contribute to the evolving understanding of the faith, rather than being sidelined?
 

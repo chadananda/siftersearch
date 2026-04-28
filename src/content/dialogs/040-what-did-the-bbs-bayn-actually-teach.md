@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/040-what-did-the-bbs-bayn-actually-teach-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Báb's Bayán contains laws and teachings that Bahá'u'lláh subsequently abrogated or fulfilled. What was the Bayán actually teaching, and how should a Bahá'í today read it?
 
@@ -31,7 +31,7 @@ Bahá'ís approach the Bayán with reverence, drawing inspiration from its spiri
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mention that the Bayán served as a bridge and emphasized spiritual renewal and oneness, but I'm curious about specifics. Can you point to a particular teaching or law from the Bayán that illustrates these themes? Moreover, how does Bahá'u'lláh's abrogation fit into the concept of progressive revelation? Doesn't abrogation imply a kind of contradiction or discontinuity? How do we reconcile the idea of progressive revelation with the notion of abolishing previous laws?
 
@@ -47,7 +47,7 @@ Progressive revelation recognizes the continuity of divine purpose while allowin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You describe the Bayán's emphasis on recognizing "He Whom God shall make manifest" as a revolutionary concept that called for spiritual renewal and oneness. Yet, aren't these themes also present in earlier religious traditions? For instance, the Qur'an talks about the coming of future Prophets and the importance of spiritual transformation. What exactly was different in the Bayán's presentation that made it so uniquely transformative for its time?
 
@@ -65,7 +65,7 @@ The concept of progressive revelation encompasses these changes as part of a coh
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 It’s intriguing how the Bayán’s call for immediate readiness stands out, but how did the Báb's message interact with the existing socio-political context of 19th-century Persia? Did this urgency contribute to the societal upheaval at the time? Moreover, your example of pilgrimage highlights a specific shift, yet Bahá'u'lláh's teachings went beyond mere logistical changes. What about core principles or moral laws where Bahá'u'lláh’s teachings fundamentally expanded or redefined concepts from the Bayán? Can you elaborate on any such doctrinal evolution and how it aligns with the idea of continuity within progressive revelation?
 
@@ -83,7 +83,7 @@ These expansions align with the concept of continuity within progressive revelat
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It's clear that the Báb's message had a profound impact on the socio-political fabric of 19th-century Persia. Given the revolutionary nature of his teachings, how did the Báb himself envisage the transition from his dispensation to Bahá'u'lláh's? Was there an inherent acknowledgment in the Bayán of potential conflict or resistance that would arise due to such transformative ideas? Furthermore, while Bahá'u'lláh's principles like the oneness of humanity and consultation reflect an evolution, how do we understand these alongside concepts in the Bayán that seem more rigid or specific to that transitional context? How do Bahá'ís today reconcile studying a text that was intended for such a specific historical moment, with the universal principles that followed?
 
@@ -101,7 +101,7 @@ The reconciliation lies in recognizing that while the Bayán addressed immediate
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The foresight of the Báb regarding the resistance and conflict his transformative teachings would provoke is compelling. But was there any explicit guidance in the Bayán about how his followers should handle such upheaval? Did he anticipate any specific strategies for engaging with opposition, especially considering the intense persecution that followed?
 
@@ -119,7 +119,7 @@ An example of how a specific teaching from the Bayán is appreciated today is th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The guidance you mention from the Báb—emphasizing patience, steadfastness, and forgiveness—is noble, but how did the Báb’s followers balance these virtues with the active resistance and defense some engaged in? Historical accounts suggest that Bábís did take up arms in certain contexts. How do Bahá'ís interpret these actions in light of the Báb's teachings and the later peaceful directives of Bahá'u'lláh?
 
@@ -139,7 +139,7 @@ Bahá'ís navigate these complexities by recognizing the dynamic nature of sacre
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The historical context of the Bábí resistance, seen through the lens of survival rather than contradiction, is understandable. However, this brings up a tension between the Báb's vision and the practical realities faced by his followers. If the Báb's teachings were meant to prepare for Bahá'u'lláh's peaceful paradigm, why didn't they more explicitly discourage violent resistance? Was there a theological rationale that allowed for defensive measures within the larger spiritual framework he presented?
 
@@ -159,7 +159,7 @@ Shoghi Effendi and 'Abdu'l-Bahá further elaborated on this principle, reinforci
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The tension you describe between ideal principles and practical realities is a fascinating aspect of religious history, particularly in transformative movements. But I'm still curious about the practical aspects of how Bahá'ís today reconcile these historical complexities, particularly in contexts where Bahá'u'lláh's non-violent teachings are front and center. How do Bahá'ís engage with the legacy of the Bábí resistance in contemporary discourse about peace and conflict resolution?
 
@@ -179,7 +179,7 @@ These writings collectively guide Bahá'ís in bridging historical context with 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 It's intriguing how Bahá'ís manage to integrate the historical legacy of the Bábí resistance with Bahá'u'lláh's emphasis on non-violence in modern contexts. This acknowledgment of past complexities highlights a nuanced approach to historical narrative. But I'm wondering, how does this influence the way Bahá'ís participate in interfaith or international peace-building efforts? Are there specific examples where Bahá'í principles drawn from the teachings of the Báb and Bahá'u'lláh have been applied successfully in resolving conflicts?
 

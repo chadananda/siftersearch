@@ -15,7 +15,7 @@ excerpt: "Engages with complex theological concepts"
 featured: false
 heroImage: /images/dialog/020-muhammads-role-and-the-bah-critique-of-some-islamic-interpre-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 How do Bahá'ís understand Muhammad's role given that the Bahá'í writings are sometimes critical of how Muslim communities have interpreted Islam? Where is the line?
 
@@ -31,7 +31,7 @@ Bahá'u'lláh, in His writings, emphasizes the unity of all religions and the ne
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 If Bahá'ís honor Muhammad as a Manifestation of God, how do they reconcile this with the critiques of interpretations in Islam? Can you point me to specific writings by Bahá'u'lláh or 'Abdu'l-Bahá that address the essence of Muhammad's message compared to its later interpretations? I'm curious about how these writings draw that line. Also, how do the Bahá'í teachings handle the continuity and change between these revelations, given the unique context each one has?
 
@@ -51,7 +51,7 @@ This illustrates the Bahá'í belief in the unity of all religions, each contrib
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 I appreciate the references to the *Star of the West* and George Townshend's writings, but I'm looking for more direct sources from Bahá'u'lláh or 'Abdu'l-Bahá that discuss the essence of Muhammad's message and the divergence due to later interpretations. How does Bahá'u'lláh address this challenge in the Kitáb-i-Íqán or other texts? What specific guidance do the central figures provide about discerning the original message from human alterations? Additionally, how do Bahá'í teachings frame the authority of the Qur'an in light of recognizing Muhammad as a Manifestation of God while still advocating for progressive revelation?
 
@@ -69,7 +69,7 @@ For a deeper exploration of these themes within the Bahá'í writings, I recomme
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, while I understand the principle of progressive revelation and its role in the Bahá'í Faith, I'm specifically interested in seeing where Bahá'u'lláh or 'Abdu'l-Bahá directly address the integrity of Muhammad’s original message compared to its historical interpretations. You mentioned the *Kitáb-i-Íqán*; can we hone in on any passages that directly deal with interpreting previous scriptures, particularly the Qur'an? How do these writings guide Bahá'ís in determining what part of a scripture is eternally relevant versus what requires contextual understanding?
 
@@ -91,7 +91,7 @@ These writings guide Bahá'ís in recognizing the eternal truths within previous
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The passage from the *Kitáb-i-Íqán* is helpful, especially the discussion of "those well-grounded in knowledge." How do Bahá'ís determine who qualifies as "well-grounded in knowledge"? Is this purely an individual spiritual journey, or are there communal or institutional guidelines within the Bahá'í Faith that help believers interpret sacred texts authentically?
 
@@ -113,7 +113,7 @@ Bahá'u'lláh, in the *Kitáb-i-Íqán*, addresses this idea of understanding th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 It sounds like the communal aspect, through the guidance of the Universal House of Justice, plays a critical role in helping Bahá'ís navigate complex interpretations. However, doesn't this central authority risk overshadowing the individual spiritual journey, or is there a balance struck between personal interpretation and institutional guidance?
 
@@ -135,7 +135,7 @@ This approach allows Bahá'ís to honor the eternal spiritual principles within 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 I see the reasoning behind having both personal exploration and communal guidance, but it seems to me there’s an inherent tension between the two, especially when individual interpretations might deviate from the guidance of the Universal House of Justice. How do Bahá'ís reconcile such instances of personal insight that might challenge institutional interpretations? Is there a formal process for addressing these differences?
 
@@ -159,7 +159,7 @@ If you would like, I can continue to search for specific quotes or documented in
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The idea of consultation and prioritizing community unity over personal interpretation is fascinating, though it seems it might limit a person's ability to challenge existing understandings, especially when new insights arise. How does this dynamic affect the development of Bahá'í teachings over time? Are there instances where personal insights have led to significant shifts in interpretation or practice within the Bahá'í community?
 
@@ -181,7 +181,7 @@ If you're interested in specific passages, I can continue to look for those text
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The idea of consultation and community dialogue as a means to channel personal insights is intriguing, but it does raise the question of how new insights are integrated without disrupting the unity. Has there ever been a historical instance in the Bahá'í community where a grassroots insight led to a significant doctrinal shift or reevaluation by the Universal House of Justice? This might illustrate how personal insights can still impact the broader community.
 
@@ -205,7 +205,7 @@ Such statements and actions illustrate how 'Abdu'l-Bahá actively worked to rein
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your example of the administrative structures evolving from local practices is interesting, but it seems more a matter of organizational adaptation rather than doctrinal shifts. Has there been a doctrinal or theological insight—perhaps arising from scholarly interpretation or grassroots understanding—that prompted the Universal House of Justice to reconsider or reinterpret teachings more significantly? 
 

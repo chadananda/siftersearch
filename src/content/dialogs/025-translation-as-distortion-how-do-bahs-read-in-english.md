@@ -15,7 +15,7 @@ excerpt: "Engages deeply with translation challenges"
 featured: false
 heroImage: /images/dialog/025-translation-as-distortion-how-do-bahs-read-in-english-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Most Bahá'ís read Bahá'u'lláh in English translations of works composed in Arabic and Persian. What is lost? What is added? Should English-only readers be more cautious about claiming to know what was said?
 
@@ -31,7 +31,7 @@ English-only readers should indeed be mindful of these potential shifts in meani
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned that skilled translators like Shoghi Effendi strive to maintain the spirit and intent of Bahá'u'lláh's original writings. Can you give an example of how Shoghi Effendi managed to capture the essence of a particular passage or concept in his translations? And in what ways might even Shoghi Effendi's translations fall short of conveying the full depth of Bahá'u'lláh's original words? Additionally, how do we reconcile the need for accessibility with the risk of oversimplification?
 
@@ -46,7 +46,7 @@ Reconciling the need for accessibility with the risk of oversimplification invol
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Your example of "The Hidden Words" is fascinating because it brings up an interesting point—how do we judge the "success" of a translation like Shoghi Effendi's? Is it about fidelity to the original words, or to the spirit and impact they intend to convey? You mentioned wordplay and allusions that might be lost. Can you elaborate on a specific instance of this in Bahá'u'lláh's writings that was particularly challenging to translate? And aren't there also risks in relying too heavily on commentaries and interpretations, which could introduce another layer of potential distortion? How should an English-only reader weigh these complexities while striving for a genuine understanding of Bahá'u'lláh's teachings?
 
@@ -64,7 +64,7 @@ Striving for a genuine understanding involves a multi-faceted approach: reading 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You make an important point about striving for both fidelity and capturing the transformative power of the original message. However, there's a potential dilemma here: when translation choices prioritize the overall spirit or impact, might they inadvertently gloss over some doctrinal specifics that could alter understanding? 
 
@@ -96,7 +96,7 @@ The writings do encourage readers to approach the texts with humility, recognizi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 You mention that both 'Abdu'l-Bahá and Shoghi Effendi offered guidance on the study of the teachings. It's intriguing to consider how their perspectives might differ or align, especially since 'Abdu'l-Bahá was known for emphasizing spiritual insight over strict literal interpretation. 
 
@@ -126,7 +126,7 @@ This approach fosters a dynamic relationship with the teachings, where individua
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 You bring up the role of the Universal House of Justice, which is pivotal in maintaining the unity of interpretation within the Bahá'í community. But I'm curious about the interplay between individual understanding and institutional guidance. You mentioned that the House of Justice offers legislative guidance on interpretation. How do we discern when an interpretation requires institutional input versus when it can remain a matter of personal understanding?
 
@@ -154,7 +154,7 @@ This framework helps prevent fragmentation by fostering an environment where div
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The interplay between individual understanding and institutional guidance you've described is indeed nuanced, and it raises an interesting point about the authority and flexibility within the Bahá'í Faith. You mentioned that the Universal House of Justice steps in when interpretations might affect community unity or touch on fundamental principles. 
 
@@ -182,7 +182,7 @@ Ultimately, the Bahá'í Faith aims to create a community where unity in diversi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The theme of unity in diversity within the Bahá'í community, especially regarding interpretation and personal experiences, raises fascinating questions about the tension between individual autonomy and collective guidance. You mentioned that the Universal House of Justice clarifies issues as societies evolve, like the implementation of laws or gender roles. How does this adaptability interact with the principle of progressive revelation, which suggests that religious teachings are gradually disclosed over time? Are there examples where evolving societal norms have prompted reinterpretation or development of Bahá'í practices, and how do these instances align with the core tenets of the Faith?
 
@@ -208,7 +208,7 @@ This dynamic allows for a balance between personal autonomy and collective guida
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The examples of evolving societal norms prompting reinterpretation within the Bahá'í Faith that you've pointed out, especially concerning gender equality, demonstrate a careful balancing act between tradition and progress. Yet, I'm curious about how the principle of progressive revelation operates in practice within the Bahá'í community. Are there explicit instances where the Universal House of Justice has adjusted practices or interpretations to align with contemporary values that were not previously addressed in the writings?
 
@@ -234,7 +234,7 @@ The balance between individual creativity and unity is maintained by encouraging
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 You've outlined a compelling picture of how progressive revelation operates within the Bahá'í framework and the mechanisms that support consultation and inclusivity. However, it seems like the actual process by which the Universal House of Justice decides to address emerging societal issues remains somewhat opaque. Are there specific examples of societal shifts that prompted significant guidance from the House of Justice that you can share, particularly ones that might not have been anticipated by the original texts?
 

@@ -14,7 +14,7 @@ excerpt: "Emphasizes independent investigation of truth"
 featured: false
 heroImage: /images/dialog/031-the-bah-view-of-other-manifestations-followers-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 What does the Bahá'í Faith ask Christians, Hindus, Jews, Buddhists, Muslims to do — convert, deepen in their own tradition, or something else? The answer in practice seems messier than 'we honor all religions.'
 
@@ -28,7 +28,7 @@ In practice, the Bahá'í Faith honors and respects all religions by acknowledgi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 The idea of Bahá'u'lláh's teachings building upon previous religions is an interesting one. However, how do Bahá'ís address the doctrinal differences that might exist between Bahá'í teachings and those of, say, Christianity or Hinduism? For example, the divinity of Christ is a central tenet of Christianity, while Hinduism has a rich tapestry of deities and philosophies. Are Bahá'ís suggesting these doctrines were misinterpretations, or do they view them as symbolic in some way? How does this approach maintain respect for the foundational doctrines of other faiths while promoting Bahá'u'lláh's teachings?
 
@@ -46,7 +46,7 @@ By viewing these differences as symbolic or contextual, Bahá'ís aim to honor t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of progressive revelation indeed offers a framework for understanding how different religious teachings can be seen as part of a larger divine plan, but doesn't this perspective risk undermining the unique claims and practices of each religion? For instance, if the divinity of Christ in Christianity is reinterpreted as symbolic, doesn't it challenge the foundational beliefs that many Christians hold dear? Similarly, by viewing Hindu deities as symbolic, does it not risk dismissing the literal beliefs held by millions of Hindus? How can the Bahá'í Faith claim to respect all religions if it fundamentally alters the interpretation of their core doctrines? Could you provide any direct quotes from Bahá'í writings that address how to reconcile these tensions without diminishing the original teachings of other faiths?
 
@@ -64,7 +64,7 @@ The Bahá'í writings suggest that the differences in religious teachings reflec
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 I appreciate the quote from Bahá'í writings you provided, but it seems to focus more on changing social laws than core theological beliefs. The divinity of Christ or the multiplicity of Hindu deities aren't exactly analogous to dietary laws; they're central theological tenets. How can the reinterpretation of these central beliefs be seen merely as an evolution suited to new conditions rather than a fundamental shift that challenges the essence of these faiths? 
 
@@ -86,7 +86,7 @@ Ultimately, the Bahá'í Faith presents this process as one of spiritual maturat
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The passage from 'Abdu'l-Bahá about reality not admitting multiplicity seems to be promoting the oneness of truth, but it still doesn’t fully tackle how adherents can both hold onto their core beliefs and embrace Bahá'í interpretations. Is there a specific method or approach proposed in the Bahá'í writings for engaging with one's own faith tradition in light of Bahá'u'lláh's teachings? For example, how does one navigate the potential conflict between personal convictions formed over a lifetime and the call to accept a reinterpretation or expansion? Are there examples from Bahá'í history where individuals from other faiths have successfully reconciled these tensions, and what insights do those examples offer?
 
@@ -104,7 +104,7 @@ In practice, this means approaching one's own religious doctrines with openness 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The example of Mírzá Abu'l-Fadl is quite telling, yet I wonder if it might be the exception rather than the norm. For many people, deeply held beliefs are intertwined with personal and cultural identity, making the idea of reinterpretation not just an intellectual exercise, but an existential challenge. How does the Bahá'í Faith accommodate those who might find this transition strenuous or even insurmountable? 
 
@@ -124,7 +124,7 @@ For those who find the transition strenuous, the Bahá'í teachings encourage pa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 I appreciate the emphasis on independent investigation of truth and the community support within the Bahá'í Faith, as well as the value placed on unity in diversity. However, I'm still struggling to see how this theoretical openness translates into practice, especially when facing doctrines that directly contradict one's previous beliefs. 
 
@@ -148,7 +148,7 @@ The community's role is to support each person's journey with encouragement and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 I understand the principle of consultation and the encouragement of diverse opinions within the Bahá'í community. But realistically, how does this play out when someone’s personal convictions remain at odds with Bahá'í interpretations even after thorough investigation and consultation? Is there a place for such individuals within the community, or is the expectation that they will eventually align? How are dissenting voices treated, and is dissent seen as a legitimate aspect of faith practice?
 
@@ -176,7 +176,7 @@ Ultimately, the Bahá'í Faith acknowledges that unity does not require the eras
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The quote from 'Abdu'l-Bahá about truth emerging from the clash of opinions is insightful, but how does this actually manifest in decision-making within the Bahá'í community? If unity of purpose and action is the goal, what happens when a dissenting opinion might disrupt that unity? Is there a point where the community must prioritize collective harmony over individual diversity of thought?
 
@@ -198,7 +198,7 @@ In practice, unity is achieved through a shared commitment to the common goals o
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The emphasis on consultation as a means of integrating diverse voices and reaching collective decisions is compelling. Yet, it seems crucial to dig deeper into how the Bahá'í community navigates instances where dissent might persistently conflict with collective decisions. Given the absence of specific examples of changes due to dissent, I wonder if this process truly allows for theological diversity to impact the evolution of practices meaningfully. 
 

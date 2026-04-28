@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/069-is-the-bah-faith-a-religion-or-a-movement-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Some critics call the Bahá'í Faith a 'movement' rather than a religion. Some Bahá'ís push back. What does the distinction actually rest on, and does it matter?
 
@@ -30,7 +30,7 @@ Ultimately, whether it matters depends on perspective. For Bahá'ís, being reco
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But if the distinction is partly about structure and maturity, couldn't one argue that other newer religious movements like Scientology or the Raelian movement might also be classified as "religions" by these criteria? They too have their own teachings, scriptures, and organizational frameworks. So, what exactly distinguishes the Bahá'í Faith more definitively as a religion? Is there something unique in its teachings or its self-understanding that goes beyond these structural elements? And how does the Bahá'í emphasis on unity and universality play into this classification?
 
@@ -54,7 +54,7 @@ These elements contribute to the Bahá'í self-understanding as a world religion
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 While the continuity of revelation and the global vision are compelling, I'm curious about the claim that the Bahá'í Faith offers solutions to contemporary challenges. How do these solutions specifically manifest in a way that distinguishes it from being merely aspirational? Are there examples where Bahá'í principles have led to tangible, systemic changes in society? And regarding the administrative order, how does the absence of clergy align with historical religious traditions, and does it present any particular challenges or advantages in maintaining doctrinal unity and adapting to modern issues? Additionally, when you mention "rapid global spread," some might argue that spread doesn't necessarily equate to depth of impact. How would you respond to those who suggest breadth might mask a lack of profound societal transformation?
 
@@ -74,7 +74,7 @@ The Bahá'í Faith's unique approach, combining spiritual principles with practi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The Bahá'í-inspired projects like the Ruhi Institute certainly seem to have grassroots impact, but I'm curious about how they scale up to influence systemic changes on a larger societal or governmental level. Have there been instances where Bahá'í principles have substantially contributed to policy changes or national initiatives? Additionally, regarding the absence of clergy, while it might prevent power concentration, how does it address the potential for interpretive fragmentation or doctrinal drift across diverse cultures? Given that other religions often rely on clergy for doctrinal consistency, how does the Bahá'í administrative framework compensate for this in practice, especially when dealing with complex theological issues? Finally, with respect to the breadth vs. depth question, can you point to specific examples where Bahá'í principles have led to measurable change beyond community or individual transformation, perhaps influencing broader societal norms or policies?
 
@@ -94,7 +94,7 @@ While the Bahá'í approach focuses more on gradual transformation through educa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The Bahá'í participation in forums like the United Nations is notable, but it seems more advisory than prescriptive in influencing direct policy changes. Can you cite cases where Bahá'í principles have driven policy shifts or legislative changes in a discernible way? On the matter of doctrinal consistency without clergy, how does the Universal House of Justice handle divergent interpretations or theological debates, particularly in diverse cultural contexts where understandings might naturally differ? And while the principles of unity and equality are noble, in what specific ways have they reshaped societal norms—can you offer concrete instances where these ideals have led to visible cultural or legal changes within societies?
 
@@ -114,7 +114,7 @@ While the Bahá'í Faith might not always directly drive policy or legal changes
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 I see how the Bahá'í Faith's contributions, albeit more indirect, aim to foster an environment conducive to societal change. Yet, the absence of direct legislative influence raises questions about the measurable impact of such advocacy. Could you provide more specific examples of countries or regions where Bahá'í-inspired educational initiatives or community projects have led to notable societal improvements in metrics like literacy rates or gender equality indices?
 
@@ -138,7 +138,7 @@ The Bahá'í Faith's impact is often cumulative and integrated with other societ
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The examples from Colombia and other regions are helpful in understanding the localized impact of Bahá'í initiatives. Yet, the challenge remains in clearly linking these initiatives to larger systemic changes. Is there any quantitative data or study that tracks the outcomes of Bahá'í-inspired programs in terms of specific social indicators like education rates, women's participation, or economic development, which might help demonstrate a more direct correlation?
 
@@ -162,7 +162,7 @@ While the Bahá'í approach may not always result in immediate policy shifts, it
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The nuanced approach you describe seems to focus heavily on long-term, subtle shifts rather than immediate, overt changes. While this aligns with a principled stance on non-partisanship and gradual transformation, it raises questions about the measurable efficacy and visibility of Bahá'í action in urgent social issues like climate change or human rights abuses. Are there specific examples where Bahá'í communities have successfully mobilized around these urgent issues in a way that has led to concrete, measurable outcomes, either locally or globally?
 
@@ -186,7 +186,7 @@ The Bahá'í Faith's approach, characterized by principled non-partisanship and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While the examples of Bahá'í communities participating in environmental projects and raising awareness about human rights are valuable, they still seem more about contributing to the discourse rather than catalyzing systemic change. Can you point to any instances where Bahá'í initiatives have led to tangible legislative or policy changes, particularly in the realm of human rights or environmental protection?
 
@@ -210,7 +210,7 @@ While the Bahá'í Faith's influence on direct legislative change might be less 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 It seems the focus is largely on creating the conditions for change rather than achieving direct legislative outcomes. However, without clear examples of legislative or policy shifts, it’s challenging to discern the concrete impact of Bahá'í initiatives. Are there any specific partnerships or collaborative projects with governments or international bodies where Bahá'í teachings have clearly guided policy development, especially in areas like education or human rights?
 

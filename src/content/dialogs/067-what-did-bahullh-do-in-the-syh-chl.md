@@ -15,7 +15,7 @@ excerpt: "Engages with interfaith comparisons"
 featured: false
 heroImage: /images/dialog/067-what-did-bahullh-do-in-the-syh-chl-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh was imprisoned in the Síyáh-Chál (Black Pit) of Tehran in 1852 — the moment of his revelation. What happened in that pit, and why does it matter that revelation came in such conditions?
 
@@ -29,7 +29,7 @@ The significance of this revelation in such dire conditions is profound. It high
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Jafar, while you've highlighted the theme of light emerging from darkness, I'm curious about the nature of the revelation itself. Bahá'u'lláh mentions the "Most Great Spirit" in his writings, but can we delve deeper into what he actually experienced in the Síyáh-Chál? Are there primary sources or specific writings that describe this encounter in more detail? Additionally, how has this revelation been interpreted by figures like 'Abdu'l-Bahá or Shoghi Effendi, and what implications does it hold for our understanding of divine communication in adverse conditions?
 
@@ -47,7 +47,7 @@ Figures like Shoghi Effendi have elaborated on this event, placing it in the con
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, the imagery of the Maiden and the voice Bahá'u'lláh heard is indeed powerful and reminiscent of other prophetic encounters. But let's examine the motif of the Maiden further. What is the significance of Bahá'u'lláh using this particular imagery? How does this symbol compare to other feminine metaphors in religious texts, like Sophia in Gnosticism or Shekinah in Jewish mysticism?
 
@@ -67,7 +67,7 @@ Thus, Bahá'u'lláh's revelation in such oppressive conditions not only marks a 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The comparison to other feminine metaphors like Sophia and Shekinah is fascinating, as it draws from a broader interfaith tapestry to highlight the nurturing and transformative aspects of the divine. However, Bahá'u'lláh's use of the Maiden in his revelation seems to carry a unique contextual weight. Could this be interpreted as a deliberate choice to emphasize the renewed role of divine femininity in a time of profound change? How does this align with the Bahá'í principle of gender equality and the elevation of the role of women in spiritual and social spheres?
 
@@ -85,7 +85,7 @@ These teachings resonate deeply with contemporary challenges, as the Bahá'í ap
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, the metaphor of the furnace refining iron ore is a powerful illustration, yet 'Abdu'l-Bahá's writings seem to suggest that adversity is not just inevitable but perhaps necessary for spiritual purification. However, if we consider the broader context of divine intervention, could this imply that God intentionally allows these hardships as part of a divine plan? How does this align with the Bahá'í understanding of a benevolent deity, especially when such adversity results in suffering?
 
@@ -103,7 +103,7 @@ The Bahá'í community is encouraged to actively combat inequality through educa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while I appreciate that adversity is seen as an opportunity for growth in the Bahá'í teachings, there's still a complex theological tension when considering the role of a benevolent God in allowing suffering. How do Bahá'í writings reconcile this with the existence of free will? Do individuals play a role in bringing about their own tests, or are these purely divine instruments?
 
@@ -123,7 +123,7 @@ These efforts illustrate that while challenges remain, the Bahá'í community is
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, it's insightful to recognize that while tests may be part of a divine framework, the emphasis is on how individuals choose to navigate them. This suggests a responsibility on the part of believers to actively engage with their challenges rather than passively endure them. How does this idea of active engagement play out in the context of social justice issues, such as systemic inequality or discrimination? How are Bahá'ís encouraged to take initiative in these areas without overstepping divine prerogatives?
 
@@ -143,7 +143,7 @@ Lessons learned from such experiences highlight the importance of patience, cult
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, it's compelling to see how the Bahá'í community emphasizes education, consultation, and service in addressing social justice issues, while also engaging in policy dialogues through the Bahá'í International Community. However, the challenge often lies in balancing respect for cultural contexts with the imperative for systemic change, especially when facing entrenched opposition to gender equality. 
 
@@ -165,7 +165,7 @@ There are instances where Bahá'í communities have accelerated their efforts in
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, the notion of using consultation and gradual change to address deeply rooted cultural practices is practical, yet there's a subtle complexity when we think about the urgency some situations demand. You mentioned Shoghi Effendi's emphasis on patience and wisdom, but I'm curious about specific methods or strategies he recommended for situations requiring swift action. Are there moments in Bahá'í history where Shoghi Effendi or 'Abdu'l-Bahá provided direct guidance on how to handle immediate crises within a community?
 
@@ -185,7 +185,7 @@ One lesson from past experiences is the importance of building relationships bas
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, your points about maintaining Bahá'í principles in collaborations and the emphasis on consultation are well taken. Yet, given the diverse views and potential conflicts that can arise in interfaith or secular partnerships, how do Bahá'í communities handle situations where their principles might be at odds with those of their partners? Are there instances in Bahá'í history where a partnership was reconsidered due to misalignments with core beliefs, or where unique compromises were made to uphold Bahá'í values?
 

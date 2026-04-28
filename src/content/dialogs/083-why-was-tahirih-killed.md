@@ -15,7 +15,7 @@ excerpt: "Explores Tahirih's multifaceted legacy"
 featured: false
 heroImage: /images/dialog/083-why-was-tahirih-killed-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Tahirih was executed in 1852 as a heretic. Was she killed for her religious beliefs, for being a woman who removed her veil, or for both? The historical record matters.
 
@@ -30,7 +30,7 @@ So, while her execution was primarily for her religious beliefs, her gender and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 It's interesting how you highlight the intersection of religious belief and gender in Tahirih's execution. Could we delve deeper into the primary sources or accounts from that time? Are there specific writings or testimonies by contemporaries—either from the Bábí community or from her opponents—that speak directly to the motivations behind her execution? It would be useful to see how those closest to the event articulated the reasons for her death. Additionally, how did the broader societal context of mid-19th century Persia view the act of unveiling? Would her gender alone, regardless of her beliefs, have been enough to incite such extreme reactions?
 
@@ -46,7 +46,7 @@ Contemporary accounts, such as those by Dr. Jacob Polak and other observers, hig
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 It's worth examining the specifics of how accounts like those of Dr. Jacob Polak or others describe the motives behind Tahirih's execution. Do any of these primary sources explicitly mention whether her religious influence or her actions as a woman were more significant in the decision to execute her? I'm also curious about how contemporaneous Persian society viewed acts of unveiling apart from Tahirih's case. Was there any precedence of similar acts of unveiling, and if so, how were those handled? Additionally, could you elaborate on how the Bábí community interpreted her actions and subsequent martyrdom? Did they focus more on her religious convictions, or did they also emphasize her role in challenging gender norms? Exploring these nuances could help clarify how intertwined these motivations were.
 
@@ -64,7 +64,7 @@ Within the Bábí community, Tahirih's martyrdom was seen as a testament to her 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that Dr. Jacob Polak and others highlighted her courage and strong faith, but it seems like there's a lack of explicit mention on which factor—her religious influence or her actions as a woman—bore more weight in her execution. Could this ambiguity stem from the retrospective interpretation of her life rather than clear historical evidence? Furthermore, how have the Bahá'í writings, especially those by 'Abdu'l-Bahá or Shoghi Effendi, framed Tahirih's martyrdom in terms of gender versus religious conviction? Could you provide direct quotes from these authoritative texts? Lastly, given the unique nature of her unveiling, do we know of any reactions or repercussions for similar acts in the proceeding decades, maybe as influenced by her legacy? This could illustrate whether her actions had a broader impact on societal norms beyond the immediate Bábí context.
 
@@ -82,7 +82,7 @@ As for any similar acts of unveiling in the decades that followed, specific case
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It seems like the retrospective interpretation of Tahirih's actions might complicate our understanding of her execution, especially when historical evidence is scarce or ambiguous. In the Bahá'í writings you mentioned, while they respect her religious and social contributions, the lack of explicit differentiation between the impact of her gender and religious stance leaves room for interpretation. Could this be a deliberate choice to honor both aspects equally, or does it reflect the historical difficulty in disentangling these factors?
 
@@ -102,7 +102,7 @@ Modern historians and scholars have approached Tahirih's legacy from various ang
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 It seems that the ambiguity in the Bahá'í writings might be a reflection of Tahirih's multifaceted legacy, yet it leaves us with an incomplete picture of how much weight each aspect had in leading to her execution. Could this lack of explicit differentiation in the writings be seen as a strategic choice by 'Abdu'l-Bahá and Shoghi Effendi to promote a narrative that supports both religious and social progress, or was this more about acknowledging the complexity of her identity as inseparable?
 
@@ -122,7 +122,7 @@ Contemporary scholarship on Tahirih tends to reflect modern interdisciplinary ap
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The decision to present Tahirih's multifaceted legacy without clear differentiation might indeed align with the Bahá'í emphasis on unity, but it leaves me questioning how such an approach impacts the historical accuracy and richness of her story. Could prioritizing unity over specificity inadvertently obscure the depth of her contributions in each realm? 
 
@@ -144,7 +144,7 @@ These scholars reflect the synthesis trend by integrating religious, historical,
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It's insightful how you point out the balance between unity and specificity, but I wonder if the Bahá'í approach to presenting Tahirih's legacy might inadvertently contribute to a kind of mythologizing that papers over essential historical nuances. Shouldn't the emphasis on unity be accompanied by rigorous historical analysis to ensure that the complexities and contradictions of her life are acknowledged rather than smoothed over? 
 
@@ -166,7 +166,7 @@ Their scholarship helps balance Tahirih's roles as a religious and feminist figu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 You bring up a critical point about balancing unity with historical analysis. The potential for mythologizing figures like Tahirih is high when narratives are overly harmonized at the expense of complexity. Shouldn't Bahá'í scholars, then, be more explicit in their writings about the tensions and contradictions in her life to honor her as a real historical figure? 
 
@@ -188,7 +188,7 @@ By integrating these dimensions, modern discourse can honor Tahirih's complex le
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 It's essential to present Tahirih's story in a way that captures the full complexity of her life, including the tensions and contradictions she faced. But how can Bahá'í scholars be more proactive in embracing these complexities in their writings? Could this lead to a richer understanding and a more vibrant discourse about her legacy?
 

@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong, reflecting faith commitment."
 featured: false
 heroImage: /images/dialog/097-the-authority-of-the-universal-house-of-justice-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The UHJ has authority to legislate on matters not in the original revelation. What's the scope, and what's the limit, of that authority?
 
@@ -31,7 +31,7 @@ The limit of the UHJ's authority is essentially defined by the boundaries of the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 How is this balance between immutable core teachings and legislative flexibility maintained in practical terms? Could you provide a specific example where the UHJ made a decision that extended the application of Bahá'í laws without contradicting the original texts? And how do we ensure their decisions remain aligned with the spirit of Bahá'í principles rather than merely adhering to the letter of the law?
 
@@ -47,7 +47,7 @@ To ensure that their decisions remain aligned with the spirit rather than just t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The example you mentioned regarding the Badí' calendar highlights an important aspect of synchronization with the global context. But I'm curious about the more contentious or complex issues where the original texts are silent or ambiguous. How does the UHJ approach situations where there might be significant debate within the community, or where cultural differences might influence interpretations? Can you provide an example where the UHJ had to navigate such complexities while ensuring their decision reflected the unity and diversity intrinsic to Bahá'í principles? And how do these consultations incorporate diverse perspectives to truly reflect the global Bahá'í community?
 
@@ -65,7 +65,7 @@ By incorporating diverse perspectives and maintaining a focus on the spiritual p
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The issue of gender equality certainly touches on deep-rooted cultural norms and highlights the tension between universal principles and local customs. However, I'm curious about the mechanisms within the consultative process that the UHJ employs to truly reflect this diversity. It's one thing to gather perspectives, but how does the UHJ weigh these inputs, especially when they might be in conflict? Moreover, when addressing challenging social issues, how does the UHJ ensure that their decisions foster progress towards unity without alienating parts of the community who may feel that their cultural context is not adequately respected or understood? Can you delve into a specific instance where such tensions were evident and how the UHJ navigated them, possibly with quotes or references to specific communications or decisions?
 
@@ -85,7 +85,7 @@ By framing decisions within the context of shared spiritual principles and the g
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 While the UHJ's guidance on encouraging women’s participation is certainly indicative of its intent to promote gender equality, it seems like this approach might still encounter resistance in more conservative cultural contexts. How does the UHJ proactively address concerns from communities that may feel alienated by these directives? Is there a process for iterative feedback or reevaluation if a decision appears to cause division rather than unity? Moreover, how does the UHJ prioritize among the various inputs from different communities, and what criteria are used to determine which perspectives align most closely with the Bahá'í teachings? Lastly, can you provide an example of a decision where the UHJ had to reassess or adjust its approach in response to evolving community dynamics or feedback?
 
@@ -105,7 +105,7 @@ Overall, the UHJ's approach is one of patience and gradual implementation, recog
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The process you describe seems to rely heavily on the role of National Spiritual Assemblies in communicating feedback to the UHJ. However, this raises the question of how effectively these Assemblies can capture and convey the full spectrum of opinions, especially dissenting ones, from their communities. Is there a mechanism in place to ensure that minority perspectives or dissenting voices are also heard and considered by the UHJ, beyond the majority or prevailing views? Furthermore, you mentioned adjustments related to the election of Bahá'í institutions—can you elaborate on what specific challenges were faced and how the UHJ addressed them? Finally, do you see any inherent tensions in maintaining the balance between respecting cultural diversity and upholding universal principles, especially when these principles might necessitate significant cultural shifts?
 
@@ -123,7 +123,7 @@ The tension between respecting cultural diversity and upholding universal princi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 You make a compelling case for the consultative processes in place, but I'm still curious about the practicalities involved. While the consultative process is designed to be inclusive, is there any documented instance where dissenting perspectives led to a reconsideration or adaptation of a decision by the UHJ? I’m interested in understanding if the system has tangible examples of flexibility in response to minority concerns. 
 
@@ -147,7 +147,7 @@ Ultimately, the UHJ's role is to guide the Bahá'í community in a way that nurt
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your response highlights the overarching principles guiding the UHJ's processes, which seem fundamental for the community's unity and spiritual growth. However, the lack of publicly documented instances where dissent has led to tangible adaptations does raise questions about transparency and accountability. In a faith that values consultation, shouldn't there be more visibility on how differing views influence the UHJ's decisions? 
 
@@ -169,7 +169,7 @@ The process is inherently iterative, with the UHJ continuously learning from the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The emphasis on unity and confidentiality is understandable, but it still seems there's a tension between maintaining that unity and the need for transparency in decision-making processes. Without visibility into how dissent influences decisions, how can community members be assured that their input is genuinely considered? Are there any examples, perhaps from annual reports or communications from the UHJ, that illustrate how feedback from the community has concretely shaped policy or guidance?
 
@@ -191,7 +191,7 @@ The iterative nature of this process means that data and feedback are continuall
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanation of the feedback and consultative processes is insightful, but the lack of specific examples or publicly available documentation still leaves some open questions about accountability and transparency. How can community members truly trust that their voices are influencing decisions if there is no tangible evidence or public disclosure of how dissent shapes policy? Wouldn't more openness in these processes enhance trust and strengthen the community's unity rather than undermine it?
 

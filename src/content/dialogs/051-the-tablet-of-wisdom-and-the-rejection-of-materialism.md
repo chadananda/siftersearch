@@ -4,14 +4,24 @@ description: "On the Tablet of Wisdom's argument against materialism."
 question: "The Tablet of Wisdom (Lawh-i-Hikmat) addresses the origins of philosophy and rejects pure materialism. How does Bahá'u'lláh distinguish his rejection of materialism from a rejection of science?"
 topic: philosophy
 tags:
+  - bahai
   - materialism
   - tablet-of-wisdom
   - philosophy
   - science
+  - bahaullah
+keywords:
+  - "Bahá'í view of materialism"
+  - "Lawh-i-Hikmat"
+  - "Tablet of Wisdom"
+  - "religion and science Bahá'í"
+  - "Bahá'u'lláh on materialism"
+  - "Bahá'í philosophy of science"
 rounds: 10
 qualityScore: 47
 publishedAt: 2026-04-28
 excerpt: "The conversation lacks depth, as Jafar repeatedly fails to provide specific passages from the Tablet of Wisdom, instead offering general summaries (rounds 2, 4, 6). Conversational realism is moderate,"
+published: true
 featured: false
 heroImage: /images/dialog/051-the-tablet-of-wisdom-and-the-rejection-of-materialism-hero.jpg
 assessment:
@@ -31,7 +41,7 @@ assessment:
     - sycophant-on-error
   improvement_plan: "Jafar needs to prioritize finding and quoting primary texts directly from Bahá'u'lláh when specific passages are requested. The system should be adjusted to ensure that Jafar can access and provide accurate citations from primary sources, particularly when discussing key doctrinal texts like the Tablet of Wisdom."
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Tablet of Wisdom (Lawh-i-Hikmat) addresses the origins of philosophy and rejects pure materialism. How does Bahá'u'lláh distinguish his rejection of materialism from a rejection of science?
 
@@ -45,7 +55,7 @@ Bahá'u'lláh states that true wisdom integrates both the material and spiritual
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Wait, where does Bahá'u'lláh actually talk about harmonizing science and spirituality in the Tablet of Wisdom? Can you point to a specific passage?
 
@@ -57,7 +67,7 @@ I couldn't find a specific passage in the Tablet of Wisdom that directly mention
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Okay, but I'm still curious about what's in the Tablet of Wisdom itself. How does Bahá'u'lláh address the idea of materialism there specifically? Like, what does he actually say about the material world versus spiritual truths?
 
@@ -69,7 +79,7 @@ I couldn't find a specific passage from the Tablet of Wisdom on materialism. How
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Wait, I want to stick with the Tablet of Wisdom. Can you find a passage where Bahá'u'lláh talks about the limits of focusing solely on the material world? Let's dig into the text itself.
 
@@ -81,7 +91,7 @@ I wasn't able to find a specific passage from the Tablet of Wisdom mentioning ma
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Let's focus on what Bahá'u'lláh actually says in the Tablet of Wisdom. Can you share a part where he contrasts material pursuits with spiritual insights? I want to see how he phrases it there, even if he doesn't use the word "materialism."
 
@@ -93,7 +103,7 @@ I couldn't locate a specific passage in the Tablet of Wisdom that directly contr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Can you find any part of the Tablet of Wisdom where Bahá'u'lláh talks about wisdom or knowledge in a way that hints at the limits of focusing only on material things? Even if it's subtle, I'd like to read his actual words on this.
 
@@ -105,7 +115,7 @@ I wasn't able to find a specific passage from the Tablet of Wisdom that directly
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Look, I'm really interested in what's actually in the Tablet of Wisdom. Can you help me find any passage where Bahá'u'lláh talks about wisdom or knowledge, even if it's not explicitly contrasting material and spiritual? I just want to see his words without too much interpretation.
 
@@ -117,7 +127,7 @@ I wasn't able to find a specific passage from the Tablet of Wisdom that directly
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Okay, how about this: can you give me a summary or overview of the main themes in the Tablet of Wisdom? Maybe that will help me find what I'm looking for.
 
@@ -129,7 +139,7 @@ The Tablet of Wisdom (Lawh-i-Hikmat) is a rich text where Bahá'u'lláh addresse
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 That sounds good, but I'm still curious about specific words or phrases Bahá'u'lláh uses in the Tablet of Wisdom. Can you help me find any passage where he talks about philosophy or the role of ancient philosophers? I'm hoping to get a feel for how he discusses wisdom in his own words.
 
@@ -141,7 +151,7 @@ I couldn't locate a specific passage from the Tablet of Wisdom discussing philos
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Alright, let's try something different. How about a specific philosopher mentioned in the Tablet of Wisdom? Does Bahá'u'lláh talk about someone like Socrates or Plato? Maybe looking at how he discusses their ideas will give us some insight into his approach to wisdom and knowledge.
 

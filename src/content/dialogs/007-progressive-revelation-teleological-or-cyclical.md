@@ -15,7 +15,7 @@ excerpt: "Explores complex theological concepts"
 featured: false
 heroImage: /images/dialog/007-progressive-revelation-teleological-or-cyclical-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Is Bahá'í 'progressive revelation' a teleological story heading somewhere, or is it a cyclical pattern of decline and renewal? The Bahá'í writings sometimes seem to teach both. Which is the deeper teaching?
 
@@ -30,7 +30,7 @@ The deeper teaching is ultimately teleological, as the Bahá'í Faith envisions 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 If the deeper teaching is teleological, aiming toward the unification of humanity, how do we reconcile this with the cyclical pattern of decline and renewal? Does this imply that previous religious cycles failed to achieve this ultimate goal, or are they integral steps in a larger plan? Moreover, how does this teleological aspect align with the Bahá'í view of divine omnipotence and wisdom? If each cycle is advancing us toward a divine purpose, why do these declines occur? Wouldn't a perfect divine plan avoid such setbacks?
 
@@ -48,7 +48,7 @@ Thus, the teleological aspect of Bahá'í belief is not contradicted by the cycl
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 But isn't there an inherent tension between divine omnipotence and human agency here? If humanity's free will leads to periods of spiritual darkness, how is this reconciled with the idea of an infallible divine plan? If God's plan is perfect, one might argue that reliance on human agency resulting in such decline seems contrary to the notion of a divine trajectory. Furthermore, if each cycle builds upon the last, why do we see such stark lapses in adherence and understanding of previous teachings across history? Wouldn't a truly progressive revelation ensure a more consistent upward trajectory without such significant periods of forgetfulness or corruption? How do these apparent inconsistencies reflect the wisdom of an omnipotent deity guiding humanity towards unity?
 
@@ -66,7 +66,7 @@ In this view, the lapses in understanding and adherence are not inconsistencies 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Your explanation suggests that humanity's spiritual journey is akin to a learning process with room for error and growth. Still, if divine wisdom and omnipotence are ensuring that setbacks ultimately serve progress, why does this process require such extensive periods of darkness or deviation from divine teachings? Could it be argued that these periods are too long or too severe, given an omnipotent deity's capability to guide humanity more gently or efficiently?
 
@@ -86,7 +86,7 @@ The differentiation between temporary adaptations and eternal truths lies in the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The idea that humanity must fully experience the consequences of deviating from divine guidance to foster growth is intriguing, but isn't there a risk that such extended periods of darkness might hinder progress more than aid it? If humanity is repeatedly falling into these lapses, isn't there a danger that the lessons learned could be forgotten or distorted over time, impeding the overall trajectory toward unity?
 
@@ -110,7 +110,7 @@ In summary, the Bahá'í writings encourage believers to look to the core teachi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The Bahá'í principle of consultation as an example makes sense in illustrating how core spiritual truths are applied flexibly, but doesn't this flexibility risk diluting the core message over time? If every society adapts these principles in different ways, how do we ensure that the eternal truths remain intact and comprehensible across different cultural contexts? Isn't there a danger of straying too far from the original teachings?
 
@@ -134,7 +134,7 @@ This ongoing process of consultation and adaptation allows the Bahá'í communit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The role of the Universal House of Justice in maintaining the balance between flexibility and adherence to foundational teachings is certainly critical, but how do we ensure the infallibility of its decisions given the complexities and nuances involved in interpreting and applying Bahá'í principles? How does the House of Justice address potential concerns about human fallibility in interpreting religious texts, especially in a rapidly changing world? Can you provide examples of how the House of Justice has resolved disagreements or different interpretations within the Bahá'í community? And considering the emphasis on consultation, how are diverse voices and perspectives integrated into its decision-making process to ensure that it remains representative and reflective of the global Bahá'í community?
 
@@ -156,7 +156,7 @@ Through these mechanisms, the Universal House of Justice seeks to remain respons
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While the consultative process and the structure of the Universal House of Justice aim to maintain both unity and diversity, I'm curious about specific instances where its decisions have addressed major shifts or challenges in interpretation within the Bahá'í community. Are there notable cases where a decision by the House of Justice significantly changed or clarified an understanding of Bahá'í principles in response to contemporary issues?
 
@@ -178,7 +178,7 @@ This dynamic between individual understanding and institutional guidance is not 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The Universal House of Justice's role in addressing contemporary issues such as gender equality and socio-economic development highlights its adaptive capacity, but how does it ensure that such adaptations remain true to Bahá'u'lláh's original intent? Considering the faith's expansion into diverse cultural contexts, how does the House of Justice balance cultural sensitivity with adherence to Bahá'í principles to avoid cultural relativism from overshadowing core teachings?
 
@@ -200,7 +200,7 @@ By fostering an environment where believers can engage with the teachings, consu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanation highlights the critical role of consultation and the Universal House of Justice's foundational reliance on Bahá'í scriptures to maintain the integrity of Bahá'u'lláh's teachings. However, how does this process impact individual believers who might feel that their cultural context or personal insight presents a unique perspective that hasn't been fully considered by the House of Justice? Are there mechanisms in place to ensure that such voices are not only heard but thoughtfully integrated into the decision-making process?
 

@@ -14,7 +14,7 @@ excerpt: "Explores Bahá'í consultation deeply"
 featured: false
 heroImage: /images/dialog/064-what-are-the-spiritual-seasons-of-the-bah-year-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í calendar has its own structure — 19 months of 19 days, plus intercalary days. Beyond logistics, does the Bahá'í year have its own spiritual seasons?
 
@@ -28,7 +28,7 @@ Moreover, the intercalary days, known as Ayyám-i-Há, are a time for hospitalit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 It's interesting how the attributes of God serve as a monthly focal point, but I'm curious about the emphasis on reflection and renewal. How do these spiritual themes manifest in the daily lives of Bahá'ís beyond the observance of the Fast or Naw-Rúz? For instance, do specific practices or community activities help deepen this engagement with the calendar's spiritual seasons throughout each month? And how do these practices compare to or differ from the expressions of spirituality in other religions' liturgical calendars?
 
@@ -44,7 +44,7 @@ Comparatively, while other religious calendars like the Christian liturgical cal
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You mentioned the Nineteen Day Feast as a key practice, but I'd like to delve deeper into how the communal aspects of these Feasts tie into the month's divine attribute. How do the consultative and social components of the Feast specifically encourage participants to both reflect on and embody that attribute? Additionally, you noted that service projects often reflect the month's spiritual focus—could you provide an example of how a community might align a specific service initiative with one of these attributes? Finally, while individual transformation is a common theme across religions, the emphasis on societal transformation seems particularly prominent in the Bahá'í Faith. How does this dual focus manifest in the practices observed throughout the calendar year?
 
@@ -64,7 +64,7 @@ Throughout the year, these practices encourage Bahá'ís to translate the spirit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Could you elaborate more on the consultative aspect of the Nineteen Day Feast? How does this process of consultation specifically help participants apply the month's divine attribute in community decision-making or addressing communal challenges? Are there guidelines from the Bahá'í writings on how to conduct these consultations effectively to ensure they lead to tangible action?
 
@@ -88,7 +88,7 @@ Bahá'ís measure success not only by tangible outcomes but also by the processe
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 You mentioned that consultation in the Bahá'í Faith emphasizes qualities like humility and detachment, and the aim is to reach unity rather than unanimity. But how do Bahá'í communities handle deeply divisive issues where consensus seems elusive? Are there specific strategies or teachings that Bahá'ís employ to navigate particularly contentious topics while still striving for unity? 
 
@@ -108,7 +108,7 @@ In measuring impact, Bahá'í communities balance tangible outcomes with the spi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 You spoke about maintaining an open and respectful dialogue, especially in handling divisive issues. But I'm curious—what happens if a disagreement persists even after all views have been considered? Are there teachings or examples from the Bahá'í writings that offer guidance on moving forward when unity remains out of reach? For instance, is there a role for authority or decision-making bodies in these situations, and how do they intervene while respecting the community's input?
 
@@ -130,7 +130,7 @@ When communicating the importance of qualitative outcomes to external partners o
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The principle of "submission to the majority decision" is fascinating, yet I wonder how it reconciles with the potential that the majority can sometimes be misguided or short-sighted. Are there checks within the Bahá'í system to ensure that majority decisions are revisited if they prove ineffective, or is there a mechanism for minority voices to still influence the course of action after a decision has been made? How do the writings balance the need for unity with the possibility of error in collective decisions?
 
@@ -150,7 +150,7 @@ When conveying qualitative impacts, Bahá'í communities strive to ground their 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The checks and balances within the Bahá'í system for revisiting decisions made by majority consensus are intriguing, yet they seem to rely heavily on the community's willingness to continually engage in consultation. How does the Bahá'í Faith address scenarios where the community might resist revisiting a decision due to fear of conflict or a desire for stability over change? Are there teachings or examples that guide communities in overcoming such inertia to ensure that decisions are genuinely progressive and not just superficially unified?
 
@@ -170,7 +170,7 @@ When communicating complex spiritual and social transformations, Bahá'í commun
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The emphasis on adaptability and continuous learning within the Bahá'í community is certainly admirable, but I'm still curious—what if a particular community struggles to embrace this culture due to deeply ingrained norms or resistance to change? Are there examples or teachings that address how a community might overcome such barriers to ensure that consultation remains dynamic and effective, even when faced with internal inertia?
 
@@ -190,7 +190,7 @@ When addressing skepticism about the relevance of spiritual principles in practi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The approach of using consultation to address resistance through fostering understanding and shared goals is insightful, but what if the community's leadership itself is resistant to change or doesn't prioritize this adaptability? Are there teachings or examples that guide the community in addressing leadership that may be inadvertently hindering progress, while still maintaining respect and unity? How can the community ensure that even those in leadership positions remain open to growth and change?
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T14:45:45.381Z",
+  "generated": "2026-04-28T17:09:21.982Z",
   "entries": [
+    {
+      "hash": "dc3dc10",
+      "date": "2026-04-28",
+      "type": "Style",
+      "description": "Differentiated speaker rendering — italicized indented user turns + Jafar with circular avatar (jīm)",
+      "scope": null
+    },
     {
       "hash": "8eaa88b",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove paragraph hover background",
       "scope": null
-    },
-    {
-      "hash": "228c37a",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Redesign Study view with aligned phrase rows",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "dc3dc10",
+        "date": "2026-04-28",
+        "type": "Style",
+        "description": "Differentiated speaker rendering — italicized indented user turns + Jafar with circular avatar (jīm)",
+        "scope": null
+      },
       {
         "hash": "8eaa88b",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Remove paragraph hover background",
-        "scope": null
-      },
-      {
-        "hash": "228c37a",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Redesign Study view with aligned phrase rows",
         "scope": null
       }
     ]

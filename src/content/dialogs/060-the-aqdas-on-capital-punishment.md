@@ -15,7 +15,7 @@ excerpt: "Addresses complex ethical issues"
 featured: false
 heroImage: /images/dialog/060-the-aqdas-on-capital-punishment-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Kitáb-i-Aqdas permits capital punishment for murder and arson. How is this consistent with the Bahá'í teaching of the sacredness of human life?
 
@@ -31,7 +31,7 @@ Furthermore, the broader Bahá'í teachings emphasize consultation, justice, and
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 That flexibility and emphasis on mercy are interesting, but it still seems contradictory to permit capital punishment while upholding the sacredness of life. If every soul has the potential for transformation, wouldn't execution preclude the possibility of rehabilitation and growth? How do Bahá'í teachings reconcile this potential loss of life with the principle of justice? Are there specific writings from 'Abdu'l-Bahá or Shoghi Effendi that further illuminate this apparent tension between justice and the preservation of life?
 
@@ -51,7 +51,7 @@ While the writings do not resolve the tension entirely, they provide a framework
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 It's intriguing that the notion of justice is positioned as a balancing act with mercy, but doesn't this imply that the value of individual transformation is negotiable? If Bahá'í teachings, as you mention, evolve with societal maturity, couldn't we argue that adherence to capital punishment is itself a relic of less mature times? You mentioned that Shoghi Effendi noted many laws aren't in force, but are there any specific statements from him or 'Abdu'l-Bahá directly addressing capital punishment? How does this balance between individual transformation and societal protection get practically mediated in Bahá'í teachings, especially when the stakes are as high as life and death?
 
@@ -71,7 +71,7 @@ While 'Abdu'l-Bahá addressed the principle, specific guidance on the practical 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 It's an interesting point you bring up about earthly justice providing closure and avoiding double punishment in the afterlife. However, couldn't this be seen as a theological justification rather than a practical or moral one, especially if the ultimate goal is rehabilitation and transformation? If capital punishment precludes further earthly transformation, how do we reconcile this with the Bahá'í vision of progress and spiritual growth? Furthermore, considering the global trend towards abolishing the death penalty in favor of life sentences, isn't there a risk that retaining such a law might become misaligned with the evolving global standards of justice and human rights? Can you point to specific instances where Bahá'í communities have actively engaged with these evolving standards to ensure that their application of justice aligns with both spiritual principles and contemporary human rights understandings?
 
@@ -89,7 +89,7 @@ The Bahá'í approach to justice is not static but is dynamic and responsive to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 While I appreciate the dynamic and evolving nature of Bahá'í law you describe, it still feels unsatisfactory when considering the irreversible nature of capital punishment. If the Bahá'í community is not currently enforcing these laws and is aligned with global human rights standards, doesn't that suggest a tacit acknowledgment that some laws, like those regarding capital punishment, might be fundamentally at odds with the contemporary understanding of justice? You mentioned the Bahá'í International Community’s engagement with the UN — could you provide specific examples of how these interactions have influenced or reshaped Bahá'í legal principles, especially concerning capital punishment? And more broadly, how would Bahá'í teachings address the potential moral conflict between religious law and evolving ethical standards in a global society?
 
@@ -107,7 +107,7 @@ The Bahá'í approach is to balance the spiritual principles enshrined in its te
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 You seem to frame the lack of enforcement as a practical consideration tied to societal maturity, yet when considering the irreversible nature of capital punishment, isn't there a moral imperative to completely abolish it if it contradicts current human rights standards? This seems more than just a case of waiting for societal readiness—it's a fundamental ethical issue. Can you point to any specific guidance from the Universal House of Justice that addresses this tension directly? Because if the Bahá'í Faith indeed aims to align with evolving ethical standards, wouldn't a definitive stance against capital punishment be necessary to lead by example within the global community? And how does this sit with the broader Bahá'í principle of leading the way to global unity and justice?
 
@@ -125,7 +125,7 @@ While the specific issue of capital punishment remains a complex topic within th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While the concept of progressive revelation is foundational to the Bahá'í Faith, it seems there is a crucial distinction between principles that are adaptable over time and those that are fundamentally aligned with contemporary human rights. If leading the way to global unity and justice is a Bahá'í principle, wouldn't the Faith be expected to take a clear stance on issues like capital punishment, which many see as incompatible with modern human rights standards?
 
@@ -147,7 +147,7 @@ In essence, while the Faith's stance on issues like capital punishment may not y
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 You've outlined the consultation and reflection process of the Universal House of Justice in adapting Bahá'í teachings to contemporary ethical standards, but it still seems there's a significant gap between this internal deliberation and the proactive stance needed on issues like capital punishment. Given the irreversible nature of capital punishment and its potential misalignment with modern human rights norms, how does the Bahá'í community reconcile maintaining laws like these with its responsibility to lead in global justice efforts?
 
@@ -171,7 +171,7 @@ Ultimately, the Bahá'í Faith's approach to evolving its practices is rooted in
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The examples you provided about the evolution of the Bahá'í administrative order and the emphasis on gender equality are insightful, as they show how the community can adapt over time. However, it still seems that the issue of capital punishment, given its severity and the potential for irreversible harm, deserves more urgent attention and a definitive stance.
 
@@ -205,7 +205,7 @@ These steps reflect an ongoing commitment to aligning Bahá'í teachings with th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your suggestions for how the Bahá'í community might navigate the issue of capital punishment in alignment with global human rights standards are constructive. However, there's still a lingering question about the practical efficacy of these processes. Given the community's commitment to justice and unity, shouldn't there be a more structured, perhaps even external, mechanism to ensure that Bahá'í laws are not just internally reflective, but also externally accountable to contemporary human rights standards? 
 

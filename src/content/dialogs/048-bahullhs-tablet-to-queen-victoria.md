@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/048-bahullhs-tablet-to-queen-victoria-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh wrote tablets to several heads of state. The Tablet to Queen Victoria praises her abolition of slavery and her prohibition of selling government offices. What does the tablet ACTUALLY ask of her?
 
@@ -26,7 +26,7 @@ In the Tablet to Queen Victoria, Bahá'u'lláh praises her for abolishing the tr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Bahá'u'lláh's call for unity and recognition of the Manifestation suggests a profound spiritual and practical shift. But what does it mean for a queen, specifically, to recognize the Manifestation in this context? Is it purely spiritual, or does He envision a transformation in how she exercises her political influence? And while the call for unity is compelling, how does Bahá'u'lláh envision this union operating amidst the diverse religious and political landscapes of the time? Does He offer any insights on managing potential conflicts or reconciling existing power structures with His vision?
 
@@ -42,7 +42,7 @@ His teachings offer a framework for reconciling existing power structures by enc
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, your explanation points to a transformative vision, but the practicalities of implementation seem formidable, especially considering the entrenched power structures of the time. Can you provide specific examples or quotes from Bahá'u'lláh's writings that address how rulers should navigate these entrenched interests? Additionally, Bahá'u'lláh’s principles like consultation and justice sound ideal, but what mechanisms does He propose for these to be effectively put into practice amid resistance from those benefiting from the status quo? How does He reconcile the necessity for change with the likely resistance from established authorities?
 
@@ -64,7 +64,7 @@ The call is for a gradual but persistent transformation, with the understanding 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The vision of establishing just institutions like the House of Justice sounds promising, but in Bahá'u'lláh's time, such concepts were radical and faced extensive challenges. You mention the gradual transformation and collective action; however, how does Bahá'u'lláh address the immediate realities of rulers who benefit directly from maintaining the status quo? Does He provide any guidance on how leaders can make the initial strides toward these principles without losing their grip on power or destabilizing their realms? Additionally, how does Bahá'u'lláh propose that these divine ordinances be communicated and accepted by a population not yet ready to embrace such profound changes, given the existing religious and cultural dynamics?
 
@@ -82,7 +82,7 @@ Bahá'u'lláh also highlights the importance of consultation as a means to addre
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Your response emphasizes gradualism and the long-term power of spiritual principles, which is compelling. Yet, the historical context reveals that entrenched rulers often saw any shift as a threat. Bahá'u'lláh's emphasis on rulers acting as trustees is idealistic, but in practice, how does He propose they navigate the fear of losing power? Are there specific instances or teachings that suggest mechanisms for easing such transitions for rulers accustomed to absolute control?
 
@@ -102,7 +102,7 @@ To address deeply held beliefs, Bahá'u'lláh calls for a respectful dialogue th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, what you're describing is a deeply interconnected strategy where spiritual principles guide political action, but in a world of realpolitik, were such ideas met with any success or historical precedent? Is there evidence either from Bahá'u'lláh's time or subsequent eras where rulers or leaders were able to implement such changes without significant upheaval or loss of power? 
 
@@ -124,7 +124,7 @@ Regarding the balance between patience and direct action, Bahá'u'lláh emphasiz
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Your response touches on how Bahá'u'lláh's teachings influenced modern governance indirectly through principles like consultation and unity. However, are there specific examples from His time or shortly thereafter where political or religious leaders implemented His ideas effectively? Did any rulers, perhaps inspired by His writings, make tangible reforms that aligned with these principles?
 
@@ -148,7 +148,7 @@ While Bahá'u'lláh does not prescribe specific moments for more forceful advoca
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, while the indirect influence of Bahá'u'lláh’s teachings on later governance models is intriguing, I'm curious if there are any more direct connections—perhaps obscure or lesser-known—between His writings and specific political reforms or movements. Are there any examples, even if not fully realized, where His ideas sparked a notable shift in policy or governance within any particular nation or community shortly after His time?
 
@@ -170,7 +170,7 @@ There is contemporary guidance within the Bahá'í community on engaging with op
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Your response offers a nuanced view of Bahá'u'lláh’s impact, yet the connection between His teachings and the Persian constitutional movement seems speculative. Is there any documented acknowledgment from leaders of that movement that they drew inspiration from Bahá'í principles, or is the influence more interpretative or circumstantial?
 
@@ -192,7 +192,7 @@ The global Bahá'í community draws on its diverse experiences to navigate these
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The connection to the Persian Constitutional Revolution being interpretative is understandable given the complex tapestry of influences at the time. However, moving to a more concrete example: are there specific historical instances where Bahá'í communities, under oppressive circumstances, effectively employed the principles of consultation or justice to negotiate their rights or improve their situation? I'm interested in documented strategies or outcomes that highlight these principles in action.
 

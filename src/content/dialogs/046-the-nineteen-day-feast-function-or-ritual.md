@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/046-the-nineteen-day-feast-function-or-ritual-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Nineteen Day Feast is at once a worship service, a community business meeting, and a social gathering. Is this triple function deliberate, and what does it teach about Bahá'í community life?
 
@@ -35,7 +35,7 @@ Through these three functions, the Nineteen Day Feast teaches that a healthy com
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned the principle of consultation as a key aspect during the administrative portion of the Feast. How does this approach differ from other models of governance or decision-making you might see in other religious or secular contexts? Can you provide specific examples from the Bahá'í writings that highlight how consultation is supposed to function within the Bahá'í community? I'm curious about the tangible benefits or challenges this method presents when applied in practice.
 
@@ -57,7 +57,7 @@ The benefits of this method include fostering unity and collective wisdom, as de
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You've painted a compelling picture of Bahá'í consultation as a spiritually grounded, collective decision-making process. But how does this ideal translate into the real-world functioning of Bahá'í communities? Are there documented instances where a decision reached through consultation significantly impacted a Bahá'í community in a way that exemplifies the process's transformative power? And how do Bahá'ís handle situations where consensus isn't reached, given the emphasis on unity and collective agreement?
 
@@ -75,7 +75,7 @@ This approach highlights a key aspect of Bahá'í consultation: it is not about 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Your examples suggest that Bahá'í consultation promotes a balance between individual expression and collective decision-making, which is indeed intriguing. However, the fact that documented instances are more anecdotal than systematically recorded makes it challenging to assess its effectiveness objectively. Is there any effort within the Bahá'í community to systematically document these consultation outcomes and their impacts? Moreover, the idea of deferring decisions when consensus isn't reached seems like it might lead to stagnation in certain situations. How does the community ensure that important issues are addressed in a timely manner without sacrificing the principle of unity? Can you cite any Bahá'í writings that offer guidance on managing prolonged disagreements or failed consensus?
 
@@ -93,7 +93,7 @@ In practice, Bahá'í communities strive to uphold these principles by fostering
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 I understand there's an emphasis on learning and reflection within the Bahá'í community, and it's encouraging to hear that efforts are being made to document consultation outcomes systematically. However, given the potential for majority decisions to sometimes polarize a community, how does the Bahá'í framework ensure that minority voices are not just heard but meaningfully integrated into the decision-making process? Are there specific mechanisms or teachings that prevent the marginalization of dissenting opinions, ensuring that they contribute to the community’s collective wisdom? Can you point to any writings that emphasize the protection of minority perspectives within this consultative process?
 
@@ -117,7 +117,7 @@ In practice, Bahá'í communities strive to embody these principles by fostering
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The idea that truth emerges from "the clash of differing opinions" is intriguing and certainly sets a high bar for valuing diverse perspectives. However, this approach assumes that participants can detach from their ideas and egos, which, as you noted earlier, can be quite challenging in practice. How does the Bahá'í community address the human tendency towards attachment and ego, which might hinder this process? Are there any specific spiritual exercises or practices prescribed in the Bahá'í writings that help individuals cultivate the necessary detachment and humility for effective consultation? Also, how does this process unfold in practice when entrenched opinions or conflict arise, potentially disrupting the atmosphere of trust and humility?
 
@@ -141,7 +141,7 @@ Through these practices and structures, the Bahá'í community strives to create
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While the emphasis on spiritual exercises like prayer and reflection seems integral, how does the Bahá'í community ensure that these practices tangibly impact the consultation process? It's one thing to value humility and detachment in theory, but quite another to ensure these values manifest in discussions that can often be heated or contentious. How are these spiritual teachings practically integrated into the consultation process to transform potential conflict into constructive dialogue? Additionally, could you elaborate on the role local spiritual assemblies play in fostering these qualities within their communities, possibly with examples of how they've successfully navigated entrenched conflicts? Are there specific instances or guidance from Bahá'í writings that illustrate the assembly's function in maintaining unity and promoting effective consultation?
 
@@ -167,7 +167,7 @@ While instances of Assemblies navigating conflicts are often shared within the c
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The integration of spiritual practices like prayer and reflection seems crucial, but in heated discussions, emotions can easily override these initial intentions. Are there any specific techniques or protocols recommended within the Bahá'í community to maintain or restore a constructive atmosphere when discussions begin to veer towards conflict? How does the community ensure that these initial spiritual intentions don't just remain ceremonial but actively influence the participants' mindset throughout the entire consultation process?
 
@@ -191,7 +191,7 @@ These practices and examples underscore the importance of patience, empathy, and
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While the concept of using structured facilitation and maintaining an ongoing emphasis on spiritual reflection is helpful, it seems that in moments of intense conflict, some might question whether these methods are enough to keep discussions from derailing. How does the community deal with situations where even with facilitation, the emotional charge is too high for constructive dialogue? Are there teachings or protocols that suggest taking a break or changing the approach in such circumstances?
 
@@ -213,7 +213,7 @@ Overall, the flexibility and spiritual grounding of Bahá'í consultation allow 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your point about taking a break to restore a more constructive atmosphere is practical, but it seems that could risk losing momentum or leaving issues unresolved. How do Bahá'í communities ensure that these breaks are productive and that participants return to the dialogue with renewed perspective rather than frustration? Is there any specific guidance on how long these breaks should last or what participants should focus on during them to ensure they remain spiritually grounded?
 

@@ -15,7 +15,7 @@ excerpt: "Explores progressive revelation concept"
 featured: false
 heroImage: /images/dialog/092-reading-the-aqdas-today-living-law-or-aspirational-vision-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Kitáb-i-Aqdas contains laws — some unenforced, some applied. How should a Bahá'í today understand the laws as a whole — living law, aspirational vision, or both at once?
 
@@ -31,7 +31,7 @@ At the same time, the laws offer an aspirational vision of the oneness of humani
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 How do we reconcile the idea of the Kitáb-i-Aqdas as a "living law" with the fact that some laws remain unenforced or are pending future societal capacity? Doesn't this create a potential disconnect between the aspirational vision and the lived reality of the community? For instance, if some laws are intended for a future time, does that suggest that parts of the Kitáb-i-Aqdas are currently irrelevant or inapplicable? How do Bahá'ís live with the tension between laws that are binding now and those that are aspirational? Are there any specific examples of how the Universal House of Justice has approached this issue in recent times?
 
@@ -51,7 +51,7 @@ Living with this tension involves recognizing that the Kitáb-i-Aqdas is both a 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Your explanation of the Kitáb-i-Aqdas as both a guide for present action and a blueprint for future development is intriguing. However, it seems like there could be a risk that the flexible application of these laws might be seen as inconsistent or even arbitrary by those outside the Faith, or even some within it. How does the Universal House of Justice ensure transparency and consistency in deciding which laws to enforce and when? Are there specific principles or guidelines outlined in Bahá'í writings that guide their decision-making process? Can you point to any primary sources that articulate this approach more explicitly?
 
@@ -71,7 +71,7 @@ While I can't directly quote these letters without searching, they are collected
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that the principle of progressive revelation allows for flexibility in applying the laws of the Kitáb-i-Aqdas, but I'm curious about the specifics of how this principle is operationalized. How does the Universal House of Justice determine when humanity has evolved enough to implement a particular law? Are there specific indicators or criteria they look for? And while you cite Shoghi Effendi's writings, I'm interested in how these principles are reflected in a primary source like Bahá'u'lláh's own writings or 'Abdu'l-Bahá's explanations. Can you provide any specific guidance or examples from these primary sources that inform the House of Justice's decision-making? Additionally, how does the community itself engage with these evolving interpretations to maintain a coherent understanding of the Faith's laws and aspirations?
 
@@ -97,7 +97,7 @@ By grounding its decisions in the principles of the Bahá'í teachings and foste
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The quote you provided from the Universal House of Justice mentions the role of the Covenant and the infallible Institutions that guide the gradual implementation of the Kitáb-i-Aqdas's laws. However, it seems to imply a high level of trust in these institutions without going into detail about the criteria or specific indicators they use to determine readiness for implementation. Can we find any more concrete criteria or conditions in Bahá'u'lláh's writings or the explanations of 'Abdu'l-Bahá that offer insight into what constitutes community maturity or capacity? Additionally, how does this process remain open to criticism or improvement, ensuring that the community does not just passively accept decisions but actively contributes to the evolving understanding and application of the law? Are there examples of how communities have engaged in this process effectively?
 
@@ -117,7 +117,7 @@ The dynamic nature of the Bahá'í administrative system, with its emphasis on c
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The emphasis on consultation as a tool for discovering truth and fostering community engagement is certainly consistent with the Bahá'í ideals of unity and participation. However, in practical terms, how does this consultation process influence decisions about law implementation? Does the feedback from local communities directly affect the Universal House of Justice's decisions, or is it more about building a general sense of readiness across the global community? And could you point to specific instances in Bahá'í history where consultation at various levels led to significant shifts or adaptations in the application of laws? Finally, while the process you describe sounds inclusive, how does the Bahá'í community ensure that diverse voices are heard in this global consultation process, especially considering cultural differences and varying levels of individual engagement with the Faith?
 
@@ -137,7 +137,7 @@ Through these mechanisms, the Bahá'í community strives to maintain an inclusiv
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The example of the Ruhi Institute process is notable, but it still seems more about organic development than a direct impact on the application of specific laws from the Kitáb-i-Aqdas. I'm curious if there are examples where community consultation led to a tangible change or adaptation in the enforcement or understanding of a particular law? Also, while you mention efforts to ensure diversity in consultation, how does the Bahá'í community actively mitigate power dynamics or biases that might silence minority voices, especially in communities with deep-seated cultural hierarchies? How is the principle of "unity in diversity" operationalized to ensure that it doesn't merely become a slogan but a lived reality within the consultation process?
 
@@ -157,7 +157,7 @@ Through these practices, the Bahá'í community strives to ensure that consultat
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While it's insightful to see how community consultation influences understanding and practice at a local level, I'm still seeking concrete examples where it has impacted the enforcement or modification of a specific law from the Kitáb-i-Aqdas. Are there instances where feedback from the community led the Universal House of Justice to pause, modify, or reinterpret a specific law in response to evolving circumstances or newfound understanding? 
 
@@ -187,7 +187,7 @@ Through these measures, Bahá'í communities strive to ensure that consultation 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It seems like the process you've described focuses heavily on the ideals of consultation and inclusivity, yet lacks specific examples where these have led to tangible changes in the application of laws. Can you point to any historical moments or documented cases where community feedback directly influenced the Universal House of Justice's approach to a specific law in the Kitáb-i-Aqdas? 
 
@@ -213,7 +213,7 @@ These efforts are ongoing and reflect a continuous learning process. The Bahá'�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 While the emphasis on a global perspective and collective maturity is understandable, it seems to maintain a certain distance from direct, documented cases of local impact on law application. If specific examples aren't widely publicized, does this suggest a gap in transparency or communication within the Bahá'í community about how community feedback is utilized by the Universal House of Justice? Or is it more a matter of maintaining confidentiality due to the sensitivity of these consultations?
 

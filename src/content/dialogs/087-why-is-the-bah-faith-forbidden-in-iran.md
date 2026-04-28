@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/087-why-is-the-bah-faith-forbidden-in-iran-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith is illegal in Iran, the country of its origin. What's the actual basis of the Iranian state's persecution, and why have Bahá'ís remained committed to the country?
 
@@ -30,7 +30,7 @@ Despite the severe persecution, including discrimination, imprisonment, and deni
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Jafar, you mention that the Bahá'í Faith challenges traditional clerical authority and interpretations, leading to hostility. Can you provide specific examples or writings from the Bahá'í texts that illustrate this challenge? I'm also curious about the accusations of foreign influence. Have there been documented instances or propaganda from the Iranian state that perpetuate this narrative? Lastly, you touched on the principle of service to humanity—how do Bahá'ís manage to contribute positively in such a hostile environment, and are there any notable examples of this service in action?
 
@@ -50,7 +50,7 @@ Despite these challenges, Bahá'ís have consistently sought to contribute posit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The writings and historical context you mention illustrate the deep-rooted nature of the clerical opposition. But there's a nuance I'm curious about—how do the Bahá'í teachings on progressive revelation specifically threaten the clerical establishment? Is there a particular doctrine or interpretation that is especially contentious?
 
@@ -72,7 +72,7 @@ Regarding the Bahá'í Institute for Higher Education (BIHE), it operates as an 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The idea of progressive revelation seems inherently inclusive, yet it's clear why it threatens entrenched clerical authority. Do you think the interpretation of Bahá'u'lláh's teachings as a continuation beyond Muhammad is a core reason for the severity of the persecution? How do the Bahá'í texts address the concept of finality in revelation—are there any writings where Bahá'u'lláh or 'Abdu'l-Bahá explicitly discuss this tension with Islam?
 
@@ -96,7 +96,7 @@ Regarding the BIHE, international partnerships with universities often involve r
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Bahá'u'lláh's emphasis on the continuity of divine revelation does indeed seem to undercut the idea of a final, unalterable message, which is central to many Islamic teachings. However, I'm curious about how Bahá'u'lláh and 'Abdu'l-Bahá address any potential accusations of undermining Islamic legitimacy. Are there particular passages where they confront these criticisms head-on, specifically addressing Muslim believers or clerics?
 
@@ -120,7 +120,7 @@ International collaborations through the BIHE have had a profound impact on stud
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The emphasis on respect and unity among religions in Bahá'u'lláh's and 'Abdu'l-Bahá's writings is clear, yet I wonder if this theological approach has tangible impacts on dialogue with Muslim clerics or communities in Iran, especially those who might be open to reconsidering their stance. Are there instances where Bahá'í efforts have led to any reduction in tensions or misconceptions, perhaps through informal or personal engagements?
 
@@ -140,7 +140,7 @@ BIHE graduates have contributed significantly both within Iran and abroad. Many 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Given the personal interactions and acts of service by Bahá'ís that you mentioned, do you think there might be a potential for these small-scale efforts to eventually create a ripple effect within Iranian society? Is there any evidence or indication that these individual connections are leading to a broader shift in societal perceptions or at least sowing seeds for future change?
 
@@ -160,7 +160,7 @@ For the Bahá'í Faith to gain legal recognition in Iran, significant changes wo
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The idea of small-scale efforts by Bahá'ís gradually influencing societal perceptions is quite hopeful, and it emphasizes the long view that transformation often requires. But given the socio-political pressures in Iran, do you think there's a risk that these personal acts of kindness might be seen as merely individual exceptions rather than indicative of a broader community ethos? How might the Bahá'í community amplify these efforts to ensure they are perceived as part of a larger narrative of Bahá'í values and contributions?
 
@@ -180,7 +180,7 @@ Looking to historical precedents, there are examples where international advocac
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The idea of amplifying individual efforts to reflect a collective ethos is crucial, especially in an environment that seeks to fragment and isolate communities like the Bahá'ís. How might the Bahá'í community increase visibility for these acts of kindness and service in a way that resonates with broader Iranian society without triggering governmental backlash? Could there be safe, creative ways to share these stories more widely within Iran that haven't been explored yet?
 
@@ -200,7 +200,7 @@ In adapting lessons from international advocacy efforts, such as those against a
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The subtlety required to increase visibility within Iran is indeed a delicate balance, but the suggestion of leveraging cultural contexts like art, music, or literature holds promise. Could you elaborate on how the Bahá'í community might harness these creative avenues without raising suspicion, perhaps through metaphor or allegory that resonates with broader societal values?
 

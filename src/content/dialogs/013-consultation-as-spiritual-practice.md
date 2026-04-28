@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/013-consultation-as-spiritual-practice-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'í consultation is often described as a spiritual practice, not just a decision-making method. What does that distinction mean in practice?
 
@@ -28,7 +28,7 @@ In practice, this involves approaching consultation with humility, detachment fr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 It sounds like you're saying the approach and mindset in Bahá'í consultation make it spiritual. But how do the principles of humility, detachment, and courtesy specifically transform a meeting from mundane to spiritual? Can you point to any Bahá'í texts that explicitly link these qualities to the notion of consultation as a spiritual practice? I'm curious how this differs from secular processes that might also value respectful listening and collaboration.
 
@@ -46,7 +46,7 @@ This differs from secular processes that might value respectful listening and co
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You've pointed to Bahá’u’lláh's description of consultation involving "selfless devotion to truth" and aligning with "the will of God," but how do these concepts practically affect the outcomes of consultation? Are there examples or stories within the Bahá'í tradition that illustrate how this spiritual approach leads to different decisions or solutions than a secular approach might? Additionally, how do community members reconcile when their understanding of divine guidance diverges? Can you provide examples of how the principle of seeking divine guidance has practically influenced a specific decision or community consultation?
 
@@ -66,7 +66,7 @@ While specific decisions influenced by divine guidance might not always be docum
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that the Bahá'í community's consultations, even under persecution, focused on spiritual principles to maintain unity and resilience. But how does this spiritual consultation translate when dealing with practical or contentious issues like financial management or political involvement? Are there any documented cases where Bahá'í consultation led to innovative decisions that diverged from what secular approaches might have produced? I'm particularly interested in how the community handles complex issues where spiritual guidance isn't immediately clear or when there's significant disagreement. Can you pinpoint any specific instances or provide more details about how a decision was reached that exemplifies this spiritual consultation in action?
 
@@ -86,7 +86,7 @@ Ultimately, the principle of consultation as a spiritual practice enables the Ba
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 You mentioned that financial management and social projects in pioneering areas benefited from Bahá'í consultation by balancing immediate needs with long-term goals through spiritual guidance. However, without specific examples, it's difficult to assess what makes these decisions distinct from secular decision-making processes that also aim for sustainable solutions. Can you provide more detailed accounts of particular decisions or projects where Bahá'í consultation led to outcomes that might have been unexpected or innovative compared to a secular approach? For example, how did a specific community tackle a financial issue through consultation, and what role did spiritual principles play in the decision-making process? Details on how exactly these spiritual principles were applied in practice would be invaluable.
 
@@ -106,7 +106,7 @@ The emphasis on spiritual principles such as unity, service, and equality shaped
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The Barli Development Institute is indeed a fascinating example. The integration of spiritual education with vocational training marks a clear departure from conventional secular approaches, which might prioritize immediate economic outcomes. However, I'm curious—how do such projects measure success in a way that accounts for both spiritual and material progress? Are there metrics or criteria used in Bahá'í consultation to evaluate outcomes that aren't primarily economic? Furthermore, when the principle of detachment leads to prioritizing community well-being over individual gain, how does the community ensure that those involved remain motivated and dedicated? Can you provide specific examples of how these spiritual principles were used to motivate and engage stakeholders effectively? I'm interested in understanding how the balance between spiritual principles and practical considerations is maintained in these projects.
 
@@ -138,7 +138,7 @@ By balancing spiritual principles with practical considerations, Bahá'í projec
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The dual metrics of success you mentioned—material and spiritual—are intriguing, especially since they expand the scope of evaluation beyond what is typically quantifiable. However, can you clarify how specific spiritual metrics are identified and tracked? For example, are there explicit criteria or indicators used to measure spiritual growth and community unity, or is it more subjective? Additionally, in projects like the Barli Institute, what happens when the material and spiritual outcomes are at odds? How does the consultation process navigate potential conflicts between these dimensions, and can you share how a specific decision was resolved when such a conflict arose?
 
@@ -168,7 +168,7 @@ The goal is to find a balance where material progress supports and enhances spir
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The qualitative and observational methods for tracking spiritual growth and unity are interesting, as they provide a more holistic view of a project's impact. However, these methods can seem quite subjective. How does the community ensure that these subjective measures are consistently interpreted and applied across different projects and communities? Are there guidelines or frameworks in place to guide these assessments? 
 
@@ -198,7 +198,7 @@ The development and monitoring of the mentoring solution rely heavily on consult
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The structured approach you describe for maintaining consistency and effectiveness in mentoring roles is insightful, especially with the emphasis on shared principles and ongoing consultation. However, I'm curious about how the community navigates potential challenges in this process. For instance, what happens when mentors and mentees have differing interpretations of the spiritual principles they're meant to uphold? How do you ensure that the training and feedback mechanisms truly reflect and reinforce the project's values, rather than unintentionally reinforcing biases or subjective interpretations? Can you provide specific examples, perhaps from the Barli Institute, where these challenges were addressed through consultation or how these evaluations led to significant changes in the mentoring process? Additionally, how does the community measure the long-term impact of these roles on both the mentors and mentees?
 
@@ -232,7 +232,7 @@ By maintaining a commitment to consultation and the principles of the Bahá'í F
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The structured use of consultation and feedback to navigate challenges in mentoring roles is indeed comprehensive. However, the reliance on self-assessment and community observation seems to lean heavily on subjective interpretations. Are there any instances where the Barli Institute or similar projects have faced significant disagreements or challenges in interpreting these subjective indicators? How were those resolved, particularly when they involved deeply held beliefs or personal biases? 
 

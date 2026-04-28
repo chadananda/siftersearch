@@ -14,7 +14,7 @@ excerpt: "Explores Naw-Rúz's cultural and spiritual significance"
 featured: false
 heroImage: /images/dialog/063-naw-rz-the-new-year-and-why-it-matters-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Naw-Rúz is celebrated at the spring equinox as the Bahá'í new year. It's also the Persian new year. What is the Bahá'í Faith doing with this Persian holiday — adopting it, transforming it, or universalizing it?
 
@@ -28,7 +28,7 @@ In the Bahá'í Faith, Naw-Rúz is universalized as it takes on a spiritual sign
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But isn't there a risk here of cultural appropriation, where a religious practice is universalized and potentially detached from its cultural roots? How does the Bahá'í Faith ensure that the universalization of Naw-Rúz respects and honors its Persian origins while simultaneously making it relevant to a global community? Can you point to any specific teachings from Bahá'u'lláh or 'Abdu'l-Bahá that address this balance between respecting cultural roots and promoting universal unity?
 
@@ -44,7 +44,7 @@ If you have more questions or would like to explore this further, I'd be happy t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 You're leaning heavily on the principle of "unity in diversity," but what does that actually look like in practice during Naw-Rúz celebrations? Do Bahá'í communities integrate specific Persian traditions into their observance, or do they create entirely new practices that reflect their local customs? Also, you mentioned that Bahá'u'lláh affirmed Naw-Rúz as a holy day — can you provide a specific reference or quote from his writings that illustrates how he envisioned this celebration in the context of the Bahá'í Faith? Understanding his perspective might shed more light on how Naw-Rúz is meant to balance respect for its origins with its universal application.
 
@@ -66,7 +66,7 @@ These teachings illustrate how Naw-Rúz can be celebrated in a manner that both 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The references you provided offer some insight, but they still leave me wondering about the specifics of how Bahá'í communities balance this cultural respect with universal application. When you mention elements like the exchanging of gifts, are these practices directly borrowed from Persian traditions, or are they adapted to suit different cultural contexts? Can you give examples of how Naw-Rúz is meaningfully celebrated in a non-Persian context? Furthermore, how do the teachings of Bahá'u'lláh address the potential tension between preserving cultural identities and the universality of Bahá'í principles? Are there instances where cultural practices had to be modified or even set aside to align with Bahá'í teachings? I'm trying to understand how these principles are applied in real-world scenarios, especially across diverse communities.
 
@@ -86,7 +86,7 @@ In every community, this balance is a dynamic process, one of consultation and r
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 These examples illustrate how Bahá'í principles might guide adaptation, but they still leave room for interpretation about what gets preserved versus changed. Take the Bahá'í approach to marriage that you mentioned: can you point to specific guidance from the writings on how communities decide which cultural practices to adopt or modify? Are there guidelines or processes, perhaps in the writings of 'Abdu'l-Bahá or Shoghi Effendi, that help communities navigate these decisions collectively? Furthermore, given the emphasis on consultation, how do Bahá'í communities ensure that all voices are heard, especially minority cultural voices, when deciding on how to incorporate local elements into Naw-Rúz celebrations? Is there a risk that the broader push for universality might overshadow individual expressions of cultural identity?
 
@@ -106,7 +106,7 @@ While there is always a risk that the emphasis on universality could overshadow 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Consultation certainly sounds like a valuable tool for ensuring diverse voices are heard, but I'm curious about its practical application. How do Bahá'í communities ensure that the consultation process genuinely includes minority cultural voices rather than just paying lip service to inclusivity? Are there any mechanisms or guidelines that actively promote this inclusivity, especially in regions where certain cultures might be more dominant? Also, how does the principle of consultation handle disagreements, particularly when there's a tension between a cultural practice and Bahá'í principles? Are there examples of how such tensions have been resolved in the past? Understanding the practicalities could provide a clearer picture of how these principles are lived out in real communities.
 
@@ -128,7 +128,7 @@ In practice, the emphasis on consultation aims to foster an environment where di
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 These processes and principles sound quite ideal, but I'm still curious about how they function in practice, especially in areas with historical imbalances of power or representation. How do Bahá'í communities ensure that consultation is not just a formality where dominant cultural voices overshadow minority ones? Are there specific protocols to counteract the risk of dominant voices prevailing in decision-making? Also, I'm interested in the concept of "deferred decisions" you mentioned. Is there a structured approach to revisiting these deferred decisions to ensure they are eventually resolved and not perpetually postponed? I'd appreciate concrete examples or accounts from Bahá'í communities that have navigated these practical challenges.
 
@@ -150,7 +150,7 @@ While every community has its unique dynamics, the overarching goal is to create
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 These strategies for promoting inclusivity in consultation are promising, but I'm still left wondering how they're consistently applied across different communities, especially in areas where entrenched cultural hierarchies might exist. Are there recorded instances of these protocols effectively changing dynamics in communities where minority voices had previously been marginalized? Also, how do the Bahá'í institutions ensure that deferred decisions are revisited with fresh perspectives rather than just rehashing old arguments? Is there an emphasis on education or training in the principles of consultation to equip members with the necessary skills for this process, particularly in diverse settings? It would be helpful to hear about specific cases or testimonies that highlight the evolution of community practices through effective consultation and decision-making.
 
@@ -172,7 +172,7 @@ Ultimately, the Bahá'í approach to consultation is designed to be adaptable an
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It's insightful to hear how Bahá'í communities strive for inclusivity through these frameworks, but I remain curious about the prevalence and impact of training in consultation. How widespread is this educational initiative across various Bahá'í communities, particularly in regions where cultural hierarchies are deeply rooted? Do these training sessions involve explicit guidance on overcoming cultural biases during consultation, and how are they tailored to address the specific dynamics of each community? Furthermore, while iteration and reflection sound promising for deferred decisions, what mechanisms are in place to ensure accountability and prevent decision fatigue, where pressing issues remain unresolved? Can you share more about the feedback loops between the Local Spiritual Assemblies and the community members in ensuring that consultation results in tangible outcomes? Specific examples or testimonies would be really helpful to understand how these principles have been actualized in different contexts.
 
@@ -196,7 +196,7 @@ Overall, the Bahá'í approach to consultation and community decision-making is 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The principles and frameworks you describe certainly seem well-intentioned, but I can't help but wonder how well they adapt to real-world complexities. Can you share any insights into the challenges Bahá'í communities face when these ideals meet reality, especially in places with persistent socio-cultural divides? Is there evidence or research on how effectively these consultation practices are implemented and their actual impact on community cohesion and decision-making efficacy? Moreover, when feedback loops uncover discrepancies between intended outcomes and actual experiences, how do Local Spiritual Assemblies adjust their strategies to address these gaps? It would be beneficial to learn about any documented instances or research that highlight both successes and areas for improvement in the application of consultation across diverse Bahá'í communities.
 

@@ -14,7 +14,7 @@ excerpt: "Explains Manifestations' role clearly"
 featured: false
 heroImage: /images/dialog/056-what-it-means-to-be-a-manifestation-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith calls Bahá'u'lláh, the Báb, Christ, Muhammad, and others 'Manifestations of God.' What ontological category is that, and how is it different from prophet, avatar, or god-man?
 
@@ -32,7 +32,7 @@ In essence, Manifestations of God are seen as unique, recurring figures througho
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 This explanation certainly provides a nuanced view, but it seems like the concept of "Manifestations of God" might blur distinctions rather than clarify them. For instance, you say they embody both a human and divine station, yet you maintain that they are not God incarnate. This seems to dance close to concepts like the Christian understanding of Christ's dual nature, leading to possible theological ambiguities.
 
@@ -52,7 +52,7 @@ Regarding salvation, Bahá'í teachings focus on spiritual education and transfo
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The passage from *The Kitáb-i-Aqdas* does clarify the separation between God and the Manifestations, but it still raises questions about the nature of their "pure and stainless Soul." This seems to imply a level of purity that is beyond human, suggesting a unique form of existence that may border on divine. How does this align with the idea that they are not God incarnate?
 
@@ -70,7 +70,7 @@ The claim of universality lies in the belief that all major religious traditions
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You’re painting a broad picture of progressive revelation, which elegantly ties together diverse religious traditions, but isn’t there an inherent tension in claiming that each Manifestation brings unique guidance suited to their time while also suggesting a universal applicability of their teachings? If these teachings are context-specific, how do they remain relevant today, especially for people who may not have had historical access to them? Can you provide an example from Bahá'u'lláh’s writings that illustrates how a seemingly time-bound teaching can transcend its original context to maintain relevance in the modern world?
 
@@ -92,7 +92,7 @@ Regarding the need for successive Manifestations, while spiritual truths are ind
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The idea that each Manifestation rearticulates eternal truths is compelling and addresses the evolving dynamics of human society. However, if the essence of their teachings is universal and consistent, what necessitates new codifications of these principles in successive dispensations? Could this not imply that the core spiritual teachings, if truly universal, would suffice regardless of societal evolution? 
 
@@ -112,7 +112,7 @@ The Bahá'í perspective acknowledges that the potential for misunderstanding or
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The examples of teachings transcending their original contexts, like Christ's emphasis on love and Muhammad's principles of justice, are indeed powerful. Yet, these are often filtered through a complex web of interpretations and historical circumstances that can significantly alter their original intent. How does the Bahá'í Faith address the potential divergence from original teachings caused by centuries of human interpretation, especially without a central authoritative structure like the papacy in Catholicism to provide official interpretation?
 
@@ -132,7 +132,7 @@ Through the Covenant and the institution of the Universal House of Justice, Bah�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The concept of the Covenant and the role of the Universal House of Justice as authoritative bodies for interpretation is intriguing and offers structure within the Bahá'í Faith. However, doesn't relying on designated interpreters risk concentrating interpretive authority and potentially stifling individual spiritual insight or innovation? How does this balance with the Bahá'í emphasis on independent investigation of truth?
 
@@ -152,7 +152,7 @@ The safeguards against dilution of core principles include the emphasis on commu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The balance between authoritative guidance and independent investigation is a delicate one. However, doesn't the directive for personal inquiry become somewhat circumscribed if final interpretive authority rests with the Universal House of Justice? In practical terms, how can individuals critically engage with Bahá'í teachings without fear of contradicting established interpretations, especially when exploring nuanced or contentious issues?
 
@@ -174,7 +174,7 @@ An example of significant development is the series of global conferences focusi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The mechanism of community consultation and the engagement of grassroots efforts are impressive in their ability to ground Bahá'í teachings in practical realities, yet they still raise questions about the responsiveness to rapid cultural shifts. How does the Bahá'í framework ensure agility in addressing urgent social issues that may not wait for the usual processes of consultation and interpretation?
 
@@ -198,7 +198,7 @@ Through these mechanisms, the Bahá'í community seeks to remain responsive and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The emphasis on consultation and inclusivity as mechanisms for responsiveness within the Bahá'í framework highlights an admirable commitment to principled action. However, are there examples where the Universal House of Justice has needed to step in decisively to address areas where cultural inertia might delay progress on urgent issues, such as gender equality or racial justice?
 

@@ -14,7 +14,7 @@ excerpt: "Explores practical applications of principles"
 featured: false
 heroImage: /images/dialog/028-why-is-politics-forbidden-but-social-action-required-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'ís are forbidden to engage in partisan politics — yet the writings require active engagement with social transformation. How does that boundary actually work?
 
@@ -30,7 +30,7 @@ In essence, the boundary works by ensuring that Bahá'ís engage with social iss
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 While that explanation provides a general framework, I'm curious about how this plays out in practice. Let's say a Bahá'í feels passionate about a particular social issue that is heavily politicized, like climate change or racial justice. How would they navigate advocating for change without slipping into partisan dynamics, especially when these issues often have clear political divides? Can you point to specific guidance from Bahá'í writings or statements from the Universal House of Justice that illuminate how to effectively engage in such situations?
 
@@ -50,7 +50,7 @@ This guidance allows Bahá'ís to be active agents of change, advocating for soc
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The suggestion to focus on universal principles like unity and justice is a good start, but I wonder how this plays out when concrete action is required. For instance, if a Bahá'í is working on climate action, specific policy measures often need to be supported or opposed, which can appear partisan. Can you cite any specific examples or statements where Bahá'í institutions or communities have navigated this boundary effectively, perhaps with climate initiatives or racial equality efforts? Additionally, while emphasizing unity and dialogue sounds admirable, isn't there a risk of neutralizing the urgency and depth of these issues if Bahá'ís are overly cautious about appearing non-partisan? How do we reconcile these tensions pragmatically?
 
@@ -72,7 +72,7 @@ In practice, this might involve supporting specific policy measures that align w
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, your points about how Bahá'í institutions like the BIC navigate the balance between action and non-partisanship offer an interesting model, particularly in global forums. However, I'm still curious about how this plays out at more local or national levels where the political context can be more polarized. Are there documented instances of Bahá'í communities effectively advocating for policy change on contentious issues within their own countries, where the political landscape might be more divided?
 
@@ -94,7 +94,7 @@ These teachings aim to ensure that Bahá'ís maintain their principles while eff
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, I appreciate the reference to Michael Karlberg's work on "constructive resilience," but I notice that the passage doesn't come directly from the central figures of the Bahá'í Faith or the Universal House of Justice. Could you cite direct guidance from these authoritative sources on handling urgent social issues like climate change or racial justice without compromising Bahá'í principles?
 
@@ -120,7 +120,7 @@ In polarized environments, this means focusing on the core issues and collaborat
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while the citations from the Universal House of Justice provide a framework for addressing issues like climate change and racial justice within the Bahá'í principles, there's still an inherent challenge in truly gauging the partisanship of potential partners. The idea of not aligning with "divisive political stances" seems quite abstract when, in practice, many organizations that share Bahá'í goals may have political entanglements. How do local Bahá'í communities practically apply these teachings in their decision-making processes regarding partnerships? Is there a mechanism within Bahá'í administrative structures that assists individuals or communities in making these judgments, or is it solely reliant on personal or community consultation?
 
@@ -144,7 +144,7 @@ Ultimately, the goal is to contribute positively and constructively to society, 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, it's helpful to hear how the process of consultation and guidance from Spiritual Assemblies can aid Bahá'í communities in discerning appropriate partnerships, but I wonder how this approach is practically applied on the ground, especially in highly divided regions. Can you provide a specific example of how a local Bahá'í community has navigated a contentious social issue without slipping into partisanship? How did they involve the Spiritual Assemblies in their decision-making process, and what outcomes did they achieve?
 
@@ -166,7 +166,7 @@ Overall, the Bahá'í emphasis on both immediate and long-term strategies allows
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, the example you gave of Bahá'í communities in the United States engaging in race unity dialogues is a helpful illustration. However, it still feels somewhat abstract without concrete details of how these events avoided partisanship in a politically charged atmosphere. Can you provide more specific details on the methods used during these dialogues and how the involvement of the Local Spiritual Assemblies shaped the discussions? 
 
@@ -192,7 +192,7 @@ While specific quotes or detailed criteria from the writings might not be explic
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, while the general practices you describe for creating non-partisan dialogues offer some clarity, I'm curious about specific examples of how these principles manifest in actual events. For instance, did the Local Spiritual Assemblies provide specific guidelines or set topics to steer clear of contentious partisan debates during these dialogues? How do they ensure that political affiliations or biases of participants don't inadvertently influence the outcomes?
 
@@ -218,7 +218,7 @@ The balance between consultation and action allows Bahá'í communities to respo
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, the idea that Bahá'í communities foster non-partisan dialogues by focusing on personal storytelling and shared values provides a clearer picture of how they might navigate political sensitivities. However, I'm still interested in how this is operationalized during the event itself. Are there specific techniques or methodologies employed during these dialogues to ensure discussions remain constructive and non-partisan, especially if discussions veer into political territory? 
 

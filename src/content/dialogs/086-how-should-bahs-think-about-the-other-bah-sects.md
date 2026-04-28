@@ -14,7 +14,7 @@ excerpt: "Emphasizes consultation and unity"
 featured: false
 heroImage: /images/dialog/086-how-should-bahs-think-about-the-other-bah-sects-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Most Bahá'ís are unaware of the other small Bahá'í-derived groups (Orthodox Bahá'ís, Bahá'ís Under the Provisions of the Covenant, etc.). What is the Bahá'í Faith's position on these groups, and why?
 
@@ -30,7 +30,7 @@ The emphasis on unity and adherence to the Covenant is intended to prevent divis
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 The emphasis on the Covenant is indeed central, but isn't it worth questioning how the Bahá'í Faith addresses diversity in interpretation within its unity? After all, other religious movements have dealt with interpretative differences without necessarily fracturing. 'Abdu'l-Bahá in his writings emphasized unity in diversity. How does the Bahá'í Faith reconcile the need for a unified administrative order with the individual's quest for personal understanding? Are there writings from Bahá'u'lláh or 'Abdu'l-Bahá that discuss how to handle interpretative differences within the faith?
 
@@ -48,7 +48,7 @@ This approach allows for personal exploration and understanding within the frame
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 While Schaefer's interpretation provides a modern perspective on diversity of thought within the Bahá'í Faith, I'm curious about how these ideas are grounded in primary sources. Can you point to specific writings from Bahá'u'lláh or 'Abdu'l-Bahá that explicitly address the handling of diverse interpretations within the community? How do these writings address the balance between individual insight and collective unity, especially considering the challenges posed by those who diverge significantly from the mainstream interpretation? It seems the practical application of unity in diversity isn’t always straightforward, especially when it comes to maintaining cohesion without stifling personal understanding. How does the Faith navigate this tension?
 
@@ -68,7 +68,7 @@ Through these writings, the Bahá'í Faith navigates the tension between unity a
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, your response provides a holistic view, but I'm still grappling with how these principles play out in practice. 'Abdu'l-Bahá's caution against literal interpretation is insightful, but are there specific texts where he or Bahá'u'lláh discuss the practical steps for addressing significant divergences in interpretation? How do these teachings apply when differences begin to challenge the core tenets or structure of the Faith? 
 
@@ -98,7 +98,7 @@ These writings illustrate how the Bahá'í Faith seeks to harmonize individual s
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The foundational principles you've shared are indeed aimed at preserving unity while allowing for personal insight. However, given the historical context where major religious schisms have often begun with interpretive differences, how does the Bahá'í Faith actively engage with individuals or groups who begin to diverge significantly in their views? Are there specific processes or dialogues encouraged by the administrative institutions to address such divergences before they lead to formal splits?
 
@@ -128,7 +128,7 @@ These teachings and structures help maintain the coherence of the Bahá'í commu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The consultative approach you mentioned seems vital, but I'm curious about how effectively it's applied in practice. For instance, when local or national bodies engage in consultation, what is the process for ensuring these discussions remain constructive rather than adversarial? Are there specific guidelines or examples from the writings of the Universal House of Justice that illustrate how consultation is meant to function in cases of significant divergence?
 
@@ -158,7 +158,7 @@ These approaches demonstrate how the Bahá'í Faith seeks to maintain unity whil
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, the principles you describe for consultation seem robust, but I'm curious about the practical challenges Bahá'í communities might face when implementing them. For example, in cases where personal opinions are deeply entrenched, how do Bahá'í institutions ensure that detachment and courtesy don't just become ideals but are actively practiced during consultation? Are there specific examples or stories from Bahá'í history where such principles were successfully applied to resolve conflicts?
 
@@ -188,7 +188,7 @@ Through these mechanisms, the Bahá'í community strives to translate its princi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It's encouraging to hear about the iterative nature of consultation practices and the focus on continuous learning within the Bahá'í community. However, I'm still seeking clarity on how these principles effectively translate into resolving deeply rooted conflicts. Your mention of historical examples, like the early Iranian Bahá'í community, is intriguing. Could you elaborate on specific instances where entrenched opinions were successfully reconciled through consultation? What were the key factors that led to resolution, and how was detachment from personal opinions achieved?
 
@@ -216,7 +216,7 @@ While the specifics of each situation may vary, the Bahá'í community's approac
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, while I appreciate the emphasis on consultation and inclusivity in theory, the lack of specific documented examples of successful conflict resolution within the Bahá'í community leaves me wondering how these principles are applied in real-world scenarios. Can you point to any specific instance where entrenched disagreements were resolved in a documented way, perhaps through historical records, letters, or reports from the Universal House of Justice or other Bahá'í institutions?
 
@@ -246,7 +246,7 @@ The Bahá'í model of maintaining unity amidst diversity relies heavily on conti
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, I recognize the importance of confidentiality and respect in the consultative processes of the Bahá'í Faith, which might limit the detailed documentation of specific conflicts. However, without concrete examples, it becomes challenging to fully grasp the practical efficacy of these processes. Is there a way to access aggregated insights or case studies—perhaps anonymized—that illustrate how certain principles effectively led to conflict resolution and strengthened community ties?
 

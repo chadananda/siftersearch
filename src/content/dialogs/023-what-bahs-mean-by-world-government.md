@@ -14,7 +14,7 @@ excerpt: "Engages with complex questions"
 featured: false
 heroImage: /images/dialog/023-what-bahs-mean-by-world-government-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 When Bahá'í writings speak of a future 'world government,' is that a unitary global state, a federation, or something more like the EU?
 
@@ -28,7 +28,7 @@ The idea is not to create a monolithic system but rather a global framework wher
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Shoghi Effendi's vision of a "world commonwealth" is intriguing, especially in its balance of national autonomy with a global authority. But how realistic is this balance in practice, given historical tendencies of centralized powers to encroach on local sovereignty? How does the Bahá'í Faith address potential conflicts between the global authority and national governments? Are there specific mechanisms mentioned in the writings that are intended to preserve this balance while still achieving global unity? And how does this vision reconcile with current nationalistic trends we see in many parts of the world?
 
@@ -46,7 +46,7 @@ While specific mechanisms are not detailed in the manner of a political blueprin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of consultation as a mechanism for balancing national autonomy with global authority is a compelling one, but how does it practically manifest in a global system? Does the Bahá'í vision provide any specific guidance on the structures or processes through which consultation might take place on an international scale? Also, while a shared moral and spiritual foundation is an admirable goal, history shows that moral and spiritual values can be interpreted quite differently across cultures. How does the Bahá'í Faith propose to address these differing interpretations in a way that genuinely respects diversity while fostering unity? Lastly, the assertion that current nationalistic trends are part of an evolutionary process seems somewhat optimistic. Can you point to specific teachings or examples from the Bahá'í writings that address how such nationalistic fervor might be transformed into a more global consciousness?
 
@@ -64,7 +64,7 @@ An example from the Bahá'í writings is the emphasis on world citizenship and t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The concepts you've mentioned—unity, equality, and the inherent dignity of every human being—are powerful, yet they often remain abstract without concrete examples of implementation. Could you provide any specific instances from the Bahá'í community or teachings where these principles have been effectively applied, particularly in diverse cultural settings? I'm also curious about the notion of world citizenship that you mentioned. How does one practically embody this idea while still engaging with the immediate socio-political realities of their own nation? Additionally, you referred to the Bahá'í belief that crises can be catalysts for growth. Are there historical precedents in the Bahá'í writings or history that illustrate how a seemingly divisive crisis was transformed into an opportunity for unity? Lastly, while the idea of transcending nationalism is idealistic, how does the Bahá'í Faith propose to engage with individuals who perceive such a shift as a threat to their cultural identity?
 
@@ -82,7 +82,7 @@ When it comes to engaging with those who see transcending nationalism as a threa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The Ruhi Institute is indeed a fascinating example of Bahá'í principles in action, but it's primarily educational and community-focused. How does this model scale up to address larger structural issues in global governance? Can you give examples of how Bahá'í consultation or the institute's principles have influenced policy or conflict resolution on a broader scale? 
 
@@ -104,7 +104,7 @@ These principles are reflected in how Bahá'í communities operate, striving to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 While the grassroots focus of Bahá'í-inspired initiatives like the Ruhi Institute is commendable, the leap from local community engagement to influencing global governance seems substantial. Are there documented instances or case studies where these principles have directly impacted formal policy-making or conflict resolution on a national or international level? It would be helpful to understand concrete examples beyond theoretical applications.
 
@@ -126,7 +126,7 @@ These approaches are embedded in the community practices of the Bahá'í Faith, 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The involvement of the Bahá'í International Community with the United Nations is an interesting example, but it seems more about influencing discourse than directly impacting policy or conflict resolution. Are there specific cases where Bahá'í consultation methods have been utilized in formal diplomatic processes or peace efforts that led to measurable outcomes? 
 
@@ -148,7 +148,7 @@ These approaches reflect a commitment to creating systems where every culture ha
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It's useful to explore where Bahá'í consultation principles have been applied successfully, even at grassroots levels, but without concrete examples at the diplomatic or national scale, it remains somewhat theoretical. Are there any specific cases, perhaps less documented, where these methods have influenced peace negotiations or policy frameworks, even indirectly? It would strengthen the argument for their potential impact at a higher level.
 
@@ -170,7 +170,7 @@ By focusing on these principles, the Bahá'í community seeks to create a model 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Colombia's peace-building initiatives are a valuable example of how Bahá'í principles can foster reconciliation and cohesion. However, I'm curious about the specifics of how these principles were integrated into the peace efforts. Did Bahá'í methods play a role in official negotiations or frameworks, or were they more about community-level healing and dialogue post-conflict? Understanding these details would give more clarity on their potential applicability at larger scales.
 
@@ -190,7 +190,7 @@ Regarding empowerment and shifting power dynamics, the Bahá'í teachings emphas
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The community-level work in Colombia is indeed meaningful, but it seems to stop short of influencing formal peace negotiations. Are there specific examples where Bahá'í principles have directly informed formal peace frameworks or have been utilized in more official diplomatic settings? Insights into how these principles can scale beyond grassroots initiatives would be enlightening.
 

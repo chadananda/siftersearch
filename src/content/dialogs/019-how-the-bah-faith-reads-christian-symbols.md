@@ -15,7 +15,7 @@ excerpt: "Emphasizes unity and interconnectedness"
 featured: false
 heroImage: /images/dialog/019-how-the-bah-faith-reads-christian-symbols-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh's interpretation of the symbols of Christianity — the resurrection, the Second Coming — differs from most Christian traditions. What is the Bahá'í reading, and why does it differ?
 
@@ -31,7 +31,7 @@ These interpretations differ because they emphasize the continuity of divine gui
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Isn't there a risk, though, in interpreting core events like the resurrection purely symbolically? Many Christian traditions hold these events as literal miracles that validate the authority and divinity of Christ. How does the Bahá'í viewpoint reconcile the potential dilution of these profound events' significance? And what specific writings from Bahá'u'lláh or 'Abdu'l-Bahá articulate this symbolic interpretation? I’d like to understand more about the textual basis for such readings.
 
@@ -51,7 +51,7 @@ This symbolic approach doesn't aim to diminish the significance of these events 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 But isn't there a tension between this symbolic interpretation and the emphasis in Christianity on miracles as testament to divine intervention? For many, the literal resurrection is central to the faith, not merely as a metaphor but as proof of Christ's triumph over death. By interpreting these events symbolically, is there a risk of overlooking the historical and doctrinal context that gives them their unique authority and role within Christianity?
 
@@ -73,7 +73,7 @@ This perspective does not seek to diminish the historical and doctrinal context 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, while I understand the emphasis on metaphor and symbol as a means to convey spiritual truths, it still feels like there's a gap between this approach and the historical context that defines much of Christian theology. For instance, how does Bahá'u'lláh's symbolic interpretation engage with the narrative of the Apostles, who bear witness to a physical resurrection? The Apostles' accounts were crucial for the early Christians, serving as a testament to Christ's divine authority.
 
@@ -97,7 +97,7 @@ In Bahá'í-Christian dialogue, this approach offers an opportunity to explore t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, while I see the value in seeking deeper spiritual truths across religious narratives, I'm still curious about how Bahá'ís balance the weight of historical events with symbolic interpretations. Specifically, how do Bahá'í teachings address the Apostles' role as eye-witnesses to the resurrection, which is such a cornerstone in Christian theology? Their testimonies seem to be more than just symbolic; they're presented as historical proof within the New Testament.
 
@@ -119,7 +119,7 @@ This perspective is intended to foster a dialogue that respects the historical r
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while 'Abdu'l-Bahá's explanation in "Some Answered Questions" provides an elegant way of understanding the resurrection as a metaphor for the revival of Christ's teachings, it still raises the question of how Bahá'ís interpret the physical resurrection narratives that are central to the New Testament. The distinction between Christ’s spiritual teachings and the physical events described by the Apostles seems to be at odds with the traditional Christian understanding of these events as literal.
 
@@ -143,7 +143,7 @@ The methodology for bridging interpretative differences involves focusing on sha
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, the approach you’ve outlined emphasizes a respectful, symbolic engagement with religious texts, which can be a catalyst for understanding shared spiritual principles. However, the tension remains around the degree to which Bahá'í teachings acknowledge the canonical authority of the New Testament alongside its symbolic readings. You mentioned that Bahá'ís regard the Apostles' accounts as conveying divinely inspired truths. But if the New Testament is viewed as metaphorical rather than literal, does this affect the perceived authority of these texts within the Bahá'í Faith? 
 
@@ -165,7 +165,7 @@ There are no strict guidelines or prescriptions for these interactions, but the 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, while I appreciate the nuanced balance you've described, I’m still left wondering how a Bahá'í might internally reconcile these symbolic interpretations with the historical facets of the New Testament. For instance, if the authority of the New Testament is acknowledged, yet its narratives are primarily viewed through a symbolic lens, how do Bahá'ís internally validate the historical claims of Christianity? In what ways do the Bahá'í teachings engage with the historical veracity of biblical events? 
 
@@ -189,7 +189,7 @@ In interfaith dialogue, this perspective can help bridge understanding by focusi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, I recognize the value of viewing religious history as a continuum, but this approach still seems to present challenges when it comes to specific historical claims in Christianity, such as the resurrection. If Bahá'ís honor the New Testament's authority, how do they engage with the belief that Jesus' physical resurrection is not just a spiritual metaphor but a historical event that validates Christian faith? How do Bahá'ís address this particular issue in a way that is sensitive to Christians who see the resurrection as foundational to their belief in Christ's divinity?
 
@@ -211,7 +211,7 @@ In this context, Bahá'í dialogue with Christians seeks to reassure that the re
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, I appreciate the emphasis on unity and interconnectedness in Bahá'í teachings, but I'm curious how this translates into practical interfaith engagement, especially when it comes to discussing foundational doctrines like the resurrection. If, as you say, Bahá'ís interpret the resurrection symbolically, how do they address the potential for misunderstanding or tension with Christians who see the physical resurrection as an indispensable confirmation of their faith?
 

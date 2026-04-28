@@ -15,7 +15,7 @@ excerpt: "Engages deeply with user's questions"
 featured: false
 heroImage: /images/dialog/008-why-forbid-asceticism-but-require-fasting-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh forbids monasticism and ascetic withdrawal from the world, yet requires a 19-day fast. Aren't these in tension? How is one a discipline and the other an excess?
 
@@ -29,7 +29,7 @@ On the other hand, the 19-day fast is a period of spiritual rejuvenation and dis
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But isn't there a fine line between spiritual rejuvenation and asceticism? The fast requires abstinence from food and drink during daylight, which could be seen as a form of self-denial not too dissimilar from ascetic practices. Could you point to any specific writings from Bahá'u'lláh that clarify how this fasting period aligns with engaging the world rather than withdrawing from it? How does this abstinence enhance one's ability to interact and contribute to society actively, rather than serving as a period of personal withdrawal?
 
@@ -47,7 +47,7 @@ The fasting period is not about withdrawing from life but rather serves as a sym
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The passage you quoted from the "Star of the West" presents fasting as a symbolic reminder rather than an end in itself. Yet, isn't there an inherent contradiction in needing to engage in physical abstention to cultivate spiritual virtues like patience and empathy? How does depriving oneself materially directly lead to such spiritual gains? Also, could you provide a source from Bahá'u'lláh himself that explicates how adhering to this physical discipline within the fast doesn't contradict the principle of world engagement? I see how fasting might sharpen spiritual focus, but where is the line drawn between this and the hermit's withdrawal for spiritual gain?
 
@@ -63,7 +63,7 @@ The distinction from ascetic practices lies in the intent and context. Asceticis
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Shoghi Effendi's explanation certainly frames the fast as a period of rejuvenation, but it still seems like a paradox that physical abstention can lead to greater engagement with the material world. You mention that the fast is not about self-denial for its own sake—yet, abstaining from essential needs like food and water can seem like an extreme form of self-denial to the uninitiated. 
 
@@ -85,7 +85,7 @@ In essence, the fasting period reinforces the Bahá'í principle that individual
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The explanation that personal transformation during the fast benefits the wider community is compelling, but it still leaves me wondering about the practical, tangible outcomes. How do these spiritual gains specifically translate into actions or initiatives that foster community development? Are there any documented examples or stories within the Bahá'í community where the benefits of fasting manifested in social projects or community initiatives that align with Bahá'í principles of service?
 
@@ -107,7 +107,7 @@ In essence, the Bahá'í community believes that the spiritual growth of individ
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Your description of the collective activities and consultative processes that occur during and after the fasting period helps clarify how personal spiritual discipline can feed into communal service. However, I am curious about how these practices are practically implemented to ensure continuity and effectiveness. Are there specific examples of initiatives that have arisen from the heightened spiritual focus following the fast? 
 
@@ -127,7 +127,7 @@ The framework for evaluating initiatives is not rigid but rather adaptive, allow
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 It seems that the reflection gatherings and consultative processes are crucial for ensuring that the spiritual insights gained during the fast are effectively translated into meaningful community action. However, I'm still curious about how this cycle of action and reflection is maintained over time to ensure sustained impact. 
 
@@ -153,7 +153,7 @@ In essence, the Bahá'í community's focus on consultation, reflection, and capa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The reflection gatherings and training institutes you mention certainly indicate a commitment to learning and adaptation, but I'm curious about the role of individual initiative within this framework. How do personal insights or revelations during the fast bubble up to influence community decisions or projects? Is there room for individual believers to propose new initiatives based on their personal spiritual experiences during the fast, and if so, how are these proposals integrated into the community's consultative process?
 
@@ -177,7 +177,7 @@ In essence, the Bahá'í community seeks to harness the richness of individual s
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Your explanation of the participatory consultative process sheds light on how individual experiences during the fast can indeed shape community initiatives. However, I am intrigued about the balance between individual insights and collective decision-making. How do Bahá'í communities ensure that the contributions of individuals, especially those related to personal spiritual experiences during the fast, are not just heard but actively influence and enhance community projects? Are there examples where individual proposals significantly transformed or redirected community initiatives?
 
@@ -199,7 +199,7 @@ The emphasis on unity in diversity means that even when there are differing pers
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanation highlights how the consultative process and the emphasis on unity in diversity allow individual insights to influence community initiatives, but I'm still curious about the practical outcomes. Can you share specific instances or stories where an individual's spiritual insights during the fast led to a measurable change or development within their community? 
 

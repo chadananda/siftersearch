@@ -14,7 +14,7 @@ excerpt: "Explores historical context of Bahá'í education"
 featured: false
 heroImage: /images/dialog/058-why-is-childhood-sacred-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'í teachings on the education of children are unusually rich and explicit. What's the underlying view of childhood — is it innocent, formative, sacred?
 
@@ -30,7 +30,7 @@ This view of childhood as innocent and full of potential aligns with the sacred 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mention that children are described as "a young tree" or "a pure mirror" in Bahá'í writings. These metaphors suggest a certain passivity, implying that children simply absorb what's around them. Is there a tension here between viewing childhood as sacred and formative yet potentially so passive? Does this view risk underestimating children's agency or their ability to actively contribute to their own development? How do Bahá'í teachings reconcile the nurturing of inherent potential with recognizing a child's own role in their development?
 
@@ -48,7 +48,7 @@ In this way, Bahá'í teachings reconcile the nurturing role of adults with the 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea that children possess "innate capacities" and a "noble essence" is intriguing. Is there a specific teaching or quote from Bahá'u'lláh or 'Abdu'l-Bahá that explicitly discusses this agency and potential in children? I’m curious about how Bahá'í writings articulate these active roles children play in their development. Additionally, how does this perspective align with or differ from societal views of childhood during the time the writings were revealed? How radical was this view compared to contemporary beliefs about education and child development?
 
@@ -68,7 +68,7 @@ This approach aligns with contemporary educational philosophies that emphasize c
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that the Bahá'í view on the education of children was quite radical for its time. Could you elaborate on how this view compares to specific educational practices or philosophies in the 19th century? For instance, how did it contrast with the prevailing models, like rote memorization or the strictly hierarchical teacher-student dynamics of the time? Also, while you referenced secondary sources like Taherzadeh, I'm curious if there are any direct writings from 'Abdu'l-Bahá or Bahá'u'lláh that not only discuss the potential of children but also explicitly endorse their agency — perhaps something from the Hidden Words or the Tablets of Bahá'u'lláh? Such primary sources would help illustrate how foundational this idea was in the Bahá'í Faith.
 
@@ -86,7 +86,7 @@ This perspective was indeed progressive for its time, aligning more closely with
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, I appreciate the contextual exploration, but if we truly want to grasp how the Bahá'í teachings were innovative, we need to probe deeper into the primary texts. Can you look into some of the foundational works like the Hidden Words or the Tablets of Bahá'u'lláh for direct statements that might hint at the active, participatory role of children in their development? For instance, Bahá'u'lláh's emphasis on the inherent nobility of every soul might implicitly recognize children's agency. And considering 'Abdu'l-Bahá's numerous talks on education, surely there are examples where he directly addresses how children might engage with their learning. This focus might give us a clearer picture of how radical and foundational these ideas were, especially when juxtaposing them with the prevalent educational practices of rote learning and hierarchy.
 
@@ -101,7 +101,7 @@ In terms of how radical this view was, the emphasis on moral and spiritual educa
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while I appreciate your efforts to contextualize the Bahá'í perspective within historical educational practices, I'm still seeking more concrete evidence from primary sources about the active role of children in their learning process. Bahá'u'lláh's emphasis on the nobility of the soul seems crucial here, but could you delve specifically into 'Abdu'l-Bahá's writings? He was particularly prolific on education and might provide more direct insights. For example, in his numerous talks and letters, does he discuss how children might participate in shaping their learning experiences or contribute to their communities from a young age? This could help us understand whether these teachings on agency and active participation were explicit and foundational, rather than just implied. Additionally, how do these teachings translate into contemporary Bahá'í practices concerning children's education? Are there any specific methods or curricula that reflect this philosophy today?
 
@@ -119,7 +119,7 @@ The Ruhi Institute, for example, offers a series of educational programs that in
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, while the overall framework you describe is valuable, it's crucial for our understanding to pinpoint specific teachings that illustrate the agency of children. 'Abdu'l-Bahá's emphasis on education should not just imply but explicitly state how children can actively shape their learning journeys. Also, while you've mentioned contemporary practices such as the Ruhi Institute, I'm interested in how these practices directly derive from foundational texts. Can you provide examples from 'Abdu'l-Bahá's talks or letters that outline children's roles as participants, perhaps touching on their contributions to family and community life? Additionally, how does the Bahá'í educational system practically implement these principles in ways that distinguish it from secular educational models? This deeper dive into both historical teachings and modern applications might clarify how these ideas were not just innovative but remain integral today.
 
@@ -139,7 +139,7 @@ This perspective aligns with the foundational Bahá'í view that education shoul
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, the metaphor of children as "young bushes in a garden" is insightful, but it seems to suggest that their worth depends significantly on external nurturing. If 'Abdu'l-Bahá compares them to living entities that can grow crooked without guidance, it raises a question about the inherent vs. cultivated aspects of their development. How might this view reconcile with the idea of innate nobility and agency? 
 
@@ -161,7 +161,7 @@ These programs are designed to help children understand the importance of their 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, I see how the metaphor and teachings provide a framework for balancing the cultivation of inherent qualities and external nurturing. However, without explicit statements on children's ability to initiate their own growth, the emphasis seems to tilt towards external guidance. How do Bahá'í educators ensure that this guidance doesn't overshadow a child's own exploratory and creative impulses? Is there a risk of over-directing their development, thereby limiting their agency?
 
@@ -181,7 +181,7 @@ Overall, the Bahá'í educational approach seeks to empower children by nurturin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, while the emphasis on creating environments that stimulate curiosity and encourage questions is promising, it seems there's a fine line between supportive guidance and overly prescriptive teaching. Are there any checks within the Bahá'í educational system to ensure that educators do not inadvertently stifle children’s creative impulses with well-intentioned guidance? How do educators balance imparting spiritual and moral teachings with fostering independent thinking and exploration?
 

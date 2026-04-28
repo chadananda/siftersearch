@@ -16,7 +16,7 @@ excerpt: "Engages with progressive revelation concept"
 featured: false
 heroImage: /images/dialog/005-alcohol-forbidden-tobacco-discouraged-why-the-asymmetry-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Why is alcohol categorically forbidden in the Bahá'í Faith, but tobacco only strongly discouraged rather than forbidden? Both are intoxicants of a kind. The asymmetry is not arbitrary — what's the textual reasoning?
 
@@ -36,7 +36,7 @@ The distinction seems to arise from the different impacts these substances are p
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Jafar, in the Bahá'í paradigm, spiritual perception and clarity are paramount. If both alcohol and tobacco impair the body—albeit in different ways—shouldn't the guidance regarding tobacco have evolved to align more closely with the strict prohibition of alcohol, given our contemporary understanding of tobacco's severe health impacts? The teachings in both cases seem to prioritize the effect on mental faculties. Could there be a deeper rationale behind the softer stance on tobacco beyond hygiene and social perceptions?
 
@@ -56,7 +56,7 @@ The teachings of Bahá'u'lláh and 'Abdu'l-Bahá often leave room for wisdom to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 That's an interesting point about the progressive nature of spiritual development and individual responsibility. However, if the Bahá'í Faith emphasizes progressive revelation, shouldn't there be clearer guidance on issues like tobacco as scientific understanding advances? If the harmful effects of tobacco are now indisputable and its impact on health is profound, doesn't the principle of preserving the "temple of the body" demand a more unified stance from the Bahá'í community? After all, health severely impacts one's ability to contribute to society and fulfill spiritual duties. Could this be a case where the principle of personal responsibility might need to be balanced with more definitive guidance from institutions?
 
@@ -73,7 +73,7 @@ The balance between individual choice and institutional guidance is a dynamic pr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Your explanation highlights the balance between personal responsibility and institutional guidance, which is certainly a key tenet of the Bahá'í Faith. However, given the faith's proactive stance on promoting well-being and spiritual clarity, I'm curious about how this balance is navigated when it involves issues with clear public health implications like tobacco use. The writings of 'Abdu'l-Bahá mention the body as the "temple of the spirit," yet for substances like tobacco, which indisputably harm this "temple," the guidance remains somewhat open-ended.
 
@@ -97,7 +97,7 @@ The balance you mention—between personal responsibility and institutional guid
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, it's insightful to consider how the balance between personal responsibility and institutional guidance is navigated in the Bahá'í Faith. However, the idea of progressive revelation seems a bit nebulous when it comes to practical application, especially in light of significant advancements in understanding public health risks like tobacco. If the Universal House of Justice is empowered to provide contemporary guidance, why hasn't there been a more definitive stance on tobacco, given the stark evidence of its harm?
 
@@ -121,7 +121,7 @@ As scientific understanding continues to evolve, so too might the community's ap
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, the way the Bahá'í Faith emphasizes gradual internalization of principles is indeed unique, but this approach feels somewhat at odds with the urgency of addressing public health crises like tobacco use. If we consider the principle of the "temple of the spirit" to be integral to fulfilling spiritual duties, shouldn't there be a more immediate and explicit stance on issues that are directly undermining this principle?
 
@@ -147,7 +147,7 @@ Ultimately, the Bahá'í Faith seeks to harmonize immediate needs with long-term
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, while I appreciate the Bahá'í approach of fostering personal growth and spiritual transformation, the urgency of tobacco's public health impact demands a more immediate response. If the Bahá'í Faith recognizes the integration of science and spirituality as a guiding principle, how does it justify a stance that seems to lag behind the scientific consensus on tobacco's dangers?
 
@@ -168,7 +168,7 @@ While the current stance may seem less direct than some might hope, it reflects 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, your explanation of the Bahá'í approach to these issues is thorough, but it raises deeper questions about the practical implications of such a stance. If the Bahá'í Faith truly values the integration of spiritual and material well-being, shouldn't its policies be more directly informed by scientific consensus, especially when health risks are so clearly established?
 
@@ -194,7 +194,7 @@ The Bahá'í institutions, including the Universal House of Justice, continue to
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, while I understand the emphasis on fostering long-term spiritual change, the urgency of public health crises like tobacco requires action that goes beyond gradual cultural shifts. Other communities have managed to implement effective public health measures by issuing clear guidance based on scientific consensus. Why isn't the Bahá'í community taking a similar approach, given its commitment to the integration of science with spirituality?
 
@@ -218,7 +218,7 @@ The Bahá'í Faith seeks to create a culture where health-conscious choices are 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, it's clear that the Bahá'í Faith values both scientific understanding and spiritual principles, yet it seems there might be a disconnect between the urgency of public health issues and the gradual approach taken by the community. If the Universal House of Justice is the supreme authority capable of providing immediate guidance, why hasn't there been a more decisive stance on tobacco use, directly reflecting the overwhelming scientific consensus on its harms?
 

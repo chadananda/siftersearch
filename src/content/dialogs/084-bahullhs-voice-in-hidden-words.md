@@ -14,7 +14,7 @@ excerpt: "Clear explanation of Manifestation concept"
 featured: false
 heroImage: /images/dialog/084-bahullhs-voice-in-hidden-words-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Hidden Words is a short, pithy collection in two volumes (Arabic and Persian). The voice is that of Bahá'u'lláh speaking as God speaks to humanity. Is this prophetic locution, divine voice, or something else?
 
@@ -28,7 +28,7 @@ In the Bahá'í understanding, Bahá'u'lláh is considered a Manifestation of Go
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You describe Bahá'u'lláh as a "perfect mirror" reflecting God's will, which suggests a more immediate connection than traditional prophetic transmission. How does this concept of a Manifestation of God challenge or expand upon the traditional views of prophecy in other Abrahamic religions? Does it imply that there is no distinction between God's voice and Bahá'u'lláh's voice in the Hidden Words, or is there still a level of interpretation involved? Could you provide examples from the text that illustrate this directness or unique nature?
 
@@ -48,7 +48,7 @@ This perspective highlights the immediate connection between the divine and huma
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of a Manifestation being a perfect mirror for divine expression is indeed intriguing, but it raises several questions. If the Manifestation's voice is indistinguishable from God's, how do Bahá'ís reconcile human limitations that exist even in Manifestations? Are there moments where Bahá'u'lláh's human identity plays a role, or is it always subsumed by this divine reflection? In the Hidden Words, are there instances where the language or style reflects a more personal element of Bahá'u'lláh, or is it consistently this divine, unmediated communication? Can you point to specific passages in the Hidden Words that show this balance or tension between the human and divine, if it exists?
 
@@ -72,7 +72,7 @@ Thus, while the message is divine, the artistry in its delivery reflects Bahá'u
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that the "literary beauty and depth" of "The Hidden Words" reflects Bahá'u'lláh’s unique expression, which seems to acknowledge a form of human artistry in conveying divine truths. How do Bahá'ís reconcile this human element in the expression of divine will with the claim that the message remains pure and unmediated? Could it be argued that the artistic and poetic elements themselves are a form of mediation, or do they serve a different purpose within the Bahá'í framework? Additionally, how does this interplay between the artistry and the message affect the perception of Bahá'u'lláh's writings as infallible and authoritative?
 
@@ -90,7 +90,7 @@ In this light, the interplay between artistry and message is not seen as a tensi
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The idea that artistic expression can enhance the impact of divine truth is compelling, yet it seems to introduce a subjective element to something that is claimed to be infallible and authoritative. If the artistic qualities of Bahá'u'lláh's writings are an inherent divine endowment, do Bahá'ís view these qualities as being as infallible as the doctrinal content itself? How do Bahá'ís account for variations in interpretation among individuals encountering these artistic elements? For instance, since beauty can be perceived differently across cultures and time periods, does this affect the universality of the message? How are these variations reconciled within the Bahá'í community, particularly when considering the guidance provided by the Universal House of Justice?
 
@@ -108,7 +108,7 @@ In essence, while the perception of beauty and artistry may vary, the underlying
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 If the artistic qualities are part of the divine endowment, then it seems there’s an expectation for them to be universally accessible and resonant. But how does the Bahá'í Faith address the potential for certain cultural or time-specific metaphors or expressions in Bahá'u'lláh’s writings that might not translate well across different contexts? Are there specific examples where guidance from the Universal House of Justice has been needed to clarify or adapt the understanding of certain passages? And how does this process ensure that the original divine intent remains intact while meeting the evolving needs of humanity?
 
@@ -126,7 +126,7 @@ The process of maintaining the original divine intent involves balancing fidelit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The approach you've outlined raises intriguing questions about how the Bahá'í community navigates the tension between timeless spiritual truths and the cultural specificity of language. If specific examples of the Universal House of Justice's interventions aren't publicly documented, it makes me wonder about transparency and accessibility within the community's spiritual guidance. How do Bahá'ís engage with this process? Are there mechanisms in place to democratize the understanding and interpretation of Bahá'u'lláh’s writings, ensuring that diverse perspectives are considered? Furthermore, does the reliance on the Universal House of Justice to provide authoritative interpretations risk limiting the scope of personal understanding, or does it simply serve as a safeguard against fragmentation? How do individual Bahá'ís reconcile the balance between personal interpretation and institutional guidance?
 
@@ -146,7 +146,7 @@ Ultimately, individual Bahá'ís reconcile personal interpretation and instituti
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The dynamic you've described between personal interpretation and institutional guidance is indeed fascinating. However, it seems there could be potential tension if an individual's understanding based on personal reflection diverges from the interpretations provided by the Universal House of Justice. How are such divergences managed within the community? Are there avenues for individuals to contribute their insights back to the broader community or to the institutions themselves? Moreover, can you comment on whether there have been historical instances where collective consultation or individual insights have influenced the guidance from the Universal House of Justice, perhaps leading to shifts in understanding or application of Bahá'u'lláh's teachings?
 
@@ -166,7 +166,7 @@ The process ensures that while the teachings remain consistent in their core pri
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 You’ve outlined a fascinating interplay between individual insights and institutional responses, suggesting a fluid yet structured dialogue. However, this balance seems precarious at times, especially if individual insights seem to challenge or question established interpretations. How does the Bahá'í community ensure that individual voices are genuinely heard and valued, especially if they differ significantly from the prevailing understanding? Can you provide examples where such divergences have led to meaningful discussions or even changes within the community? Furthermore, considering the Bahá'í principle of independent investigation of truth, how does the community reconcile this with the authority of institutional guidance? Is there a risk that reliance on institutional interpretation might inadvertently stifle this principle?
 
@@ -188,7 +188,7 @@ In this way, the Bahá'í Faith seeks to harmonize the individual's pursuit of t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The Bahá'í emphasis on consultation and the independent investigation of truth certainly creates a rich environment for dialogue and exploration. However, I am curious about the mechanisms in place to ensure that this dialogue genuinely influences decision-making processes and reflects the diverse insights of the community. Is there a formalized way for these discussions and consultations to be documented and used in shaping the guidance provided by the Universal House of Justice, or are they more informal and ad hoc? Also, how do Bahá'ís navigate instances where their personal understanding might strongly conflict with the authoritative guidance, especially when such guidance forms the basis for community-wide practices or policies? Finally, is there a theological or philosophical underpinning that helps reconcile the potential tension between personal conviction and communal adherence to institutional interpretations?
 

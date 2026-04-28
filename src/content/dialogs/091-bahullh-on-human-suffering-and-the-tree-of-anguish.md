@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong, reflecting faith and conviction."
 featured: false
 heroImage: /images/dialog/091-bahullh-on-human-suffering-and-the-tree-of-anguish-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh writes about the 'Tree of Anguish' — a striking image. What does this image teach about the relationship between revelation and suffering?
 
@@ -28,7 +28,7 @@ If you have a specific passage in mind, feel free to share more details, and we 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 I appreciate your explanation of suffering as a means of spiritual growth. However, I want to focus on how this idea of anguish or suffering specifically ties to revelation itself. Bahá'u'lláh underwent immense personal suffering — from imprisonment to exile. How does his own experience of suffering relate to the revelation he brought? Can we see this as a prerequisite or a parallel process? Is there something in his writings, perhaps in the Kitáb-i-Íqán or the Hidden Words, that connects these personal trials to the divine message?
 
@@ -44,7 +44,7 @@ This concept is echoed throughout the Bahá'í writings, where the sufferings of
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea that Bahá'u'lláh's suffering is deeply intertwined with the revelation itself is intriguing. It suggests that his personal trials were not just tests but essential to the authenticity and power of his message. Yet, how do we reconcile this notion with the concept that the divine message is inherently transcendent and complete, independent of any earthly suffering? Could it be that the suffering serves more as a means of connecting the Messenger to humanity's experience, rather than a prerequisite for revelation? Are there writings or interpretations from 'Abdu'l-Bahá or Shoghi Effendi that clarify whether the suffering was necessary for Bahá'u'lláh's revelation, or more a means to exemplify the message?
 
@@ -64,7 +64,7 @@ In this way, the suffering of the Messenger is not a prerequisite for revelation
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Shoghi Effendi's insights are compelling, particularly the idea that turmoil and suffering can prepare humanity for revelation. However, if we take this perspective, doesn't it suggest that the conditions of the world play a significant role in the timing and reception of divine messages? How does this align with the belief that God's revelations are delivered according to a divine timetable, independent of earthly circumstances? Also, when you mention that Bahá'u'lláh's suffering exemplifies the human condition, could his experiences be seen as a way to emphasize empathy and solidarity with humanity, rather than just a demonstration of perseverance? Are there other writings or interpretations that further explore this duality between the divine timing and the human condition?
 
@@ -82,7 +82,7 @@ Regarding Bahá'u'lláh's personal suffering, it indeed serves as a profound exp
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The understanding of divine timing is fascinating, especially since it suggests a harmony between predestined revelation and the earthly conditions into which it is introduced. However, I'm curious about the implications of this harmony on the concept of free will. If humanity's readiness—or lack thereof—can impact the reception of a revelation, does this mean that humanity has some agency in hastening or delaying the acceptance of divine guidance? How do Bahá'í teachings reconcile the divine timetable with human free will and responsibility? Also, in terms of empathy, could you point to specific writings from 'Abdu'l-Bahá that elaborate on how Bahá'u'lláh's life exemplifies solidarity with humanity through his experiences?
 
@@ -108,7 +108,7 @@ This highlights how the Manifestations of God, through their experiences and tea
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The concept of divine destiny intersecting with human frailty is intriguing, especially in the way it implies our actions can influence the reception of divine guidance. When you mention that humanity's readiness can hasten or delay the acceptance of revelation, it seems to suggest a remarkable degree of human agency in the divine plan. Could you elaborate on how this agency is understood within the Bahá'í teachings? Are there examples or parables in Bahá'í literature that illustrate this interplay between divine will and human action?
 
@@ -130,7 +130,7 @@ Through these teachings and actions, Bahá'u'lláh exemplified a profound connec
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The metaphor of "Divine Springtime" certainly enriches our understanding of this interplay between divine will and human agency. However, I'm curious about practical expressions of this agency. Are there specific teachings or guidance from Bahá'u'lláh that outline how individuals or communities can actively prepare themselves for the "Divine Springtime"? How do these preparations manifest in everyday life to cultivate virtues and foster unity?
 
@@ -152,7 +152,7 @@ This letter goes beyond personal counsel, addressing universal principles of jus
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The practical guidance you've highlighted—like cultivating a "pure, kindly and radiant heart"—is certainly compelling. However, in a world rife with systemic injustice and social fragmentation, how do Bahá'í teachings address the complexities of translating such personal virtues into broader societal change? Are there writings that provide a framework for integrating these individual transformations into community and societal structures to effectively prepare for the "Divine Springtime"?
 
@@ -172,7 +172,7 @@ In terms of social justice, the Bahá'í teachings advocate for the elimination 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The integration of personal transformation with broader societal change in the Bahá'í teachings is profound. However, when it comes to addressing systemic issues like economic inequality or racial injustice, how do the principles of consultation and collective decision-making in Bahá'í communities translate into practical actions or policies? Are there specific examples where these principles have been applied effectively to bring about change in Bahá'í communities or beyond?
 
@@ -192,7 +192,7 @@ Balancing spiritual principles with pragmatic demands involves a careful conside
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The emphasis on consultation and collective decision-making in the Bahá'í approach is intriguing, particularly as it relates to systemic issues. But I'm curious about how these processes actually unfold in practice, especially in situations where consensus might be difficult due to differing perspectives. Can you provide any examples or insights into how Bahá'í communities navigate such challenges while maintaining unity and focus on justice?
 

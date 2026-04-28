@@ -14,7 +14,7 @@ excerpt: "Explores spirituality beyond virtues"
 featured: false
 heroImage: /images/dialog/085-what-spirituality-cannot-be-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 If 'spirituality' has been hollowed out by New Age culture, what is its proper Bahá'í content? What is spirituality NOT, in the writings?
 
@@ -28,7 +28,7 @@ Spirituality is not about disengagement from the world or a pursuit of personal 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But Jafar, doesn't that definition still risk being vague? When you say spirituality involves "a commitment to service, justice, and unity," how do we differentiate that from the many other ideologies that also claim to promote these values? What makes the Bahá'í approach uniquely spiritual rather than just ethical or social? And how do the Bahá'í writings specifically distinguish these spiritual actions from secular actions with similar goals? Can you provide specific passages from the texts like the Hidden Words or the Iqán that clarify this distinction?
 
@@ -50,7 +50,7 @@ These passages suggest that spirituality in the Bahá'í context is deeply inter
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, I appreciate those citations, but they still seem to lean on the idea that spirituality is tied to virtues in a way that isn't exclusive to the Bahá'í teachings. You mention a "connection with God" and "divine attributes" — how do the writings define or explain this connection? Is it a mystical experience, a form of communion through prayer, or something else? The quote from the Star of the West mentions "Guidance" and "prayer." Are there specific teachings in the Aqdas or the Hidden Words that define how prayer or guidance uniquely contribute to Bahá'í spirituality, distinguishing it from secular or other religious practices? I'd love to explore how these practices functionally transform an individual in a distinctly Bahá'í way.
 
@@ -72,7 +72,7 @@ These teachings highlight that Bahá'í spirituality involves an intimate relati
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, I see that you highlighted prayer as a "conversation with God" and referenced the transformative role of the Manifestations of God. But I'm curious about the specifics of how this process unfolds. How does a Bahá'í's daily practice concretely differ from someone who engages in secular meditation or other forms of personal development? You mention the obligatory prayers in the *Kitáb-i-Aqdas*; do those prayers have specific qualities or intentions that go beyond personal reflection or mindfulness? Also, regarding the *Hidden Words*, how do these spiritual truths function differently from moral aphorisms found in other traditions? I'd appreciate any direct quotes that illustrate these unique aspects, as well as any guidance from 'Abdu'l-Bahá or Shoghi Effendi on how these practices are intended to lead to the kind of holistic transformation you described.
 
@@ -98,7 +98,7 @@ These elements illustrate that Bahá'í practices are designed to foster a deep,
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, I appreciate the depth you've provided regarding the nature of obligatory prayers and the transformative power of the *Hidden Words*. However, I'm still wrestling with understanding how these elements concretely lead to societal transformation. How does this intimate connection with God and the alignment with divine purpose translate into tangible actions in the world? Is there guidance in the writings on how this spiritual transformation impacts community development or global change, beyond personal virtue cultivation? 
 
@@ -122,7 +122,7 @@ In essence, the Bahá'í approach to spirituality envisions a world where person
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, I see how you've drawn a connection between individual spiritual growth and societal transformation, with examples from 'Abdu'l-Bahá's life and Shoghi Effendi's guidance. However, I'm curious about how this process addresses systemic issues that seem deeply ingrained in social structures. For instance, racial and economic injustices often seem resistant to change even with individual efforts. How do Bahá'í teachings envision tackling such entrenched problems through spiritual transformation? 
 
@@ -146,7 +146,7 @@ In summary, the Bahá'í approach to systemic issues involves a blend of spiritu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, your explanation clarifies the spiritual depth behind consultation and its potential for transformative decision-making. However, when you describe consultation as requiring participants to "detach from personal opinions and egos," it seems quite an aspirational goal. In real-world settings, especially when emotions run high or stakes are significant, how does the Bahá'í community ensure that this ideal is realistically practiced? Are there specific mechanisms or teachings in the writings that help individuals achieve this level of detachment and openness during consultation?
 
@@ -176,7 +176,7 @@ In summary, the Bahá'í approach integrates spiritual principles with practical
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, your explanation of the mechanisms within consultation and the spiritual underpinnings for economic reform is insightful. However, I'm still curious about the practical application of these teachings in today's complex world. For instance, how do Bahá'í communities navigate specific challenges, such as ensuring that everyone, including marginalized voices, is heard during consultation? Are there any documented instances where Bahá'í consultation led to significant changes in community dynamics or resolved conflicts that felt intractable?
 
@@ -202,7 +202,7 @@ While Bahá'í communities may face constraints as minorities, their commitment 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, I appreciate the nuance you've provided about the inclusivity efforts and grassroots economic practices within Bahá'í communities. Yet, I'm intrigued by how these efforts scale in contexts where systemic issues are deeply rooted and resistant to change. You mentioned interfaith initiatives and dialogues on sustainable development—could you provide examples or specifics about how Bahá'í principles have been integrated into these larger frameworks or projects? 
 
@@ -228,7 +228,7 @@ In summary, the Bahá'í approach to systemic issues involves a combination of l
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, while I understand the role of the Bahá'í International Community and their advocacy at platforms like the United Nations, I'm still curious about how effective these efforts are in creating tangible change. Can you point to any specific instances where Bahá'í participation has notably influenced policy or prompted new initiatives, especially in areas like climate change or gender equality?
 

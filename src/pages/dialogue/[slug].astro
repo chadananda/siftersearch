@@ -13,16 +13,50 @@ import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const dialogs = await getCollection('dialogs');
-  return dialogs.map(d => ({
+  const all = await getCollection('dialogs');
+  // Each detail page also gets the full published list (for the Related sidebar
+  // and cross-linking footer). We compute it once per build and pass via props.
+  const published = all.filter(d => d.data.published === true);
+  return all.map(d => ({
     params: { slug: d.id.replace(/\.md$/, '') },
-    props: { dialog: d },
+    props: {
+      dialog: d,
+      allPublished: published.map(p => ({
+        slug: p.id.replace(/\.md$/, ''),
+        title: p.data.title,
+        topic: p.data.topic,
+        tags: p.data.tags,
+        description: p.data.description,
+        publishedAt: p.data.publishedAt.toISOString(),
+        heroImage: p.data.heroImage,
+        score: p.data.qualityScore,
+      })),
+    },
   }));
 }
 
-const { dialog } = Astro.props;
-const { Content } = await render(dialog);
+const { dialog, allPublished } = Astro.props;
+const { Content, headings } = await render(dialog);
 const data = dialog.data;
+
+// Related dialogs = other published dialogs that share at least one tag.
+// Ranked by # shared tags desc, then recency. Cap at 12.
+const currentSlug = dialog.id.replace(/\.md$/, '');
+const tagSet = new Set(data.tags);
+const related = allPublished
+  .filter(p => p.slug !== currentSlug)
+  .map(p => ({
+    ...p,
+    overlap: p.tags.filter(t => tagSet.has(t)).length
+  }))
+  .filter(p => p.overlap > 0)
+  .sort((a, b) => b.overlap - a.overlap || (new Date(b.publishedAt)).getTime() - (new Date(a.publishedAt)).getTime())
+  .slice(0, 12);
+
+// "All published" used for the right rail when there's room.
+const allRecent = allPublished
+  .slice()
+  .sort((a, b) => (new Date(b.publishedAt)).getTime() - (new Date(a.publishedAt)).getTime());
 
 // Schema.org structured data — Article with Q&A structure
 const articleSchema = {
@@ -70,7 +104,7 @@ const TOPIC_LABELS: Record<string, string> = {
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
-    <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialog/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialogue/rss.xml" />
   </Fragment>
 
   <LiquidBackground client:only="svelte" />
@@ -110,12 +144,11 @@ const TOPIC_LABELS: Record<string, string> = {
 
     <div class="dialog-container">
       <header class="dialog-header">
-        <a href="/dialog" class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</a>
+        <a href={`/dialogue/category/${data.topic}/`} class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</a>
         <h1>{sq(data.title)}</h1>
-        <blockquote class="seed-question">
-          <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+        <p class="seed-question">
           {sq(data.question)}
-        </blockquote>
+        </p>
         <div class="dialog-meta">
           {typeof data.qualityScore === 'number' && (
             <span class="meta-score">
@@ -141,15 +174,58 @@ const TOPIC_LABELS: Record<string, string> = {
         )}
       </header>
 
-      <div class="dialog-body prose">
-        <Content />
+      <div class="dialog-layout">
+        <!-- LEFT: Table of contents (round-by-round) -->
+        <aside class="toc-rail" aria-label="Conversation rounds">
+          <p class="rail-label">Rounds</p>
+          <ol class="toc-list">
+            {Array.from({ length: data.rounds }, (_, i) => i + 1).map(n => (
+              <li><a href={`#round-${n}`}>Round {n}</a></li>
+            ))}
+            <li class="toc-spacer" />
+            <li><a href="#assessment" class="toc-assess">Assessment</a></li>
+          </ol>
+        </aside>
+
+        <!-- CENTER: the dialog body itself -->
+        <div class="dialog-body prose">
+          <Content />
+        </div>
+
+        <!-- RIGHT: Related conversations (shared tags) -->
+        <aside class="related-rail" aria-label="Related conversations">
+          <p class="rail-label">Related conversations</p>
+          {related.length === 0 ? (
+            <p class="rail-empty">No related dialogs yet.</p>
+          ) : (
+            <ul class="related-list">
+              {related.map(r => (
+                <li>
+                  <a href={`/dialogue/${r.slug}/`} class="related-card">
+                    {r.heroImage && <img src={r.heroImage} alt="" loading="lazy" />}
+                    <span class="related-text">
+                      <span class="related-title">{sq(r.title)}</span>
+                      <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {related.length > 0 && (
+            <p class="rail-explainer">
+              Sharing tags with this dialog: {Array.from(tagSet).slice(0, 5).join(', ')}.
+            </p>
+          )}
+        </aside>
       </div>
 
       {data.assessment && (
-        <aside class="assessment-box" aria-label="Editorial assessment">
+        <aside id="assessment" class="assessment-box" aria-label="Editorial assessment">
           <header class="assess-header">
             <span class="assess-label">Assessment</span>
-            <a class="assess-link" href="/dialog/assessment">how this is assessed →</a>
+            <a class="assess-link" href="/dialogue/assessment">how this is assessed →</a>
           </header>
 
           <div class="assess-scores">
@@ -169,7 +245,7 @@ const TOPIC_LABELS: Record<string, string> = {
           {data.assessment.flags && data.assessment.flags.length > 0 && (
             <div class="assess-flags">
               {data.assessment.flags.map(f => (
-                <a class="flag" href={`/dialog/assessment#failure-modes`} title="see methodology">{f}</a>
+                <a class="flag" href={`/dialogue/assessment#failure-modes`} title="see methodology">{f}</a>
               ))}
             </div>
           )}
@@ -193,6 +269,35 @@ const TOPIC_LABELS: Record<string, string> = {
           Citations are pulled from the actual interfaith corpus.
           <a href="/">Try your own question →</a>
         </p>
+
+        <nav class="footer-grid" aria-label="Site resources">
+          <div class="footer-col">
+            <h4>Dialog</h4>
+            <a href="/dialogue/">All conversations</a>
+            <a href="/dialogue/assessment">How these are assessed</a>
+            <a href={`/dialogue/category/${data.topic}/`}>{TOPIC_LABELS[data.topic] ?? data.topic}</a>
+          </div>
+          <div class="footer-col">
+            <h4>Library</h4>
+            <a href="/library/">Browse the library</a>
+            <a href="/">Search & chat</a>
+            <a href="/about/">About SifterSearch</a>
+          </div>
+          <div class="footer-col">
+            <h4>Tags on this dialog</h4>
+            {data.tags.slice(0, 6).map(t => (
+              <a href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+            ))}
+          </div>
+          {allRecent.length > 0 && (
+            <div class="footer-col">
+              <h4>Recent dialogs</h4>
+              {allRecent.slice(0, 5).filter(r => r.slug !== currentSlug).slice(0, 5).map(r => (
+                <a href={`/dialogue/${r.slug}/`}>{sq(r.title)}</a>
+              ))}
+            </div>
+          )}
+        </nav>
       </footer>
     </div>
   </article>
@@ -224,11 +329,146 @@ const TOPIC_LABELS: Record<string, string> = {
   }
 
   .dialog-container {
-    max-width: 760px;
+    max-width: 1280px;
     margin: -100px auto 0;
     padding: 2rem 1.5rem 6rem;
     position: relative;
     z-index: 1;
+  }
+
+  /* Three-column layout: TOC (240px) | body (flex) | related (300px) */
+  .dialog-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+    gap: 2.5rem;
+    align-items: start;
+    margin-top: 2rem;
+  }
+  .toc-rail, .related-rail {
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    font-family: 'Libre Caslon Text', serif;
+    padding: 1.25rem 1rem;
+    background: rgba(10, 22, 42, 0.55);
+    border: 1px solid rgba(140, 180, 220, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .rail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 0 0 0.85rem;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .toc-list li { margin: 0; padding: 0; }
+  .toc-list a {
+    display: block;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .toc-list a:hover {
+    color: var(--text-primary);
+    border-left-color: rgba(186, 160, 82, 0.5);
+    background: rgba(186, 160, 82, 0.05);
+  }
+  .toc-spacer { height: 0.75rem; border-top: 1px solid rgba(140, 180, 220, 0.1); margin: 0.5rem 0; }
+  .toc-assess {
+    color: rgb(218, 188, 110) !important;
+    font-style: italic;
+    text-transform: uppercase;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.08em;
+  }
+
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .related-card {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.6rem 0.5rem;
+    margin: 0 0 0.4rem;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    border: 1px solid transparent;
+  }
+  .related-card:hover {
+    background: rgba(20, 52, 98, 0.4);
+    border-color: rgba(140, 180, 220, 0.2);
+  }
+  .related-card img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .related-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .related-title {
+    font-size: 0.88rem;
+    line-height: 1.3;
+    color: var(--text-primary);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .related-topic {
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .rail-empty,
+  .rail-explainer {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0.5rem 0 0;
+    font-style: italic;
+  }
+
+  /* Below 1100px: hide right rail. Below 900px: hide both rails (mobile). */
+  @media (max-width: 1100px) {
+    .dialog-layout {
+      grid-template-columns: 220px minmax(0, 1fr);
+    }
+    .related-rail { display: none; }
+  }
+  @media (max-width: 900px) {
+    .dialog-layout {
+      grid-template-columns: 1fr;
+    }
+    .toc-rail, .related-rail {
+      position: static;
+      max-height: none;
+    }
+    .toc-rail {
+      order: 2;
+      margin-top: 2rem;
+    }
   }
 
   .dialog-header {
@@ -360,72 +600,100 @@ const TOPIC_LABELS: Record<string, string> = {
     .dialog-body { padding: 1.5rem 1.25rem; border-radius: 14px; }
   }
 
-  /* Speaker turns — visual differentiation instead of "You"/"Jafar" labels */
+  /* Speaker turns — visual differentiation by speaker */
 
-  /* User turn: indented + italicized + smaller, like a quoted question */
+  /* USER TURN — chat-bubble style. Right-aligned, distinct color, with a tail. */
   .dialog-body :global(.user-turn) {
-    margin: 2.5rem 0 1.5rem;
-    padding: 0.25rem 0 0.25rem 1.5rem;
-    border-left: 2px solid rgba(140, 180, 220, 0.35);
-    color: var(--text-secondary);
-    font-style: italic;
+    position: relative;
+    margin: 2rem 0 2rem auto;
+    max-width: 78%;
+    padding: 0.95rem 1.25rem 0.85rem;
+    background: rgba(56, 114, 184, 0.22);
+    border: 1px solid rgba(140, 180, 220, 0.3);
+    border-radius: 18px 18px 4px 18px;
+    color: var(--text-primary);
+    font-style: normal;
     font-size: 0.98rem;
+    line-height: 1.6;
+  }
+  .dialog-body :global(.user-turn::after) {
+    /* Bubble tail pointing down-right toward Jafar's reply */
+    content: "";
+    position: absolute;
+    right: 1.5rem;
+    bottom: -8px;
+    width: 16px;
+    height: 16px;
+    background: rgba(56, 114, 184, 0.22);
+    border-right: 1px solid rgba(140, 180, 220, 0.3);
+    border-bottom: 1px solid rgba(140, 180, 220, 0.3);
+    transform: rotate(45deg);
+    border-radius: 0 0 4px 0;
   }
   .dialog-body :global(.user-turn:first-child) { margin-top: 0; }
   .dialog-body :global(.user-turn p) {
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.6rem;
   }
+  .dialog-body :global(.user-turn p:last-child) { margin-bottom: 0; }
 
-  /* Jafar turn: full-width, with floating circular avatar on the left */
+  /* JAFAR TURN — full-width, with floating circular avatar on the left */
   .dialog-body :global(.jafar-turn) {
     position: relative;
-    margin: 1.5rem 0 2.5rem;
-    padding: 0.25rem 0 0.25rem 3.5rem;
+    margin: 1.25rem 0 2.5rem;
+    padding: 0.5rem 0 0.5rem 3.75rem;
     color: var(--text-primary);
     font-style: normal;
   }
   .dialog-body :global(.jafar-turn p) {
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.1rem;
     font-size: 1.0625rem;
     line-height: 1.75;
   }
+  .dialog-body :global(.jafar-turn p:last-child) { margin-bottom: 0; }
+
+  /* Jafar avatar — single canonical render (default candidate A: jīm) */
   .dialog-body :global(.jafar-turn::before) {
     content: "";
     position: absolute;
     left: 0;
     top: 0.5rem;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(218, 188, 110, 0.95), rgba(140, 110, 50, 0.8) 60%, rgba(60, 40, 15, 0.9));
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background:
+      radial-gradient(circle at 30% 30%, rgba(245, 215, 145, 0.95), rgba(186, 140, 60, 0.85) 55%, rgba(80, 50, 20, 0.92)),
+      linear-gradient(135deg, rgba(40, 25, 0, 0.4), transparent);
+    box-shadow:
+      0 3px 10px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 -2px 4px rgba(40, 25, 5, 0.3);
   }
   .dialog-body :global(.jafar-turn::after) {
     content: "ج";  /* Jīm — initial of Jafar in Arabic script */
     position: absolute;
     left: 0;
     top: 0.5rem;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(40, 25, 5, 0.85);
+    color: rgba(35, 22, 5, 0.9);
     font-family: 'Amiri', serif;
-    font-size: 1.4rem;
+    font-size: 1.55rem;
     font-weight: 700;
     pointer-events: none;
   }
 
-  @media (max-width: 640px) {
-    .dialog-body :global(.user-turn) { padding-left: 1rem; }
-    .dialog-body :global(.jafar-turn) { padding-left: 2.75rem; }
+  @media (max-width: 720px) {
+    .dialog-body :global(.user-turn) { max-width: 92%; }
+    .dialog-body :global(.jafar-turn) { padding-left: 3rem; }
     .dialog-body :global(.jafar-turn::before),
     .dialog-body :global(.jafar-turn::after) {
-      width: 1.75rem;
-      height: 1.75rem;
+      width: 2rem;
+      height: 2rem;
     }
-    .dialog-body :global(.jafar-turn::after) { font-size: 1.1rem; }
+    .dialog-body :global(.jafar-turn::after) { font-size: 1.2rem; }
   }
 
   .dialog-body :global(p) {
@@ -580,11 +848,41 @@ const TOPIC_LABELS: Record<string, string> = {
   }
 
   .dialog-footer {
-    margin-top: 4rem;
+    margin: 4rem auto 0;
+    max-width: 1080px;
     padding-top: 2rem;
+    border-top: 1px solid rgba(140,180,220,0.12);
     text-align: center;
-    border-top: 1px solid rgba(140,180,220,0.1);
   }
+  .assessment-box,
+  .dialog-body { max-width: 760px; margin-left: auto; margin-right: auto; }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2rem;
+    margin: 3rem auto 0;
+    text-align: left;
+    padding: 2rem 1.5rem 0;
+    border-top: 1px solid rgba(140,180,220,0.08);
+  }
+  .footer-col { display: flex; flex-direction: column; gap: 0.4rem; }
+  .footer-col h4 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgb(218, 188, 110);
+    font-weight: 700;
+    margin: 0 0 0.6rem;
+  }
+  .footer-col a {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    line-height: 1.45;
+    transition: color 0.15s ease;
+  }
+  .footer-col a:hover { color: var(--text-primary); }
 
   .footer-watermark { margin-bottom: 1rem; opacity: 0.7; }
   .footer-watermark svg { width: 200px; height: 40px; }

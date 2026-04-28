@@ -324,7 +324,7 @@ async function runOne(idx, q) {
   writeFileSync(join(score_dir, `${slug}.json`), JSON.stringify({ slug, ...judgeResult, elapsedSec }, null, 2));
 
   // Append to logs
-  const line = `${slug} - ${q.title} - score=${score}% - https://siftersearch.com/dialog/${slug}/ - ${new Date().toISOString()}\n`;
+  const line = `${slug} - ${q.title} - score=${score}% - https://siftersearch.com/dialogue/${slug}/ - ${new Date().toISOString()}\n`;
   writeFileSync(overallLog, (existsSync(overallLog) ? readFileSync(overallLog, 'utf-8') : '') + line);
 
   const signalLine = `[${slug}] ${score}% — ${judgeResult.prompt_signal}\n`;

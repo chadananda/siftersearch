@@ -15,7 +15,7 @@ excerpt: "Engages with complex questions"
 featured: false
 heroImage: /images/dialog/027-the-right-relationship-between-religion-and-science-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith teaches the unity of religion and science. But what does that look like when scientific findings genuinely challenge religious teachings — say, evolutionary biology vs special creation?
 
@@ -31,7 +31,7 @@ In practice, this means that when scientific findings emerge, the Bahá'í Faith
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But doesn't this approach run the risk of cherry-picking which religious teachings align with science and which are metaphorical? Some might argue that this flexibility could dilute the authority or consistency of the religious doctrine. How do we determine which aspects of religious teachings should be taken metaphorically in light of scientific findings? And where do we draw the line between safeguarding core spiritual truths and accommodating scientific advancements?
 
@@ -53,7 +53,7 @@ Ultimately, the line is drawn through a combination of personal understanding, c
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of distinguishing between core spiritual truths and peripheral teachings seems crucial here. But how do we definitively categorize teachings into these two groups? For instance, if the creation of humanity is considered a core truth, wouldn't challenging a literal interpretation of special creation with evolutionary science risk undermining that core? How does the Bahá'í Faith determine the immutability of certain spiritual principles compared to others that might evolve? Wouldn't there be a potential subjective bias in deciding which teachings are immutable and which are open to reinterpretation?
 
@@ -77,7 +77,7 @@ While there is always a potential for subjective bias, the combination of script
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mentioned the role of the Universal House of Justice in navigating scientific insights and traditional interpretations. However, isn't there a risk in relying too heavily on institutional guidance, potentially at the expense of personal interpretation and understanding? How does the Bahá'í Faith balance institutional authority with the principle of independent investigation of truth, especially in areas where science and religion intersect? And how can a global institution effectively address the diverse scientific and cultural landscapes across different regions of the world?
 
@@ -101,7 +101,7 @@ By combining personal investigation, institutional guidance, and community consu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 While I appreciate the balance you've outlined, there's an inherent tension in relying on institutional authority even with mechanisms like consultation and independent investigation. If the Universal House of Justice provides a framework for understanding complex issues, doesn't that framework inevitably shape or limit personal interpretation? How can we ensure that the framework is flexible enough to accommodate new and potentially disruptive scientific discoveries, especially when they challenge long-held religious beliefs? Additionally, given that the Universal House of Justice is composed of individuals, isn't there a risk that their interpretations may reflect their own biases or lack of expertise in rapidly evolving scientific fields? How is this potential limitation addressed within the Bahá'í administrative order?
 
@@ -125,7 +125,7 @@ While the potential for bias and limitation exists, these mechanisms aim to crea
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Despite these mechanisms to mitigate biases and ensure adaptability, isn't there still a fundamental tension between personal interpretation and institutional guidance? When new scientific discoveries arise that challenge established religious interpretations, how can individual Bahá'ís be confident that the guidance provided by the Universal House of Justice is truly accommodating these discoveries rather than subtly reinforcing existing dogma? For instance, if a groundbreaking finding in evolutionary biology emerged that completely reshaped our understanding of human origins, how would the Universal House of Justice engage with it, given their limitations in scientific expertise? Is there a possibility that institutional reluctance could hinder progress in reconciling such findings with Bahá'í teachings? And how is accountability maintained within this system, to ensure that institutional interpretations remain dynamic and grounded in both spiritual and scientific realities?
 
@@ -151,7 +151,7 @@ These mechanisms aim to ensure that the Bahá'í Faith remains a living, evolvin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 You've outlined various safeguards and processes designed to ensure that the guidance of the Universal House of Justice remains relevant, but I'm still curious about how this plays out in practice, especially with truly paradigm-shifting scientific discoveries. Can you provide an example of a situation where such a discovery has prompted a re-evaluation or reinterpretation of Bahá'í teachings? And how do Bahá'ís reconcile faith in a divinely guided institution with the possibility of needing to amend its guidance in light of new evidence? Isn't there a potential conflict between viewing the House of Justice as divinely guided and accepting human fallibility, especially in scientific matters? How do these aspects coexist without undermining either the role of the institution or the commitment to an evolving understanding of truth?
 
@@ -173,7 +173,7 @@ While there might be tensions between divine guidance and human fallibility, the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While your explanation of the Bahá'í approach to evolving interpretation is helpful, I'm still concerned about the lack of concrete examples where this dynamic has been put into practice. For instance, in fields like genetics, neuroscience, or quantum physics, which have fundamentally altered our understanding of human identity and the universe, how has the Bahá'í Faith shown adaptability? Can you point to specific instances where the Universal House of Justice has issued guidance based on new scientific developments? And regarding the relationship between divine guidance and human agency, how does the Faith ensure that this doesn't lead to a complacency that might inhibit critical engagement with scientific challenges? Is there a mechanism within the Bahá'í community to actively question and engage with institutional interpretations when they seem at odds with emerging evidence?
 
@@ -197,7 +197,7 @@ While the relationship between divine guidance and human agency might seem to ri
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While the principles and frameworks you've detailed provide a broad approach to integrating scientific advancements within the Bahá'í Faith, the absence of specific examples where the Universal House of Justice has issued guidance based on new scientific developments leaves me wondering about the practical application of these ideals. For instance, in the face of significant advancements in genetics, which challenge traditional views on human identity and agency, how are Bahá'ís encouraged to think differently or adapt their understanding? Without concrete examples, it's challenging to see how this dynamic truly plays out beyond theoretical discussions. 
 
@@ -223,7 +223,7 @@ While these processes may not always result in immediate or visible changes, the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 These overarching themes of adaptability and receptivity to scientific progress are certainly commendable within the Bahá'í Faith. However, the lack of documented examples of reinterpretation based on scientific advancements leaves me with lingering questions about the implementation of these ideals. For instance, consider rapidly advancing fields like CRISPR and genetic engineering, which bring profound ethical and existential questions. How does the Bahá'í Faith, in practical terms, navigate these developments without explicit guidance from the Universal House of Justice? 
 

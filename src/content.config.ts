@@ -57,9 +57,12 @@ const dialogs = defineCollection({
     decorativePrompts: z.array(z.string()).default([]),  // for inline imagery
     excerpt: z.string().optional(),         // pull quote for listing card
     featured: z.boolean().default(false),
-    // Beta: visible per-article assessment. Reader sees the conversation
-    // and the assessment side-by-side, can verify or dispute the assessment.
-    // Methodology lives at /dialog/assessment.
+    // Publish gate. Old v1-v3.1 dialogs default to false (hidden from index)
+    // until they're regenerated under v4 with proper assessment + SEO.
+    published: z.boolean().default(false),
+    // SEO-tuned keyword set (distinct from `tags` which are taxonomy).
+    keywords: z.array(z.string()).default([]),
+    // Beta: visible per-article assessment.
     assessment: z.object({
       scores: z.record(z.string(), z.number()),
       narrative: z.string(),                  // 3-5 sentence critique

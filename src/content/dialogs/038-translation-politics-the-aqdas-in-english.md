@@ -15,7 +15,7 @@ excerpt: "Addresses linguistic challenges thoughtfully"
 featured: false
 heroImage: /images/dialog/038-translation-politics-the-aqdas-in-english-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Kitáb-i-Aqdas was written in Arabic in 1873 but only fully translated into English in 1992. Why the delay? What does that delay tell us about how the Bahá'í community handled its own central text?
 
@@ -33,7 +33,7 @@ The delay also highlights the Bahá'í principle of progressive revelation and t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mention the need for linguistic precision and spiritual understanding, which implies that earlier translations might have been insufficient or lacked depth. Was there a real risk of misunderstanding or misapplication of the Aqdas if translated earlier? Also, can you point to any passages or directives from Shoghi Effendi or the Universal House of Justice that explicitly discuss the timing or rationale for delaying the translation? It seems like a delicate balance between preserving the integrity of the text and making its guidance accessible to a growing community. How was this balance struck in practical terms, especially as the Faith expanded globally?
 
@@ -49,7 +49,7 @@ The balance between preserving the integrity of the text and making it accessibl
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, this notion of a "phased approach" implies a strategic layering of understanding within the Bahá'í community. But does it suggest that earlier Bahá'ís were intentionally kept in a kind of spiritual infancy until the community matured? Was there a conscious decision to withhold certain teachings until a particular level of readiness was achieved? And how does this align with the Bahá'í emphasis on independent investigation of truth? If the community was expanding globally, wouldn’t diverse linguistic contexts necessitate earlier translations to nurture this investigation? If we look at the writings of 'Abdu'l-Bahá or Shoghi Effendi, do we find any reflections on balancing the dissemination of central texts with the developmental needs of a global community?
 
@@ -69,7 +69,7 @@ As the Faith expanded globally, diverse linguistic and cultural contexts indeed 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, while I see the rationale for strategic patience and community maturity, I'm curious about the tension this creates with the Bahá'í principle of universal participation and inclusivity. If translations were delayed to ensure mature understanding, how did this impact communities that didn't speak Arabic or Persian? What are we to make of the idea that spiritual insight is contingent upon linguistic access? Doesn't this create a hierarchy of understanding within the global Bahá'í community? 
 
@@ -93,7 +93,7 @@ As the Bahá'í Faith expanded globally, the emphasis was on building a cohesive
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, while the focus on unity and preventing fragmentation is clear, I'm struggling with how this harmonizes with the individual spiritual journey, which might require access to central texts for personal growth and understanding. Isn't there an inherent contradiction here if full engagement with the teachings is dependent on linguistic barriers? The mention of an international auxiliary language is intriguing, but hasn't this remained largely theoretical rather than practical in addressing these concerns?
 
@@ -119,7 +119,7 @@ While their writings consistently emphasize the balance of fostering individual 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, your insights into the principle of independent investigation of truth are crucial here, but I'm trying to reconcile this with the phased translation strategy that might inadvertently limit individual access. While the intention is clear—to maintain unity and prevent fragmentation—doesn't this inadvertently create a form of gatekeeping where certain communities, due to linguistic barriers, might depend more heavily on external interpretations rather than having direct access to foundational texts?
 
@@ -141,7 +141,7 @@ Ultimately, the Bahá'í approach is to foster a community where individual inve
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, while the emphasis on community consultation and mutual support is admirable, it still seems like a workaround for the fundamental issue of direct access to core texts. Isn't there a risk that communities could develop unevenly due to varying degrees of reliance on interpretative guidance? How does the Bahá'í community address this potential disparity in spiritual understanding and development?
 
@@ -169,7 +169,7 @@ While there may not be explicit instructions on prioritizing translations, the p
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, while these efforts at translation and educational programs are commendable, they still seem to be addressing the symptoms rather than the root issue of direct access. The reliance on widely spoken languages as a bridge doesn't fully resolve the disparity, as it still leaves minority language communities at a disadvantage. It's as if the principle of "unity in diversity" is at odds with the practical challenges of linguistic diversity within the Faith. 
 
@@ -199,7 +199,7 @@ In practice, this means ongoing efforts to address linguistic disparities, recog
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, it's clear that the Bahá'í community has put significant thought into overcoming linguistic barriers, but the core issue still seems to be that linguistic inequities can perpetuate a kind of spiritual hierarchy. Even with localized translation efforts and the use of technology, doesn't the global disparity in access lead to unequal spiritual development? Could this have long-term implications for unity, if certain communities feel marginalized by their limited access to core texts?
 
@@ -225,7 +225,7 @@ Ultimately, the Bahá'í community recognizes that achieving true unity in diver
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, while I appreciate the adaptive strategies and the commitment to inclusivity, it's still challenging to see how these measures fully resolve the core disparities in direct access to texts. The potential long-term implications for unity, as you mentioned, could be significant. It's one thing to assess and adapt strategies, but another to fundamentally shift how linguistic accessibility is approached as a priority within the faith.
 

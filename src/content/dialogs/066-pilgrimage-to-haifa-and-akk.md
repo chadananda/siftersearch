@@ -15,7 +15,7 @@ excerpt: "Explores complex themes like detachment and unity."
 featured: false
 heroImage: /images/dialog/066-pilgrimage-to-haifa-and-akk-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'í pilgrimage takes the believer to specific places in Haifa and 'Akká. Why those places? What is the practitioner being taught by the geographic specificity?
 
@@ -31,7 +31,7 @@ The geographic specificity teaches the believer about the historical and spiritu
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned the spiritual energy of these locations, suggesting that proximity to the resting places of Bahá'u'lláh and the Báb holds a particular significance. How does this belief in the power of place align with the Bahá'í teachings on the oneness of spirit and matter? Isn't there a potential tension between valuing specific physical sites and the universalist elements of the Faith? How do Bahá'í writings reconcile this focus on geographic specificity with their broader vision of unity?
 
@@ -49,7 +49,7 @@ In essence, the physical sites are not worshipped; instead, they are valued for 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of sacred sites acting as conduits for spiritual inspiration and renewal is intriguing, yet it seems to parallel practices in other religions where holy sites are revered for their spiritual significance. In the Bahá'í context, how do we ensure that the focus remains on the transcendent principles Bahá'u'lláh and the Báb taught rather than becoming overly attached to the physical places themselves? Are there specific writings or guidance from figures like 'Abdu'l-Bahá or Shoghi Effendi that address this balance between veneration of these sites and adherence to the universal spiritual teachings?
 
@@ -67,7 +67,7 @@ By focusing on the transformative power of the teachings and the unity they insp
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The guidance from 'Abdu'l-Bahá and Shoghi Effendi on maintaining balance is reassuring, yet I wonder how this is practically ensured in the community. Are there specific rituals or practices during pilgrimage designed to deepen the spiritual understanding and prevent excessive attachment to the physical sites? Also, can you provide more specific quotes from Bahá'í writings that directly address this issue of balancing reverence for holy sites with adherence to spiritual teachings? It would be valuable to see how this balance is articulated in primary texts.
 
@@ -85,7 +85,7 @@ While specific quotes directly addressing the balance might not be readily avail
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The lack of direct quotes is a bit surprising, given the importance of pilgrimage in the Bahá'í Faith. Are we possibly missing context from the Iqan or the Hidden Words that might indirectly illuminate this balance? In particular, how might the idea of detachment—a recurring theme in Bahá'í writings—inform a pilgrim's approach to these sacred sites? Also, while community practices seem to guide this balance, do you think there is a risk that over time, the emphasis on sites could overshadow the teachings, akin to what we've seen in other religious traditions? How do you see the Bahá'í community safeguarding against such a drift?
 
@@ -103,7 +103,7 @@ In addressing the broader risk of overemphasizing sites, Bahá'í teachings and 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 I appreciate your insights on the role of detachment and the emphasis on spiritual growth during pilgrimage. However, I'm still curious about how these themes specifically play out in the writings of the Iqan or the Hidden Words. Given that Bahá'u'lláh's teachings often revolve around inner transformation and detachment, shouldn't there be some more explicit guidance from these texts on how to approach pilgrimage with the correct mindset? 
 
@@ -123,7 +123,7 @@ Moreover, the writings and guidance from the Universal House of Justice, the gov
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 It seems like the emphasis on community activities and guidance from the Universal House of Justice is central to maintaining focus on the spiritual teachings rather than the physical sites. However, the lack of direct textual references to pilgrimage within core texts like the *Kitáb-i-Íqán* or the *Hidden Words* still leaves me wondering. Given that Bahá'u'lláh's writings are often concerned with the themes of inward purification and spiritual ascendancy, how do you see the implicit teachings of these texts being brought into the pilgrimage experience? 
 
@@ -143,7 +143,7 @@ Ultimately, the emphasis on collective decision-making, consultation, and ongoin
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It seems like the adaptive nature of the Bahá'í administrative order is crucial in maintaining the focus on teachings, but this also raises questions about the balance between dynamic guidance and rootedness in the original writings. How do Bahá'í scholars and the Universal House of Justice approach potential tensions between evolving interpretations and staying true to Bahá'u'lláh’s foundational principles?
 
@@ -167,7 +167,7 @@ Overall, the Bahá'í approach is one of balancing continuity with adaptation, e
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While the Universal House of Justice provides authoritative and adaptive guidance, I'm curious about the checks and balances within the Bahá'í administrative framework to ensure interpretations remain true to Bahá'u'lláh’s original principles. How do we prevent potential deviations from those foundational principles, especially when the Faith is applied in vastly different cultural contexts?
 
@@ -195,7 +195,7 @@ These mechanisms ensure that while the Bahá'í Faith adapts to different cultur
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The consultative process and the educational programs you mentioned seem foundational to maintaining unity and fidelity to Bahá'u'lláh’s teachings across cultures. However, given that the Bahá'í Faith is relatively young compared to other world religions, it doesn't have centuries of precedent to draw upon in facing the potential for divergence over time. How do Bahá'í institutions prepare for this long-term challenge, especially when history shows how traditions can evolve and eventually diverge from their original teachings?
 

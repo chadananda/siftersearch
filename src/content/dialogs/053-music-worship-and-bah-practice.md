@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong, reflecting faith commitment."
 featured: false
 heroImage: /images/dialog/053-music-worship-and-bah-practice-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith encourages music in worship — but its houses of worship are largely silent, with simple chanted scripture. What's the actual teaching about music?
 
@@ -28,7 +28,7 @@ While music is cherished, the Bahá'í Houses of Worship are designed to focus o
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 If music is such a powerful vehicle for spiritual elevation and education, why then is the practice within Bahá'í Houses of Worship so restrained? Is there any specific guidance or explanation from Bahá'u'lláh or 'Abdu'l-Bahá on why more elaborate musical expressions are minimized in these spaces? Are there any writings that delve into how this balance between music and silence was determined?
 
@@ -46,7 +46,7 @@ This balance between music and silence ensures that the spiritual experience in 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The emphasis on vocal music over instruments, as you've mentioned, seems to suggest a purposeful austerity. But is there a discussion in the writings about the specific spiritual effects or distractions that instrumental music might cause, which would lead to this guidance? For example, are there any teachings from Bahá'u'lláh or 'Abdu'l-Bahá that articulate how instruments might detract from the worship experience, or is the guidance more about historical or contextual concerns at the time of its inception? 
 
@@ -64,7 +64,7 @@ As for the potential for future shifts in practice, the Bahá'í Faith emphasize
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 That's intriguing, Jafar. It seems then that the decision to prioritize vocal music is more about maintaining a certain collective atmosphere rather than a direct critique of instrumental sounds. However, I'm curious about how this decision aligns with Bahá'í principles of unity and diversity. Given that music is a universal language with diverse cultural expressions, how are cultural variations in musical worship accommodated within this framework? 
 
@@ -84,7 +84,7 @@ By allowing for these cultural variations, the Bahá'í Faith honors the beauty 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It seems that cultural adaptations are indeed embraced, which highlights the Faith's commitment to both unity and diversity. However, this leads me to wonder how balance is ensured between celebrating cultural diversity and maintaining a cohesive worship environment. How do the Bahá'í institutions decide what's appropriate in terms of cultural integration without compromising the core spiritual atmosphere intended for these spaces? Are there any specific examples or guidelines that illustrate how these decisions are made and communicated across different Houses of Worship?
 
@@ -104,7 +104,7 @@ The process is inherently dynamic and flexible, allowing for a standardized expe
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Your explanation highlights the dynamic interplay between cultural expression and spiritual cohesion, but I want to delve a bit more into how these principles are operationalized. When you mention that local Bahá'í communities consult to integrate cultural expressions, who specifically within these communities is responsible for making these decisions? Are there appointed roles or committees that handle these aspects, and how is their decision-making process documented or evaluated?
 
@@ -128,7 +128,7 @@ As for significant changes, these often occur when a new House of Worship is est
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 You mention that Local Spiritual Assemblies or Regional Councils oversee the integration of cultural expressions in worship and that these bodies might establish committees for this purpose. How do these committees ensure that they're truly representative of the community's diversity? Are there specific criteria or processes to ensure diverse representation in these decision-making groups, and how do they prevent the dominance of particular cultural perspectives?
 
@@ -152,7 +152,7 @@ This system of communication and decision-making ensures that cultural integrati
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 It's interesting how the election process is meant to encourage spiritual maturity and diversity without explicit quotas. However, this raises a question about how effectively this process achieves true representation. In practice, how do communities address situations where certain groups feel underrepresented or marginalized within these decision-making bodies? Are there mechanisms for feedback or reevaluation to ensure all voices are heard, especially those of minority groups within the local Bahá'í population?
 
@@ -176,7 +176,7 @@ As for the Universal House of Justice, it remains engaged with local communities
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The feedback and consultation mechanisms you describe are pivotal in fostering inclusivity, but I'm curious about how effectively they function in addressing deeper systemic issues of underrepresentation. Are there specific examples where a marginalized group within a Bahá'í community successfully used these mechanisms to influence change in their local administration or practices? How did the community ensure that the resulting changes were sustainable and not just token gestures?
 
@@ -200,7 +200,7 @@ Such instances demonstrate the dynamic interplay between local initiatives and i
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The examples you've provided suggest a flexible and evolving process, but I'm curious about the challenges communities face when balancing this interplay between local expressions and global unity. When there are deep cultural differences or strong historical grievances within a local Bahá'í community, how do these consultations navigate sensitive issues without exacerbating existing tensions? Are there strategies or teachings specifically aimed at mediating such situations to ensure that the outcome is genuinely unifying?
 

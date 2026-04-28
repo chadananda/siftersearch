@@ -15,7 +15,7 @@ excerpt: "Engages with complex interpretive challenges"
 featured: false
 heroImage: /images/dialog/043-the-iqns-argument-structure-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Kitáb-i-Iqán is Bahá'u'lláh's argument for the legitimacy of his own claim — but the argument is largely about how to read scripture symbolically. What's the structure, and why does it work?
 
@@ -33,7 +33,7 @@ The argument works because it shifts the focus from a literal interpretation —
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 If the *Kitáb-i-Iqán* emphasizes symbolic interpretation to avoid contradictions, how does Bahá'u'lláh address potential accusations of relativism? Couldn’t this approach lead religions to mean anything anyone wants them to? Furthermore, what does Bahá'u'lláh say about discerning the true symbolic meanings as opposed to arbitrary interpretations? Are there specific passages in the text that outline these guidelines?
 
@@ -55,7 +55,7 @@ Although these principles are drawn from the broader themes and instructions fou
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Your response leans heavily on general principles without pinpointing specific passages from the *Kitáb-i-Iqán* where Bahá'u'lláh directly addresses these issues of discernment. Are there parts of the text where he explicitly sets these boundaries for symbolic interpretation, or do these guidelines rely more on the synthesis of Bahá'u'lláh's broader teachings? Also, considering the principle of spiritual intuition, how does one distinguish between genuine insight and personal bias? Is there guidance on this distinction in the *Kitáb-i-Iqán* or other Bahá'í writings?
 
@@ -77,7 +77,7 @@ While the *Kitáb-i-Iqán* may not address these practices directly in the conte
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 If the principles of consultation and humility are emphasized across Bahá'í teachings, can you point me to specific passages in Bahá'u'lláh's writings, or perhaps from 'Abdu'l-Bahá and Shoghi Effendi, where these are discussed in relation to interpreting scripture? Additionally, how does the concept of detachment function practically? It's one thing to discuss it as an ideal, but how does a believer actively practice detachment in the midst of interpreting sacred texts? Are there instructions or examples within Bahá'í writings that illustrate this process?
 
@@ -109,7 +109,7 @@ These principles are meant to guide believers in seeking truth and understanding
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The excerpts you provided from the Universal House of Justice and other sources illustrate consultation and humility broadly but don't pinpoint how these directly relate to interpreting scripture. How do these principles specifically apply to the process of understanding sacred texts within the Bahá'í community? Has Shoghi Effendi or 'Abdu'l-Bahá elaborated on this connection in a more detailed way?
 
@@ -143,7 +143,7 @@ In summary, while direct instructions may be limited, the application of consult
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Your explanation offers a conceptual approach to interpreting scriptures, but it lacks specificity in terms of direct guidance from the texts of Shoghi Effendi or 'Abdu'l-Bahá on how consultation and humility directly apply to understanding sacred texts. Are there letters or messages from Shoghi Effendi that provide more detail on how these principles should be applied specifically to scriptural interpretation within the Bahá'í framework?
 
@@ -175,7 +175,7 @@ These practices, while not explicitly outlined in a step-by-step manner in the t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While I appreciate the broader context you've provided, it seems we're still circling around general principles without zeroing in on explicit directives from Shoghi Effendi or 'Abdu'l-Bahá regarding scriptural interpretation. The passage from Udo Schaefer's works gives us an idea of the qualities necessary for consultation, but it doesn't directly answer how these qualities are applied specifically to interpreting sacred texts. Are there no letters or specific instructions from Shoghi Effendi that address this issue directly?
 
@@ -213,7 +213,7 @@ While the danger of projecting biases onto one's understanding is real, these pr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your practical steps are insightful, but they still lean heavily on general advice rather than specific guidance from Bahá'u'lláh, 'Abdu'l-Bahá, or Shoghi Effendi. Are there any particular letters, even if not elaborately detailed, where Shoghi Effendi discusses the nuances of interpreting sacred texts within the framework of humility and consultation? It seems crucial to have even a glimpse of explicit guidance directly from the authoritative figures during such interpretive endeavors.
 
@@ -251,7 +251,7 @@ Maintaining a balance between scrutiny and faith involves recognizing that quest
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 It's clear that explicit directives from Shoghi Effendi on scriptural interpretation might not be readily available in detail, but your point about balancing critical thought with faith is intriguing. If Udo Schaefer emphasizes the importance of reflection and critical thinking for enduring faith, how does this balance manifest in community practices, especially if interpretations impact collective decisions or actions? Are there any documented instances where this approach has been successfully applied in Bahá'í communities to navigate complex interpretive challenges, perhaps in how they implement Universal House of Justice guidance?
 
@@ -283,7 +283,7 @@ While the core texts may not explicitly address these potential pitfalls, these 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanation of consultative decision-making and safeguarding against group bias offers a helpful framework, yet it remains somewhat abstract. Without concrete examples or instances where Bahá'í communities successfully navigated interpretive challenges using these methods, it can be difficult to visualize the process in action. Are there any documented case studies or writings that provide a more detailed look at how specific communities have applied these principles practically, especially in complex situations?
 

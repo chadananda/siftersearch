@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/041-the-mystic-sense-and-the-analytic-mind-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 'Abdu'l-Bahá speaks of a 'mystic sense' that perceives spiritual realities the analytic intellect cannot. What is this sense, and how does one know it from imagination or wishful thinking?
 
@@ -31,7 +31,7 @@ This is not an easy task, and it often requires guidance from those more experie
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned that cultivating this mystic sense involves discernment and spiritual discipline, but how can one be certain that even with prayer, meditation, and reflection, what one perceives isn't just a product of deep-seated desires or subconscious biases? Is there a criterion or a litmus test given in the Bahá'í writings that helps verify the authenticity of these insights? And doesn't the need for guidance from those more experienced suggest a reliance on external validation rather than an internal realization?
 
@@ -47,7 +47,7 @@ Regarding guidance from others, it's not about external validation in a superfic
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of aligning spiritual insights with the teachings of the Manifestations of God as a criterion is intriguing. However, considering the diversity of interpretation even within the Bahá'í community, how can one be confident that their understanding is not just another subjective interpretation? If spiritual insights are supposed to reflect love, compassion, and service, wouldn't that be a common aim of many belief systems, thus blurring the lines between a mystic sense and common ethical guidance?
 
@@ -67,7 +67,7 @@ Ultimately, authenticity in spiritual discoveries comes from a sincere heart, a 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 You mention that consultation helps balance personal and communal insights, but how does one ensure that this process doesn't inadvertently suppress minority perspectives or innovative ideas that may initially seem unconventional? Historically, even within religious communities, revolutionary insights have often started as minority viewpoints. How does the Bahá'í practice of consultation safeguard against conformity and encourage genuine innovation in understanding spiritual truths?
 
@@ -87,7 +87,7 @@ For specific writings, Bahá'u'lláh's "The Hidden Words" and "Tablets of Bahá'
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 It's commendable that the Bahá'í practice of consultation seeks to ensure all voices, including minority perspectives, are heard. However, in practice, how is this balanced with maintaining unity, especially when the majority holds a different view? How are decisions made when consensus isn't reached, and how does that process ensure innovation isn't stifled due to the desire for unity?
 
@@ -105,7 +105,7 @@ Regarding distinctive outcomes in Bahá'í social and economic development effor
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The idea that decisions in Bahá'í consultation can be revisited as new insights emerge is intriguing. It suggests a dynamic process, yet I'm curious how this plays out in practice, especially when it comes to significant matters that may impact a community. How often does revisiting occur, and is there a formal mechanism for it, or is it more ad hoc? What ensures that this flexibility doesn't lead to instability or indecisiveness within the community?
 
@@ -123,7 +123,7 @@ The program's impact can be seen in the personal growth of participants and the 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The flexibility within Bahá'í consultation to revisit decisions is certainly a strength, ensuring that communities remain dynamic and responsive. However, considering the potential for differing interpretations of when it's appropriate to revisit a decision, how does the community determine what warrants reevaluation without falling into the trap of frequent second-guessing or undermining authority? Is there a guidance or protocol in the Bahá'í writings that addresses this balance?
 
@@ -141,7 +141,7 @@ As for quantitative measures, there have been studies and evaluations that asses
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The process of discerning when to revisit a decision in Bahá'í consultation without disrupting stability speaks to a nuanced understanding of authority and growth within the community. However, it seems like a rather subjective call that could vary greatly from one assembly to another. How does the Bahá'í community ensure consistent application of these principles across different Local Spiritual Assemblies worldwide? Are there training or guidelines provided to these bodies to ensure that they exercise their discretion wisely and consistently?
 
@@ -161,7 +161,7 @@ Regarding the assessment of the program's impact, ensuring rigor and objectivity
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The intention behind ensuring consistent application of consultation principles across different Local Spiritual Assemblies is clear, but I'm curious about the effectiveness of these training and support systems. Since the Bahá'í community values experiential learning, are there examples or case studies that illustrate how these assemblies have successfully navigated complex consultation issues using the provided guidelines? How are these successful strategies shared within the global Bahá'í community to foster a more unified approach?
 
@@ -183,7 +183,7 @@ The findings from these assessments are used to refine the program, ensuring it 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The sharing of successful strategies and experiences among Local Spiritual Assemblies is a valuable approach to fostering a more unified application of Bahá'í consultation principles. However, are there mechanisms in place to ensure that assemblies that may be struggling have equal access to these resources and support? How does the Bahá'í community address potential disparities in capacity or experience among different assemblies, especially in regions where the faith is newer or faces significant challenges?
 

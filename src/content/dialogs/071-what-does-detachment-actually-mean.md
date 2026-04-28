@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/071-what-does-detachment-actually-mean-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í writings call for 'detachment' — but the same writings also call for engaged work in the world. How is detachment compatible with engagement?
 
@@ -30,7 +30,7 @@ So, detachment and engagement are not opposites; rather, they complement each ot
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 That makes sense as a general idea, but it seems like a fine line to walk. Could you give me a primary source quote from the Bahá'í writings that illustrates this concept of detachment as being an inner state rather than complete withdrawal? And how do we practically ensure that our engagement doesn't slip into attachment? Are there specific teachings or practices that guide Bahá'ís in maintaining this balance?
 
@@ -52,7 +52,7 @@ This view transforms work into a spiritual practice, aligning our daily activiti
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The quotes you provided beautifully encapsulate the notion of detachment as an inner state rather than physical withdrawal. However, it seems like maintaining this mindset requires persistent effort, especially in a world that constantly pulls us towards material pursuits. How do Bahá'ís practically cultivate this consciousness daily? Are there specific prayers, meditations, or community practices that reinforce this inner state of detachment while engaging in worldly occupations? Can you explain how these might differ across various cultural contexts within the Bahá'í community?
 
@@ -76,7 +76,7 @@ These practices, together, create a framework that supports individuals in maint
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 It's clear that daily practices like prayer, meditation, and community service are crucial for fostering detachment while remaining engaged in the world. However, I'm curious about the role of consultation in this balance. The Bahá'í Faith places a significant emphasis on consultation. How does this process contribute to maintaining detachment and engagement within a community? And how does it help individuals avoid falling into attachment during decision-making processes or community projects? Can you provide examples of how consultation has been successfully used to navigate these challenges within Bahá'í communities?
 
@@ -96,7 +96,7 @@ In essence, consultation embodies the principles of detachment and engagement by
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 While I see the merit in the consultative process as a means of fostering detachment from individual ego and attachment to personal outcomes, I'm curious about the practical challenges that might arise. In a world that often valorizes strong personal opinions and competition, how do Bahá'í communities effectively cultivate an environment where true consultation can flourish? 
 
@@ -125,7 +125,7 @@ Overall, consultation is a dynamic process that requires ongoing effort and spir
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The emphasis on humility and the search for truth in consultation certainly provides a framework for detachment from ego, but I wonder how effective this is when deeply entrenched cultural norms of individualism or assertiveness come into play. How do Bahá'í communities practically address these cultural challenges, especially in regions where assertive expression is culturally ingrained or even valued? Are there specific examples of communities adapting consultation practices to different cultural contexts, and how do these adaptations ensure the preservation of the core principles of detachment and unity? Additionally, how do Bahá'í teachings reconcile the need for decisions by majority vote with the ideal of achieving consensus? It seems like a delicate balance to strike.
 
@@ -150,7 +150,7 @@ These adaptations and approaches reflect the flexibility and universality of the
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 These adaptations highlight a pragmatic approach to consultation, respecting cultural diversity while upholding Bahá'í principles. But I'm curious about how these practices translate to individual transformation. In communities where assertiveness is celebrated, how does a person internally reconcile the tension between cultural expectations and the Bahá'í ideal of detachment? Are there specific teachings or personal stories in the Bahá'í writings that illustrate this journey of personal transformation amidst cultural pressures?
 
@@ -178,7 +178,7 @@ These practices and principles foster an environment where detachment and engage
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your insights on individual transformation are compelling, especially the focus on reflection and prayer as tools for transcending cultural pressures. However, I'm curious about the broader social dynamics. How do Bahá'í communities handle the potential for internal conflict when personal transformation might lag behind community expectations? Are there mechanisms within the Bahá'í administrative framework that actively support individuals who struggle with this transformation, without alienating them?
 
@@ -208,7 +208,7 @@ By focusing on love, encouragement, and the ongoing integration of diverse persp
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The mechanisms you describe for supporting individual transformation and integrating diverse perspectives seem well thought out. However, I'm interested in how these principles are practically applied in situations where there's persistent disagreement or when individuals feel marginalized despite the community's efforts. Are there specific teachings or processes within the Bahá'í framework that address situations of recurring conflict or feelings of alienation? How do communities ensure these individuals are brought back into the fold in a meaningful way, especially when their perspectives might consistently diverge from the majority or commonly-held views?
 
@@ -238,7 +238,7 @@ These practices demonstrate how the principles of unity in diversity can lead to
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Your explanations on consultative dialogue and the role of Local Spiritual Assemblies in maintaining unity are insightful, but there seems to be an implicit assumption that these mechanisms seamlessly resolve conflicts. What happens if individuals repeatedly feel that their voices are not impactful in decision-making, even after such processes? Are there specific writings or teachings on how to address repeated feelings of disenfranchisement, ensuring these individuals don't disengage from the community entirely?
 

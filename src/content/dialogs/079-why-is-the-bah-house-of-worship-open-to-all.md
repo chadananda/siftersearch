@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/079-why-is-the-bah-house-of-worship-open-to-all-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Anyone — Bahá'í or not — can enter and pray in a Bahá'í House of Worship. Why this openness, when most religious traditions reserve sacred space?
 
@@ -28,7 +28,7 @@ This approach also aligns with the Bahá'í view of progressive revelation, whic
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 The idea of universal accessibility is powerful, but how does this openness handle the potential dilution or misinterpretation of Bahá'í teachings? If anyone can come and pray without any guidance on Bahá'í principles, is there a risk of the core message being overshadowed or misunderstood? How do the Bahá'í writings address maintaining the integrity of their teachings while promoting such inclusivity?
 
@@ -44,7 +44,7 @@ Moreover, the writings of Bahá'u'lláh and 'Abdu'l-Bahá encourage Bahá'ís to
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 But isn't there a risk that without explicit guidance in Houses of Worship, visitors might interpret their experiences through the lens of their own religious traditions, which might be at odds with Bahá'í principles? How do we ensure that the message of unity and oneness isn't lost in translation? Are there any specific writings or directives from Bahá'u'lláh or 'Abdu'l-Bahá that address how to navigate this balance between openness and fidelity to the teachings?
 
@@ -60,7 +60,7 @@ In terms of writings, 'Abdu'l-Bahá emphasized the importance of deeds over word
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, it's fascinating that you mention the absence of sermons or preaching in the Houses of Worship as a method to prevent doctrinal misinterpretation. However, doesn't this lack of direct guidance leave room for visitors to project their own beliefs onto the Bahá'í experience, potentially missing the unique aspects of the faith? Given that 'Abdu'l-Bahá emphasizes deeds over words, how do Bahá'í communities ensure that their actions are interpreted correctly by those unfamiliar with the teachings? Are there community practices or traditions outside the Houses of Worship that explicitly engage with non-Bahá'ís to clarify these principles in practice? Can you point to any specific examples or teachings that guide Bahá'ís in this area?
 
@@ -78,7 +78,7 @@ By engaging in service-oriented activities and community development projects, B
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, while it's insightful to see how community activities like devotional gatherings and service projects facilitate understanding, I wonder how effective these are in reaching those who might only experience the faith through a visit to a House of Worship. If these visitors don't participate in the community life where teachings are actively demonstrated, how does the faith ensure that its principles of unity and oneness are communicated beyond just the physical space of the House of Worship?
 
@@ -100,7 +100,7 @@ In addition, the Bahá'í teachings encourage the development of personal virtue
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while the symbolic architecture of the Bahá'í Houses of Worship is intriguing, relying on such symbolism seems limiting when it comes to imparting nuanced teachings. Symbols can evoke feelings of unity, but they may not convey the full depth of the Bahá'í principles. You mention the Universal House of Justice's guidance, but how is this guidance disseminated to ensure global consistency? Is there a danger of over-reliance on personal virtues and actions to convey complex spiritual concepts, which might lose their distinctiveness in translation across different cultural contexts?
 
@@ -122,7 +122,7 @@ These strategies are constantly evolving through consultation and reflection, al
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, you've provided a comprehensive overview of how the Bahá'í community attempts to balance global coherence with local relevance. However, I'm curious about the practical challenges that might arise in this balancing act. When local adaptations are made, how does the Bahá'í community ensure that these do not lead to divergences from the core tenets of the faith? Do you have examples of tensions or conflicts that have arisen in this process, and how they have been resolved while staying true to the universal Bahá'í message?
 
@@ -146,7 +146,7 @@ In terms of specific examples, while there aren't publicly documented cases of m
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Your explanation of consultation and the role of spiritual assemblies is informative, but doesn't this heavy reliance on consultation risk slowing down decision-making, especially in urgent situations that require immediate action? How do Bahá'í communities balance the need for timely decisions with the thoroughness of consultation? 
 
@@ -174,7 +174,7 @@ By maintaining a balance between thorough consultation and adaptability, Bahá'�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, while it's commendable that Bahá'í communities strive for efficiency in consultation and adaptability in educational programs like the Ruhi Institute, how do they ensure that the core values are not diluted over time, especially when adapting to local issues? There's a risk that, in trying to be relevant, some interpretations might stray too far from the original intent of the teachings. Are there checks in place, perhaps through the guidance of the Universal House of Justice or other structures, that actively monitor and maintain the integrity of these adaptations?
 
@@ -205,7 +205,7 @@ These governance and educational strategies illustrate the Bahá'í community's 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, you've highlighted the role of the Universal House of Justice and spiritual assemblies in maintaining coherence, but I'm curious about how specific local challenges are addressed without losing sight of the global Bahá'í framework. Are there examples where local adaptations had to be reevaluated because they veered too far from core teachings? How does the process of correction work in practice, and what mechanisms ensure that these realignments are accepted by the community?
 

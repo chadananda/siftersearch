@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/054-what-is-the-soul-doing-between-lives-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í Faith teaches one earthly life followed by progress through spiritual worlds. What does the soul actually DO in those worlds? Are there activities, relationships, work?
 
@@ -30,7 +30,7 @@ As for activities and work, while there isn't a clear depiction of "work" as we 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 The idea of the soul engaging in acts of worship and service in the spiritual worlds is intriguing. How do these acts differ from our earthly experiences? Are there any specific writings or teachings by 'Abdu'l-Bahá or Bahá'u'lláh that elaborate on what worship and service entail in the afterlife? Additionally, when you mention relationships continuing, is there a sense of community or society, akin to the social structures we have here, or is it purely spiritual connections? Can you provide some specific quotes from the Bahá'í texts that shed light on these aspects?
 
@@ -50,7 +50,7 @@ The above insights provide a glimpse into the rich spiritual life that awaits th
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The quote you provided hints at spiritual interaction and influence, but it feels quite abstract. When 'Abdu'l-Bahá mentions a "mingling of station and condition," it suggests a profound interaction, but what does that practically mean for the soul's experience? How does this differ from earthly communication? And what of the concept of "service"? Is it solely service to God, or does it include service to other souls, perhaps similar to how we might guide or teach others on earth? Are there specific teachings or examples from Bahá'í texts that illustrate these concepts more concretely? Additionally, if relationships are part of a "spiritual society," how do the writings reconcile this with the emphasis on individual spiritual progress? It seems like there's a tension between personal development and communal life that I'd like to understand better.
 
@@ -68,7 +68,7 @@ These ideas are interwoven throughout the Bahá'í writings and reflect a vision
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 While I understand that the spiritual worlds are beyond our earthly comprehension, I'm still trying to grasp what this "exchange of spiritual energy and insight" practically entails. Are there any specific parables or metaphors in the texts that might provide a more tangible understanding of these interactions? You mentioned that service in the spiritual realms is both a personal expression and a communal act. Is there any guidance on how these acts are initiated or reciprocated in the afterlife? It seems like if personal progress is tied to communal interactions, then there must be some sort of structure or rhythm to these exchanges. Can you provide any textual examples that depict how this is envisioned, even if metaphorically? And when Bahá'í teachings talk about individual and collective progress being complementary, how does this compare with earthly life where we often see tension and conflict between the two?
 
@@ -86,7 +86,7 @@ These metaphors and teachings provide a framework for imagining the spiritual in
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The metaphors of the sun and its rays, as well as the mirror reflecting light, are evocative, but they still leave me wondering about the mechanics of how this spiritual influence and assistance operate. If the emanation of virtues and wisdom uplifts other souls, does this suggest a kind of hierarchical structure where more advanced souls help guide those less advanced? And if service is more about alignment with divine will than structured tasks, how does a soul know what its service should be or when it has fulfilled it? Are there any writings that take these metaphors further or provide examples of souls interacting with one another in these ways? Lastly, while it's envisioned that tensions between individual and collective progress are resolved in the spiritual worlds, how does the Bahá'í Faith suggest we address those tensions in our earthly lives to prepare for the afterlife? Are there specific teachings that guide us on balancing these aspects while we're still here?
 
@@ -106,7 +106,7 @@ This alignment with divine principles is seen not only as preparation for the af
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 These teachings about virtues and alignment with divine will seem to emphasize a kind of spiritual intuition that guides souls, both in this life and in the afterlife. However, the absence of a detailed framework or specifics makes it challenging to relate to or apply practically. Are there any teachings or examples that show how one might cultivate this "spiritual intuition" while still on earth? How can we discern when we are truly aligning with divine will versus following our own inclinations? 
 
@@ -128,7 +128,7 @@ This vision of spiritual development is one where personal and collective progre
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 The practices of prayer, meditation, and consultation seem integral to cultivating spiritual intuition, yet I'm curious about how these practices specifically relate to recognizing divine will versus personal desires. Are there any specific writings or examples that illustrate how believers have successfully navigated this discernment process? It seems like distinguishing between one's ego and true spiritual inspiration could be quite nuanced.
 
@@ -152,7 +152,7 @@ The writings encourage believers to reflect on these virtues in their daily live
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 The emphasis on integrating virtues rather than prioritizing them in isolation is intriguing, especially given the complex moral scenarios we often face. 'Abdu'l-Bahá's life as an exemplar of virtue integration is inspiring, but are there specific anecdotes or writings that detail how he or other Bahá'í figures balanced these virtues in practice? For example, how did they apply love and justice simultaneously in community decisions or personal interactions?
 
@@ -174,7 +174,7 @@ These narratives illustrate the interconnectedness of personal growth and commun
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 The stories of 'Abdu'l-Bahá in 'Akká and the courage of Táhirih and Mírzá Mihdí are profound illustrations of virtue in action, but I'm curious about how these examples are practically interpreted in modern-day Bahá'í communities. Are there any contemporary examples or anecdotes that show how Bahá'ís today might emulate this balance of love and justice in community life or personal interactions? 
 
@@ -198,7 +198,7 @@ These contemporary applications demonstrate how Bahá'í principles continue to 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 The modern application of Bahá'í teachings you describe is fascinating, especially how consultation is conducted to respect both personal insights and collective wisdom. However, I wonder if there have been tensions or challenges in this process that communities have had to navigate. Are there instances where issues like power dynamics or differing interpretations of principles have arisen, and how have Bahá'í communities addressed these to maintain unity?
 

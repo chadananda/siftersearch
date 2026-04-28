@@ -14,7 +14,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/094-what-did-abdul-bah-mean-by-the-most-great-justice-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 'Abdu'l-Bahá speaks of 'the Most Great Justice' as a foundation of the new world order. Is this distributive justice, retributive justice, or something more like a metaphysical justice woven into reality?
 
@@ -30,7 +30,7 @@ So, while "the Most Great Justice" encompasses elements of distributive and retr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 You mentioned that 'the Most Great Justice' is fundamentally a metaphysical and spiritual principle. How does this principle manifest in practical terms? Are there specific teachings or writings from 'Abdu'l-Bahá or the Kitáb-i-Aqdas that illustrate how this justice is to be implemented in daily life or governance? Can you provide some primary sources that elaborate on how justice transcends typical legal structures to foster unity and interconnectedness?
 
@@ -56,7 +56,7 @@ These passages illustrate how Bahá'í teachings envision justice as a transform
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea that justice serves as a foundational principle for Bahá'í institutions and transcends legal frameworks is intriguing. But how does this translate into practical everyday actions for individual Bahá'ís? Are there specific teachings from 'Abdu'l-Bahá or Bahá’u’lláh that guide personal conduct to ensure justice is upheld in personal relationships or community interactions? And when Shoghi Effendi talks about justice being a crowning distinction, what role does individual responsibility play in achieving that within the Assemblies? Are there writings that explicitly say how individuals contribute to this higher form of justice?
 
@@ -80,7 +80,7 @@ Individual responsibility in achieving justice involves living by these principl
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 The emphasis on personal conduct and community interactions is indeed central, but Bahá’u’lláh's call for justice being "the best beloved of all things" suggests a profound personal transformation. How do individuals balance their personal biases and interests to truly live this principle? Are there specific practices or spiritual disciplines within the Bahá'í Faith that help cultivate an unbiased and fair mindset? Also, in terms of Assemblies, how do they ensure that individual members' contributions do not just reflect personal perspectives but align with the collective pursuit of justice? Are there examples from Bahá'í history where this principle has been effectively realized or where it presented challenges?
 
@@ -104,7 +104,7 @@ The balance between personal transformation and collective action is ongoing, re
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 The notion of independent investigation of truth is quite powerful, especially when it comes to countering personal biases. But how realistic is it to expect individuals to completely detach from their own perspectives? Are there writings or teachings that acknowledge the inherent difficulty in this process and provide guidance on navigating it without becoming paralyzed by indecision or conflict? Also, regarding the historical development of Local Spiritual Assemblies, could you provide specific examples of how they overcame challenges related to justice during their evolution? How did these experiences inform the broader understanding of justice within the Bahá'í administrative framework?
 
@@ -130,7 +130,7 @@ These experiences have informed the broader understanding of justice in the Bah�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 The acknowledgement of the difficulty in achieving complete detachment and the emphasis on gradual refinement are crucial points. However, when we talk about consultation as a means of resolving differences, I'm curious about the mechanics of this process. How does consultation prevent dominant voices from overshadowing others? Are there safeguards within the Bahá'í consultation process to ensure equality of participation and that decisions truly reflect collective wisdom rather than just the most persuasive arguments? Also, regarding the historical development of Assemblies in places like Iran and North America, could you provide specific examples of how they specifically managed to incorporate diverse perspectives? How did these examples shape the practical application of justice within the Bahá’í administrative order?
 
@@ -154,7 +154,7 @@ These experiences demonstrated the practical application of justice within the B
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 While the process of consultation in the Bahá'í Faith seems to have robust principles to ensure inclusivity and equality, I'm curious about its effectiveness in practice, particularly in modern, diverse communities. Are there contemporary examples or studies that illustrate how Bahá'í consultation navigates complex issues such as cultural differences or global challenges like climate change, where consensus might be difficult to achieve? How do these examples demonstrate the practical application of "the Most Great Justice"? Additionally, how is accountability maintained within Assemblies to ensure that justice is not only an aspirational ideal but a tangible reality in their governance?
 
@@ -176,7 +176,7 @@ These examples demonstrate how Bahá'í consultation is not just an ideal but a 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 While these examples of Bahá'í consultation addressing cultural diversity and global challenges are promising, how do we measure the success of such initiatives? Has there been any empirical evaluation or documented case studies showing the tangible impacts of Bahá'í consultation on community development or environmental outcomes? Moreover, when it comes to accountability, you mentioned annual elections for Assemblies, but how does the community ensure that these elections are genuinely reflective of diverse voices, and not just a reiteration of existing leadership structures? Are there mechanisms to prevent stagnation or ensure that emerging concerns are adequately addressed within these frameworks, especially in rapidly changing times?
 
@@ -200,7 +200,7 @@ While formal empirical evaluations might be limited, the practical impact of Bah
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 While it's enlightening to hear about the community-driven and qualitative assessments, it seems like there's a missed opportunity in not having more empirical data to measure the tangible impacts of Bahá'í consultation. In an era where metrics and data guide so much of policy-making and social intervention, do you think there's potential for developing more robust evaluation methods that remain true to Bahá'í principles? How might Bahá'í communities balance the spiritual and qualitative aspects of their initiatives with the need for data-driven evidence when engaging with larger secular frameworks or collaborations? Additionally, when it comes to ensuring elections genuinely reflect diverse voices, how do Bahá'í communities address unconscious biases that might still influence choices despite the absence of campaigning? Are there discussions or teachings that specifically aim to mitigate such biases during the electoral process?
 
@@ -222,7 +222,7 @@ By combining spiritual principles with thoughtful evaluation practices, Bahá'í
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 While it's clear that Bahá'í initiatives emphasize spiritual principles and qualitative assessments, integrating empirical evaluation could indeed enhance understanding and collaboration with broader frameworks. How are Bahá'í communities moving towards this integration? Are there any pilot programs or initiatives currently exploring mixed-method evaluation approaches or partnerships with research institutions to quantify their impacts? Additionally, regarding unconscious biases, you mentioned community discussions on bias and the importance of spiritual focus. Are there specific writings or frameworks within the Bahá'í teachings that provide guidance or methods to actively recognize and address these biases, beyond just reflection and prayer? How do communities ensure these discussions translate into tangible changes in practice?
 

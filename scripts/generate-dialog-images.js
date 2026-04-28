@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Generate hero images for /dialog/ pages using OpenAI's image API.
+// Generate hero images for /dialogue/ pages using OpenAI's image API.
 // Reads heroPrompt from each markdown frontmatter, generates a 1024×1024
 // blue-shaded watercolor image, saves to public/images/dialog/{slug}-hero.jpg
 // then re-enables `heroImage:` in the frontmatter (was commented out).

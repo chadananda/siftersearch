@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/068-the-mahdi-and-the-christ-why-two-manifestations-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Báb is identified with the awaited Mahdi of Islam, Bahá'u'lláh with the return of Christ (and other figures). Why two consecutive Manifestations rather than one?
 
@@ -29,7 +29,7 @@ This sequence allowed for a gradual unfolding of divine teachings, tailored to t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 But why did it need two separate figures to achieve this? Couldn't a single Manifestation have both prepared the way and delivered the full revelation? In the progressive revelation concept, isn't God capable of timing a revelation perfectly so one would suffice? How do the Writings justify the necessity for this "gradual unfolding" through two distinct individuals rather than a singular comprehensive message?
 
@@ -47,7 +47,7 @@ While God could certainly reveal everything through a single Manifestation, the 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 The idea of dynamic and layered process is compelling, but it still leaves unanswered why the complexity of the modern world necessitated two figures instead of one. If Bahá'u'lláh's revelation is the fullest expression of divine will for this age, why then couldn't it also have encompassed the revolutionary aspects needed to break old traditions? Is there something in the Bahá'í Writings that explicitly states why these roles had to be divided between two Manifestations rather than a single one? You mention the deep-rooted resistance to change, but surely Bahá'u'lláh's authority could have overcome this if God's timing and power are as all-encompassing as taught. Can you point to specific writings or teachings that describe this need for dual figures?
 
@@ -65,7 +65,7 @@ While God's power is indeed limitless, the dual appearance of these Manifestatio
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Esslemont and Taherzadeh provide interesting perspectives, but I'm curious about what the primary Bahá'í texts say on this matter. Are there any direct quotes from Bahá'u'lláh, the Báb, or even 'Abdu'l-Bahá or Shoghi Effendi that address the necessity of having two consecutive Manifestations? It seems like such a crucial aspect of the faith would be explicitly mentioned in the foundational texts. Moreover, if the Báb's role was purely preparatory, could this have been accomplished by Bahá'u'lláh Himself establishing a preliminary phase of His own revelation, instead of requiring a separate figure? How do these roles reflect the broader concept of divine revelation, particularly in this unprecedented rapid succession?
 
@@ -81,7 +81,7 @@ The idea of rapid succession is unique but aligns with the unprecedented changes
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 This lack of explicit primary source justification for two distinct Manifestations in rapid succession intrigues me, especially given the Bahá'í emphasis on scriptural authority. It's curious that such a fundamental aspect seems more interpretative than textual. Does this suggest that the understanding of this dual revelation relies heavily on the interpretations of influential Bahá'í scholars like Esslemont and Taherzadeh rather than the writings of Bahá'u'lláh and the Báb themselves?
 
@@ -101,7 +101,7 @@ In this sense, the dual revelation can indeed be seen as a critique of past reli
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 If we consider this dual revelation as both a critique and an evolution of past religious structures, does that imply a certain imperfection or incompleteness inherent in previous dispensations? How does this align with the Bahá'í view of all religions as part of a continuous divine plan? Does the need for two Manifestations suggest that earlier teachings reached a stagnation that required a more urgent, multifaceted intervention? In recognizing these two distinct phases, are we inadvertently suggesting that the traditional pattern of single Manifestations wasn't sufficient for the complexity of modern times? How does this shift reflect on the nature of God’s communication with humanity across different eras?
 
@@ -119,7 +119,7 @@ This reflects a dynamic and responsive nature of divine communication, showing G
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Your explanation of progressive revelation acknowledges that each previous religion was complete for its time, yet the dual appearance of the Báb and Bahá'u'lláh marks a significant departure from past patterns. If each previous dispensation was perfect for its era, why was a “more layered and immediate response” needed now? How do Bahá'í teachings reconcile this need for urgency with the notion of an omniscient, omnipotent deity whose timing is always perfect?
 
@@ -141,7 +141,7 @@ Regarding future revelations, the Bahá'í Faith teaches that divine revelation 
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 This perspective on progressive revelation and the evolving form of divine guidance is fascinating. However, I wonder if viewing past dispensations as "perfect for their time" inadvertently implies that people's adherence to these teachings contributed to them becoming outdated. How does Bahá'í theology address the role of human interpretation and adaptation of religious teachings in this process? If humanity's maturation dictates the need for new revelations, is there a sense that earlier religious communities could have adapted their understandings in ways that might have prolonged the relevance of their original teachings?
 
@@ -161,7 +161,7 @@ The tension between completeness and progression is an integral part of how Bah�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 This explanation of human interpretation and the evolving nature of divine guidance is thought-provoking. It makes me wonder about the role of community dynamics in the adaptation of religious teachings. If the rigidity or misalignment of past teachings arises from human interpretation, how do Bahá'í communities actively guard against similar pitfalls today? Are there mechanisms within the Bahá'í administrative order or spiritual practices that ensure interpretations remain aligned with Bahá'u'lláh's original intent, preventing stagnation and promoting continual relevance?
 
@@ -183,7 +183,7 @@ These considerations shape Bahá'í community life by promoting an outward-looki
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 You've articulated how the Bahá'í administrative order and spiritual practices aim to maintain alignment with Bahá'u'lláh's teachings, but it raises a question about the balance between divine authority and human agency. If the Universal House of Justice is divinely guided, does this imply a potential for infallibility in its decisions, similar to how Manifestations are viewed? How does this governance model accommodate individual interpretation and personal spiritual exploration, which are also core Bahá'í principles? 
 

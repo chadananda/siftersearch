@@ -15,7 +15,7 @@ excerpt: "Believer_voice is strong and consistent."
 featured: false
 heroImage: /images/dialog/015-lesser-peace-most-great-peace-whats-the-distinction-hero.jpg
 ---
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 What does 'the Lesser Peace' actually mean, and why does it precede 'the Most Great Peace'? Is the distinction structural or temporal?
 
@@ -31,7 +31,7 @@ The distinction between the two is both structural and temporal. Structurally, t
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-2">
 
 Jafar, your explanation seems to rely on a progression of external to internal transformation, but isn't this somewhat simplistic? Bahá’u’lláh often speaks about the necessity of transforming hearts first and foremost. How do you reconcile this with the idea that the "Lesser Peace," which is more about political agreements, comes before the "Most Great Peace"? And could you provide specific quotes from Bahá’u’lláh or 'Abdu'l-Bahá that clarify why the temporal order is as you describe it? It seems counterintuitive that external conditions could precede internal spiritual transformation, given the emphasis on the latter throughout Bahá'í writings.
 
@@ -51,7 +51,7 @@ The temporal order reflects the reality that large-scale changes often start wit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-3">
 
 Jafar, I understand the practical necessity of the "Lesser Peace" as a foundation for wider changes, but doesn't this approach risk placing too much emphasis on political structures at the expense of spiritual ones? Bahá'u'lláh also emphasizes the transformative power of spiritual teachings in reshaping society. For instance, in the "Tablets of Bahá’u’lláh," He emphasizes the importance of the individual's spiritual journey and the cultivation of virtues. How do we ensure that the pursuit of the "Lesser Peace" doesn't overshadow the spiritual development necessary for the "Most Great Peace"?
 
@@ -75,7 +75,7 @@ This metaphor highlights the need for both material (political) and spiritual pr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-4">
 
 Jafar, the metaphor of two wings is compelling, yet it seems to leave room for ambiguity regarding prioritization. 'Abdu'l-Bahá's quote suggests an equal necessity for material and spiritual development. However, given the current state of the world, where political structures often dominate and shape society, how do we practically ensure that spiritual growth is not sidelined? Isn't there a risk that in focusing too much on establishing stable political frameworks, the critical spiritual aspects could become mere afterthoughts, given the current emphasis on political and economic power?
 
@@ -101,7 +101,7 @@ By weaving spiritual principles into every aspect of life and community, Bahá'�
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-5">
 
 Jafar, the efforts you describe within the Bahá'í community are undoubtedly important, yet they seem somewhat insular when considering the global scale of the "Lesser Peace" and "Most Great Peace." How does the Bahá'í community ensure that these transformative practices extend beyond community boundaries to influence broader political and societal structures? Is there a specific strategy or framework within the Faith for engaging with international systems or governments to promote these dual forms of peace?
 
@@ -131,7 +131,7 @@ These efforts demonstrate how Bahá'í principles are being applied on a broader
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-6">
 
 Jafar, while the Bahá'í International Community's presence at the UN and other forums is commendable, how effective has this engagement been in terms of measurable outcomes? The principles of consultation and unity are undoubtedly valuable, but are there concrete examples where these have directly influenced policy or led to changes at the governmental level?
 
@@ -159,7 +159,7 @@ While the path to influencing global policy is gradual and often indirect, the B
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-7">
 
 Jafar, I appreciate the nuanced picture you're painting of the Bahá'í community's role in international advocacy, yet there's a need for more specific examples of tangible outcomes from this engagement, particularly at the policymaking level. While shaping discourse is crucial, are there instances where Bahá'í interventions have led directly to policy shifts or legislative changes? For example, has the concept of gender equality or sustainability, as influenced by Bahá'í advocacy, been explicitly reflected in any specific international agreements or national policies?
 
@@ -187,7 +187,7 @@ These examples illustrate how Bahá'í principles are applied in practice, contr
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-8">
 
 Jafar, while it's understandable that the Bahá'í community's contributions often blend into collective efforts, the examples you mentioned seem to highlight participatory roles rather than direct causal influences on policy shifts. This makes it difficult to gauge the specific impact of Bahá'í advocacy. For instance, if we look at the drafting of the SDGs, can you point to concrete instances where Bahá'í thought leadership directly shaped certain goals or targets in ways distinct from the contributions of other groups?
 
@@ -211,7 +211,7 @@ The Bahá'í community's strategy in advocacy involves persistent engagement wit
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-9">
 
 Jafar, it's clear that the Bahá'í community is committed to a long-term vision of peace and justice, but the challenges you've outlined highlight a key tension between vision and practical impact. The integration of moral considerations into frameworks like the SDGs is valuable, yet without specific, measurable outcomes directly attributed to Bahá'í advocacy, it remains more of an influence than a catalyst.
 
@@ -237,7 +237,7 @@ The community's approach is flexible, allowing for responsiveness to changing ci
 
 </div>
 
-<div class="user-turn">
+<div class="user-turn" id="round-10">
 
 Jafar, while the adaptability and focus of the Bahá'í community are commendable, the examples and strategies still seem to reflect a supportive rather than a leading role in global issues. I'm curious about the mechanisms that allow the Bahá'í community to evaluate and refine its strategies over time. How does the community learn from past efforts to ensure future initiatives are more impactful? Is there a formal process for evaluating the effectiveness of their advocacy or community-building efforts?
 
