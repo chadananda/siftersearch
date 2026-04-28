@@ -54,11 +54,13 @@ const organizationSchema = {
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" style="background:#0a162a;color:#e6edf6;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1e293b" />
+    <meta name="theme-color" content="#0a162a" />
+    <!-- Inline critical bg color so first paint is dark — prevents white flash on refresh -->
+    <style>html,body{background:#0a162a;color:#e6edf6;margin:0;}</style>
 
     <!-- SEO Component handles: title, description, canonical, OG, Twitter -->
     <SEO
