@@ -403,11 +403,43 @@ const CANONICAL_WORKS = [
 // the Aqdas" (doc 8270) has 600+ paragraphs containing many named tablets:
 // each named tablet's first paragraph carries a heading like "Lawḥ-i-Ḥikmat"
 // or "Ishráqát". This function returns the parent doc + the start/end
-// paragraph range for each match — Jafar can then read just that range
-// rather than the whole compilation.
+// paragraph range for each match.
 //
-// Matches the heading text against the title using normalized substring
-// (case-insensitive, apostrophe-and-diacritic-insensitive).
+// Headings are cached in memory because there's no index on content.heading
+// and the corpus has 3.4M rows — a full scan would crash Cloudflare's
+// timeout on every chat request. Cache is built lazily on first call;
+// subsequent calls are O(1).
+let _headingsCache = null;
+let _headingsCacheLoadedAt = null;
+const HEADINGS_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+async function loadHeadingsCache() {
+  if (_headingsCache && _headingsCacheLoadedAt && (Date.now() - _headingsCacheLoadedAt) < HEADINGS_CACHE_TTL_MS) {
+    return _headingsCache;
+  }
+  // Two-step query so the heading scan doesn't full-scan content. First, find
+  // doc_ids that have any non-null heading (small query against indexed
+  // doc_id), then for each such doc fetch heading rows.
+  // Simpler approach: scan content for non-null headings — runs once per cache
+  // lifetime so the slow query is amortized.
+  const t0 = Date.now();
+  const rows = await queryAll(
+    `SELECT c.doc_id, c.heading, MIN(c.paragraph_index) as first_para,
+            d.title as parent_title, d.author as parent_author, d.religion,
+            d.collection, d.paragraph_count
+     FROM content c JOIN docs d ON d.id = c.doc_id
+     WHERE c.heading IS NOT NULL AND c.heading != ''
+       AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+     GROUP BY c.doc_id, c.heading
+     ORDER BY c.doc_id, first_para`,
+    []
+  );
+  logger.info({ rowCount: rows.length, ms: Date.now() - t0 }, 'headings cache loaded');
+  _headingsCache = rows;
+  _headingsCacheLoadedAt = Date.now();
+  return rows;
+}
+
 async function findNamedWorksInCompilations(title) {
   if (!title || title.length < 3) return [];
   const normalize = (s) => (s || '')
@@ -417,17 +449,7 @@ async function findNamedWorksInCompilations(title) {
     .replace(/[\u2018\u2019\u02bc\u02bb`'']/g, "'");
   const normTitle = normalize(title);
 
-  // Pull all distinct (doc_id, heading) pairs and filter in JS — there are
-  // typically only a few thousand non-null headings across the corpus.
-  const rows = await queryAll(
-    `SELECT c.doc_id, c.heading, MIN(c.paragraph_index) as first_para,
-            d.title as parent_title, d.author as parent_author, d.religion, d.collection, d.paragraph_count
-     FROM content c JOIN docs d ON d.id = c.doc_id
-     WHERE c.heading IS NOT NULL AND c.heading != '' AND c.deleted_at IS NULL AND d.deleted_at IS NULL
-     GROUP BY c.doc_id, c.heading
-     ORDER BY c.doc_id, first_para`,
-    []
-  );
+  const rows = await loadHeadingsCache();
 
   // Filter to headings that contain (or are contained by) the title. Also
   // the reverse — title contains heading — handles "Tablet of Wisdom" vs

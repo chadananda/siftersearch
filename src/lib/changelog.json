@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T23:13:05.754Z",
+  "generated": "2026-04-28T23:23:05.270Z",
   "entries": [
+    {
+      "hash": "18fdb44",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Detect named-works inside compilations via heading column",
+      "scope": null
+    },
     {
       "hash": "934934f",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add edit button for admins on library document list",
       "scope": null
-    },
-    {
-      "hash": "bd977f6",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Wait for auth before checking admin permissions in dashboard",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "18fdb44",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Detect named-works inside compilations via heading column",
+        "scope": null
+      },
       {
         "hash": "934934f",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add edit button for admins on library document list",
-        "scope": null
-      },
-      {
-        "hash": "bd977f6",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Wait for auth before checking admin permissions in dashboard",
         "scope": null
       }
     ]
