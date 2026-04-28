@@ -105,7 +105,12 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**When the topic is a specific small work, READ IT — preferably via the sub-agent.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), prefer \`read_document_for_question\` with the document_id and the user's question. The sub-agent reads the document and returns ONLY a tailored summary plus 2-3 verbatim excerpts — the document body stays out of your context. If \`read_document_for_question\` returns an error, fall back to \`search\` with \`mode: "read"\` and \`document_id\` to fetch paragraphs directly. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, ingest it.
+**Specific named works — use the citation pipeline.** When the conversation is about a specific named scripture or work (*the Tablet of Wisdom, the Iqán, the Hidden Words, the Gospel of John, the Bhagavad Gita, a specific Upanishad*) — that is, when the user is asking what a particular text says — use this two-step pipeline:
+
+1. \`find_document_for_citation\` with the work's name and the religion. This is the citation lookup. It applies an authority boost so canonical scriptures rank above commentaries that happen to share the title (e.g. "Tablet of Wisdom: Questions and Answers" loses to the Tablet itself). Returns up to 5 candidates with \`document_id\`, \`paragraph_count\`, and an \`is_primary\` flag.
+2. \`read_document_for_question\` with the \`document_id\` of the primary match and the user's question. A sub-agent reads the document and returns ONLY a tailored summary plus 2-3 verbatim excerpts — the document body never enters your context. If it errors, fall back to \`search\` with \`mode: "read"\` on the same \`document_id\`.
+
+This pipeline is for the case "what does X say about Y?" Use \`search\` with \`mode: "passages"\` for the case "find me passages on Y." Failing to answer a question about a named small work because keyword search missed the right phrase is a refusal masquerading as research — the citation pipeline is exactly the tool for this.
 
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
@@ -198,8 +203,29 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
     type: 'function',
     function: {
       name: 'library_overview',
-      description: 'Get a high-level overview of the entire library: total documents, passages, religions, and collections with counts. Use when the user asks about the library scope or size.',
+      description: `Returns a structured snapshot of the entire library: total documents, total paragraphs, religion counts (per tradition: how many docs, how many paragraphs), and collection counts (per collection name within each religion). Call this when:
+- the user asks about library scope, size, or coverage ("how big is your library?", "how many books do you have?")
+- the user asks what's available on a tradition ("do you have anything on Sufism?", "what Buddhist texts do you carry?")
+- you're about to answer a question on a tradition you suspect might be thinly represented in the corpus — checking coverage first prevents asserting from training memory when the corpus is sparse
+- the user asks about a specific collection ("the Pali Canon", "the Tablet Translations") and you need to know if it exists and how big it is`,
       parameters: { type: 'object', properties: {} }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'find_document_for_citation',
+      description: `Locate a specific NAMED scripture or work by title — *the* citation lookup. Use this BEFORE quoting from a named text. Searches the documents index by title with a primary-source authority boost: canonical scriptures (Aqdas, Iqán, Hidden Words, Gleanings, Some Answered Questions; the Gospels; Qur'án; Pali Canon; Upanishads, Bhagavad Gita; Guru Granth Sahib) rank ABOVE commentaries, papers, and pilgrim notes that share the title. Returns up to 5 candidates with document_id, title, author, paragraph_count, and an is_primary flag. Then call read_document_for_question with the document_id of the primary match. Use search with mode:"passages" for topic searches; use this tool when the user is asking about a specific named work.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'The work\'s name as the user said it (or as it\'s commonly known): "Tablet of Wisdom", "Lawh-i-Hikmat", "Gospel of John", "Bhagavad Gita".' },
+          religion: { type: 'string', description: 'Tradition filter: "Baha\'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh", "Jain", "Confucian", "Tao", "Zoroastrian".' },
+          author: { type: 'string', description: 'Optional partial author name filter, useful when multiple works share a title (e.g., "Bahá\'u\'lláh" to disambiguate from \'Abdu\'l-Bahá tablets).' },
+          limit: { type: 'integer', description: 'Max candidates to return (default 5).', default: 5 }
+        },
+        required: ['title']
+      }
     }
   },
   {
@@ -332,6 +358,123 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
   };
 }
 
+// ─── Primary-source authority boost for find_document_for_citation ───────
+// Per-religion allowlist of canonical works whose titles should rank above
+// commentary, papers, and pilgrim-note documents when the user asks for "the
+// Tablet of Wisdom" or "the Gospel of John". Matches against the document's
+// title (case-insensitive substring) and falls back to author for the
+// Central Figures who wrote the entire primary canon.
+const PRIMARY_AUTHORITY = {
+  "Baha'i": {
+    titles: [
+      'kitáb-i-aqdas', 'kitab-i-aqdas', 'most holy book',
+      'kitáb-i-íqán', 'kitab-i-iqan', 'book of certitude',
+      'hidden words',
+      'gleanings from the writings',
+      'gems of divine mysteries',
+      'seven valleys', 'four valleys',
+      'tablets of bahá', 'tablets of baha',
+      'epistle to the son of the wolf',
+      'summons of the lord of hosts',
+      'prayers and meditations',
+      'some answered questions',
+      'paris talks', 'promulgation of universal peace',
+      'secret of divine civilization',
+      'tablets of the divine plan',
+      'tablet of', 'lawh-',  // catch all named tablets
+      'will and testament',
+      // Shoghi Effendi
+      'god passes by', 'world order of bahá', 'world order of baha',
+      'advent of divine justice', 'promised day is come',
+      'dispensation of bahá', 'dispensation of baha'
+    ],
+    authors: ['bahá', 'baha', 'báb', 'bab', 'abdu', 'shoghi effendi']
+  },
+  Christian: {
+    titles: ['gospel of matthew', 'gospel of mark', 'gospel of luke', 'gospel of john', 'matthew', 'mark', 'luke', 'john (gospel)', 'acts of the apostles'],
+    authors: []
+  },
+  Islam: {
+    titles: ['qur', "qur'án", 'koran', 'al-fatihah', 'sahih', 'bukhari', 'muslim'],
+    authors: []
+  },
+  Judaism: {
+    titles: ['torah', 'tanakh', 'genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy', 'isaiah', 'jeremiah', 'ezekiel', 'psalms', 'proverbs'],
+    authors: []
+  },
+  Buddhist: {
+    titles: ['dhammapada', 'sutta', 'sutra', 'pali canon', 'tipitaka'],
+    authors: []
+  },
+  Hindu: {
+    titles: ['upanishad', 'bhagavad', 'gita', 'vedas', 'rigveda', 'samaveda'],
+    authors: []
+  },
+  Sikh: {
+    titles: ['guru granth sahib'],
+    authors: ['guru']
+  }
+};
+
+function authorityScore(doc) {
+  const rel = doc.religion;
+  const cfg = PRIMARY_AUTHORITY[rel];
+  if (!cfg) return 0;
+  const t = (doc.title || '').toLowerCase();
+  const a = (doc.author || '').toLowerCase();
+  for (const titleNeedle of cfg.titles) if (t.includes(titleNeedle)) return 100;
+  for (const authorNeedle of cfg.authors) if (a.includes(authorNeedle)) return 50;
+  return 0;
+}
+
+// Find a specific named work (Tablet, Gospel, Sutra, etc.) by title. Wraps
+// Meilisearch documents index with a primary-source authority boost so the
+// actual scripture surfaces above commentaries and pilgrim notes.
+export async function executeFindDocumentForCitation({ title, religion, author, limit = 5 }) {
+  const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
+  try {
+    const { getMeili, INDEXES } = await import('../lib/search.js');
+    const meili = getMeili();
+    if (meili) {
+      const filters = [];
+      if (religion) filters.push(`religion = "${religion}"`);
+      const result = await meili.index(INDEXES.DOCUMENTS).search(title || '', {
+        limit: 25, // grab more, re-rank, then trim
+        attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug'],
+        ...(filters.length > 0 ? { filter: filters.join(' AND ') } : {})
+      });
+      let hits = result.hits;
+      if (author) {
+        const a = author.toLowerCase();
+        hits = hits.filter(h => (h.author || '').toLowerCase().includes(a));
+      }
+      // Re-rank: authority score first, then Meilisearch position
+      hits = hits
+        .map((h, idx) => ({ ...h, _authority: authorityScore(h), _idx: idx }))
+        .sort((a, b) => (b._authority - a._authority) || (a._idx - b._idx))
+        .slice(0, safeLimit);
+      return {
+        candidates: hits.map(h => ({
+          document_id: h.id,
+          title: h.title,
+          author: h.author || '',
+          religion: h.religion || '',
+          collection: h.collection || '',
+          year: h.year,
+          paragraph_count: h.paragraph_count,
+          is_primary: h._authority >= 100,
+          slug: h.slug
+        })),
+        searched: title,
+        religion: religion || null
+      };
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'find_document Meilisearch failed');
+  }
+  return { candidates: [], error: 'Meilisearch unavailable', searched: title };
+}
+
 export async function executeLibraryOverview() {
   const [docCount, paraCount, religions, collections] = await Promise.all([
     queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
@@ -439,6 +582,7 @@ async function executeTool(name, args) {
   switch (name) {
     case 'search': return executeSearch(args);
     case 'library_overview': return executeLibraryOverview();
+    case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
     default: return { error: `Unknown tool: ${name}` };
   }
