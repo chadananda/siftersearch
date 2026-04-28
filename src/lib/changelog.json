@@ -1,6 +1,27 @@
 {
-  "generated": "2026-04-28T13:43:48.582Z",
+  "generated": "2026-04-28T14:38:08.152Z",
   "entries": [
+    {
+      "hash": "6a438c0",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "HeroImage path uses full slug; rebuild runner output",
+      "scope": null
+    },
+    {
+      "hash": "51403e8",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "V4 prompt + assessment infrastructure (schema, methodology page, per-article assessment box)",
+      "scope": null
+    },
+    {
+      "hash": "2e1634c",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "PUBLIC_API_URL resolved in astro.config from API_URL/API_URL_DEV based on DEV_MODE",
+      "scope": null
+    },
     {
       "hash": "2e7b43d",
       "date": "2026-04-28",
@@ -3479,31 +3500,31 @@
       "type": "Fixed",
       "description": "Correct Study view column order for RTL documents",
       "scope": null
-    },
-    {
-      "hash": "a1bf8d7",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add numbered middle column to Study view (like SBS)",
-      "scope": null
-    },
-    {
-      "hash": "6dc2d44",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Redesign Study view with aligned phrase rows",
-      "scope": null
-    },
-    {
-      "hash": "9991825",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view now uses API pre-parsed translation fields",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "6a438c0",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "HeroImage path uses full slug; rebuild runner output",
+        "scope": null
+      },
+      {
+        "hash": "51403e8",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "V4 prompt + assessment infrastructure (schema, methodology page, per-article assessment box)",
+        "scope": null
+      },
+      {
+        "hash": "2e1634c",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "PUBLIC_API_URL resolved in astro.config from API_URL/API_URL_DEV based on DEV_MODE",
+        "scope": null
+      },
       {
         "hash": "2e7b43d",
         "date": "2026-04-28",
@@ -7045,27 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Correct Study view column order for RTL documents",
-        "scope": null
-      },
-      {
-        "hash": "a1bf8d7",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add numbered middle column to Study view (like SBS)",
-        "scope": null
-      },
-      {
-        "hash": "6dc2d44",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Redesign Study view with aligned phrase rows",
-        "scope": null
-      },
-      {
-        "hash": "9991825",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view now uses API pre-parsed translation fields",
         "scope": null
       }
     ]

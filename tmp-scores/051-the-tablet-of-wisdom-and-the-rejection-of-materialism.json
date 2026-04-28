@@ -1,26 +1,22 @@
 {
   "slug": "051-the-tablet-of-wisdom-and-the-rejection-of-materialism",
-  "depth": 60,
-  "clarity": 65,
-  "stereotype_avoidance": 55,
-  "word_definition_questioning": 50,
-  "assumption_questioning": 45,
-  "teaching_clarity": 60,
-  "evidence_quality": 40,
-  "conversational_naturalness": 55,
-  "believer_voice": 70,
-  "archive_worthy": 50,
-  "overall": 55,
-  "strengths": [
-    "Believer_voice is strong, reflecting faith perspective.",
-    "Clarity in explaining consultation process.",
-    "Teaching_clarity in discussing principles."
+  "scores": {
+    "depth": 40,
+    "conversational_realism": 50,
+    "doctrinal_fidelity": 60,
+    "period_word_discipline": 70,
+    "evidence_quality": 20,
+    "brevity_discipline": 60,
+    "correction_courage": 50,
+    "archive_worthy": 30
+  },
+  "overall": 47,
+  "narrative": "The conversation lacks depth, as Jafar repeatedly fails to provide specific passages from the Tablet of Wisdom, instead offering general summaries (rounds 2, 4, 6). Conversational realism is moderate, but Jafar's responses often lack the natural flow of a friendly dialogue. Doctrinal fidelity is compromised by the absence of primary citations and reliance on generalizations. Evidence quality is poor due to the lack of direct quotes from Bahá'u'lláh. Jafar shows some brevity discipline but fails to correct the user's misconceptions about the text's content.",
+  "flags": [
+    "missing-primary-citation",
+    "secondary-substitution",
+    "sycophant-on-error"
   ],
-  "weaknesses": [
-    "Lacks primary source evidence.",
-    "Limited questioning of assumptions.",
-    "Abstract without concrete examples."
-  ],
-  "prompt_signal": "Incorporate more primary sources and concrete examples to enhance depth.",
-  "elapsedSec": "98.9"
+  "improvement_plan": "Jafar needs to prioritize finding and quoting primary texts directly from Bahá'u'lláh when specific passages are requested. The system should be adjusted to ensure that Jafar can access and provide accurate citations from primary sources, particularly when discussing key doctrinal texts like the Tablet of Wisdom.",
+  "elapsedSec": "51.6"
 }

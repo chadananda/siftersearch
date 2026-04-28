@@ -201,7 +201,7 @@ function slugify(s) {
 const TOPIC_LABELS = ['theology','ethics','social-order','politics','history','comparative-religion','mysticism','practice','modern-challenges','word-meaning','metaphysics','philosophy'];
 const VALID_TOPIC = new Set(TOPIC_LABELS);
 
-function dialogMarkdown(q, history, score, judgeResult) {
+function dialogMarkdown(q, history, score, judgeResult, slug) {
   const parts = [];
   for (let i = 0; i < history.length; i += 2) {
     const u = history[i];
@@ -211,8 +211,7 @@ function dialogMarkdown(q, history, score, judgeResult) {
     if (i + 2 < history.length - 1) parts.push('---', '');
   }
 
-  // Hero image already on disk (generated previously) at /images/dialog/{slug}-hero.jpg
-  const slug = q.slug || `${slugify(q.title)}`;
+  // Hero image already on disk at /images/dialog/{slug}-hero.jpg
   const heroPath = `/images/dialog/${slug}-hero.jpg`;
 
   // Assessment block — visible per-article meta-commentary

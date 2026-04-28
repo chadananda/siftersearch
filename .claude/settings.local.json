@@ -51,7 +51,8 @@
       "WebFetch(domain:commons.wikimedia.org)",
       "WebFetch(domain:upload.wikimedia.org)",
       "WebFetch(domain:fontawesome.cc)",
-      "WebFetch(domain:qwenlm.github.io)"
+      "WebFetch(domain:qwenlm.github.io)",
+      "Bash(ssh chad@tower-nas ' *)"
     ]
   }
 }
