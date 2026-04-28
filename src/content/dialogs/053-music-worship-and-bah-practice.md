@@ -1,6 +1,6 @@
 ---
-title: "How Does the Bahá'í Faith Treat Music in Worship?"
-description: "In the House of Worship: vocal only, no instruments. Outside: instruments encouraged, calligraphy and beautiful recitation honored. Bahá'u'lláh and 'Abdu'l-Bahá both treat music as devotional — capable of uplifting the soul. Mishkín-Qalam's calligraphy of the writings was itself considered a form of worship."
+title: "Music, Worship, and Bahá'í Practice"
+description: "On the Bahá'í teaching about music — what's allowed in the House of Worship, what's encouraged outside it, and where music sits in the doctrine."
 question: "What does the Bahá'í Faith teach about music in worship?"
 topic: practice
 tags:

@@ -1,6 +1,6 @@
 ---
-title: "How Does the Tablet of Wisdom Reject Materialism Without Rejecting Science?"
-description: "Bahá'u'lláh's Tablet of Wisdom (Lawḥ-i-Ḥikmat) draws a clean line: science studies the physical world and is praised; materialism is the metaphysical claim that the physical is all there is, and is rejected. The Tablet names Hippocrates, Socrates, Plato, and Aristotle as philosophers who acknowledged divine reality — the harmony of religion and science is a Bahá'í doctrinal foundation, not a slogan."
+title: "The Tablet of Wisdom and the Rejection of Materialism"
+description: "On the Tablet of Wisdom's argument against materialism, and how Bahá'u'lláh distinguishes that from a rejection of science."
 question: "The Tablet of Wisdom (Lawh-i-Hikmat) addresses the origins of philosophy and rejects pure materialism. How does Bahá'u'lláh distinguish his rejection of materialism from a rejection of science?"
 topic: philosophy
 tags:
