@@ -746,7 +746,7 @@ const TOPIC_LABELS: Record<string, string> = {
   .dialog-body :global(h4) {
     font-size: 0.6rem;
     color: rgba(186, 160, 82, 0.22);
-    margin: 2.4rem 0 0.4rem;
+    margin: 2.4rem 0 0;     /* zero bottom margin — sits right on the prose */
     padding-left: 4rem;
   }
   @media (max-width: 720px) {
@@ -800,13 +800,14 @@ const TOPIC_LABELS: Record<string, string> = {
   .dialog-body :global(.user-turn p) { margin: 0 0 0.6rem; }
   .dialog-body :global(.user-turn p:last-child) { margin-bottom: 0; }
 
-  /* JAFAR TURN — open prose. A sits in the left margin (slightly past the
-     column edge), prose starts past A's right edge with breathing room
-     so the first character is never eaten by the marker. */
+  /* JAFAR TURN — open prose. A sits CENTERED horizontally in the left
+     margin between the dialog-body's outer edge (-2.25rem) and the prose
+     text edge (+4rem), at midpoint ~+0.9rem. Prose starts immediately
+     under the h4 — no padding-top — so h4 sits right on the text. */
   .dialog-body :global(.jafar-turn) {
     position: relative;
     margin: 0;
-    padding: 0.5rem 0 0.5rem 4rem;
+    padding: 0 0 0.5rem 4rem;
     background: none;
     border: none;
     border-radius: 0;
@@ -816,8 +817,8 @@ const TOPIC_LABELS: Record<string, string> = {
   .dialog-body :global(.jafar-turn::before) {
     content: "";
     position: absolute;
-    left: -1.75rem;
-    top: 0.5rem;             /* aligned with the top of Jafar's first line of text */
+    left: -1.1rem;           /* centers a 4rem A on the gap midpoint */
+    top: 0;
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 8px;
@@ -834,24 +835,33 @@ const TOPIC_LABELS: Record<string, string> = {
   }
   .dialog-body :global(.jafar-turn p:last-child) { margin-bottom: 0; }
 
-  /* First Q and first A in the conversation are 25% larger; subsequent
-     markers fade to 0.75 alpha so the opening pair reads as the entrance. */
-  .dialog-body :global(.user-turn:first-of-type::before),
-  .dialog-body :global(.jafar-turn:first-of-type::before) {
+  /* First Q and first A are 25% larger; subsequent markers fade to 0.75
+     alpha. Sibling combinator detects "not the first": .user-turn ~ .user-turn
+     matches user-turns that are preceded by another user-turn. */
+  .dialog-body :global(.user-turn ~ .user-turn::before),
+  .dialog-body :global(.jafar-turn ~ .jafar-turn::before) {
+    opacity: 0.75;
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+  /* First user-turn — bigger Q, full opacity */
+  .dialog-body :global(.user-turn::before) {
     width: 4rem;
     height: 4rem;
     left: -3rem;
   }
-  .dialog-body :global(.jafar-turn:first-of-type::before) {
-    left: -2.25rem;
-  }
-  .dialog-body :global(.user-turn::before),
+  /* First jafar-turn — bigger A, centered in the left margin */
   .dialog-body :global(.jafar-turn::before) {
-    opacity: 0.75;
+    width: 4rem;
+    height: 4rem;
+    left: -1.5rem;           /* centers a 4rem A on the gap midpoint */
   }
-  .dialog-body :global(.user-turn:first-of-type::before),
-  .dialog-body :global(.jafar-turn:first-of-type::before) {
-    opacity: 1;
+  /* Subsequent: shrink back + reset left for centered position */
+  .dialog-body :global(.user-turn ~ .user-turn::before) {
+    left: -2.5rem;
+  }
+  .dialog-body :global(.jafar-turn ~ .jafar-turn::before) {
+    left: -1.1rem;
   }
 
   @media (max-width: 720px) {
