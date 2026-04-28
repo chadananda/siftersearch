@@ -19,7 +19,14 @@ function resolveDbPath() {
   return filePath.startsWith('/') ? filePath : join(PROJECT_ROOT, filePath);
 }
 
-const BACKUP_DIR = join(PROJECT_ROOT, 'data', 'backups');
+// Configurable backup directory. Defaults to ./data/backups but on machines
+// with a dedicated bulk-storage volume (e.g. tower-nas /tank), set BACKUP_DIR
+// in the env so daily 21GB SQLite snapshots don't fill the OS root partition.
+const BACKUP_DIR = process.env.BACKUP_DIR
+  ? (process.env.BACKUP_DIR.startsWith('/')
+      ? process.env.BACKUP_DIR
+      : join(PROJECT_ROOT, process.env.BACKUP_DIR))
+  : join(PROJECT_ROOT, 'data', 'backups');
 const LAST_BACKUP_FILE = join(BACKUP_DIR, '.last-backup');
 
 function ensureBackupDir() {
