@@ -35,7 +35,8 @@ This is the single biggest leverage point for the next stage. See **Recommendati
 | **v3** | Perennialist wise-believer; "think first, search to verify" | 69% | **Hallucinated Shoghi Effendi quote** — too far from search-anchored |
 | **v3.1** | v3 + RULE 1 NEVER QUOTE WITHOUT SEARCHING | 66% / 61% / 60% (avg 62%) | Hallucination fixed; naturalness dropped from 72→60 |
 | **v3.2** | v3.1 + RULE 2 multi-search per turn + RULE 3 be specific + tougher user-agent | 58% / 46% on dialogs 5-6 | **Over-tightened — scores fell further; conversations got more rigid** |
-| **v3.1 (REVERTED)** ← **final** | Reverted v3.2 → v3.1 after observing regression | tbd (rerunning) | Best balance of no-hallucination + decent score in tested versions |
+| **v3.1 (REVERTED)** | Reverted v3.2 → v3.1 after observing regression | 50-55% | I had inadvertently kept the v3.2 aggressive user-agent — variable not held |
+| **v3.1 + original user-agent** ← **final** | Reverted user-agent too; clean v3.1 baseline | running through the night | Targets 60-66% (the original v3.1 score range) |
 
 **Pattern:** each tightening either traded naturalness for honesty or produced no measurable gain because the binding constraint moved to the search layer. After three cycles, reverted to **v3.1** as the best operating point achievable with prompt-only iteration.
 
