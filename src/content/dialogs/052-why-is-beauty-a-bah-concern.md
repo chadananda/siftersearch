@@ -1,6 +1,6 @@
 ---
 title: "Why Is Beauty a Bahá'í Concern?"
-description: "On the doctrinal foundation of beauty in the Bahá'í Faith — beauty as reflection of divine attributes, in worship, architecture, and the Word."
+description: "Beauty in the Bahá'í Faith reflects divine attributes — it's not aesthetic preference but doctrinal claim. Bahá'u'lláh links beauty to the soul's elevation in works like 'O Nightingales!' and the Hidden Words; calligraphy, the nine-sided Mashriqu'l-Adhkár, and devotional recitation all flow from this. The discipline pairs beauty with detachment: be beautiful, don't be ostentatious."
 question: "Why is beauty a specific concern in the Bahá'í Faith — is there a doctrine behind it, or just an aesthetic preference?"
 topic: ethics
 tags:

@@ -67,7 +67,7 @@ for (const p of allPublished) {
 }
 const linkableTags = data.tags.filter(t => (tagCounts.get(t) || 0) >= 2);
 
-// Schema.org structured data — Article with Q&A structure
+// Schema.org structured data — Article wrapper
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -87,6 +87,45 @@ const articleSchema = {
   "image": data.heroImage ? `https://siftersearch.com${data.heroImage}` : undefined,
   "keywords": data.tags.join(', ')
 };
+
+// FAQPage schema — every round (h3 question summary + Jafar's prose answer)
+// becomes a Q&A entry. Strong rich-result signal for Google: the conversation
+// renders in search as a collapsible FAQ stack. Pulled from Astro's headings
+// (h3 = question summary) and the markdown body (jafar-turn divs hold the
+// prose answers).
+const roundQuestions = headings.filter(h => h.depth === 3);
+const jafarTurnRegex = /<div class="jafar-turn">([\s\S]*?)<\/div>/g;
+const jafarAnswers: string[] = [];
+{
+  // body is in the rendered HTML; we don't have direct access. Pull from the
+  // raw markdown via the import (gray-matter loaded by Astro's content).
+  // Fallback: empty array — FAQPage will be omitted if we can't pair.
+  const raw = (dialog.body || '');
+  let m;
+  while ((m = jafarTurnRegex.exec(raw)) !== null) {
+    // Strip surrounding whitespace and any HTML; keep markdown as-is so
+    // the Answer.text field is human-readable.
+    const text = m[1].trim();
+    if (text) jafarAnswers.push(text);
+  }
+}
+const faqEntries = roundQuestions
+  .map((q, i) => ({ q: q.text, a: jafarAnswers[i] }))
+  .filter(p => p.q && p.a);
+const faqSchema = faqEntries.length >= 3 ? {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": faqEntries.map(p => ({
+    "@type": "Question",
+    "name": p.q,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      // Strip the markdown blockquote prefix so the answer reads cleanly
+      // in search results. Cap at ~600 chars per answer.
+      "text": p.a.replace(/^>\s*/gm, '').slice(0, 600)
+    }
+  }))
+} : null;
 
 // Topic label
 const TOPIC_LABELS: Record<string, string> = {
@@ -113,6 +152,7 @@ const TOPIC_LABELS: Record<string, string> = {
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+    {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
     <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialogue/rss.xml" />
   </Fragment>
 
