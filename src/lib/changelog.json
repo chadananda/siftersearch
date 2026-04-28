@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T22:55:26.788Z",
+  "generated": "2026-04-28T23:02:10.483Z",
   "entries": [
+    {
+      "hash": "fd78c07",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
+      "scope": null
+    },
     {
       "hash": "5b47747",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
       "scope": null
-    },
-    {
-      "hash": "fa09a0c",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Add auto_segmented flag to track AI-segmented documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "fd78c07",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Normalize apostrophes/diacritics + force two-step pipeline in prompt",
+        "scope": null
+      },
       {
         "hash": "5b47747",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Test",
         "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
-        "scope": null
-      },
-      {
-        "hash": "fa09a0c",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Add auto_segmented flag to track AI-segmented documents",
         "scope": null
       }
     ]

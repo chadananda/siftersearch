@@ -360,6 +360,55 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
   };
 }
 
+// ─── Canonical-works hard-resolve for find_document_for_citation ─────────
+// When the user names a known canonical work, return its known doc_id
+// directly — bypasses Meilisearch ranking entirely. The actual full English
+// text lives at these document_ids (audited against the corpus 2026-04-28).
+// Each entry: { matchers: [strings tested against normalized title query],
+//               doc_id: int, religion: string }
+const CANONICAL_WORKS = [
+  // Bahá'u'lláh — primary works
+  { matchers: ['kitab-i-aqdas', 'kitabi aqdas', 'kitab al-aqdas', 'aqdas', 'most holy book'], doc_id: 16712, religion: "Baha'i" },
+  { matchers: ['kitab-i-iqan', 'iqan', 'book of certitude'], doc_id: 8300, religion: "Baha'i" },
+  { matchers: ['hidden words'], doc_id: 8230, religion: "Baha'i" },
+  { matchers: ['gleanings'], doc_id: 8312, religion: "Baha'i" },
+  { matchers: ['gems of divine mysteries', 'jawahir al-asrar'], doc_id: 8253, religion: "Baha'i" },
+  { matchers: ['seven valleys', 'four valleys', 'haft vadi'], doc_id: 8241, religion: "Baha'i" },
+  { matchers: ['summons of the lord of hosts'], doc_id: 8299, religion: "Baha'i" },
+  { matchers: ['prayers and meditations'], doc_id: 8301, religion: "Baha'i" },
+  // The compilation that contains the Tablet of Wisdom, Tablet of Carmel,
+  // Bisharat, Tarazat, Lawh-i-Maqsud, etc. When the user asks for any of
+  // these named tablets, this is where the full English text lives.
+  { matchers: ['tablets of bahaullah', 'tablets revealed after', 'tablet of wisdom', 'lawh-i-hikmat', 'lawh i hikmat', 'tablet of carmel', 'lawh-i-karmil', 'bisharat', 'tarazat', 'lawh-i-maqsud', 'lawh-i-dunya', 'ishraqat', 'kalimat-i-firdawsiyyih', 'glad tidings', 'splendours', 'tablet of the world', 'tablet to manakji', 'tablet to queen victoria', 'lawh-i-malikih', 'lawh-i-naser', 'tablet to napoleon'], doc_id: 8270, religion: "Baha'i" },
+  // 'Abdu'l-Bahá
+  { matchers: ['some answered questions', 'mufavadat'], doc_id: 8346, religion: "Baha'i" },
+  { matchers: ['promulgation of universal peace'], doc_id: 8638, religion: "Baha'i" },
+  { matchers: ['paris talks'], doc_id: 8320, religion: "Baha'i" },
+  { matchers: ['secret of divine civilization'], doc_id: 11433, religion: "Baha'i" },
+  { matchers: ['tablets of the divine plan'], doc_id: 8260, religion: "Baha'i" },
+  // Shoghi Effendi
+  { matchers: ['god passes by'], doc_id: 8635, religion: "Baha'i" },
+  { matchers: ['advent of divine justice'], doc_id: 8295, religion: "Baha'i" },
+  { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" }
+];
+
+function canonicalLookup(title, religion) {
+  if (!title) return null;
+  const norm = title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019\u02bc\u02bb`'']/g, "'")
+    .replace(/[^a-z0-9\-\s']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  for (const work of CANONICAL_WORKS) {
+    if (religion && work.religion !== religion && !religion.toLowerCase().startsWith(work.religion.toLowerCase().slice(0, 4))) continue;
+    if (work.matchers.some(m => norm.includes(m))) return work;
+  }
+  return null;
+}
+
 // ─── Primary-source authority boost for find_document_for_citation ───────
 // Per-religion allowlist of canonical works whose titles should rank above
 // commentary, papers, and pilgrim-note documents when the user asks for "the
@@ -450,6 +499,36 @@ function authorityScore(doc) {
 // we over-fetch and post-filter for reliability.
 export async function executeFindDocumentForCitation({ title, religion, author, limit = 5 }) {
   const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
+
+  // Hard-resolve known canonical works first. If the user names one (e.g.
+  // "Tablet of Wisdom"), we know exactly which doc_id to return — skip the
+  // Meilisearch ranking dance entirely. The doc_id is fetched from the DB
+  // for fresh metadata, then prepended to any other Meilisearch hits.
+  const canon = canonicalLookup(title, religion);
+  let canonicalCandidate = null;
+  if (canon) {
+    const doc = await queryOne(
+      `SELECT id, title, author, religion, collection, year, paragraph_count, slug
+       FROM docs WHERE id = ? AND deleted_at IS NULL`,
+      [canon.doc_id]
+    );
+    if (doc) {
+      canonicalCandidate = {
+        document_id: doc.id,
+        title: doc.title,
+        author: doc.author || '',
+        religion: doc.religion || '',
+        collection: doc.collection || '',
+        year: doc.year,
+        paragraph_count: doc.paragraph_count,
+        authority_score: 999,
+        is_primary: true,
+        slug: doc.slug,
+        match_reason: 'canonical-work'
+      };
+    }
+  }
+
   try {
     const { getMeili, INDEXES } = await import('../lib/search.js');
     const meili = getMeili();
@@ -480,8 +559,10 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
         .map((h, idx) => ({ ...h, _authority: authorityScore(h), _idx: idx }))
         .sort((a, b) => (b._authority - a._authority) || (a._idx - b._idx))
         .slice(0, safeLimit);
-      return {
-        candidates: hits.map(h => ({
+      const meiliCandidates = hits
+        // Skip the canonical doc if we already prepended it
+        .filter(h => !canonicalCandidate || h.id !== canonicalCandidate.document_id)
+        .map(h => ({
           document_id: h.id,
           title: h.title,
           author: h.author || '',
@@ -491,8 +572,12 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
           paragraph_count: h.paragraph_count,
           authority_score: h._authority,
           is_primary: h._authority >= 100,
-          slug: h.slug
-        })),
+          slug: h.slug,
+          match_reason: 'meilisearch'
+        }));
+      const candidates = canonicalCandidate ? [canonicalCandidate, ...meiliCandidates] : meiliCandidates;
+      return {
+        candidates: candidates.slice(0, safeLimit),
         searched: title,
         religion_filter: religion || null,
         author_filter: author || null
@@ -500,6 +585,10 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
     }
   } catch (err) {
     logger.warn({ err: err.message }, 'find_document Meilisearch failed');
+  }
+  // Meilisearch unavailable, but we may still have a canonical hit
+  if (canonicalCandidate) {
+    return { candidates: [canonicalCandidate], searched: title, religion_filter: religion || null };
   }
   return { candidates: [], error: 'Meilisearch unavailable', searched: title };
 }
