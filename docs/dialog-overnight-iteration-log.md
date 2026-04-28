@@ -19,11 +19,54 @@
 - Estimated score: 72–75% on the same hardest topic v1 scored 58%
 - Documented in `docs/jafar-system-prompt-v2.md`
 
-### v3 (deployed to production — perennialist wise-believer)
+### v3 (deployed — perennialist wise-believer)
 - User direction: "Jafar should be the wise believer in the deep unity and wisdom of all prophetic traditions. His wisdom is not from modern materialistic, nihilistic thinking, it is from deep appreciation of the guidance of God through all time and all traditions."
-- Adds: explicit perennialist voice section, "How you understand other traditions" section, "What you are NOT" section
-- Tested in: batch run starting at dialog 005, ongoing
-- Initial observations: Jafar speaking mostly from internal knowledge (0 tool calls in early rounds), responses tending verbose (2300+ char Jafar turns)
+- Adds: explicit perennialist voice section, "How you understand other traditions", "What you are NOT"
+- Tested in: dialog 005 (alcohol/tobacco)
+- Score: 69%
+- **Critical issue surfaced**: Jafar quoted "The system of Bahá'u'lláh is adaptable, and will, in the course of time, evolve and expand…" attributed to Shoghi Effendi — appears fabricated from training memory, not in search results. The "think first, search to verify" posture was making Jafar invent quotes.
+
+### v3.1 (deployed — hard search-before-quote rule)
+- Adds: RULE 1 NEVER QUOTE WITHOUT SEARCHING; explicit "Quoting from training memory is the same severity as fabricating"
+- Tested in: dialogs 005-007 (alcohol, homosexuality, progressive revelation)
+- Scores: 66% / 61% / 60% — average 62.3%, **regression from v3**
+- Naturalness dropped from 72→60-65
+- Signal pattern: "more specific examples and evidence", "question assumptions more deeply"
+- Diagnosis: hard search rule made Jafar more rigid; without abundant searching it had less specific material to work with
+
+### v3.2 (deployed — multi-search + primary-first + specificity + tougher user-agent)
+- Adds: RULE 2 SEARCH MULTIPLE TIMES PER TURN, RULE 3 BE SPECIFIC (name the work, the date, the figure), RULE 6 PRIMARY-FIRST SEARCH STRATEGY
+- User-agent prompt also strengthened: pushes for primary scripture, demands verbatim quotes when paraphrased, interrogates word meanings across centuries
+- Tested in: dialog 005 (alcohol/tobacco)
+- Score: **58% — further regression**
+- Naturalness: 55 (still dropping)
+- Signal: same as v3.1 — "incorporate more direct primary sources"
+
+## The wall: prompt iteration alone has a ceiling
+
+| Version | Dialog 5 score | Naturalness | Issue |
+|---|---|---|---|
+| v1 (baseline manual) | 58% | n/a | over-hedging, generic |
+| v3 | 69% | 72 | fabricated quotes from training |
+| v3.1 | 66% | 60 | rigid, less specific |
+| v3.2 | 58% | 55 | doubled down on rigidity |
+
+Each prompt tightening reduces naturalness further. The persistent judge signal — "more primary sources" — is not a prompt-fixable problem. Jafar IS searching multiple times in v3.2. The issue is that the search ranking returns Star of the West articles, scholarly essays, and family memoirs above primary scripture from Bahá'u'lláh.
+
+**This is a search-layer problem.** No prompt change will fix it. Required infrastructure work:
+1. Add a `source_tier` weight to the indexer — multiply BM25/hybrid scores by source authority
+2. Re-rank search results so primary scripture surfaces above commentary
+3. Optionally: separate `search_primary` and `search_commentary` tools so Jafar can target tier directly
+
+Until that work happens, prompt iteration has hit its ceiling around 60-70%. v3.2 is the most honest of the versions — it doesn't fabricate, it tries to search well, but it has to work with whatever the index hands it.
+
+## Decision for the rest of the night
+
+Let v3.2 run to completion. The conversations it produces are honest, citation-disciplined, and reasonably wise — just not the 80%+ "archive-worthy" threshold I'd set as a target. The morning report will:
+1. Be transparent about the score plateau
+2. Identify the search-layer work as the next-leverage move
+3. Provide a representative sample of conversations across the 100-question span
+4. Document the prompt-version journey for future reference
 
 ---
 
