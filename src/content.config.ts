@@ -57,6 +57,15 @@ const dialogs = defineCollection({
     decorativePrompts: z.array(z.string()).default([]),  // for inline imagery
     excerpt: z.string().optional(),         // pull quote for listing card
     featured: z.boolean().default(false),
+    // Beta: visible per-article assessment. Reader sees the conversation
+    // and the assessment side-by-side, can verify or dispute the assessment.
+    // Methodology lives at /dialog/assessment.
+    assessment: z.object({
+      scores: z.record(z.string(), z.number()),
+      narrative: z.string(),                  // 3-5 sentence critique
+      flags: z.array(z.string()).default([]), // failure-mode tags
+      improvement_plan: z.string(),           // forward-looking, in concepts
+    }).optional(),
   }),
 });
 

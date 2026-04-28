@@ -1,0 +1,411 @@
+---
+// Public assessment methodology document. Beta — explains the criteria, the
+// pipeline, the known failure modes, and shows Jafar's "soul" (system prompt)
+// with a collapsible version history. Readers can see the conversations AND
+// the criteria evolving.
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+import NavBar from '../../components/common/NavBar.svelte';
+import { readFileSync, readdirSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+export const prerender = true;
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = join(__dirname, '..', '..', '..');
+
+// Load each Jafar prompt version that exists in scripts/. Newest first.
+// Each file is plain text (the system prompt itself).
+const SOUL_VERSIONS: Array<{
+  version: string;
+  date: string;
+  summary: string;
+  text: string;
+}> = [];
+
+const soulHistory = [
+  { version: 'v4', date: '2026-04-28', summary: 'Doctrinal fidelity rules; period-word discipline; per-tradition primary texts; quote-first-summarize-second.', file: 'jafar-prompt-v4.txt' },
+  { version: 'v3.2', date: '2026-04-28', summary: 'Multi-search-per-turn + primary-first + specificity (over-tightened, reverted).', file: 'jafar-prompt-v3.2.txt' },
+  { version: 'v3.1', date: '2026-04-27', summary: 'Hard "never quote without searching" rule. Fixes hallucinated quotes.', file: 'jafar-prompt-v3.1.txt' },
+  { version: 'v3', date: '2026-04-27', summary: 'Perennialist wise-believer voice; deep unity of prophetic traditions.', file: 'jafar-prompt-v3.txt' },
+  { version: 'v2', date: '2026-04-27', summary: 'Analytical wise-friend; persistence ladder; source hierarchy.', file: 'jafar-prompt-v2.txt' },
+];
+
+for (const v of soulHistory) {
+  const path = join(PROJECT_ROOT, 'scripts', v.file);
+  try {
+    const text = readFileSync(path, 'utf-8');
+    SOUL_VERSIONS.push({ ...v, text });
+  } catch {
+    // version file missing — skip
+  }
+}
+
+// Assessment criteria version history (judge prompts).
+// For now we describe them in prose since the judge prompt is embedded in
+// scripts/jafar-batch-runner.js. As we iterate, we'll snapshot to versioned files.
+const CRITERIA_VERSIONS = [
+  {
+    version: 'v2',
+    date: '2026-04-28',
+    summary: 'Adds conversational_realism, doctrinal_fidelity, period_word_discipline, brevity_discipline; structured assessment object with narrative + flags + improvement_plan.',
+    bullets: [
+      'depth — does the conversation actually go deep?',
+      'conversational_realism — does this read like two friends talking?',
+      'doctrinal_fidelity — does Jafar reflect the tradition\'s actual self-understanding from primary doctrinal texts, or soften into secular-humanist palatability?',
+      'period_word_discipline — does Jafar avoid letting words like "progressive," "liberal," "spiritual," "freedom" silently import their modern political/materialistic connotations?',
+      'evidence_quality — primary-tier citations? properly attributed? primary scripture for doctrinal claims?',
+      'brevity_discipline — replies brief by default, no essay paragraphs?',
+      'archive_worthy — would a thoughtful believer send this to another thoughtful believer, confident it represents the Faith well?',
+    ],
+  },
+  {
+    version: 'v1',
+    date: '2026-04-27',
+    summary: 'Initial: depth, clarity, stereotype_avoidance, word_definition_questioning, assumption_questioning, teaching_clarity, evidence_quality, conversational_naturalness, believer_voice, archive_worthy. No structured improvement_plan; no period-word dimension; no doctrinal_fidelity dimension.',
+    bullets: [
+      'depth, clarity, stereotype_avoidance',
+      'word_definition_questioning, assumption_questioning',
+      'teaching_clarity, evidence_quality',
+      'conversational_naturalness, believer_voice',
+      'archive_worthy',
+    ],
+  },
+];
+
+// Per-tradition primary texts table
+const TRADITION_TEXTS = [
+  { tradition: 'Bahá\u2019í', primary: 'Kitáb-i-Íqán (Bahá\u2019u\u2019lláh), Some Answered Questions (\u2019Abdu\u2019l-Bahá), Shoghi Effendi\u2019s writings & translations, Aqdas, Hidden Words, Gleanings, Gems of Divine Mysteries' },
+  { tradition: 'Christianity', primary: 'The Gospels (Matthew, Mark, Luke, John); secondarily Pauline letters and Acts' },
+  { tradition: 'Islam', primary: 'The Qur\u2019án; secondarily the recognized Hadith collections' },
+  { tradition: 'Judaism', primary: 'The Tanakh (Torah, Nevi\u2019im, Ketuvim); secondarily the Talmud' },
+  { tradition: 'Buddhism', primary: 'The Pali Canon (Dhammapada, Sutta Piṭaka), the major Mahāyāna sutras' },
+  { tradition: 'Hinduism', primary: 'The Upanishads, the Bhagavad Gita, the Vedas' },
+  { tradition: 'Sikhism', primary: 'The Guru Granth Sahib' },
+];
+
+const FAILURE_MODES = [
+  { tag: 'essay-tone', desc: 'Replies open like academic essays; no friend speaks this way.' },
+  { tag: 'secular-drift', desc: 'Softens a doctrine into secular-humanist palatability ("doesn\u2019t require a religious framework").' },
+  { tag: 'period-word-import', desc: 'Uses words like "progressive" without marking the period sense, letting modern political connotations leak in.' },
+  { tag: 'missing-primary-citation', desc: 'States a doctrinal claim without quoting the primary text where it lives.' },
+  { tag: 'secondary-substitution', desc: 'Quotes scholarly commentary or family memoirs in place of the primary scripture.' },
+  { tag: 'hedge-without-position', desc: 'When pushed to commit, retreats to "both perspectives offer valuable insights."' },
+  { tag: 'stock-phrase-reflex', desc: 'Reaches for stock Bahá\u2019í-discourse phrases ("transformative force," "diversity within unity") instead of speaking specifically.' },
+];
+
+const description = "How dialogs are assessed: the criteria, the pipeline, Jafar's evolving soul, the failure modes we watch for, and how to dispute the assessment.";
+---
+
+<Layout title="Dialog Assessment Methodology — How We Read These" description={description}>
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="dialog" client:load />
+
+  <main class="assessment-page">
+    <header class="header">
+      <a href="/dialog" class="back">&larr; back to dialogs</a>
+      <h1>How These Conversations Are Assessed</h1>
+      <p class="lead">
+        This is beta. Every published dialog carries a visible assessment so you can
+        read the conversation and the assessment side-by-side, and decide whether the
+        assessment is right. If you find a blind spot, that's the most useful kind of
+        feedback &mdash; it iterates the criteria themselves, not just Jafar.
+      </p>
+    </header>
+
+    <section class="block">
+      <h2>What we&rsquo;re trying to make</h2>
+      <p>
+        Realistic, compelling conversations between two friends &mdash; one curious and
+        informed, one (Jafar) deeply versed in the corpus and the prophetic
+        traditions. Short turns. Evidence pulled directly from each tradition&rsquo;s
+        primary doctrinal texts. Conversational language throughout.
+      </p>
+      <p>
+        The hardest constraint is fidelity. Modern training data is saturated with
+        secular-humanist framing; without strict anchoring, the AI will silently
+        translate doctrines into terms that feel palatable to contemporary ears but
+        misrepresent what the traditions actually teach. The assessment is calibrated
+        to detect that drift.
+      </p>
+    </section>
+
+    <section class="block">
+      <h2>The pipeline</h2>
+      <p>
+        Each conversation is generated by three roles:
+      </p>
+      <ul class="roles">
+        <li>
+          <strong>The User</strong> &mdash; a curious, informed friend (driven by
+          gpt-4o with a conversational pushback prompt) who asks short questions and
+          presses for primary-source evidence.
+        </li>
+        <li>
+          <strong>Jafar</strong> &mdash; the production chat at siftersearch.com,
+          using its actual system prompt and library search tools. Same Jafar a
+          visitor talks to.
+        </li>
+        <li>
+          <strong>The Judge</strong> &mdash; a separate gpt-4o pass that scores the
+          finished transcript across the dimensions below and writes the visible
+          per-article assessment.
+        </li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>Per-tradition primary texts</h2>
+      <p>
+        When the question concerns a specific tradition, evidence comes from that
+        tradition&rsquo;s own primary doctrinal corpus, not general scholarly
+        commentary.
+      </p>
+      <table class="texts">
+        <thead>
+          <tr><th>Tradition</th><th>Primary doctrinal texts</th></tr>
+        </thead>
+        <tbody>
+          {TRADITION_TEXTS.map(t => (
+            <tr><td>{t.tradition}</td><td>{t.primary}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h2>Failure modes the assessment watches for</h2>
+      <dl class="failures">
+        {FAILURE_MODES.map(f => (
+          <div class="failure">
+            <dt><code>{f.tag}</code></dt>
+            <dd>{f.desc}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="block">
+      <h2>Assessment criteria &mdash; version history</h2>
+      <p>
+        The criteria themselves evolve. Latest version expanded; previous versions
+        collapsed for reference.
+      </p>
+      {CRITERIA_VERSIONS.map((v, i) => (
+        <details class="version" open={i === 0}>
+          <summary>
+            <span class="vtag">{v.version}</span>
+            <span class="vdate">{v.date}</span>
+            <span class="vsummary">{v.summary}</span>
+          </summary>
+          <ul class="vbody">
+            {v.bullets.map(b => <li>{b}</li>)}
+          </ul>
+        </details>
+      ))}
+    </section>
+
+    <section class="block">
+      <h2>Jafar&rsquo;s soul &mdash; version history</h2>
+      <p>
+        The system prompt that defines Jafar&rsquo;s voice and posture is itself part
+        of what&rsquo;s being iterated. Each version is the actual prompt text used for
+        the conversations published while that version was current.
+      </p>
+      {SOUL_VERSIONS.map((v, i) => (
+        <details class="version soul" open={i === 0}>
+          <summary>
+            <span class="vtag">{v.version}</span>
+            <span class="vdate">{v.date}</span>
+            <span class="vsummary">{v.summary}</span>
+          </summary>
+          <pre class="vbody soul-prompt">{v.text}</pre>
+        </details>
+      ))}
+    </section>
+
+    <section class="block">
+      <h2>How to dispute an assessment</h2>
+      <p>
+        If you read a conversation and disagree with its assessment, that&rsquo;s the
+        most valuable kind of feedback. The assessment surfaces blind spots in the
+        criteria themselves &mdash; not just in Jafar. Tell us what we got wrong, and
+        the next iteration of the criteria will reflect it.
+      </p>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .assessment-page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 6rem;
+    color: var(--text-primary);
+    font-family: 'Libre Caslon Text', serif;
+  }
+
+  .header { margin-bottom: 3rem; }
+
+  .back {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 1rem;
+    letter-spacing: 0.04em;
+  }
+  .back:hover { color: var(--accent); }
+
+  h1 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    margin: 0 0 1rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .lead {
+    font-size: 1.15rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    max-width: 36rem;
+  }
+
+  .block {
+    margin: 0 0 3rem;
+    padding: 2rem 2rem 1.5rem;
+    background: rgba(10, 22, 42, 0.78);
+    border: 1px solid rgba(140, 180, 220, 0.12);
+    border-radius: 16px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .block h2 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+  }
+
+  .block p, .block li, .block dd {
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  .roles {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+  }
+  .roles li {
+    margin: 0 0 0.75rem;
+    padding-left: 1.25rem;
+    border-left: 2px solid rgba(186, 160, 82, 0.3);
+  }
+
+  .texts {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+  }
+  .texts th, .texts td {
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(140, 180, 220, 0.1);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .texts th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .texts td:first-child {
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .failures { margin: 0; }
+  .failure { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem 1.25rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(140, 180, 220, 0.08); }
+  .failure dt code {
+    background: rgba(186, 160, 82, 0.12);
+    color: rgb(218, 188, 110);
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-family: 'SFMono-Regular', Menlo, monospace;
+    font-size: 0.85rem;
+  }
+  .failure dd { margin: 0; color: var(--text-secondary); }
+  @media (max-width: 600px) {
+    .failure { grid-template-columns: 1fr; gap: 0.25rem 0; }
+  }
+
+  details.version {
+    margin: 0.75rem 0;
+    border: 1px solid rgba(140, 180, 220, 0.15);
+    border-radius: 10px;
+    background: rgba(20, 52, 98, 0.18);
+    overflow: hidden;
+  }
+  details.version summary {
+    cursor: pointer;
+    padding: 0.85rem 1rem;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.5rem 0.85rem;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+  details.version[open] summary { border-bottom: 1px solid rgba(140, 180, 220, 0.12); }
+  details.version summary::-webkit-details-marker { display: none; }
+  details.version summary::before {
+    content: "▶";
+    margin-right: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    grid-column: 1 / 2;
+  }
+  details.version[open] summary::before { content: "▼"; }
+  .vtag {
+    background: rgba(186, 160, 82, 0.18);
+    color: rgb(218, 188, 110);
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .vdate {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .vsummary {
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .vbody {
+    margin: 0;
+    padding: 1rem 1.25rem;
+  }
+  .vbody li { margin: 0 0 0.4rem; line-height: 1.5; }
+  .soul-prompt {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text-primary);
+    background: rgba(10, 22, 42, 0.5);
+    margin: 0;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+  }
+</style>

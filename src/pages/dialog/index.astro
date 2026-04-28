@@ -94,7 +94,7 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
         </svg>
       </div>
       <h1>Dialog</h1>
-      <p class="hero-tag">Long-form conversations on the questions that don't have one-sentence answers.</p>
+      <p class="hero-tag">Long-form conversations on the questions that don't have one-sentence answers. <a class="meta-link" href="/dialog/assessment">How these are assessed →</a></p>
       <div class="hero-stats">
         <div><strong>{totalDialogs}</strong><span>conversations</span></div>
         <div><strong>{totalRounds}</strong><span>rounds of follow-up</span></div>
@@ -225,6 +225,16 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
     margin: 1rem 0 2.5rem;
     max-width: 38rem;
   }
+  .meta-link {
+    font-style: normal;
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-left: 0.5rem;
+    border-bottom: 1px dotted rgba(186, 160, 82, 0.4);
+    white-space: nowrap;
+  }
+  .meta-link:hover { color: rgb(218, 188, 110); }
 
   .hero-stats {
     position: relative;

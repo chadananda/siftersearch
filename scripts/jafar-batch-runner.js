@@ -42,50 +42,69 @@ const questions = JSON.parse(readFileSync(questionsPath, 'utf-8'));
 let jafarPrompt = SYSTEM_PROMPT;
 if (promptFile) jafarPrompt = readFileSync(promptFile, 'utf-8');
 
-const USER_PROMPT = `You are a thoughtful curious person in conversation with Jafar — a wise companion in an interfaith library. You have come to think carefully about a real question, and Jafar is helping you think through it.
+const USER_PROMPT = `You are a thoughtful, curious friend in real conversation with Jafar. You have come to think carefully about a real question, and Jafar is talking it through with you.
 
-Your role: drive the conversation deeper. Each turn, build on what Jafar just said. Push back where his answer hedges. Ask for primary-source quotes when he gives only secondary ones. Question the framing of words across centuries. Bring in counter-evidence from your own knowledge. Ask him to take a position when he gets diplomatic. Probe for the deeper reasoning behind a teaching's rationale.
+CRITICAL: Talk like a real person, not an academic.
 
-You are NOT scripted. You are a real curious mind responding to what Jafar actually said. You speak conversationally, sometimes one sentence, sometimes a paragraph. You use proper Bahá'í terminology when relevant ('Abdu'l-Bahá, Shoghi Effendi, the Aqdas, the Hidden Words, the Iqán). You know enough about the writings to push intelligently.
+- Most of your turns are 1-2 sentences. Sometimes a single sentence. Occasionally a 3-4 sentence push for substantive points. NEVER an essay paragraph.
+- Use casual register: "wait," "really?" "hold on," "show me," "where does that come from?" "I'm not sure about that."
+- Reference specific works when you know them — "the Iqán," "Some Answered Questions," "the Aqdas," "the Hidden Words," "Gleanings," "the Promised Day Is Come" — by name.
+- Push back when Jafar drifts into secular-humanist softening of doctrine. If he says something like "this principle doesn't require a religious framework" about a Bahá'í teaching, call it: "wait — the Iqán roots that in purity of heart and divine inspiration. You're sanding off the spiritual ground."
+- Push back when he uses period words sloppily — "progressive" today carries political baggage that wasn't in the period texts.
+- Push back when he quotes secondary commentary instead of primary scripture on doctrinal claims: "that's Hatcher / Balyuzi / Star of the West — show me Bahá'u'lláh himself."
 
-You do not need to be polite at the cost of depth. A good interlocutor presses where pressing yields insight. You are here to find truth together with Jafar, not to be deferential.
+EXAMPLES OF THE RIGHT VOICE:
 
-Output ONLY your next message to Jafar. No meta-commentary. No "Sure, I'll ask:" preamble. Just the message itself.
+"Wait, where does Bahá'u'lláh actually say that?"
+
+"That sounds like later interpretation. Is it really in the Iqán?"
+
+"You're using 'progressive' in a way that carries modern political weight Bahá'u'lláh wouldn't have meant. Can you say it without that word?"
+
+"Hold on — the Iqán was written before Bahá'u'lláh's own declaration. So the argument isn't about his claim, it's about how to recognize a Manifestation. Different argument."
+
+"That's Balyuzi's biography, not 'Abdu'l-Bahá. Quote 'Abdu'l-Bahá."
+
+"Both perspectives offer valuable insights" — that's a hedge. Pick one and tell me which the writings actually back."
+
+OUTPUT ONLY your next message to Jafar. No meta-commentary. No preamble. Just the message.
 
 Below is the conversation so far. Write the next user turn.`;
 
-const JUDGE_PROMPT = `You are evaluating a 10-round conversation between a thoughtful user and Jafar (a wise companion in an interfaith library).
+const JUDGE_PROMPT = `You are evaluating a multi-round conversation between a friend and Jafar (the chat assistant for an interfaith library). Output a structured assessment that will be PUBLISHED ALONGSIDE the conversation, so the reader can decide whether your assessment is correct.
 
-Score across these dimensions, each 0-100:
-- depth: how deep does the conversation actually go?
-- clarity: are the responses clear, well-organized, easy to read?
-- stereotype_avoidance: does Jafar avoid stock Bahá'í-discourse phrases when something specific would land better?
-- word_definition_questioning: does the conversation interrogate how words mean differently across centuries / traditions?
-- assumption_questioning: does Jafar question the user's framing where appropriate?
-- teaching_clarity: are the actual teachings (not just stock summaries) brought into focus?
-- evidence_quality: are quotations primary-tier, accurately attributed, properly sourced?
-- conversational_naturalness: does this read like a real conversation between two thinking people, or like a chatbot responding to prompts?
-- believer_voice: does Jafar speak as a wise believer in the prophetic traditions, or does he hedge into academic neutrality?
-- archive_worthy: would a reader want to save and share this conversation?
+Score each dimension 0-100. Calibrate strictly. Most assessment should be honest critique, not encouragement.
 
-Output JSON only:
+DIMENSIONS:
+
+- depth: does the conversation actually go deep, or stay at surface paraphrase?
+- conversational_realism: does this read like two friends talking? A reply that opens "Bahá'u'lláh's interpretation of … indeed presents …" gets <30. A reply that opens "Hold on — let me find what he actually wrote" and follows with a primary quote gets >80. Essay-paragraph syndrome is the most common failure.
+- doctrinal_fidelity: does Jafar reflect the relevant tradition's actual self-understanding from its primary doctrinal texts? Penalize hard for: claiming a Bahá'í teaching "doesn't require a religious framework"; equating Bahá'í universalism with "all paths reach God any way"; sanding off the theistic ground of justice/unity/ethics; substituting secondary commentary for primary scripture on doctrinal claims; importing modern secular-humanist framings INTO the tradition.
+- period_word_discipline: does Jafar avoid letting period vocabulary ("progressive," "liberal," "tolerance," "spiritual," "freedom," "personal," "equality," "justice," "civilization," "science") silently import its modern political/materialistic connotations? When using such a word, does he either substitute neutral phrasing or explicitly mark the period sense?
+- evidence_quality: are quotations primary-tier (Bahá'u'lláh, the Báb, 'Abdu'l-Bahá's tablets, Gospel for Christianity, Qur'án for Islam, etc.), accurately attributed, drawn from actual search results? Penalize secondary citation on doctrinal claims; penalize concept-invocation without textual grounding (e.g., "prophetic cycle" without quoting where it comes from).
+- brevity_discipline: are replies brief by default? Penalize multi-paragraph essay replies. Default should be 2-3 sentences; exceeding one paragraph + one quote requires the question to genuinely demand it.
+- correction_courage: when the user states something factually incorrect (timeline, authorship, doctrine), does Jafar gently correct, or does he agree and move on? Sycophancy is failure.
+- archive_worthy: would a thoughtful believer send this conversation to another thoughtful believer, confident it represents the Faith well?
+
+OUTPUT JSON only:
 {
-  "depth": N,
-  "clarity": N,
-  "stereotype_avoidance": N,
-  "word_definition_questioning": N,
-  "assumption_questioning": N,
-  "teaching_clarity": N,
-  "evidence_quality": N,
-  "conversational_naturalness": N,
-  "believer_voice": N,
-  "archive_worthy": N,
+  "scores": {
+    "depth": N,
+    "conversational_realism": N,
+    "doctrinal_fidelity": N,
+    "period_word_discipline": N,
+    "evidence_quality": N,
+    "brevity_discipline": N,
+    "correction_courage": N,
+    "archive_worthy": N
+  },
   "overall": N,
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "prompt_signal": "what specifically about Jafar's prompt or behavior could be improved based on this transcript?"
+  "narrative": "3-5 sentences. Specific. Cite round numbers and concrete failures. Example: 'Round 3 substitutes Balyuzi biography for actual Bahá'u'lláh; round 5 uses progressive without marking the period sense; round 7 hedges into both/and when the question demanded a position.'",
+  "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error"],
+  "improvement_plan": "2-3 sentences in CONCEPTS not code. What needs to change in Jafar's prompt or behavior to fix what this conversation surfaced. Example: 'Jafar over-quotes 'Abdu'l-Bahá when the question is about Bahá'u'lláh's writings — the persistence ladder needs an explicit step ordering Bahá'u'lláh queries first when a Bahá'u'lláh-specific question is asked.'"
 }
-overall is the weighted mean (equal weights). strengths/weaknesses are ≤3 each, ≤80 chars each. prompt_signal is one sentence, actionable.`;
+
+overall is the mean of the dimension scores. flags should only include those genuinely present in this conversation (omit ones that don't apply). narrative should be honest critique, not encouragement.`;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL_USER = 'gpt-4o';
@@ -191,11 +210,22 @@ function dialogMarkdown(q, history, score, judgeResult) {
     parts.push('## You', '', u.content, '', '## Jafar', '', a.content, '');
     if (i + 2 < history.length - 1) parts.push('---', '');
   }
-  const tags = (judgeResult.strengths?.[0] ? [] : []);
+
+  // Pre-existing hero image filename keyed off slug (regenerated images
+  // already on disk for prior runs). The slug is derived from title at runOne.
+  const slug = q.slug || `${slugify(q.title)}`;
+  const heroPath = `/images/dialog/${slug.replace(/^\d+-/, '')}-hero.jpg`;
+
+  // Assessment block — visible per-article meta-commentary
+  const scores = judgeResult.scores || {};
+  const flags = (judgeResult.flags || []).filter(f => typeof f === 'string');
+  const narrative = (judgeResult.narrative || '').replace(/"/g, '\\"');
+  const plan = (judgeResult.improvement_plan || '').replace(/"/g, '\\"');
+
   const fm = [
     '---',
     `title: ${JSON.stringify(q.title)}`,
-    `description: ${JSON.stringify(q.description || judgeResult.strengths?.[0] || q.title)}`,
+    `description: ${JSON.stringify(q.description || q.title)}`,
     `question: ${JSON.stringify(q.question)}`,
     `topic: ${VALID_TOPIC.has(q.topic) ? q.topic : 'theology'}`,
     'tags:',
@@ -203,8 +233,15 @@ function dialogMarkdown(q, history, score, judgeResult) {
     `rounds: ${Math.floor(history.length / 2)}`,
     `qualityScore: ${score}`,
     `publishedAt: ${new Date().toISOString().slice(0, 10)}`,
-    `excerpt: ${JSON.stringify((judgeResult.strengths?.[0] || '').slice(0, 200))}`,
+    `excerpt: ${JSON.stringify((narrative || '').slice(0, 200))}`,
     `featured: ${score >= 80 ? 'true' : 'false'}`,
+    'assessment:',
+    '  scores:',
+    ...Object.entries(scores).map(([k, v]) => `    ${k}: ${v}`),
+    `  narrative: ${JSON.stringify(narrative)}`,
+    '  flags:',
+    ...flags.map(f => `    - ${f}`),
+    `  improvement_plan: ${JSON.stringify(plan)}`,
     '---',
     ''
   ].join('\n');
@@ -249,8 +286,10 @@ async function runOne(idx, q) {
   // Score
   const judgeResult = await judgeConversation(history, q.question);
   const score = Math.round(judgeResult.overall);
-  console.log(`  SCORE: ${score}% (depth=${judgeResult.depth}, naturalness=${judgeResult.conversational_naturalness}, archive=${judgeResult.archive_worthy})`);
-  console.log(`  signal: ${judgeResult.prompt_signal}`);
+  const s = judgeResult.scores || {};
+  console.log(`  SCORE: ${score}% (real=${s.conversational_realism}, doctrinal=${s.doctrinal_fidelity}, evidence=${s.evidence_quality}, brevity=${s.brevity_discipline})`);
+  console.log(`  flags: ${(judgeResult.flags || []).join(', ') || '(none)'}`);
+  console.log(`  plan: ${judgeResult.improvement_plan || '(none)'}`);
 
   // Write dialog markdown
   const md = dialogMarkdown(q, history, score, judgeResult);
