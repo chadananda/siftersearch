@@ -13,6 +13,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/040-what-did-the-bbs-bayn-actually-teach-hero.jpg
 ---
 ## You
 

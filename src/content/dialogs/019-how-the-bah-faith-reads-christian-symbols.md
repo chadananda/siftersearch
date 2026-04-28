@@ -13,6 +13,7 @@ qualityScore: 60
 publishedAt: 2026-04-28
 excerpt: "Emphasizes unity and interconnectedness"
 featured: false
+heroImage: /images/dialog/019-how-the-bah-faith-reads-christian-symbols-hero.jpg
 ---
 ## You
 

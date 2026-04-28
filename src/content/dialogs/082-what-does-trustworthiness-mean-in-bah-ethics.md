@@ -12,6 +12,7 @@ qualityScore: 73
 publishedAt: 2026-04-28
 excerpt: "Clear explanation of consultation process"
 featured: false
+heroImage: /images/dialog/082-what-does-trustworthiness-mean-in-bah-ethics-hero.jpg
 ---
 ## You
 

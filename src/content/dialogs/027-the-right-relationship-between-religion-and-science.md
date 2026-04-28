@@ -13,6 +13,7 @@ qualityScore: 62
 publishedAt: 2026-04-28
 excerpt: "Engages with complex questions"
 featured: false
+heroImage: /images/dialog/027-the-right-relationship-between-religion-and-science-hero.jpg
 ---
 ## You
 

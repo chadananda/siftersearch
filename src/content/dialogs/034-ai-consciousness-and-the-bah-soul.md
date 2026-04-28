@@ -13,6 +13,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with ethical implications of AI."
 featured: false
+heroImage: /images/dialog/034-ai-consciousness-and-the-bah-soul-hero.jpg
 ---
 ## You
 

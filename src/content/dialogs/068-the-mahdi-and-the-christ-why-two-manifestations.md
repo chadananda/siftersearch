@@ -13,6 +13,7 @@ qualityScore: 68
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/068-the-mahdi-and-the-christ-why-two-manifestations-hero.jpg
 ---
 ## You
 

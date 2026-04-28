@@ -12,6 +12,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Emphasizes independent investigation of truth"
 featured: false
+heroImage: /images/dialog/031-the-bah-view-of-other-manifestations-followers-hero.jpg
 ---
 ## You
 

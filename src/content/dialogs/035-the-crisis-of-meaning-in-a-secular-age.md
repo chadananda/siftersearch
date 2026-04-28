@@ -13,6 +13,7 @@ qualityScore: 68
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/035-the-crisis-of-meaning-in-a-secular-age-hero.jpg
 ---
 ## You
 

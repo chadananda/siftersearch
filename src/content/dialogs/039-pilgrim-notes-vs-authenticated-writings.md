@@ -13,6 +13,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Emphasizes consultation and individual exploration"
 featured: false
+heroImage: /images/dialog/039-pilgrim-notes-vs-authenticated-writings-hero.jpg
 ---
 ## You
 

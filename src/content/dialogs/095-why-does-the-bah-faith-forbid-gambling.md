@@ -12,6 +12,7 @@ qualityScore: 59
 publishedAt: 2026-04-28
 excerpt: "Emphasizes integrity and spiritual growth"
 featured: false
+heroImage: /images/dialog/095-why-does-the-bah-faith-forbid-gambling-hero.jpg
 ---
 ## You
 

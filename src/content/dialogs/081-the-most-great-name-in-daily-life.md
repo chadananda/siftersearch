@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Explores spiritual practices deeply"
 featured: false
+heroImage: /images/dialog/081-the-most-great-name-in-daily-life-hero.jpg
 ---
 ## You
 

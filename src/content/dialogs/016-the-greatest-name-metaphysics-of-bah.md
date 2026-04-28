@@ -13,6 +13,7 @@ qualityScore: 65
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/016-the-greatest-name-metaphysics-of-bah-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with translation challenges"
 featured: false
+heroImage: /images/dialog/025-translation-as-distortion-how-do-bahs-read-in-english-hero.jpg
 ---
 ## You
 

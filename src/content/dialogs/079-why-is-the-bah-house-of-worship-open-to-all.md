@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/079-why-is-the-bah-house-of-worship-open-to-all-hero.jpg
 ---
 ## You
 

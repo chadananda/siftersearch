@@ -12,6 +12,7 @@ qualityScore: 64
 publishedAt: 2026-04-28
 excerpt: "Explores spiritual vs. material aspects of Huqúqu'lláh"
 featured: false
+heroImage: /images/dialog/033-huqqullh-a-tax-or-a-spiritual-practice-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores Tahirih's multifaceted legacy"
 featured: false
+heroImage: /images/dialog/083-why-was-tahirih-killed-hero.jpg
 ---
 ## You
 

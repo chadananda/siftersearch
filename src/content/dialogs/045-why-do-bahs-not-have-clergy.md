@@ -12,6 +12,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/045-why-do-bahs-not-have-clergy-hero.jpg
 ---
 ## You
 

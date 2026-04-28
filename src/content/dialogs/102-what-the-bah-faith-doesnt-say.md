@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Explores complex topics like unity and consultation."
 featured: false
+heroImage: /images/dialog/102-what-the-bah-faith-doesnt-say-hero.jpg
 ---
 ## You
 

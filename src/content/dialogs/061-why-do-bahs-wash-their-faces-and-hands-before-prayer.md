@@ -13,6 +13,7 @@ qualityScore: 60
 publishedAt: 2026-04-28
 excerpt: "Explores community practices"
 featured: false
+heroImage: /images/dialog/061-why-do-bahs-wash-their-faces-and-hands-before-prayer-hero.jpg
 ---
 ## You
 

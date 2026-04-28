@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Engages with complex topics thoughtfully"
 featured: false
+heroImage: /images/dialog/076-are-there-other-civilizations-in-the-universe-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with complex theological concepts"
 featured: false
+heroImage: /images/dialog/020-muhammads-role-and-the-bah-critique-of-some-islamic-interpre-hero.jpg
 ---
 ## You
 

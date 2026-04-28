@@ -12,6 +12,7 @@ qualityScore: 76
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with theological nuances"
 featured: false
+heroImage: /images/dialog/088-the-question-of-universalism-in-bah-discourse-hero.jpg
 ---
 ## You
 

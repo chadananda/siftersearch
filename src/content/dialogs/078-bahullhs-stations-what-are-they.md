@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Explores individuality of Manifestations"
 featured: false
+heroImage: /images/dialog/078-bahullhs-stations-what-are-they-hero.jpg
 ---
 ## You
 

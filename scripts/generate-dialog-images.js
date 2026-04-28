@@ -27,19 +27,22 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const slugFilter = args.find(a => a.startsWith('--slug='))?.split('=')[1];
 
-function parseFrontmatter(text) {
+function parseFrontmatter(text, filename) {
   const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!m) return null;
   const fm = m[1];
   const body = m[2];
   const heroPromptMatch = fm.match(/^heroPrompt:\s*"([^"]+)"$/m);
-  const slug = fm.match(/^# heroImage:\s*\/images\/dialog\/([^\s]+)-hero\.jpg$/m)?.[1]
-    ?? fm.match(/^heroImage:\s*\/images\/dialog\/([^\s]+)-hero\.jpg$/m)?.[1];
-  return {
-    fm, body,
-    heroPrompt: heroPromptMatch?.[1],
-    slug
-  };
+  const titleMatch = fm.match(/^title:\s*"([^"]+)"$/m);
+  const questionMatch = fm.match(/^question:\s*"([^"]+)"$/m);
+  // Slug derived from filename (drop .md). Falls back to heroImage line if it ever existed.
+  const slug = filename.replace(/\.md$/, '');
+  // Derive a watercolor prompt from the title if heroPrompt is missing
+  let heroPrompt = heroPromptMatch?.[1];
+  if (!heroPrompt && titleMatch?.[1]) {
+    heroPrompt = `A meditative scene evoking the theme: "${titleMatch[1]}". Loose dreamlike imagery, no human faces, soft and contemplative.`;
+  }
+  return { fm, body, heroPrompt, slug };
 }
 
 const files = readdirSync(DIALOG_DIR).filter(f => f.endsWith('.md'));
@@ -48,7 +51,7 @@ console.log(`Found ${files.length} dialog files. Generating images...\n`);
 for (const file of files) {
   const path = join(DIALOG_DIR, file);
   const text = readFileSync(path, 'utf-8');
-  const parsed = parseFrontmatter(text);
+  const parsed = parseFrontmatter(text, file);
   if (!parsed?.heroPrompt || !parsed.slug) {
     console.log(`SKIP ${file} (no heroPrompt or slug)`);
     continue;
@@ -79,14 +82,26 @@ for (const file of files) {
     writeFileSync(outPath, buf);
     console.log(`OK   ${parsed.slug} → ${outPath} (${buf.length} bytes)`);
 
-    // Re-enable heroImage in frontmatter
-    const newText = text.replace(
-      `# heroImage: /images/dialog/${parsed.slug}-hero.jpg`,
-      `heroImage: /images/dialog/${parsed.slug}-hero.jpg`
-    );
+    // Add or re-enable heroImage in frontmatter
+    let newText;
+    if (text.includes(`# heroImage: /images/dialog/${parsed.slug}-hero.jpg`)) {
+      // Re-enable existing commented-out reference
+      newText = text.replace(
+        `# heroImage: /images/dialog/${parsed.slug}-hero.jpg`,
+        `heroImage: /images/dialog/${parsed.slug}-hero.jpg`
+      );
+    } else if (text.match(/^heroImage:/m)) {
+      newText = text;  // already has heroImage line
+    } else {
+      // Insert heroImage line before the closing --- of frontmatter
+      newText = text.replace(
+        /^(---\n[\s\S]*?)(\n---\n)/,
+        `$1\nheroImage: /images/dialog/${parsed.slug}-hero.jpg$2`
+      );
+    }
     if (newText !== text) {
       writeFileSync(path, newText);
-      console.log(`     re-enabled heroImage in ${file}`);
+      console.log(`     wrote heroImage line in ${file}`);
     }
   } catch (err) {
     console.error(`FAIL ${parsed.slug}: ${err.message}`);

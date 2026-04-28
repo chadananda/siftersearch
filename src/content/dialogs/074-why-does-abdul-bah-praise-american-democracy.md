@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Balanced believer voice"
 featured: false
+heroImage: /images/dialog/074-why-does-abdul-bah-praise-american-democracy-hero.jpg
 ---
 ## You
 

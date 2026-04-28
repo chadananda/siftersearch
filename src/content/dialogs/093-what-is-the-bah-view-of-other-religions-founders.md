@@ -12,6 +12,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with complex questions about Manifestations"
 featured: false
+heroImage: /images/dialog/093-what-is-the-bah-view-of-other-religions-founders-hero.jpg
 ---
 ## You
 

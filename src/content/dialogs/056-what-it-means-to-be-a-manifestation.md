@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Explains Manifestations' role clearly"
 featured: false
+heroImage: /images/dialog/056-what-it-means-to-be-a-manifestation-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 58
 publishedAt: 2026-04-28
 excerpt: "Addresses linguistic challenges thoughtfully"
 featured: false
+heroImage: /images/dialog/038-translation-politics-the-aqdas-in-english-hero.jpg
 ---
 ## You
 

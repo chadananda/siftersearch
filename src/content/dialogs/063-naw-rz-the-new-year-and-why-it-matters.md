@@ -12,6 +12,7 @@ qualityScore: 63
 publishedAt: 2026-04-28
 excerpt: "Explores Naw-Rúz's cultural and spiritual significance"
 featured: false
+heroImage: /images/dialog/063-naw-rz-the-new-year-and-why-it-matters-hero.jpg
 ---
 ## You
 

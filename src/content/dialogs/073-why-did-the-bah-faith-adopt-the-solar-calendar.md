@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores symbolic and practical aspects of the calendar"
 featured: false
+heroImage: /images/dialog/073-why-did-the-bah-faith-adopt-the-solar-calendar-hero.jpg
 ---
 ## You
 

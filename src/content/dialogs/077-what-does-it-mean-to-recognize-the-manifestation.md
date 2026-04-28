@@ -13,6 +13,7 @@ qualityScore: 73
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with complex questions"
 featured: false
+heroImage: /images/dialog/077-what-does-it-mean-to-recognize-the-manifestation-hero.jpg
 ---
 ## You
 

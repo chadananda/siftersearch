@@ -12,6 +12,7 @@ qualityScore: 56
 publishedAt: 2026-04-28
 excerpt: "Emphasizes consultation and unity"
 featured: false
+heroImage: /images/dialog/086-how-should-bahs-think-about-the-other-bah-sects-hero.jpg
 ---
 ## You
 

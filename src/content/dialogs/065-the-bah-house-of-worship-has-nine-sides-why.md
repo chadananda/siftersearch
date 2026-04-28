@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with complex cultural questions"
 featured: false
+heroImage: /images/dialog/065-the-bah-house-of-worship-has-nine-sides-why-hero.jpg
 ---
 ## You
 

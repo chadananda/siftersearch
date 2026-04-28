@@ -12,6 +12,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores practical application of teachings"
 featured: false
+heroImage: /images/dialog/080-voluntary-poverty-in-the-bah-tradition-hero.jpg
 ---
 ## You
 

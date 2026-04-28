@@ -12,6 +12,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/054-what-is-the-soul-doing-between-lives-hero.jpg
 ---
 ## You
 

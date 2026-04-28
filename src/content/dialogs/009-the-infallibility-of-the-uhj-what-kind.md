@@ -13,6 +13,7 @@ qualityScore: 59
 publishedAt: 2026-04-28
 excerpt: "Explains dynamic infallibility well"
 featured: false
+heroImage: /images/dialog/009-the-infallibility-of-the-uhj-what-kind-hero.jpg
 ---
 ## You
 

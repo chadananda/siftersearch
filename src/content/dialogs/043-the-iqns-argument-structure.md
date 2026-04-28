@@ -13,6 +13,7 @@ qualityScore: 55
 publishedAt: 2026-04-28
 excerpt: "Engages with complex interpretive challenges"
 featured: false
+heroImage: /images/dialog/043-the-iqns-argument-structure-hero.jpg
 ---
 ## You
 

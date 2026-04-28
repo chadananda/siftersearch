@@ -12,6 +12,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/087-why-is-the-bah-faith-forbidden-in-iran-hero.jpg
 ---
 ## You
 

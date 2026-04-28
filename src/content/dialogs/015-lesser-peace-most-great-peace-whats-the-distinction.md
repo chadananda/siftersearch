@@ -13,6 +13,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/015-lesser-peace-most-great-peace-whats-the-distinction-hero.jpg
 ---
 ## You
 

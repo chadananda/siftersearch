@@ -12,6 +12,7 @@ qualityScore: 59
 publishedAt: 2026-04-28
 excerpt: "Engages with complex theological topics"
 featured: false
+heroImage: /images/dialog/090-why-is-the-bah-faith-sometimes-called-the-faith-of-god-hero.jpg
 ---
 ## You
 

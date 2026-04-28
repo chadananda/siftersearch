@@ -12,6 +12,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Addresses complex issues thoughtfully"
 featured: false
+heroImage: /images/dialog/057-the-question-of-gender-in-spiritual-reality-hero.jpg
 ---
 ## You
 

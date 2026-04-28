@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores balance between unity and diversity"
 featured: false
+heroImage: /images/dialog/010-why-a-thousand-years-hero.jpg
 ---
 ## You
 

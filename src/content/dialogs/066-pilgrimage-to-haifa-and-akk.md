@@ -13,6 +13,7 @@ qualityScore: 60
 publishedAt: 2026-04-28
 excerpt: "Explores complex themes like detachment and unity."
 featured: false
+heroImage: /images/dialog/066-pilgrimage-to-haifa-and-akk-hero.jpg
 ---
 ## You
 

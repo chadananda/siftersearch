@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong, reflecting faith commitment."
 featured: false
+heroImage: /images/dialog/053-music-worship-and-bah-practice-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 73
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with symbolic interpretations"
 featured: false
+heroImage: /images/dialog/096-bahullhs-dream-of-the-maid-of-heaven-hero.jpg
 ---
 ## You
 

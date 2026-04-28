@@ -15,7 +15,7 @@ tags:
 rounds: 10
 qualityScore: 64
 publishedAt: 2026-04-28
-# heroImage: /images/dialog/004-soul-reincarnation-hero.jpg
+heroImage: /images/dialog/004-soul-reincarnation-hero.jpg
 heroPrompt: "Blue-shaded hand-drawn watercolor: a single point of golden light suspended above a still pool of indigo water, the reflection forming a chain of figures dissolving into the depths, soft brushstrokes, paper texture visible."
 decorativePrompts:
   - "Watercolor: a candle flame casting reflection in a mirror, cobalt blues, gold highlights."

@@ -13,6 +13,7 @@ qualityScore: 64
 publishedAt: 2026-04-28
 excerpt: "Explores complex theological concepts"
 featured: false
+heroImage: /images/dialog/026-why-did-bahullh-forbid-the-image-of-god-hero.jpg
 ---
 ## You
 

@@ -12,6 +12,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/014-predestination-and-free-will-hero.jpg
 ---
 ## You
 

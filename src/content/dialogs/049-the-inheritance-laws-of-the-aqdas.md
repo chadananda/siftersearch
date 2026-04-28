@@ -13,6 +13,7 @@ qualityScore: 59
 publishedAt: 2026-04-28
 excerpt: "Engages with complex issues thoughtfully"
 featured: false
+heroImage: /images/dialog/049-the-inheritance-laws-of-the-aqdas-hero.jpg
 ---
 ## You
 

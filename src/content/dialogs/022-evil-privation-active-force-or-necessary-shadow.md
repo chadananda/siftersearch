@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with complex theological questions"
 featured: false
+heroImage: /images/dialog/022-evil-privation-active-force-or-necessary-shadow-hero.jpg
 ---
 ## You
 

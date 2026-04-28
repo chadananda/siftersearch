@@ -12,6 +12,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Explores spirituality beyond virtues"
 featured: false
+heroImage: /images/dialog/085-what-spirituality-cannot-be-hero.jpg
 ---
 ## You
 

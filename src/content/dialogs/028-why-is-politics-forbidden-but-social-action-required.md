@@ -12,6 +12,7 @@ qualityScore: 65
 publishedAt: 2026-04-28
 excerpt: "Explores practical applications of principles"
 featured: false
+heroImage: /images/dialog/028-why-is-politics-forbidden-but-social-action-required-hero.jpg
 ---
 ## You
 

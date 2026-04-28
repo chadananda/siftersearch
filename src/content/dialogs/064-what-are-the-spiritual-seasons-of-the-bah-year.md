@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Explores Bahá'í consultation deeply"
 featured: false
+heroImage: /images/dialog/064-what-are-the-spiritual-seasons-of-the-bah-year-hero.jpg
 ---
 ## You
 

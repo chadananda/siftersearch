@@ -13,6 +13,7 @@ qualityScore: 56
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong, reflecting faith commitment."
 featured: false
+heroImage: /images/dialog/097-the-authority-of-the-universal-house-of-justice-hero.jpg
 ---
 ## You
 

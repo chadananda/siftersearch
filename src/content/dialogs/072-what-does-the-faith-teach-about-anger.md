@@ -12,6 +12,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with user's questions"
 featured: false
+heroImage: /images/dialog/072-what-does-the-faith-teach-about-anger-hero.jpg
 ---
 ## You
 

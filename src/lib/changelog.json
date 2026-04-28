@@ -1,6 +1,62 @@
 {
-  "generated": "2026-04-28T04:57:16.903Z",
+  "generated": "2026-04-28T08:35:51.822Z",
   "entries": [
+    {
+      "hash": "e15c1ef",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
+      "scope": null
+    },
+    {
+      "hash": "d146afc",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
+      "scope": null
+    },
+    {
+      "hash": "f0ccb04",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Morning report shows v3.2 → v3.1 revert decision",
+      "scope": null
+    },
+    {
+      "hash": "157b697",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
+      "scope": null
+    },
+    {
+      "hash": "7163574",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Iteration log shows prompt ceiling at ~60-70% — search-layer is next leverage",
+      "scope": null
+    },
+    {
+      "hash": "1d07845",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Jafar v3.2 + tougher user-agent — multi-search per turn, primary-first, specificity required",
+      "scope": null
+    },
+    {
+      "hash": "d7218f0",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Jafar v3.1 — hard search-before-quote rule (v3 hallucinated quotes from training memory)",
+      "scope": null
+    },
+    {
+      "hash": "73e4dae",
+      "date": "2026-04-27",
+      "type": "Fixed",
+      "description": "Strip inline backticks from Jafar v3 prompt (broke JS template literal)",
+      "scope": null
+    },
     {
       "hash": "8754f32",
       "date": "2026-04-27",
@@ -3444,66 +3500,68 @@
       "type": "Fixed",
       "description": "SBS phrase highlighting uses composite keys + styling improvements",
       "scope": null
-    },
-    {
-      "hash": "885d664",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "SBS phrase highlighting now uses composite keys (para+seg)",
-      "scope": null
-    },
-    {
-      "hash": "b08b58b",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
-      "scope": null
-    },
-    {
-      "hash": "e80af5c",
-      "date": "2026-01-04",
-      "type": "Other",
-      "description": "Add logging to translation save path",
-      "scope": null
-    },
-    {
-      "hash": "534d209",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Allow saving translations even if segments are null",
-      "scope": null
-    },
-    {
-      "hash": "f6bb5ca",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Cap maxTokens at 16000 to prevent model limit errors",
-      "scope": null
-    },
-    {
-      "hash": "81cdebf",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Improve phrase segmentation for Study mode",
-      "scope": null
-    },
-    {
-      "hash": "92e2ec5",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Generate phrase-level segments for marked text translation",
-      "scope": null
-    },
-    {
-      "hash": "a63e548",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Paragraph 0 translation + segment format normalization",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-28": [
+      {
+        "hash": "e15c1ef",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "98 auto-generated dialogs from overnight batch (v3.1, avg 64.3%, range 55-76%)",
+        "scope": null
+      }
+    ],
     "2026-04-27": [
+      {
+        "hash": "d146afc",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Morning report shows full iteration journey, final config v3.1 + original user-agent",
+        "scope": null
+      },
+      {
+        "hash": "f0ccb04",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Morning report shows v3.2 → v3.1 revert decision",
+        "scope": null
+      },
+      {
+        "hash": "157b697",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "V3.2 → v3.1 (v3.2 over-tightened rules, scores 46-58% vs v3.1's 60-66%)",
+        "scope": null
+      },
+      {
+        "hash": "7163574",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Iteration log shows prompt ceiling at ~60-70% — search-layer is next leverage",
+        "scope": null
+      },
+      {
+        "hash": "1d07845",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Jafar v3.2 + tougher user-agent — multi-search per turn, primary-first, specificity required",
+        "scope": null
+      },
+      {
+        "hash": "d7218f0",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Jafar v3.1 — hard search-before-quote rule (v3 hallucinated quotes from training memory)",
+        "scope": null
+      },
+      {
+        "hash": "73e4dae",
+        "date": "2026-04-27",
+        "type": "Fixed",
+        "description": "Strip inline backticks from Jafar v3 prompt (broke JS template literal)",
+        "scope": null
+      },
       {
         "hash": "8754f32",
         "date": "2026-04-27",
@@ -7010,62 +7068,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "SBS phrase highlighting uses composite keys + styling improvements",
-        "scope": null
-      },
-      {
-        "hash": "885d664",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "SBS phrase highlighting now uses composite keys (para+seg)",
-        "scope": null
-      },
-      {
-        "hash": "b08b58b",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "OrganizeIntoWaves to use array position instead of paragraph_index",
-        "scope": null
-      },
-      {
-        "hash": "e80af5c",
-        "date": "2026-01-04",
-        "type": "Other",
-        "description": "Add logging to translation save path",
-        "scope": null
-      },
-      {
-        "hash": "534d209",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Allow saving translations even if segments are null",
-        "scope": null
-      },
-      {
-        "hash": "f6bb5ca",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Cap maxTokens at 16000 to prevent model limit errors",
-        "scope": null
-      },
-      {
-        "hash": "81cdebf",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Improve phrase segmentation for Study mode",
-        "scope": null
-      },
-      {
-        "hash": "92e2ec5",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Generate phrase-level segments for marked text translation",
-        "scope": null
-      },
-      {
-        "hash": "a63e548",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Paragraph 0 translation + segment format normalization",
         "scope": null
       }
     ]

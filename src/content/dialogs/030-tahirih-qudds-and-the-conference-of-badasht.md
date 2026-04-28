@@ -13,6 +13,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/030-tahirih-qudds-and-the-conference-of-badasht-hero.jpg
 ---
 ## You
 

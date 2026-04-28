@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores Bahá'í and Sufi convergence/divergence"
 featured: false
+heroImage: /images/dialog/024-the-bah-faith-and-sufism-hero.jpg
 ---
 ## You
 

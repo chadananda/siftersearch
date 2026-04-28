@@ -13,6 +13,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/046-the-nineteen-day-feast-function-or-ritual-hero.jpg
 ---
 ## You
 

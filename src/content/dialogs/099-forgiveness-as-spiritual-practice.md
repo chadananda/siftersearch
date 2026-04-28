@@ -12,6 +12,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Comprehensive exploration of forgiveness"
 featured: false
+heroImage: /images/dialog/099-forgiveness-as-spiritual-practice-hero.jpg
 ---
 ## You
 

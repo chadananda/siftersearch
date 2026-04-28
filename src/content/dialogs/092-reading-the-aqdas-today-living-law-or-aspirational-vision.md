@@ -13,6 +13,7 @@ qualityScore: 58
 publishedAt: 2026-04-28
 excerpt: "Explores progressive revelation concept"
 featured: false
+heroImage: /images/dialog/092-reading-the-aqdas-today-living-law-or-aspirational-vision-hero.jpg
 ---
 ## You
 

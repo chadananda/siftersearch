@@ -12,6 +12,7 @@ qualityScore: 70
 publishedAt: 2026-04-28
 excerpt: "Clear explanation of Manifestation concept"
 featured: false
+heroImage: /images/dialog/084-bahullhs-voice-in-hidden-words-hero.jpg
 ---
 ## You
 

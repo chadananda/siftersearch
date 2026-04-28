@@ -12,6 +12,7 @@ qualityScore: 62
 publishedAt: 2026-04-28
 excerpt: "Explores historical context of Bahá'í education"
 featured: false
+heroImage: /images/dialog/058-why-is-childhood-sacred-hero.jpg
 ---
 ## You
 

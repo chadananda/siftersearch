@@ -13,6 +13,7 @@ qualityScore: 63
 publishedAt: 2026-04-28
 excerpt: "Engages deeply with user's questions"
 featured: false
+heroImage: /images/dialog/008-why-forbid-asceticism-but-require-fasting-hero.jpg
 ---
 ## You
 

@@ -14,6 +14,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with progressive revelation concept"
 featured: false
+heroImage: /images/dialog/005-alcohol-forbidden-tobacco-discouraged-why-the-asymmetry-hero.jpg
 ---
 ## You
 

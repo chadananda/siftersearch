@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores complex theological concepts"
 featured: false
+heroImage: /images/dialog/007-progressive-revelation-teleological-or-cyclical-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Emphasizes community support and personal growth"
 featured: false
+heroImage: /images/dialog/062-what-is-the-long-obligatory-prayer-actually-doing-hero.jpg
 ---
 ## You
 

@@ -13,6 +13,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Explores word meaning across traditions"
 featured: false
+heroImage: /images/dialog/047-what-spiritual-meant-then-vs-now-hero.jpg
 ---
 ## You
 

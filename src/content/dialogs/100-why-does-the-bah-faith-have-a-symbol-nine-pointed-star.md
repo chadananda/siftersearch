@@ -12,6 +12,7 @@ qualityScore: 68
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/100-why-does-the-bah-faith-have-a-symbol-nine-pointed-star-hero.jpg
 ---
 ## You
 

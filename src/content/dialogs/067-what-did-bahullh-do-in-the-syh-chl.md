@@ -13,6 +13,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Engages with interfaith comparisons"
 featured: false
+heroImage: /images/dialog/067-what-did-bahullh-do-in-the-syh-chl-hero.jpg
 ---
 ## You
 

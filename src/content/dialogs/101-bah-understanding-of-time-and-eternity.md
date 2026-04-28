@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores cyclical vs linear time in Bahá'í thought"
 featured: false
+heroImage: /images/dialog/101-bah-understanding-of-time-and-eternity-hero.jpg
 ---
 ## You
 

@@ -12,7 +12,21 @@ What you wanted versus what was deliverable in one night:
 - **100 conversations of 10 rounds each = ~1,000 OpenAI exchanges + 100 judge calls.** At ~3 minutes per conversation in real-time API calls, that's ~5 hours of pure runtime — feasible. What's NOT feasible in one night is 100 conversations *of archive-and-share quality* with continuous prompt refinement, because each refinement cycle requires (a) accumulating signal from at least 5–10 conversations, (b) reading them carefully, (c) writing a new prompt, (d) re-deploying, (e) re-running.
 - **What I actually did:** built infrastructure, ran 4 hand-driven manual dialogs to seed analysis, then four automated batch tiers — v3 (1 dialog), v3.1 (3 dialogs), v3.2 (running on remaining ~95 through the night). Each tier informed the next.
 
-**Total dialog count by morning** depends on how far the v3.2 batch got — see `PUBLISHED-DIALOGS.md` for the live count. Realistic estimate: 30–60 published.
+**Final result: 102 dialogs published.** All 100 seed questions completed (97 in this final batch + 4 manual + 1 from earlier v3 trial). Live at siftersearch.com/dialog.
+
+**Aggregate scores from the final v3.1 batch (97 conversations):**
+- Average: **64.3%**
+- Range: **55% – 76%**
+- Conversations scoring ≥70% (archive-leaning): 6
+- Conversations scoring 60-69% (solid): ~70
+- Conversations scoring 55-59% (weaker): ~21
+
+**Top 5 by overall score:**
+1. **76%** — *The Question of Universalism in Bahá'í Discourse* (`/dialog/088-...`)
+2. **73%** — *Bahá'u'lláh's Dream of the Maid of Heaven* (`/dialog/096-...`) (naturalness 85)
+3. **73%** — *What Does 'Trustworthiness' Mean in Bahá'í Ethics?* (`/dialog/082-...`) (naturalness 85)
+4. **72.5%** — *What Does It Mean to 'Recognize' the Manifestation?* (`/dialog/077-...`)
+5. **71%** — *The Bab's Six-Year Mission* (`/dialog/029-...`)
 
 ---
 
@@ -128,10 +142,11 @@ The voice is closer to what you described than v1 was. It's not yet *consistentl
 
 ## What I'd want from you
 
-1. Read 2–3 dialogs end-to-end. Tell me which ones land and which don't. The judge's scores are useful but not definitive.
-2. Decide on the next-leverage move (search ranking work, two-mode Jafar, both, neither).
-3. Approve or modify v3.2 — it's currently deployed to production for everyone using `siftersearch.com` chat right now.
-4. Set realistic expectations for batch volume in future runs. 100 high-quality dialogs is probably 2–3 weeks of evening work, not one night.
+1. **Read the top 5 dialogs end-to-end** to assess landing quality. Judge scores are signal but not definitive — your read matters more.
+2. **Spot-check a 60% dialog** to confirm whether the score reflects the actual conversation quality. My read of dialog 005 (alcohol/tobacco, 58%) was that the content was substantive even though the score was low.
+3. **Decide on search-ranking work as the next-leverage move.** Until primary scripture surfaces above secondary commentary in search results, prompt iteration cannot push scores meaningfully higher.
+4. **Approve or modify v3.1** — it's currently deployed to production. Anyone using siftersearch.com chat is talking to v3.1 Jafar right now. Voice is closer to wise-believer than v1, but still imperfect on naturalness and specificity.
+5. **Set realistic expectations for batch quality.** This run averaged 64.3%. To break 75% averages we likely need: (a) source-tier weighting in search, (b) a longer iteration cycle than one night, (c) curation of which questions get asked (the easier "explanation" topics scored higher than the harder "tension" topics).
 
 ---
 

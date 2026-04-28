@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/070-service-to-humanity-vs-service-to-the-faith-hero.jpg
 ---
 ## You
 

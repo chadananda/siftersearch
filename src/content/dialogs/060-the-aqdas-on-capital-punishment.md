@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Addresses complex ethical issues"
 featured: false
+heroImage: /images/dialog/060-the-aqdas-on-capital-punishment-hero.jpg
 ---
 ## You
 

@@ -12,6 +12,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong, reflecting faith and conviction."
 featured: false
+heroImage: /images/dialog/091-bahullh-on-human-suffering-and-the-tree-of-anguish-hero.jpg
 ---
 ## You
 

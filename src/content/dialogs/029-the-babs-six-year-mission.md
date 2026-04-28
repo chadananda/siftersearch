@@ -13,6 +13,7 @@ qualityScore: 71
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/029-the-babs-six-year-mission-hero.jpg
 ---
 ## You
 

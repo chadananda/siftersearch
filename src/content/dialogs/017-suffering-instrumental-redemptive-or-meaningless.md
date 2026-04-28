@@ -13,6 +13,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Emphasizes virtues like patience and resilience"
 featured: false
+heroImage: /images/dialog/017-suffering-instrumental-redemptive-or-meaningless-hero.jpg
 ---
 ## You
 

@@ -12,6 +12,7 @@ qualityScore: 60
 publishedAt: 2026-04-28
 excerpt: "Explores Bahá'í principles in governance"
 featured: false
+heroImage: /images/dialog/050-why-does-bahullh-praise-constitutional-monarchy-hero.jpg
 ---
 ## You
 

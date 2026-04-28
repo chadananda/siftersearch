@@ -12,6 +12,7 @@ qualityScore: 62
 publishedAt: 2026-04-28
 excerpt: "Engages with complex questions"
 featured: false
+heroImage: /images/dialog/023-what-bahs-mean-by-world-government-hero.jpg
 ---
 ## You
 

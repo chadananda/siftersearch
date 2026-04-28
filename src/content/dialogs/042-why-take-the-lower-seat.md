@@ -13,6 +13,7 @@ qualityScore: 66
 publishedAt: 2026-04-28
 excerpt: "Believer voice is strong and consistent."
 featured: false
+heroImage: /images/dialog/042-why-take-the-lower-seat-hero.jpg
 ---
 ## You
 

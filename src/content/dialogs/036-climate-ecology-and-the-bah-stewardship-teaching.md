@@ -13,6 +13,7 @@ qualityScore: 55
 publishedAt: 2026-04-28
 excerpt: "Explores Bahá'í principles of stewardship"
 featured: false
+heroImage: /images/dialog/036-climate-ecology-and-the-bah-stewardship-teaching-hero.jpg
 ---
 ## You
 

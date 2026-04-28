@@ -13,6 +13,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Explores Bahá'í principles in social justice."
 featured: false
+heroImage: /images/dialog/032-wealth-and-voluntary-giving-hero.jpg
 ---
 ## You
 

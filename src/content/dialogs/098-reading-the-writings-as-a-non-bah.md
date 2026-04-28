@@ -12,6 +12,7 @@ qualityScore: 69
 publishedAt: 2026-04-28
 excerpt: "Balanced believer voice"
 featured: false
+heroImage: /images/dialog/098-reading-the-writings-as-a-non-bah-hero.jpg
 ---
 ## You
 

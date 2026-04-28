@@ -13,6 +13,7 @@ qualityScore: 55
 publishedAt: 2026-04-28
 excerpt: "Believer_voice is strong, reflecting faith perspective."
 featured: false
+heroImage: /images/dialog/051-the-tablet-of-wisdom-and-the-rejection-of-materialism-hero.jpg
 ---
 ## You
 

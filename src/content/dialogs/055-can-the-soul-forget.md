@@ -13,6 +13,7 @@ qualityScore: 67
 publishedAt: 2026-04-28
 excerpt: "Explores complex themes of soul's journey"
 featured: false
+heroImage: /images/dialog/055-can-the-soul-forget-hero.jpg
 ---
 ## You
 

@@ -12,6 +12,7 @@ qualityScore: 61
 publishedAt: 2026-04-28
 excerpt: "Engages with complex questions about science and spirituality."
 featured: false
+heroImage: /images/dialog/089-the-tablet-of-carmel-and-the-mountain-of-god-hero.jpg
 ---
 ## You
 
