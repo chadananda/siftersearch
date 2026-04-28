@@ -368,10 +368,15 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
 
 // ─── Canonical-works hard-resolve for find_document_for_citation ─────────
 // When the user names a known canonical work, return its known doc_id
-// directly — bypasses Meilisearch ranking entirely. The actual full English
-// text lives at these document_ids (audited against the corpus 2026-04-28).
-// Each entry: { matchers: [strings tested against normalized title query],
-//               doc_id: int, religion: string }
+// directly — bypasses Meilisearch ranking entirely.
+//
+// Two kinds of entries:
+// 1. Whole-document works (Aqdas, Iqán, Hidden Words, etc.) — { matchers, doc_id, religion }
+// 2. Sub-section works (named tablets inside a compilation, chapters of a
+//    book) — { matchers, doc_id, religion, start_paragraph, end_paragraph }
+//
+// Sub-section ranges were audited 2026-04-28 against the corpus by parsing
+// chapter prefixes [N.M] in paragraph text.
 const CANONICAL_WORKS = [
   // Bahá'u'lláh — primary works
   { matchers: ['kitab-i-aqdas', 'kitabi aqdas', 'kitab al-aqdas', 'aqdas', 'most holy book'], doc_id: 16712, religion: "Baha'i" },
@@ -382,10 +387,19 @@ const CANONICAL_WORKS = [
   { matchers: ['seven valleys', 'four valleys', 'haft vadi'], doc_id: 8241, religion: "Baha'i" },
   { matchers: ['summons of the lord of hosts'], doc_id: 8299, religion: "Baha'i" },
   { matchers: ['prayers and meditations'], doc_id: 8301, religion: "Baha'i" },
-  // The compilation that contains the Tablet of Wisdom, Tablet of Carmel,
-  // Bisharat, Tarazat, Lawh-i-Maqsud, etc. When the user asks for any of
-  // these named tablets, this is where the full English text lives.
-  { matchers: ['tablets of bahaullah', 'tablets revealed after', 'tablet of wisdom', 'lawh-i-hikmat', 'lawh i hikmat', 'tablet of carmel', 'lawh-i-karmil', 'bisharat', 'tarazat', 'lawh-i-maqsud', 'lawh-i-dunya', 'ishraqat', 'kalimat-i-firdawsiyyih', 'glad tidings', 'splendours', 'tablet of the world', 'tablet to manakji', 'tablet to queen victoria', 'lawh-i-malikih', 'lawh-i-naser', 'tablet to napoleon'], doc_id: 8270, religion: "Baha'i" },
+
+  // Compilation: "Tablets of Bahá'u'lláh Revealed After the Kitáb-i-Aqdas"
+  // (doc 8270, 664 paragraphs). Sub-section ranges by chapter prefix:
+  { matchers: ['ishraqat', 'splendours', 'splendors', 'effulgences', 'lawh-i-ishraqat'], doc_id: 8270, religion: "Baha'i", start_paragraph: 229, end_paragraph: 312 },
+  { matchers: ['tablet of wisdom', 'lawh-i-hikmat', 'lawh i hikmat', 'hikmat'], doc_id: 8270, religion: "Baha'i", start_paragraph: 313, end_paragraph: 365 },
+  { matchers: ['asl-i-kullul-khayr', 'words of wisdom'], doc_id: 8270, religion: "Baha'i", start_paragraph: 366, end_paragraph: 387 },
+  { matchers: ['lawh-i-maqsud', 'tablet of maqsud'], doc_id: 8270, religion: "Baha'i", start_paragraph: 388, end_paragraph: 439 },
+  { matchers: ['suriy-i-vafa', 'tablet of faithfulness'], doc_id: 8270, religion: "Baha'i", start_paragraph: 440, end_paragraph: 467 },
+  { matchers: ['lawh-i-siyyid-i-mihdiy-i-dahaji', 'tablet to siyyid mihdi'], doc_id: 8270, religion: "Baha'i", start_paragraph: 468, end_paragraph: 489 },
+  // Catch-all for the compilation: searches for "Tablets Revealed After" or
+  // any tablet name not matched above fall here, returning the whole comp.
+  { matchers: ['tablets of bahaullah', 'tablets revealed after', 'bisharat', 'tarazat', 'lawh-i-dunya', 'kalimat-i-firdawsiyyih', 'glad tidings', 'tablet of the world', 'tablet to manakji', 'tablet to queen victoria', 'lawh-i-malikih', 'lawh-i-naser', 'tablet to napoleon', 'tablet of carmel', 'lawh-i-karmil'], doc_id: 8270, religion: "Baha'i" },
+
   // 'Abdu'l-Bahá
   { matchers: ['some answered questions', 'mufavadat'], doc_id: 8346, religion: "Baha'i" },
   { matchers: ['promulgation of universal peace'], doc_id: 8638, religion: "Baha'i" },
@@ -397,122 +411,6 @@ const CANONICAL_WORKS = [
   { matchers: ['advent of divine justice'], doc_id: 8295, religion: "Baha'i" },
   { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" }
 ];
-
-// Find named-work sub-sections inside compilations by searching the content
-// table's `heading` column. The Bahá'í compilation "Tablets Revealed After
-// the Aqdas" (doc 8270) has 600+ paragraphs containing many named tablets:
-// each named tablet's first paragraph carries a heading like "Lawḥ-i-Ḥikmat"
-// or "Ishráqát". This function returns the parent doc + the start/end
-// paragraph range for each match.
-//
-// Headings are cached in memory because there's no index on content.heading
-// and the corpus has 3.4M rows — a full scan would crash Cloudflare's
-// timeout on every chat request. Cache is built lazily on first call;
-// subsequent calls are O(1).
-let _headingsCache = null;
-let _headingsCacheLoadedAt = null;
-const HEADINGS_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-
-async function loadHeadingsCache() {
-  if (_headingsCache && _headingsCacheLoadedAt && (Date.now() - _headingsCacheLoadedAt) < HEADINGS_CACHE_TTL_MS) {
-    return _headingsCache;
-  }
-  // Two-step query so the heading scan doesn't full-scan content. First, find
-  // doc_ids that have any non-null heading (small query against indexed
-  // doc_id), then for each such doc fetch heading rows.
-  // Simpler approach: scan content for non-null headings — runs once per cache
-  // lifetime so the slow query is amortized.
-  const t0 = Date.now();
-  const rows = await queryAll(
-    `SELECT c.doc_id, c.heading, MIN(c.paragraph_index) as first_para,
-            d.title as parent_title, d.author as parent_author, d.religion,
-            d.collection, d.paragraph_count
-     FROM content c JOIN docs d ON d.id = c.doc_id
-     WHERE c.heading IS NOT NULL AND c.heading != ''
-       AND c.deleted_at IS NULL AND d.deleted_at IS NULL
-     GROUP BY c.doc_id, c.heading
-     ORDER BY c.doc_id, first_para`,
-    []
-  );
-  logger.info({ rowCount: rows.length, ms: Date.now() - t0 }, 'headings cache loaded');
-  _headingsCache = rows;
-  _headingsCacheLoadedAt = Date.now();
-  return rows;
-}
-
-async function findNamedWorksInCompilations(title) {
-  if (!title || title.length < 3) return [];
-  const normalize = (s) => (s || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2018\u2019\u02bc\u02bb`'']/g, "'");
-  const normTitle = normalize(title);
-
-  const rows = await loadHeadingsCache();
-
-  // Filter to headings that contain (or are contained by) the title. Also
-  // the reverse — title contains heading — handles "Tablet of Wisdom" vs
-  // "Lawḥ-i-Ḥikmat" type mismatch via the canonical-works alias map below.
-  const TITLE_ALIAS = {
-    'tablet of wisdom': ['lawh-i-hikmat', 'lawh i hikmat', 'hikmat'],
-    'tablet of carmel': ['lawh-i-karmil', 'karmil'],
-    'tablet to queen victoria': ['lawh-i-malikih', 'malikih'],
-    'tablet to napoleon iii': ['lawh-i-napulyun', 'napulyun'],
-    'tablet to the pope': ['lawh-i-papa', 'papa'],
-    'tablet to the czar': ['lawh-i-rais', 'rais'],
-    'tablet of the world': ['lawh-i-dunya', 'dunya'],
-    'glad tidings': ['bisharat', 'bisharát'],
-    'splendours': ['tarazat', 'tarázát'],
-    'effulgences': ['ishraqat', 'ishráqát'],
-    'words of paradise': ['kalimat-i-firdawsiyyih', 'firdawsiyyih'],
-    'tablet of the holy mariner': ['lawh-i-mallah', 'mallah'],
-    'tablet of maqsud': ['lawh-i-maqsud', 'maqsud'],
-    'dispensation of bahaullah': ['the dispensation', 'dispensation'],
-    'world order of bahaullah': ['world order', 'goal of a new world order']
-  };
-
-  // Build the set of strings to test against headings: the title itself,
-  // plus all aliases for this title.
-  const testStrings = [normTitle];
-  for (const [primary, aliases] of Object.entries(TITLE_ALIAS)) {
-    if (normTitle.includes(primary) || primary.includes(normTitle)) {
-      testStrings.push(...aliases);
-    }
-    if (aliases.some(a => normTitle.includes(a))) {
-      testStrings.push(primary, ...aliases);
-    }
-  }
-
-  const matches = rows.filter(r => {
-    const normH = normalize(r.heading);
-    return testStrings.some(s => s.length >= 3 && (normH.includes(s) || s.includes(normH)));
-  });
-
-  // For each match, compute the end-paragraph by finding the next heading in
-  // the same doc OR using doc.paragraph_count.
-  const byDoc = new Map();
-  for (const r of rows) {
-    if (!byDoc.has(r.doc_id)) byDoc.set(r.doc_id, []);
-    byDoc.get(r.doc_id).push(r);
-  }
-  return matches.map(m => {
-    const docHeadings = byDoc.get(m.doc_id) || [];
-    const next = docHeadings.find(h => h.first_para > m.first_para);
-    const end = next ? next.first_para - 1 : m.paragraph_count - 1;
-    return {
-      parent_doc_id: m.doc_id,
-      parent_title: m.parent_title,
-      parent_author: m.parent_author,
-      religion: m.religion,
-      collection: m.collection,
-      named_work_heading: m.heading,
-      start_paragraph: m.first_para,
-      end_paragraph: end,
-      paragraph_count: end - m.first_para + 1
-    };
-  });
-}
 
 function canonicalLookup(title, religion) {
   if (!title) return null;
@@ -635,18 +533,28 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
       [canon.doc_id]
     );
     if (doc) {
+      const isSubSection = typeof canon.start_paragraph === 'number';
       canonicalCandidate = {
         document_id: doc.id,
-        title: doc.title,
+        title: isSubSection
+          ? `${title} (in ${doc.title}, paragraphs ${canon.start_paragraph}-${canon.end_paragraph})`
+          : doc.title,
         author: doc.author || '',
         religion: doc.religion || '',
         collection: doc.collection || '',
         year: doc.year,
-        paragraph_count: doc.paragraph_count,
+        paragraph_count: isSubSection
+          ? (canon.end_paragraph - canon.start_paragraph + 1)
+          : doc.paragraph_count,
         authority_score: 999,
         is_primary: true,
         slug: doc.slug,
-        match_reason: 'canonical-work'
+        match_reason: isSubSection ? 'canonical-section' : 'canonical-work',
+        ...(isSubSection ? {
+          start_paragraph: canon.start_paragraph,
+          end_paragraph: canon.end_paragraph,
+          read_hint: `read_document_for_question with document_id=${doc.id}, start_paragraph=${canon.start_paragraph}, end_paragraph=${canon.end_paragraph}`
+        } : {})
       };
     }
   }
@@ -697,29 +605,13 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
           slug: h.slug,
           match_reason: 'meilisearch'
         }));
-      // Also search heading-based named-works inside compilations. The Tablet
-      // of Wisdom isn't a standalone doc — it's a section inside doc 8270.
-      const namedWorks = await findNamedWorksInCompilations(title)
-        .catch(err => { logger.warn({ err: err.message }, 'named-works lookup failed'); return []; });
-      const namedWorkCandidates = namedWorks
-        .filter(nw => !religion || (nw.religion || '').toLowerCase().includes((religion || '').toLowerCase().slice(0, 4)))
-        .map(nw => ({
-          document_id: nw.parent_doc_id,
-          title: `${nw.named_work_heading} (in ${nw.parent_title})`,
-          author: nw.parent_author || '',
-          religion: nw.religion || '',
-          collection: nw.collection || '',
-          paragraph_count: nw.paragraph_count,
-          start_paragraph: nw.start_paragraph,
-          end_paragraph: nw.end_paragraph,
-          authority_score: 800,  // ranks above Meilisearch hits but below canonical hard-resolve
-          is_primary: true,
-          match_reason: 'named-work-in-compilation',
-          read_hint: `read_document_for_question with document_id=${nw.parent_doc_id}, start_paragraph=${nw.start_paragraph}, end_paragraph=${nw.end_paragraph}`
-        }));
+      // Note: named-works detection via heading scan was removed — the heading
+      // column data isn't reliable as a section-start marker (headings appear
+      // at section endings in some compilations). The canonical-works table
+      // above now carries explicit start_paragraph/end_paragraph for known
+      // sub-sections, which is much more reliable.
       const candidates = [
         ...(canonicalCandidate ? [canonicalCandidate] : []),
-        ...namedWorkCandidates,
         ...meiliCandidates
       ];
       return {
