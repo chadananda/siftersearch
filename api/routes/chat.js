@@ -422,28 +422,45 @@ function authorityScore(doc) {
   if (!cfg) return 0;
   const t = (doc.title || '').toLowerCase();
   const a = (doc.author || '').toLowerCase();
-  for (const titleNeedle of cfg.titles) if (t.includes(titleNeedle)) return 100;
-  for (const authorNeedle of cfg.authors) if (a.includes(authorNeedle)) return 50;
-  return 0;
+  let score = 0;
+  // Title-needle match: 60 (the title looks like canonical scripture)
+  for (const titleNeedle of cfg.titles) if (t.includes(titleNeedle)) { score += 60; break; }
+  // Canonical author: 60 (Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi for Bahá'í)
+  for (const authorNeedle of cfg.authors) if (a.includes(authorNeedle)) { score += 60; break; }
+  // Penalize titles that look like commentary even if the title-needle matched.
+  // "Questions and Answers", "Notes on", "Commentary on", "Problems of" are giveaways.
+  if (/questions and answers|commentary on|notes on|problems of|towards a |a study of|reflections on/i.test(t)) {
+    score -= 40;
+  }
+  // Penalize papers/scholarly collections (these aren't primary scripture)
+  if (/^papers?$|scholarly|journal|paper$/i.test(doc.collection || '')) {
+    score -= 30;
+  }
+  return score;
 }
 
 // Find a specific named work (Tablet, Gospel, Sutra, etc.) by title. Wraps
 // Meilisearch documents index with a primary-source authority boost so the
 // actual scripture surfaces above commentaries and pilgrim notes.
+//
+// Religion filter is applied IN JS rather than via Meilisearch filter syntax —
+// Meilisearch struggles with apostrophes in filter values like "Baha'i", so
+// we over-fetch and post-filter for reliability.
 export async function executeFindDocumentForCitation({ title, religion, author, limit = 5 }) {
   const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
   try {
     const { getMeili, INDEXES } = await import('../lib/search.js');
     const meili = getMeili();
     if (meili) {
-      const filters = [];
-      if (religion) filters.push(`religion = "${religion}"`);
       const result = await meili.index(INDEXES.DOCUMENTS).search(title || '', {
-        limit: 25, // grab more, re-rank, then trim
-        attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug'],
-        ...(filters.length > 0 ? { filter: filters.join(' AND ') } : {})
+        limit: 50, // over-fetch so post-filtering still leaves enough candidates
+        attributesToRetrieve: ['id', 'title', 'author', 'religion', 'collection', 'year', 'paragraph_count', 'encumbered', 'slug']
       });
       let hits = result.hits;
+      if (religion) {
+        const r = religion.toLowerCase();
+        hits = hits.filter(h => (h.religion || '').toLowerCase() === r);
+      }
       if (author) {
         const a = author.toLowerCase();
         hits = hits.filter(h => (h.author || '').toLowerCase().includes(a));
@@ -462,11 +479,13 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
           collection: h.collection || '',
           year: h.year,
           paragraph_count: h.paragraph_count,
+          authority_score: h._authority,
           is_primary: h._authority >= 100,
           slug: h.slug
         })),
         searched: title,
-        religion: religion || null
+        religion_filter: religion || null,
+        author_filter: author || null
       };
     }
   } catch (err) {
