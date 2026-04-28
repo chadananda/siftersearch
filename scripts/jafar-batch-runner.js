@@ -211,10 +211,9 @@ function dialogMarkdown(q, history, score, judgeResult) {
     if (i + 2 < history.length - 1) parts.push('---', '');
   }
 
-  // Pre-existing hero image filename keyed off slug (regenerated images
-  // already on disk for prior runs). The slug is derived from title at runOne.
+  // Hero image already on disk (generated previously) at /images/dialog/{slug}-hero.jpg
   const slug = q.slug || `${slugify(q.title)}`;
-  const heroPath = `/images/dialog/${slug.replace(/^\d+-/, '')}-hero.jpg`;
+  const heroPath = `/images/dialog/${slug}-hero.jpg`;
 
   // Assessment block — visible per-article meta-commentary
   const scores = judgeResult.scores || {};
@@ -235,6 +234,7 @@ function dialogMarkdown(q, history, score, judgeResult) {
     `publishedAt: ${new Date().toISOString().slice(0, 10)}`,
     `excerpt: ${JSON.stringify((narrative || '').slice(0, 200))}`,
     `featured: ${score >= 80 ? 'true' : 'false'}`,
+    `heroImage: ${heroPath}`,
     'assessment:',
     '  scores:',
     ...Object.entries(scores).map(([k, v]) => `    ${k}: ${v}`),
