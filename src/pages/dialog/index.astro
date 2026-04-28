@@ -6,6 +6,9 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { getCollection } from 'astro:content';
 
+// Prerender at build time — content is static between deploys.
+export const prerender = true;
+
 const all = await getCollection('dialogs');
 
 // Sort by featured first, then quality score desc, then date desc

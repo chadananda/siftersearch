@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T04:44:17.753Z",
+  "generated": "2026-04-28T04:48:24.704Z",
   "entries": [
+    {
+      "hash": "d0d0c44",
+      "date": "2026-04-27",
+      "type": "Other",
+      "description": "Overnight dialog work — 4 conversations, v2 prompt, analysis, morning report",
+      "scope": null
+    },
     {
       "hash": "05fcdea",
       "date": "2026-04-27",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
       "scope": null
-    },
-    {
-      "hash": "2da673a",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-27": [
+      {
+        "hash": "d0d0c44",
+        "date": "2026-04-27",
+        "type": "Other",
+        "description": "Overnight dialog work — 4 conversations, v2 prompt, analysis, morning report",
+        "scope": null
+      },
       {
         "hash": "05fcdea",
         "date": "2026-04-27",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Save translation_segments to dedicated column for SBS phrase highlighting",
-        "scope": null
-      },
-      {
-        "hash": "2da673a",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Ensure no gaps between sentences in extractSentencesFromEndings",
         "scope": null
       }
     ]

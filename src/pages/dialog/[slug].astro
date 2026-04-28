@@ -6,6 +6,11 @@ import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import { getCollection, render } from 'astro:content';
 
+// Prerender all dialog pages at build time. Required in Astro `output: 'server'`
+// mode for getStaticPaths to actually generate routes. Without this the
+// slug param has no props at runtime and rendering 500s.
+export const prerender = true;
+
 export async function getStaticPaths() {
   const dialogs = await getCollection('dialogs');
   return dialogs.map(d => ({

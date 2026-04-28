@@ -1,0 +1,720 @@
+[
+  {
+    "title": "Warnings about the Left, but not the Right",
+    "question": "Why are there so many warnings in the Bahá'í writings about the movement of the left, but relatively few warnings about the movement of the right?",
+    "description": "Testing whether Shoghi Effendi's warnings against communism really outweigh his warnings against fascism.",
+    "topic": "politics",
+    "tags": ["shoghi-effendi", "communism", "fascism", "political-binaries", "historical-context"],
+    "slug": "001-left-right-warnings"
+  },
+  {
+    "title": "Women, the UHJ, and Faith in Unrevealed Wisdom",
+    "question": "The Bahá'í teaching is that women and men are equal — and yet Bahá'u'lláh ruled that women cannot serve on the Universal House of Justice. How is this not a flat contradiction?",
+    "description": "On the most controversial institutional asymmetry in Bahá'í governance.",
+    "topic": "social-order",
+    "tags": ["women", "universal-house-of-justice", "equality", "institutional-structure"],
+    "slug": "002-women-uhj"
+  },
+  {
+    "title": "What 'Abdu'l-Bahá Actually Meant by 'Religion'",
+    "question": "When 'Abdu'l-Bahá used the word 'religion,' what did he mean by it? Because the modern English word 'religion' carries an enormous freight of post-Enlightenment baggage — institutional, voluntary, partitioned from civic life. I suspect he meant something quite different. Search the writings for how the word is used and tell me.",
+    "description": "Testing whether modern English 'religion' carries the freight 'Abdu'l-Bahá meant.",
+    "topic": "word-meaning",
+    "tags": ["religion", "din", "civilization", "secularism", "translation"],
+    "slug": "003-religion-word-meaning"
+  },
+  {
+    "title": "The Bahá'í Soul, Buddhist Anatta, and the Limits of Both/And",
+    "question": "How does the Bahá'í concept of the soul differ from the Hindu and Buddhist concepts of reincarnation? I want a sharp answer — not 'all religions teach about the soul' but the actual ontological differences.",
+    "description": "Forcing the question Bahá'í-Buddhist comparative theology often avoids.",
+    "topic": "comparative-religion",
+    "tags": ["soul", "reincarnation", "anatta", "buddhism", "personal-identity"],
+    "slug": "004-soul-reincarnation"
+  },
+  {
+    "title": "Alcohol Forbidden, Tobacco Discouraged — Why the Asymmetry?",
+    "question": "Why is alcohol categorically forbidden in the Bahá'í Faith, but tobacco only strongly discouraged rather than forbidden? Both are intoxicants of a kind. The asymmetry is not arbitrary — what's the textual reasoning?",
+    "description": "On the textual reasoning behind two adjacent prohibitions of differing strength.",
+    "topic": "ethics",
+    "tags": ["alcohol", "tobacco", "kitab-i-aqdas", "law", "graduation"]
+  },
+  {
+    "title": "Is the Bahá'í Faith Opposed to Homosexuality, or to Sex Outside Marriage?",
+    "question": "Is the Bahá'í teaching about homosexuality a teaching against gay people, or is it part of a broader teaching that all sexual activity outside heterosexual marriage falls outside the law? The distinction matters.",
+    "description": "On the often-conflated question of the Bahá'í position on homosexuality.",
+    "topic": "ethics",
+    "tags": ["homosexuality", "marriage", "sexuality", "law"]
+  },
+  {
+    "title": "Progressive Revelation — Teleological or Cyclical?",
+    "question": "Is Bahá'í 'progressive revelation' a teleological story heading somewhere, or is it a cyclical pattern of decline and renewal? The Bahá'í writings sometimes seem to teach both. Which is the deeper teaching?",
+    "description": "On the structural shape of the Bahá'í view of religious history.",
+    "topic": "theology",
+    "tags": ["progressive-revelation", "manifestations", "history", "eschatology"]
+  },
+  {
+    "title": "Why Forbid Asceticism but Require Fasting?",
+    "question": "Bahá'u'lláh forbids monasticism and ascetic withdrawal from the world, yet requires a 19-day fast. Aren't these in tension? How is one a discipline and the other an excess?",
+    "description": "On the line between ordained discipline and forbidden austerity.",
+    "topic": "practice",
+    "tags": ["asceticism", "fasting", "monasticism", "discipline"]
+  },
+  {
+    "title": "The Infallibility of the UHJ — What Kind?",
+    "question": "When Bahá'ís say the Universal House of Justice is 'infallible,' what kind of infallibility do they mean? It can't mean infallible in the same way Bahá'u'lláh's revelation is infallible. Make the distinction precise.",
+    "description": "On the type-distinction between revelation and institutional guidance.",
+    "topic": "theology",
+    "tags": ["infallibility", "universal-house-of-justice", "covenant", "authority"]
+  },
+  {
+    "title": "Why a Thousand Years?",
+    "question": "Why is the Bahá'í dispensation said to last 1,000 years, not 500 or 5,000? Where does that number come from, and what does it actually mean?",
+    "description": "On the eschatological math of the Bahá'í dispensation.",
+    "topic": "theology",
+    "tags": ["dispensation", "eschatology", "manifestations", "time"]
+  },
+  {
+    "title": "Backbiting vs Honest Criticism",
+    "question": "The Bahá'í writings strongly forbid backbiting. But honest criticism of public figures, of the powerful, of injustice — is that backbiting? Where exactly is the line?",
+    "description": "On the line between backbiting and warranted public criticism.",
+    "topic": "ethics",
+    "tags": ["backbiting", "criticism", "speech", "ethics"]
+  },
+  {
+    "title": "Work as Worship — Including Exploitative Work?",
+    "question": "The teaching that 'work performed in the spirit of service is worship' is beautiful — but is it true of every kind of work? What about exploitative or dehumanizing work?",
+    "description": "On whether the work-as-worship teaching applies universally.",
+    "topic": "ethics",
+    "tags": ["work", "worship", "service", "labor"]
+  },
+  {
+    "title": "Consultation as Spiritual Practice",
+    "question": "Bahá'í consultation is often described as a spiritual practice, not just a decision-making method. What does that distinction mean in practice?",
+    "description": "On the spiritual ontology of Bahá'í consultation.",
+    "topic": "practice",
+    "tags": ["consultation", "decision-making", "spiritual-practice"]
+  },
+  {
+    "title": "Predestination and Free Will",
+    "question": "How do the Bahá'í writings handle the ancient question of predestination and free will? They seem to affirm both — but on what terms?",
+    "description": "On the Bahá'í navigation of the freedom-determinism question.",
+    "topic": "metaphysics",
+    "tags": ["free-will", "predestination", "providence"]
+  },
+  {
+    "title": "Lesser Peace, Most Great Peace — What's the Distinction?",
+    "question": "What does 'the Lesser Peace' actually mean, and why does it precede 'the Most Great Peace'? Is the distinction structural or temporal?",
+    "description": "On the sequence and distinction in Bahá'í eschatology.",
+    "topic": "social-order",
+    "tags": ["lesser-peace", "most-great-peace", "world-order", "eschatology"]
+  },
+  {
+    "title": "The Greatest Name — Metaphysics of 'Bahá''",
+    "question": "What is the metaphysics of the 'Greatest Name' (Bahá')? Is it merely a title, or does it carry ontological weight?",
+    "description": "On the inner meaning of the central Name in Bahá'í practice.",
+    "topic": "mysticism",
+    "tags": ["greatest-name", "baha", "names-of-god", "mysticism"]
+  },
+  {
+    "title": "Suffering — Instrumental, Redemptive, or Meaningless?",
+    "question": "How do the Bahá'í writings understand suffering? Is it instrumental for soul-development, redemptive in some Christian-like sense, or simply contingent and meaningless?",
+    "description": "On the Bahá'í theology of suffering.",
+    "topic": "theology",
+    "tags": ["suffering", "soul", "tests", "providence"]
+  },
+  {
+    "title": "Historical Accuracy of Religious Narratives",
+    "question": "What is the Bahá'í position on the historical accuracy of religious narratives — Adam, Noah, the Buddha's life as told in the Pali canon? Are these literal histories?",
+    "description": "On the Bahá'í handling of mythic vs historical religious narratives.",
+    "topic": "comparative-religion",
+    "tags": ["history", "myth", "scripture", "interpretation"]
+  },
+  {
+    "title": "How the Bahá'í Faith Reads Christian Symbols",
+    "question": "Bahá'u'lláh's interpretation of the symbols of Christianity — the resurrection, the Second Coming — differs from most Christian traditions. What is the Bahá'í reading, and why does it differ?",
+    "description": "On Bahá'u'lláh's reading of Christian symbolism.",
+    "topic": "comparative-religion",
+    "tags": ["christianity", "resurrection", "second-coming", "symbolism"]
+  },
+  {
+    "title": "Muhammad's Role and the Bahá'í Critique of Some Islamic Interpretations",
+    "question": "How do Bahá'ís understand Muhammad's role given that the Bahá'í writings are sometimes critical of how Muslim communities have interpreted Islam? Where is the line?",
+    "description": "On the Bahá'í navigation of Islamic affirmation and Muslim critique.",
+    "topic": "comparative-religion",
+    "tags": ["muhammad", "islam", "interpretation", "manifestations"]
+  },
+  {
+    "title": "Hidden Words and the Most Holy Book — Why Such Different Tones?",
+    "question": "The Hidden Words is intimate, mystical, devotional. The Kitáb-i-Aqdas is legalistic and structured. Both are by Bahá'u'lláh. Why such radically different tones?",
+    "description": "On the inner-vs-outer voices of Bahá'u'lláh's writing.",
+    "topic": "mysticism",
+    "tags": ["hidden-words", "aqdas", "tone", "writings"]
+  },
+  {
+    "title": "Evil — Privation, Active Force, or Necessary Shadow?",
+    "question": "Do the Bahá'í writings handle evil as the mere privation of good (Augustinian), as an active force, or as a necessary shadow that makes good visible?",
+    "description": "On the Bahá'í theodicy.",
+    "topic": "theology",
+    "tags": ["evil", "theodicy", "good", "privation"]
+  },
+  {
+    "title": "What Bahá'ís Mean by 'World Government'",
+    "question": "When Bahá'í writings speak of a future 'world government,' is that a unitary global state, a federation, or something more like the EU?",
+    "description": "On the political shape of the Most Great Peace.",
+    "topic": "politics",
+    "tags": ["world-government", "federation", "political-philosophy"]
+  },
+  {
+    "title": "The Bahá'í Faith and Sufism",
+    "question": "What is the relationship between the Bahá'í Faith and Sufism? Bahá'u'lláh wrote 'The Seven Valleys' clearly within a Sufi tradition — but he forbids monasticism. Where do they converge and diverge?",
+    "description": "On Bahá'u'lláh's complex relationship with Sufism.",
+    "topic": "mysticism",
+    "tags": ["sufism", "seven-valleys", "mysticism", "asceticism"]
+  },
+  {
+    "title": "Translation as Distortion — How Do Bahá'ís Read in English?",
+    "question": "Most Bahá'ís read Bahá'u'lláh in English translations of works composed in Arabic and Persian. What is lost? What is added? Should English-only readers be more cautious about claiming to know what was said?",
+    "description": "On translation and authority in Bahá'í practice.",
+    "topic": "word-meaning",
+    "tags": ["translation", "arabic", "persian", "authority"]
+  },
+  {
+    "title": "Why Did Bahá'u'lláh Forbid the Image of God?",
+    "question": "Bahá'u'lláh affirms that God is unknowable in essence and that representations are false. But he also gives many names for God in the Long Obligatory Prayer. How do these fit?",
+    "description": "On the apophatic and cataphatic in Bahá'í theology.",
+    "topic": "theology",
+    "tags": ["apophatic", "names-of-god", "image", "theology"]
+  },
+  {
+    "title": "The Right Relationship Between Religion and Science",
+    "question": "The Bahá'í Faith teaches the unity of religion and science. But what does that look like when scientific findings genuinely challenge religious teachings — say, evolutionary biology vs special creation?",
+    "description": "On where the unity-of-religion-and-science teaching actually lives.",
+    "topic": "philosophy",
+    "tags": ["science", "evolution", "creation", "epistemology"]
+  },
+  {
+    "title": "Why Is Politics Forbidden but Social Action Required?",
+    "question": "Bahá'ís are forbidden to engage in partisan politics — yet the writings require active engagement with social transformation. How does that boundary actually work?",
+    "description": "On the line between forbidden politics and required social engagement.",
+    "topic": "politics",
+    "tags": ["politics", "social-action", "non-partisanship"]
+  },
+  {
+    "title": "The Bab's Six-Year Mission",
+    "question": "The Bab's mission lasted only six years before he was executed. How does the brevity of that ministry change how Bahá'ís should read his writings?",
+    "description": "On the theological weight of the Báb's foreshortened ministry.",
+    "topic": "history",
+    "tags": ["the-bab", "history", "manifestations", "martyrdom"]
+  },
+  {
+    "title": "Tahirih, Quddús, and the Conference of Badasht",
+    "question": "What actually happened at Badasht when Tahirih removed her veil, and why is it considered a foundational moment in the Bahá'í tradition? What does the gesture mean?",
+    "description": "On the meaning of Tahirih's most famous act.",
+    "topic": "history",
+    "tags": ["tahirih", "badasht", "women", "history"]
+  },
+  {
+    "title": "The Bahá'í View of Other Manifestations' Followers",
+    "question": "What does the Bahá'í Faith ask Christians, Hindus, Jews, Buddhists, Muslims to do — convert, deepen in their own tradition, or something else? The answer in practice seems messier than 'we honor all religions.'",
+    "description": "On the practical implications of unity for non-Bahá'ís.",
+    "topic": "comparative-religion",
+    "tags": ["evangelism", "conversion", "interfaith"]
+  },
+  {
+    "title": "Wealth and Voluntary Giving",
+    "question": "The Bahá'í teaching on wealth seems to combine respect for property with strong calls for voluntary redistribution. How is this different from socialism, and how is it different from capitalism?",
+    "description": "On the Bahá'í economic vision.",
+    "topic": "ethics",
+    "tags": ["wealth", "economics", "huquq", "redistribution"]
+  },
+  {
+    "title": "Huqúqu'lláh — A Tax or a Spiritual Practice?",
+    "question": "Is the Right of God (Huqúqu'lláh) properly understood as a kind of religious tax, or is it more like a spiritual practice? What does the textual rationale say?",
+    "description": "On the inner meaning of the Right of God.",
+    "topic": "practice",
+    "tags": ["huquq", "wealth", "spiritual-practice"]
+  },
+  {
+    "title": "AI, Consciousness, and the Bahá'í Soul",
+    "question": "If a future AI displays all the behavioral signs of consciousness, what would the Bahá'í Faith say about its moral status? Does it have a soul, or is the soul-association uniquely human?",
+    "description": "On the Bahá'í view of synthetic consciousness.",
+    "topic": "modern-challenges",
+    "tags": ["ai", "consciousness", "soul", "personhood"]
+  },
+  {
+    "title": "The Crisis of Meaning in a Secular Age",
+    "question": "Charles Taylor argues we live in a 'secular age' where belief is one option among many. The Bahá'í writings precede this analysis but address its symptoms — alienation, materialism, despair. What does the Bahá'í Faith offer specifically to the late-secular condition?",
+    "description": "On Bahá'í engagement with the late-secular crisis of meaning.",
+    "topic": "modern-challenges",
+    "tags": ["secularism", "meaning", "alienation", "modernity"]
+  },
+  {
+    "title": "Climate, Ecology, and the Bahá'í Stewardship Teaching",
+    "question": "What do the Bahá'í writings actually say about humanity's relationship to the natural world? Is the framework stewardship, sacramental, or something else?",
+    "description": "On the Bahá'í environmental theology.",
+    "topic": "modern-challenges",
+    "tags": ["environment", "stewardship", "ecology", "creation"]
+  },
+  {
+    "title": "Race, Racism, and the Bahá'í Teaching on Unity",
+    "question": "The Bahá'í Faith calls racism America's 'most challenging issue.' What is the structure of the teaching — is racism understood as a sin, a sickness, a structural condition, or all of these?",
+    "description": "On the multidimensional Bahá'í teaching on race.",
+    "topic": "ethics",
+    "tags": ["race", "racism", "unity", "america"]
+  },
+  {
+    "title": "Translation Politics — The Aqdas in English",
+    "question": "The Kitáb-i-Aqdas was written in Arabic in 1873 but only fully translated into English in 1992. Why the delay? What does that delay tell us about how the Bahá'í community handled its own central text?",
+    "description": "On the long English-translation gestation of the Aqdas.",
+    "topic": "history",
+    "tags": ["aqdas", "translation", "history", "community"]
+  },
+  {
+    "title": "Pilgrim Notes vs Authenticated Writings",
+    "question": "Many widely-circulated Bahá'í teachings come from 'pilgrim notes' — notes by visitors recording 'Abdu'l-Bahá's spoken words. These don't have the same authority as authenticated writings. How do thoughtful Bahá'ís navigate that distinction?",
+    "description": "On source-tier discipline in the Bahá'í corpus.",
+    "topic": "history",
+    "tags": ["pilgrim-notes", "authority", "abdul-baha", "authentication"]
+  },
+  {
+    "title": "What Did the Báb's Bayán Actually Teach?",
+    "question": "The Báb's Bayán contains laws and teachings that Bahá'u'lláh subsequently abrogated or fulfilled. What was the Bayán actually teaching, and how should a Bahá'í today read it?",
+    "description": "On reading the Báb's writings within the Bahá'í Faith.",
+    "topic": "history",
+    "tags": ["bab", "bayan", "abrogation", "manifestations"]
+  },
+  {
+    "title": "The Mystic Sense and the Analytic Mind",
+    "question": "'Abdu'l-Bahá speaks of a 'mystic sense' that perceives spiritual realities the analytic intellect cannot. What is this sense, and how does one know it from imagination or wishful thinking?",
+    "description": "On the epistemology of spiritual perception.",
+    "topic": "mysticism",
+    "tags": ["mystic-sense", "epistemology", "intellect", "intuition"]
+  },
+  {
+    "title": "Why Take the Lower Seat?",
+    "question": "Bahá'u'lláh's instruction to take the lower seat at any gathering is more than etiquette. What is the deeper teaching about ego, station, and acknowledgment?",
+    "description": "On the practice and inner meaning of taking the lower seat.",
+    "topic": "practice",
+    "tags": ["humility", "ego", "etiquette", "spiritual-practice"]
+  },
+  {
+    "title": "The Iqán's Argument Structure",
+    "question": "The Kitáb-i-Iqán is Bahá'u'lláh's argument for the legitimacy of his own claim — but the argument is largely about how to read scripture symbolically. What's the structure, and why does it work?",
+    "description": "On the rhetorical and theological structure of the Book of Certitude.",
+    "topic": "theology",
+    "tags": ["iqan", "scripture", "interpretation", "manifestations"]
+  },
+  {
+    "title": "Bahá'u'lláh in Edirne — The Most Great Separation",
+    "question": "The break between Bahá'u'lláh and his half-brother Mírzá Yahyá in Edirne is called 'the Most Great Separation.' What was actually at stake, and why does it matter for how the Bahá'í Faith understands itself?",
+    "description": "On the founding crisis of the Bahá'í Faith.",
+    "topic": "history",
+    "tags": ["edirne", "history", "covenant", "mirza-yahya"]
+  },
+  {
+    "title": "Why Do Bahá'ís Not Have Clergy?",
+    "question": "The Bahá'í Faith deliberately abolished clergy. What's the rationale, and what fills the function — pastoral care, theology, ritual leadership — that clergy provide in other traditions?",
+    "description": "On the structural absence of clergy in Bahá'í community life.",
+    "topic": "social-order",
+    "tags": ["clergy", "community", "pastoral-care"]
+  },
+  {
+    "title": "The Nineteen Day Feast — Function or Ritual?",
+    "question": "The Nineteen Day Feast is at once a worship service, a community business meeting, and a social gathering. Is this triple function deliberate, and what does it teach about Bahá'í community life?",
+    "description": "On the integrated structure of Bahá'í community gathering.",
+    "topic": "practice",
+    "tags": ["nineteen-day-feast", "community", "ritual", "worship"]
+  },
+  {
+    "title": "What 'Spiritual' Meant Then vs Now",
+    "question": "The English word 'spiritual' has drifted enormously over the last century. When 'Abdu'l-Bahá used the word, did it carry our modern New-Age connotations, or something more austere?",
+    "description": "On the semantic drift of 'spiritual' across a century.",
+    "topic": "word-meaning",
+    "tags": ["spiritual", "translation", "new-age", "semantic-drift"]
+  },
+  {
+    "title": "Bahá'u'lláh's Tablet to Queen Victoria",
+    "question": "Bahá'u'lláh wrote tablets to several heads of state. The Tablet to Queen Victoria praises her abolition of slavery and her prohibition of selling government offices. What does the tablet ACTUALLY ask of her?",
+    "description": "On the political theology of Bahá'u'lláh's tablets to rulers.",
+    "topic": "politics",
+    "tags": ["tablets-to-rulers", "victoria", "political-theology"]
+  },
+  {
+    "title": "The Inheritance Laws of the Aqdas",
+    "question": "The Kitáb-i-Aqdas contains detailed inheritance laws apportioning wealth among various relatives in fixed fractions. They look ancient. What's the intent, and how does this fit with the Bahá'í teaching of equality?",
+    "description": "On the inheritance laws of the Aqdas.",
+    "topic": "ethics",
+    "tags": ["inheritance", "aqdas", "law", "family"]
+  },
+  {
+    "title": "Why Does Bahá'u'lláh Praise Constitutional Monarchy?",
+    "question": "Bahá'u'lláh wrote favorably about the British constitutional monarchy as a model of governance. Yet he also taught that political forms will evolve. How should a 21st-century reader understand his praise of monarchy?",
+    "description": "On reading Bahá'u'lláh's praise of monarchy in context.",
+    "topic": "politics",
+    "tags": ["monarchy", "constitution", "governance"]
+  },
+  {
+    "title": "The Tablet of Wisdom and the Rejection of Materialism",
+    "question": "The Tablet of Wisdom (Lawh-i-Hikmat) addresses the origins of philosophy and rejects pure materialism. How does Bahá'u'lláh distinguish his rejection of materialism from a rejection of science?",
+    "description": "On the Tablet of Wisdom's argument against materialism.",
+    "topic": "philosophy",
+    "tags": ["materialism", "tablet-of-wisdom", "philosophy", "science"]
+  },
+  {
+    "title": "Why Is Beauty a Bahá'í Concern?",
+    "question": "The Bahá'í writings repeatedly invoke beauty — the beauty of the world, of a craft, of a building. Why is beauty a religious category in this tradition, when many religious traditions are suspicious of it?",
+    "description": "On the role of beauty in Bahá'í aesthetics.",
+    "topic": "philosophy",
+    "tags": ["beauty", "aesthetics", "art", "creation"]
+  },
+  {
+    "title": "Music, Worship, and Bahá'í Practice",
+    "question": "The Bahá'í Faith encourages music in worship — but its houses of worship are largely silent, with simple chanted scripture. What's the actual teaching about music?",
+    "description": "On music's place in Bahá'í practice.",
+    "topic": "practice",
+    "tags": ["music", "worship", "houses-of-worship"]
+  },
+  {
+    "title": "What Is the Soul Doing Between Lives?",
+    "question": "The Bahá'í Faith teaches one earthly life followed by progress through spiritual worlds. What does the soul actually DO in those worlds? Are there activities, relationships, work?",
+    "description": "On the structure of the afterlife in Bahá'í teaching.",
+    "topic": "metaphysics",
+    "tags": ["afterlife", "soul", "spiritual-worlds"]
+  },
+  {
+    "title": "Can the Soul Forget?",
+    "question": "If the soul retains personal identity after death, does it carry memory? What about traumas, regrets, the things one wishes to forget? Does the spiritual world offer any forgetting?",
+    "description": "On memory, identity, and the Bahá'í afterlife.",
+    "topic": "metaphysics",
+    "tags": ["memory", "afterlife", "soul", "trauma"]
+  },
+  {
+    "title": "What It Means to Be a Manifestation",
+    "question": "The Bahá'í Faith calls Bahá'u'lláh, the Báb, Christ, Muhammad, and others 'Manifestations of God.' What ontological category is that, and how is it different from prophet, avatar, or god-man?",
+    "description": "On the metaphysics of Manifestation in Bahá'í theology.",
+    "topic": "metaphysics",
+    "tags": ["manifestations", "prophets", "ontology"]
+  },
+  {
+    "title": "The Question of Gender in Spiritual Reality",
+    "question": "If the soul has no gender (as some Bahá'í teachings suggest), why does earthly gender carry the weight it does in Bahá'í institutional structure? Is gender a feature of bodies only, or of souls too?",
+    "description": "On the location of gender in Bahá'í anthropology.",
+    "topic": "metaphysics",
+    "tags": ["gender", "soul", "anthropology"]
+  },
+  {
+    "title": "Why Is Childhood Sacred?",
+    "question": "Bahá'í teachings on the education of children are unusually rich and explicit. What's the underlying view of childhood — is it innocent, formative, sacred?",
+    "description": "On the Bahá'í theology of childhood.",
+    "topic": "ethics",
+    "tags": ["childhood", "education", "innocence"]
+  },
+  {
+    "title": "Death and Mourning Practices",
+    "question": "Bahá'í burial practices are simple and prescribed — body washed, wrapped, buried within an hour of travel. Why so specific? What's the underlying teaching about death and the body?",
+    "description": "On Bahá'í burial practices and their meaning.",
+    "topic": "practice",
+    "tags": ["death", "burial", "body", "ritual"]
+  },
+  {
+    "title": "The Aqdas on Capital Punishment",
+    "question": "The Kitáb-i-Aqdas permits capital punishment for murder and arson. How is this consistent with the Bahá'í teaching of the sacredness of human life?",
+    "description": "On capital punishment in the Bahá'í legal code.",
+    "topic": "ethics",
+    "tags": ["capital-punishment", "aqdas", "law", "life"]
+  },
+  {
+    "title": "Why Do Bahá'ís Wash Their Faces and Hands Before Prayer?",
+    "question": "Bahá'í prayer practice involves ritual ablution — washing face and hands before the obligatory prayer. What's the symbolism, and what does it teach about the relationship between physical and spiritual?",
+    "description": "On the meaning of ritual ablution in Bahá'í practice.",
+    "topic": "practice",
+    "tags": ["ablution", "prayer", "ritual", "embodiment"]
+  },
+  {
+    "title": "What Is the 'Long Obligatory Prayer' Actually Doing?",
+    "question": "The Long Obligatory Prayer involves specific physical postures — standing, raising hands, bowing, prostrating. Why these motions? What does the practitioner experience that a silent prayer would not provide?",
+    "description": "On the embodied practice of the Long Obligatory Prayer.",
+    "topic": "practice",
+    "tags": ["obligatory-prayer", "ritual", "embodiment", "practice"]
+  },
+  {
+    "title": "Naw-Rúz, the New Year, and Why It Matters",
+    "question": "Naw-Rúz is celebrated at the spring equinox as the Bahá'í new year. It's also the Persian new year. What is the Bahá'í Faith doing with this Persian holiday — adopting it, transforming it, or universalizing it?",
+    "description": "On Naw-Rúz as Bahá'í holy day.",
+    "topic": "practice",
+    "tags": ["naw-ruz", "calendar", "persian-tradition"]
+  },
+  {
+    "title": "What Are the Spiritual Seasons of the Bahá'í Year?",
+    "question": "The Bahá'í calendar has its own structure — 19 months of 19 days, plus intercalary days. Beyond logistics, does the Bahá'í year have its own spiritual seasons?",
+    "description": "On the spiritual rhythm of the Bahá'í calendar.",
+    "topic": "practice",
+    "tags": ["calendar", "rhythm", "seasons"]
+  },
+  {
+    "title": "The Bahá'í House of Worship Has Nine Sides — Why?",
+    "question": "Every Bahá'í House of Worship has nine sides and nine entrances. Why nine? What's the symbolism, and why is it built into the architecture of every temple?",
+    "description": "On the symbolism of nine in Bahá'í architecture.",
+    "topic": "mysticism",
+    "tags": ["nine", "houses-of-worship", "architecture", "symbolism"]
+  },
+  {
+    "title": "Pilgrimage to Haifa and 'Akká",
+    "question": "Bahá'í pilgrimage takes the believer to specific places in Haifa and 'Akká. Why those places? What is the practitioner being taught by the geographic specificity?",
+    "description": "On the geography of Bahá'í pilgrimage.",
+    "topic": "practice",
+    "tags": ["pilgrimage", "haifa", "akka", "place"]
+  },
+  {
+    "title": "What Did Bahá'u'lláh Do in the Síyáh-Chál?",
+    "question": "Bahá'u'lláh was imprisoned in the Síyáh-Chál (Black Pit) of Tehran in 1852 — the moment of his revelation. What happened in that pit, and why does it matter that revelation came in such conditions?",
+    "description": "On the founding moment of Bahá'í revelation.",
+    "topic": "history",
+    "tags": ["siyah-chal", "revelation", "history", "manifestations"]
+  },
+  {
+    "title": "The Mahdi and the Christ — Why Two Manifestations?",
+    "question": "The Báb is identified with the awaited Mahdi of Islam, Bahá'u'lláh with the return of Christ (and other figures). Why two consecutive Manifestations rather than one?",
+    "description": "On the structural meaning of the Báb-Bahá'u'lláh sequence.",
+    "topic": "theology",
+    "tags": ["bab", "bahaullah", "manifestations", "eschatology"]
+  },
+  {
+    "title": "Is the Bahá'í Faith a Religion or a Movement?",
+    "question": "Some critics call the Bahá'í Faith a 'movement' rather than a religion. Some Bahá'ís push back. What does the distinction actually rest on, and does it matter?",
+    "description": "On the categorization of the Bahá'í Faith.",
+    "topic": "social-order",
+    "tags": ["religion", "movement", "category"]
+  },
+  {
+    "title": "Service to Humanity vs. Service to the Faith",
+    "question": "Bahá'ís often speak of 'service' — but is that service to humanity at large, or to the Bahá'í community specifically? Are these the same in practice?",
+    "description": "On the dual senses of service in Bahá'í discourse.",
+    "topic": "ethics",
+    "tags": ["service", "community", "humanity"]
+  },
+  {
+    "title": "What Does 'Detachment' Actually Mean?",
+    "question": "The Bahá'í writings call for 'detachment' — but the same writings also call for engaged work in the world. How is detachment compatible with engagement?",
+    "description": "On the practice of detachment in active life.",
+    "topic": "practice",
+    "tags": ["detachment", "engagement", "spiritual-practice"]
+  },
+  {
+    "title": "What Does the Faith Teach About Anger?",
+    "question": "How do the Bahá'í writings handle anger? Is it a passion to be suppressed, transmuted, or expressed?",
+    "description": "On the Bahá'í teaching about anger.",
+    "topic": "ethics",
+    "tags": ["anger", "emotions", "passions"]
+  },
+  {
+    "title": "Why Did the Bahá'í Faith Adopt the Solar Calendar?",
+    "question": "The Bahá'í calendar is solar, not lunar like the Islamic calendar. What's the rationale, and what does the choice say about the Bahá'í relationship to Islamic tradition?",
+    "description": "On the solar calendar's significance.",
+    "topic": "history",
+    "tags": ["calendar", "solar", "islam", "differentiation"]
+  },
+  {
+    "title": "Why Does 'Abdu'l-Bahá Praise American Democracy?",
+    "question": "'Abdu'l-Bahá's Tablets of the Divine Plan praise American democracy and assign America a unique role. Was this prophecy, contextual diplomacy, or something else?",
+    "description": "On 'Abdu'l-Bahá's tablets to America.",
+    "topic": "history",
+    "tags": ["america", "democracy", "tablets-of-the-divine-plan"]
+  },
+  {
+    "title": "Bahá'í Cosmology — Is the Universe Eternal?",
+    "question": "Bahá'u'lláh writes about the eternity of creation. Does this conflict with modern Big Bang cosmology, or is the teaching about something else entirely?",
+    "description": "On Bahá'í cosmology and modern physics.",
+    "topic": "metaphysics",
+    "tags": ["cosmology", "eternity", "creation", "physics"]
+  },
+  {
+    "title": "Are There Other Civilizations in the Universe?",
+    "question": "'Abdu'l-Bahá makes statements suggesting there are inhabited worlds beyond Earth. Are these to be read as cosmological claims, metaphors, or something between?",
+    "description": "On the Bahá'í view of life beyond Earth.",
+    "topic": "metaphysics",
+    "tags": ["extraterrestrial", "cosmology", "creation"]
+  },
+  {
+    "title": "What Does It Mean to 'Recognize' the Manifestation?",
+    "question": "The first duty in Bahá'u'lláh's Aqdas is 'recognition' of the Manifestation. What does recognition involve — intellectual assent, mystical experience, ethical alignment?",
+    "description": "On the act of recognition in Bahá'í practice.",
+    "topic": "theology",
+    "tags": ["recognition", "manifestation", "faith", "aqdas"]
+  },
+  {
+    "title": "Bahá'u'lláh's Stations — What Are They?",
+    "question": "The Bahá'í writings speak of multiple 'stations' of Bahá'u'lláh — the station of essential unity, the station of distinction. What are these stations, and how should a reader hold them?",
+    "description": "On the doctrine of stations in Bahá'í Christology.",
+    "topic": "theology",
+    "tags": ["stations", "manifestation", "essential-unity"]
+  },
+  {
+    "title": "Why Is the Bahá'í House of Worship Open to All?",
+    "question": "Anyone — Bahá'í or not — can enter and pray in a Bahá'í House of Worship. Why this openness, when most religious traditions reserve sacred space?",
+    "description": "On the architecture of openness in Bahá'í sacred space.",
+    "topic": "social-order",
+    "tags": ["houses-of-worship", "openness", "interfaith"]
+  },
+  {
+    "title": "Voluntary Poverty in the Bahá'í Tradition",
+    "question": "The Bahá'í Faith teaches respect for wealth and ordained labor — but also voluntary giving and detachment. Is voluntary poverty ever a Bahá'í ideal?",
+    "description": "On poverty and detachment in Bahá'í ethics.",
+    "topic": "ethics",
+    "tags": ["poverty", "wealth", "detachment"]
+  },
+  {
+    "title": "The 'Most Great Name' in Daily Life",
+    "question": "Bahá'ís invoke the Most Great Name (Alláh-u-Abhá) at specific moments — entering a Mashriqu'l-Adhkár, beginning prayer. Why this invocation, and what is being practiced?",
+    "description": "On the practice of invoking the Most Great Name.",
+    "topic": "mysticism",
+    "tags": ["most-great-name", "invocation", "practice"]
+  },
+  {
+    "title": "What Does 'Trustworthiness' Mean in Bahá'í Ethics?",
+    "question": "Trustworthiness is named the supreme virtue in many Bahá'í texts. Why this virtue rather than love, justice, or mercy? What is trustworthiness doing in Bahá'í moral psychology?",
+    "description": "On the centrality of trustworthiness in Bahá'í ethics.",
+    "topic": "ethics",
+    "tags": ["trustworthiness", "virtues", "ethics"]
+  },
+  {
+    "title": "Why Was Tahirih Killed?",
+    "question": "Tahirih was executed in 1852 as a heretic. Was she killed for her religious beliefs, for being a woman who removed her veil, or for both? The historical record matters.",
+    "description": "On the historical specifics of Tahirih's martyrdom.",
+    "topic": "history",
+    "tags": ["tahirih", "martyrdom", "women", "history"]
+  },
+  {
+    "title": "Bahá'u'lláh's Voice in 'Hidden Words'",
+    "question": "The Hidden Words is a short, pithy collection in two volumes (Arabic and Persian). The voice is that of Bahá'u'lláh speaking as God speaks to humanity. Is this prophetic locution, divine voice, or something else?",
+    "description": "On the voice of the Hidden Words.",
+    "topic": "mysticism",
+    "tags": ["hidden-words", "voice", "revelation"]
+  },
+  {
+    "title": "What 'Spirituality' Cannot Be",
+    "question": "If 'spirituality' has been hollowed out by New Age culture, what is its proper Bahá'í content? What is spirituality NOT, in the writings?",
+    "description": "On reclaiming the word 'spiritual' from its New-Age drift.",
+    "topic": "word-meaning",
+    "tags": ["spirituality", "new-age", "definition"]
+  },
+  {
+    "title": "How Should Bahá'ís Think About the Other Bahá'í Sects?",
+    "question": "Most Bahá'ís are unaware of the other small Bahá'í-derived groups (Orthodox Bahá'ís, Bahá'ís Under the Provisions of the Covenant, etc.). What is the Bahá'í Faith's position on these groups, and why?",
+    "description": "On the Bahá'í community's relation to other Bahá'í-derived groups.",
+    "topic": "history",
+    "tags": ["sects", "covenant", "community"]
+  },
+  {
+    "title": "Why Is the Bahá'í Faith Forbidden in Iran?",
+    "question": "The Bahá'í Faith is illegal in Iran, the country of its origin. What's the actual basis of the Iranian state's persecution, and why have Bahá'ís remained committed to the country?",
+    "description": "On Bahá'í persecution and presence in Iran.",
+    "topic": "modern-challenges",
+    "tags": ["iran", "persecution", "history"]
+  },
+  {
+    "title": "The Question of 'Universalism' in Bahá'í Discourse",
+    "question": "Is the Bahá'í Faith universalist in the strong sense — that all paths reach God — or only in the weaker sense that all paths share a common root? The distinction matters.",
+    "description": "On Bahá'í universalism, weak and strong.",
+    "topic": "comparative-religion",
+    "tags": ["universalism", "salvation", "interfaith"]
+  },
+  {
+    "title": "The Tablet of Carmel and the Mountain of God",
+    "question": "Bahá'u'lláh's Tablet of Carmel addresses Mount Carmel as a person and prophesies its becoming a center of pilgrimage. How should a 21st-century reader receive this addressing of a mountain?",
+    "description": "On the personification and prophecy in the Tablet of Carmel.",
+    "topic": "mysticism",
+    "tags": ["carmel", "tablet-of-carmel", "prophecy"]
+  },
+  {
+    "title": "Why Is the Bahá'í Faith Sometimes Called 'the Faith of God'?",
+    "question": "Bahá'ís sometimes refer to the Bahá'í Faith as 'the Faith of God' — an unusual phrasing. What does this naming actually claim?",
+    "description": "On the self-naming of the Bahá'í Faith.",
+    "topic": "theology",
+    "tags": ["naming", "claims", "identity"]
+  },
+  {
+    "title": "Bahá'u'lláh on Human Suffering and the 'Tree of Anguish'",
+    "question": "Bahá'u'lláh writes about the 'Tree of Anguish' — a striking image. What does this image teach about the relationship between revelation and suffering?",
+    "description": "On the image of the Tree of Anguish in Bahá'u'lláh's writings.",
+    "topic": "mysticism",
+    "tags": ["suffering", "tree-of-anguish", "imagery"]
+  },
+  {
+    "title": "Reading the Aqdas Today — Living Law or Aspirational Vision?",
+    "question": "The Kitáb-i-Aqdas contains laws — some unenforced, some applied. How should a Bahá'í today understand the laws as a whole — living law, aspirational vision, or both at once?",
+    "description": "On the practical force of the Aqdas in contemporary Bahá'í life.",
+    "topic": "practice",
+    "tags": ["aqdas", "law", "practice", "interpretation"]
+  },
+  {
+    "title": "What Is the Bahá'í View of Other Religions' Founders?",
+    "question": "The Bahá'í Faith honors Buddha, Krishna, Christ, Muhammad, and others as Manifestations. Does it honor Zoroaster the same way? Confucius? Mani? Where is the line drawn?",
+    "description": "On the boundaries of Bahá'í recognition of other religious founders.",
+    "topic": "comparative-religion",
+    "tags": ["manifestations", "comparative-religion", "founders"]
+  },
+  {
+    "title": "What Did 'Abdu'l-Bahá Mean by 'The Most Great Justice'?",
+    "question": "'Abdu'l-Bahá speaks of 'the Most Great Justice' as a foundation of the new world order. Is this distributive justice, retributive justice, or something more like a metaphysical justice woven into reality?",
+    "description": "On the structure of justice in Bahá'í social philosophy.",
+    "topic": "philosophy",
+    "tags": ["justice", "social-order", "metaphysics"]
+  },
+  {
+    "title": "Why Does the Bahá'í Faith Forbid Gambling?",
+    "question": "Gambling is forbidden in the Aqdas. What's the reasoning — economic, spiritual, social? And how does this fit with the Bahá'í respect for honest commerce and risk-taking?",
+    "description": "On the prohibition of gambling in the Aqdas.",
+    "topic": "ethics",
+    "tags": ["gambling", "law", "commerce"]
+  },
+  {
+    "title": "Bahá'u'lláh's Dream of the Maid of Heaven",
+    "question": "Bahá'u'lláh describes a vision of the Maid of Heaven (Húríyyih) at the moment of his revelation. What is this vision, and how should it be read — literal, symbolic, prophetic?",
+    "description": "On the vision of the Maid of Heaven in Bahá'í revelation.",
+    "topic": "mysticism",
+    "tags": ["maid-of-heaven", "revelation", "vision", "siyah-chal"]
+  },
+  {
+    "title": "The Authority of the Universal House of Justice",
+    "question": "The UHJ has authority to legislate on matters not in the original revelation. What's the scope, and what's the limit, of that authority?",
+    "description": "On the legislative scope of the UHJ.",
+    "topic": "social-order",
+    "tags": ["uhj", "authority", "legislation", "scope"]
+  },
+  {
+    "title": "Reading the Writings as a Non-Bahá'í",
+    "question": "Can someone who is not a Bahá'í read the Bahá'í writings on their own terms — engaged but not committed? Or does the corpus only fully open up to a believer?",
+    "description": "On the readerly stance for non-Bahá'í engagement.",
+    "topic": "philosophy",
+    "tags": ["interpretation", "stance", "reading"]
+  },
+  {
+    "title": "Forgiveness as Spiritual Practice",
+    "question": "The Bahá'í writings call for forgiveness — even of enemies. But forgiveness can be glib in modern usage. What's the substantive Bahá'í practice of forgiveness?",
+    "description": "On forgiveness as a substantive Bahá'í practice.",
+    "topic": "practice",
+    "tags": ["forgiveness", "ethics", "practice"]
+  },
+  {
+    "title": "Why Does the Bahá'í Faith Have a Symbol — Nine-Pointed Star?",
+    "question": "The nine-pointed star is the most common Bahá'í symbol. Why nine? Why a star? And how does this symbol relate to the Greatest Name calligraphy?",
+    "description": "On the symbolism of the nine-pointed star.",
+    "topic": "mysticism",
+    "tags": ["nine-pointed-star", "symbolism", "iconography"]
+  },
+  {
+    "title": "Bahá'í Understanding of Time and Eternity",
+    "question": "Bahá'u'lláh writes both of cyclical patterns (recurring Manifestations) and of unique once-in-creation events (his own revelation). How do cyclical and linear time fit together in Bahá'í thought?",
+    "description": "On the structure of time in Bahá'í metaphysics.",
+    "topic": "metaphysics",
+    "tags": ["time", "eternity", "cycle", "manifestation"]
+  },
+  {
+    "title": "What the Bahá'í Faith Doesn't Say",
+    "question": "Sometimes a tradition is defined as much by what it does not say as by what it says. What does the Bahá'í Faith deliberately leave silent — and what does that silence teach?",
+    "description": "On the deliberate silences of the Bahá'í tradition.",
+    "topic": "philosophy",
+    "tags": ["silence", "tradition", "interpretation"]
+  }
+]
