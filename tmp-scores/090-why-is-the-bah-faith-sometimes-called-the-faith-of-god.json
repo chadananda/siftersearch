@@ -1,0 +1,26 @@
+{
+  "slug": "090-why-is-the-bah-faith-sometimes-called-the-faith-of-god",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 65,
+  "evidence_quality": 40,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 55,
+  "overall": 59,
+  "strengths": [
+    "Engages with complex theological topics",
+    "Maintains a respectful tone",
+    "Explores interfaith dialogue"
+  ],
+  "weaknesses": [
+    "Lacks specific examples and sources",
+    "Avoids deep questioning of assumptions",
+    "Relies on generalizations"
+  ],
+  "prompt_signal": "Encourage Jafar to provide specific examples and primary sources.",
+  "elapsedSec": "78.5"
+}

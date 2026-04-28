@@ -1,0 +1,26 @@
+{
+  "slug": "098-reading-the-writings-as-a-non-bah",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 60,
+  "conversational_naturalness": 72,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 68.5,
+  "strengths": [
+    "Balanced believer voice",
+    "Engages with user's assumptions",
+    "Explores community dynamics"
+  ],
+  "weaknesses": [
+    "Lacks specific examples",
+    "Limited primary source use",
+    "Some reliance on generalities"
+  ],
+  "prompt_signal": "Include more specific historical examples and primary sources.",
+  "elapsedSec": "79.9"
+}

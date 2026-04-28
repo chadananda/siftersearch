@@ -1,0 +1,26 @@
+{
+  "slug": "079-why-is-the-bah-house-of-worship-open-to-all",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining Bahá'í structures.",
+    "Addresses contemporary issues in teachings."
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions.",
+    "Lacks specific primary-tier evidence.",
+    "Could explore word meanings more deeply."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "58.8"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "030-tahirih-qudds-and-the-conference-of-badasht",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining Bahá'í principles.",
+    "Depth in exploring historical context."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Evidence quality lacks primary sources.",
+    "Stereotype avoidance could improve."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "125.0"
+}

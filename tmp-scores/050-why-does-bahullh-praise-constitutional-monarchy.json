@@ -1,0 +1,26 @@
+{
+  "slug": "050-why-does-bahullh-praise-constitutional-monarchy",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 60,
+  "strengths": [
+    "Explores Bahá'í principles in governance",
+    "Discusses adaptability of teachings",
+    "Emphasizes consultation and unity"
+  ],
+  "weaknesses": [
+    "Lacks specific examples or case studies",
+    "Limited questioning of user's assumptions",
+    "Repetitive explanations without new insights"
+  ],
+  "prompt_signal": "Incorporate specific examples or case studies to illustrate points.",
+  "elapsedSec": "111.2"
+}

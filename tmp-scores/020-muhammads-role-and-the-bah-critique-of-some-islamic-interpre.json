@@ -1,0 +1,26 @@
+{
+  "slug": "020-muhammads-role-and-the-bah-critique-of-some-islamic-interpre",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Engages with complex theological concepts",
+    "Provides examples from Bahá'í texts",
+    "Maintains a respectful believer voice"
+  ],
+  "weaknesses": [
+    "Lacks specific primary source quotations",
+    "Limited questioning of user's assumptions",
+    "Repetitive explanations without new insights"
+  ],
+  "prompt_signal": "Incorporate more direct quotations from primary Bahá'í texts to enhance depth.",
+  "elapsedSec": "83.5"
+}

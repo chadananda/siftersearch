@@ -1,0 +1,26 @@
+{
+  "slug": "032-wealth-and-voluntary-giving",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 65,
+  "evidence_quality": 55,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Explores Bahá'í principles in social justice.",
+    "Highlights Bahá'í community initiatives.",
+    "Discusses Bahá'í engagement with secular systems."
+  ],
+  "weaknesses": [
+    "Lacks specific data on initiative outcomes.",
+    "Limited questioning of user's assumptions.",
+    "Generalized responses without detailed evidence."
+  ],
+  "prompt_signal": "Encourage Jafar to provide specific examples and data to support claims.",
+  "elapsedSec": "115.6"
+}

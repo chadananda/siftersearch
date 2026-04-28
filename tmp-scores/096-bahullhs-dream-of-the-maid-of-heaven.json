@@ -1,0 +1,26 @@
+{
+  "slug": "096-bahullhs-dream-of-the-maid-of-heaven",
+  "depth": 75,
+  "clarity": 80,
+  "stereotype_avoidance": 70,
+  "word_definition_questioning": 65,
+  "assumption_questioning": 60,
+  "teaching_clarity": 75,
+  "evidence_quality": 70,
+  "conversational_naturalness": 85,
+  "believer_voice": 80,
+  "archive_worthy": 75,
+  "overall": 73,
+  "strengths": [
+    "Engages deeply with symbolic interpretations",
+    "Provides practical examples of principles",
+    "Maintains a believer's voice throughout"
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions",
+    "Some reliance on stock phrases",
+    "Lacks specific primary source citations"
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions more actively and provide specific source citations.",
+  "elapsedSec": "78.0"
+}

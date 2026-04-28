@@ -1,0 +1,26 @@
+{
+  "slug": "081-the-most-great-name-in-daily-life",
+  "depth": 75,
+  "clarity": 70,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 65,
+  "conversational_naturalness": 60,
+  "believer_voice": 75,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Explores spiritual practices deeply",
+    "Connects invocation to broader spiritual themes",
+    "Emphasizes community and service"
+  ],
+  "weaknesses": [
+    "Lacks specific examples from core texts",
+    "Some responses are repetitive",
+    "Limited questioning of user assumptions"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific examples from core texts.",
+  "elapsedSec": "66.6"
+}

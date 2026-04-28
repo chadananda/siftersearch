@@ -1,0 +1,26 @@
+{
+  "slug": "068-the-mahdi-and-the-christ-why-two-manifestations",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 55,
+  "conversational_naturalness": 72,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 68,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Assumption_questioning is well-executed.",
+    "Conversational_naturalness is maintained."
+  ],
+  "weaknesses": [
+    "Lacks primary source evidence.",
+    "Stereotype_avoidance could improve.",
+    "Word_definition_questioning is limited."
+  ],
+  "prompt_signal": "Incorporate more primary source quotations to strengthen evidence quality.",
+  "elapsedSec": "104.3"
+}

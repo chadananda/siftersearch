@@ -1,0 +1,26 @@
+{
+  "slug": "051-the-tablet-of-wisdom-and-the-rejection-of-materialism",
+  "depth": 60,
+  "clarity": 65,
+  "stereotype_avoidance": 55,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 45,
+  "teaching_clarity": 60,
+  "evidence_quality": 40,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 50,
+  "overall": 55,
+  "strengths": [
+    "Believer_voice is strong, reflecting faith perspective.",
+    "Clarity in explaining consultation process.",
+    "Teaching_clarity in discussing principles."
+  ],
+  "weaknesses": [
+    "Lacks primary source evidence.",
+    "Limited questioning of assumptions.",
+    "Abstract without concrete examples."
+  ],
+  "prompt_signal": "Incorporate more primary sources and concrete examples to enhance depth.",
+  "elapsedSec": "98.9"
+}

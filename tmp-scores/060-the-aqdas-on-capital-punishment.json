@@ -1,0 +1,26 @@
+{
+  "slug": "060-the-aqdas-on-capital-punishment",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 60,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Addresses complex ethical issues",
+    "Engages with global justice standards",
+    "Explains Bahá'í consultation process"
+  ],
+  "weaknesses": [
+    "Lacks specific guidance from authorities",
+    "Limited primary source citations",
+    "Repetitive explanations"
+  ],
+  "prompt_signal": "Incorporate more primary sources and specific guidance from Bahá'í authorities.",
+  "elapsedSec": "82.5"
+}

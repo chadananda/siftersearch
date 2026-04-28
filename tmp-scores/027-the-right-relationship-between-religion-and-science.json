@@ -1,0 +1,26 @@
+{
+  "slug": "027-the-right-relationship-between-religion-and-science",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 60,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 65,
+  "believer_voice": 75,
+  "archive_worthy": 60,
+  "overall": 62,
+  "strengths": [
+    "Engages with complex questions",
+    "Maintains a believer's perspective",
+    "Explores institutional dynamics"
+  ],
+  "weaknesses": [
+    "Lacks specific examples",
+    "Limited questioning of assumptions",
+    "Repetitive explanations"
+  ],
+  "prompt_signal": "Incorporate specific historical examples of Bahá'í adaptation to scientific developments.",
+  "elapsedSec": "94.1"
+}

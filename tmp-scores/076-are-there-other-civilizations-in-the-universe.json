@@ -1,0 +1,26 @@
+{
+  "slug": "076-are-there-other-civilizations-in-the-universe",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Engages with complex topics thoughtfully",
+    "Highlights Bahá'í principles in real-world contexts",
+    "Maintains a believer's perspective"
+  ],
+  "weaknesses": [
+    "Lacks deep questioning of assumptions",
+    "Limited interrogation of word meanings",
+    "Some reliance on generalities over specifics"
+  ],
+  "prompt_signal": "Encourage deeper questioning of assumptions and word meanings.",
+  "elapsedSec": "58.9"
+}

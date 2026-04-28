@@ -1,0 +1,26 @@
+{
+  "slug": "035-the-crisis-of-meaning-in-a-secular-age",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 65,
+  "conversational_naturalness": 70,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 67.5,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining Bahá'í principles.",
+    "Conversational_naturalness maintained."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Evidence quality could be improved.",
+    "Stereotype avoidance needs work."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions more actively.",
+  "elapsedSec": "98.3"
+}

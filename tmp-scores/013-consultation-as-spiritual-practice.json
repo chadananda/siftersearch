@@ -1,0 +1,26 @@
+{
+  "slug": "013-consultation-as-spiritual-practice",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining consultation principles.",
+    "Integration of spiritual and material metrics."
+  ],
+  "weaknesses": [
+    "Lacks specific examples and detailed evidence.",
+    "Limited questioning of assumptions.",
+    "Subjective interpretations not deeply explored."
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific examples and detailed evidence.",
+  "elapsedSec": "83.4"
+}

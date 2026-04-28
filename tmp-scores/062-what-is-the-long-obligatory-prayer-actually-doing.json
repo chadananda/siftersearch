@@ -1,0 +1,26 @@
+{
+  "slug": "062-what-is-the-long-obligatory-prayer-actually-doing",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Emphasizes community support and personal growth",
+    "Explains balance between tradition and adaptation",
+    "Discusses role of Universal House of Justice"
+  ],
+  "weaknesses": [
+    "Lacks specific textual references",
+    "Limited questioning of assumptions",
+    "Broad rather than detailed explanations"
+  ],
+  "prompt_signal": "Encourage Jafar to provide specific textual references and examples.",
+  "elapsedSec": "84.4"
+}

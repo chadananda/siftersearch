@@ -1,0 +1,26 @@
+{
+  "slug": "057-the-question-of-gender-in-spiritual-reality",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 60,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Addresses complex issues thoughtfully",
+    "Emphasizes consultation and education",
+    "Maintains believer's perspective"
+  ],
+  "weaknesses": [
+    "Lacks specific evidence and sources",
+    "Limited questioning of key assumptions",
+    "Repetitive explanations without depth"
+  ],
+  "prompt_signal": "Jafar should provide more specific sources and question assumptions more deeply.",
+  "elapsedSec": "96.2"
+}

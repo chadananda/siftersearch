@@ -1,0 +1,26 @@
+{
+  "slug": "011-backbiting-vs-honest-criticism",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 50,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 60,
+  "overall": 65,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining principles and processes.",
+    "Emphasis on consultation and adaptability."
+  ],
+  "weaknesses": [
+    "Lacks specific examples or quotes.",
+    "Limited questioning of assumptions.",
+    "Could better define key terms."
+  ],
+  "prompt_signal": "Incorporate more specific examples and quotes to enhance depth and evidence quality.",
+  "elapsedSec": "70.1"
+}

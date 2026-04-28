@@ -1,0 +1,26 @@
+{
+  "slug": "036-climate-ecology-and-the-bah-stewardship-teaching",
+  "depth": 60,
+  "clarity": 65,
+  "stereotype_avoidance": 55,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 45,
+  "teaching_clarity": 60,
+  "evidence_quality": 40,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 50,
+  "overall": 55,
+  "strengths": [
+    "Explores Bahá'í principles of stewardship",
+    "Discusses consultation and unity in diversity",
+    "Mentions educational programs like Ruhi Institute"
+  ],
+  "weaknesses": [
+    "Lacks specific case studies or examples",
+    "Limited direct quotations from primary texts",
+    "Does not deeply question user's assumptions"
+  ],
+  "prompt_signal": "Provide more specific examples and primary sources to enhance depth.",
+  "elapsedSec": "83.8"
+}

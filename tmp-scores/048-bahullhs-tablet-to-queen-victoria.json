@@ -1,0 +1,26 @@
+{
+  "slug": "048-bahullhs-tablet-to-queen-victoria",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 70,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 67,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining complex ideas.",
+    "Conversational_naturalness maintained."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Evidence quality could be improved.",
+    "Stereotype_avoidance needs work."
+  ],
+  "prompt_signal": "Encourage deeper questioning of assumptions and provide more primary evidence.",
+  "elapsedSec": "90.9"
+}

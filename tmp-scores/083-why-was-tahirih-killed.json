@@ -1,0 +1,26 @@
+{
+  "slug": "083-why-was-tahirih-killed",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 55,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 70,
+  "believer_voice": 65,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Explores Tahirih's multifaceted legacy",
+    "Balances religious and feminist perspectives",
+    "Engages with historical context"
+  ],
+  "weaknesses": [
+    "Lacks specific primary source quotes",
+    "Limited questioning of user's assumptions",
+    "Some responses lack depth"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more direct quotes from primary sources.",
+  "elapsedSec": "71.3"
+}

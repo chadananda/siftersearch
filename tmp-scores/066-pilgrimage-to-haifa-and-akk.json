@@ -1,0 +1,26 @@
+{
+  "slug": "066-pilgrimage-to-haifa-and-akk",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 45,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 60,
+  "strengths": [
+    "Explores complex themes like detachment and unity.",
+    "Emphasizes the role of the Universal House of Justice.",
+    "Discusses the consultative process and community education."
+  ],
+  "weaknesses": [
+    "Lacks direct quotes from primary texts.",
+    "Limited questioning of user's assumptions.",
+    "Relies on generalities over specific teachings."
+  ],
+  "prompt_signal": "Encourage Jafar to provide more direct quotes from primary Bahá'í texts.",
+  "elapsedSec": "94.6"
+}

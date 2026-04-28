@@ -1,0 +1,26 @@
+{
+  "slug": "025-translation-as-distortion-how-do-bahs-read-in-english",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66.5,
+  "strengths": [
+    "Engages deeply with translation challenges",
+    "Explores balance between individual and collective understanding",
+    "Maintains a believer's voice throughout"
+  ],
+  "weaknesses": [
+    "Lacks specific examples of institutional guidance",
+    "Limited questioning of user's assumptions",
+    "Some responses rely on generalities"
+  ],
+  "prompt_signal": "Include more specific examples of institutional guidance in responses.",
+  "elapsedSec": "103.6"
+}

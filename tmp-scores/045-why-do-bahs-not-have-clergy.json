@@ -1,0 +1,26 @@
+{
+  "slug": "045-why-do-bahs-not-have-clergy",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 65,
+  "conversational_naturalness": 72,
+  "believer_voice": 80,
+  "archive_worthy": 68,
+  "overall": 69,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Assumption questioning is thoughtful.",
+    "Conversational naturalness is maintained."
+  ],
+  "weaknesses": [
+    "Lacks depth in exploring word meanings.",
+    "Evidence quality could be improved.",
+    "Stereotype avoidance needs work."
+  ],
+  "prompt_signal": "Encourage deeper exploration of word meanings and provide more primary sources.",
+  "elapsedSec": "82.0"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "040-what-did-the-bbs-bayn-actually-teach",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining complex historical contexts.",
+    "Depth in discussing historical and spiritual evolution."
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions.",
+    "Evidence quality lacks specific citations.",
+    "Stereotype_avoidance could be improved."
+  ],
+  "prompt_signal": "Encourage more questioning of assumptions and provide specific citations.",
+  "elapsedSec": "76.7"
+}

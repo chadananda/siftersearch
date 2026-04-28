@@ -1,0 +1,26 @@
+{
+  "slug": "089-the-tablet-of-carmel-and-the-mountain-of-god",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 65,
+  "overall": 61,
+  "strengths": [
+    "Engages with complex questions about science and spirituality.",
+    "Provides examples of Bahá'í engagement with global issues.",
+    "Maintains a believer's voice throughout the conversation."
+  ],
+  "weaknesses": [
+    "Lacks deep questioning of assumptions.",
+    "Limited exploration of word meanings across contexts.",
+    "Some responses are repetitive and lack depth."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "66.4"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "059-death-and-mourning-practices",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66.5,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining consultation processes.",
+    "Teaching_clarity is maintained throughout."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Few concrete historical examples.",
+    "Stereotype_avoidance could improve."
+  ],
+  "prompt_signal": "Encourage Jafar to provide more concrete historical examples and question assumptions more actively.",
+  "elapsedSec": "73.1"
+}

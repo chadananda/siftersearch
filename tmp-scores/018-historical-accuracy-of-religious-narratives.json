@@ -1,0 +1,26 @@
+{
+  "slug": "018-historical-accuracy-of-religious-narratives",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 65,
+  "conversational_naturalness": 60,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining Bahá'í principles.",
+    "Depth in exploring consultation and unity."
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions.",
+    "Lacks specific historical examples.",
+    "Conversational flow feels somewhat scripted."
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific historical examples and question assumptions more deeply.",
+  "elapsedSec": "71.7"
+}

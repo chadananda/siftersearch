@@ -1,0 +1,26 @@
+{
+  "slug": "095-why-does-the-bah-faith-forbid-gambling",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 50,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 59,
+  "strengths": [
+    "Emphasizes integrity and spiritual growth",
+    "Discusses practical strategies for ethical business",
+    "Highlights community support and consultation"
+  ],
+  "weaknesses": [
+    "Lacks specific historical examples",
+    "Limited questioning of assumptions",
+    "Insufficient exploration of word meanings"
+  ],
+  "prompt_signal": "Include more specific historical examples and direct quotations from Bahá'í texts.",
+  "elapsedSec": "61.3"
+}

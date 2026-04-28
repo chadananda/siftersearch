@@ -1,0 +1,26 @@
+{
+  "slug": "073-why-did-the-bah-faith-adopt-the-solar-calendar",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Explores symbolic and practical aspects of the calendar",
+    "Highlights community practices like the Nineteen Day Feast",
+    "Discusses the role of consultation in spiritual growth"
+  ],
+  "weaknesses": [
+    "Lacks primary source depth on solar calendar rationale",
+    "Limited questioning of user's assumptions",
+    "Insufficient exploration of word meanings across contexts"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more primary sources and question assumptions more deeply.",
+  "elapsedSec": "113.7"
+}

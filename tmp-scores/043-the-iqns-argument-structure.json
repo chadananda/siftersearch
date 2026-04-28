@@ -1,0 +1,26 @@
+{
+  "slug": "043-the-iqns-argument-structure",
+  "depth": 60,
+  "clarity": 65,
+  "stereotype_avoidance": 55,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 45,
+  "teaching_clarity": 60,
+  "evidence_quality": 40,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 50,
+  "overall": 55,
+  "strengths": [
+    "Engages with complex interpretive challenges",
+    "Emphasizes community practices",
+    "Balances critical thought with faith"
+  ],
+  "weaknesses": [
+    "Lacks specific textual evidence",
+    "Relies on general principles",
+    "Limited questioning of assumptions"
+  ],
+  "prompt_signal": "Incorporate more specific textual evidence and direct guidance from Bahá'í writings.",
+  "elapsedSec": "93.1"
+}

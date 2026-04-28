@@ -1,0 +1,26 @@
+{
+  "slug": "061-why-do-bahs-wash-their-faces-and-hands-before-prayer",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 60,
+  "believer_voice": 70,
+  "archive_worthy": 55,
+  "overall": 60,
+  "strengths": [
+    "Explores community practices",
+    "Emphasizes mindfulness",
+    "Discusses cultural integration"
+  ],
+  "weaknesses": [
+    "Lacks specific textual evidence",
+    "Limited assumption questioning",
+    "Repetitive explanations"
+  ],
+  "prompt_signal": "Encourage Jafar to provide specific textual references and examples.",
+  "elapsedSec": "76.6"
+}

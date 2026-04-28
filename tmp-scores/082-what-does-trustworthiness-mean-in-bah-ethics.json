@@ -1,0 +1,26 @@
+{
+  "slug": "082-what-does-trustworthiness-mean-in-bah-ethics",
+  "depth": 75,
+  "clarity": 80,
+  "stereotype_avoidance": 70,
+  "word_definition_questioning": 65,
+  "assumption_questioning": 60,
+  "teaching_clarity": 75,
+  "evidence_quality": 70,
+  "conversational_naturalness": 85,
+  "believer_voice": 80,
+  "archive_worthy": 75,
+  "overall": 73,
+  "strengths": [
+    "Clear explanation of consultation process",
+    "Integration of historical examples",
+    "Emphasis on community reflection"
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions",
+    "Lack of specific mentorship examples",
+    "Some reliance on generalizations"
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions more deeply and provide specific examples.",
+  "elapsedSec": "55.6"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "058-why-is-childhood-sacred",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 60,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 62,
+  "strengths": [
+    "Explores historical context of Bahá'í education",
+    "Discusses contemporary Bahá'í practices",
+    "Attempts to balance guidance with agency"
+  ],
+  "weaknesses": [
+    "Lacks specific primary source quotes",
+    "Limited questioning of word meanings",
+    "Overuses generalizations about teachings"
+  ],
+  "prompt_signal": "Jafar should provide more primary source quotes to substantiate claims.",
+  "elapsedSec": "84.4"
+}

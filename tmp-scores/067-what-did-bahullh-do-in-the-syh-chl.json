@@ -1,0 +1,26 @@
+{
+  "slug": "067-what-did-bahullh-do-in-the-syh-chl",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66.5,
+  "strengths": [
+    "Engages with interfaith comparisons",
+    "Maintains believer's voice",
+    "Addresses gender equality"
+  ],
+  "weaknesses": [
+    "Limited primary source use",
+    "Lacks deep assumption questioning",
+    "Some responses feel generic"
+  ],
+  "prompt_signal": "Encourage Jafar to use more primary sources and question assumptions deeply.",
+  "elapsedSec": "82.4"
+}

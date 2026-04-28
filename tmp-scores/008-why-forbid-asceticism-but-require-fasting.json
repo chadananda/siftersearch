@@ -1,0 +1,26 @@
+{
+  "slug": "008-why-forbid-asceticism-but-require-fasting",
+  "depth": 65,
+  "clarity": 70,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 65,
+  "evidence_quality": 60,
+  "conversational_naturalness": 70,
+  "believer_voice": 75,
+  "archive_worthy": 60,
+  "overall": 63,
+  "strengths": [
+    "Engages deeply with user's questions",
+    "Explains consultative process well",
+    "Maintains believer's voice"
+  ],
+  "weaknesses": [
+    "Lacks specific examples",
+    "Limited primary source use",
+    "Insufficient assumption questioning"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific examples and primary sources.",
+  "elapsedSec": "92.4"
+}

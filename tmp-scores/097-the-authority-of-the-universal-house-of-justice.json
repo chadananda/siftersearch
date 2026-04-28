@@ -1,0 +1,26 @@
+{
+  "slug": "097-the-authority-of-the-universal-house-of-justice",
+  "depth": 60,
+  "clarity": 65,
+  "stereotype_avoidance": 55,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 45,
+  "teaching_clarity": 60,
+  "evidence_quality": 50,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 50,
+  "overall": 56,
+  "strengths": [
+    "Believer_voice is strong, reflecting faith commitment.",
+    "Clarity in explaining UHJ's role and principles.",
+    "Teaching_clarity provides some insight into Bahá'í processes."
+  ],
+  "weaknesses": [
+    "Lacks specific examples of dissent influencing decisions.",
+    "Limited questioning of assumptions and definitions.",
+    "Evidence_quality lacks detailed sourcing and primary quotes."
+  ],
+  "prompt_signal": "Encourage Jafar to provide specific examples and question assumptions more deeply.",
+  "elapsedSec": "68.6"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "026-why-did-bahullh-forbid-the-image-of-god",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 60,
+  "teaching_clarity": 65,
+  "evidence_quality": 50,
+  "conversational_naturalness": 70,
+  "believer_voice": 75,
+  "archive_worthy": 65,
+  "overall": 63.5,
+  "strengths": [
+    "Explores complex theological concepts",
+    "Balances mystical and practical aspects",
+    "Maintains a believer's perspective"
+  ],
+  "weaknesses": [
+    "Lacks specific quotes for evidence",
+    "Limited questioning of assumptions",
+    "Some responses are repetitive"
+  ],
+  "prompt_signal": "Include specific quotes from Bahá'í texts to enhance evidence quality.",
+  "elapsedSec": "96.6"
+}

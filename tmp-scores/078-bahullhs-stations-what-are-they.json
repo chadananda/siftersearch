@@ -1,0 +1,26 @@
+{
+  "slug": "078-bahullhs-stations-what-are-they",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Explores individuality of Manifestations",
+    "Discusses Primal Will concept",
+    "Addresses consultation process"
+  ],
+  "weaknesses": [
+    "Lacks specific primary sources",
+    "Limited questioning of assumptions",
+    "Some reliance on general explanations"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific primary sources and question assumptions more deeply.",
+  "elapsedSec": "58.7"
+}

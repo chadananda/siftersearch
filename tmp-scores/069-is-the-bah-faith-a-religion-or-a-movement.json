@@ -1,0 +1,26 @@
+{
+  "slug": "069-is-the-bah-faith-a-religion-or-a-movement",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining Bahá'í principles.",
+    "Teaching_clarity is well-maintained."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Evidence quality lacks primary sources.",
+    "Word definition questioning is minimal."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "121.3"
+}

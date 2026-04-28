@@ -1,0 +1,26 @@
+{
+  "slug": "029-the-babs-six-year-mission",
+  "depth": 75,
+  "clarity": 80,
+  "stereotype_avoidance": 70,
+  "word_definition_questioning": 65,
+  "assumption_questioning": 60,
+  "teaching_clarity": 75,
+  "evidence_quality": 60,
+  "conversational_naturalness": 70,
+  "believer_voice": 85,
+  "archive_worthy": 70,
+  "overall": 71,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Clarity in explaining complex ideas.",
+    "Depth in exploring mystical vs practical balance."
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions.",
+    "Lacks primary-tier evidence and sourcing.",
+    "Could better define key terms historically."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and define terms more historically.",
+  "elapsedSec": "123.7"
+}

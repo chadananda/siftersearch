@@ -1,0 +1,26 @@
+{
+  "slug": "086-how-should-bahs-think-about-the-other-bah-sects",
+  "depth": 60,
+  "clarity": 65,
+  "stereotype_avoidance": 55,
+  "word_definition_questioning": 50,
+  "assumption_questioning": 45,
+  "teaching_clarity": 60,
+  "evidence_quality": 50,
+  "conversational_naturalness": 55,
+  "believer_voice": 70,
+  "archive_worthy": 55,
+  "overall": 56,
+  "strengths": [
+    "Emphasizes consultation and unity",
+    "Highlights Ruhi Institute's adaptability",
+    "Mentions Universal House of Justice's role"
+  ],
+  "weaknesses": [
+    "Lacks specific documented examples",
+    "Limited questioning of assumptions",
+    "Insufficient primary source evidence"
+  ],
+  "prompt_signal": "Incorporate specific historical examples to illustrate principles in action.",
+  "elapsedSec": "78.4"
+}

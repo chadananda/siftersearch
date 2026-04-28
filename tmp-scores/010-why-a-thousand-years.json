@@ -1,0 +1,26 @@
+{
+  "slug": "010-why-a-thousand-years",
+  "depth": 70,
+  "clarity": 65,
+  "stereotype_avoidance": 60,
+  "word_definition_questioning": 55,
+  "assumption_questioning": 50,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 60,
+  "overall": 61,
+  "strengths": [
+    "Explores balance between unity and diversity",
+    "Discusses role of Universal House of Justice",
+    "Addresses consultation process"
+  ],
+  "weaknesses": [
+    "Lacks specific examples of minority influence",
+    "Limited primary source references",
+    "Insufficient questioning of assumptions"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific examples and primary sources.",
+  "elapsedSec": "92.5"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "041-the-mystic-sense-and-the-analytic-mind",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 65,
+  "evidence_quality": 60,
+  "conversational_naturalness": 70,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 68,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Assumption_questioning is thorough.",
+    "Conversational_naturalness is maintained."
+  ],
+  "weaknesses": [
+    "Evidence_quality lacks primary sources.",
+    "Teaching_clarity could be improved.",
+    "Word_definition_questioning is limited."
+  ],
+  "prompt_signal": "Incorporate more primary sources and specific teachings to enhance depth.",
+  "elapsedSec": "67.9"
+}

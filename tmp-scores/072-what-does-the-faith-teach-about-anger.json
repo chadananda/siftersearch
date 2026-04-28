@@ -1,0 +1,26 @@
+{
+  "slug": "072-what-does-the-faith-teach-about-anger",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 60,
+  "conversational_naturalness": 72,
+  "believer_voice": 78,
+  "archive_worthy": 68,
+  "overall": 68.6,
+  "strengths": [
+    "Engages deeply with user's questions",
+    "Maintains believer's voice",
+    "Balances urgency with spiritual principles"
+  ],
+  "weaknesses": [
+    "Limited primary source references",
+    "Lacks specific word questioning",
+    "Could challenge assumptions more"
+  ],
+  "prompt_signal": "Encourage Jafar to provide more primary source references and question word meanings.",
+  "elapsedSec": "85.3"
+}

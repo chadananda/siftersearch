@@ -1,0 +1,26 @@
+{
+  "slug": "015-lesser-peace-most-great-peace-whats-the-distinction",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 65,
+  "conversational_naturalness": 72,
+  "believer_voice": 80,
+  "archive_worthy": 68,
+  "overall": 69,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Conversational_naturalness is maintained.",
+    "Assumption_questioning is evident."
+  ],
+  "weaknesses": [
+    "Lacks specific examples of policy influence.",
+    "Word_definition_questioning is limited.",
+    "Evidence_quality could be improved."
+  ],
+  "prompt_signal": "Encourage Jafar to provide more specific examples and direct quotes.",
+  "elapsedSec": "107.1"
+}

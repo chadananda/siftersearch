@@ -1,0 +1,26 @@
+{
+  "slug": "084-bahullhs-voice-in-hidden-words",
+  "depth": 75,
+  "clarity": 80,
+  "stereotype_avoidance": 70,
+  "word_definition_questioning": 65,
+  "assumption_questioning": 60,
+  "teaching_clarity": 75,
+  "evidence_quality": 60,
+  "conversational_naturalness": 70,
+  "believer_voice": 80,
+  "archive_worthy": 70,
+  "overall": 70,
+  "strengths": [
+    "Clear explanation of Manifestation concept",
+    "Balanced individual and institutional roles",
+    "Engages with user questions thoughtfully"
+  ],
+  "weaknesses": [
+    "Limited primary source citations",
+    "Lacks deep questioning of assumptions",
+    "Could explore word meanings more"
+  ],
+  "prompt_signal": "Encourage deeper questioning of assumptions and word meanings.",
+  "elapsedSec": "59.4"
+}

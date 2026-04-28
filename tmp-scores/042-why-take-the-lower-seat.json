@@ -1,0 +1,26 @@
+{
+  "slug": "042-why-take-the-lower-seat",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer voice is strong and consistent.",
+    "Examples from Bahá'í history are well-integrated.",
+    "Focus on humility and service is clear."
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions.",
+    "Lacks specific primary-source quotations.",
+    "Some responses are repetitive."
+  ],
+  "prompt_signal": "Incorporate more primary-source quotations to enhance evidence quality.",
+  "elapsedSec": "65.1"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "077-what-does-it-mean-to-recognize-the-manifestation",
+  "depth": 75,
+  "clarity": 80,
+  "stereotype_avoidance": 70,
+  "word_definition_questioning": 65,
+  "assumption_questioning": 60,
+  "teaching_clarity": 75,
+  "evidence_quality": 70,
+  "conversational_naturalness": 75,
+  "believer_voice": 80,
+  "archive_worthy": 75,
+  "overall": 72.5,
+  "strengths": [
+    "Engages deeply with complex questions",
+    "Maintains clarity and structure",
+    "Balances personal and communal aspects"
+  ],
+  "weaknesses": [
+    "Limited questioning of assumptions",
+    "Could use more primary sources",
+    "Lacks deeper word definition analysis"
+  ],
+  "prompt_signal": "Encourage more questioning of assumptions and deeper word analysis.",
+  "elapsedSec": "59.2"
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "094-what-did-abdul-bah-mean-by-the-most-great-justice",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Teaching_clarity is maintained throughout.",
+    "Depth is achieved through exploration of concepts."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning.",
+    "Evidence quality could be improved.",
+    "Stereotype avoidance needs attention."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "70.4"
+}

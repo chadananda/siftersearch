@@ -1,0 +1,26 @@
+{
+  "slug": "100-why-does-the-bah-faith-have-a-symbol-nine-pointed-star",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 70,
+  "teaching_clarity": 68,
+  "evidence_quality": 55,
+  "conversational_naturalness": 72,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 68,
+  "strengths": [
+    "Believer_voice is strong and consistent.",
+    "Assumption_questioning is thorough.",
+    "Conversational_naturalness is maintained."
+  ],
+  "weaknesses": [
+    "Evidence_quality lacks specific citations.",
+    "Word_definition_questioning is limited.",
+    "Stereotype_avoidance could improve."
+  ],
+  "prompt_signal": "Jafar should provide more specific textual evidence and citations.",
+  "elapsedSec": "81.2"
+}

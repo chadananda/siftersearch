@@ -1,0 +1,26 @@
+{
+  "slug": "047-what-spiritual-meant-then-vs-now",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 80,
+  "assumption_questioning": 70,
+  "teaching_clarity": 60,
+  "evidence_quality": 55,
+  "conversational_naturalness": 65,
+  "believer_voice": 70,
+  "archive_worthy": 65,
+  "overall": 67,
+  "strengths": [
+    "Explores word meaning across traditions",
+    "Questions assumptions effectively",
+    "Balances inner and outer spirituality"
+  ],
+  "weaknesses": [
+    "Lacks specific primary sources",
+    "Overuses general Bahá'í concepts",
+    "Limited depth in teaching clarity"
+  ],
+  "prompt_signal": "Include more primary sources and specific examples from Bahá'í texts.",
+  "elapsedSec": "77.8"
+}

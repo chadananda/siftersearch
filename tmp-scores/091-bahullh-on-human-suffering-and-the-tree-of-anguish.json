@@ -1,0 +1,26 @@
+{
+  "slug": "091-bahullh-on-human-suffering-and-the-tree-of-anguish",
+  "depth": 70,
+  "clarity": 75,
+  "stereotype_avoidance": 65,
+  "word_definition_questioning": 60,
+  "assumption_questioning": 55,
+  "teaching_clarity": 70,
+  "evidence_quality": 60,
+  "conversational_naturalness": 65,
+  "believer_voice": 80,
+  "archive_worthy": 65,
+  "overall": 66,
+  "strengths": [
+    "Believer_voice is strong, reflecting faith and conviction.",
+    "Clarity is maintained with well-structured responses.",
+    "Depth is achieved through exploration of complex themes."
+  ],
+  "weaknesses": [
+    "Limited assumption questioning in user's framing.",
+    "Evidence quality could be improved with more primary sources.",
+    "Stereotype_avoidance needs more specific insights."
+  ],
+  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
+  "elapsedSec": "73.8"
+}
