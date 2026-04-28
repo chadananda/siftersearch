@@ -15,7 +15,7 @@ tags:
 rounds: 10
 qualityScore: 72
 publishedAt: 2026-04-28
-heroImage: /images/dialog/002-women-uhj-hero.jpg
+# heroImage: /images/dialog/002-women-uhj-hero.jpg
 heroPrompt: "Blue-shaded hand-drawn watercolor: nine empty seats in a circle on a stone floor, soft cobalt and indigo washes, a single ray of golden light falling diagonally across one of the seats. Loose brushwork, paper texture, contemplative mood."
 decorativePrompts:
   - "Watercolor: a woman in profile reading an open book, blue tones, soft edges."

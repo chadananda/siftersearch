@@ -14,7 +14,7 @@ tags:
 rounds: 10
 qualityScore: 58
 publishedAt: 2026-04-28
-heroImage: /images/dialog/001-left-right-warnings-hero.jpg
+# heroImage: /images/dialog/001-left-right-warnings-hero.jpg
 heroPrompt: "A blue-shaded hand-drawn watercolor illustration: two facing crowds blurred into deep indigo and cobalt washes, divided by a luminous golden vertical strand, with a single dove poised at the apex of the strand. Loose brushwork, paper texture visible, soft bleeding edges. Style: contemplative, classical illustration."
 decorativePrompts:
   - "Watercolor: a hammer and sickle dissolving into a flock of birds, blue palette."

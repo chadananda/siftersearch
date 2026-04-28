@@ -15,7 +15,7 @@ tags:
 rounds: 10
 qualityScore: 68
 publishedAt: 2026-04-28
-heroImage: /images/dialog/003-religion-word-meaning-hero.jpg
+# heroImage: /images/dialog/003-religion-word-meaning-hero.jpg
 heroPrompt: "Blue-shaded hand-drawn watercolor: an old dictionary opened to a page where the word RELIGION is half-erased and overwritten with Persian script (دین), surrounded by floating ink stains in cobalt and indigo, soft paper texture, warm gold light at the edges."
 decorativePrompts:
   - "Watercolor: a city skyline rendered as one organism, blues bleeding into golds at the rooftops."
