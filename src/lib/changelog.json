@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T12:11:27.039Z",
+  "generated": "2026-04-28T12:15:21.529Z",
   "entries": [
+    {
+      "hash": "6553f6e",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
+      "scope": null
+    },
     {
       "hash": "94fb8ec",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Move utility bar down to 12rem to avoid clash",
       "scope": null
-    },
-    {
-      "hash": "e1ae51b",
-      "date": "2026-01-05",
-      "type": "Style",
-      "description": "Increase content max-width to 900px",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "6553f6e",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Smart-quote rendering — remark-smartypants for markdown body, sq() helper for Astro template strings",
+        "scope": null
+      },
       {
         "hash": "94fb8ec",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Style",
         "description": "Move utility bar down to 12rem to avoid clash",
-        "scope": null
-      },
-      {
-        "hash": "e1ae51b",
-        "date": "2026-01-05",
-        "type": "Style",
-        "description": "Increase content max-width to 900px",
         "scope": null
       }
     ]
