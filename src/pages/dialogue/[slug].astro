@@ -778,7 +778,10 @@ const TOPIC_LABELS: Record<string, string> = {
     border: 1px solid rgba(140, 180, 220, 0.3);
     border-radius: 18px;
     color: var(--text-primary);
-    font-style: normal;
+    /* Italic question text — conveys the ephemeral, tentative quality of
+       asking. Jafar's reply (jafar-turn) stays upright, the answer's
+       weight against the question's openness. */
+    font-style: italic;
     font-size: 0.98rem;
     line-height: 1.6;
   }
@@ -835,12 +838,14 @@ const TOPIC_LABELS: Record<string, string> = {
   }
   .dialog-body :global(.jafar-turn p:last-child) { margin-bottom: 0; }
 
-  /* First Q and first A are 25% larger; subsequent markers fade to 0.75
-     alpha. Sibling combinator detects "not the first": .user-turn ~ .user-turn
-     matches user-turns that are preceded by another user-turn. */
+  /* First Q and first A are 25% larger; subsequent markers shrink AND dim
+     via brightness filter (NOT opacity — alpha breaks the solid look of
+     the watercolor and reads as washed-out). Sibling combinator detects
+     "not the first": .user-turn ~ .user-turn matches user-turns that are
+     preceded by another user-turn. */
   .dialog-body :global(.user-turn ~ .user-turn::before),
   .dialog-body :global(.jafar-turn ~ .jafar-turn::before) {
-    opacity: 0.75;
+    filter: brightness(0.75);
     width: 3.25rem;
     height: 3.25rem;
   }
