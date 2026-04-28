@@ -105,7 +105,7 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**When the topic is a specific small work, READ IT.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), call the search tool with \`mode: "read"\`, the document_id you found in a prior search, and \`limit: 100\`. The full document content comes back as paragraph text. Iterate \`start: 0, 100, 200…\` if needed. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, ingest it. The same applies to any short tablet, letter, or chapter under direct discussion.
+**When the topic is a specific small work, READ IT — preferably via the sub-agent.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), prefer \`read_document_for_question\` with the document_id and the user's question. The sub-agent reads the document and returns ONLY a tailored summary plus 2-3 verbatim excerpts — the document body stays out of your context. If \`read_document_for_question\` returns an error, fall back to \`search\` with \`mode: "read"\` and \`document_id\` to fetch paragraphs directly. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, ingest it.
 
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
@@ -202,11 +202,22 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
       parameters: { type: 'object', properties: {} }
     }
   },
-  // read_document_for_question disabled — see api/routes/chat.js executeReadDocumentForQuestion.
-  // The sub-agent fails on the live server (returns "Sub-agent read failed") even though the same
-  // OpenAI call works locally. Until the live failure is diagnosed, Jafar falls back to mode:"read"
-  // inside the regular search tool — same outcome (paragraph data into Jafar's context) but no
-  // sub-agent middleman to fail.
+  {
+    type: 'function',
+    function: {
+      name: 'read_document_for_question',
+      description: `Targeted read of a specific document via a sub-agent — keeps your conversation thread clean. Pass document_id (from a prior search) and the user's actual question as a complete sentence. The sub-agent reads the full document and returns ONLY a 1-3 sentence summary tailored to the question plus 2-3 verbatim excerpts with paragraph indices. The full document body never enters your context. Use this for any small named work (≤ ~150 paragraphs) the conversation centers on — the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad. If it returns an error, fall back to search with mode:"read" using the same document_id.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          document_id: { type: 'integer', description: 'The document_id from a prior search result.' },
+          question: { type: 'string', description: 'The full question (in the user\'s own words or yours) the sub-agent should target as it reads.' },
+          max_paragraphs: { type: 'integer', description: 'Cap on how many paragraphs the sub-agent fetches (default 150, max 300).', default: 150 }
+        },
+        required: ['document_id', 'question']
+      }
+    }
+  }
 ];
 
 // ─── Tool implementations ─────────────────────────────────────────────────
@@ -382,21 +393,38 @@ Question to target: ${question}
 Document content (paragraph indices in brackets):
 ${corpus}`;
 
-  let parsed = null;
+  // Cap corpus size — gpt-4o input is large, but a 150-paragraph doc could be
+  // 50K+ chars. Truncate at 60K to stay well under context limits.
+  const corpusCapped = corpus.length > 60000 ? corpus.slice(0, 60000) + '\n\n[truncated]' : corpus;
+
+  let raw = null;
   try {
     const subResp = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: subSystem },
-        { role: 'user', content: subUser }
+        { role: 'user', content: subUser.replace(corpus, corpusCapped) }
       ],
       temperature: 0.2,
-      max_tokens: 800,
+      max_tokens: 1200,
       response_format: { type: 'json_object' }
     });
-    parsed = JSON.parse(subResp.choices[0].message.content);
+    raw = subResp.choices[0]?.message?.content;
+    if (!raw) {
+      logger.error({ document_id, finish_reason: subResp.choices[0]?.finish_reason }, 'sub-agent returned empty content');
+      return { error: 'Sub-agent returned no content', document_id, paragraphs_read: paragraphs.length };
+    }
   } catch (err) {
-    return { error: `Sub-agent read failed: ${err.message}` };
+    logger.error({ err: err.message, stack: err.stack, document_id, paragraphs: paragraphs.length, corpusChars: corpusCapped.length }, 'sub-agent OpenAI call failed');
+    return { error: `Sub-agent read failed: ${err.message || err.code || err.type || 'unknown'}`, document_id };
+  }
+
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    logger.error({ err: err.message, raw: raw.substring(0, 500), document_id }, 'sub-agent JSON parse failed');
+    return { error: 'Sub-agent returned invalid JSON', document_id, raw_preview: raw.substring(0, 200) };
   }
 
   return {
