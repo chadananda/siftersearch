@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T03:18:35.482Z",
+  "generated": "2026-04-28T03:43:10.231Z",
   "entries": [
+    {
+      "hash": "687bd43",
+      "date": "2026-04-27",
+      "type": "Fixed",
+      "description": "Bump API+worker memory limit from 500M to 1500M",
+      "scope": null
+    },
     {
       "hash": "f1fb0c1",
       "date": "2026-04-25",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Never cut text at arbitrary char limit - always find word boundary",
       "scope": null
-    },
-    {
-      "hash": "6934e10",
-      "date": "2026-01-04",
-      "type": "Fixed",
-      "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-27": [
+      {
+        "hash": "687bd43",
+        "date": "2026-04-27",
+        "type": "Fixed",
+        "description": "Bump API+worker memory limit from 500M to 1500M",
+        "scope": null
+      }
+    ],
     "2026-04-25": [
       {
         "hash": "f1fb0c1",
@@ -7057,13 +7066,6 @@
         "date": "2026-01-04",
         "type": "Fixed",
         "description": "Never cut text at arbitrary char limit - always find word boundary",
-        "scope": null
-      },
-      {
-        "hash": "6934e10",
-        "date": "2026-01-04",
-        "type": "Fixed",
-        "description": "Split oversized sentences at phrase boundaries instead of hard char limit",
         "scope": null
       }
     ]
