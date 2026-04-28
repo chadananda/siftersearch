@@ -41,11 +41,15 @@ assessment:
     - stock-phrase-residue
   improvement_plan: "Two prompt nudges. (1) When Jafar asserts X is in source Y, then searches and can't find it, the rule should be 'retract the claim explicitly' — not silently move on. Add: 'If you've made an attributed claim and the search comes up empty, say so directly: I asserted X is in the Iqán; I cannot locate it. The claim should not stand.' (2) For architectural / institutional questions about the Faith (Mashriqu'l-Adhkár, House of Justice, etc.), Shoghi Effendi's letters are the primary source — push Jafar to search 'Shoghi Effendi Mashriqu'l-Adhkár' explicitly when this kind of question comes up."
 ---
+### Why is beauty a Bahá'í concern?
+
 <div class="user-turn" id="round-1">
 
 In the Bahá'í Faith I keep hearing aesthetic principles invoked — beauty in places of worship, beauty in the calligraphy, beauty in writings. Why is beauty specifically a Bahá'í concern? Is there a doctrine behind it or just an aesthetic preference?
 
 </div>
+
+#### Beauty reflects divine harmony and order.
 
 <div class="jafar-turn">
 
@@ -56,11 +60,15 @@ Beauty in the Bahá'í Faith is indeed more than just an aesthetic preference; i
 
 </div>
 
+### Can you find a passage on beauty?
+
 <div class="user-turn" id="round-2">
 
 You mention Bahá'u'lláh discusses this in the Iqán — can you find me an actual passage? A direct quote about beauty as a sign of divine handiwork would help me anchor this.
 
 </div>
+
+#### Beauty linked to divine in writings.
 
 <div class="jafar-turn">
 
@@ -71,11 +79,15 @@ This reflects the idea that beauty is not just an aesthetic concern but is tied 
 
 </div>
 
+### Is there a sensory vs. spiritual beauty distinction?
+
 <div class="user-turn" id="round-3">
 
 Beautiful. Does the Faith distinguish between sensory beauty (a flower, a face, a melody) and spiritual beauty (virtue, character)? I'd expect 'Abdu'l-Bahá to have something on this distinction.
 
 </div>
+
+#### Spiritual beauty is enduring and vital.
 
 <div class="jafar-turn">
 
@@ -86,11 +98,15 @@ In general, 'Abdu'l-Bahá speaks of spiritual qualities as the true adornments o
 
 </div>
 
+### What makes Bahá'í architecture 'right'?
+
 <div class="user-turn" id="round-4">
 
 OK, what about the architectural side? Bahá'í Houses of Worship are striking — nine-sided, often with gardens, paying attention to symmetry. Is there explicit guidance on what makes the architecture 'right' for a Mashriqu'l-Adhkár?
 
 </div>
+
+#### Nine sides symbolize unity and inclusivity.
 
 <div class="jafar-turn">
 
@@ -101,11 +117,15 @@ Shoghi Effendi, in his writings, emphasizes that the architectural beauty of the
 
 </div>
 
+### Is there guidance on worship aesthetics?
+
 <div class="user-turn" id="round-5">
 
 What about beauty in worship itself — chanting, the way prayers are read aloud? Is there a guidance about the aesthetic of devotional practice?
 
 </div>
+
+#### Devotional practice should uplift the soul.
 
 <div class="jafar-turn">
 
@@ -116,11 +136,15 @@ In several of His writings, Bahá'u'lláh mentions that prayers and supplication
 
 </div>
 
+### Is calligraphy a form of worship?
+
 <div class="user-turn" id="round-6">
 
 Calligraphy too, right? I know Mishkín-Qalam was a major Bahá'í calligrapher. Was producing beautiful manuscripts of the writings considered itself a form of worship?
 
 </div>
+
+#### Calligraphy honors the sacred Word.
 
 <div class="jafar-turn">
 
@@ -131,11 +155,15 @@ In the Bahá'í perspective, creating beautiful manuscripts is a way to honor th
 
 </div>
 
+### Is beauty linked to detachment in writings?
+
 <div class="user-turn" id="round-7">
 
 Earlier you quoted that 'Beauty has dawned, the lights of God shine bright. Flee the prison of your self.' Where does that prison-imagery sit in Bahá'u'lláh's broader writings? Is the link between beauty and detachment a recurring theme?
 
 </div>
+
+#### Detachment and beauty are recurring themes.
 
 <div class="jafar-turn">
 
@@ -146,11 +174,15 @@ In the Hidden Words, Bahá'u'lláh writes, "O Son of Spirit! My first counsel is
 
 </div>
 
+### How does beauty coexist with modesty?
+
 <div class="user-turn" id="round-8">
 
 Is there a tension here? Bahá'u'lláh also warns against ostentation and display in many places — clothing, possessions, behavior. How does 'be beautiful' coexist with 'don't show off'?
 
 </div>
+
+#### Inner beauty prioritized over outward display.
 
 <div class="jafar-turn">
 
@@ -163,11 +195,15 @@ In this sense, beauty in the Bahá'í Faith is meant to inspire and elevate, not
 
 </div>
 
+### Why does beauty matter in the Bahá'í Faith?
+
 <div class="user-turn" id="round-9">
 
 Last question — give me the one-sentence summary. Why does beauty matter in the Bahá'í Faith?
 
 </div>
+
+#### Beauty reflects divine attributes and inspires.
 
 <div class="jafar-turn">
 

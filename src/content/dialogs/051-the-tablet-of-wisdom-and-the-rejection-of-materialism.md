@@ -40,11 +40,15 @@ assessment:
     - tool-failure
   improvement_plan: "The blocker is not the prompt — it's that read_document_for_question reported failure on the Tablet of Wisdom across multiple attempts. Either the document isn't indexed under a name Jafar's search can find, the sub-agent JSON parse is failing silently, or the corpus search is returning a different document_id than the actual Tablet. Three concrete next steps: (1) test the search tool directly with 'Lawh-i-Hikmat' and 'Tablet of Wisdom' to see what document_ids are returned and whether the actual text is in there; (2) instrument read_document_for_question to log when the sub-agent's JSON output fails to parse so we can distinguish 'document not findable' from 'sub-agent crashed'; (3) if the Tablet's English text exists in the corpus but isn't being matched, audit the Bahá'í primary works to see which others are similarly missing. Until that's addressed, retrying this same conversation will produce the same evidence failure."
 ---
+### How does Bahá'u'lláh define materialism?
+
 <div class="user-turn" id="round-1">
 
 I've been reading about Bahá'u'lláh's Tablet of Wisdom (Lawh-i-Hikmat). It's striking how it praises philosophy and the natural sciences while also rejecting materialism. How does Bahá'u'lláh draw that line — what does he reject as 'materialism' that's distinct from rejecting science itself?
 
 </div>
+
+#### Materialism denies spiritual dimensions of life.
 
 <div class="jafar-turn">
 
@@ -54,11 +58,15 @@ Bahá'u'lláh emphasizes that true knowledge involves recognizing the spiritual 
 
 </div>
 
+### Where does Bahá'u'lláh distinguish science and materialism?
+
 <div class="user-turn" id="round-2">
 
 That makes sense as a summary, but can you show me the passage in the Tablet where he actually draws that distinction? I'd like to see how Bahá'u'lláh himself frames it — his own wording.
 
 </div>
+
+#### Specific passage not found, general harmony noted.
 
 <div class="jafar-turn">
 
@@ -67,11 +75,15 @@ I'm having trouble locating the specific passage in the Tablet of Wisdom right n
 
 </div>
 
+### What is Bahá'u'lláh's view on pursuing knowledge?
+
 <div class="user-turn" id="round-3">
 
 OK let's set Socrates and Plato aside for now. What does Bahá'u'lláh actually say in the Tablet about how knowledge should be pursued? Or about the source of true wisdom?
 
 </div>
+
+#### True wisdom integrates spiritual and material understanding.
 
 <div class="jafar-turn">
 
@@ -84,11 +96,15 @@ If you'd like, I can keep searching for the exact passages or look into other re
 
 </div>
 
+### When and to whom was the Tablet written?
+
 <div class="user-turn" id="round-4">
 
 When was the Tablet of Wisdom written, and to whom? Knowing the historical context might help — what was Bahá'u'lláh actually responding to?
 
 </div>
+
+#### Written in 'Akká to Nabíl-i-Akbar, during intellectual growth.
 
 <div class="jafar-turn">
 
@@ -101,11 +117,15 @@ If you'd like, I can try to pull more detailed information from other sources or
 
 </div>
 
+### Can you provide a direct quote on materialism?
+
 <div class="user-turn" id="round-5">
 
 Do you have one direct quote from the Tablet itself? Even a single sentence where Bahá'u'lláh's voice on materialism comes through clearly?
 
 </div>
+
+#### Direct quote unavailable, broader writings emphasize integration.
 
 <div class="jafar-turn">
 
@@ -116,11 +136,15 @@ If you're still interested, I can keep looking into it or discuss other related 
 
 </div>
 
+### What does 'Abdu'l-Bahá say about materialism?
+
 <div class="user-turn" id="round-6">
 
 Let's try Some Answered Questions then. 'Abdu'l-Bahá has a chapter on materialism there, doesn't he? What does he say there about why materialism specifically is the wrong frame?
 
 </div>
+
+#### Materialism limits understanding to the physical realm.
 
 <div class="jafar-turn">
 
@@ -133,11 +157,15 @@ If you'd like, I can try to explore other sources or related themes in 'Abdu'l-B
 
 </div>
 
+### How does this teaching affect Bahá'í scientists?
+
 <div class="user-turn" id="round-7">
 
 OK, let's shift angle. What's the practical consequence of this teaching for a Bahá'í today? Does it affect how someone would approach a career in science, or scientific research generally?
 
 </div>
+
+#### Bahá'í scientists integrate ethical and spiritual considerations.
 
 <div class="jafar-turn">
 
@@ -148,11 +176,15 @@ A Bahá'í scientist might approach their work with the intention of contributin
 
 </div>
 
+### How does the 'two wings' metaphor relate?
+
 <div class="user-turn" id="round-8">
 
 How does this connect to the 'two wings' image — religion and science as two wings of the same bird? That's 'Abdu'l-Bahá's, right?
 
 </div>
+
+#### Science and religion are complementary for progress.
 
 <div class="jafar-turn">
 
@@ -163,11 +195,15 @@ The connection here is that science, representing the pursuit of knowledge and u
 
 </div>
 
+### What marks the shift from science to materialism?
+
 <div class="user-turn" id="round-9">
 
 Last question: what would be the test, in the Bahá'í view, of when someone's thinking has crossed from healthy science into materialism? Is there a marker — something concrete?
 
 </div>
+
+#### Exclusion of spiritual truths and moral considerations.
 
 <div class="jafar-turn">
 

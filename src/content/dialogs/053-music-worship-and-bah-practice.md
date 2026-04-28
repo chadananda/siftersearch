@@ -39,11 +39,15 @@ assessment:
     - missing-aqdas-anchor
   improvement_plan: "Two issues: (1) Jafar attributed an 'Abdu'l-Bahá talk to Bahá'u'lláh on first reach and corrected only when pressed. The prompt rule against unbacked claims needs to extend to wrong-author claims: 'Before attributing a quote to a specific author, verify the citation source genuinely is from that author. Star of the West and Lights of Guidance are compilations and talks — not Bahá'u'lláh's own pen.' (2) The conversation hit a 520 on a search round, killing it mid-flow. The runner should retry on 5xx and not just terminate. Separately, the underlying API stability (tower-nas) seems to drop briefly when redeploying — investigate whether PM2 reload causes connection drops mid-stream."
 ---
+### What role does music play in Bahá'í worship?
+
 <div class="user-turn" id="round-1">
 
 What does the Bahá'í Faith teach about music in worship? I know there's no clergy, no liturgy in the formal sense — but is music encouraged, restricted, anything?
 
 </div>
+
+#### Music is vocal-only in worship.
 
 <div class="jafar-turn">
 
@@ -54,11 +58,15 @@ Music is indeed a part of Bahá'í worship, but with specific guidelines. In the
 
 </div>
 
+### Are instruments allowed outside the House of Worship?
+
 <div class="user-turn" id="round-2">
 
 Vocal only inside the House of Worship — interesting. What about outside that context, in private devotion or community gatherings? Are instruments ok there?
 
 </div>
+
+#### Instruments encouraged outside worship context.
 
 <div class="jafar-turn">
 
@@ -67,11 +75,15 @@ Yes, outside the specific context of the House of Worship, music, including inst
 
 </div>
 
+### Where does Bahá'u'lláh praise music?
+
 <div class="user-turn" id="round-3">
 
 Where does Bahá'u'lláh praise music? I'd love a direct passage.
 
 </div>
+
+#### Bahá'u'lláh praises music's uplifting effect.
 
 <div class="jafar-turn">
 
@@ -82,11 +94,15 @@ Bahá'u'lláh praises music for its uplifting effect on the spirit. Here's a pas
 
 </div>
 
+### Is the quote from Bahá'u'lláh or 'Abdu'l-Bahá?
+
 <div class="user-turn" id="round-4">
 
 Hmm — is that actually Bahá'u'lláh, or is it 'Abdu'l-Bahá speaking in 'Akká or America? Star of the West usually records talks of 'Abdu'l-Bahá, not Bahá'u'lláh's tablets directly.
 
 </div>
+
+#### Quote is from 'Abdu'l-Bahá, not Bahá'u'lláh.
 
 <div class="jafar-turn">
 
