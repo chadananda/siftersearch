@@ -234,13 +234,19 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
     type: 'function',
     function: {
       name: 'read_document_for_question',
-      description: `Targeted read of a specific document via a sub-agent — keeps your conversation thread clean. Pass document_id (from a prior search) and the user's actual question as a complete sentence. The sub-agent reads the full document and returns ONLY a 1-3 sentence summary tailored to the question plus 2-3 verbatim excerpts with paragraph indices. The full document body never enters your context. Use this for any small named work (≤ ~150 paragraphs) the conversation centers on — the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad. If it returns an error, fall back to search with mode:"read" using the same document_id.`,
+      description: `Targeted read of a document via a sub-agent — keeps your conversation thread clean. Pass document_id and the user's question; sub-agent returns a 1-3 sentence summary plus 2-3 verbatim excerpts. Document body never enters your context.
+
+For named sections inside a compilation (e.g. the Tablet of Wisdom inside "Tablets of Bahá'u'lláh Revealed After the Aqdas", or the Epilogue of the Dawn-Breakers), find_document_for_citation will return a candidate with start_paragraph and end_paragraph — pass those through here so the sub-agent reads ONLY that section, not the entire compilation.
+
+For standalone small works, omit start_paragraph/end_paragraph and the sub-agent reads from paragraph 0 up to max_paragraphs.`,
       parameters: {
         type: 'object',
         properties: {
-          document_id: { type: 'integer', description: 'The document_id from a prior search result.' },
-          question: { type: 'string', description: 'The full question (in the user\'s own words or yours) the sub-agent should target as it reads.' },
-          max_paragraphs: { type: 'integer', description: 'Cap on how many paragraphs the sub-agent fetches (default 150, max 300).', default: 150 }
+          document_id: { type: 'integer', description: 'The document_id from a prior find_document_for_citation result.' },
+          question: { type: 'string', description: 'The full question the sub-agent should target while reading.' },
+          start_paragraph: { type: 'integer', description: 'Inclusive start of paragraph range (when reading a named section inside a compilation). Use the start_paragraph value from the find_document_for_citation candidate.' },
+          end_paragraph: { type: 'integer', description: 'Inclusive end of paragraph range (when reading a named section inside a compilation). Use the end_paragraph value from the find_document_for_citation candidate.' },
+          max_paragraphs: { type: 'integer', description: 'Cap on paragraphs fetched when not using a range (default 250, max 1000).', default: 250 }
         },
         required: ['document_id', 'question']
       }
@@ -391,6 +397,100 @@ const CANONICAL_WORKS = [
   { matchers: ['advent of divine justice'], doc_id: 8295, religion: "Baha'i" },
   { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" }
 ];
+
+// Find named-work sub-sections inside compilations by searching the content
+// table's `heading` column. The Bahá'í compilation "Tablets Revealed After
+// the Aqdas" (doc 8270) has 600+ paragraphs containing many named tablets:
+// each named tablet's first paragraph carries a heading like "Lawḥ-i-Ḥikmat"
+// or "Ishráqát". This function returns the parent doc + the start/end
+// paragraph range for each match — Jafar can then read just that range
+// rather than the whole compilation.
+//
+// Matches the heading text against the title using normalized substring
+// (case-insensitive, apostrophe-and-diacritic-insensitive).
+async function findNamedWorksInCompilations(title) {
+  if (!title || title.length < 3) return [];
+  const normalize = (s) => (s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019\u02bc\u02bb`'']/g, "'");
+  const normTitle = normalize(title);
+
+  // Pull all distinct (doc_id, heading) pairs and filter in JS — there are
+  // typically only a few thousand non-null headings across the corpus.
+  const rows = await queryAll(
+    `SELECT c.doc_id, c.heading, MIN(c.paragraph_index) as first_para,
+            d.title as parent_title, d.author as parent_author, d.religion, d.collection, d.paragraph_count
+     FROM content c JOIN docs d ON d.id = c.doc_id
+     WHERE c.heading IS NOT NULL AND c.heading != '' AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+     GROUP BY c.doc_id, c.heading
+     ORDER BY c.doc_id, first_para`,
+    []
+  );
+
+  // Filter to headings that contain (or are contained by) the title. Also
+  // the reverse — title contains heading — handles "Tablet of Wisdom" vs
+  // "Lawḥ-i-Ḥikmat" type mismatch via the canonical-works alias map below.
+  const TITLE_ALIAS = {
+    'tablet of wisdom': ['lawh-i-hikmat', 'lawh i hikmat', 'hikmat'],
+    'tablet of carmel': ['lawh-i-karmil', 'karmil'],
+    'tablet to queen victoria': ['lawh-i-malikih', 'malikih'],
+    'tablet to napoleon iii': ['lawh-i-napulyun', 'napulyun'],
+    'tablet to the pope': ['lawh-i-papa', 'papa'],
+    'tablet to the czar': ['lawh-i-rais', 'rais'],
+    'tablet of the world': ['lawh-i-dunya', 'dunya'],
+    'glad tidings': ['bisharat', 'bisharát'],
+    'splendours': ['tarazat', 'tarázát'],
+    'effulgences': ['ishraqat', 'ishráqát'],
+    'words of paradise': ['kalimat-i-firdawsiyyih', 'firdawsiyyih'],
+    'tablet of the holy mariner': ['lawh-i-mallah', 'mallah'],
+    'tablet of maqsud': ['lawh-i-maqsud', 'maqsud'],
+    'dispensation of bahaullah': ['the dispensation', 'dispensation'],
+    'world order of bahaullah': ['world order', 'goal of a new world order']
+  };
+
+  // Build the set of strings to test against headings: the title itself,
+  // plus all aliases for this title.
+  const testStrings = [normTitle];
+  for (const [primary, aliases] of Object.entries(TITLE_ALIAS)) {
+    if (normTitle.includes(primary) || primary.includes(normTitle)) {
+      testStrings.push(...aliases);
+    }
+    if (aliases.some(a => normTitle.includes(a))) {
+      testStrings.push(primary, ...aliases);
+    }
+  }
+
+  const matches = rows.filter(r => {
+    const normH = normalize(r.heading);
+    return testStrings.some(s => s.length >= 3 && (normH.includes(s) || s.includes(normH)));
+  });
+
+  // For each match, compute the end-paragraph by finding the next heading in
+  // the same doc OR using doc.paragraph_count.
+  const byDoc = new Map();
+  for (const r of rows) {
+    if (!byDoc.has(r.doc_id)) byDoc.set(r.doc_id, []);
+    byDoc.get(r.doc_id).push(r);
+  }
+  return matches.map(m => {
+    const docHeadings = byDoc.get(m.doc_id) || [];
+    const next = docHeadings.find(h => h.first_para > m.first_para);
+    const end = next ? next.first_para - 1 : m.paragraph_count - 1;
+    return {
+      parent_doc_id: m.doc_id,
+      parent_title: m.parent_title,
+      parent_author: m.parent_author,
+      religion: m.religion,
+      collection: m.collection,
+      named_work_heading: m.heading,
+      start_paragraph: m.first_para,
+      end_paragraph: end,
+      paragraph_count: end - m.first_para + 1
+    };
+  });
+}
 
 function canonicalLookup(title, religion) {
   if (!title) return null;
@@ -575,7 +675,31 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
           slug: h.slug,
           match_reason: 'meilisearch'
         }));
-      const candidates = canonicalCandidate ? [canonicalCandidate, ...meiliCandidates] : meiliCandidates;
+      // Also search heading-based named-works inside compilations. The Tablet
+      // of Wisdom isn't a standalone doc — it's a section inside doc 8270.
+      const namedWorks = await findNamedWorksInCompilations(title)
+        .catch(err => { logger.warn({ err: err.message }, 'named-works lookup failed'); return []; });
+      const namedWorkCandidates = namedWorks
+        .filter(nw => !religion || (nw.religion || '').toLowerCase().includes((religion || '').toLowerCase().slice(0, 4)))
+        .map(nw => ({
+          document_id: nw.parent_doc_id,
+          title: `${nw.named_work_heading} (in ${nw.parent_title})`,
+          author: nw.parent_author || '',
+          religion: nw.religion || '',
+          collection: nw.collection || '',
+          paragraph_count: nw.paragraph_count,
+          start_paragraph: nw.start_paragraph,
+          end_paragraph: nw.end_paragraph,
+          authority_score: 800,  // ranks above Meilisearch hits but below canonical hard-resolve
+          is_primary: true,
+          match_reason: 'named-work-in-compilation',
+          read_hint: `read_document_for_question with document_id=${nw.parent_doc_id}, start_paragraph=${nw.start_paragraph}, end_paragraph=${nw.end_paragraph}`
+        }));
+      const candidates = [
+        ...(canonicalCandidate ? [canonicalCandidate] : []),
+        ...namedWorkCandidates,
+        ...meiliCandidates
+      ];
       return {
         candidates: candidates.slice(0, safeLimit),
         searched: title,
@@ -619,19 +743,32 @@ export async function executeLibraryOverview() {
 // and runs a single gpt-4o pass to extract verbatim excerpts + a tailored
 // summary. Only the distilled result returns to Jafar — full text never
 // enters the main conversation context.
-async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 150 }) {
+async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 250, start_paragraph, end_paragraph }) {
   const doc = await queryOne(
     'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
     [document_id]
   );
   if (!doc) return { error: 'Document not found' };
 
-  const cap = Math.min(Math.max(max_paragraphs || 150, 1), 300);
-  const paragraphs = await queryAll(
-    `SELECT paragraph_index, text, heading FROM content
-     WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ?`,
-    [document_id, cap]
-  );
+  // Two modes: paragraph range (start..end inclusive) for reading a named
+  // section of a compilation (e.g. Tablet of Wisdom inside doc 8270), or
+  // first-N (the default) for small standalone works.
+  let paragraphs;
+  if (typeof start_paragraph === 'number' && typeof end_paragraph === 'number') {
+    paragraphs = await queryAll(
+      `SELECT paragraph_index, text, heading FROM content
+       WHERE doc_id = ? AND paragraph_index >= ? AND paragraph_index <= ?
+         AND deleted_at IS NULL ORDER BY paragraph_index`,
+      [document_id, start_paragraph, end_paragraph]
+    );
+  } else {
+    const cap = Math.min(Math.max(max_paragraphs || 250, 1), 1000);
+    paragraphs = await queryAll(
+      `SELECT paragraph_index, text, heading FROM content
+       WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ?`,
+      [document_id, cap]
+    );
+  }
   if (paragraphs.length === 0) return { error: 'Document is empty or unreadable' };
 
   // Build a compact corpus the sub-agent can read end-to-end. Numbered

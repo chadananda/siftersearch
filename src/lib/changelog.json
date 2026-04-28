@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T23:02:10.483Z",
+  "generated": "2026-04-28T23:13:05.754Z",
   "entries": [
+    {
+      "hash": "934934f",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Hard-resolve canonical Bahá'í works to known doc_ids",
+      "scope": null
+    },
     {
       "hash": "fd78c07",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Wait for auth before checking admin permissions in dashboard",
       "scope": null
-    },
-    {
-      "hash": "bace91b",
-      "date": "2026-01-05",
-      "type": "Test",
-      "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "934934f",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Hard-resolve canonical Bahá'í works to known doc_ids",
+        "scope": null
+      },
       {
         "hash": "fd78c07",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Wait for auth before checking admin permissions in dashboard",
-        "scope": null
-      },
-      {
-        "hash": "bace91b",
-        "date": "2026-01-05",
-        "type": "Test",
-        "description": "Add comprehensive tests for parseDocumentWithBlocks and auto-segmentation",
         "scope": null
       }
     ]
