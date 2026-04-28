@@ -130,50 +130,53 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
         <span class="topic-count">{dialogs.length}</span>
       </header>
       <div class="cards">
-        {dialogs.map(d => (
-              <a class="card" href={`/dialogue/${d.id.replace(/\.md$/, '')}`} data-featured={d.data.featured}>
-                {d.data.heroImage && (
-                  <div class="card-image">
-                    <img src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
-                  </div>
-                )}
-                {!d.data.heroImage && (
-                  <div class="card-image card-image-placeholder" aria-hidden="true">
-                    <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
-                      <defs>
-                        <radialGradient id={`p-${d.id}-1`} cx="30%" cy="40%" r="55%">
-                          <stop offset="0%" stop-color="rgba(56,114,184,0.6)" />
-                          <stop offset="100%" stop-color="rgba(20,52,98,0.1)" />
-                        </radialGradient>
-                        <radialGradient id={`p-${d.id}-2`} cx="75%" cy="65%" r="45%">
-                          <stop offset="0%" stop-color="rgba(140,180,220,0.5)" />
-                          <stop offset="100%" stop-color="rgba(20,52,98,0)" />
-                        </radialGradient>
-                      </defs>
-                      <rect width="400" height="240" fill="rgba(20,52,98,0.4)" />
-                      <rect width="400" height="240" fill={`url(#p-${d.id}-1)`} />
-                      <rect width="400" height="240" fill={`url(#p-${d.id}-2)`} />
-                    </svg>
-                  </div>
-                )}
-                <div class="card-body">
-                  <a class="card-topic" href={`/dialogue/category/${d.data.topic}/`}>{TOPIC_LABELS[d.data.topic] ?? d.data.topic}</a>
-                  <h3>{sq(d.data.title)}</h3>
-                  <p class="card-summary">{sq(d.data.description)}</p>
-                  <div class="card-meta">
-                    {typeof d.data.qualityScore === 'number' && (
-                      <span class="score" data-score={d.data.qualityScore}>{d.data.qualityScore}%</span>
-                    )}
-                    <span class="rounds">{d.data.rounds} rounds</span>
-                    {d.data.tags.slice(0, 3).map(t => (
-                      multiTagSet.has(t)
-                        ? <a class="card-tag link" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
-                        : <span class="card-tag">{t}</span>
-                    ))}
-                  </div>
+        {dialogs.map(d => {
+          const slug = d.id.replace(/\.md$/, '');
+          return (
+            <article class="card" data-featured={d.data.featured}>
+              {d.data.heroImage && (
+                <div class="card-image">
+                  <img src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
                 </div>
-              </a>
-            ))}
+              )}
+              {!d.data.heroImage && (
+                <div class="card-image card-image-placeholder" aria-hidden="true">
+                  <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                      <radialGradient id={`p-${d.id}-1`} cx="30%" cy="40%" r="55%">
+                        <stop offset="0%" stop-color="rgba(56,114,184,0.6)" />
+                        <stop offset="100%" stop-color="rgba(20,52,98,0.1)" />
+                      </radialGradient>
+                      <radialGradient id={`p-${d.id}-2`} cx="75%" cy="65%" r="45%">
+                        <stop offset="0%" stop-color="rgba(140,180,220,0.5)" />
+                        <stop offset="100%" stop-color="rgba(20,52,98,0)" />
+                      </radialGradient>
+                    </defs>
+                    <rect width="400" height="240" fill="rgba(20,52,98,0.4)" />
+                    <rect width="400" height="240" fill={`url(#p-${d.id}-1)`} />
+                    <rect width="400" height="240" fill={`url(#p-${d.id}-2)`} />
+                  </svg>
+                </div>
+              )}
+              <div class="card-body">
+                <a class="card-topic" href={`/dialogue/category/${d.data.topic}/`}>{TOPIC_LABELS[d.data.topic] ?? d.data.topic}</a>
+                <h3><a class="card-title-link" href={`/dialogue/${slug}/`}>{sq(d.data.title)}</a></h3>
+                <p class="card-summary">{sq(d.data.description)}</p>
+                <div class="card-meta">
+                  {typeof d.data.qualityScore === 'number' && (
+                    <span class="score" data-score={d.data.qualityScore}>{d.data.qualityScore}%</span>
+                  )}
+                  <span class="rounds">{d.data.rounds} rounds</span>
+                  {d.data.tags.slice(0, 3).map(t => (
+                    multiTagSet.has(t)
+                      ? <a class="card-tag link" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
+                      : <span class="card-tag">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
 
@@ -360,15 +363,34 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
   }
 
   .card {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: rgba(20,52,98,0.18);
     border: 1px solid rgba(140,180,220,0.12);
     border-radius: 16px;
     overflow: hidden;
-    text-decoration: none;
     color: inherit;
     transition: all 0.25s ease;
+  }
+
+  /* Stretched-link pattern. Outer card is an <article> (no nested <a>);
+     the title link's ::after covers the whole card, making it clickable
+     while topic/tag links remain real, separately-clickable anchors. */
+  .card-title-link {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .card-title-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .card-topic,
+  a.card-tag.link {
+    position: relative;
+    z-index: 2;
   }
 
   .card:hover {
