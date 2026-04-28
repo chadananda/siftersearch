@@ -179,9 +179,14 @@ const TOPIC_LABELS: Record<string, string> = {
         <aside class="toc-rail" aria-label="Conversation rounds">
           <p class="rail-label">Rounds</p>
           <ol class="toc-list">
-            {Array.from({ length: data.rounds }, (_, i) => i + 1).map(n => (
-              <li><a href={`#round-${n}`}>Round {n}</a></li>
-            ))}
+            {(() => {
+              // Pair each markdown h3 (round summary) with the corresponding round-N anchor.
+              // The h3 emerges via Astro's `headings`; the anchor is on the user-turn div.
+              const h3s = headings.filter(h => h.depth === 3);
+              return h3s.map((h, i) => (
+                <li><a href={`#round-${i + 1}`}>{sq(h.text)}</a></li>
+              ));
+            })()}
             <li class="toc-spacer" />
             <li><a href="#assessment" class="toc-assess">Assessment</a></li>
           </ol>
@@ -599,6 +604,23 @@ const TOPIC_LABELS: Record<string, string> = {
   @media (max-width: 640px) {
     .dialog-body { padding: 1.5rem 1.25rem; border-radius: 14px; }
   }
+
+  /* Round summary headers — tiny, de-emphasized, but real h3 elements
+     so Astro's headings extraction picks them up for the TOC and SEO. */
+  .dialog-body :global(h3) {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(186, 160, 82, 0.65);
+    margin: 2.5rem 0 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px dotted rgba(186, 160, 82, 0.2);
+    /* Anchor offset so jump-links don't hide the header under the navbar */
+    scroll-margin-top: 5rem;
+  }
+  .dialog-body :global(h3:first-child) { margin-top: 0; }
 
   /* Speaker turns — visual differentiation by speaker */
 

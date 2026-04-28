@@ -62,6 +62,9 @@ const dialogs = defineCollection({
     published: z.boolean().default(false),
     // SEO-tuned keyword set (distinct from `tags` which are taxonomy).
     keywords: z.array(z.string()).default([]),
+    // Tiny descriptive titles per round, used in TOC and as h3 micro-headers
+    // in the body. "Round 1" is useless for both navigation and SEO.
+    roundTitles: z.array(z.string()).default([]),
     // Beta: visible per-article assessment.
     assessment: z.object({
       scores: z.record(z.string(), z.number()),

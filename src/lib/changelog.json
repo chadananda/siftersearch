@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-28T17:24:00.102Z",
+  "generated": "2026-04-28T17:36:17.701Z",
   "entries": [
+    {
+      "hash": "e544f46",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
+      "scope": null
+    },
     {
       "hash": "7b6b0e8",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use padding-right for Arabic continuation indent",
       "scope": null
-    },
-    {
-      "hash": "fe6bc12",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Study view improvements and batch translation notes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "e544f46",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "Dark bg before JS load (no white flash); About mentions Jafar; redirects /dialog/ → /dialogue/",
+        "scope": null
+      },
       {
         "hash": "7b6b0e8",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Use padding-right for Arabic continuation indent",
-        "scope": null
-      },
-      {
-        "hash": "fe6bc12",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Study view improvements and batch translation notes",
         "scope": null
       }
     ]
