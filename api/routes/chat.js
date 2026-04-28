@@ -105,7 +105,7 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**When the topic is a specific small work, READ IT — but via the sub-agent.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), use the \`read_document_for_question\` tool. A sub-agent will read the full document and return ONLY a tailored summary plus 2-3 verbatim excerpts — the document body never enters this conversation. This keeps the thread clean while you still get grounded, citable answers from the actual text. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, send the sub-agent to read it. The same applies to any short tablet, letter, or chapter under direct discussion.
+**When the topic is a specific small work, READ IT.** The search tool returns each document's \`paragraph_count\`. If the conversation centers on a named work (*the Tablet of Wisdom, the Tablet to Queen Victoria, the Hidden Words, a specific Gospel chapter, a specific Upanishad*) AND the document is small enough to ingest (≤ ~150 paragraphs), call the search tool with \`mode: "read"\`, the document_id you found in a prior search, and \`limit: 100\`. The full document content comes back as paragraph text. Iterate \`start: 0, 100, 200…\` if needed. Failing to answer a question about a small named document because keyword search missed the right phrase is a refusal masquerading as research — the document is right there, ingest it. The same applies to any short tablet, letter, or chapter under direct discussion.
 
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
@@ -202,22 +202,11 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
       parameters: { type: 'object', properties: {} }
     }
   },
-  {
-    type: 'function',
-    function: {
-      name: 'read_document_for_question',
-      description: `When the conversation centers on a specific named document and the document is small enough to ingest (paragraph_count from a prior search ≤ ~150), use this tool instead of mode:"read". A sub-agent reads the full document, then returns ONLY the 2-3 most-relevant verbatim passages plus a brief summary tailored to your question. This keeps the conversation thread clean — full document text never enters your own context. Pass the user's actual question as a complete sentence so the sub-agent can target relevance correctly.`,
-      parameters: {
-        type: 'object',
-        properties: {
-          document_id: { type: 'integer', description: 'The document_id from a prior search result.' },
-          question: { type: 'string', description: 'The full question (in the user\'s own words or yours) the sub-agent should target as it reads.' },
-          max_paragraphs: { type: 'integer', description: 'Cap on how many paragraphs the sub-agent fetches (default 150).', default: 150 }
-        },
-        required: ['document_id', 'question']
-      }
-    }
-  }
+  // read_document_for_question disabled — see api/routes/chat.js executeReadDocumentForQuestion.
+  // The sub-agent fails on the live server (returns "Sub-agent read failed") even though the same
+  // OpenAI call works locally. Until the live failure is diagnosed, Jafar falls back to mode:"read"
+  // inside the regular search tool — same outcome (paragraph data into Jafar's context) but no
+  // sub-agent middleman to fail.
 ];
 
 // ─── Tool implementations ─────────────────────────────────────────────────
