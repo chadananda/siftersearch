@@ -137,6 +137,13 @@
           </svg>
           <span class="nav-label">Library</span>
         </a>
+        <a href="/dialog" class="nav-link show-sm" class:active={currentPage === 'dialog'}>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="13" y2="14"/>
+          </svg>
+          <span class="nav-label">Dialog</span>
+        </a>
         <!-- Discuss tab hidden until multi-user launch -->
         <!--<a href="/community" class="nav-link show-md" class:active={currentPage === 'community'}>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

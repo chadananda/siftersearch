@@ -1,0 +1,464 @@
+---
+// Dialog index — artsy listing of all published dialogs, grouped by topic
+// with tag cloud, quality scores, and decorative watercolor headers.
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+import NavBar from '../../components/common/NavBar.svelte';
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('dialogs');
+
+// Sort by featured first, then quality score desc, then date desc
+const dialogs = all.sort((a, b) => {
+  if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+  const qa = a.data.qualityScore ?? 0;
+  const qb = b.data.qualityScore ?? 0;
+  if (qa !== qb) return qb - qa;
+  return b.data.publishedAt.getTime() - a.data.publishedAt.getTime();
+});
+
+// Group by topic
+const TOPIC_LABELS: Record<string, string> = {
+  'theology': 'Theology',
+  'ethics': 'Ethics',
+  'social-order': 'Social Order',
+  'politics': 'Politics',
+  'history': 'History',
+  'comparative-religion': 'Comparative Religion',
+  'mysticism': 'Mysticism',
+  'practice': 'Practice',
+  'modern-challenges': 'Modern Challenges',
+  'word-meaning': 'Word & Meaning',
+  'metaphysics': 'Metaphysics',
+  'philosophy': 'Philosophy',
+};
+
+const byTopic = new Map<string, typeof dialogs>();
+for (const d of dialogs) {
+  const arr = byTopic.get(d.data.topic) ?? [];
+  arr.push(d);
+  byTopic.set(d.data.topic, arr);
+}
+
+// Aggregate all tags across all dialogs for the tag cloud
+const tagCounts = new Map<string, number>();
+for (const d of dialogs) {
+  for (const t of d.data.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+}
+const tagList = Array.from(tagCounts.entries())
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 40);
+
+const totalDialogs = dialogs.length;
+const totalRounds = dialogs.reduce((s, d) => s + d.data.rounds, 0);
+const avgScore = dialogs.length
+  ? Math.round(dialogs.reduce((s, d) => s + (d.data.qualityScore ?? 0), 0) / dialogs.length)
+  : 0;
+
+const description = `Long-form dialogues exploring ${totalDialogs} deep questions in Bahá'í teachings, comparative theology, and philosophy. Each conversation goes ten or more rounds — questioning assumptions, examining word definitions across centuries, and weighing actual textual evidence.`;
+---
+
+<Layout title="Dialog — Deep Conversations on Faith, Meaning, and Text" description={description}>
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="dialog" client:load />
+
+  <main class="dialog-index">
+    <header class="hero">
+      <div class="hero-decoration" aria-hidden="true">
+        <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid slice">
+          <!-- Hand-drawn watercolor wash, blue-shaded -->
+          <defs>
+            <radialGradient id="wash1" cx="20%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="rgba(56,114,184,0.55)" />
+              <stop offset="100%" stop-color="rgba(56,114,184,0)" />
+            </radialGradient>
+            <radialGradient id="wash2" cx="80%" cy="40%" r="50%">
+              <stop offset="0%" stop-color="rgba(108,156,209,0.45)" />
+              <stop offset="100%" stop-color="rgba(108,156,209,0)" />
+            </radialGradient>
+            <radialGradient id="wash3" cx="55%" cy="80%" r="45%">
+              <stop offset="0%" stop-color="rgba(31,82,148,0.5)" />
+              <stop offset="100%" stop-color="rgba(31,82,148,0)" />
+            </radialGradient>
+          </defs>
+          <rect x="0" y="0" width="600" height="200" fill="url(#wash1)" />
+          <rect x="0" y="0" width="600" height="200" fill="url(#wash2)" />
+          <rect x="0" y="0" width="600" height="200" fill="url(#wash3)" />
+          <!-- Stylized brush strokes -->
+          <path d="M 30 130 Q 150 80 280 120 T 570 100" stroke="rgba(20,52,98,0.4)" stroke-width="2" fill="none" stroke-linecap="round" />
+          <path d="M 50 160 Q 200 130 380 150 T 580 145" stroke="rgba(20,52,98,0.3)" stroke-width="1.5" fill="none" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h1>Dialog</h1>
+      <p class="hero-tag">Long-form conversations on the questions that don't have one-sentence answers.</p>
+      <div class="hero-stats">
+        <div><strong>{totalDialogs}</strong><span>conversations</span></div>
+        <div><strong>{totalRounds}</strong><span>rounds of follow-up</span></div>
+        <div><strong>{avgScore}<small>%</small></strong><span>average quality score</span></div>
+      </div>
+    </header>
+
+    {tagList.length > 0 && (
+      <section class="tag-cloud">
+        <h2 class="section-label">Tags</h2>
+        <div class="tags">
+          {tagList.map(([tag, count]) => (
+            <a class="tag-pill" href={`/dialog?tag=${encodeURIComponent(tag)}`} data-count={count}>
+              <span class="tag-text">{tag}</span>
+              <span class="tag-count">{count}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="topics">
+      {Array.from(byTopic.entries()).map(([topic, items]) => (
+        <div class="topic-block">
+          <header class="topic-header">
+            <h2>{TOPIC_LABELS[topic] ?? topic}</h2>
+            <span class="topic-count">{items.length}</span>
+          </header>
+          <div class="cards">
+            {items.map(d => (
+              <a class="card" href={`/dialog/${d.id.replace(/\.md$/, '')}`} data-featured={d.data.featured}>
+                {d.data.heroImage && (
+                  <div class="card-image">
+                    <img src={d.data.heroImage} alt={d.data.title} loading="lazy" />
+                  </div>
+                )}
+                {!d.data.heroImage && (
+                  <div class="card-image card-image-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+                      <defs>
+                        <radialGradient id={`p-${d.id}-1`} cx="30%" cy="40%" r="55%">
+                          <stop offset="0%" stop-color="rgba(56,114,184,0.6)" />
+                          <stop offset="100%" stop-color="rgba(20,52,98,0.1)" />
+                        </radialGradient>
+                        <radialGradient id={`p-${d.id}-2`} cx="75%" cy="65%" r="45%">
+                          <stop offset="0%" stop-color="rgba(140,180,220,0.5)" />
+                          <stop offset="100%" stop-color="rgba(20,52,98,0)" />
+                        </radialGradient>
+                      </defs>
+                      <rect width="400" height="240" fill="rgba(20,52,98,0.4)" />
+                      <rect width="400" height="240" fill={`url(#p-${d.id}-1)`} />
+                      <rect width="400" height="240" fill={`url(#p-${d.id}-2)`} />
+                    </svg>
+                  </div>
+                )}
+                <div class="card-body">
+                  <h3>{d.data.title}</h3>
+                  <p class="card-summary">{d.data.description}</p>
+                  <div class="card-meta">
+                    {typeof d.data.qualityScore === 'number' && (
+                      <span class="score" data-score={d.data.qualityScore}>{d.data.qualityScore}%</span>
+                    )}
+                    <span class="rounds">{d.data.rounds} rounds</span>
+                    {d.data.tags.slice(0, 3).map(t => (
+                      <span class="card-tag">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+
+    {dialogs.length === 0 && (
+      <section class="empty">
+        <p>The first dialogues are being prepared. Check back shortly.</p>
+      </section>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .dialog-index {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 6rem;
+    color: var(--text-primary);
+  }
+
+  .hero {
+    position: relative;
+    padding: 5rem 2rem 4rem;
+    margin-bottom: 3rem;
+    border-radius: 24px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(20,52,98,0.4) 0%, rgba(56,114,184,0.2) 100%);
+    border: 1px solid rgba(140,180,220,0.15);
+  }
+
+  .hero-decoration {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.85;
+  }
+  .hero-decoration svg { width: 100%; height: 100%; }
+
+  .hero h1 {
+    position: relative;
+    font-family: 'Libre Caslon Text', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 400;
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text-primary);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  .hero-tag {
+    position: relative;
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin: 1rem 0 2.5rem;
+    max-width: 38rem;
+  }
+
+  .hero-stats {
+    position: relative;
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-stats > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .hero-stats strong {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .hero-stats strong small {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-left: 0.1em;
+  }
+
+  .hero-stats span {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+    font-weight: 600;
+  }
+
+  .tag-cloud {
+    margin-bottom: 4rem;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(56,114,184,0.12);
+    border: 1px solid rgba(56,114,184,0.25);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .tag-pill:hover {
+    background: rgba(56,114,184,0.25);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+
+  .tag-count {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    background: rgba(140,180,220,0.15);
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+  }
+
+  .topic-block {
+    margin-bottom: 4rem;
+  }
+
+  .topic-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(140,180,220,0.1);
+    padding-bottom: 0.75rem;
+  }
+
+  .topic-header h2 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .topic-count {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    background: rgba(140,180,220,0.1);
+    padding: 0.15rem 0.7rem;
+    border-radius: 999px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(20,52,98,0.18);
+    border: 1px solid rgba(140,180,220,0.12);
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(140,180,220,0.35);
+    box-shadow: 0 12px 32px rgba(20,52,98,0.4);
+  }
+
+  .card[data-featured="true"] {
+    border-color: rgba(186,160,82,0.4);
+    background: linear-gradient(135deg, rgba(186,160,82,0.08) 0%, rgba(20,52,98,0.18) 60%);
+  }
+
+  .card-image {
+    aspect-ratio: 5 / 3;
+    overflow: hidden;
+    background: rgba(20,52,98,0.3);
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card-image-placeholder svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .card-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+  }
+
+  .card-body h3 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.3;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .card-summary {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .score {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(186,160,82,0.18);
+    color: rgb(218, 188, 110);
+    border: 1px solid rgba(186,160,82,0.3);
+  }
+
+  .score[data-score^="9"], .score[data-score="100"] {
+    background: rgba(120,180,140,0.18);
+    color: rgb(140,200,160);
+    border-color: rgba(120,180,140,0.3);
+  }
+
+  .rounds {
+    color: var(--text-muted);
+  }
+
+  .card-tag {
+    color: var(--text-secondary);
+    background: rgba(140,180,220,0.1);
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .dialog-index { padding: 1rem 1rem 4rem; }
+    .hero { padding: 3rem 1.5rem 2.5rem; }
+    .hero-stats { gap: 1.5rem; }
+    .hero-stats strong { font-size: 1.75rem; }
+    .cards { grid-template-columns: 1fr; }
+  }
+</style>

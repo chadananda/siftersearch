@@ -1,0 +1,403 @@
+---
+// Individual dialog page — long-form rendering of a User ↔ Jafar conversation
+// with rich typography, citation styling, and watercolor decorative elements.
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+import NavBar from '../../components/common/NavBar.svelte';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const dialogs = await getCollection('dialogs');
+  return dialogs.map(d => ({
+    params: { slug: d.id.replace(/\.md$/, '') },
+    props: { dialog: d },
+  }));
+}
+
+const { dialog } = Astro.props;
+const { Content } = await render(dialog);
+const data = dialog.data;
+
+// Schema.org structured data — Article with Q&A structure
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": data.title,
+  "description": data.description,
+  "datePublished": data.publishedAt.toISOString(),
+  "dateModified": (data.updatedAt ?? data.publishedAt).toISOString(),
+  "author": [
+    { "@type": "Person", "name": "Reader" },
+    { "@type": "SoftwareApplication", "name": "Jafar (SifterSearch)" }
+  ],
+  "publisher": {
+    "@type": "Organization",
+    "name": "SifterSearch",
+    "logo": { "@type": "ImageObject", "url": "https://siftersearch.com/logo.svg" }
+  },
+  "image": data.heroImage ? `https://siftersearch.com${data.heroImage}` : undefined,
+  "keywords": data.tags.join(', ')
+};
+
+// Topic label
+const TOPIC_LABELS: Record<string, string> = {
+  'theology': 'Theology',
+  'ethics': 'Ethics',
+  'social-order': 'Social Order',
+  'politics': 'Politics',
+  'history': 'History',
+  'comparative-religion': 'Comparative Religion',
+  'mysticism': 'Mysticism',
+  'practice': 'Practice',
+  'modern-challenges': 'Modern Challenges',
+  'word-meaning': 'Word & Meaning',
+  'metaphysics': 'Metaphysics',
+  'philosophy': 'Philosophy',
+};
+---
+
+<Layout
+  title={`${data.title} — Dialog`}
+  description={data.description}
+  image={data.heroImage ?? '/og-image.png'}
+  type="article"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+    <link rel="alternate" type="application/rss+xml" title="SifterSearch Dialogs" href="/dialog/rss.xml" />
+  </Fragment>
+
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="dialog" client:load />
+
+  <article class="dialog-page">
+    <div class="dialog-hero">
+      {data.heroImage ? (
+        <img class="hero-image" src={data.heroImage} alt={data.title} />
+      ) : (
+        <div class="hero-watercolor" aria-hidden="true">
+          <svg viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="hw1" cx="25%" cy="40%" r="55%">
+                <stop offset="0%" stop-color="rgba(56,114,184,0.65)" />
+                <stop offset="100%" stop-color="rgba(20,52,98,0)" />
+              </radialGradient>
+              <radialGradient id="hw2" cx="75%" cy="60%" r="50%">
+                <stop offset="0%" stop-color="rgba(140,180,220,0.55)" />
+                <stop offset="100%" stop-color="rgba(20,52,98,0)" />
+              </radialGradient>
+              <radialGradient id="hw3" cx="50%" cy="85%" r="40%">
+                <stop offset="0%" stop-color="rgba(186,160,82,0.25)" />
+                <stop offset="100%" stop-color="rgba(20,52,98,0)" />
+              </radialGradient>
+            </defs>
+            <rect width="1200" height="480" fill="rgba(20,52,98,0.5)" />
+            <rect width="1200" height="480" fill="url(#hw1)" />
+            <rect width="1200" height="480" fill="url(#hw2)" />
+            <rect width="1200" height="480" fill="url(#hw3)" />
+            <path d="M 60 280 Q 320 180 580 240 T 1140 200" stroke="rgba(20,52,98,0.4)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+            <path d="M 80 340 Q 380 280 700 320 T 1150 290" stroke="rgba(140,180,220,0.4)" stroke-width="1.5" fill="none" stroke-linecap="round" />
+          </svg>
+        </div>
+      )}
+    </div>
+
+    <div class="dialog-container">
+      <header class="dialog-header">
+        <a href="/dialog" class="topic-crumb">{TOPIC_LABELS[data.topic] ?? data.topic}</a>
+        <h1>{data.title}</h1>
+        <blockquote class="seed-question">
+          <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+          {data.question}
+        </blockquote>
+        <div class="dialog-meta">
+          {typeof data.qualityScore === 'number' && (
+            <span class="meta-score">
+              <span class="meta-label">Quality</span>
+              <strong>{data.qualityScore}%</strong>
+            </span>
+          )}
+          <span class="meta-rounds">
+            <span class="meta-label">Rounds</span>
+            <strong>{data.rounds}</strong>
+          </span>
+          <span class="meta-date">
+            <span class="meta-label">Published</span>
+            <strong>{data.publishedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+          </span>
+        </div>
+        {data.tags.length > 0 && (
+          <div class="dialog-tags">
+            {data.tags.map(t => (
+              <a class="dialog-tag" href={`/dialog?tag=${encodeURIComponent(t)}`}>{t}</a>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <div class="dialog-body prose">
+        <Content />
+      </div>
+
+      <footer class="dialog-footer">
+        <div class="footer-watermark" aria-hidden="true">
+          <svg viewBox="0 0 400 80" preserveAspectRatio="xMidYMid meet">
+            <path d="M 30 40 Q 100 20 200 40 T 370 40" stroke="rgba(56,114,184,0.4)" stroke-width="1.5" fill="none" stroke-linecap="round" />
+            <circle cx="200" cy="40" r="4" fill="rgba(186,160,82,0.6)" />
+          </svg>
+        </div>
+        <p class="footer-note">
+          This conversation was held with <strong>Jafar</strong>, SifterSearch's library-grounded chat.
+          Citations are pulled from the actual interfaith corpus.
+          <a href="/">Try your own question →</a>
+        </p>
+      </footer>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .dialog-page { color: var(--text-primary); }
+
+  .dialog-hero {
+    width: 100%;
+    height: clamp(280px, 38vh, 480px);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hero-image, .hero-watercolor svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .dialog-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15,30,55,0) 0%, rgba(15,30,55,0.3) 60%, var(--surface-0) 100%);
+    pointer-events: none;
+  }
+
+  .dialog-container {
+    max-width: 760px;
+    margin: -100px auto 0;
+    padding: 2rem 1.5rem 6rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dialog-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2.5rem 1.5rem;
+    background: rgba(20,52,98,0.45);
+    border: 1px solid rgba(140,180,220,0.15);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .topic-crumb {
+    display: inline-block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid rgba(186,160,82,0.3);
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease;
+  }
+
+  .topic-crumb:hover { background: rgba(186,160,82,0.12); }
+
+  .dialog-header h1 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: clamp(1.75rem, 4.5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.5rem;
+    color: var(--text-primary);
+  }
+
+  .seed-question {
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    border: none;
+    margin: 0 0 1.5rem;
+    padding: 0 1rem;
+    position: relative;
+  }
+
+  .seed-question .quote-mark {
+    font-size: 4rem;
+    line-height: 0;
+    color: rgba(186,160,82,0.4);
+    margin-right: 0.25rem;
+    vertical-align: -0.4em;
+  }
+
+  .dialog-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .dialog-meta > span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    align-items: center;
+  }
+
+  .meta-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+
+  .dialog-meta strong {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+  }
+
+  .meta-score strong { color: rgb(218, 188, 110); }
+
+  .dialog-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .dialog-tag {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(56,114,184,0.15);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border: 1px solid rgba(56,114,184,0.2);
+  }
+
+  .dialog-tag:hover { background: rgba(56,114,184,0.3); }
+
+  /* Dialog body — rich typography for the dialogue itself */
+  .dialog-body {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+
+  /* User and Jafar turn styling — rendered from markdown ## sections */
+  .dialog-body :global(h2) {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin: 2.5rem 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(140,180,220,0.12);
+  }
+
+  .dialog-body :global(h2:first-child) { margin-top: 0; }
+
+  /* Highlight Jafar's responses with subtle accent */
+  .dialog-body :global(h2[id^="jafar"]),
+  .dialog-body :global(h2[id*="jafar"]) {
+    color: rgb(186, 160, 82);
+  }
+
+  .dialog-body :global(h2[id^="you"]),
+  .dialog-body :global(h2[id*="you"]) {
+    color: rgb(140, 180, 220);
+  }
+
+  .dialog-body :global(p) {
+    margin: 0 0 1.25rem;
+  }
+
+  .dialog-body :global(blockquote) {
+    border-left: 3px solid rgba(186,160,82,0.35);
+    padding: 0.5rem 0 0.5rem 1.25rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: var(--text-secondary);
+    background: rgba(186,160,82,0.04);
+  }
+
+  .dialog-body :global(blockquote cite) {
+    display: block;
+    font-style: normal;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
+  }
+
+  .dialog-body :global(blockquote cite::before) {
+    content: "— ";
+  }
+
+  .dialog-body :global(em) { color: var(--text-secondary); }
+
+  .dialog-body :global(hr) {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(140,180,220,0.3), transparent);
+    margin: 3rem 0;
+  }
+
+  /* Watercolor decorative dividers between major exchanges */
+  .dialog-body :global(.divider-watercolor) {
+    display: block;
+    margin: 3rem auto;
+    text-align: center;
+  }
+
+  .dialog-footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    text-align: center;
+    border-top: 1px solid rgba(140,180,220,0.1);
+  }
+
+  .footer-watermark { margin-bottom: 1rem; opacity: 0.7; }
+  .footer-watermark svg { width: 200px; height: 40px; }
+
+  .footer-note {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 32rem;
+    margin: 0 auto;
+  }
+
+  .footer-note a { color: var(--accent); text-decoration: none; }
+  .footer-note a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .dialog-hero { height: 240px; }
+    .dialog-container { padding: 1.5rem 1rem 4rem; margin-top: -60px; }
+    .dialog-header { padding: 1.5rem 1rem; }
+    .dialog-meta { gap: 1rem; }
+  }
+</style>
