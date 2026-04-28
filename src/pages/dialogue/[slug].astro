@@ -181,11 +181,26 @@ const TOPIC_LABELS: Record<string, string> = {
           <p class="rail-label">Rounds</p>
           <ol class="toc-list">
             {(() => {
-              // Pair each markdown h3 (round summary) with the corresponding round-N anchor.
-              // The h3 emerges via Astro's `headings`; the anchor is on the user-turn div.
-              const h3s = headings.filter(h => h.depth === 3);
-              return h3s.map((h, i) => (
-                <li><a href={`#round-${i + 1}`}>{sq(h.text)}</a></li>
+              // Pair each h3 (user question) with its following h4 (Jafar's answer).
+              // Both come from Astro's `headings`. h3 anchors to round-N (the user-turn div).
+              const items = [];
+              let roundN = 0;
+              for (let i = 0; i < headings.length; i++) {
+                const h = headings[i];
+                if (h.depth === 3) {
+                  roundN++;
+                  const next = headings[i + 1];
+                  const answer = next && next.depth === 4 ? next : null;
+                  items.push({ q: h, a: answer, n: roundN });
+                }
+              }
+              return items.map(item => (
+                <li class="toc-round">
+                  <a class="toc-q" href={`#round-${item.n}`}>{sq(item.q.text)}</a>
+                  {item.a && (
+                    <a class="toc-a" href={`#${item.a.slug}`}>{sq(item.a.text)}</a>
+                  )}
+                </li>
               ));
             })()}
             <li class="toc-spacer" />
@@ -377,14 +392,35 @@ const TOPIC_LABELS: Record<string, string> = {
     margin: 0;
   }
   .toc-list li { margin: 0; padding: 0; }
+  .toc-round {
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dotted rgba(140, 180, 220, 0.08);
+  }
+  .toc-round:last-of-type { border-bottom: none; }
   .toc-list a {
     display: block;
-    padding: 0.4rem 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
     text-decoration: none;
     border-left: 2px solid transparent;
     transition: all 0.15s ease;
+    line-height: 1.4;
+  }
+  .toc-q {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .toc-a {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.78rem !important;
+    padding-left: 1.25rem !important;
+    margin-top: 0.1rem;
+  }
+  .toc-a::before {
+    content: "→ ";
+    opacity: 0.5;
   }
   .toc-list a:hover {
     color: var(--text-primary);
@@ -606,52 +642,65 @@ const TOPIC_LABELS: Record<string, string> = {
     .dialog-body { padding: 1.5rem 1.25rem; border-radius: 14px; }
   }
 
-  /* Round summary headers — tiny, de-emphasized, but real h3 elements
+  /* Round summary headers — tiny, de-emphasized, but real h3/h4 elements
      so Astro's headings extraction picks them up for the TOC and SEO. */
   .dialog-body :global(h3) {
     font-family: 'Libre Caslon Text', serif;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: rgba(186, 160, 82, 0.65);
-    margin: 2.5rem 0 0.5rem;
+    letter-spacing: 0.1em;
+    color: rgba(140, 180, 220, 0.7);
+    margin: 2.75rem 0 0.5rem;
     padding-bottom: 0.3rem;
-    border-bottom: 1px dotted rgba(186, 160, 82, 0.2);
-    /* Anchor offset so jump-links don't hide the header under the navbar */
+    border-bottom: 1px dotted rgba(140, 180, 220, 0.2);
     scroll-margin-top: 5rem;
   }
   .dialog-body :global(h3:first-child) { margin-top: 0; }
+  .dialog-body :global(h4) {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 0.72rem;
+    font-style: italic;
+    font-weight: 500;
+    color: rgba(186, 160, 82, 0.55);
+    margin: 1.25rem 0 0.4rem;
+    padding-left: 3.75rem;  /* aligns with Jafar's text after the avatar */
+    scroll-margin-top: 5rem;
+  }
+  @media (max-width: 720px) {
+    .dialog-body :global(h4) { padding-left: 3rem; }
+  }
 
   /* Speaker turns — visual differentiation by speaker */
 
-  /* USER TURN — chat-bubble style. Right-aligned, distinct color, with a tail. */
+  /* USER TURN — left-aligned chat bubble in cool blue. Visually distinct
+     from Jafar's full-width reply: smaller width, distinct color, with tail. */
   .dialog-body :global(.user-turn) {
     position: relative;
-    margin: 2rem 0 2rem auto;
+    margin: 2rem auto 2rem 0;
     max-width: 78%;
     padding: 0.95rem 1.25rem 0.85rem;
     background: rgba(56, 114, 184, 0.22);
     border: 1px solid rgba(140, 180, 220, 0.3);
-    border-radius: 18px 18px 4px 18px;
+    border-radius: 18px 18px 18px 4px;
     color: var(--text-primary);
     font-style: normal;
     font-size: 0.98rem;
     line-height: 1.6;
   }
   .dialog-body :global(.user-turn::after) {
-    /* Bubble tail pointing down-right toward Jafar's reply */
+    /* Bubble tail pointing down-left, toward the reader */
     content: "";
     position: absolute;
-    right: 1.5rem;
+    left: 1.5rem;
     bottom: -8px;
     width: 16px;
     height: 16px;
     background: rgba(56, 114, 184, 0.22);
-    border-right: 1px solid rgba(140, 180, 220, 0.3);
+    border-left: 1px solid rgba(140, 180, 220, 0.3);
     border-bottom: 1px solid rgba(140, 180, 220, 0.3);
-    transform: rotate(45deg);
-    border-radius: 0 0 4px 0;
+    transform: rotate(-45deg);
+    border-radius: 0 0 0 4px;
   }
   .dialog-body :global(.user-turn:first-child) { margin-top: 0; }
   .dialog-body :global(.user-turn p) {

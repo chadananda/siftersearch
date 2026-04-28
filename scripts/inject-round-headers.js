@@ -43,11 +43,17 @@ function extractRounds(body) {
 }
 
 async function generateTitles(rounds) {
-  const prompt = `For each round of this conversation, write a tiny descriptive title (4-7 words, no quotes). The title should capture the substance of the exchange — what's actually being argued or asked — not just topic words. Avoid generic ("a deeper look at unity") and prefer specific ("does anatta refute personal identity?"). Use Title Case. Return JSON: { "titles": ["...", "...", ...] } with exactly ${rounds.length} entries in order.
+  const prompt = `For each round of this conversation, write TWO tiny descriptive titles:
+- A question-form title for the user's turn (4-8 words, ending in "?", capturing the substance of what they're asking — not just the topic). Example: "Does anatta refute personal identity?"
+- An answer-form title for Jafar's reply (4-8 words, declarative, capturing the substance of his response). Example: "It addresses ego, not the soul."
+
+Avoid generic phrasings like "Exploring unity in religion." Be specific. Use sentence case for both.
+
+Return JSON: { "rounds": [{ "question": "...", "answer": "..." }, ...] } with exactly ${rounds.length} entries in order.
 
 Rounds:
 
-${rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${r.user.slice(0, 400)}\nJAFAR: ${r.jafar.slice(0, 400)}`).join('\n\n')}`;
+${rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${r.user.slice(0, 500)}\nJAFAR: ${r.jafar.slice(0, 500)}`).join('\n\n')}`;
 
   const r = await client.chat.completions.create({
     model: MODEL,
@@ -56,7 +62,7 @@ ${rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${r.user.slice(0, 400)}\nJAFAR: $
     response_format: { type: 'json_object' }
   });
   const parsed = JSON.parse(r.choices[0].message.content);
-  return parsed.titles || [];
+  return parsed.rounds || [];
 }
 
 const files = readdirSync(DIALOG_DIR).filter(f => f.endsWith('.md'));
@@ -96,16 +102,25 @@ for (const f of files) {
     console.warn(`WARN ${f}: title count ${titles.length} != rounds ${rounds.length}`);
   }
 
-  // Inject ### {title} immediately before each user-turn div
-  let i = 0;
-  body = body.replace(/<div class="user-turn"(?:\s+id="(round-\d+)")?>/g, (match, id) => {
-    const title = titles[i] || `Round ${i + 1}`;
-    i++;
-    return `### ${title}\n\n${match}`;
+  // Strip any prior round headers (### or ####) so we can inject fresh ones.
+  body = body.replace(/^###{1,2} .+\n\n/gm, '');
+
+  // Inject ### {question} before each user-turn AND #### {answer} before each jafar-turn
+  let userI = 0;
+  body = body.replace(/<div class="user-turn"(?:\s+id="(round-\d+)")?>/g, (match) => {
+    const t = titles[userI];
+    const q = (t && t.question) ? t.question : `Round ${userI + 1}`;
+    userI++;
+    return `### ${q}\n\n${match}`;
   });
 
-  // Idempotency safeguard: collapse cases where injection happened twice
-  body = body.replace(/(### .+\n\n)(### .+\n\n)/g, '$2');
+  let jafarI = 0;
+  body = body.replace(/<div class="jafar-turn">/g, (match) => {
+    const t = titles[jafarI];
+    const a = (t && t.answer) ? t.answer : '';
+    jafarI++;
+    return a ? `#### ${a}\n\n${match}` : match;
+  });
 
   writeFileSync(path, fm + body);
   console.log(`OK   ${f}`);
