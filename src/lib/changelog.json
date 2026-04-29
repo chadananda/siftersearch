@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:55:53.942Z",
+  "generated": "2026-04-29T04:59:17.644Z",
   "entries": [
+    {
+      "hash": "e7c332a",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Revert to mini + don't strip inline-citation lines",
+      "scope": null
+    },
     {
       "hash": "c1a853e",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show Institutional tier centered above subscribe button",
       "scope": null
-    },
-    {
-      "hash": "7b0f6c1",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Simplify to monthly subscriptions only, add Institutional tier",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "e7c332a",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Revert to mini + don't strip inline-citation lines",
+        "scope": null
+      },
       {
         "hash": "c1a853e",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Show Institutional tier centered above subscribe button",
-        "scope": null
-      },
-      {
-        "hash": "7b0f6c1",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Simplify to monthly subscriptions only, add Institutional tier",
         "scope": null
       }
     ]
