@@ -611,8 +611,14 @@ OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary a
 // fast-path orchestrator. Returns the full text at the end.
 export async function craftAnswerStream({ user_question, retrieved_quotes, conversation_summary, user_intent, onChunk, _temperature_override }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent });
+  // Crafter uses gpt-4o (not mini) for stronger instruction-following on the
+  // forbidden-opener and no-restating rules. Mini kept inventing new restate
+  // patterns ("He emphasizes that," "This definition of nature as,"
+  // "Engaging with secular thinkers can be seen as") that the prompt
+  // and post-process strip didn't catch. The 5x cost is worth it for
+  // grounding fidelity. Speed cost: ~1-2s additional crafter latency.
   const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-4o',
     messages: [
       { role: 'system', content: CRAFTER_SYSTEM },
       { role: 'user', content: userPayload }
@@ -645,13 +651,27 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, conve
 function stripRestatementSentences(text) {
   if (!text) return text;
   const FORBIDDEN_OPENERS = [
-    /^Bah[áa]'?u'?ll[áa]h\s+(emphasizes|distinguishes|acknowledges|teaches|reflects|highlights|presents|seems|notes|suggests|indicates|writes|states)\b/i,
-    /^This\s+(passage|verse|quote|text|teaching|excerpt|line)\s+(suggests|indicates|highlights|reflects|emphasizes|underscores|presents|reveals|illustrates|shows|reminds|tells|points)\b/i,
-    /^This\s+(suggests|indicates|highlights|reflects|emphasizes|underscores)\b/i,
-    /^In the (Tablet|Lawh|Kit[áa]b|Iq[áa]n|Aqdas|Hidden Words|Gleanings)/i,
+    // Authority-as-subject restating
+    /^(Bah[áa]'?u'?ll[áa]h|He|She|They|'?Abdu'?l-Bah[áa]|The B[áa]b|Shoghi Effendi)\s+(emphasizes|distinguishes|acknowledges|teaches|reflects|highlights|presents|seems|notes|suggests|indicates|writes|states|frames|describes|explains|reveals|stresses|advises|guides|encourages)\b/i,
+    // Possessive variants — "Bahá'u'lláh's work/teaching"
+    /^(Bah[áa]'?u'?ll[áa]h'?s|'?Abdu'?l-Bah[áa]'?s)\s+(work|teaching|writing|message|words|tablet|view|perspective|approach|emphasis)/i,
+    // Demonstrative-as-subject restating
+    /^This\s+(passage|verse|quote|text|teaching|excerpt|line|definition|distinction|perspective|view|framing|approach|understanding|context|insight|principle|aspect|notion|concept|idea|stance|interpretation)\b/i,
+    /^This\s+(suggests|indicates|highlights|reflects|emphasizes|underscores|implies|illustrates|reveals|points|shows|reminds|presents|frames|challenges|contrasts)\b/i,
+    /^These\s+(teachings|writings|words|principles|passages)\b/i,
+    /^It\s+(suggests|indicates|highlights|reflects|emphasizes|underscores|implies|reveals|points|shows|presents|frames|challenges|contrasts|raises)\b/i,
+    // "In the [work]..." essay openers
+    /^In the\s+(Tablet|Lawh|Kit[áa]b|Iq[áa]n|Aqdas|Hidden Words|Gleanings|Some Answered Questions|Seven Valleys)/i,
+    // "For Bahá'ís..." community-style explainers
     /^For Bah[áa]'?[íi]s,?\s/i,
-    /^Living these teachings/i,
-    /^The Tablet (of|was)/i
+    // Living/embodying/engaging — generic application essays
+    /^Living\b/i,
+    /^Embodying\b/i,
+    /^Engaging\b/i,
+    // "The Tablet of X is/was..." biographical restatement
+    /^The (Tablet|Lawh|Kit[áa]b|Iq[áa]n)\s+(of|was|is)/i,
+    // Passive voice essay starts
+    /^.{0,40}\b(can be seen|is seen|was seen|may be understood|should be understood)\s+as\b/i
   ];
   const lines = text.split('\n');
   const out = [];

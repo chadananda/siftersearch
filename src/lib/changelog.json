@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:47:28.549Z",
+  "generated": "2026-04-29T04:51:34.353Z",
   "entries": [
+    {
+      "hash": "0e8a910",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Post-process strip restating sentences + final_reply event",
+      "scope": null
+    },
     {
       "hash": "907baa5",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Update donation tiers and remove yearly option",
       "scope": null
-    },
-    {
-      "hash": "4669304",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Admin panel logo, search results, and add translation debug",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "0e8a910",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Post-process strip restating sentences + final_reply event",
+        "scope": null
+      },
       {
         "hash": "907baa5",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Update donation tiers and remove yearly option",
-        "scope": null
-      },
-      {
-        "hash": "4669304",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Admin panel logo, search results, and add translation debug",
         "scope": null
       }
     ]
