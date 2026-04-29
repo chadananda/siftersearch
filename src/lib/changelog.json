@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:36:26.630Z",
+  "generated": "2026-04-29T04:40:54.541Z",
   "entries": [
+    {
+      "hash": "18eb58e",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Topic→primary-work mapping + conversation-aware work_name carry",
+      "scope": null
+    },
     {
       "hash": "364062b",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Admin panel improvements and search performance",
       "scope": null
-    },
-    {
-      "hash": "67c0b4f",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Use $effect and objects for translation stats reactivity",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "18eb58e",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Topic→primary-work mapping + conversation-aware work_name carry",
+        "scope": null
+      },
       {
         "hash": "364062b",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Admin panel improvements and search performance",
-        "scope": null
-      },
-      {
-        "hash": "67c0b4f",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Use $effect and objects for translation stats reactivity",
         "scope": null
       }
     ]
