@@ -617,8 +617,8 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, conve
       { role: 'system', content: CRAFTER_SYSTEM },
       { role: 'user', content: userPayload }
     ],
-    temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.3,
-    max_tokens: 1200,
+    temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.1,
+    max_tokens: 800,
     stream: true
   });
   let full = '';
@@ -629,7 +629,50 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, conve
       if (onChunk) onChunk(text);
     }
   }
-  return full;
+  // Post-process: strip the most-flagged restating opener patterns. The mini
+  // model partially obeys the prompt — these regexes catch the residual cases
+  // (R1, R6, R7, R9 in our 051 test still slipped through). We delete the
+  // entire offending sentence rather than the opener alone, since the rest
+  // of that sentence is also restatement.
+  return stripRestatementSentences(full);
+}
+
+// Drop sentences that begin with a forbidden restating opener. Operates on
+// non-block-quote prose (lines that don't start with ">"). Run after the
+// crafter's stream completes — the user already saw the streamed text but
+// the persisted reply uses the cleaned version (which is what the markdown
+// publisher and the citation harvester read).
+function stripRestatementSentences(text) {
+  if (!text) return text;
+  const FORBIDDEN_OPENERS = [
+    /^Bah[áa]'?u'?ll[áa]h\s+(emphasizes|distinguishes|acknowledges|teaches|reflects|highlights|presents|seems|notes|suggests|indicates|writes|states)\b/i,
+    /^This\s+(passage|verse|quote|text|teaching|excerpt|line)\s+(suggests|indicates|highlights|reflects|emphasizes|underscores|presents|reveals|illustrates|shows|reminds|tells|points)\b/i,
+    /^This\s+(suggests|indicates|highlights|reflects|emphasizes|underscores)\b/i,
+    /^In the (Tablet|Lawh|Kit[áa]b|Iq[áa]n|Aqdas|Hidden Words|Gleanings)/i,
+    /^For Bah[áa]'?[íi]s,?\s/i,
+    /^Living these teachings/i,
+    /^The Tablet (of|was)/i
+  ];
+  const lines = text.split('\n');
+  const out = [];
+  for (const line of lines) {
+    if (line.startsWith('>') || line.trim() === '') {
+      out.push(line);
+      continue;
+    }
+    // Split this prose line into sentences and filter restating ones.
+    const sentences = line.match(/[^.!?]+[.!?]+\s*/g) || [line];
+    const kept = [];
+    for (const s of sentences) {
+      const trimmed = s.trim();
+      if (FORBIDDEN_OPENERS.some(re => re.test(trimmed))) continue;
+      kept.push(s);
+    }
+    const cleaned = kept.join('').trim();
+    if (cleaned) out.push(cleaned);
+  }
+  // Collapse multiple blank lines to one
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent }) {
@@ -691,7 +734,7 @@ Compose the reply now.`;
     temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.4,
     max_tokens: 1200
   });
-  return resp.choices[0].message.content || '';
+  return stripRestatementSentences(resp.choices[0].message.content || '');
 }
 
 // LLM picker — gpt-4o judges multiple gpt-4o-mini drafts and returns the

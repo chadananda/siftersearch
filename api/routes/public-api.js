@@ -1032,6 +1032,7 @@ export default async function publicApiRoutes(fastify) {
         type: 'done',
         processingTimeMs: Date.now() - startTime,
         conversation_id,
+        final_reply: finalContent,
         meta: {
           user_intent: result.user_intent,
           retrieved_count: result.retrieved_count,
