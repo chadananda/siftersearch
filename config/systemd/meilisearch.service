@@ -1,0 +1,34 @@
+[Unit]
+Description=Meilisearch Search Engine
+After=network.target
+
+[Service]
+# Tuned for tower-nas: 80-core / 197GB box.
+# - max-indexing-threads 64: leaves 16 cores for api/worker/enrichment/everything
+# - max-indexing-memory 96GiB: indexing-time buffer; leaves 100GB for OS + processes
+# - http-payload-size-limit 1GiB: large bulk-index batches won't 413
+# - db-path on /fast NVMe ZFS pool (the 18GB index lives there; restored from
+#   ZFS snapshot zfs-auto-snap_weekly-2026-04-26-1444 after a brief outage
+#   when stale /home/.../data/meilisearch was confused with the real dataset)
+#
+# DEPLOY: copy this file to ~/.config/systemd/user/meilisearch.service
+# then `systemctl --user daemon-reload && systemctl --user restart meilisearch`
+#
+# CRITICAL: Meili 1.41 requires VERSION file in db-path. After any restore
+# from snapshot or fresh extract, ensure /fast/meilisearch-data/VERSION
+# contains the running Meili version string (e.g. "1.41.0").
+ExecStart=/usr/local/bin/meilisearch \
+  --db-path /fast/meilisearch-data \
+  --http-addr localhost:7700 \
+  --no-analytics \
+  --master-key 797f54ee48797f54ee48797f54ee48 \
+  --max-indexing-threads 64 \
+  --max-indexing-memory 96GiB \
+  --http-payload-size-limit 1073741824
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+WorkingDirectory=/home/chad/sifter/siftersearch
+
+[Install]
+WantedBy=default.target
