@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T13:47:36.446Z",
+  "generated": "2026-04-29T14:04:04.928Z",
   "entries": [
+    {
+      "hash": "2bc1bf7",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Answer-first crafter + clarifying-principle authority hierarchy",
+      "scope": null
+    },
     {
       "hash": "701f3df",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use canonical base path for deterministic document IDs",
       "scope": null
-    },
-    {
-      "hash": "c2972f3",
-      "date": "2026-01-06",
-      "type": "Chore",
-      "description": "Bump version to 0.1.547",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "2bc1bf7",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Answer-first crafter + clarifying-principle authority hierarchy",
+        "scope": null
+      },
       {
         "hash": "701f3df",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Use canonical base path for deterministic document IDs",
-        "scope": null
-      },
-      {
-        "hash": "c2972f3",
-        "date": "2026-01-06",
-        "type": "Chore",
-        "description": "Bump version to 0.1.547",
         "scope": null
       }
     ]
