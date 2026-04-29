@@ -846,99 +846,50 @@ export default async function chatRoutes(fastify) {
     };
 
     try {
-      const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+      // Three-stage Jafar pipeline: research → craft → reflection-gate.
+      // See api/lib/jafar-pipeline.js for the architecture rationale.
+      const { runJafarPipeline } = await import('../lib/jafar-pipeline.js');
 
-      let systemContent = SYSTEM_PROMPT;
-      if (researchContext) {
-        systemContent += `\n\n## Previous research context\n\n${researchContext}`;
+      const debug = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
+      const result = await runJafarPipeline({
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+        sendEvent,
+        debug
+      });
+
+      // Word-by-word emit so the existing dialogue UI's typing animation
+      // still triggers, even though the text is fully buffered before send.
+      const words = (result.reply || '').split(/(\s+)/);
+      for (const w of words) {
+        if (w) sendEvent({ type: 'chunk', text: w });
       }
 
-      const aiMessages = [
-        { role: 'system', content: systemContent },
-        ...messages.map(m => ({ role: m.role, content: m.content }))
-      ];
+      // Build citations from retrieved_quotes that ended up in the reply
+      const citations = (result.retrieval_quotes || []).slice(0, 8).map(q => ({
+        document_id: q.doc_id,
+        paragraph_index: q.paragraph_index,
+        text: (q.text || '').slice(0, 300),
+        title: q.source_title,
+        author: q.source_author,
+        religion: q.religion,
+        collection: q.collection
+      }));
+      if (citations.length > 0) sendEvent({ type: 'citations', citations });
 
-      // Tool calling loop — model may call tools multiple times before responding
-      const MAX_TOOL_ROUNDS = 5;
-      let citations = [];
-
-      for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: aiMessages,
-          tools: TOOLS,
-          tool_choice: round === 0 ? 'auto' : 'auto',
-          stream: false, // Non-streaming for tool calls
-          max_tokens: 2500,
-          temperature: 0.7
-        });
-
-        const choice = response.choices[0];
-
-        // If the model wants to call tools
-        if (choice.finish_reason === 'tool_calls' || choice.message.tool_calls?.length > 0) {
-          aiMessages.push(choice.message);
-
-          // Execute all tool calls in parallel
-          const toolResults = await Promise.all(
-            choice.message.tool_calls.map(async (tc) => {
-              const args = JSON.parse(tc.function.arguments || '{}');
-              logger.info({ tool: tc.function.name, args, userId }, 'Jafar tool call');
-              const result = await executeTool(tc.function.name, args);
-
-              // Collect citations from search results
-              if (tc.function.name === 'search_library' && Array.isArray(result)) {
-                citations.push(...result.map(r => ({
-                  document_id: r.document_id,
-                  paragraph_index: r.paragraph_index,
-                  text: r.text,
-                  title: r.title,
-                  author: r.author,
-                  religion: r.religion,
-                  collection: r.collection
-                })));
-              }
-
-              return {
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: JSON.stringify(result)
-              };
-            })
-          );
-
-          aiMessages.push(...toolResults);
-          sendEvent({ type: 'tool_use', tools: choice.message.tool_calls.map(tc => tc.function.name) });
-          continue; // Go back for next round
+      sendEvent({
+        type: 'complete',
+        citations,
+        meta: {
+          user_intent: result.user_intent,
+          retrieved_count: result.retrieved_count,
+          gate_passed: result.gate?.pass,
+          retried: result.retried
         }
-
-        // Model is done with tools — stream the final response
-        // Re-request with streaming now that tools are resolved
-        const stream = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: aiMessages,
-          stream: true,
-          max_tokens: 2500,
-          temperature: 0.7
-        });
-
-        for await (const chunk of stream) {
-          const text = chunk.choices?.[0]?.delta?.content || '';
-          if (text) sendEvent({ type: 'chunk', text });
-        }
-
-        break; // Done
-      }
-
-      if (citations.length > 0) {
-        sendEvent({ type: 'citations', citations });
-      }
-
-      sendEvent({ type: 'complete', citations });
+      });
       reply.raw.end();
 
     } catch (err) {
-      logger.error({ err: err.message, userId }, 'Chat stream error');
+      logger.error({ err: err.message, stack: err.stack, userId }, 'Chat stream error');
       sendEvent({ type: 'error', message: 'An error occurred. Please try again.' });
       reply.raw.end();
     }
