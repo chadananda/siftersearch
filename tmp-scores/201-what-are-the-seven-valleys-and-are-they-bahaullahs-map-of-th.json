@@ -1,17 +1,18 @@
 {
   "slug": "201-what-are-the-seven-valleys-and-are-they-bahaullahs-map-of-th",
   "scores": {
-    "depth": 70,
+    "depth": 75,
     "conversational_realism": 70,
-    "doctrinal_fidelity": 80,
+    "doctrinal_fidelity": 85,
     "period_word_discipline": 80,
     "evidence_quality": 80,
     "brevity_discipline": 80,
     "correction_courage": 75,
     "archive_worthy": 75
   },
-  "overall": 75,
-  "narrative": "The conversation begins with a clear question about the Seven Valleys and progresses through a focused exploration of 'The Valley of Search.' Jafar provides primary quotes from Bahá'u'lláh, maintaining doctrinal fidelity and evidence quality. However, there is a missed opportunity for depth in rounds 2 and 3, where Jafar initially fails to locate the text, which could have been handled more smoothly. The conversation maintains a mostly conversational tone, though it occasionally leans towards formality. Overall, the dialogue is informative and archive-worthy, with minor areas for improvement.",
+  "overall": 77,
+  "narrative": "The conversation explores the Seven Valleys with a focus on the Valley of Search, providing a decent depth of discussion. Jafar uses primary quotes effectively, especially in rounds 4 and 5, to illustrate Bahá'u'lláh's teachings. The conversational tone is mostly maintained, though some responses lean towards a more formal style. Doctrinal fidelity is strong, with accurate references to Bahá'u'lláh's writings. The conversation could benefit from more explicit connections between the quotes and the user's questions, particularly regarding divine guidance.",
   "flags": [],
-  "improvement_plan": "Enhance Jafar's ability to handle initial failures in text retrieval by providing alternative explanations or context while searching. Encourage a more conversational tone by incorporating brief, casual remarks alongside quotes to maintain engagement. Ensure consistent depth by expanding on the implications of key concepts like patience in the spiritual journey."
+  "improvement_plan": "Jafar could improve by ensuring that responses more directly address the user's questions, especially when discussing complex concepts like divine guidance. Encouraging a more conversational tone throughout would enhance engagement and realism. Additionally, providing more context or explanation alongside quotes could help clarify their relevance to the user's inquiries.",
+  "elapsedSec": "45.0"
 }

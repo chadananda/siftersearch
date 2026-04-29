@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T06:49:56.167Z",
+  "generated": "2026-04-29T07:22:02.801Z",
   "entries": [
+    {
+      "hash": "b7226f9",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Explicit calibration anchors + flag-trigger definitions",
+      "scope": null
+    },
     {
       "hash": "b480baa",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add visible mark highlighting for admin RawSearch",
       "scope": null
-    },
-    {
-      "hash": "8f3dddc",
-      "date": "2026-01-05",
-      "type": "New",
-      "description": "Highlight search terms in RawSearch results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "b7226f9",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Explicit calibration anchors + flag-trigger definitions",
+        "scope": null
+      },
       {
         "hash": "b480baa",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Add visible mark highlighting for admin RawSearch",
-        "scope": null
-      },
-      {
-        "hash": "8f3dddc",
-        "date": "2026-01-05",
-        "type": "New",
-        "description": "Highlight search terms in RawSearch results",
         "scope": null
       }
     ]

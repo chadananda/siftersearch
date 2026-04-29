@@ -1,20 +1,18 @@
 {
   "slug": "213-does-bahaullah-teach-reincarnation-or-successive-lives",
   "scores": {
-    "depth": 60,
+    "depth": 70,
     "conversational_realism": 70,
-    "doctrinal_fidelity": 50,
-    "period_word_discipline": 70,
-    "evidence_quality": 40,
-    "brevity_discipline": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
     "correction_courage": 75,
-    "archive_worthy": 50
+    "archive_worthy": 70
   },
-  "overall": 60,
-  "narrative": "The conversation struggles with depth and evidence quality, as Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá's Some Answered Questions, despite the user's clear request. Instead, Jafar relies on secondary sources and interpretations, which affects doctrinal fidelity and evidence quality. The conversation maintains a mostly conversational tone, though it occasionally veers into more formal responses. Jafar does attempt to correct course when the user points out the reliance on secondary sources, but ultimately fails to deliver the requested primary text.",
-  "flags": [
-    "missing-primary-citation",
-    "secondary-substitution"
-  ],
-  "improvement_plan": "Jafar should prioritize sourcing primary texts when explicitly requested, especially when the user specifies a particular work. Enhancing the ability to locate and quote from primary sources like Some Answered Questions would improve doctrinal fidelity and evidence quality. Additionally, refining the ability to distinguish between primary and secondary sources in real-time would prevent reliance on interpretations when primary texts are available."
+  "overall": 73.125,
+  "narrative": "The conversation provides a decent exploration of the Bahá'í perspective on reincarnation, with some depth achieved through multiple rounds. Jafar's responses are mostly conversational, though there are moments where the tone shifts slightly towards formality. Doctrinal fidelity is maintained with accurate references to primary texts, though the initial use of Getsinger's quote was unnecessary. Evidence quality is solid but could be improved by more direct quotations from Bahá'u'lláh earlier in the conversation. The conversation is brief and to the point, with Jafar correcting the user's misunderstanding about the symbolic nature of 'return.'",
+  "flags": [],
+  "improvement_plan": "Jafar should prioritize primary sources from Bahá'u'lláh when addressing doctrinal questions, especially when the user explicitly requests them. Additionally, maintaining a consistently conversational tone throughout the interaction would enhance realism. Ensuring that all responses are grounded in primary texts will improve evidence quality.",
+  "elapsedSec": "110.2"
 }

@@ -1,10 +1,7 @@
 ---
-title: What Bahá'í Prayers Are Said for Those Who Have Died?
-description: What Bahá'í Prayers Are Said for Those Who Have Died?
-question: >-
-  Are there specific Bahá'í prayers for someone who has just died, for those in
-  mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh
-  provide for a family facing death?
+title: "What Bahá'í Prayers Are Said for Those Who Have Died?"
+description: "What Bahá'í Prayers Are Said for Those Who Have Died?"
+question: "Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?"
 topic: practice
 tags:
   - death
@@ -13,32 +10,26 @@ tags:
   - departed
   - prayers-for-departed
 rounds: 5
-qualityScore: 60
-publishedAt: 2026-04-29T00:00:00.000Z
-excerpt: >-
-  The conversation struggles with evidence quality and doctrinal fidelity,
-  particularly in rounds 2 and 4 where Jafar repeats the same quote and
-  incorrectly cites the Báb instead of Bahá'u'lláh. The fin
+qualityScore: 68
+publishedAt: 2026-04-29
+excerpt: "The conversation starts with a relevant question about Bahá'í prayers for the deceased and mourning, but Jafar struggles to provide specific prayers directly addressing these themes. While the convers"
 featured: false
-heroImage: >-
-  /images/dialog/207-what-bahai-prayers-are-said-for-those-who-have-died-hero.jpg
-published: false
+heroImage: /images/dialog/207-what-bahai-prayers-are-said-for-those-who-have-died-hero.jpg
 assessment:
   scores:
     depth: 60
-    conversational_realism: 60
+    conversational_realism: 70
     doctrinal_fidelity: 70
     period_word_discipline: 80
     evidence_quality: 60
-    brevity_discipline: 70
-    correction_courage: 60
+    brevity_discipline: 80
+    correction_courage: 75
     archive_worthy: 60
-  narrative: "The conversation begins with a relevant quote from Bahá'u'lláh but fails to address the user's specific query about the 'Prayer for the Dead' until later rounds. Jafar repeats the same quote in round 2, which doesn't advance the conversation. The user points out the need for a specific prayer, and Jafar initially provides a quote from the Báb, which is not directly relevant. Eventually, Jafar correctly identifies the 'Prayer for the Dead' in the Kitáb-i-Aqdas, but this comes after some confusion. The conversation lacks depth and evidence quality, as it doesn't consistently provide primary quotes relevant to the user's questions. Conversational realism is affected by repeated quotes and a lack of smooth progression."
+  narrative: "The conversation starts with a relevant question about Bahá'í prayers for the deceased and mourning, but Jafar struggles to provide specific prayers directly addressing these themes. While the conversation maintains a conversational tone, Jafar repeats the same quote without addressing the user's request for specificity. The evidence quality is lacking as Jafar does not provide primary quotes that directly address the user's query. Doctrinal fidelity is somewhat maintained, but the conversation could benefit from more precise references to Bahá'í texts that specifically address mourning and the departed. Overall, the conversation has value but misses opportunities to deepen the discussion with more targeted quotes."
   flags:
     - missing-primary-citation
-  improvement_plan: "Jafar should ensure that each response directly addresses the user's query with relevant primary quotes. Avoid repeating the same quote unless it is directly applicable to the new question. Improve the ability to identify and provide specific prayers or texts when requested, ensuring clarity and relevance in responses."
+  improvement_plan: "Jafar should be programmed to better identify and retrieve specific prayers or texts that directly address user queries, especially when the user requests specificity. Enhancing the ability to distinguish between general and specific prayers in the Bahá'í corpus would improve the depth and evidence quality of the conversation."
 ---
-
 <div class="user-turn">
 
 Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?
@@ -55,7 +46,7 @@ Are there specific Bahá'í prayers for someone who has just died, for those in 
 
 <div class="user-turn">
 
-Wait, are those the only ones? I thought there was a specific prayer called the "Prayer for the Dead" that Bahá'ís use. Can you show me where Bahá'u'lláh talks about that?
+Wait, but are those specific prayers intended for when someone has just died? Or are these more general prayers that can be used in many situations? I'm looking for something that directly addresses death and mourning.
 
 </div>
 
@@ -63,23 +54,13 @@ Wait, are those the only ones? I thought there was a specific prayer called the 
 
 >> "I beseech Thee, O my God, by them and by the sighs which their hearts utter in their separation from Thee, to keep them safe from the mischief of Thine adversaries, and to nourish their souls with what Thou hast ordained for Thy loved ones on whom shall come no fear and who shall not be put to grief." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
 
-</div>
-
-<div class="user-turn">
-
-Wait, that's the same quote again. I'm looking for something specific about the "Prayer for the Dead." Isn't there a distinct prayer that's recited at Bahá'í funerals? Where does Bahá'u'lláh actually mention it?
-
-</div>
-
-<div class="jafar-turn">
-
->> "When you want to pray for a dead person say six *ta'birs*." ([*The Arabic Bayán: From A.L.M. Nicolas' French translation*](https://siftersearch.com/document/16725) — The Báb)
+This prayer directly addresses the feelings of separation and grief. Want to see more prayers that focus on mourning?
 
 </div>
 
 <div class="user-turn">
 
-Hold on, that's quoting the Báb now, not Bahá'u'lláh. Can you show me where Bahá'u'lláh talks specifically about the "Prayer for the Dead"? I'm pretty sure it’s a distinct prayer in Bahá'í practices.
+Sure, I'd love to see more. But make sure they're specifically for mourning or for the spiritual progress of someone who's passed. I want to understand how Bahá'u'lláh specifically guides the grieving process, not just general prayers.
 
 </div>
 
@@ -91,14 +72,30 @@ II couldn't locate text on this in the corpus.
 
 <div class="user-turn">
 
-Wait, really? I'm sure there's a specific "Prayer for the Dead" in Bahá'í rituals. Maybe it's in the Aqdas or another key text. Can you check again?
+No worries. Maybe check the Bahá'í Prayer Book? It usually has a section specifically for the departed and for those who mourn. Could be what you're looking for. Can we try that?
 
 </div>
 
 <div class="jafar-turn">
 
->> "In the Prayer for the Dead six specific passages have been sent down by God, the Revealer of Verses." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
+>> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
 
-Want to see more about how it's performed?
+This one speaks to the feelings of loss and yearning. Want to see more specific prayers for the departed?
+
+</div>
+
+<div class="user-turn">
+
+That sounds like it's addressing longing and separation, but I'm still not sure it's specifically for mourning or the departed. What about the Bahá'í Prayer Book section for the departed? Does it have anything clearer from Bahá'u'lláh or 'Abdu'l-Bahá specifically for those situations?
+
+</div>
+
+<div class="jafar-turn">
+
+>> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
+
+> "So both in separation and reunion the life-lorn, soul-shorn lover burns..." ([*Mathnaviyí-i Mubárak*](https://siftersearch.com/document/16284) — Bahá’u’lláh) 
+
+Want to dive into more specific prayers for the departed?
 
 </div>

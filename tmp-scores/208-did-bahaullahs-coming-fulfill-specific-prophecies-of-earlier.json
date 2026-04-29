@@ -5,13 +5,16 @@
     "conversational_realism": 70,
     "doctrinal_fidelity": 80,
     "period_word_discipline": 80,
-    "evidence_quality": 70,
+    "evidence_quality": 60,
     "brevity_discipline": 80,
     "correction_courage": 75,
     "archive_worthy": 65
   },
   "overall": 71,
-  "narrative": "The conversation begins with a strong focus on the *Kitáb-i-Íqán* and Bahá'u'lláh's interpretation of biblical prophecies, but it lacks depth as it fails to address specific prophecies directly. While Jafar maintains doctrinal fidelity and uses primary quotes, the responses are somewhat repetitive and do not fully satisfy the user's request for specific biblical verses. The conversational tone is mostly maintained, though some responses could be more direct. Overall, the conversation is informative but could benefit from more specific examples and deeper exploration of the user's questions.",
-  "flags": [],
-  "improvement_plan": "Jafar should be prompted to provide more specific examples from primary texts when discussing interpretations of prophecies. Encouraging a deeper exploration of user queries and ensuring that responses directly address the user's requests for specifics would enhance the depth and evidence quality of the conversation."
+  "narrative": "The conversation starts with a clear question about Bahá'u'lláh's interpretation of biblical prophecy, but Jafar's responses remain somewhat surface-level, often repeating the same quotes without directly addressing the user's specific inquiries about the 'Return of Christ' prophecy (rounds 2-4). While the quotes are relevant, they lack the specificity needed to fully engage with the user's questions. The conversation maintains a mostly conversational tone, though it occasionally drifts into a more formal style. Doctrinal fidelity is maintained, but the evidence quality suffers from a lack of direct quotations addressing the user's specific questions. Overall, the conversation is informative but could benefit from more targeted responses.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should be prompted to provide more targeted responses that directly address the user's specific questions, especially when dealing with complex topics like prophecy. Incorporating more direct and relevant quotes from primary texts would enhance evidence quality and depth. Additionally, ensuring that responses build on each other to deepen the conversation would improve the overall engagement.",
+  "elapsedSec": "42.1"
 }

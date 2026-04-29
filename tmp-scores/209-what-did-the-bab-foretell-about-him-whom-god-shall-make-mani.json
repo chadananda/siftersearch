@@ -1,19 +1,20 @@
 {
   "slug": "209-what-did-the-bab-foretell-about-him-whom-god-shall-make-mani",
   "scores": {
-    "depth": 50,
+    "depth": 65,
     "conversational_realism": 70,
-    "doctrinal_fidelity": 60,
+    "doctrinal_fidelity": 70,
     "period_word_discipline": 80,
-    "evidence_quality": 40,
-    "brevity_discipline": 80,
+    "evidence_quality": 60,
+    "brevity_discipline": 70,
     "correction_courage": 75,
-    "archive_worthy": 50
+    "archive_worthy": 65
   },
-  "overall": 63,
-  "narrative": "The conversation struggles with depth and evidence quality, as Jafar fails to provide direct quotes from the Báb's writings, instead relying on secondary sources and thematic analyses. This limits the conversation's depth and doctrinal fidelity, as the user specifically requested primary texts. Conversational realism is decent, with Jafar maintaining a friendly tone, but the lack of primary citations and reliance on secondary commentary significantly detracts from the conversation's value. The user is left unsatisfied, indicating a missed opportunity for a more meaningful exchange.",
+  "overall": 69,
+  "narrative": "The conversation begins with a clear request for the Báb's own words, but Jafar initially provides Bahá'u'lláh's writings instead, which the user corrects in round 2. Jafar then provides some quotes from the Báb, but includes secondary sources, which the user again points out. In round 4, Jafar finally provides a quote from the Persian Bayán, but fails to provide context or further detail when asked. The conversation lacks depth as it doesn't build on specifics or provide comprehensive primary citations. Conversational realism is decent, with a mix of casual and formal tones. Doctrinal fidelity is mostly sound, but there is reliance on secondary sources. Evidence quality is weak due to the lack of primary citations. Brevity is maintained, and Jafar corrects when prompted. Overall, the conversation has value but misses opportunities for depth and primary evidence.",
   "flags": [
     "missing-primary-citation"
   ],
-  "improvement_plan": "Jafar should prioritize sourcing primary texts directly from the Báb when they are explicitly requested. Enhancing the ability to access and quote from primary Bahá'í texts would improve both doctrinal fidelity and evidence quality, providing a more satisfying and informative experience for users seeking specific scriptural references."
+  "improvement_plan": "Jafar should prioritize providing primary text citations directly from the Báb's writings when requested, ensuring the conversation remains focused on the user's query. Additionally, Jafar should aim to provide context and build on specifics to deepen the conversation, rather than relying on secondary sources or summaries.",
+  "elapsedSec": "66.2"
 }

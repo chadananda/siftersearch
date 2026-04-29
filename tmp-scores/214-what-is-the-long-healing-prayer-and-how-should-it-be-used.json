@@ -1,19 +1,18 @@
 {
   "slug": "214-what-is-the-long-healing-prayer-and-how-should-it-be-used",
   "scores": {
-    "depth": 60,
-    "conversational_realism": 70,
-    "doctrinal_fidelity": 80,
+    "depth": 75,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 85,
     "period_word_discipline": 80,
-    "evidence_quality": 60,
+    "evidence_quality": 80,
     "brevity_discipline": 80,
-    "correction_courage": 75,
-    "archive_worthy": 65
+    "correction_courage": 85,
+    "archive_worthy": 80
   },
-  "overall": 70,
-  "narrative": "The conversation begins with a clear question about the Long Healing Prayer, but Jafar struggles to provide depth, particularly in rounds 3 and 4, where the user requests specific passages about the connection between physical and spiritual healing. Jafar's responses are mostly conversational, though there are moments where the replies could be more engaging. Doctrinal fidelity is maintained, but the evidence quality suffers due to a lack of direct quotations from the prayer that address the user's inquiry. Jafar does well in maintaining brevity and offers a gentle correction in round 5 by acknowledging the lack of explicit text. Overall, the conversation is informative but lacks the depth and specificity that would make it truly archive-worthy.",
-  "flags": [
-    "missing-primary-citation"
-  ],
-  "improvement_plan": "Jafar should be equipped with a more comprehensive database of primary texts to ensure specific passages can be cited when requested. Additionally, enhancing the ability to provide context and explanation around quoted texts would improve depth and evidence quality."
+  "overall": 80,
+  "narrative": "The conversation effectively explores the Long Healing Prayer, with Jafar providing relevant quotes and maintaining a conversational tone. Depth is achieved through specific inquiries into the prayer's content and its implications for healing. Jafar corrects the user when necessary, ensuring doctrinal fidelity. The use of primary sources is consistent, though there could be more direct engagement with the prayer's specific verses. Overall, the dialogue is informative and archive-worthy.",
+  "flags": [],
+  "improvement_plan": "Jafar could enhance depth by more directly engaging with specific verses of the Long Healing Prayer when the user asks about them. Additionally, ensuring that each response directly addresses the user's query with precise quotes from the prayer would improve evidence quality and depth.",
+  "elapsedSec": "40.1"
 }

@@ -4,17 +4,18 @@
     "depth": 65,
     "conversational_realism": 70,
     "doctrinal_fidelity": 60,
-    "period_word_discipline": 70,
+    "period_word_discipline": 80,
     "evidence_quality": 50,
-    "brevity_discipline": 80,
+    "brevity_discipline": 70,
     "correction_courage": 75,
     "archive_worthy": 60
   },
   "overall": 66,
-  "narrative": "The conversation begins with a relevant quote from Bahá'u'lláh, but subsequent rounds rely on secondary sources, leading to doctrinal drift. Jafar's responses are mostly brief and conversational, though there is a notable misattribution of a quote to Bahá'u'lláh instead of 'Abdu'l-Bahá, which the user correctly identifies. The conversation lacks depth as it doesn't fully explore the nuances of Bahá'í teachings on communication with the departed. The absence of primary citations in later rounds weakens the evidence quality.",
+  "narrative": "The conversation begins with a relevant primary quote, but quickly shifts to secondary sources, which weakens the evidence quality. Jafar's responses are mostly conversational, though there are moments where the tone becomes slightly formal. The doctrinal fidelity is compromised by reliance on secondary sources like the Dwight Barstow Collection, which are not canonical. Jafar does attempt to correct when the user points out the reliance on non-primary sources, but fails to provide a satisfactory primary source. The conversation lacks depth, as it doesn't fully explore the nuances of Bahá'í teachings on communication with the departed.",
   "flags": [
     "missing-primary-citation",
     "secondary-substitution"
   ],
-  "improvement_plan": "Jafar should prioritize primary sources when discussing doctrinal topics, ensuring accurate attribution and avoiding reliance on secondary commentary. Enhancing the ability to locate relevant primary texts on specific topics would improve doctrinal fidelity and evidence quality."
+  "improvement_plan": "Jafar should prioritize primary sources from Bahá'í scripture when addressing doctrinal questions. The prompt could be adjusted to ensure Jafar seeks out canonical texts first before considering secondary sources. Additionally, Jafar should be equipped to handle user corrections more effectively by providing alternative primary sources or acknowledging the absence of direct scriptural references.",
+  "elapsedSec": "60.2"
 }

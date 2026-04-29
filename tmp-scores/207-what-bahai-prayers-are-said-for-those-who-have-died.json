@@ -2,18 +2,19 @@
   "slug": "207-what-bahai-prayers-are-said-for-those-who-have-died",
   "scores": {
     "depth": 60,
-    "conversational_realism": 60,
+    "conversational_realism": 70,
     "doctrinal_fidelity": 70,
     "period_word_discipline": 80,
     "evidence_quality": 60,
-    "brevity_discipline": 70,
-    "correction_courage": 60,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
     "archive_worthy": 60
   },
-  "overall": 60,
-  "narrative": "The conversation begins with a relevant quote from Bahá'u'lláh but fails to address the user's specific query about the 'Prayer for the Dead' until later rounds. Jafar repeats the same quote in round 2, which doesn't advance the conversation. The user points out the need for a specific prayer, and Jafar initially provides a quote from the Báb, which is not directly relevant. Eventually, Jafar correctly identifies the 'Prayer for the Dead' in the Kitáb-i-Aqdas, but this comes after some confusion. The conversation lacks depth and evidence quality, as it doesn't consistently provide primary quotes relevant to the user's questions. Conversational realism is affected by repeated quotes and a lack of smooth progression.",
+  "overall": 68,
+  "narrative": "The conversation starts with a relevant question about Bahá'í prayers for the deceased and mourning, but Jafar struggles to provide specific prayers directly addressing these themes. While the conversation maintains a conversational tone, Jafar repeats the same quote without addressing the user's request for specificity. The evidence quality is lacking as Jafar does not provide primary quotes that directly address the user's query. Doctrinal fidelity is somewhat maintained, but the conversation could benefit from more precise references to Bahá'í texts that specifically address mourning and the departed. Overall, the conversation has value but misses opportunities to deepen the discussion with more targeted quotes.",
   "flags": [
     "missing-primary-citation"
   ],
-  "improvement_plan": "Jafar should ensure that each response directly addresses the user's query with relevant primary quotes. Avoid repeating the same quote unless it is directly applicable to the new question. Improve the ability to identify and provide specific prayers or texts when requested, ensuring clarity and relevance in responses."
+  "improvement_plan": "Jafar should be programmed to better identify and retrieve specific prayers or texts that directly address user queries, especially when the user requests specificity. Enhancing the ability to distinguish between general and specific prayers in the Bahá'í corpus would improve the depth and evidence quality of the conversation.",
+  "elapsedSec": "84.3"
 }
