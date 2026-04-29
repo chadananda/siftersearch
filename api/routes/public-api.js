@@ -139,6 +139,96 @@ export default async function publicApiRoutes(fastify) {
     timestamp: new Date().toISOString()
   }));
 
+  /**
+   * GET /api/v1/conversations/:slug — PUBLIC-READ (no auth)
+   *
+   * Saved share URLs need to work for anonymous visitors. Registered before
+   * the auth hook so it bypasses API key validation. Tenant is read from
+   * the query string instead of the API key.
+   *
+   * Content-negotiated: JSON by default, markdown via ?format=md or
+   * Accept: text/markdown.
+   */
+  fastify.get('/conversations/:slug', {
+    schema: {
+      description: 'Fetch a published conversation by slug. PUBLIC-READ (no API key required) so saved share URLs work for anonymous visitors. Content-negotiated: JSON by default, markdown via ?format=md or Accept: text/markdown.',
+      tags: ['Conversations'],
+      params: {
+        type: 'object',
+        properties: { slug: { type: 'string' } },
+        required: ['slug']
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          tenant: { type: 'string', description: 'Tenant identifier — same slug can exist under multiple tenants.' },
+          format: { type: 'string', enum: ['json', 'md'], default: 'json' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { slug } = request.params;
+    const tenant = request.query.tenant || 'siftersearch';
+    const format = request.query.format ||
+      (request.headers.accept?.includes('text/markdown') ? 'md' : 'json');
+
+    const row = await queryOne(
+      `SELECT * FROM published_conversations WHERE tenant_id = ? AND slug = ?`,
+      [tenant, slug]
+    );
+    if (!row) return reply.code(404).send({ error: 'Not found', tenant, slug });
+
+    const etag = `W/"${Buffer.from(String(row.updated_at || row.published_at)).toString('base64')}"`;
+    if (request.headers['if-none-match'] === etag) {
+      reply.code(304);
+      return reply.send();
+    }
+    reply.header('ETag', etag);
+    reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+
+    const tags = row.tags_json ? JSON.parse(row.tags_json) : [];
+    const keywords = row.keywords_json ? JSON.parse(row.keywords_json) : [];
+    const rounds = row.rounds_json ? JSON.parse(row.rounds_json) : [];
+
+    if (format === 'md') {
+      reply.header('Content-Type', 'text/markdown; charset=utf-8');
+      const fm = ['---'];
+      const j = (k, v) => fm.push(`${k}: ${JSON.stringify(v)}`);
+      j('title', row.title);
+      j('description', row.description);
+      j('question', row.question);
+      fm.push(`topic: ${row.topic || 'theology'}`);
+      fm.push('tags:');
+      tags.forEach(t => fm.push(`  - ${t}`));
+      fm.push(`rounds: ${rounds.length}`);
+      fm.push(`publishedAt: ${row.published_at}`);
+      if (row.hero_image) fm.push(`heroImage: ${row.hero_image}`);
+      fm.push('keywords:');
+      keywords.forEach(k => fm.push(`  - ${JSON.stringify(k)}`));
+      if (row.excerpt) j('excerpt', row.excerpt);
+      fm.push('---', '');
+      const body = [];
+      for (const r of rounds) {
+        if (r.round_summary?.question) body.push(`### ${r.round_summary.question}`, '');
+        body.push(`<div class="user-turn" id="round-${r.n}">`, '', r.user || '', '', '</div>', '');
+        if (r.round_summary?.answer) body.push(`#### ${r.round_summary.answer}`, '');
+        body.push(`<div class="jafar-turn">`, '', r.jafar || '', '', '</div>', '');
+      }
+      return reply.send(fm.join('\n') + body.join('\n'));
+    }
+
+    return {
+      slug: row.slug, tenant: row.tenant_id,
+      title: row.title, description: row.description, question: row.question,
+      topic: row.topic, tags, keywords, excerpt: row.excerpt,
+      hero_image: row.hero_image,
+      published_at: row.published_at, updated_at: row.updated_at,
+      share_url: row.share_url,
+      conversation_id: row.conversation_id,
+      rounds
+    };
+  });
+
   // Apply API key auth to all remaining routes
   fastify.addHook('preHandler', apiKeyAuth);
 
@@ -1103,95 +1193,10 @@ export default async function publicApiRoutes(fastify) {
     }
   });
 
-  /**
-   * GET /api/v1/conversations/:slug
-   *
-   * Public-read fetch endpoint for saved conversations. Used by remote sites
-   * (and SifterSearch's own /dialogue/ template) to render published
-   * conversations on each request. Content-negotiated:
-   *   default + Accept: application/json → structured JSON
-   *   ?format=md or Accept: text/markdown → raw markdown frontmatter+body
-   */
-  fastify.get('/conversations/:slug', {
-    schema: {
-      description: 'Fetch a published conversation by slug. Public read (no API key required) so saved share URLs work for anonymous visitors. Content-negotiated: returns JSON by default, markdown via ?format=md or Accept: text/markdown.',
-      tags: ['Conversations'],
-      params: {
-        type: 'object',
-        properties: { slug: { type: 'string' } },
-        required: ['slug']
-      },
-      querystring: {
-        type: 'object',
-        properties: {
-          tenant: { type: 'string', description: 'Tenant identifier — same slug can exist under multiple tenants.' },
-          format: { type: 'string', enum: ['json', 'md'], default: 'json' }
-        }
-      }
-    }
-  }, async (request, reply) => {
-    const { slug } = request.params;
-    const tenant = request.query.tenant || 'siftersearch';
-    const format = request.query.format ||
-      (request.headers.accept?.includes('text/markdown') ? 'md' : 'json');
-
-    const row = await queryOne(
-      `SELECT * FROM published_conversations WHERE tenant_id = ? AND slug = ?`,
-      [tenant, slug]
-    );
-    if (!row) return reply.code(404).send({ error: 'Not found', tenant, slug });
-
-    // ETag from updated_at for cheap revalidation
-    const etag = `W/"${Buffer.from(String(row.updated_at || row.published_at)).toString('base64')}"`;
-    if (request.headers['if-none-match'] === etag) {
-      reply.code(304);
-      return reply.send();
-    }
-    reply.header('ETag', etag);
-    reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
-
-    const tags = row.tags_json ? JSON.parse(row.tags_json) : [];
-    const keywords = row.keywords_json ? JSON.parse(row.keywords_json) : [];
-    const rounds = row.rounds_json ? JSON.parse(row.rounds_json) : [];
-
-    if (format === 'md') {
-      reply.header('Content-Type', 'text/markdown; charset=utf-8');
-      const fm = ['---'];
-      const j = (k, v) => fm.push(`${k}: ${JSON.stringify(v)}`);
-      j('title', row.title);
-      j('description', row.description);
-      j('question', row.question);
-      fm.push(`topic: ${row.topic || 'theology'}`);
-      fm.push('tags:');
-      tags.forEach(t => fm.push(`  - ${t}`));
-      fm.push(`rounds: ${rounds.length}`);
-      fm.push(`publishedAt: ${row.published_at}`);
-      if (row.hero_image) fm.push(`heroImage: ${row.hero_image}`);
-      fm.push('keywords:');
-      keywords.forEach(k => fm.push(`  - ${JSON.stringify(k)}`));
-      if (row.excerpt) j('excerpt', row.excerpt);
-      fm.push('---', '');
-      const body = [];
-      for (const r of rounds) {
-        if (r.round_summary?.question) body.push(`### ${r.round_summary.question}`, '');
-        body.push(`<div class="user-turn" id="round-${r.n}">`, '', r.user || '', '', '</div>', '');
-        if (r.round_summary?.answer) body.push(`#### ${r.round_summary.answer}`, '');
-        body.push(`<div class="jafar-turn">`, '', r.jafar || '', '', '</div>', '');
-      }
-      return reply.send(fm.join('\n') + body.join('\n'));
-    }
-
-    return {
-      slug: row.slug, tenant: row.tenant_id,
-      title: row.title, description: row.description, question: row.question,
-      topic: row.topic, tags, keywords, excerpt: row.excerpt,
-      hero_image: row.hero_image,
-      published_at: row.published_at, updated_at: row.updated_at,
-      share_url: row.share_url,
-      conversation_id: row.conversation_id,
-      rounds
-    };
-  });
+  // GET /api/v1/conversations/:slug is registered ABOVE the auth hook —
+  // see the public-read block near /health. Defining it here would shadow
+  // that public route and force API-key auth, breaking saved share URLs
+  // for anonymous visitors.
 
   // Health endpoint registered above (before auth hook) so it's public
 }
