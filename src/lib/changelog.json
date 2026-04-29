@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T06:40:04.106Z",
+  "generated": "2026-04-29T06:41:54.336Z",
   "entries": [
+    {
+      "hash": "b480baa",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
+      "scope": null
+    },
     {
       "hash": "ae6beaf",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Highlight search terms in RawSearch results",
       "scope": null
-    },
-    {
-      "hash": "d1e341b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "b480baa",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "20 common-question dialogs (200-219) — all draft, avg 54%",
+        "scope": null
+      },
       {
         "hash": "ae6beaf",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Highlight search terms in RawSearch results",
-        "scope": null
-      },
-      {
-        "hash": "d1e341b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "RawSearch opens in new tab, fix race condition, improve translation indicator",
         "scope": null
       }
     ]
