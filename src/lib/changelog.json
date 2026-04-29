@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T03:35:52.998Z",
+  "generated": "2026-04-29T03:55:43.560Z",
   "entries": [
+    {
+      "hash": "efa9515",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Cap crafter excerpts at 12 with topic-keyword preference",
+      "scope": null
+    },
     {
       "hash": "e168369",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Highlight active nav item in admin sidebar",
       "scope": null
-    },
-    {
-      "hash": "55a3bf0",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Auth timing and missing ingestion_queue table",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "efa9515",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Cap crafter excerpts at 12 with topic-keyword preference",
+        "scope": null
+      },
       {
         "hash": "e168369",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Highlight active nav item in admin sidebar",
-        "scope": null
-      },
-      {
-        "hash": "55a3bf0",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Auth timing and missing ingestion_queue table",
         "scope": null
       }
     ]
