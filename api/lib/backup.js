@@ -101,10 +101,21 @@ async function runMeiliBackup() {
     mkdirSync(dest, { recursive: true });
     logger.info({ src: MEILI_SRC, dest }, 'Starting Meilisearch rsync backup');
     const t0 = Date.now();
-    // -aH preserves perms/links/hardlinks; --delete keeps backup in sync
-    // (drops files removed from source). Quiet stderr, capture stdout for diag.
-    execSync(`rsync -aH --delete "${MEILI_SRC}/" "${dest}/"`,
-      { stdio: ['ignore', 'pipe', 'pipe'] });
+    // -aH preserves perms/hardlinks; --delete keeps backup in sync.
+    // Meili's update_files/ contains transient task spool entries that are
+    // processed-and-deleted concurrently with rsync; expect rsync to report
+    // exit 24 ("some files vanished") on most runs. That's fine — the LMDB
+    // pages we actually care about (indexes/) are stable and copied.
+    try {
+      execSync(`rsync -aH --delete "${MEILI_SRC}/" "${dest}/"`,
+        { stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (rsyncErr) {
+      // rsync exits 24 when files vanish during transfer — non-fatal.
+      // Anything else is a real error.
+      const code = rsyncErr.status;
+      if (code !== 24) throw rsyncErr;
+      logger.info({ code }, 'rsync exited 24 (transient files vanished — normal for Meili)');
+    }
     const elapsedMs = Date.now() - t0;
     let sizeBytes = 0;
     try {
