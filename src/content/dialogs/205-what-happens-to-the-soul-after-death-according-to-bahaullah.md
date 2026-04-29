@@ -21,8 +21,6 @@ excerpt: >-
   shifts to quoting the Báb in round 2, which is not directly relevant to the
   user's request for Bahá'u'lláh's writings. Jafar d
 featured: false
-heroImage: >-
-  /images/dialog/205-what-happens-to-the-soul-after-death-according-to-bahaullah-hero.jpg
 published: false
 assessment:
   scores:
@@ -38,72 +36,91 @@ assessment:
   flags: []
   improvement_plan: "To enhance depth, Jafar could provide more detailed explanations or additional quotes that specifically describe the stages of the soul's journey. Improving period word discipline by explicitly marking the historical context of terms like 'stations' or 'nearness' could prevent modern misinterpretations. Encouraging Jafar to explore more specific aspects of the user's questions could also enrich the conversation."
 ---
+### What does Bahá'u'lláh teach about the soul?
 
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 What does Bahá'u'lláh actually teach about what happens to the soul after physical death? Is there a journey, judgment, levels of existence? I want to understand the Bahá'í view of the afterlife from the actual writings, not just summaries.
 
 </div>
 
+#### Bahá'u'lláh emphasizes soul's deeds matter.
+
 <div class="jafar-turn">
 
->> "Each soul for what it has done." ([*Tablet on the Right of the People (Lawḥ-i ḥaqq al-nās)*](https://siftersearch.com/document/16677) — Bahá'u'lláh) 
+> "Each soul for what it has done." ([*Tablet on the Right of the People (Lawḥ-i ḥaqq al-nās)*](https://siftersearch.com/document/16677) — Bahá'u'lláh) 
 
 Want to dive deeper into the journey of the soul?
 
 </div>
 
-<div class="user-turn">
+### Is there judgment after death in Bahá'í faith?
+
+<div class="user-turn" id="round-2">
 
 Yeah, let's dive deeper. So when Bahá'u'lláh says "Each soul for what it has done," is that pointing to some sort of judgment after death? Like, are there specific writings that describe different levels or stages the soul goes through?
 
 </div>
 
+#### Judgment and soul's journey are taught.
+
 <div class="jafar-turn">
 
->> "Or the day of judgment, confirming to the verses of God..." ([*The Arabic Bayán: From A.L.M. Nicolas' French translation*](https://siftersearch.com/document/16725) — The Báb) 
+> "Or the day of judgment, confirming to the verses of God..." ([*The Arabic Bayán: From A.L.M. Nicolas' French translation*](https://siftersearch.com/document/16725) — The Báb) 
 
 There are definitely teachings about judgment and the soul's journey. Want to explore more about the stages or levels?
 
 </div>
 
-<div class="user-turn">
+### What does Bahá'u'lláh say about soul's stages?
+
+<div class="user-turn" id="round-3">
 
 Wait, quoting the Báb is interesting, but can we stick to Bahá'u'lláh's writings for this? What does Bahá'u'lláh himself say about stages or levels the soul goes through?
 
 </div>
 
+#### Bahá'u'lláh mentions ascending spiritual stations.
+
 <div class="jafar-turn">
 
->> "Whatever duty Thou hast prescribed unto Thy servants of extolling to the utmost Thy majesty and glory is but a token of Thy grace unto them, that they may be enabled to ascend unto the station conferred upon their own inmost being." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh) 
+> "Whatever duty Thou hast prescribed unto Thy servants of extolling to the utmost Thy majesty and glory is but a token of Thy grace unto them, that they may be enabled to ascend unto the station conferred upon their own inmost being." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh) 
 
 This touches on the idea of ascending to different spiritual stations. Want to explore more about those stages?
 
 </div>
 
-<div class="user-turn">
+### Do stages of nearness start in this life?
+
+<div class="user-turn" id="round-4">
 
 Okay, so that talks about ascending to spiritual stations. But are these stages something the soul goes through after death, or does it start in this life? And do Bahá'u'lláh's writings describe what those stations look like or how we progress through them?
 
 </div>
 
+#### Stages of nearness start in this life.
+
 <div class="jafar-turn">
 
->> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
+> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
 
 So, Bahá'u'lláh talks about stages of nearness to God, which suggests a process that starts in this life and continues after death. Want to explore more about what those stages look like?
 
 </div>
 
-<div class="user-turn">
+### Does Bahá'u'lláh describe stages of nearness?
+
+<div class="user-turn" id="round-5">
 
 Okay, so Bahá'u'lláh talks about stages of nearness to God. But does he describe what these stages actually look like, either in this life or after? Are there any specific writings that detail this journey or give us a glimpse of what the soul's experience is like?
 
 </div>
 
+#### Stages are a journey beginning in life.
+
 <div class="jafar-turn">
 
->> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
+> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
 
 > "Whatever duty Thou hast prescribed unto Thy servants of extolling to the utmost Thy majesty and glory is but a token of Thy grace unto them, that they may be enabled to ascend unto the station con." ([*Mathnaviyí-i Mubárak*](https://siftersearch.com/document/16284) — Bahá’u’lláh) 
 

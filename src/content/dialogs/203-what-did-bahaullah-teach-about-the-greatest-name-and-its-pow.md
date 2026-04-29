@@ -20,8 +20,6 @@ excerpt: >-
   5 without providing further explanation. Conversational realism is moderate,
   but the responses feel somewhat mechanical. D
 featured: false
-heroImage: >-
-  /images/dialog/203-what-did-bahaullah-teach-about-the-greatest-name-and-its-pow-hero.jpg
 published: false
 assessment:
   scores:
@@ -37,72 +35,91 @@ assessment:
   flags: []
   improvement_plan: "Jafar could improve by providing more varied and detailed explanations when the user asks for deeper insights, rather than repeating the same quotes. This would enhance the depth and provide a richer understanding of the topic. Additionally, ensuring that each response builds on the previous one would create a more cohesive exploration of the subject."
 ---
+### What is the power of the Greatest Name?
 
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'ís repeat 'Alláh-u-Abhá' ninety-five times daily and refer to 'the Greatest Name.' What does Bahá'u'lláh actually teach about the power of the Greatest Name? Is this just devotional, or is there something operative happening?
 
 </div>
 
+#### The Greatest Name holds spiritual power.
+
 <div class="jafar-turn">
 
->> "The most great name in the kingdom of creation." ([*Súrah of Visitation for Mullá Husayn*](https://siftersearch.com/document/16619) — Bahá’u’lláh) 
+> "The most great name in the kingdom of creation." ([*Súrah of Visitation for Mullá Husayn*](https://siftersearch.com/document/16619) — Bahá’u’lláh) 
 
 Yeah, it's definitely more than just devotional. The Greatest Name carries a significant spiritual power in the Faith. Want to dive deeper into how it's used in prayers?
 
 </div>
 
-<div class="user-turn">
+### Where does Bahá'u'lláh describe its effects?
+
+<div class="user-turn" id="round-2">
 
 Wait, before we jump into prayers, let's go back to what Bahá'u'lláh says about its spiritual power. Where does he actually explain what happens when someone repeats or invokes the Greatest Name? Is there something specific in the writings that describes the effect it has?
 
 </div>
 
+#### Invocation offers protection and empowerment.
+
 <div class="jafar-turn">
 
->> "This invocation, like unto a mighty fortress and a powerful host, shall protect and deliver thee." ([*Tablet of Seven Questions*](https://siftersearch.com/document/16638) — Bahá’u’lláh) 
+> "This invocation, like unto a mighty fortress and a powerful host, shall protect and deliver thee." ([*Tablet of Seven Questions*](https://siftersearch.com/document/16638) — Bahá’u’lláh) 
 
 It's pretty clear that invoking the Greatest Name has a protective and empowering effect. Want to dive deeper into this?
 
 </div>
 
-<div class="user-turn">
+### Why does the Greatest Name have power?
+
+<div class="user-turn" id="round-3">
 
 Okay, cool. So Bahá'u'lláh calls it a "mighty fortress" and a "powerful host." But I'm curious, is there anything about why it has this power? Is it just because He said so, or is there a deeper reason given in the writings?
 
 </div>
 
+#### Divine power is behind the Name.
+
 <div class="jafar-turn">
 
->> "This invocation, like unto a mighty fortress and a powerful host, shall protect and deliver thee." ([*Tablet of Seven Questions*](https://siftersearch.com/document/16638) — Bahá’u’lláh) 
+> "This invocation, like unto a mighty fortress and a powerful host, shall protect and deliver thee." ([*Tablet of Seven Questions*](https://siftersearch.com/document/16638) — Bahá’u’lláh) 
 
 It's about the divine power behind the Name, not just the act of saying it. Want to dive deeper into how that works?
 
 </div>
 
-<div class="user-turn">
+### How does divine power operate through the Name?
+
+<div class="user-turn" id="round-4">
 
 Hold on, that's kind of vague. Bahá'u'lláh often ties power to purity of heart and divine will, right? Is there a more detailed explanation of how divine power operates through something like the Greatest Name? How does he connect the dots?
 
 </div>
 
+#### Invocation speaks to inherent divine power.
+
 <div class="jafar-turn">
 
->> "In the Name of the Lord of Utterance, the Mighty." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh) 
+> "In the Name of the Lord of Utterance, the Mighty." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh) 
 
 This speaks to the divine power inherent in invoking His name. Want to explore more about how this connects to purity of heart?
 
 </div>
 
-<div class="user-turn">
+### How is purity of heart connected to power?
+
+<div class="user-turn" id="round-5">
 
 Wait, so is there something specific in the writings that ties the power of the Greatest Name to purity of heart and divine will? How does Bahá'u'lláh explain the connection between invoking the Name and our spiritual state?
 
 </div>
 
+#### Purity is key for connecting with divine power.
+
 <div class="jafar-turn">
 
->> "Strive that your deeds may be cleansed from the dust of self and hypocrisy and find favor at the court of glory." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh) 
+> "Strive that your deeds may be cleansed from the dust of self and hypocrisy and find favor at the court of glory." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh) 
 
 Purity of heart is key for our deeds to ascend and connect with divine power. Want to dive deeper into how this works?
 

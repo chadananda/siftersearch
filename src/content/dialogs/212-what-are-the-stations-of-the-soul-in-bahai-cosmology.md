@@ -20,8 +20,6 @@ excerpt: >-
   quotes without directly addressing the user's questions about specific
   stations (rounds 2, 4, 6). Conversational realism 
 featured: false
-heroImage: >-
-  /images/dialog/212-what-are-the-stations-of-the-soul-in-bahai-cosmology-hero.jpg
 published: false
 assessment:
   scores:
@@ -37,71 +35,90 @@ assessment:
   flags: []
   improvement_plan: "Jafar should focus on providing more contextually relevant quotes and explanations that directly address the user's questions. Enhancing the ability to connect specific teachings to the user's queries about spiritual stations and tests would improve depth. Additionally, ensuring that period words are used with clear historical context would enhance understanding."
 ---
+### What are the soul's stations in Bahá'í faith?
 
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 The Bahá'í writings describe the soul as eternal and progressing through stations. What are these stations — both in this life and the next world? What do Bahá'u'lláh and 'Abdu'l-Bahá actually say about the soul's journey?
 
 </div>
 
+#### Stations involve nearness to God eternally.
+
 <div class="jafar-turn">
 
->> "the stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
+> "the stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
 
 Want to dive deeper into what those stations look like in this life?
 
 </div>
 
-<div class="user-turn">
+### How do stations relate to spiritual growth?
+
+<div class="user-turn" id="round-2">
 
 Sure, let's dive into that. What does Bahá'u'lláh say about the soul's journey through stations in this life specifically? How do these stations relate to spiritual growth or tests we experience?
 
 </div>
 
+#### Stations reflect growth through spiritual tests.
+
 <div class="jafar-turn">
 
->> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
+> "The stations (maqāmāt) of nearness [to God] in the Retreats of Eternity (makman-i baqā')." ([*Lawh-i-Kimiya to ‘Abbás*](https://siftersearch.com/document/16290) — Bahá’u’lláh) 
 
 Quick context — these stations reflect the soul's journey and growth through spiritual tests in this life. Want to explore more about specific stations?
 
 </div>
 
-<div class="user-turn">
+### What examples of stations or tests exist?
+
+<div class="user-turn" id="round-3">
 
 Wait, I'm curious — what specific examples does Bahá'u'lláh give about these stations or spiritual tests in this life? Can you point me to a passage where he talks about these in detail?
 
 </div>
 
+#### Worldly and Kingdom qualities indicate tests.
+
 <div class="jafar-turn">
 
->> "The spirit of the world is that of avarice, selfishness and envy, while that of the Kingdom is mercy, unselfishness and love." ([*Dwight Barstow Collection*](https://siftersearch.com/document/11408) — Various) 
+> "The spirit of the world is that of avarice, selfishness and envy, while that of the Kingdom is mercy, unselfishness and love." ([*Dwight Barstow Collection*](https://siftersearch.com/document/11408) — Various) 
 
 Want to explore more about how these qualities relate to spiritual tests?
 
 </div>
 
-<div class="user-turn">
+### Does Iqán or Hidden Words detail trials?
+
+<div class="user-turn" id="round-4">
 
 Hold on — that quote doesn't directly address the stations or tests Bahá'u'lláh describes. Do you have something from the Iqán or the Hidden Words where he speaks specifically about the soul's journey or the trials we face?
 
 </div>
 
+#### Detachment is key to understanding trials.
+
 <div class="jafar-turn">
 
->> "No man shall attain the shores of the ocean of true understanding except he be detached from all that is in heaven and on earth." ([*The Kitáb-i-Íqán*](https://siftersearch.com/document/8300) — Bahá’u’lláh) 
+> "No man shall attain the shores of the ocean of true understanding except he be detached from all that is in heaven and on earth." ([*The Kitáb-i-Íqán*](https://siftersearch.com/document/8300) — Bahá’u’lláh) 
 
 Quick context — this speaks to the trials we face in our journey toward understanding and spiritual growth. Want to explore more about these concepts?
 
 </div>
 
-<div class="user-turn">
+### How do we recognize stations in daily life?
+
+<div class="user-turn" id="round-5">
 
 I see, but that still feels a bit broad. Can we dig into something more specific? In the Hidden Words, are there any passages where Bahá'u'lláh talks about how we recognize these stations or spiritual milestones in our everyday lives?
 
 </div>
 
+#### Renouncing self leads to spiritual milestones.
+
 <div class="jafar-turn">
 
->> "O Son of Spirit! There is no peace for thee save by renouncing thyself and turning unto Me." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
+> "O Son of Spirit! There is no peace for thee save by renouncing thyself and turning unto Me." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
 
 </div>

@@ -14,7 +14,6 @@ qualityScore: 72
 publishedAt: 2026-04-29
 excerpt: "The conversation maintains a decent depth, with Jafar providing primary quotes from Bahá'u'lláh and Shoghi Effendi, though it occasionally misses opportunities to delve deeper into the user's question"
 featured: false
-heroImage: /images/dialog/218-what-did-bahaullah-promise-to-those-who-recite-the-obligator-hero.jpg
 assessment:
   scores:
     depth: 65
@@ -29,15 +28,19 @@ assessment:
   flags: []
   improvement_plan: "Jafar could improve by providing more explicit connections between concepts when the user asks for them, ensuring that the links between prayer, unity, and victory are clearly supported by primary texts. Additionally, maintaining a more consistently conversational tone while addressing complex theological points would enhance the realism of the dialogue."
 ---
-<div class="user-turn">
+### What is promised by reciting obligatory prayers?
+
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh ordained three obligatory prayers in the Aqdas. What does he specifically promise about the spiritual effect of reciting them — both for the worshipper's own soul and in the wider spiritual order?
 
 </div>
 
+#### Prayers elevate spirit and spiritual order.
+
 <div class="jafar-turn">
 
->> "We have enjoined obligatory prayer upon you... by them the standards of victory will be hoisted on the tops of mountains and hills." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
+> "We have enjoined obligatory prayer upon you... by them the standards of victory will be hoisted on the tops of mountains and hills." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
 > "Blessed is he who observeth that whereunto he hath been bidden by Him Who ruleth over all mankind." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
@@ -45,15 +48,19 @@ The prayers are said to elevate the worshipper's spirit and contribute to a grea
 
 </div>
 
-<div class="user-turn">
+### Where does Bahá'u'lláh discuss prayer effects?
+
+<div class="user-turn" id="round-2">
 
 Yeah, let's dive deeper. Where does Bahá'u'lláh talk about the effect on the worshipper's own soul? And how does he describe the bigger impact on the world or community?
 
 </div>
 
+#### Prayers uplift soul and impact community.
+
 <div class="jafar-turn">
 
->> "Verily, by His remembrance the eye is cheered and the heart is filled with light." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
+> "Verily, by His remembrance the eye is cheered and the heart is filled with light." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
 > "By them the standards of victory will be hoisted on the tops of mountains and hills." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
@@ -61,15 +68,19 @@ It's pretty profound how personal worship can uplift the soul and also have a wi
 
 </div>
 
-<div class="user-turn">
+### How do prayers relate to victory and unity?
+
+<div class="user-turn" id="round-3">
 
 Hold on, Jafar. Let's not just gloss over the "standards of victory" bit. How does reciting these prayers actually relate to victory? Is it metaphorical or literal? And is there a specific link in the writings between prayer and unity, or are you connecting dots?
 
 </div>
 
+#### Prayers link to upliftment and community strength.
+
 <div class="jafar-turn">
 
->> "Verily, by His remembrance the eye is cheered and the heart is filled with light." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
+> "Verily, by His remembrance the eye is cheered and the heart is filled with light." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
 > "Whenever ye enter the council-chamber, recite this prayer... that the All-powerful may graciously aid you to achieve supreme victory." ([*Bahá’í Administration*](https://siftersearch.com/document/16278) — Shoghi Effendi) 
 
@@ -77,15 +88,19 @@ The writings link prayer to personal upliftment and community strength. Want to 
 
 </div>
 
-<div class="user-turn">
+### Is victory aspect from Bahá'u'lláh or Shoghi?
+
+<div class="user-turn" id="round-4">
 
 Wait, I'm still curious about this "supreme victory" idea. Is that from Shoghi Effendi or somewhere in Bahá'u'lláh's writings? If it's Shoghi, let's focus on what Bahá'u'lláh himself says about the victory aspect of prayer. Can we get more into the specifics of how prayer contributes to unity as described by Bahá'u'lláh directly?
 
 </div>
 
+#### Unity and victory linked in Bahá'u'lláh's writings.
+
 <div class="jafar-turn">
 
->> "The first kind of unity is unity in religion. This unity has always been the cause of the victory of the Faith of God in every age and century." ([*Tablet of Unity*](https://siftersearch.com/document/16286) — Bahá’u’lláh)
+> "The first kind of unity is unity in religion. This unity has always been the cause of the victory of the Faith of God in every age and century." ([*Tablet of Unity*](https://siftersearch.com/document/16286) — Bahá’u’lláh)
 
 > "By them the standards of Victory will be hoisted on the highest peaks." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh)
 
@@ -93,15 +108,19 @@ Want to explore more about how this unity plays out in community life?
 
 </div>
 
-<div class="user-turn">
+### How do prayers contribute to unity in religion?
+
+<div class="user-turn" id="round-5">
 
 Okay, but let's slow down a bit. How exactly do the prayers contribute to "unity in religion," according to Bahá'u'lláh? Are there specific writings where he ties the act of praying to unity directly? I'm curious about the mechanisms he's outlining, not just the outcomes. Can you show me where he explicitly connects these dots?
 
 </div>
 
+#### Prayers tied to unity and victory directly.
+
 <div class="jafar-turn">
 
->> "The first kind of unity is unity in religion. This unity has always been the cause of the victory of the Faith of God in every age and century." ([*Tablet of Unity*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
+> "The first kind of unity is unity in religion. This unity has always been the cause of the victory of the Faith of God in every age and century." ([*Tablet of Unity*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 
 > "By them the standards of victory will be hoisted on the tops of mountains and hills." ([*The Most Holy Book (Kitáb-i-Aqdas)*](https://siftersearch.com/document/16712) — Bahá'u'lláh) 
 

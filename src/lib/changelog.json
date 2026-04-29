@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T07:22:02.801Z",
+  "generated": "2026-04-29T07:42:13.908Z",
   "entries": [
+    {
+      "hash": "f783fd0",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
+      "scope": null
+    },
     {
       "hash": "b7226f9",
       "date": "2026-04-28",
@@ -3493,16 +3500,18 @@
       "type": "Fixed",
       "description": "Add prerender to agent pages + comprehensive link tests",
       "scope": null
-    },
-    {
-      "hash": "657b6cd",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Add visible mark highlighting for admin RawSearch",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-29": [
+      {
+        "hash": "f783fd0",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Best-of (rerun, calibrated rejudge) for all 20 articles",
+        "scope": null
+      }
+    ],
     "2026-04-28": [
       {
         "hash": "b7226f9",
@@ -7059,13 +7068,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Add prerender to agent pages + comprehensive link tests",
-        "scope": null
-      },
-      {
-        "hash": "657b6cd",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Add visible mark highlighting for admin RawSearch",
         "scope": null
       }
     ]

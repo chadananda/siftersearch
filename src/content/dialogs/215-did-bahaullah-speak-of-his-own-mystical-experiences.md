@@ -20,8 +20,6 @@ excerpt: >-
   passages that are not directly relevant to the user's question about
   Bahá'u'lláh's mystical experiences (Rounds 1 and 2). 
 featured: false
-heroImage: >-
-  /images/dialog/215-did-bahaullah-speak-of-his-own-mystical-experiences-hero.jpg
 published: false
 assessment:
   scores:
@@ -37,16 +35,19 @@ assessment:
   flags: []
   improvement_plan: "Jafar should focus on selecting passages that more directly address the user's specific queries about Bahá'u'lláh's mystical experiences. Enhancing the ability to discern and prioritize the most relevant texts for a given question will improve the depth and evidence quality of the conversation."
 ---
+### Where does Bahá'u'lláh describe divine encounters?
 
-<div class="user-turn">
+<div class="user-turn" id="round-1">
 
 Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heaven, the experience in the Síyáh-Chál, the revelation in Baghdad. What are the major passages where he describes his own mystical/revelatory experience?
 
 </div>
 
+#### Passages from *The Seven Valleys* shared.
+
 <div class="jafar-turn">
 
->> "Praise be to God Who hath made being to come forth from nothingness; graven upon the tablet of man the secrets of preexistence..." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)  
+> "Praise be to God Who hath made being to come forth from nothingness; graven upon the tablet of man the secrets of preexistence..." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)  
 >  
 > "By My life, O friend, wert thou to taste of these fruits, from the green garden of these blossoms which grow in the lands of knowledge..." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)  
 >  
@@ -54,56 +55,72 @@ Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heave
 
 </div>
 
-<div class="user-turn">
+### Which texts describe Bahá'u'lláh's divine experiences?
+
+<div class="user-turn" id="round-2">
 
 Wait, those are beautiful passages, but they don't directly talk about Bahá'u'lláh's own encounters with the Divine. Can you point to where he actually describes those revelatory experiences? Like the Maid of Heaven or the Síyáh-Chál?
 
 </div>
 
+#### Passages from *Lawḥ-i Halih Halih Halih Yā Bishārat!* shared.
+
 <div class="jafar-turn">
 
->> "The Maid of Eternity came from the Exalted Paradise!" ([*Lawḥ-i Halih Halih Halih Yā Bishārat!*](https://siftersearch.com/document/16249) — Bahá’u’lláh)  
+> "The Maid of Eternity came from the Exalted Paradise!" ([*Lawḥ-i Halih Halih Halih Yā Bishārat!*](https://siftersearch.com/document/16249) — Bahá’u’lláh)  
 >  
 > "In this city, even the veils of light are split asunder and vanish away." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Where does Bahá'u'lláh describe the Síyáh-Chál?
+
+<div class="user-turn" id="round-3">
 
 These are closer, but the one from the *Seven Valleys* still doesn't quite fit. Can you find passages where Bahá'u'lláh specifically talks about his experiences in the Síyáh-Chál or his mystical encounters in Baghdad? I remember something about his revelation there that was really direct.
 
 </div>
 
+#### *Rashh-i-'Amá* describes Síyáh-Chál experience.
+
 <div class="jafar-turn">
 
->> "In the year nine, I was in the Siyah-Chal, and there I was made to witness the creation of all things in this black and ruinous age." ([*Sprinkling of the Cloud of Unknowing (Rashh-i-'Amá)*](https://siftersearch.com/document/16610) — Bahá'u'lláh)  
+> "In the year nine, I was in the Siyah-Chal, and there I was made to witness the creation of all things in this black and ruinous age." ([*Sprinkling of the Cloud of Unknowing (Rashh-i-'Amá)*](https://siftersearch.com/document/16610) — Bahá'u'lláh)  
 >  
 > "The intensity of His revelation hath covered Him, and the fullness of His shining forth hath hidden Him." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Is there a direct passage about Baghdad revelation?
+
+<div class="user-turn" id="round-4">
 
 That's more like it with the *Rashh-i-'Amá*. But for the revelation in Baghdad, isn't there a more direct passage? I think there's something in *Epistle to the Son of the Wolf* or maybe even in *Gleanings* where Bahá'u'lláh gives a clear account. Can you find that?
 
 </div>
 
+#### *Epistle to the Son of the Wolf* passage shared.
+
 <div class="jafar-turn">
 
->> "In the year nine, I was in the Siyah-Chal, and there I was made to witness the creation of all things in this black and ruinous age." ([*Sprinkling of the Cloud of Unknowing (Rashh-i-'Amá)*](https://siftersearch.com/document/16610) — Bahá'u'lláh)  
+> "In the year nine, I was in the Siyah-Chal, and there I was made to witness the creation of all things in this black and ruinous age." ([*Sprinkling of the Cloud of Unknowing (Rashh-i-'Amá)*](https://siftersearch.com/document/16610) — Bahá'u'lláh)  
 >  
 > "The light that is shed from the heaven of bounty..." ([*Epistle to the Son of the Wolf*](https://siftersearch.com/document/8273) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Does *Gleanings* have explicit Baghdad revelation?
+
+<div class="user-turn" id="round-5">
 
 Hold on, Jafar. The passage from *Epistle to the Son of the Wolf* still seems a bit vague. I thought there was something more explicit about Bahá'u'lláh's revelation in Baghdad. Can you check if there's a specific section in *Gleanings* where he recounts that experience more directly?
 
 </div>
 
+#### *Gleanings* contains explicit revelation passage.
+
 <div class="jafar-turn">
 
->> "The Revelation which, from time immemorial, hath been acclaimed as the Purpose and Promise of all the Prophets of God... hath now, by virtue of the pervasive Will of the Almighty... been revealed unto men." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
+> "The Revelation which, from time immemorial, hath been acclaimed as the Purpose and Promise of all the Prophets of God... hath now, by virtue of the pervasive Will of the Almighty... been revealed unto men." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
 
 </div>

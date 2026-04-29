@@ -708,6 +708,11 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, conve
 // publisher and the citation harvester read).
 function stripRestatementSentences(text) {
   if (!text) return text;
+  // Collapse leading `>>+ ` (nested-blockquote) to single `> `. The crafter
+  // sometimes emits `>>` or `>>>>` for block quotes; markdown renders each
+  // `>` as a nesting level, producing 2 or 4 indent borders. We always want
+  // a single-level block quote.
+  text = text.replace(/^>>+\s/gm, '> ');
   const FORBIDDEN_OPENERS = [
     // Authority-as-subject restating
     /^(Bah[áa]'?u'?ll[áa]h|He|She|They|'?Abdu'?l-Bah[áa]|The B[áa]b|Shoghi Effendi)\s+(emphasizes|distinguishes|acknowledges|teaches|reflects|highlights|presents|seems|notes|suggests|indicates|writes|states|frames|describes|explains|reveals|stresses|advises|guides|encourages)\b/i,

@@ -14,7 +14,6 @@ qualityScore: 68
 publishedAt: 2026-04-29
 excerpt: "The conversation starts with a relevant question about Bahá'í prayers for the deceased and mourning, but Jafar struggles to provide specific prayers directly addressing these themes. While the convers"
 featured: false
-heroImage: /images/dialog/207-what-bahai-prayers-are-said-for-those-who-have-died-hero.jpg
 assessment:
   scores:
     depth: 60
@@ -30,39 +29,51 @@ assessment:
     - missing-primary-citation
   improvement_plan: "Jafar should be programmed to better identify and retrieve specific prayers or texts that directly address user queries, especially when the user requests specificity. Enhancing the ability to distinguish between general and specific prayers in the Bahá'í corpus would improve the depth and evidence quality of the conversation."
 ---
-<div class="user-turn">
+### Are there Bahá'í prayers for the deceased?
+
+<div class="user-turn" id="round-1">
 
 Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?
 
 </div>
 
+#### Bahá'u'lláh provides prayers for mourning.
+
 <div class="jafar-turn">
 
->> "I beseech Thee, O my God, by them and by the sighs which their hearts utter in their separation from Thee, to keep them safe from the mischief of Thine adversaries, and to nourish their souls with what Thou hast ordained for Thy loved ones on whom shall come no fear and who shall not be put to grief." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
+> "I beseech Thee, O my God, by them and by the sighs which their hearts utter in their separation from Thee, to keep them safe from the mischief of Thine adversaries, and to nourish their souls with what Thou hast ordained for Thy loved ones on whom shall come no fear and who shall not be put to grief." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
 
 > "Almighty, Who answereth our prayers." ([*Supplications*](https://siftersearch.com/document/16289) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Are these prayers specific to mourning?
+
+<div class="user-turn" id="round-2">
 
 Wait, but are those specific prayers intended for when someone has just died? Or are these more general prayers that can be used in many situations? I'm looking for something that directly addresses death and mourning.
 
 </div>
 
+#### Prayer addresses separation and grief.
+
 <div class="jafar-turn">
 
->> "I beseech Thee, O my God, by them and by the sighs which their hearts utter in their separation from Thee, to keep them safe from the mischief of Thine adversaries, and to nourish their souls with what Thou hast ordained for Thy loved ones on whom shall come no fear and who shall not be put to grief." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
+> "I beseech Thee, O my God, by them and by the sighs which their hearts utter in their separation from Thee, to keep them safe from the mischief of Thine adversaries, and to nourish their souls with what Thou hast ordained for Thy loved ones on whom shall come no fear and who shall not be put to grief." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
 
 This prayer directly addresses the feelings of separation and grief. Want to see more prayers that focus on mourning?
 
 </div>
 
-<div class="user-turn">
+### Can you show more prayers for mourning?
+
+<div class="user-turn" id="round-3">
 
 Sure, I'd love to see more. But make sure they're specifically for mourning or for the spiritual progress of someone who's passed. I want to understand how Bahá'u'lláh specifically guides the grieving process, not just general prayers.
 
 </div>
+
+#### Couldn't locate specific mourning prayers.
 
 <div class="jafar-turn">
 
@@ -70,29 +81,37 @@ II couldn't locate text on this in the corpus.
 
 </div>
 
-<div class="user-turn">
+### Can we check the Bahá'í Prayer Book?
+
+<div class="user-turn" id="round-4">
 
 No worries. Maybe check the Bahá'í Prayer Book? It usually has a section specifically for the departed and for those who mourn. Could be what you're looking for. Can we try that?
 
 </div>
 
+#### Prayer addresses feelings of loss and yearning.
+
 <div class="jafar-turn">
 
->> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
+> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
 
 This one speaks to the feelings of loss and yearning. Want to see more specific prayers for the departed?
 
 </div>
 
-<div class="user-turn">
+### Does the Prayer Book have clearer prayers?
+
+<div class="user-turn" id="round-5">
 
 That sounds like it's addressing longing and separation, but I'm still not sure it's specifically for mourning or the departed. What about the Bahá'í Prayer Book section for the departed? Does it have anything clearer from Bahá'u'lláh or 'Abdu'l-Bahá specifically for those situations?
 
 </div>
 
+#### Prayers address separation and longing.
+
 <div class="jafar-turn">
 
->> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
+> "After learning of this departure, you who are filled with yearning..." ([*Tablet of Nightingale of Separation*](https://siftersearch.com/document/16630) — Bahá’u’lláh) 
 
 > "So both in separation and reunion the life-lorn, soul-shorn lover burns..." ([*Mathnaviyí-i Mubárak*](https://siftersearch.com/document/16284) — Bahá’u’lláh) 
 

@@ -13,7 +13,6 @@ qualityScore: 77
 publishedAt: 2026-04-29
 excerpt: "The conversation explores the Seven Valleys with a focus on the Valley of Search, providing a decent depth of discussion. Jafar uses primary quotes effectively, especially in rounds 4 and 5, to illust"
 featured: false
-heroImage: /images/dialog/201-what-are-the-seven-valleys-and-are-they-bahaullahs-map-of-th-hero.jpg
 assessment:
   scores:
     depth: 75
@@ -28,71 +27,91 @@ assessment:
   flags: []
   improvement_plan: "Jafar could improve by ensuring that responses more directly address the user's questions, especially when discussing complex concepts like divine guidance. Encouraging a more conversational tone throughout would enhance engagement and realism. Additionally, providing more context or explanation alongside quotes could help clarify their relevance to the user's inquiries."
 ---
-<div class="user-turn">
+### What are the Seven Valleys' stages?
+
+<div class="user-turn" id="round-1">
 
 The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are these seven stages — search, love, knowledge, unity, contentment, wonderment, and true poverty — and is this his actual map of the soul's journey toward God?
 
 </div>
 
+#### The Seven Valleys outline spiritual journey.
+
 <div class="jafar-turn">
 
->> "The stages that mark the wayfarer’s journey from the abode of dust to the heavenly homeland are said to be seven." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
+> "The stages that mark the wayfarer’s journey from the abode of dust to the heavenly homeland are said to be seven." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 
 The Seven Valleys represent stages like "The Valley of Search," where the seeker begins their quest. Each valley has its own challenges and lessons, leading ultimately to deeper knowledge and unity with God. Want to dive into a specific valley?
 
 </div>
 
-<div class="user-turn">
+### What's unique about the Valley of Search?
+
+<div class="user-turn" id="round-2">
 
 Sure, let's start with the Valley of Search. What's unique about it, and why does the journey begin there? How does Bahá'u'lláh describe the qualities and mindset of someone in this stage?
 
 </div>
 
+#### The Valley of Search begins quest.
+
 <div class="jafar-turn">
 
->> "This is the guiding principle of the search." ([*The Spiritual Journey towards God*](https://siftersearch.com/document/12186) — The Báb) 
+> "This is the guiding principle of the search." ([*The Spiritual Journey towards God*](https://siftersearch.com/document/12186) — The Báb) 
 
 The Valley of Search is all about the quest for truth and understanding. Want to dive into what follows in the next valley?
 
 </div>
 
-<div class="user-turn">
+### What mindset is needed in Search?
+
+<div class="user-turn" id="round-3">
 
 Wait, before we move on, I'm curious about how Bahá'u'lláh describes the seeker in the Valley of Search. What mindset or qualities does he say are necessary to truly embark on this stage? Is there something about purity of heart or divine guidance that's emphasized?
 
 </div>
 
+#### Openness and sincerity are emphasized.
+
 <div class="jafar-turn">
 
->> "O thou seeker of Truth!" ([*Tablets of Bahá’u’lláh and ’Abdu’l-Bahá from Star of the West*](https://siftersearch.com/document/16714) — Bahá’u’lláh, ’Abdu’l-Bahá) 
+> "O thou seeker of Truth!" ([*Tablets of Bahá’u’lláh and ’Abdu’l-Bahá from Star of the West*](https://siftersearch.com/document/16714) — Bahá’u’lláh, ’Abdu’l-Bahá) 
 
 The emphasis on being a "seeker of Truth" suggests a mindset of openness and sincerity. Want to dive deeper into what qualities he highlights?
 
 </div>
 
-<div class="user-turn">
+### Does Bahá'u'lláh mention purity of heart?
+
+<div class="user-turn" id="round-4">
 
 Wait, before we move on, show me where Bahá'u'lláh actually talks about the qualities and mindset needed in the Valley of Search. Does he specifically mention purity of heart or relying on divine guidance in the Seven Valleys? I want to see how he frames that search for truth.
 
 </div>
 
+#### Cleansing heart and patience are key.
+
 <div class="jafar-turn">
 
->> "It is incumbent on these servants that they cleanse the heart — which is the wellspring of divine treasures — from every marking." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)  
+> "It is incumbent on these servants that they cleanse the heart — which is the wellspring of divine treasures — from every marking." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)  
 >  
 > "The steed of this Valley is patience; without patience the wayfarer on this journey will reach nowhere and attain no goal." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Is divine inspiration guiding the seeker?
+
+<div class="user-turn" id="round-5">
 
 So it’s about cleansing the heart and having patience? That makes sense. But when Bahá’u’lláh talks about the heart being the "wellspring of divine treasures," is he saying that divine inspiration is what guides the seeker? How does this connect to the idea of divine guidance in the search?
 
 </div>
 
+#### Cleansing heart opens to divine guidance.
+
 <div class="jafar-turn">
 
->> "It is incumbent on these servants that they cleanse the heart — which is the wellspring of divine treasures — from every marking." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh) 
+> "It is incumbent on these servants that they cleanse the heart — which is the wellspring of divine treasures — from every marking." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh) 
 
 Cleansing the heart is key for receiving divine inspiration. It connects to the idea of guidance as the seeker opens up to truth. Want to dive deeper into how this guidance unfolds?
 
