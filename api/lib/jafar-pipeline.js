@@ -528,17 +528,18 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     harvestPassages(fallback, 'search-fallback');
   }
 
-  // Primary-source filter — when ANY primary-tier passage exists, drop
-  // secondary commentary entirely. Otherwise the crafter weaves Esslemont
-  // / Taherzadeh / Milani into a question about Bahá'u'lláh's writings,
-  // which the judge correctly flags as secondary-substitution. Match on
-  // normalized author name (apostrophe + diacritic variants).
-  const PRIMARY_AUTHORS_NORM = [
-    'bahaullah', 'baha\'u\'llah', 'bahaullah', // Bahá'u'lláh
-    'the bab', 'bab', 'al-bab',                 // The Báb
-    'abdulbaha', 'abdu\'l-baha', 'abdulbaha',   // 'Abdu'l-Bahá
-    'shoghi effendi', 'shoghi effendi rabbani'  // Shoghi Effendi
-  ];
+  // Authority-tier classification — the Bahá'í clarifying principle has
+  // each successor as the authoritative interpreter of the prior. Tier 1
+  // (Shoghi Effendi) is the supreme interpretive authority on doctrinal
+  // questions; tier 2 ('Abdu'l-Bahá) is the appointed Center of the
+  // Covenant; tier 3 (Bahá'u'lláh) is the Source. Tier 4 is the Báb.
+  // Tier 5 is secondary scholarship (use only when no tier 1-4 quote
+  // addresses the question).
+  //
+  // Each retrieved quote is tagged with its tier so the crafter can apply
+  // the hierarchy in its quote-selection. We also drop tier 5 quotes
+  // when ANY tier 1-4 quote is present (avoids secondary-substitution
+  // even when a commentator's text matches the topic better lexically).
   const normAuthor = (s) => (s || '')
     .toLowerCase()
     .normalize('NFD')
@@ -546,13 +547,25 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     .replace(/[\u2018\u2019\u02bc\u02bb`'"]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  const isPrimary = (q) => {
-    if (q.is_summary) return true; // sub-agent summary always kept
-    const a = normAuthor(q.source_author);
-    return PRIMARY_AUTHORS_NORM.some(p => a.includes(p));
+  const TIER_MATCHERS = [
+    { tier: 1, label: 'Shoghi Effendi (interpreter)', match: ['shoghi effendi', 'shoghi rabbani'] },
+    { tier: 2, label: "'Abdu'l-Bahá (interpreter)",   match: ['abdulbaha', 'abdu\'l-baha', 'abbas effendi'] },
+    { tier: 3, label: "Bahá'u'lláh (Manifestation)",  match: ['bahaullah', 'baha\'u\'llah'] },
+    { tier: 4, label: 'The Báb (Manifestation)',      match: ['the bab', 'al-bab', ' bab '] }
+  ];
+  const tierOf = (q) => {
+    if (q.is_summary) return 1; // sub-agent summary always kept
+    const a = ' ' + normAuthor(q.source_author) + ' ';
+    for (const t of TIER_MATCHERS) {
+      if (t.match.some(m => a.includes(m))) return t.tier;
+    }
+    return 5;
   };
-  const primaryRetrieved = retrieved.filter(isPrimary);
-  const filteredForCrafter = primaryRetrieved.length > 0 ? primaryRetrieved : retrieved;
+  for (const q of retrieved) q.authority_tier = tierOf(q);
+  const hasPrimary = retrieved.some(q => q.authority_tier <= 4);
+  const filteredForCrafter = hasPrimary
+    ? retrieved.filter(q => q.authority_tier <= 4)
+    : retrieved;
 
   // Trim — gpt-4o-mini's TTFT scales with prompt size. A whole tablet worth
   // of excerpts (50+ paragraphs, ~50k chars) makes the crafter slow to first
@@ -633,10 +646,34 @@ GROUNDING (firm)
 - If retrieved_quotes has entries but none directly answer the question: name that gap, then offer the closest as related material. Better an honest sideways answer than a quote that pretends to fit.
 
 ────────────────────────────────────────────────────────────
-PRIMARY-SOURCE PREFERENCE
+AUTHORITY HIERARCHY — the Bahá'í clarifying principle
 ────────────────────────────────────────────────────────────
 
-Prefer Bahá'u'lláh, the Báb, 'Abdu'l-Bahá, Shoghi Effendi over secondary commentary. 'Abdu'l-Bahá's *Some Answered Questions* IS primary (his canonical table-talks). When the question concerns Bahá'u'lláh specifically, lead with HIS words if any are in retrieved_quotes; only quote 'Abdu'l-Bahá or commentary if Bahá'u'lláh doesn't address it directly.
+The Bahá'í Faith treats each successor as the AUTHORITATIVE INTERPRETER of those who came before. Each later figure clarifies the earlier — and that interpretive clarification is the authoritative reading of the prior text. So when explaining what the Faith TEACHES on a doctrinal question, work the chain from MOST RECENT INTERPRETER BACK:
+
+1. **Shoghi Effendi** (the Guardian, supreme interpreter; works include God Passes By, Advent of Divine Justice, Promised Day Is Come, World Order letters) — the clearest authoritative reading of all Bahá'í teaching.
+2. **'Abdu'l-Bahá** (Center of the Covenant; Some Answered Questions, Paris Talks, Promulgation of Universal Peace, Tablets of the Divine Plan, Secret of Divine Civilization) — authoritative interpreter of Bahá'u'lláh.
+3. **Bahá'u'lláh** (Manifestation/Source; Aqdas, Iqán, Hidden Words, Gleanings, Seven Valleys, Tablets, Prayers and Meditations) — the Source text.
+4. **The Báb** (Manifestation/Source; Bayán) — Bahá'u'lláh's predecessor.
+
+PRACTICAL APPLICATION:
+
+- When the user asks "what does the Faith teach about X?" → lead with Shoghi Effendi if he addressed X authoritatively; then 'Abdu'l-Bahá; then Bahá'u'lláh as the underlying source.
+- When the user asks "what does Bahá'u'lláh say about X?" — quote Bahá'u'lláh first (he's the subject of the question), but if his treatment is brief or oblique, supplement with 'Abdu'l-Bahá or Shoghi Effendi's authoritative reading of it.
+- When the user asks an interpretive question ("how should we understand X?", "what's the meaning of Y?") → strongly favor Shoghi Effendi or 'Abdu'l-Bahá; their interpretive role IS the answer to "how should we understand."
+- When the user names a historical event (the Covenant, the Bayán, the events of 'Akká) → Shoghi Effendi's God Passes By is often the authoritative narrative.
+- When the user asks about administration / institutions / the House of Justice → Shoghi Effendi's letters are foundational; secondary literature (Hatcher, Taherzadeh, etc.) only as a last resort.
+
+This is NOT about ranking the Manifestations below the interpreters in spiritual station. It's the CLARIFYING PRINCIPLE: each later figure's authoritative interpretation IS the clearest expression of what came before, because they were appointed to make it clear. So in answering questions about meaning, prefer the interpreter; in answering questions about the originating text, lead with the source and supplement with the interpretation.
+
+Within retrieved_quotes, scan the source_author field for these authority tiers:
+- Tier 1 (highest interpretive authority): Shoghi Effendi
+- Tier 2: 'Abdu'l-Bahá
+- Tier 3: Bahá'u'lláh
+- Tier 4: The Báb
+- Tier 5: secondary scholarship (use only if no tier 1-4 quote addresses the question)
+
+If retrieved_quotes contains both a Shoghi Effendi passage and a Bahá'u'lláh passage on the same theme, lead with Shoghi Effendi when the question is about meaning/interpretation; lead with Bahá'u'lláh when the question is "what does HE say" or quotes-the-source-text.
 
 ────────────────────────────────────────────────────────────
 NO RESTATING THE QUOTE
@@ -799,11 +836,19 @@ function stripRestatementSentences(text) {
 }
 
 function buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent }) {
+  const TIER_LABEL = {
+    1: 'TIER 1 (Shoghi Effendi — supreme interpreter)',
+    2: "TIER 2 ('Abdu'l-Bahá — Center of the Covenant, interpreter)",
+    3: "TIER 3 (Bahá'u'lláh — Manifestation/Source)",
+    4: 'TIER 4 (The Báb — Manifestation/Source)',
+    5: 'TIER 5 (secondary scholarship)'
+  };
   const quotesPayload = retrieved_quotes.map((q, i) => {
     const cite = q.citation_url
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
       : `${q.source_title || 'source'} — ${q.source_author || 'unknown'}`;
-    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}] ${q.text}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
+    const tierTag = q.authority_tier ? ` ${TIER_LABEL[q.authority_tier] || ''}` : '';
+    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}] ${q.text}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
   return `user_intent: ${user_intent}
 

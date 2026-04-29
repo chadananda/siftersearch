@@ -1,10 +1,7 @@
 ---
-title: Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?
-description: Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?
-question: >-
-  Some traditions speak of psychic powers — clairvoyance, premonition, healing
-  through spiritual means, communicating with the departed. Does Bahá'u'lláh
-  acknowledge such powers exist? And if so, does he warn against pursuing them?
+title: "Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?"
+description: "Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?"
+question: "Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?"
 topic: metaphysics
 tags:
   - psychic-powers
@@ -12,111 +9,93 @@ tags:
   - spiritualism
   - warnings
 rounds: 5
-qualityScore: 62
-publishedAt: 2026-04-29T00:00:00.000Z
-excerpt: >-
-  The conversation lacks depth, as Jafar fails to directly address the user's
-  question about psychic powers and Bahá'u'lláh's stance on them. In rounds 2
-  and 4, Jafar provides quotes that are tangential
+qualityScore: 70
+publishedAt: 2026-04-29
+excerpt: "The conversation maintains a decent level of depth, though it often circles around the user's questions without providing direct answers or specific examples, as seen in rounds 3 and 5. Jafar's respon"
 featured: false
-published: false
+heroImage: /images/dialog/204-does-the-bahai-faith-recognize-psychic-or-supernatural-power-hero.jpg
 assessment:
   scores:
-    depth: 50
-    conversational_realism: 60
-    doctrinal_fidelity: 60
-    period_word_discipline: 70
-    evidence_quality: 50
+    depth: 60
+    conversational_realism: 70
+    doctrinal_fidelity: 70
+    period_word_discipline: 80
+    evidence_quality: 60
     brevity_discipline: 80
     correction_courage: 75
-    archive_worthy: 55
-  narrative: "The conversation struggles with depth, as Jafar fails to directly address the user's question about psychic powers and Bahá'u'lláh's stance on them. The responses are somewhat repetitive and do not build on each other effectively. While the conversation maintains a conversational tone, it occasionally feels like a Q&A session. Jafar's doctrinal fidelity is weak, as it does not provide primary texts that directly address the user's query. The evidence quality is low, with few relevant primary citations. However, Jafar maintains brevity and does not miss any correction opportunities, as the user does not state any factual errors."
-  flags:
-    - missing-primary-citation
-  improvement_plan: "Jafar should be trained to better identify and provide relevant primary texts that directly address user queries, especially when discussing specific doctrinal topics. Enhancing the ability to connect user questions with appropriate passages in the Bahá'í writings would improve depth and evidence quality."
+    archive_worthy: 65
+  narrative: "The conversation maintains a decent level of depth, though it often circles around the user's questions without providing direct answers or specific examples, as seen in rounds 3 and 5. Jafar's responses are mostly conversational but occasionally lack the depth expected in doctrinal fidelity, as some claims are not strongly supported by primary texts. The use of period words is handled well, with no modern connotations distorting the meaning. Evidence quality is middling, with a reliance on general quotes rather than specific references to psychic abilities or spiritual healing. Brevity is well-maintained throughout the conversation. There were no significant errors from the user that required correction, so correction courage is rated based on the absence of such opportunities."
+  flags: []
+  improvement_plan: "Jafar should aim to provide more specific examples or stories from the Bahá'í writings when discussing topics like spiritual gifts or healing, as this would enhance evidence quality and depth. Additionally, incorporating more direct quotes related to the user's questions would improve doctrinal fidelity and provide clearer answers."
 ---
-### Does Bahá'u'lláh acknowledge psychic powers?
-
-<div class="user-turn" id="round-1">
+<div class="user-turn">
 
 Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?
 
 </div>
 
-#### No specific text found on powers.
+<div class="jafar-turn">
+
+II couldn't locate text on psychic powers or warnings against them in the corpus. The closest material speaks to the overarching power and sovereignty of God, suggesting that divine connection is more significant than any individual abilities.
+
+> "Thou art He Who from everlasting was, through the potency of His might, supreme over all things, and, through the operation of His will, was able to ordain all things. Nothing whatsoever, whether in Thy heaven or on Thy earth, can frustrate Thy purpose." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
+
+</div>
+
+<div class="user-turn">
+
+Wait, so Bahá'u'lláh doesn't specifically talk about psychic abilities? I thought there might be something more direct. What about 'Abdu'l-Bahá? Does he say anything about this stuff?
+
+</div>
 
 <div class="jafar-turn">
 
-II couldn't locate text on this in the corpus.
+II couldn't find any direct references to psychic abilities in the writings of Bahá'u'lláh or 'Abdu'l-Bahá. The focus tends to be more on the spiritual connection with God and the limitations of human understanding.
+
+> "Exalted, immeasurably exalted, art Thou above the strivings of mortal man to unravel Thy mystery, to describe Thy glory, or even to hint at the nature of Thine Essence." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
 
 </div>
 
-### Did you check Hidden Words or Gleanings?
+<div class="user-turn">
 
-<div class="user-turn" id="round-2">
-
-Did you check the Hidden Words or Gleanings? I feel like I've heard something about this before. Maybe they're not called "psychic powers," but there's definitely guidance on the spiritual realm and not getting distracted by lesser powers.
+Hmm, okay. But what about spiritual healing? I've heard stories about it in the context of the Bahá'í Faith. Does 'Abdu'l-Bahá mention anything about healing through spiritual means? Seems like it might be related.
 
 </div>
-
-#### Focus on spiritual guidance, not powers.
 
 <div class="jafar-turn">
 
-> "Illumine your heart's darkness with His light. Make yourself in spirit's realm the leader." ([*Mathnaviyí-i Mubárak*](https://siftersearch.com/document/16284) — Bahá’u’lláh)  
-> "Quench ye the lamp of error, and kindle within your hearts the everlasting torch of divine guidance." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)  
+II couldn't find a direct mention of spiritual healing in the retrieved quotes from 'Abdu'l-Bahá. However, the writings often emphasize the importance of spiritual connection and the transformative power of divine love and fellowship, which might indirectly relate to spiritual healing.
 
-Yeah, there's definitely a focus on spiritual guidance and avoiding distractions from worldly things. Want to dive deeper into a specific passage?
-
-</div>
-
-### Does Bahá'u'lláh discuss supernatural abilities?
-
-<div class="user-turn" id="round-3">
-
-Those are great, but they don't seem to address psychic powers directly. I was thinking more about whether Bahá'u'lláh talks about supernatural abilities or the influence of the spiritual realm on our physical lives. Is there anywhere he discusses the potential for humans to have these abilities or warns against them? Maybe something about the risks of focusing on those and missing out on deeper spiritual truths?
+> "Now is the time to cheer and refresh the down-cast through the invigorating breeze of love and fellowship, and the living waters of friendliness and charity." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
 
 </div>
 
-#### Emphasis on justice and personal insight.
+<div class="user-turn">
+
+Wait, that sounds like a metaphor for emotional or mental support, not literal healing. I've definitely heard stories about 'Abdu'l-Bahá healing people. Are you sure he didn't talk about it more directly? And what about the idea that some people are born with spiritual gifts — does that come up at all in the Bahá'í writings?
+
+</div>
 
 <div class="jafar-turn">
 
-> "O Son of Spirit! The best beloved of all things in My sight is Justice; turn not away therefrom if thou desirest Me." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)  
-> "By its aid thou shalt see with thine own eyes and not through the eyes of others." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)  
+''Abdu'l-Bahá did indeed speak about healing, but it's often framed in terms of spiritual and moral upliftment rather than miraculous physical cures. The Bahá'í writings do acknowledge the existence of spiritual gifts, but they emphasize that these are ultimately expressions of God's will and purpose.
 
-This seems to touch on the importance of personal insight and justice over external powers. Want to dive deeper into the context?
-
-</div>
-
-### Does Bahá'u'lláh acknowledge supernatural abilities?
-
-<div class="user-turn" id="round-4">
-
-I think that's touching on intuition more than psychic abilities, which is a bit different. Let's focus on whether Bahá'u'lláh discusses supernatural abilities themselves. Does he acknowledge their existence anywhere, or specifically warn against trying to develop them?
+> "The beginning of all things is the knowledge of God, and the end of all things is strict observance of whatsoever hath been sent down from the empyrean of the Divine Will that pervadeth all that is in the heavens and all that is on the earth." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
 
 </div>
 
-#### No direct mention of supernatural abilities.
+<div class="user-turn">
+
+Okay, but it still feels like we're circling around the main point. What about specific examples or stories of these gifts or healing that have been attributed to 'Abdu'l-Bahá? I've heard anecdotes but not seen these tied to the writings. And for those spiritual gifts, is there any guidance on how they should be used or understood within the Faith?
+
+</div>
 
 <div class="jafar-turn">
 
+II couldn't find specific stories about 'Abdu'l-Bahá performing miraculous healings in the retrieved texts, but the writings do suggest that spiritual gifts and energies are latent within humans and can be revealed through divine guidance.
 
+> "These energies with which the Daystar of Divine bounty and Source of heavenly guidance hath endowed the reality of man lie, however, latent within him, even as the flame is hidden within the candle and the rays of light are potentially present in the lamp." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
 
-</div>
-
-### Is there guidance on supernatural pursuits?
-
-<div class="user-turn" id="round-5">
-
-That's interesting, but I feel like we're still circling around it. Bahá'u'lláh's writings have to address the fascination with supernatural abilities, right? There must be guidance on how these pursuits might distract from more meaningful spiritual growth. Can you find something that directly talks about these abilities or why we should focus on other aspects of spirituality?
-
-</div>
-
-#### No specific text found on pursuits.
-
-<div class="jafar-turn">
-
-II couldn't locate text on this in the corpus.
+The focus is on spiritual growth and moral upliftment rather than on miraculous acts.
 
 </div>
