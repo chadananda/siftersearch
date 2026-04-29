@@ -18,7 +18,7 @@ dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
-import { getMeili } from '../lib/search.js';
+import { getMeili, syncHypeBatch } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
@@ -42,6 +42,8 @@ const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;
 const JOB_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const HEARTBEAT_INTERVAL_MS = 30000;
 const USAGE_REPORT_INTERVAL_MS = 5 * 60 * 1000;
+const HYPE_SYNC_INTERVAL_MS = 60 * 1000;  // 60s — keep new HyPE indexed promptly
+const HYPE_SYNC_BATCH = 100;              // paragraphs per batch (~500 questions = 1 OpenAI batch call)
 
 // ============================================================
 // State
@@ -52,6 +54,7 @@ let lastCleanupTime = 0;
 let lastFullSyncTime = 0;
 let lastJobCleanupTime = 0;
 let lastUsageReportTime = 0;
+let lastHypeSyncTime = 0;
 let activeHeartbeatInterval = null;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -367,10 +370,27 @@ async function processTranslationAudioJob(job) {
 // Periodic tasks
 // ============================================================
 
+// Drain enrichment-sidecar work each cycle — paragraphs whose hyp_questions
+// have been written/updated get embedded and pushed to the HyPE Meili sidecar
+// index. Keeps newly-enriched content searchable within one minute, no manual
+// intervention required.
+async function runHypeSyncCycle() {
+  try {
+    const result = await syncHypeBatch({ queryAll, query, getAuthority, limit: HYPE_SYNC_BATCH });
+    if (result.indexed > 0) {
+      logger.info({ ...result }, 'HyPE sidecar batch synced');
+    }
+  } catch (err) {
+    logger.error({ err: err.message, stack: err.stack }, 'HyPE sync cycle failed');
+  }
+  lastHypeSyncTime = Date.now();
+}
+
 async function runPeriodicTasks() {
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
+  if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await runHypeSyncCycle();
   if (now - lastJobCleanupTime >= JOB_CLEANUP_INTERVAL_MS) {
     try {
       const cleaned = await cleanupExpiredJobs();

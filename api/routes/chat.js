@@ -11,7 +11,7 @@
  */
 
 import OpenAI from 'openai';
-import { hybridSearch, keywordSearch } from '../lib/search.js';
+import { hybridSearch, keywordSearch, multiIndexSearch } from '../lib/search.js';
 import { optionalAuthenticate } from '../lib/auth.js';
 import { getAnonymousUserId } from '../lib/anonymous.js';
 import { logger } from '../lib/logger.js';
@@ -328,30 +328,40 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     };
   }
 
-  // MODE: passages — hybrid search for relevant content quotes
+  // MODE: passages — multi-index merged search across paragraphs + HyPE
+  // sidecar (and future enrichment layers). Falls back to legacy
+  // hybrid+keyword path if multiIndexSearch isn't available (e.g., HyPE
+  // index empty during early backfill — the merge still works because
+  // hype side returns 0 hits, contributing 0 RRF weight).
   if (mode === 'passages') {
     const filters = {};
     if (religion) filters.religion = religion;
     if (collection) filters.collection = collection;
     if (document_id) filters.documentId = document_id;
-    const searchOpts = { limit: safeLimit, filters };
-    const [hybridResults, keywordResults] = await Promise.all([
-      hybridSearch(query, searchOpts).catch(() => ({ hits: [] })),
-      keywordSearch(query, { limit: Math.max(3, Math.floor(safeLimit / 2)), filters }).catch(() => ({ hits: [] }))
-    ]);
 
-    // Merge and dedupe, then resort by authority-weighted score so canonical
-    // sources surface above citing works regardless of which search path
-    // found them first.
-    const seen = new Set();
-    const merged = [];
-    for (const result of [hybridResults, keywordResults]) {
-      for (const hit of (result?.hits || [])) {
-        const key = `${hit.doc_id || hit.document_id}:${hit.paragraph_index}`;
-        if (!seen.has(key)) { seen.add(key); merged.push(hit); }
+    let merged;
+    try {
+      const result = await multiIndexSearch(query, { limit: safeLimit, filters });
+      merged = (result.hits || []).map(hit => ({
+        ...hit,
+        _matched_via_hype: !!hit.matched_hype
+      }));
+    } catch (err) {
+      logger.warn({ err: err.message }, 'multiIndexSearch failed, falling back to legacy path');
+      const [hybridResults, keywordResults] = await Promise.all([
+        hybridSearch(query, { limit: safeLimit, filters }).catch(() => ({ hits: [] })),
+        keywordSearch(query, { limit: Math.max(3, Math.floor(safeLimit / 2)), filters }).catch(() => ({ hits: [] }))
+      ]);
+      const seen = new Set();
+      merged = [];
+      for (const r of [hybridResults, keywordResults]) {
+        for (const hit of (r?.hits || [])) {
+          const key = `${hit.doc_id || hit.document_id}:${hit.paragraph_index}`;
+          if (!seen.has(key)) { seen.add(key); merged.push(hit); }
+        }
       }
+      merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
     }
-    merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
 
     return {
       passages: merged.slice(0, safeLimit).map(hit => ({
@@ -361,7 +371,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
         religion: hit.religion || '',
         collection: hit.collection || '',
         document_id: hit.doc_id || hit.document_id,
-        paragraph_index: hit.paragraph_index
+        paragraph_index: hit.paragraph_index,
+        ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
       }))
     };
   }

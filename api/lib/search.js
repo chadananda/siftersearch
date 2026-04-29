@@ -191,7 +191,12 @@ export function getMeili() {
 // Index names
 export const INDEXES = {
   DOCUMENTS: 'documents',
-  PARAGRAPHS: 'paragraphs'
+  PARAGRAPHS: 'paragraphs',
+  // Sidecar enrichment indexes — each entry is one enrichment shard with
+  // its own embedding, pointing back to the parent paragraph by paragraph_id.
+  // Enables adding new enrichment layers (HyPE, future: summaries, entities,
+  // glossary tags) without re-embedding existing paragraphs.
+  HYPE_QUESTIONS: 'hype_questions'
 };
 
 /**
@@ -309,6 +314,21 @@ export async function initializeIndexes() {
     pagination: { maxTotalHits: 50000 }
   };
 
+  // HyPE sidecar — each row is ONE hypothetical question. The question text
+  // is the only searchable field; its embedding is the semantic match target.
+  // paragraph_id is the back-reference; everything else is metadata for
+  // filtering and tier-aware ranking inside the multi-index merge.
+  const hypeSettings = {
+    searchableAttributes: ['question_text'],
+    filterableAttributes: ['paragraph_id', 'doc_id', 'religion', 'collection', 'authority', 'encumbered'],
+    sortableAttributes: ['authority'],
+    rankingRules: buildRankingRules(),
+    pagination: { maxTotalHits: 50000 },
+    embedders: {
+      default: { source: 'userProvided', dimensions: expectedDimensions }
+    }
+  };
+
   // Ensure indexes exist and settings are applied. Non-blocking — if Meilisearch
   // is busy (processing a settings rebuild on millions of docs), we don't block startup.
   const fetchWithTimeout = (url, opts, ms = 5000) => {
@@ -317,7 +337,7 @@ export async function initializeIndexes() {
     return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
   };
 
-  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id']]) {
+  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id'], [INDEXES.HYPE_QUESTIONS, 'id']]) {
     try {
       await fetchWithTimeout(`${meiliUrl}/indexes`, {
         method: 'POST', headers, body: JSON.stringify({ uid: indexUid, primaryKey: pk })
@@ -326,7 +346,7 @@ export async function initializeIndexes() {
   }
 
   // Enqueue settings (5s timeout — just needs to accept the task, not process it)
-  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings]]) {
+  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings]]) {
     try {
       const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
         method: 'PATCH', headers, body: JSON.stringify(settings)
@@ -718,6 +738,346 @@ export async function keywordSearch(query, options = {}) {
  */
 export async function semanticSearch(query, options = {}) {
   return hybridSearch(query, { ...options, semanticRatio: 1 });
+}
+
+// ─── HyPE sidecar search ──────────────────────────────────────────────────
+//
+// Search the `hype_questions` index for questions semantically similar to
+// the user's query. Each hit carries the back-reference (paragraph_id) so
+// the multi-index merge can promote the underlying paragraph.
+//
+// HyPE matches are HIGH SIGNAL: each row is "a question this paragraph was
+// designed to answer." A user query that semantically matches a stored
+// question is a strong vote for the paragraph behind that question.
+
+/**
+ * Search the HyPE sidecar for question-similarity matches.
+ * @param {string} query - the user's query (treated as a question)
+ * @param {object} options
+ * @param {number} options.limit - top-K hits to return (default 10)
+ * @param {object} options.filters - {religion, collection, doc_id, encumbered}
+ * @returns {Object} { hits: [{paragraph_id, doc_id, religion, authority, question_text, _semanticScore}], ... }
+ */
+export async function searchHypeQuestions(query, options = {}) {
+  const meili = getMeili();
+  if (!meili || !query || !query.trim()) return { hits: [] };
+  const { limit = 10, filters = {} } = options;
+
+  // Generate embedding for the user's query — same embedder as paragraphs
+  // so vector geometry is comparable across indexes.
+  let vector;
+  try {
+    const { embedding } = await createEmbedding(query, { caller: 'hype-search' });
+    vector = embedding;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'HyPE search: embedding generation failed');
+    return { hits: [] };
+  }
+
+  const meiliFilters = [];
+  if (filters.religion) meiliFilters.push(`religion = "${filters.religion.replace(/"/g, '\\"')}"`);
+  if (filters.collection) meiliFilters.push(`collection = "${filters.collection.replace(/"/g, '\\"')}"`);
+  if (typeof filters.doc_id === 'number') meiliFilters.push(`doc_id = ${filters.doc_id}`);
+  if (filters.encumbered === false) meiliFilters.push('encumbered != 1');
+
+  try {
+    const result = await meili.index(INDEXES.HYPE_QUESTIONS).search(query, {
+      vector,
+      hybrid: { semanticRatio: 0.85, embedder: 'default' },
+      limit,
+      ...(meiliFilters.length ? { filter: meiliFilters.join(' AND ') } : {}),
+      showRankingScore: true,
+      attributesToRetrieve: ['id', 'paragraph_id', 'doc_id', 'religion', 'collection', 'authority', 'question_text']
+    });
+    const hits = (result.hits || []).map(h => ({
+      ...h,
+      _semanticScore: h._rankingScore || 0
+    }));
+    return { hits, processingTimeMs: result.processingTimeMs };
+  } catch (err) {
+    logger.warn({ err: err.message, query }, 'HyPE search failed');
+    return { hits: [] };
+  }
+}
+
+// ─── Multi-index merged search (RRF) ──────────────────────────────────────
+//
+// Queries the main `paragraphs` index AND every configured sidecar index
+// in parallel, then merges results by paragraph_id using Reciprocal Rank
+// Fusion. A paragraph that ranks high in MULTIPLE indexes scores higher
+// than one only matching in one — surfaces paragraphs that semantically
+// match BOTH the user's question (via HyPE) AND the topic (via main).
+//
+// Adding a new sidecar layer (summaries, entities, glossary tags, etc.)
+// is purely additive: define a new INDEXES.* entry, write its sync logic,
+// add it as a parallel call here with appropriate weight. Existing layers
+// are untouched.
+const RRF_K = 60;
+const DEFAULT_WEIGHTS = {
+  main: 1.0,    // paragraphs hybrid (text + context + paragraph embedding)
+  hype: 1.5     // HyPE question-match (highest signal — designed to answer)
+};
+
+/**
+ * Merged search across paragraphs + sidecars with RRF aggregation.
+ * Drop-in replacement for hybridSearch() when you want layered enrichment.
+ *
+ * @param {string} query
+ * @param {object} options
+ * @param {number} options.limit
+ * @param {object} options.filters
+ * @param {object} options.weights - per-index weights {main, hype}
+ * @param {boolean} options.includeMatchedHype - attach .matched_hype on each hit (debug)
+ * @returns {Object} { hits, estimatedTotalHits, _layers: {main: count, hype: count} }
+ */
+export async function multiIndexSearch(query, options = {}) {
+  const limit = options.limit || 10;
+  const overFetch = Math.max(limit * 3, 30);
+  const weights = { ...DEFAULT_WEIGHTS, ...(options.weights || {}) };
+  const filters = options.filters || {};
+
+  const [mainResult, hypeResult] = await Promise.all([
+    hybridSearch(query, { limit: overFetch, filters }).catch(err => {
+      logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
+      return { hits: [] };
+    }),
+    searchHypeQuestions(query, { limit: overFetch, filters }).catch(err => {
+      logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
+      return { hits: [] };
+    })
+  ]);
+
+  // RRF aggregation by paragraph_id
+  const aggregate = new Map(); // paragraph_id → { paragraph, score, matchedHype, mainRank, hypeRank }
+
+  (mainResult.hits || []).forEach((hit, rank) => {
+    const pid = hit.id;
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, mainRank: null, hypeRank: null };
+    cur.score += weights.main / (RRF_K + rank);
+    cur.paragraph = hit; // full paragraph data
+    cur.mainRank = rank;
+    aggregate.set(pid, cur);
+  });
+
+  (hypeResult.hits || []).forEach((hit, rank) => {
+    const pid = hit.paragraph_id;
+    const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, mainRank: null, hypeRank: null };
+    cur.score += weights.hype / (RRF_K + rank);
+    cur.matchedHype = hit.question_text;
+    cur.hypeRank = rank;
+    if (!cur.paragraph) {
+      // Hype-only hit — synthesize a partial paragraph stub from the hype row's
+      // metadata. The caller will fetch the full paragraph below.
+      cur.paragraph = {
+        id: pid,
+        doc_id: hit.doc_id,
+        religion: hit.religion,
+        collection: hit.collection,
+        authority: hit.authority,
+        _stub: true
+      };
+    }
+    aggregate.set(pid, cur);
+  });
+
+  // Fetch full paragraphs for hype-only hits (those flagged _stub).
+  const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
+  if (stubIds.length > 0) {
+    try {
+      const meili = getMeili();
+      // Use filter syntax for IN — Meili supports `id IN [1,2,3]`
+      const filterStr = `id IN [${stubIds.join(',')}]`;
+      const fetched = await meili.index(INDEXES.PARAGRAPHS).search('', {
+        filter: filterStr,
+        limit: stubIds.length,
+        attributesToRetrieve: ['*']
+      });
+      for (const doc of (fetched.hits || [])) {
+        const e = aggregate.get(doc.id);
+        if (e) e.paragraph = { ...doc, _stub: false };
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, stubCount: stubIds.length }, 'multiIndexSearch: stub paragraph fetch failed');
+    }
+  }
+
+  // Sort by RRF score, drop entries that couldn't be fetched, limit
+  const sorted = [...aggregate.values()]
+    .filter(e => e.paragraph && !e.paragraph._stub)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  const hits = sorted.map(e => ({
+    ...e.paragraph,
+    _rrfScore: e.score,
+    ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
+    _layerRanks: { main: e.mainRank, hype: e.hypeRank }
+  }));
+
+  logger.info({
+    query: query.slice(0, 80),
+    main_hits: (mainResult.hits || []).length,
+    hype_hits: (hypeResult.hits || []).length,
+    merged: aggregate.size,
+    returned: hits.length
+  }, 'multi-index search complete');
+
+  return {
+    hits,
+    estimatedTotalHits: aggregate.size,
+    _layers: {
+      main: (mainResult.hits || []).length,
+      hype: (hypeResult.hits || []).length
+    }
+  };
+}
+
+// ─── HyPE sidecar sync ────────────────────────────────────────────────────
+//
+// Pulls paragraphs with `enhanced_synced=0` and `hyp_questions IS NOT NULL`,
+// generates an embedding per question, and upserts one row per question into
+// the `hype_questions` Meilisearch index. Marks the source paragraph
+// `enhanced_synced=1` after successful indexing.
+//
+// Idempotent on re-runs: re-indexing a paragraph deletes its prior
+// `hype_questions` rows (filter by paragraph_id) before re-inserting,
+// so updated questions overwrite stale ones cleanly.
+//
+// Designed to be called periodically from the unified worker.
+
+/**
+ * Parse the stored hyp_questions string into an array of question strings.
+ * Storage format: newline-separated, already de-numbered/de-bulleted by
+ * parseHyPEResponse. Filter empty lines defensively.
+ */
+function parseStoredHypQuestions(raw) {
+  if (!raw || typeof raw !== 'string') return [];
+  // Some old rows may have been stored as JSON arrays — handle both
+  if (raw.startsWith('[')) {
+    try {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return arr.map(q => String(q).trim()).filter(Boolean);
+    } catch { /* fall through to newline split */ }
+  }
+  return raw.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+/**
+ * Sync a batch of HyPE-enriched paragraphs to the sidecar index.
+ * Returns { processed, indexed, errors } counts.
+ *
+ * @param {object} options
+ * @param {function} options.queryAll - SQL query function (queryAll from api/lib/db.js)
+ * @param {function} options.query - SQL exec function (query from api/lib/db.js)
+ * @param {function} options.getAuthority - authority lookup (from api/lib/authority.js)
+ * @param {number} options.limit - max paragraphs per batch
+ */
+export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100 } = {}) {
+  if (!queryAll || !query) {
+    throw new Error('syncHypeBatch requires queryAll and query (from api/lib/db.js)');
+  }
+  const meili = getMeili();
+  if (!meili) {
+    return { processed: 0, indexed: 0, errors: 0, skipped: 'meili-unavailable' };
+  }
+
+  const rows = await queryAll(`
+    SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions,
+           d.religion, d.collection, d.encumbered, d.title, d.author
+    FROM content c
+    JOIN docs d ON d.id = c.doc_id
+    WHERE c.enhanced_synced = 0
+      AND c.hyp_questions IS NOT NULL
+      AND c.deleted_at IS NULL
+      AND d.deleted_at IS NULL
+    ORDER BY c.id
+    LIMIT ?
+  `, [limit]);
+
+  if (rows.length === 0) return { processed: 0, indexed: 0, errors: 0 };
+
+  // Build the per-question records (paragraph_id × question_index)
+  const records = []; // { id, paragraph_id, doc_id, religion, collection, authority, encumbered, question_text }
+  const sourceParagraphIds = []; // for delete-then-insert idempotency
+  const questionTexts = []; // batched embedding inputs (parallel to records)
+
+  for (const row of rows) {
+    const questions = parseStoredHypQuestions(row.hyp_questions);
+    if (questions.length === 0) continue;
+    sourceParagraphIds.push(row.paragraph_id);
+    let authority = 0;
+    try { authority = getAuthority ? getAuthority({ author: row.author, title: row.title }) : 0; }
+    catch { authority = 0; }
+    questions.forEach((q, qi) => {
+      records.push({
+        id: `${row.paragraph_id}_${qi}`,
+        paragraph_id: row.paragraph_id,
+        doc_id: row.doc_id,
+        religion: row.religion || null,
+        collection: row.collection || null,
+        authority,
+        encumbered: row.encumbered ? 1 : 0,
+        question_text: q
+      });
+      questionTexts.push(q);
+    });
+  }
+
+  if (records.length === 0) {
+    // All rows had empty hyp_questions — mark them synced anyway so we don't loop
+    if (sourceParagraphIds.length > 0) {
+      const placeholders = sourceParagraphIds.map(() => '?').join(',');
+      await query(`UPDATE content SET enhanced_synced = 1 WHERE id IN (${placeholders})`, sourceParagraphIds);
+    }
+    return { processed: rows.length, indexed: 0, errors: 0 };
+  }
+
+  // Batch-embed all questions. createEmbeddings handles internal batching.
+  let embeddings;
+  try {
+    const result = await createEmbeddings(questionTexts, { caller: 'hype-sync' });
+    embeddings = result.embeddings;
+  } catch (err) {
+    logger.error({ err: err.message, count: questionTexts.length }, 'HyPE sync: embedding generation failed');
+    return { processed: 0, indexed: 0, errors: rows.length };
+  }
+  if (!Array.isArray(embeddings) || embeddings.length !== records.length) {
+    logger.error({ got: embeddings?.length, expected: records.length }, 'HyPE sync: embedding count mismatch');
+    return { processed: 0, indexed: 0, errors: rows.length };
+  }
+
+  // Attach embeddings (Meili user-provided vectors via `_vectors.default`)
+  const meiliDocs = records.map((r, i) => ({
+    ...r,
+    _vectors: { default: { embeddings: embeddings[i], regenerate: false } }
+  }));
+
+  // Idempotency: delete prior rows for these paragraph_ids, then insert.
+  // Meili supports filter-based delete on a primary-keyed index.
+  try {
+    const filterStr = `paragraph_id IN [${sourceParagraphIds.join(',')}]`;
+    await meili.index(INDEXES.HYPE_QUESTIONS).deleteDocuments({ filter: filterStr });
+  } catch (err) {
+    logger.warn({ err: err.message }, 'HyPE sync: prior-rows delete failed (continuing)');
+  }
+
+  try {
+    await meili.index(INDEXES.HYPE_QUESTIONS).addDocuments(meiliDocs, { primaryKey: 'id' });
+  } catch (err) {
+    logger.error({ err: err.message, count: meiliDocs.length }, 'HyPE sync: addDocuments failed');
+    return { processed: 0, indexed: 0, errors: rows.length };
+  }
+
+  // Mark source paragraphs synced
+  const placeholders = sourceParagraphIds.map(() => '?').join(',');
+  await query(`UPDATE content SET enhanced_synced = 1 WHERE id IN (${placeholders})`, sourceParagraphIds);
+
+  logger.info({
+    paragraphs: rows.length,
+    questions_indexed: meiliDocs.length
+  }, 'HyPE sidecar sync batch complete');
+
+  return { processed: rows.length, indexed: meiliDocs.length, errors: 0 };
 }
 
 /**
