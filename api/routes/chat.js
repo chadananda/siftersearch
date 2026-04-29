@@ -703,10 +703,13 @@ export async function executeLibraryOverview() {
   };
 }
 
-// Read-document sub-agent. Fetches the document content paragraph-by-paragraph
-// and runs a single gpt-4o pass to extract verbatim excerpts + a tailored
-// summary. Only the distilled result returns to Jafar — full text never
-// enters the main conversation context.
+// Read-document tool. Originally a "smart reader" sub-agent that ran a
+// gpt-4o pass to filter excerpts before returning. Simplified 2026-04-29
+// because the three-stage pipeline (research → craft → reflect) already
+// has the crafter filtering at the next stage — the inner OpenAI call was
+// redundant AND was the slowest step in the per-turn budget (~15s on a
+// 50-paragraph compilation slice). Now returns paragraphs directly. The
+// crafter sees them as retrieved_quotes and picks the right ones to use.
 async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 250, start_paragraph, end_paragraph }) {
   const doc = await queryOne(
     'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
@@ -735,67 +738,18 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   }
   if (paragraphs.length === 0) return { error: 'Document is empty or unreadable' };
 
-  // Build a compact corpus the sub-agent can read end-to-end. Numbered
-  // paragraphs let it cite indices back to Jafar.
-  const corpus = paragraphs
-    .map(p => `[${p.paragraph_index}]${p.heading ? ` ${p.heading}` : ''} ${p.text}`)
-    .join('\n\n');
-
-  const subSystem = `You are a research sub-agent. You read a single document and return ONLY:
-- a 1-3 sentence summary tailored to the question (concrete, grounded in the document)
-- 2-3 verbatim excerpts most relevant to the question, each with its paragraph index
-
-CRITICAL: If the question contains specific named entities, terms, or phrases (proper nouns, named people, named concepts, specific words) — return excerpts that contain those terms VERBATIM. Do not return thematically-related excerpts when literal-match excerpts exist. If the user asks "the passage where he names Plato and Socrates", you return the passage(s) that contain the words "Plato" and "Socrates" — not a related passage about wisdom in general.
-
-Respond as JSON: {"summary":"...","excerpts":[{"paragraph_index":N,"text":"..."}]}.
-Excerpts must be EXACT text copied from the document — no paraphrase, no truncation in the middle, no inserted ellipses unless they exist in the source. If the document does not address the question or does not contain the requested terms, set summary to a one-line statement of that fact and excerpts to [].`;
-
-  const subUser = `Document: "${doc.title}" by ${doc.author || 'unknown'} (${doc.religion || ''}${doc.collection ? `, ${doc.collection}` : ''}${doc.year ? `, ${doc.year}` : ''})
-
-Question to target: ${question}
-
-Document content (paragraph indices in brackets):
-${corpus}`;
-
-  // Cap corpus size — gpt-4o input is large, but a 150-paragraph doc could be
-  // 50K+ chars. Truncate at 60K to stay well under context limits.
-  const corpusCapped = corpus.length > 60000 ? corpus.slice(0, 60000) + '\n\n[truncated]' : corpus;
-
-  let raw = null;
-  try {
-    const subResp = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: subSystem },
-        { role: 'user', content: subUser.replace(corpus, corpusCapped) }
-      ],
-      temperature: 0.2,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' }
-    });
-    raw = subResp.choices[0]?.message?.content;
-    if (!raw) {
-      logger.error({ document_id, finish_reason: subResp.choices[0]?.finish_reason }, 'sub-agent returned empty content');
-      return { error: 'Sub-agent returned no content', document_id, paragraphs_read: paragraphs.length };
-    }
-  } catch (err) {
-    logger.error({ err: err.message, stack: err.stack, document_id, paragraphs: paragraphs.length, corpusChars: corpusCapped.length }, 'sub-agent OpenAI call failed');
-    return { error: `Sub-agent read failed: ${err.message || err.code || err.type || 'unknown'}`, document_id };
-  }
-
-  let parsed = null;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    logger.error({ err: err.message, raw: raw.substring(0, 500), document_id }, 'sub-agent JSON parse failed');
-    return { error: 'Sub-agent returned invalid JSON', document_id, raw_preview: raw.substring(0, 200) };
-  }
-
+  // Direct return — let the crafter (next stage) pick the relevant excerpts.
+  // No internal OpenAI call. Each paragraph becomes one excerpt.
+  // Cap text per paragraph at 1000 chars so the orchestrator's context
+  // stays manageable on long compilations.
   return {
     document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
     paragraphs_read: paragraphs.length,
-    summary: parsed?.summary || '',
-    excerpts: Array.isArray(parsed?.excerpts) ? parsed.excerpts.slice(0, 3) : []
+    excerpts: paragraphs.map(p => ({
+      paragraph_index: p.paragraph_index,
+      text: (p.text || '').slice(0, 1000),
+      heading: p.heading || null
+    }))
   };
 }
 

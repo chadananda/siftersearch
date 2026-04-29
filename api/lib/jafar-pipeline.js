@@ -46,7 +46,24 @@ Always call at least one retrieval tool before saying "done". If a search return
 //                         doc_id, paragraph_index, religion, collection}, ...],
 //     tool_calls: [{name, args, result_summary}, ...]   // for debug
 //   }
+//
+// Sends SSE heartbeats every 15s during the research loop so Cloudflare
+// doesn't drop the connection during slow sub-agent OpenAI calls.
 export async function runResearchPhase({ messages, sendEvent, debug }) {
+  let heartbeat = null;
+  if (sendEvent) {
+    heartbeat = setInterval(() => {
+      try { sendEvent({ type: 'heartbeat', stage: 'research', ts: Date.now() }); } catch {}
+    }, 15000);
+  }
+  try {
+    return await runResearchPhaseInner({ messages, sendEvent, debug });
+  } finally {
+    if (heartbeat) clearInterval(heartbeat);
+  }
+}
+
+async function runResearchPhaseInner({ messages, sendEvent, debug }) {
   const aiMessages = [
     { role: 'system', content: RESEARCH_SYSTEM },
     ...messages.map(m => ({ role: m.role, content: m.content }))
@@ -226,7 +243,7 @@ LITERAL-MATCH — if the user named specific terms (people, places, concepts):
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary about the process.`;
 
-export async function craftAnswer({ user_question, retrieved_quotes, conversation_summary, user_intent, previous_draft, gate_feedback }) {
+export async function craftAnswer({ user_question, retrieved_quotes, conversation_summary, user_intent, previous_draft, gate_feedback, _temperature_override }) {
   const quotesPayload = retrieved_quotes.map((q, i) => {
     const cite = q.citation_url
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
@@ -257,15 +274,52 @@ Rewrite the reply addressing these issues. Use only the retrieved_quotes; do not
 Compose the reply now.`;
 
   const resp = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: CRAFTER_SYSTEM },
       { role: 'user', content: userPayload }
     ],
-    temperature: 0.4,
+    temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.4,
     max_tokens: 1200
   });
   return resp.choices[0].message.content || '';
+}
+
+// Heuristic pick — score each draft on grounding signals, return the higher.
+// No LLM call. Score is the count of: block-quote lines, inline-citation
+// links, opens-with-quote bonus (for definition/quote_request/explain),
+// per-quote-citation pairing. Ties go to draft A (the higher-temperature
+// one — slightly more conversational variety).
+export function pickBestCandidate({ a, b, user_intent, retrieved_quotes }) {
+  const score = (draft) => {
+    if (!draft) return -Infinity;
+    let s = 0;
+    // Each block-quote line is +2
+    s += (draft.match(/^>\s/gm) || []).length * 2;
+    // Each siftersearch.com citation link is +2
+    s += (draft.match(/siftersearch\.com\/document\/\d+/g) || []).length * 2;
+    // Opens with a quotation mark or > (lead-with-quote bonus, except for 'discuss')
+    if (user_intent !== 'discuss' && /^[\s>"\u201C]/.test(draft.trim())) s += 3;
+    // For quote_request: shorter is better (less filler)
+    if (user_intent === 'quote_request') {
+      const wordCount = draft.split(/\s+/).length;
+      if (wordCount < 100) s += 3;
+      else if (wordCount > 250) s -= 3;
+    }
+    // For definition: prefer drafts that contain partial-quoted phrases
+    // (short quoted strings inside prose) as well as block quotes
+    if (user_intent === 'definition') {
+      const partialQuotes = (draft.match(/[\"\u201C][^"\u201C\u201D]{2,40}[\"\u201D]/g) || []).length;
+      s += partialQuotes;
+    }
+    // Penalty for paraphrase tells: training-memory phrasing patterns
+    if (/in\s+(his|the\s+\w+)\s+view/i.test(draft)) s -= 1;
+    if (/often emphasizes|generally speaking|essentially/i.test(draft)) s -= 1;
+    return s;
+  };
+  const sa = score(a);
+  const sb = score(b);
+  return sb > sa ? b : a;
 }
 
 // ─── Stage 3: Reflection gate ─────────────────────────────────────────────
@@ -310,7 +364,7 @@ Judge the draft. Output JSON only.`;
 
   try {
     const resp = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: REFLECTION_SYSTEM },
         { role: 'user', content: userPayload }
@@ -343,6 +397,18 @@ export function summarizeConversation(messages) {
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────
 
+// Send SSE heartbeats every 15s while a long-running stage (craft, reflect)
+// is in flight so Cloudflare's idle-stream timeout doesn't fire.
+async function withHeartbeat(stage, sendEvent, fn) {
+  let interval = null;
+  if (sendEvent) {
+    interval = setInterval(() => {
+      try { sendEvent({ type: 'heartbeat', stage, ts: Date.now() }); } catch {}
+    }, 15000);
+  }
+  try { return await fn(); } finally { if (interval) clearInterval(interval); }
+}
+
 // Run the full three-stage pipeline. Buffers the crafter output, runs the
 // gate, retries once on fail, returns the final reply text plus debug data.
 //
@@ -351,54 +417,47 @@ export function summarizeConversation(messages) {
 export async function runJafarPipeline({ messages, sendEvent, debug }) {
   const userMessage = messages[messages.length - 1].content;
 
-  // Stage 1: research
+  // Stage 1: research + intent classification in parallel — both depend
+  // only on the messages, neither blocks the other. Saves ~1-2s per turn.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'research' });
-  const research = await runResearchPhase({ messages, sendEvent, debug });
-
-  // Intent classification
-  const userIntent = await classifyIntent(userMessage);
+  const [research, userIntent] = await Promise.all([
+    runResearchPhase({ messages, sendEvent, debug }),
+    classifyIntent(userMessage)
+  ]);
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
 
-  // Stage 2: craft
+  // Stage 2: parallel-craft-then-pick.
+  // Two crafter calls in parallel at different temperatures (0.4 and 0.2)
+  // — about the same wall-clock as one call — followed by a deterministic
+  // heuristic pick. Replaces the prior sequential craft → reflect →
+  // recraft loop. Saves 5-8s per turn.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
-  let draft = await craftAnswer({
-    user_question: userMessage,
-    retrieved_quotes: research.retrieved_quotes,
-    conversation_summary: conversationSummary,
-    user_intent: userIntent
-  });
-
-  // Stage 3: reflect
-  if (sendEvent) sendEvent({ type: 'stage', stage: 'reflect' });
-  let gate = await reflectionGate({
-    draft,
-    retrieved_quotes: research.retrieved_quotes,
-    user_intent: userIntent,
-    user_question: userMessage
-  });
-
-  let retried = false;
-  if (!gate.pass) {
-    if (sendEvent && debug) sendEvent({ type: 'debug_gate_fail', issues: gate.issues, failed_sentences: gate.failed_sentences });
-    if (sendEvent) sendEvent({ type: 'stage', stage: 'craft_retry' });
-    draft = await craftAnswer({
+  const [draftA, draftB] = await Promise.all([
+    craftAnswer({
       user_question: userMessage,
       retrieved_quotes: research.retrieved_quotes,
       conversation_summary: conversationSummary,
       user_intent: userIntent,
-      previous_draft: draft,
-      gate_feedback: gate
-    });
-    retried = true;
-    // Skip the re-gate after retry. Saves one OpenAI call per failed-gate
-    // turn (~3-5s) which is critical for staying under Cloudflare's stream
-    // timeout. Trust the retry; if persistently bad we'll catch it in the
-    // post-hoc dialog assessment.
-    gate = { pass: false, retry_attempted: true, original_issues: gate.issues };
-  }
+      _temperature_override: 0.4
+    }),
+    craftAnswer({
+      user_question: userMessage,
+      retrieved_quotes: research.retrieved_quotes,
+      conversation_summary: conversationSummary,
+      user_intent: userIntent,
+      _temperature_override: 0.2
+    })
+  ]);
+
+  // Pick the stronger candidate via grounding heuristics. No LLM judge —
+  // simple rules: block quotes, citation links, opens-with-quote, length-
+  // appropriateness for the intent.
+  const draft = pickBestCandidate({ a: draftA, b: draftB, user_intent: userIntent, retrieved_quotes: research.retrieved_quotes });
+  const gate = { pass: true, picker: 'heuristic' };
+  const retried = false;
 
   return {
     reply: draft,
