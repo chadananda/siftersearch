@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 49;
+const CURRENT_VERSION = 51;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -1886,6 +1886,80 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_gr_target ON graph_relations(target_entity_id)');
 
     logger.info('Migration 50 complete: graph tables created');
+  },
+
+  // Version 51: chat session persistence + published conversations
+  // chat_sessions / chat_messages: optional conversation_id thread persistence
+  //   (Task #8) — POST /api/v1/chat accepts ?conversation_id=… and replays
+  //   prior history. tenant_id is derived from the API key on first message.
+  // published_conversations: REMOTE-mode save target (Task #9) — when a
+  //   tenant calls POST /api/v1/chat/save with {domain, base_path}, the
+  //   publish pipeline writes a row here keyed by (tenant_id, slug) and
+  //   returns share_url+fetch_url. The remote site fetches by slug from
+  //   GET /api/v1/conversations/{slug}?tenant=… (Task #10).
+  51: async () => {
+    logger.info('Starting migration 51: chat sessions + published conversations');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS chat_sessions (
+        id TEXT PRIMARY KEY,                 -- conversation_id, e.g. "conv_<uuid>"
+        tenant_id TEXT NOT NULL,             -- derived from API key (or "siftersearch" for internal)
+        user_id INTEGER,                     -- nullable: anonymous chats are fine
+        title TEXT,                          -- generated lazily from round 1 once rounds >= 2
+        started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        last_activity TEXT DEFAULT CURRENT_TIMESTAMP,
+        message_count INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'active',        -- active | published | archived | deleted
+        published_slug TEXT,                 -- set when this session is published via /save
+        metadata_json TEXT                   -- {hero_image, topic, tags, keywords, …}
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_chat_sessions_tenant ON chat_sessions(tenant_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_chat_sessions_last_activity ON chat_sessions(last_activity)');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        round_index INTEGER NOT NULL,        -- 0-based round number; user+assistant share the same round
+        role TEXT NOT NULL,                  -- user | assistant | system | tool
+        content TEXT NOT NULL,
+        tool_calls_json TEXT,                -- for assistant messages with tool_calls
+        tool_name TEXT,                      -- for tool result messages
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, round_index)');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS published_conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id TEXT NOT NULL,             -- derived from API key
+        slug TEXT NOT NULL,                  -- generated from title; unique per tenant
+        title TEXT NOT NULL,                 -- question form
+        description TEXT NOT NULL,           -- answer-summary
+        question TEXT NOT NULL,              -- the seed question (round 1 user content)
+        topic TEXT,
+        tags_json TEXT,                      -- JSON array
+        keywords_json TEXT,                  -- JSON array
+        excerpt TEXT,                        -- pull-quote for listing cards
+        hero_image TEXT,                     -- URL (R2/CDN)
+        rounds_json TEXT NOT NULL,           -- JSON: [{n, user, jafar, round_summary:{question,answer}}]
+        domain TEXT,                         -- e.g. "oceanoflights.org"
+        base_path TEXT,                      -- e.g. "/conversations/"
+        share_url TEXT,                      -- generated full URL
+        conversation_id TEXT,                -- chat_sessions.id if published from a tracked session
+        published_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(tenant_id, slug)
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_pubconv_tenant_slug ON published_conversations(tenant_id, slug)');
+    await query('CREATE INDEX IF NOT EXISTS idx_pubconv_published_at ON published_conversations(published_at)');
+
+    logger.info('Migration 51 complete: chat_sessions, chat_messages, published_conversations');
   },
 };
 

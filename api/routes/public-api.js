@@ -34,7 +34,7 @@ import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
 import { ApiError } from '../lib/errors.js';
 import { validateApiKey } from '../lib/api-keys.js';
-import { queryOne, queryAll, userQuery, userQueryOne } from '../lib/db.js';
+import { query, queryOne, queryAll, userQuery, userQueryOne } from '../lib/db.js';
 import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billing.js';
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 
@@ -841,6 +841,226 @@ export default async function publicApiRoutes(fastify) {
     reply.raw.end();
     logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
+  });
+
+  /**
+   * POST /api/v1/chat/save
+   *
+   * Run the publish pipeline on a captured conversation. Two modes:
+   *   LOCAL (no domain/base_path): write src/content/dialogs/{slug}.md and
+   *     return https://siftersearch.com/dialogue/{slug}/. Used internally
+   *     by Claude Code's iteration loop.
+   *   REMOTE (domain + base_path): persist in published_conversations.
+   *     Return {share_url, fetch_url}. The remote site exposes share_url as
+   *     a route and fetches structured content from fetch_url on each visit.
+   */
+  fastify.post('/chat/save', {
+    schema: {
+      description: 'Save a conversation as a published dialog. Generates SEO metadata, slug, tags, hero image, round summaries. Returns share_url and (REMOTE mode) a fetch_url the calling site uses to render content.',
+      tags: ['Chat'],
+      security: [{ apiKey: [] }],
+      body: {
+        type: 'object',
+        required: ['messages'],
+        properties: {
+          messages: {
+            type: 'array', minItems: 2, maxItems: 50,
+            description: 'Full conversation history (alternating user/assistant). At least 1 round (user+assistant).',
+            items: {
+              type: 'object', required: ['role', 'content'],
+              properties: {
+                role: { type: 'string', enum: ['user', 'assistant'] },
+                content: { type: 'string', maxLength: 12000 }
+              }
+            }
+          },
+          domain: { type: 'string', description: 'For REMOTE mode: the publishing site domain (e.g. "oceanoflights.org"). Omit for LOCAL mode (writes to siftersearch.com).' },
+          base_path: { type: 'string', description: 'For REMOTE mode: the URL path prefix (e.g. "/conversations/"). Required when domain is set.' },
+          topic_hint: { type: 'string', description: 'Optional pre-classification hint for the publish pipeline.' },
+          conversation_id: { type: 'string', description: 'Optional chat_sessions.id to associate the published dialog with a tracked session.' },
+          assessment: {
+            type: 'object',
+            description: 'Optional pre-computed assessment block (when the caller has already scored the conversation, e.g. Claude Code as judge).',
+            properties: {
+              score: { type: 'number' },
+              scores: { type: 'object' },
+              narrative: { type: 'string' },
+              flags: { type: 'array', items: { type: 'string' } },
+              improvement_plan: { type: 'string' }
+            }
+          }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { messages, domain, base_path, topic_hint, conversation_id, assessment } = request.body;
+    const tenantId = request.apiKeyTenantId || 'siftersearch';
+    const isRemote = !!(domain && base_path);
+
+    try {
+      const { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } = await import('../lib/publish-pipeline.js');
+
+      // Anonymize user turns first; sub-agent calls work on the cleaned text
+      const cleaned = await anonymizeUserTurns(messages).catch(err => {
+        logger.warn({ err: err.message }, 'anonymize failed, proceeding with raw messages');
+        return messages;
+      });
+
+      const meta = await generatePublishMetadata({ messages: cleaned, topic_hint });
+      const rounds = pairRounds(cleaned);
+      const summaries = await generateRoundSummaries(rounds).catch(() => []);
+
+      // Pair each round with its h3/h4 summaries
+      const roundsWithSummaries = rounds.map((r, i) => ({
+        n: i + 1,
+        user: r.user,
+        jafar: r.jafar,
+        round_summary: summaries[i] || null
+      }));
+
+      const slug = meta.slug;
+
+      if (isRemote) {
+        // REMOTE: persist in published_conversations
+        const shareUrl = `https://${domain}${base_path}${slug}/`;
+        const fetchUrl = `${SITE_URL}/api/v1/conversations/${slug}?tenant=${encodeURIComponent(tenantId)}`;
+
+        await query(
+          `INSERT INTO published_conversations
+             (tenant_id, slug, title, description, question, topic, tags_json, keywords_json,
+              excerpt, hero_image, rounds_json, domain, base_path, share_url, conversation_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(tenant_id, slug) DO UPDATE SET
+             title=excluded.title, description=excluded.description, topic=excluded.topic,
+             tags_json=excluded.tags_json, keywords_json=excluded.keywords_json,
+             excerpt=excluded.excerpt, rounds_json=excluded.rounds_json,
+             updated_at=CURRENT_TIMESTAMP`,
+          [tenantId, slug, meta.title, meta.description, cleaned[0]?.content || '',
+           meta.topic, JSON.stringify(meta.tags), JSON.stringify(meta.keywords),
+           meta.excerpt, null, JSON.stringify(roundsWithSummaries),
+           domain, base_path, shareUrl, conversation_id || null]
+        );
+
+        return {
+          slug, share_url: shareUrl, fetch_url: fetchUrl,
+          title: meta.title, description: meta.description,
+          topic: meta.topic, tags: meta.tags, keywords: meta.keywords,
+          hero_image: null, // hero generation deferred — caller can request via separate endpoint
+          rounds_count: rounds.length
+        };
+      }
+
+      // LOCAL mode: respond with the generated assets but DO NOT write to
+      // SifterSearch's content collection from an HTTP endpoint (Astro
+      // content collection writes require a build cycle). LOCAL writes are
+      // performed by the internal Claude Code script (scripts/wip/test-publish.mjs)
+      // which has filesystem access to src/content/dialogs/. This endpoint
+      // returns the generated metadata so the script can write the file.
+      return {
+        mode: 'local',
+        slug, title: meta.title, description: meta.description,
+        question: cleaned[0]?.content || '',
+        topic: meta.topic, tags: meta.tags, keywords: meta.keywords,
+        excerpt: meta.excerpt,
+        rounds: roundsWithSummaries,
+        intended_path: `src/content/dialogs/${slug}.md`,
+        intended_url: `${SITE_URL}/dialogue/${slug}/`,
+        assessment: assessment || null
+      };
+    } catch (err) {
+      logger.error({ err: err.message, stack: err.stack }, 'chat/save failed');
+      return reply.code(500).send({ error: err.message || 'save failed' });
+    }
+  });
+
+  /**
+   * GET /api/v1/conversations/:slug
+   *
+   * Public-read fetch endpoint for saved conversations. Used by remote sites
+   * (and SifterSearch's own /dialogue/ template) to render published
+   * conversations on each request. Content-negotiated:
+   *   default + Accept: application/json → structured JSON
+   *   ?format=md or Accept: text/markdown → raw markdown frontmatter+body
+   */
+  fastify.get('/conversations/:slug', {
+    schema: {
+      description: 'Fetch a published conversation by slug. Public read (no API key required) so saved share URLs work for anonymous visitors. Content-negotiated: returns JSON by default, markdown via ?format=md or Accept: text/markdown.',
+      tags: ['Conversations'],
+      params: {
+        type: 'object',
+        properties: { slug: { type: 'string' } },
+        required: ['slug']
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          tenant: { type: 'string', description: 'Tenant identifier — same slug can exist under multiple tenants.' },
+          format: { type: 'string', enum: ['json', 'md'], default: 'json' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { slug } = request.params;
+    const tenant = request.query.tenant || 'siftersearch';
+    const format = request.query.format ||
+      (request.headers.accept?.includes('text/markdown') ? 'md' : 'json');
+
+    const row = await queryOne(
+      `SELECT * FROM published_conversations WHERE tenant_id = ? AND slug = ?`,
+      [tenant, slug]
+    );
+    if (!row) return reply.code(404).send({ error: 'Not found', tenant, slug });
+
+    // ETag from updated_at for cheap revalidation
+    const etag = `W/"${Buffer.from(String(row.updated_at || row.published_at)).toString('base64')}"`;
+    if (request.headers['if-none-match'] === etag) {
+      reply.code(304);
+      return reply.send();
+    }
+    reply.header('ETag', etag);
+    reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+
+    const tags = row.tags_json ? JSON.parse(row.tags_json) : [];
+    const keywords = row.keywords_json ? JSON.parse(row.keywords_json) : [];
+    const rounds = row.rounds_json ? JSON.parse(row.rounds_json) : [];
+
+    if (format === 'md') {
+      reply.header('Content-Type', 'text/markdown; charset=utf-8');
+      const fm = ['---'];
+      const j = (k, v) => fm.push(`${k}: ${JSON.stringify(v)}`);
+      j('title', row.title);
+      j('description', row.description);
+      j('question', row.question);
+      fm.push(`topic: ${row.topic || 'theology'}`);
+      fm.push('tags:');
+      tags.forEach(t => fm.push(`  - ${t}`));
+      fm.push(`rounds: ${rounds.length}`);
+      fm.push(`publishedAt: ${row.published_at}`);
+      if (row.hero_image) fm.push(`heroImage: ${row.hero_image}`);
+      fm.push('keywords:');
+      keywords.forEach(k => fm.push(`  - ${JSON.stringify(k)}`));
+      if (row.excerpt) j('excerpt', row.excerpt);
+      fm.push('---', '');
+      const body = [];
+      for (const r of rounds) {
+        if (r.round_summary?.question) body.push(`### ${r.round_summary.question}`, '');
+        body.push(`<div class="user-turn" id="round-${r.n}">`, '', r.user || '', '', '</div>', '');
+        if (r.round_summary?.answer) body.push(`#### ${r.round_summary.answer}`, '');
+        body.push(`<div class="jafar-turn">`, '', r.jafar || '', '', '</div>', '');
+      }
+      return reply.send(fm.join('\n') + body.join('\n'));
+    }
+
+    return {
+      slug: row.slug, tenant: row.tenant_id,
+      title: row.title, description: row.description, question: row.question,
+      topic: row.topic, tags, keywords, excerpt: row.excerpt,
+      hero_image: row.hero_image,
+      published_at: row.published_at, updated_at: row.updated_at,
+      share_url: row.share_url,
+      conversation_id: row.conversation_id,
+      rounds
+    };
   });
 
   // Health endpoint registered above (before auth hook) so it's public
