@@ -1046,10 +1046,13 @@ export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100
     return { processed: 0, indexed: 0, errors: rows.length };
   }
 
-  // Attach embeddings (Meili user-provided vectors via `_vectors.default`)
+  // Attach embeddings — format MUST match what other workers use:
+  // `_vectors: { default: <flat array> }`. The shorthand `{embeddings, regenerate}`
+  // form is silently accepted by Meili but doesn't actually populate the vector
+  // store (numberOfEmbeddings stays 0). Verified against sync-processor.js:168.
   const meiliDocs = records.map((r, i) => ({
     ...r,
-    _vectors: { default: { embeddings: embeddings[i], regenerate: false } }
+    _vectors: { default: embeddings[i] }
   }));
 
   // Idempotency: delete prior rows for these paragraph_ids, then insert.
