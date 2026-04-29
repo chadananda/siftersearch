@@ -107,6 +107,29 @@ The pattern is purely additive:
 
 No re-embedding of existing paragraphs. No changes to the main paragraphs index. Each layer is decoupled.
 
+## Backups
+
+Daily backup runs from the unified worker (`runBackup` in `api/lib/backup.js`). Three components, each backed up independently to `BACKUP_DIR` (set via env, defaults to `/tank/backups/siftersearch/` on tower-nas):
+
+| Source | Destination | Method | Why |
+|---|---|---|---|
+| `data/sifter.db` (content + chat + sessions) | `sifter-YYYY-MM-DD.db` | `sqlite3 .backup` | atomic snapshot of WAL DB |
+| `/fast/meilisearch-data` (search index) | `meilisearch/` | incremental rsync | fast disaster recovery if NVMe pool fails |
+| `data/embedding_cache.db` | `embedding_cache-YYYY-MM-DD.db` | `sqlite3 .backup` | preserves OpenAI-cost embeddings |
+
+Retention: 7 days (configurable via `config.backup.localRetentionDays`). Old daily SQLite + embedding cache files are pruned. Meilisearch backup is mirror-style (`rsync --delete`) so it always reflects today's index state.
+
+`/tank` is a 20TB ZFS pool with auto-snapshots (daily/weekly/monthly per `/etc/cron.d/zfs-auto-snapshot`), so the rsync target also gets point-in-time rollback for free.
+
+**Testing recovery:** to restore Meilisearch from `/tank` after an `/fast` failure:
+```bash
+systemctl --user stop meilisearch
+rsync -aH --delete /tank/backups/siftersearch/meilisearch/ /fast/meilisearch-data/
+# Ensure VERSION file (Meili 1.41 requires it):
+echo "1.41.0" > /fast/meilisearch-data/VERSION
+systemctl --user start meilisearch
+```
+
 ## Operational checks
 
 ```bash
