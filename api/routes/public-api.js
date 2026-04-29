@@ -993,11 +993,10 @@ export default async function publicApiRoutes(fastify) {
         debug
       });
 
+      // Pipeline now streams the crafter's chunks via sendEvent → 'text'
+      // events as the model generates. No need to re-emit here. The full
+      // reply is captured in result.reply for persistence and citations.
       const finalContent = result.reply || '';
-      const words = finalContent.split(' ');
-      for (let i = 0; i < words.length; i += 3) {
-        sendEvent({ type: 'text', content: words.slice(i, i + 3).join(' ') + ' ' });
-      }
 
       // Build citations from the structured retrieved_quotes used by the crafter
       // (only the first 8, deduplicated by doc_id+paragraph_index).

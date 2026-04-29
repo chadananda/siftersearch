@@ -20,12 +20,12 @@ export function smartQuotes(text) {
   s = s.replace(/([A-Za-z\u00C0-\u024F])'([A-Za-z\u00C0-\u024F])/g, '$1\u2019$2');
 
   // Leading single quote (start of string or after whitespace/open-bracket): 'word
-  s = s.replace(/(^|[\s({\[])'/g, '$1\u2018');
+  s = s.replace(/(^|[\s({[])'/g, '$1\u2018');
   // Closing single quote (everything else)
   s = s.replace(/'/g, '\u2019');
 
   // Leading double quote
-  s = s.replace(/(^|[\s({\[\u2014])"/g, '$1\u201C');
+  s = s.replace(/(^|[\s({[\u2014])"/g, '$1\u201C');
   // Closing double quote
   s = s.replace(/"/g, '\u201D');
 

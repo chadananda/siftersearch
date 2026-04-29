@@ -53,7 +53,7 @@ export async function runResearchPhase({ messages, sendEvent, debug }) {
   let heartbeat = null;
   if (sendEvent) {
     heartbeat = setInterval(() => {
-      try { sendEvent({ type: 'heartbeat', stage: 'research', ts: Date.now() }); } catch {}
+      try { sendEvent({ type: 'heartbeat', stage: 'research', ts: Date.now() }); } catch { /* ignore */ }
     }, 15000);
   }
   try {
@@ -181,19 +181,30 @@ async function runResearchPhaseInner({ messages, sendEvent, debug }) {
   return { retrieved_quotes: retrieved, tool_calls: debugCalls };
 }
 
-// ─── User-intent classifier ───────────────────────────────────────────────
+// ─── Intent + entity classifier ───────────────────────────────────────────
 
-// Tiny gpt-4o-mini call to classify the user's most recent message into one
-// of four intents. The crafter routes its output style by intent.
-const INTENT_SYSTEM = `Classify the user's most recent message into ONE of these intents:
-- "quote_request": the user explicitly asks for a quote, passage, verse, or text excerpt. Words like "show me", "quote me", "find the verse", "give me the passage".
-- "definition": the user asks what a term, concept, or doctrine means.
-- "explain": the user asks how something works, why a teaching exists, or what a tradition says about a topic.
-- "discuss": general conversation, follow-up commentary, opinion, or open exploration.
+// Single gpt-4o-mini call that classifies intent AND extracts the entities
+// the deterministic retrieval router needs (work_name, religion, topics).
+// Replaces both the standalone classifyIntent and the LLM orchestrator —
+// the heaviest call in the pipeline. Total: 1 mini call (~1-2s) instead of
+// gpt-4o-with-tools (~5-7s).
+const INTENT_SYSTEM = `Classify the user's message and extract retrieval entities. Output JSON ONLY.
 
-Output JSON: {"intent": "quote_request" | "definition" | "explain" | "discuss"}`;
+intent: ONE of
+- "quote_request": user asks for a quote/passage/verse/text excerpt explicitly. Words like "show me", "quote me", "find the verse", "give me the passage".
+- "definition": user asks what a term, concept, or doctrine means.
+- "explain": user asks how something works, why a teaching exists, or what a tradition says about a topic.
+- "discuss": general conversation, follow-up commentary, opinion, open exploration.
 
-export async function classifyIntent(userMessage) {
+work_name: if the user names a specific scriptural work (Tablet of Wisdom, Iqán, Hidden Words, Gospel of John, Bhagavad Gita, Some Answered Questions, etc.), extract that name as the user phrased it. Else null.
+
+religion: ONE of "Baha'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh", "Jain", "Confucian", "Tao", "Zoroastrian" — based on context. Default to "Baha'i" if Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi, the Báb, or Bahá'í texts are referenced. Else "Baha'i" if no other tradition is signaled (this app's primary corpus). Null only if explicitly cross-tradition.
+
+topics: 1-3 lowercase topical keywords for passage search (e.g. "materialism", "justice", "soul"). Period vocabulary preferred over modern phrasing. Empty array if work_name covers it.
+
+Output: {"intent": "...", "work_name": "..."|null, "religion": "..."|null, "topics": [...]}`;
+
+export async function classifyIntentAndEntities(userMessage) {
   try {
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -202,16 +213,154 @@ export async function classifyIntent(userMessage) {
         { role: 'user', content: userMessage }
       ],
       temperature: 0.0,
-      max_tokens: 50,
+      max_tokens: 200,
       response_format: { type: 'json_object' }
     });
     const parsed = JSON.parse(resp.choices[0].message.content);
-    const valid = ['quote_request', 'definition', 'explain', 'discuss'];
-    return valid.includes(parsed.intent) ? parsed.intent : 'discuss';
+    const validIntents = ['quote_request', 'definition', 'explain', 'discuss'];
+    return {
+      intent: validIntents.includes(parsed.intent) ? parsed.intent : 'discuss',
+      work_name: parsed.work_name || null,
+      religion: parsed.religion || 'Baha\'i',
+      topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : []
+    };
   } catch (err) {
-    logger.warn({ err: err.message }, 'intent classification failed; defaulting to discuss');
-    return 'discuss';
+    logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
+    return { intent: 'discuss', work_name: null, religion: 'Baha\'i', topics: [] };
   }
+}
+
+// Backwards-compat wrapper
+export async function classifyIntent(userMessage) {
+  const { intent } = await classifyIntentAndEntities(userMessage);
+  return intent;
+}
+
+// ─── Stage 1b: Deterministic retrieval ────────────────────────────────────
+
+// Replaces the LLM orchestrator with direct, deterministic tool calls
+// based on the entities extracted by classifyIntentAndEntities.
+//
+//   work_name set  → find_document_for_citation → read_document_for_question
+//                    on the primary candidate (using canonical paragraph
+//                    range if known) PLUS a passages search for any topics
+//   else           → search:passages on topics or the raw user message
+//
+// No model call here. ~0.5-1.5s wall time. Combined with the 1-2s entity
+// classifier, the whole research stage runs in ~2-3s instead of 5-10s.
+export async function deterministicResearch({ entities, userMessage, sendEvent, debug }) {
+  const retrieved = [];
+  const debugCalls = [];
+
+  const harvestPassages = (result, via = 'search') => {
+    if (!result?.passages) return;
+    for (const p of result.passages) {
+      retrieved.push({
+        text: p.text || '',
+        source_title: p.title || '',
+        source_author: p.author || '',
+        citation_url: p.document_id ? `https://siftersearch.com/document/${p.document_id}` : null,
+        doc_id: p.document_id,
+        paragraph_index: p.paragraph_index,
+        religion: p.religion || null,
+        collection: p.collection || null,
+        via
+      });
+    }
+  };
+
+  const harvestExcerpts = (result, via = 'read_document_for_question') => {
+    if (!result?.excerpts) return;
+    const doc = result.document || {};
+    for (const e of result.excerpts) {
+      retrieved.push({
+        text: e.text || '',
+        source_title: doc.title || '',
+        source_author: doc.author || '',
+        citation_url: doc.id ? `https://siftersearch.com/document/${doc.id}` : null,
+        doc_id: doc.id,
+        paragraph_index: e.paragraph_index,
+        religion: doc.religion || null,
+        collection: doc.collection || null,
+        via
+      });
+    }
+  };
+
+  const runTool = async (name, args) => {
+    if (debug) debugCalls.push({ name, args });
+    if (sendEvent) sendEvent({ type: 'debug_research_call', name, args });
+    let result;
+    try {
+      result = await executeTool(name, args);
+    } catch (toolErr) {
+      logger.error({ err: toolErr.message, tool: name, args }, 'deterministic tool execution threw');
+      result = { error: toolErr.message };
+    }
+    if (sendEvent) {
+      sendEvent({
+        type: 'debug_research_result',
+        name,
+        diag: {
+          error: result?.error,
+          passages: result?.passages?.length,
+          excerpts: result?.excerpts?.length,
+          candidates: result?.candidates?.length
+        }
+      });
+    }
+    return result;
+  };
+
+  const tasks = [];
+
+  // Branch 1: user named a specific work — go fetch it directly
+  if (entities.work_name) {
+    tasks.push((async () => {
+      const find = await runTool('find_document_for_citation', {
+        title: entities.work_name,
+        religion: entities.religion || undefined,
+        limit: 5
+      });
+      const primary = (find?.candidates || []).find(c => c.is_primary) || find?.candidates?.[0];
+      if (primary?.document_id) {
+        const readArgs = { document_id: primary.document_id, question: userMessage };
+        if (typeof primary.start_paragraph === 'number') readArgs.start_paragraph = primary.start_paragraph;
+        if (typeof primary.end_paragraph === 'number') readArgs.end_paragraph = primary.end_paragraph;
+        const read = await runTool('read_document_for_question', readArgs);
+        harvestExcerpts(read);
+      }
+    })());
+  }
+
+  // Branch 2: passages search on the extracted topics (or raw message
+  // if no topics). Always runs — even alongside a work_name lookup —
+  // because a topic match elsewhere in the corpus often complements
+  // the named-work passage.
+  const passageQuery = entities.topics?.length
+    ? entities.topics.join(' ')
+    : userMessage;
+  if (passageQuery && passageQuery.trim()) {
+    tasks.push((async () => {
+      const search = await runTool('search', {
+        query: passageQuery,
+        mode: 'passages',
+        religion: entities.religion || undefined,
+        limit: 8
+      });
+      harvestPassages(search);
+    })());
+  }
+
+  await Promise.all(tasks);
+
+  logger.info({
+    retrieved: retrieved.length,
+    work_name: entities.work_name,
+    topics: entities.topics,
+    calls: debugCalls.length
+  }, 'deterministic research complete');
+  return { retrieved_quotes: retrieved, tool_calls: debugCalls };
 }
 
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
@@ -242,6 +391,51 @@ LITERAL-MATCH — if the user named specific terms (people, places, concepts):
 - If no retrieved quote contains them verbatim, say so directly: "The retrieved excerpts don't contain 'X' explicitly. Closest material I have:"
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary about the process.`;
+
+// Streaming variant — yields each chunk as it arrives. Used in the
+// fast-path orchestrator. Returns the full text at the end.
+export async function craftAnswerStream({ user_question, retrieved_quotes, conversation_summary, user_intent, onChunk, _temperature_override }) {
+  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent });
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: CRAFTER_SYSTEM },
+      { role: 'user', content: userPayload }
+    ],
+    temperature: typeof _temperature_override === 'number' ? _temperature_override : 0.3,
+    max_tokens: 1200,
+    stream: true
+  });
+  let full = '';
+  for await (const chunk of stream) {
+    const text = chunk.choices?.[0]?.delta?.content || '';
+    if (text) {
+      full += text;
+      if (onChunk) onChunk(text);
+    }
+  }
+  return full;
+}
+
+function buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent }) {
+  const quotesPayload = retrieved_quotes.map((q, i) => {
+    const cite = q.citation_url
+      ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
+      : `${q.source_title || 'source'} — ${q.source_author || 'unknown'}`;
+    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}] ${q.text}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
+  }).join('\n\n');
+  return `user_intent: ${user_intent}
+
+user_question: ${user_question}
+
+conversation_summary: ${conversation_summary || '(this is the opening turn)'}
+
+retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
+
+${quotesPayload || '(no quotes retrieved — reply must say so)'}
+
+Compose the reply now.`;
+}
 
 export async function craftAnswer({ user_question, retrieved_quotes, conversation_summary, user_intent, previous_draft, gate_feedback, _temperature_override }) {
   const quotesPayload = retrieved_quotes.map((q, i) => {
@@ -419,18 +613,6 @@ export function summarizeConversation(messages) {
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────
 
-// Send SSE heartbeats every 15s while a long-running stage (craft, reflect)
-// is in flight so Cloudflare's idle-stream timeout doesn't fire.
-async function withHeartbeat(stage, sendEvent, fn) {
-  let interval = null;
-  if (sendEvent) {
-    interval = setInterval(() => {
-      try { sendEvent({ type: 'heartbeat', stage, ts: Date.now() }); } catch {}
-    }, 15000);
-  }
-  try { return await fn(); } finally { if (interval) clearInterval(interval); }
-}
-
 // Run the full three-stage pipeline. Buffers the crafter output, runs the
 // gate, retries once on fail, returns the final reply text plus debug data.
 //
@@ -439,59 +621,37 @@ async function withHeartbeat(stage, sendEvent, fn) {
 export async function runJafarPipeline({ messages, sendEvent, debug }) {
   const userMessage = messages[messages.length - 1].content;
 
-  // Stage 1: research + intent classification in parallel — both depend
-  // only on the messages, neither blocks the other. Saves ~1-2s per turn.
+  // Stage 1: classify intent + entities (1 mini call ~1-2s), then run
+  // deterministic retrieval directly from the entities (no LLM) ~0.5-1.5s.
+  // Total research wall time ~2-3s vs the prior gpt-4o-with-tools 5-10s.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'research' });
-  const [research, userIntent] = await Promise.all([
-    runResearchPhase({ messages, sendEvent, debug }),
-    classifyIntent(userMessage)
-  ]);
-  if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent });
+  const entities = await classifyIntentAndEntities(userMessage);
+  const userIntent = entities.intent;
+  if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
+  const research = await deterministicResearch({ entities, userMessage, sendEvent, debug });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
 
-  // Stage 2: 3 parallel gpt-4o-mini crafters + smart gpt-4o picker.
-  // User's framing: 'speed of mini with the quick decision of the smarter
-  // model.' Three drafts at different temperatures explore variation;
-  // gpt-4o judges grounding, intent fit, and citation discipline to pick
-  // the winner. Wall clock: max(craft) + pick ≈ 4-5s + 2-3s = 6-8s total.
+  // Stage 2: SINGLE STREAMING crafter — gpt-4o-mini, output streams to the
+  // client as it generates. Picker dropped: TTFT is what matters for chat
+  // UX, and the picker added 2-3s before any text could appear.
+  // The crafter's structural isolation (sees only retrieved_quotes, no
+  // general-knowledge fallback) is what enforces grounding — multi-
+  // candidate selection was nice-to-have, not load-bearing.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
-  const candidates = await Promise.all([
-    craftAnswer({
-      user_question: userMessage,
-      retrieved_quotes: research.retrieved_quotes,
-      conversation_summary: conversationSummary,
-      user_intent: userIntent,
-      _temperature_override: 0.2
-    }),
-    craftAnswer({
-      user_question: userMessage,
-      retrieved_quotes: research.retrieved_quotes,
-      conversation_summary: conversationSummary,
-      user_intent: userIntent,
-      _temperature_override: 0.4
-    }),
-    craftAnswer({
-      user_question: userMessage,
-      retrieved_quotes: research.retrieved_quotes,
-      conversation_summary: conversationSummary,
-      user_intent: userIntent,
-      _temperature_override: 0.6
-    })
-  ]);
-
-  if (sendEvent) sendEvent({ type: 'stage', stage: 'pick' });
-  const pickResult = await pickBestCandidate({
-    candidates,
-    user_intent: userIntent,
+  const onChunk = (text) => {
+    if (sendEvent) sendEvent({ type: 'text', content: text });
+  };
+  const draft = await craftAnswerStream({
+    user_question: userMessage,
     retrieved_quotes: research.retrieved_quotes,
-    user_question: userMessage
+    conversation_summary: conversationSummary,
+    user_intent: userIntent,
+    _temperature_override: 0.3,
+    onChunk
   });
-  if (sendEvent && debug) sendEvent({ type: 'debug_pick', label: pickResult.label, reason: pickResult.reason });
-
-  const draft = pickResult.winner;
-  const gate = { pass: true, picker: 'gpt-4o', label: pickResult.label, reason: pickResult.reason };
+  const gate = { pass: true, picker: 'streamed-no-pick' };
   const retried = false;
 
   return {
