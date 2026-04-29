@@ -438,6 +438,16 @@ const CANONICAL_WORKS = [
   { matchers: ['seven valleys', 'four valleys', 'haft vadi'], doc_id: 8241, religion: "Baha'i" },
   { matchers: ['summons of the lord of hosts'], doc_id: 8299, religion: "Baha'i" },
   { matchers: ['prayers and meditations'], doc_id: 8301, religion: "Baha'i" },
+  { matchers: ['supplications'], doc_id: 16289, religion: "Baha'i" },
+  { matchers: ['epistle to the son of the wolf', 'epistle son of the wolf'], doc_id: 8273, religion: "Baha'i" },
+  { matchers: ['mathnaviyi', 'mathnavi'], doc_id: 16284, religion: "Baha'i" },
+  { matchers: ['hymn to love', 'saqi bi-dih', 'saqi bidih'], doc_id: 11447, religion: "Baha'i" },
+  { matchers: ['ode of the dove', 'qasidiy-i-varqaiyyih'], doc_id: 16600, religion: "Baha'i" },
+  { matchers: ['tablet of the temple', 'surih-i-haykal'], doc_id: 16658, religion: "Baha'i" },
+  { matchers: ['tablet to manikchi', 'tablet to manakji', 'lawh-i-manikchi'], doc_id: 16691, religion: "Baha'i" },
+  // Specific named prayers / tablets (small docs but doctrinally central)
+  { matchers: ['tablet of ahmad', 'tablet-of-ahmad', 'lawh-i-ahmad'], doc_id: 1616, religion: "Baha'i" },
+  { matchers: ['long healing prayer', 'lawh-i-anis'], doc_id: 16597, religion: "Baha'i" },
 
   // Compilation: "Tablets of Bahá'u'lláh Revealed After the Kitáb-i-Aqdas"
   // (doc 8270, 664 paragraphs). Sub-section ranges by chapter prefix:
