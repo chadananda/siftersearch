@@ -1,0 +1,74 @@
+[
+  {
+    "id": "find-tablet-of-wisdom",
+    "method": "find_document_for_citation",
+    "args": {"title": "Tablet of Wisdom", "religion": "Baha'i"},
+    "expected_top_doc_id": 8270,
+    "expected_paragraph_range": [313, 365],
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-iqan",
+    "method": "find_document_for_citation",
+    "args": {"title": "Iqán", "religion": "Baha'i"},
+    "expected_top_doc_id": 8300,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-iqan-typo",
+    "method": "find_document_for_citation",
+    "args": {"title": "Kitab-i-Iqan", "religion": "Baha'i"},
+    "expected_top_doc_id": 8300,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-aqdas",
+    "method": "find_document_for_citation",
+    "args": {"title": "Most Holy Book", "religion": "Baha'i"},
+    "expected_top_doc_id": 16712,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-hidden-words",
+    "method": "find_document_for_citation",
+    "args": {"title": "Hidden Words", "religion": "Baha'i"},
+    "expected_top_doc_id": 8230,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-tablet-of-ahmad",
+    "method": "find_document_for_citation",
+    "args": {"title": "Tablet of Ahmad", "religion": "Baha'i"},
+    "expected_top_doc_id": 1616,
+    "expected_is_primary": true,
+    "comment": "Critical: this was returning wrong fuzzy-match (Tablet to Alí Páshá) before CANONICAL_WORKS expansion"
+  },
+  {
+    "id": "find-long-healing-prayer",
+    "method": "find_document_for_citation",
+    "args": {"title": "Long Healing Prayer", "religion": "Baha'i"},
+    "expected_top_doc_id": 16597,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-saq",
+    "method": "find_document_for_citation",
+    "args": {"title": "Some Answered Questions", "religion": "Baha'i"},
+    "expected_top_doc_id": 8346,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-seven-valleys",
+    "method": "find_document_for_citation",
+    "args": {"title": "Seven Valleys", "religion": "Baha'i"},
+    "expected_top_doc_id": 8241,
+    "expected_is_primary": true
+  },
+  {
+    "id": "find-god-passes-by",
+    "method": "find_document_for_citation",
+    "args": {"title": "God Passes By", "religion": "Baha'i"},
+    "expected_top_doc_id": 8635,
+    "expected_is_primary": true
+  }
+]

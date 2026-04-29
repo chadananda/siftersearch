@@ -1,0 +1,100 @@
+[
+  {
+    "id": "tablet-of-wisdom-philosophy",
+    "query": "philosophy emanated from the prophets",
+    "intent": "phrase-match — Bahá'u'lláh's claim about the origin of philosophy in Tablet of Wisdom",
+    "expected_doc_id": 8270,
+    "expected_passage_range": [313, 365],
+    "expected_text_contains": ["essence", "fundamentals", "philosophy", "Prophets"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "tablet-of-wisdom-nature",
+    "query": "nature is the embodiment of the maker the creator",
+    "intent": "phrase-match — the Nature/Maker passage from Tablet of Wisdom",
+    "expected_doc_id": 8270,
+    "expected_passage_range": [313, 365],
+    "expected_text_contains": ["Nature", "embodiment", "Name", "Maker"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "tablet-of-wisdom-greek-philosophers",
+    "query": "Empedocles Pythagoras Greek philosophers",
+    "intent": "literal-name match — passage where Bahá'u'lláh names Greek philosophers",
+    "expected_doc_id": 8270,
+    "expected_passage_range": [313, 365],
+    "expected_text_contains": ["Empedocles", "Pythagoras"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "seven-valleys-law-secret-path",
+    "query": "secret of the path obedience to the law",
+    "intent": "phrase-match — Bahá'u'lláh on the law as the secret of the path",
+    "expected_doc_id": 8241,
+    "expected_text_contains": ["Law", "secret", "Path"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "iqan-justice",
+    "query": "purity of heart chastity of spirit justice",
+    "intent": "concept-match — Iqán's opening on justice + virtues",
+    "expected_doc_id": 8300,
+    "expected_text_contains": ["heart", "chastity"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "hidden-words-cleanse-heart",
+    "query": "cleanse thy heart from envy and from grudge",
+    "intent": "phrase-match — Hidden Words on cleansing the heart",
+    "expected_doc_id": 8230,
+    "expected_text_contains": ["heart", "envy"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "long-healing-prayer-opening",
+    "query": "Inaccessible Most High Most Holy Most Glorious",
+    "intent": "phrase-match — Long Healing Prayer opening attributes of God",
+    "expected_doc_id": 16597,
+    "expected_text_contains": ["Inaccessible", "Holy"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "tablet-of-ahmad-promise",
+    "query": "Tablet of Ahmad nightingale of paradise",
+    "intent": "named-tablet lookup — short Bahá'u'lláh tablet doc 1616",
+    "expected_doc_id": 1616,
+    "expected_text_contains": ["Nightingale", "Paradise"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "saq-immortality-soul",
+    "query": "soul is immortal continues progress after death",
+    "intent": "concept-match — 'Abdu'l-Bahá in Some Answered Questions on the soul",
+    "expected_doc_id": 8346,
+    "expected_text_contains": ["soul"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "shoghi-effendi-progressive-revelation",
+    "query": "progressive revelation successive manifestations",
+    "intent": "concept-match — Shoghi Effendi's framing of progressive revelation",
+    "expected_author_contains": "Shoghi",
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "aqdas-obligatory-prayer",
+    "query": "obligatory prayer command from age of maturity",
+    "intent": "phrase-match — Aqdas on obligatory prayer ordinance",
+    "expected_doc_id": 16712,
+    "expected_text_contains": ["pray", "obligatory"],
+    "religion_filter": "Baha'i"
+  },
+  {
+    "id": "primary-not-secondary",
+    "query": "Bahá'u'lláh on materialism science",
+    "intent": "anti-test — top hit should be Bahá'u'lláh primary, NOT Esslemont/commentary",
+    "expected_author_contains": "Bahá",
+    "expected_author_not_contains": "Esslemont",
+    "religion_filter": "Baha'i"
+  }
+]

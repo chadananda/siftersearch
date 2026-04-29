@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T17:26:08.822Z",
+  "generated": "2026-04-29T17:33:27.076Z",
   "entries": [
+    {
+      "hash": "bb8faf4",
+      "date": "2026-04-29",
+      "type": "Test",
+      "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
+      "scope": null
+    },
     {
       "hash": "9f95cf6",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Resolve relative file paths with library base path",
       "scope": null
-    },
-    {
-      "hash": "76dcafd",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Add X-Client-Version and X-Request-Id to CORS headers",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "bb8faf4",
+        "date": "2026-04-29",
+        "type": "Test",
+        "description": "Behavioral dialogue suite + fix doubled-prefix stream bug",
+        "scope": null
+      },
       {
         "hash": "9f95cf6",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Resolve relative file paths with library base path",
-        "scope": null
-      },
-      {
-        "hash": "76dcafd",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Add X-Client-Version and X-Request-Id to CORS headers",
         "scope": null
       }
     ]
