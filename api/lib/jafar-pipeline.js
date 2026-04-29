@@ -354,13 +354,36 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
 
   await Promise.all(tasks);
 
+  // Trim — gpt-4o-mini's TTFT scales with prompt size. A whole tablet worth
+  // of excerpts (50+ paragraphs, ~50k chars) makes the crafter slow to first
+  // token. Cap at 12 entries with topic-keyword preference: passages-search
+  // hits (already topic-ranked) first, then work-read excerpts that contain
+  // a topic keyword, then any remaining work-read excerpts.
+  const MAX_QUOTES = 12;
+  let trimmed = retrieved;
+  if (retrieved.length > MAX_QUOTES) {
+    const keywords = (entities.topics || [])
+      .map(t => (t || '').toLowerCase())
+      .filter(t => t.length >= 3);
+    const matchesKeyword = (q) => {
+      if (!keywords.length) return false;
+      const text = (q.text || '').toLowerCase();
+      return keywords.some(k => text.includes(k));
+    };
+    const passages = retrieved.filter(q => q.via === 'search');
+    const readMatched = retrieved.filter(q => q.via !== 'search' && matchesKeyword(q));
+    const readRest = retrieved.filter(q => q.via !== 'search' && !matchesKeyword(q));
+    trimmed = [...passages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
+  }
+
   logger.info({
     retrieved: retrieved.length,
+    trimmed: trimmed.length,
     work_name: entities.work_name,
     topics: entities.topics,
     calls: debugCalls.length
   }, 'deterministic research complete');
-  return { retrieved_quotes: retrieved, tool_calls: debugCalls };
+  return { retrieved_quotes: trimmed, tool_calls: debugCalls };
 }
 
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
