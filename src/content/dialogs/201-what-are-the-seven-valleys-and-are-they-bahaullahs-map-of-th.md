@@ -40,7 +40,7 @@ The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are
 
 <div class="jafar-turn">
 
-YesYes, Bahá'u'lláh's "The Seven Valleys" is indeed a map of the soul's journey toward God, with each valley representing a distinct stage of spiritual development. The journey begins with the Valley of Search and progresses through stages like Love, Knowledge, and Unity, culminating in True Poverty and Absolute Nothingness, which symbolize complete detachment and selflessness.
+Yes, Bahá'u'lláh's "The Seven Valleys" is indeed a map of the soul's journey toward God, with each valley representing a distinct stage of spiritual development. The journey begins with the Valley of Search and progresses through stages like Love, Knowledge, and Unity, culminating in True Poverty and Absolute Nothingness, which symbolize complete detachment and selflessness.
 
 > "The stages that mark the wayfarer’s journey from the abode of dust to the heavenly homeland are said to be seven. Some have called these Seven Valleys, and others, Seven Cities. And they say that until the wayfarer taketh leave of self, and traverseth these stages, he shall never reach to the ocean of nearness and union, nor drink of the peerless wine." ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 
@@ -78,7 +78,7 @@ So it sounds like the way each person experiences these valleys can be pretty di
 
 <div class="jafar-turn">
 
-YesYes, Bahá'u'lláh acknowledges that the journey through the valleys can be challenging and offers guidance on how to navigate doubts and difficulties.
+Yes, Bahá'u'lláh acknowledges that the journey through the valleys can be challenging and offers guidance on how to navigate doubts and difficulties.
 
 > "This station conferreth the true standard of knowledge, and freeth man from tests. In this realm, to search after knowledge is irrelevant, for He hath said concerning the guidance of travelers on this plane, 'Fear God, and God will instruct thee.' And again: 'Knowledge is a light which God casteth into the heart of whomsoever He willeth.'" ([*The Seven Valleys and the Four Valleys*](https://siftersearch.com/document/8241) — Bahá’u’lláh)
 

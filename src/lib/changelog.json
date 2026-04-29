@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T17:14:29.951Z",
+  "generated": "2026-04-29T17:26:08.822Z",
   "entries": [
+    {
+      "hash": "9f95cf6",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Scripts/health-check.mjs — single-pass operational probe",
+      "scope": null
+    },
     {
       "hash": "6ccfb2c",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add X-Client-Version and X-Request-Id to CORS headers",
       "scope": null
-    },
-    {
-      "hash": "62c17bf",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "9f95cf6",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Scripts/health-check.mjs — single-pass operational probe",
+        "scope": null
+      },
       {
         "hash": "6ccfb2c",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Add X-Client-Version and X-Request-Id to CORS headers",
-        "scope": null
-      },
-      {
-        "hash": "62c17bf",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
         "scope": null
       }
     ]

@@ -237,6 +237,7 @@ async function jafarTurn(history, attempt = 1) {
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
   let text = '';
+  let gotChunk = false; // see comment below at chunk/text branching
   const toolCalls = [];
 
   try {
@@ -251,9 +252,21 @@ async function jafarTurn(history, attempt = 1) {
         try {
           const evt = JSON.parse(payload);
           // chunk = word-emit at end of pipeline (full reply when stream completes)
-          if (evt.type === 'chunk' && typeof evt.text === 'string') text += evt.text;
-          // text = mid-pipeline stream chunks (partial reply if stream cuts)
-          else if (evt.type === 'text' && typeof evt.content === 'string' && !text) text += evt.content;
+          // text = mid-pipeline stream chunks
+          //
+          // The chat.js /api/chat/stream endpoint emits BOTH:
+          //   - `text` events as the crafter streams (one per token)
+          //   - `chunk` events at the end (word-by-word from result.reply)
+          // If we accumulate both we get a duplicate. Prefer `chunk` if any
+          // arrives (it's the canonical full reply); fall back to `text` only
+          // if the stream cuts before chunks emit.
+          if (evt.type === 'chunk' && typeof evt.text === 'string') {
+            // First chunk arrival: discard any partial text we accumulated
+            if (!gotChunk) { text = ''; gotChunk = true; }
+            text += evt.text;
+          } else if (evt.type === 'text' && typeof evt.content === 'string' && !gotChunk) {
+            text += evt.content;
+          }
           else if (evt.type === 'tool_call' || evt.type === 'tool') toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
           else if (evt.type === 'error') throw new Error(evt.message || 'stream error');
         } catch { /* skip malformed lines */ }

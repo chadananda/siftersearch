@@ -44,7 +44,7 @@ The Bahá'í Faith addresses the potential for misinterpretation and fragmentati
 
 The Universal House of Justice plays a crucial role in maintaining theological unity. While it does not interpret scripture authoritatively, it has the authority to legislate on matters not explicitly covered in the sacred texts, ensuring the community adapts to contemporary needs while staying true to Bahá'í principles. Shoghi Effendi's interpretations also provide a strong foundation for understanding Bahá'í teachings.
 
-> "Unity of doctrine is maintained by the existence of the authentic texts of Scripture and the voluminous interpretations of ’Abdu’l-Bahá and Shoghi Effendi, together with the absolute prohibition against anyone propounding 'authoritative' or 'inspired' interpretations or usurping the function of Guardian." ([*Messages from the Universal House of Justice: 1986-2001*](https://siftersearch.com/documents/366) — Universal House of Justice)
+> "Unity of doctrine is maintained by the existence of the authentic texts of Scripture and the voluminous interpretations of ’Abdu’l-Bahá and Shoghi Effendi, together with the absolute prohibition against anyone propounding 'authoritative' or 'inspired' interpretations or usurping the function of Guardian." ([*Messages from the Universal House of Justice: 1986-2001*](https://siftersearch.com/document/366) — Universal House of Justice)
 
 The administrative structure, including Local Spiritual Assemblies and the National Spiritual Assemblies, ensures that the community remains unified and can address pastoral and theological needs without the need for clergy. This system helps prevent fragmentation by relying on collective decision-making and consultation, guided by the principles laid out in the Bahá'í writings.
 
@@ -146,7 +146,7 @@ Regarding elections, the Bahá'í process places a strong emphasis on spiritual 
 
 The writings of Bahá'u'lláh and 'Abdu'l-Bahá do offer guidance on these points. For instance, Bahá'u'lláh highlights the importance of consultation and collective decision-making, while 'Abdu'l-Bahá emphasizes the qualities of sincerity and selflessness in service.
 
-> "It is incumbent upon everyone to show forth deeds that are pure and holy, that no taint of self, desire, or ambition may be detected therein." ([*Tablets of Bahá’u’lláh Revealed after the Kitáb-i-Aqdas*](https://siftersearch.com/documents/209) — Bahá'u'lláh)
+> "It is incumbent upon everyone to show forth deeds that are pure and holy, that no taint of self, desire, or ambition may be detected therein." ([*Tablets of Bahá’u’lláh Revealed after the Kitáb-i-Aqdas*](https://siftersearch.com/document/209) — Bahá'u'lláh)
 
 These teachings help guide individuals in electing those who are best suited to serve, rather than those who might seek positions for personal gain. By fostering a culture of reflection and spiritual growth, the community works to build trust and minimize inequities, allowing for authentic leadership that aligns with the core values of the Faith.
 

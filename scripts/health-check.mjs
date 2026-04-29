@@ -70,7 +70,7 @@ async function timed(fn) {
 async function checkApi() {
   try {
     const [res, ms] = await timed(() =>
-      fetch(`${API_BASE}/api/search/health`, { signal: AbortSignal.timeout(5000) })
+      fetch(`${API_BASE}/api/search/health`, { signal: AbortSignal.timeout(15000) })
     );
     if (!res.ok) return fail('api', `HTTP ${res.status}`, { latency_ms: ms });
     if (ms > 2000) return warn('api', `slow (${ms}ms)`, { latency_ms: ms });
@@ -84,7 +84,7 @@ async function checkApi() {
 async function meiliIndex(uid) {
   const headers = MEILI_KEY ? { Authorization: `Bearer ${MEILI_KEY}` } : {};
   const [res, ms] = await timed(() =>
-    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(5000) })
+    fetch(`${MEILI_URL}/indexes/${uid}/stats`, { headers, signal: AbortSignal.timeout(15000) })
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const stats = await res.json();
@@ -131,7 +131,7 @@ async function checkMeili() {
 async function checkVllm() {
   try {
     const [res, ms] = await timed(() =>
-      fetch(`${VLLM_URL}/models`, { signal: AbortSignal.timeout(5000) })
+      fetch(`${VLLM_URL}/models`, { signal: AbortSignal.timeout(15000) })
     );
     if (!res.ok) return fail('boss_vllm', `HTTP ${res.status}`, { latency_ms: ms });
     const data = await res.json();
@@ -146,7 +146,7 @@ async function checkVllm() {
 async function checkPm2() {
   // Only meaningful when running on tower-nas. If pm2 isn't local, skip.
   try {
-    const { stdout } = await exec('pm2 jlist 2>/dev/null', { timeout: 5000 });
+    const { stdout } = await exec('pm2 jlist 2>/dev/null', { timeout: 15000 });
     if (!stdout || !stdout.trim().startsWith('[')) {
       return warn('pm2', 'pm2 not available locally (run on tower-nas to verify)');
     }

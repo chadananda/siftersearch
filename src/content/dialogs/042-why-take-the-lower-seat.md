@@ -55,7 +55,7 @@ It's intriguing how the Bahá'í understanding of leadership involves service an
 
 'Abdu'l-Bahá offers valuable insights into the relationship between humility and leadership, emphasizing that true leadership is not about seeking authority or recognition but about service and humility. In several accounts, He highlights that the essence of the Cause of God is humility, meekness, and service, rather than leadership itself:
 
-> "The principal thing in the Cause of God is humility, meekness and service to the Cause, and not leadership." ([Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá](https://siftersearch.com/document_id=12478) — Ali-Kuli Khan)
+> "The principal thing in the Cause of God is humility, meekness and service to the Cause, and not leadership." ([Pilgrimage, with translations of Tablets by Bahá'u'lláh and 'Abdu'l-Bahá](https://siftersearch.com/document/12478) — Ali-Kuli Khan)
 
 'Abdu'l-Bahá's teachings suggest that leadership should be approached with a spirit of service and the recognition that every person has unique gifts. This mindset helps foster an environment where humility prevails, and leaders see themselves as servants to those they lead.
 
@@ -169,13 +169,13 @@ These examples of Lua Getsinger and Louis Gregory are insightful because they il
 
 The Bahá'í teachings do offer guidance on engaging with modern social structures while maintaining spiritual integrity. One relevant passage from the Universal House of Justice emphasizes the value of engaging in social action and public discourse, which suggests that Bahá'ís are encouraged to participate actively in society, shaping it with their values:
 
-> "value of engaging in social action and public discourse" ([The Five Year Plan: 2006-2011: Messages of the Universal House of Justice](https://siftersearch.com/document_id=379) — Universal House of Justice)
+> "value of engaging in social action and public discourse" ([The Five Year Plan: 2006-2011: Messages of the Universal House of Justice](https://siftersearch.com/document/379) — Universal House of Justice)
 
 This implies that Bahá'ís can engage with contemporary expectations like personal branding and networking, as long as their intention is to contribute positively to society and reflect Bahá'í principles in their actions. The focus remains on service and the betterment of humanity rather than personal advancement alone.
 
 Regarding humility being misconstrued as a lack of ambition or capability, Bahá'ís are encouraged to embody humility while still taking their responsibilities seriously. One passage suggests that humility does not preclude taking the cause seriously:
 
-> "Humility: Take the Cause seriously, but don’t take yourself" ([From Copper to Gold: The Life of Dorothy Baker](https://siftersearch.com/document_id=11266) — Dorothy Freeman Gilstrap)
+> "Humility: Take the Cause seriously, but don’t take yourself" ([From Copper to Gold: The Life of Dorothy Baker](https://siftersearch.com/document/11266) — Dorothy Freeman Gilstrap)
 
 This idea can be translated into the professional realm by ensuring that one's actions and contributions speak for themselves. Bahá'ís can demonstrate competence and ambition through their work ethic, quality of contributions, and commitment to collaborative success, rather than through aggressive self-promotion. By focusing on these aspects, they can navigate professional settings effectively while staying true to their spiritual principles.
 

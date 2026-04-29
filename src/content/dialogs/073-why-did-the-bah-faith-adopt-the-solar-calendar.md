@@ -61,11 +61,11 @@ The Badí' calendar's adoption of a solar system stems from the teachings of bot
 
 Bahá'u'lláh, in the *Kitáb-i-Aqdas*, addresses the solar calendar by detailing how it harmonizes with the solar year of 365 days, with intercalary days added to adjust the calendar. This reflects a practical adaptation to the solar year, which is consistent globally and aligns with the natural rhythms of the Earth, supporting the Bahá'í vision of unity and universality.
 
-> "The Year Sixty, A.H. (1844 A.D.), the year of the Declaration of the Báb, must be regarded as the beginning of the Badí' Calendar." ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/document_id=15954) — Shoghi Effendi)
+> "The Year Sixty, A.H. (1844 A.D.), the year of the Declaration of the Báb, must be regarded as the beginning of the Badí' Calendar." ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/document/15954) — Shoghi Effendi)
 
 The choice of a solar calendar can be seen as a revolutionary act, as noted by John Taylor, breaking from the lunar traditions not only of Islam but also of many religious calendars, which historically have had lunar elements. This break signifies a new era and new systems that are meant to serve a unified global society, which is central to Bahá'í teachings.
 
-> "In a characteristically revolutionary act the calendar called Badí' which the Báb instituted reinstates intercalation and re-anchors itself to a solar orientation. This must have seemed a shocking break with the lunar grounding not only of Islam but also of most other religious calendars." ([*Novelty in Ayyám-i-Há and the Badí Calendar*](https://siftersearch.com/document_id=14246) — John Taylor)
+> "In a characteristically revolutionary act the calendar called Badí' which the Báb instituted reinstates intercalation and re-anchors itself to a solar orientation. This must have seemed a shocking break with the lunar grounding not only of Islam but also of most other religious calendars." ([*Novelty in Ayyám-i-Há and the Badí Calendar*](https://siftersearch.com/document/14246) — John Taylor)
 
 The adoption of a solar calendar thus aligns with the Bahá'í principle of unity by providing a universal framework that transcends cultural and religious divisions, facilitating a more cohesive and unified global community.
 
@@ -105,11 +105,11 @@ The Badí' calendar plays a crucial role in the Bahá'í administrative order, a
 
 Adib Taherzadeh, in his work *The Revelation of Bahá’u’lláh*, discusses how the calendar aligns with the broader Bahá'í Administrative Order, which is designed to promote unity and cohesion within the community. The calendar helps synchronize worldwide Bahá'í activities, such as the Nineteen Day Feast, Holy Days, and the Fast, allowing believers everywhere to observe these events simultaneously, reinforcing a sense of global unity.
 
-> "The Bahá’í Administrative Order" ([*The Revelation of Bahá’u’lláh vol. 3*](https://siftersearch.com/document_id=431) — Adib Taherzadeh)
+> "The Bahá’í Administrative Order" ([*The Revelation of Bahá’u’lláh vol. 3*](https://siftersearch.com/document/431) — Adib Taherzadeh)
 
 Shoghi Effendi discusses the calendar as part of the Bahá'í organizational system, emphasizing its role in creating a unified global community that transcends cultural and national boundaries.
 
-> "The Badí' or Bahá’í Calendar" ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/document_id=15954) — Shoghi Effendi)
+> "The Badí' or Bahá’í Calendar" ([*Bahá’í Faith, The: 1844-1950: Information Statistical and Comparative*](https://siftersearch.com/document/15954) — Shoghi Effendi)
 
 While the solar aspect of the calendar may not be explicitly linked to unity in doctrinal terms, its consistent use across the Bahá'í world functions as a practical tool for fostering unity. The alignment of community activities around a shared calendar helps to create a common experience and identity among Bahá'ís, supporting the faith's vision of a unified global society. This shared framework helps believers around the world feel connected, facilitating mutual understanding and cooperation, which are key components of the Bahá'í principle of unity.
 
@@ -179,11 +179,11 @@ The Feast is structured to include prayer, consultation, and socializing, each p
 
 In *Bahá'u'lláh and the New Era*, Dr. J.E. Esslemont notes the Feast's importance, explaining how it provides for community prayer, consultation on Bahá'í affairs, and social association, thus reinforcing the spiritual and administrative life of the community.
 
-> "With the development of the Bahá’í administrative order since the ascension of ’Abdu’l-Bahá, the Nineteen Day Feast... has assumed a very special importance, providing as it does not only for community prayer and reading from the Holy Books, but also for general consultation on all current Bahá’í affairs and for the association of the friends together." ([*Bahá'u'lláh and the New Era*](https://siftersearch.com/document_id=8314) — Dr. J.E. Esslemont)
+> "With the development of the Bahá’í administrative order since the ascension of ’Abdu’l-Bahá, the Nineteen Day Feast... has assumed a very special importance, providing as it does not only for community prayer and reading from the Holy Books, but also for general consultation on all current Bahá’í affairs and for the association of the friends together." ([*Bahá'u'lláh and the New Era*](https://siftersearch.com/document/8314) — Dr. J.E. Esslemont)
 
 Additionally, the Universal House of Justice has noted that as the Bahá'í community grew, 'Abdu'l-Bahá delineated the devotional and social character of the Feast, emphasizing its role in nurturing the community's spiritual life.
 
-> "As the community grew, 'Abdu'l-Bahá delineated and emphasized the devotional and social character of the event." ([*Nineteen-Day Feast, Scheduling the*](https://siftersearch.com/document_id=310) — Universal House of Justice)
+> "As the community grew, 'Abdu'l-Bahá delineated and emphasized the devotional and social character of the event." ([*Nineteen-Day Feast, Scheduling the*](https://siftersearch.com/document/310) — Universal House of Justice)
 
 Through regular participation in these calendar-governed events, Bahá'ís not only strengthen their connection with each other but also deepen their spiritual understanding and commitment to the principles of their faith. The solar nature of the calendar, while primarily a practical measure, supports these regular gatherings, which are essential for fostering spiritual unity and growth within the Bahá'í community.
 
@@ -229,7 +229,7 @@ The Nineteen Day Feast is a microcosm of Bahá'í community life and is designed
 
 'Abdu'l-Bahá emphasized that consultation is a means to achieve unity of thought and purpose, encouraging individuals to practice detachment from personal opinions and humility. This spiritual discipline is intended to manifest in daily life by promoting cooperation, understanding, and a collective approach to problem-solving, which can contribute to societal well-being.
 
-> "Consultation bestoweth greater awareness and transmuteth conjecture into certitude. It is a shining light which, in a dark world, leadeth the way and guideth." ([*Selections from the Writings of ‘Abdu’l-Bahá*](https://siftersearch.com/document_id=14721) — ‘Abdu’l-Bahá)
+> "Consultation bestoweth greater awareness and transmuteth conjecture into certitude. It is a shining light which, in a dark world, leadeth the way and guideth." ([*Selections from the Writings of ‘Abdu’l-Bahá*](https://siftersearch.com/document/14721) — ‘Abdu’l-Bahá)
 
 Regarding the solar calendar and its alignment with natural cycles, while there may not be explicit teachings that directly link these cycles to personal spiritual insights, the natural rhythms of the calendar encourage a mindfulness of the interconnectedness of life and the importance of renewal.
 
