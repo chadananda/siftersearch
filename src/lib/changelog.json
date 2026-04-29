@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:10:42.924Z",
+  "generated": "2026-04-29T04:20:58.024Z",
   "entries": [
+    {
+      "hash": "d8de0be",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
+      "scope": null
+    },
     {
       "hash": "7cb3a90",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Raw Search API call and add NavBar to admin layout",
       "scope": null
-    },
-    {
-      "hash": "9458417",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Simplify translation stats loading to fix indicator display",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "d8de0be",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Primary-source filter + brevity hammer (article 001 was 54%)",
+        "scope": null
+      },
       {
         "hash": "7cb3a90",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Raw Search API call and add NavBar to admin layout",
-        "scope": null
-      },
-      {
-        "hash": "9458417",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Simplify translation stats loading to fix indicator display",
         "scope": null
       }
     ]
