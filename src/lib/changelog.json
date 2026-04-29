@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T14:56:05.334Z",
+  "generated": "2026-04-29T15:16:30.402Z",
   "entries": [
+    {
+      "hash": "0a1d23e",
+      "date": "2026-04-29",
+      "type": "Fixed",
+      "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
+      "scope": null
+    },
     {
       "hash": "de37728",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add CORS PUT method and file_hash uniqueness migration",
       "scope": null
-    },
-    {
-      "hash": "7eeee70",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Use large number instead of Infinity for SQL LIMIT",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "0a1d23e",
+        "date": "2026-04-29",
+        "type": "Fixed",
+        "description": "HyPE sync vector format — Meili expects flat array, not {embeddings,...}",
+        "scope": null
+      },
       {
         "hash": "de37728",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Add CORS PUT method and file_hash uniqueness migration",
-        "scope": null
-      },
-      {
-        "hash": "7eeee70",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Use large number instead of Infinity for SQL LIMIT",
         "scope": null
       }
     ]
