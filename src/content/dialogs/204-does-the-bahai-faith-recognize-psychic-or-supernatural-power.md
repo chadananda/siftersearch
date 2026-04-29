@@ -1,7 +1,10 @@
 ---
-title: "Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?"
-description: "Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?"
-question: "Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?"
+title: Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?
+description: Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?
+question: >-
+  Some traditions speak of psychic powers — clairvoyance, premonition, healing
+  through spiritual means, communicating with the departed. Does Bahá'u'lláh
+  acknowledge such powers exist? And if so, does he warn against pursuing them?
 topic: metaphysics
 tags:
   - psychic-powers
@@ -9,27 +12,32 @@ tags:
   - spiritualism
   - warnings
 rounds: 5
-qualityScore: 53
-publishedAt: 2026-04-29
-excerpt: "The conversation lacks depth, as Jafar fails to directly address the user's question about psychic powers and Bahá'u'lláh's stance on them. In rounds 2 and 4, Jafar provides quotes that are tangential"
+qualityScore: 62
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation lacks depth, as Jafar fails to directly address the user's
+  question about psychic powers and Bahá'u'lláh's stance on them. In rounds 2
+  and 4, Jafar provides quotes that are tangential
 featured: false
-heroImage: /images/dialog/204-does-the-bahai-faith-recognize-psychic-or-supernatural-power-hero.jpg
+heroImage: >-
+  /images/dialog/204-does-the-bahai-faith-recognize-psychic-or-supernatural-power-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
+    depth: 50
+    conversational_realism: 60
     doctrinal_fidelity: 60
     period_word_discipline: 70
     evidence_quality: 50
-    brevity_discipline: 70
-    correction_courage: 40
-    archive_worthy: 50
-  narrative: "The conversation lacks depth, as Jafar fails to directly address the user's question about psychic powers and Bahá'u'lláh's stance on them. In rounds 2 and 4, Jafar provides quotes that are tangentially related but do not directly answer the question. There is a lack of primary evidence specifically addressing the user's inquiry, and Jafar does not correct the user's assumption that such guidance exists in Bahá'u'lláh's writings. The conversation maintains a somewhat realistic tone but lacks the depth and specificity needed for a meaningful exploration of the topic."
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 55
+  narrative: "The conversation struggles with depth, as Jafar fails to directly address the user's question about psychic powers and Bahá'u'lláh's stance on them. The responses are somewhat repetitive and do not build on each other effectively. While the conversation maintains a conversational tone, it occasionally feels like a Q&A session. Jafar's doctrinal fidelity is weak, as it does not provide primary texts that directly address the user's query. The evidence quality is low, with few relevant primary citations. However, Jafar maintains brevity and does not miss any correction opportunities, as the user does not state any factual errors."
   flags:
     - missing-primary-citation
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to improve in directly addressing user queries by either confirming the absence of specific teachings on psychic powers in Bahá'u'lláh's writings or providing relevant primary sources if they exist. Additionally, Jafar should gently correct user misconceptions about the content of Bahá'u'lláh's writings to maintain doctrinal fidelity and provide a more informative dialogue."
+  improvement_plan: "Jafar should be trained to better identify and provide relevant primary texts that directly address user queries, especially when discussing specific doctrinal topics. Enhancing the ability to connect user questions with appropriate passages in the Bahá'í writings would improve depth and evidence quality."
 ---
+
 <div class="user-turn">
 
 Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?

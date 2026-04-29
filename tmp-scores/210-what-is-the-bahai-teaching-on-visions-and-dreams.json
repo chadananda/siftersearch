@@ -1,0 +1,20 @@
+{
+  "slug": "210-what-is-the-bahai-teaching-on-visions-and-dreams",
+  "scores": {
+    "depth": 40,
+    "conversational_realism": 50,
+    "doctrinal_fidelity": 50,
+    "period_word_discipline": 60,
+    "evidence_quality": 40,
+    "brevity_discipline": 70,
+    "correction_courage": 60,
+    "archive_worthy": 50
+  },
+  "overall": 52,
+  "narrative": "The conversation struggles with depth and evidence quality, as Jafar fails to provide primary quotes from 'Abdu'l-Bahá's 'Some Answered Questions' despite the user's repeated requests. Instead, Jafar offers unrelated quotes and secondary sources, which diminishes doctrinal fidelity and evidence quality. Conversational realism is affected by Jafar's inability to engage naturally, often repeating 'II couldn't locate text on this in the corpus.' The conversation lacks the depth and specificity expected when discussing spiritual dreams and visions in the Bahá'í Faith.",
+  "flags": [
+    "missing-primary-citation",
+    "secondary-substitution"
+  ],
+  "improvement_plan": "Jafar should be equipped with a more robust search capability to locate specific primary texts, especially when the user requests them directly. Additionally, Jafar should be trained to avoid secondary sources when primary texts are available and relevant, ensuring doctrinal fidelity and evidence quality are maintained."
+}

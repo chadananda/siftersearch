@@ -1,7 +1,10 @@
 ---
-title: "What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer?"
-description: "What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer?"
-question: "Bahá'u'lláh ordained three obligatory prayers in the Aqdas. What does he specifically promise about the spiritual effect of reciting them — both for the worshipper's own soul and in the wider spiritual order?"
+title: What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer?
+description: What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer?
+question: >-
+  Bahá'u'lláh ordained three obligatory prayers in the Aqdas. What does he
+  specifically promise about the spiritual effect of reciting them — both for
+  the worshipper's own soul and in the wider spiritual order?
 topic: practice
 tags:
   - obligatory-prayer
@@ -10,28 +13,31 @@ tags:
   - promises
   - prayer
 rounds: 5
-qualityScore: 52
-publishedAt: 2026-04-29
-excerpt: "The conversation lacks depth, as Jafar repeatedly cites the same quote from the Kitáb-i-Aqdas without expanding on its meaning (Rounds 2-5). There is a failure to provide a broader doctrinal context o"
+qualityScore: 68
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation lacks depth, as Jafar repeatedly cites the same quote from
+  the Kitáb-i-Aqdas without expanding on its meaning (Rounds 2-5). There is a
+  failure to provide a broader doctrinal context o
 featured: false
-heroImage: /images/dialog/218-what-did-bahaullah-promise-to-those-who-recite-the-obligator-hero.jpg
+heroImage: >-
+  /images/dialog/218-what-did-bahaullah-promise-to-those-who-recite-the-obligator-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
-    doctrinal_fidelity: 60
-    period_word_discipline: 50
-    evidence_quality: 60
-    brevity_discipline: 70
-    correction_courage: 40
-    archive_worthy: 50
-  narrative: "The conversation lacks depth, as Jafar repeatedly cites the same quote from the Kitáb-i-Aqdas without expanding on its meaning (Rounds 2-5). There is a failure to provide a broader doctrinal context or additional primary sources until the final round. Jafar's responses lack conversational realism, often repeating the same phrase and failing to engage with the user's deeper questions. The use of 'standards of victory' is not adequately explained in its period sense, leading to potential misunderstandings."
-  flags:
-    - essay-tone
-    - missing-primary-citation
-    - hedge-without-position
-  improvement_plan: "Jafar needs to diversify the sources and explanations provided, especially when a user asks for deeper understanding. The prompt should encourage Jafar to explore multiple writings and provide context for metaphors like 'standards of victory.' Additionally, Jafar should be trained to engage more dynamically with the user's questions, avoiding repetitive responses."
+    depth: 55
+    conversational_realism: 60
+    doctrinal_fidelity: 80
+    period_word_discipline: 70
+    evidence_quality: 70
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 60
+  narrative: "The conversation struggles with depth, as Jafar repeatedly cites the same quote without expanding on its meaning or providing additional context from other writings. This leads to a repetitive and somewhat superficial exploration of the topic (rounds 2-5). While the quotes used are doctrinally sound, the lack of variety in sources limits the conversation's richness. Conversational realism is moderate, with Jafar's responses feeling somewhat mechanical and not fully engaging with the user's questions. The evidence quality is decent, with primary quotes used, but the conversation would benefit from more diverse citations. Overall, the conversation has value but lacks the depth and engagement needed for a higher score."
+  flags: []
+  improvement_plan: "Jafar should be prompted to diversify the sources used when a user seeks deeper understanding, especially when the initial quote is repeated without additional context. Encourage Jafar to engage more dynamically with the user's questions, providing explanations or interpretations that go beyond quoting, to enhance conversational realism and depth."
 ---
+
 <div class="user-turn">
 
 Bahá'u'lláh ordained three obligatory prayers in the Aqdas. What does he specifically promise about the spiritual effect of reciting them — both for the worshipper's own soul and in the wider spiritual order?

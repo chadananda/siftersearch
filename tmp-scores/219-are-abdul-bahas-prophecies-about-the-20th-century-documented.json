@@ -1,0 +1,19 @@
+{
+  "slug": "219-are-abdul-bahas-prophecies-about-the-20th-century-documented",
+  "scores": {
+    "depth": 60,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 70,
+    "period_word_discipline": 80,
+    "evidence_quality": 60,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 65
+  },
+  "overall": 68,
+  "narrative": "The conversation begins with a clear question about 'Abdu'l-Bahá's prophecies, but Jafar struggles to provide direct primary quotes from 'Abdu'l-Bahá, instead referencing Shoghi Effendi and other secondary sources. This affects the depth and evidence quality, as the user specifically asked for 'Abdu'l-Bahá's words. The conversational tone is mostly maintained, though there are moments where Jafar's responses feel slightly formal. Doctrinal fidelity is generally maintained, but the reliance on secondary sources when primary ones were requested is a flaw. The conversation remains brief and corrections are handled well, though Jafar could have been more proactive in addressing the user's request for primary sources.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should prioritize sourcing primary quotes from 'Abdu'l-Bahá when the user explicitly requests them, especially from specified texts like 'The Promulgation of Universal Peace.' Enhancing the ability to distinguish between primary and secondary sources will improve evidence quality and doctrinal fidelity."
+}

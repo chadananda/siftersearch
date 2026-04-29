@@ -1,7 +1,11 @@
 ---
-title: "Do the Bahá'í Writings Speak of Mystical Experience?"
-description: "Do the Bahá'í Writings Speak of Mystical Experience?"
-question: "I've heard the Bahá'í Faith called a 'practical' religion focused on social order. But mystical experience — the soul's direct encounter with the Divine — runs through Bahá'u'lláh's writings, doesn't it? What is the actual mystical core of the Faith?"
+title: Do the Bahá'í Writings Speak of Mystical Experience?
+description: Do the Bahá'í Writings Speak of Mystical Experience?
+question: >-
+  I've heard the Bahá'í Faith called a 'practical' religion focused on social
+  order. But mystical experience — the soul's direct encounter with the Divine —
+  runs through Bahá'u'lláh's writings, doesn't it? What is the actual mystical
+  core of the Faith?
 topic: mysticism
 tags:
   - mysticism
@@ -9,27 +13,30 @@ tags:
   - seven-valleys
   - soul
 rounds: 5
-qualityScore: 70
-publishedAt: 2026-04-29
-excerpt: "The conversation maintains a good depth, especially in rounds 2 and 4, where Jafar provides multiple quotations from 'The Seven Valleys and the Four Valleys.' However, round 6 repeats a previous point"
-featured: false
+qualityScore: 82
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation maintains a good depth, especially in rounds 2 and 4, where
+  Jafar provides multiple quotations from 'The Seven Valleys and the Four
+  Valleys.' However, round 6 repeats a previous point
+featured: true
 heroImage: /images/dialog/200-do-the-bahai-writings-speak-of-mystical-experience-hero.jpg
+published: true
 assessment:
   scores:
-    depth: 70
-    conversational_realism: 60
-    doctrinal_fidelity: 85
-    period_word_discipline: 75
+    depth: 75
+    conversational_realism: 80
+    doctrinal_fidelity: 90
+    period_word_discipline: 85
     evidence_quality: 90
-    brevity_discipline: 65
-    correction_courage: 50
-    archive_worthy: 70
-  narrative: "The conversation maintains a good depth, especially in rounds 2 and 4, where Jafar provides multiple quotations from 'The Seven Valleys and the Four Valleys.' However, round 6 repeats a previous point without adding new insight, which affects depth and brevity. Conversational realism is moderate, as Jafar's responses sometimes feel scripted rather than naturally flowing, particularly in round 5. The evidence quality is strong, with primary quotes accurately attributed. However, Jafar does not correct the user's assumption in round 3 that inner experience and following divine law are separate, which impacts correction courage."
-  flags:
-    - essay-tone
-    - sycophant-on-error
-  improvement_plan: "Jafar should aim to provide more varied and contextually relevant responses to avoid repetition and maintain engagement. Additionally, Jafar should gently correct misconceptions, such as the perceived dichotomy between inner experience and adherence to divine law, to enhance doctrinal fidelity and correction courage."
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 80
+  narrative: "The conversation effectively explores the mystical aspects of the Bahá'í Faith, particularly through Bahá'u'lláh's 'The Seven Valleys and the Four Valleys.' Jafar provides primary quotes in each round, maintaining doctrinal fidelity and evidence quality. The conversation is mostly realistic and conversational, though there is some repetition in round 4. Depth is good, with the dialogue building on the user's questions, though it could push further into specifics. Overall, the conversation is archive-worthy with minor room for improvement in depth and avoiding repetition."
+  flags: []
+  improvement_plan: "To enhance depth, Jafar could provide more detailed explanations of each valley's unique aspects, avoiding repetition. Additionally, ensuring each response builds on the previous one without reiterating the same points would improve the flow and depth of the conversation."
 ---
+
 <div class="user-turn">
 
 I've heard the Bahá'í Faith called a 'practical' religion focused on social order. But mystical experience — the soul's direct encounter with the Divine — runs through Bahá'u'lláh's writings, doesn't it? What is the actual mystical core of the Faith?

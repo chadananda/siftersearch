@@ -1,7 +1,11 @@
 ---
-title: "What Happens to the Soul After Death According to Bahá'u'lláh?"
-description: "What Happens to the Soul After Death According to Bahá'u'lláh?"
-question: "What does Bahá'u'lláh actually teach about what happens to the soul after physical death? Is there a journey, judgment, levels of existence? I want to understand the Bahá'í view of the afterlife from the actual writings, not just summaries."
+title: What Happens to the Soul After Death According to Bahá'u'lláh?
+description: What Happens to the Soul After Death According to Bahá'u'lláh?
+question: >-
+  What does Bahá'u'lláh actually teach about what happens to the soul after
+  physical death? Is there a journey, judgment, levels of existence? I want to
+  understand the Bahá'í view of the afterlife from the actual writings, not just
+  summaries.
 topic: metaphysics
 tags:
   - afterlife
@@ -10,28 +14,31 @@ tags:
   - bahaullah
   - next-world
 rounds: 5
-qualityScore: 62
-publishedAt: 2026-04-29
-excerpt: "The conversation begins with a primary quote from Bahá'u'lláh but quickly shifts to quoting the Báb in round 2, which is not directly relevant to the user's request for Bahá'u'lláh's writings. Jafar d"
+qualityScore: 76
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation begins with a primary quote from Bahá'u'lláh but quickly
+  shifts to quoting the Báb in round 2, which is not directly relevant to the
+  user's request for Bahá'u'lláh's writings. Jafar d
 featured: false
-heroImage: /images/dialog/205-what-happens-to-the-soul-after-death-according-to-bahaullah-hero.jpg
+heroImage: >-
+  /images/dialog/205-what-happens-to-the-soul-after-death-according-to-bahaullah-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 60
-    conversational_realism: 50
-    doctrinal_fidelity: 70
-    period_word_discipline: 60
-    evidence_quality: 65
-    brevity_discipline: 55
-    correction_courage: 80
-    archive_worthy: 60
-  narrative: "The conversation begins with a primary quote from Bahá'u'lláh but quickly shifts to quoting the Báb in round 2, which is not directly relevant to the user's request for Bahá'u'lláh's writings. Jafar does return to Bahá'u'lláh's writings but fails to provide a clear, concise explanation of the stages of the soul's journey. The use of period vocabulary like 'stations' and 'nearness' lacks explicit marking of their period sense. The conversation lacks depth, as it mostly revolves around quoting without providing a coherent narrative or explanation."
-  flags:
-    - essay-tone
-    - missing-primary-citation
-    - secondary-substitution
-  improvement_plan: "Jafar should focus on providing concise explanations alongside quotes to build a coherent narrative. The persistence ladder should prioritize Bahá'u'lláh's writings when the user specifically requests them. Additionally, Jafar should clarify period vocabulary to avoid modern connotations and ensure doctrinal fidelity."
+    depth: 70
+    conversational_realism: 80
+    doctrinal_fidelity: 80
+    period_word_discipline: 70
+    evidence_quality: 80
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 75
+  narrative: "The conversation maintains a good level of depth, with Jafar providing primary quotes from Bahá'u'lláh's writings that address the user's questions about the soul's journey after death. The conversational tone is realistic and engaging, with Jafar matching the user's informal style. Doctrinal fidelity is strong, though there is a slight drift when quoting the Báb instead of Bahá'u'lláh initially. Evidence quality is solid, with primary quotes used effectively. Period word discipline is mostly maintained, though some terms could benefit from clearer contextualization. The conversation is concise, and Jafar corrects the user's focus back to Bahá'u'lláh's writings when needed. Overall, the conversation is informative and well-structured, though it could delve deeper into specific descriptions of the soul's journey."
+  flags: []
+  improvement_plan: "To enhance depth, Jafar could provide more detailed explanations or additional quotes that specifically describe the stages of the soul's journey. Improving period word discipline by explicitly marking the historical context of terms like 'stations' or 'nearness' could prevent modern misinterpretations. Encouraging Jafar to explore more specific aspects of the user's questions could also enrich the conversation."
 ---
+
 <div class="user-turn">
 
 What does Bahá'u'lláh actually teach about what happens to the soul after physical death? Is there a journey, judgment, levels of existence? I want to understand the Bahá'í view of the afterlife from the actual writings, not just summaries.

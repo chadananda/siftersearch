@@ -1,7 +1,11 @@
 ---
-title: "What Did the Báb Foretell About 'Him Whom God Shall Make Manifest'?"
-description: "What Did the Báb Foretell About 'Him Whom God Shall Make Manifest'?"
-question: "The Báb repeatedly foretold the coming of 'Him Whom God Shall Make Manifest.' What did he specifically promise about this Manifestation, and how do the Bahá'í writings claim Bahá'u'lláh fulfilled those promises? I want the actual texts of the Báb on this."
+title: What Did the Báb Foretell About 'Him Whom God Shall Make Manifest'?
+description: What Did the Báb Foretell About 'Him Whom God Shall Make Manifest'?
+question: >-
+  The Báb repeatedly foretold the coming of 'Him Whom God Shall Make Manifest.'
+  What did he specifically promise about this Manifestation, and how do the
+  Bahá'í writings claim Bahá'u'lláh fulfilled those promises? I want the actual
+  texts of the Báb on this.
 topic: comparative-religion
 tags:
   - bab
@@ -9,28 +13,32 @@ tags:
   - prophecy
   - bahaullah
 rounds: 5
-qualityScore: 51
-publishedAt: 2026-04-29
-excerpt: "The conversation struggles with providing primary sources from the Báb, as requested by the user. In rounds 1 and 2, Jafar substitutes Bahá'u'lláh's writings and secondary commentary instead of direct"
+qualityScore: 63
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation struggles with providing primary sources from the Báb, as
+  requested by the user. In rounds 1 and 2, Jafar substitutes Bahá'u'lláh's
+  writings and secondary commentary instead of direct
 featured: false
-heroImage: /images/dialog/209-what-did-the-bab-foretell-about-him-whom-god-shall-make-mani-hero.jpg
+heroImage: >-
+  /images/dialog/209-what-did-the-bab-foretell-about-him-whom-god-shall-make-mani-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
+    depth: 50
+    conversational_realism: 70
     doctrinal_fidelity: 60
-    period_word_discipline: 70
-    evidence_quality: 30
-    brevity_discipline: 70
-    correction_courage: 50
-    archive_worthy: 40
-  narrative: "The conversation struggles with providing primary sources from the Báb, as requested by the user. In rounds 1 and 2, Jafar substitutes Bahá'u'lláh's writings and secondary commentary instead of direct quotes from the Báb. This results in a failure to meet the user's request for primary evidence. Jafar's responses lack depth and do not adequately address the user's specific inquiry about the Báb's promises. The conversation ends without a satisfactory resolution, and Jafar fails to correct the user's misunderstanding about the availability of primary texts."
+    period_word_discipline: 80
+    evidence_quality: 40
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 50
+  narrative: "The conversation struggles with depth and evidence quality, as Jafar fails to provide direct quotes from the Báb's writings, instead relying on secondary sources and thematic analyses. This limits the conversation's depth and doctrinal fidelity, as the user specifically requested primary texts. Conversational realism is decent, with Jafar maintaining a friendly tone, but the lack of primary citations and reliance on secondary commentary significantly detracts from the conversation's value. The user is left unsatisfied, indicating a missed opportunity for a more meaningful exchange."
   flags:
     - missing-primary-citation
-    - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize sourcing primary texts from the Báb when the user explicitly requests them. The system should be trained to recognize when secondary sources are being used inappropriately and to guide the user towards primary texts or acknowledge the limitations in available data. Additionally, Jafar should be more assertive in correcting misunderstandings about the availability of texts."
+  improvement_plan: "Jafar should prioritize sourcing primary texts directly from the Báb when they are explicitly requested. Enhancing the ability to access and quote from primary Bahá'í texts would improve both doctrinal fidelity and evidence quality, providing a more satisfying and informative experience for users seeking specific scriptural references."
 ---
+
 <div class="user-turn">
 
 The Báb repeatedly foretold the coming of 'Him Whom God Shall Make Manifest.' What did he specifically promise about this Manifestation, and how do the Bahá'í writings claim Bahá'u'lláh fulfilled those promises? I want the actual texts of the Báb on this.

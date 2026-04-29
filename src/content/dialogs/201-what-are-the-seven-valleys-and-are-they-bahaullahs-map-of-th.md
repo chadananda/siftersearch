@@ -1,7 +1,15 @@
 ---
-title: "What Are the Seven Valleys and Are They Bahá'u'lláh's Map of the Mystical Path?"
-description: "What Are the Seven Valleys and Are They Bahá'u'lláh's Map of the Mystical Path?"
-question: "The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are these seven stages — search, love, knowledge, unity, contentment, wonderment, and true poverty — and is this his actual map of the soul's journey toward God?"
+title: >-
+  What Are the Seven Valleys and Are They Bahá'u'lláh's Map of the Mystical
+  Path?
+description: >-
+  What Are the Seven Valleys and Are They Bahá'u'lláh's Map of the Mystical
+  Path?
+question: >-
+  The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are
+  these seven stages — search, love, knowledge, unity, contentment, wonderment,
+  and true poverty — and is this his actual map of the soul's journey toward
+  God?
 topic: mysticism
 tags:
   - seven-valleys
@@ -9,27 +17,31 @@ tags:
   - bahaullah
   - spiritual-stages
 rounds: 5
-qualityScore: 59
-publishedAt: 2026-04-29
-excerpt: "The conversation begins with a broad question about The Seven Valleys but quickly narrows to focus on 'The Valley of Search.' Jafar initially fails to provide a quote, which is corrected in later roun"
+qualityScore: 75
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation begins with a broad question about The Seven Valleys but
+  quickly narrows to focus on 'The Valley of Search.' Jafar initially fails to
+  provide a quote, which is corrected in later roun
 featured: false
-heroImage: /images/dialog/201-what-are-the-seven-valleys-and-are-they-bahaullahs-map-of-th-hero.jpg
+heroImage: >-
+  /images/dialog/201-what-are-the-seven-valleys-and-are-they-bahaullahs-map-of-th-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 60
-    conversational_realism: 50
-    doctrinal_fidelity: 70
-    period_word_discipline: 65
-    evidence_quality: 75
-    brevity_discipline: 55
-    correction_courage: 40
-    archive_worthy: 60
-  narrative: "The conversation begins with a broad question about The Seven Valleys but quickly narrows to focus on 'The Valley of Search.' Jafar initially fails to provide a quote, which is corrected in later rounds. The responses are somewhat essay-like, lacking conversational realism (rounds 1 and 5). There is a missed opportunity to correct the user's misunderstanding about the availability of quotes (round 2). While primary sources are eventually cited, the initial failure to locate them detracts from evidence quality."
-  flags:
-    - essay-tone
-    - sycophant-on-error
-  improvement_plan: "Jafar should improve initial search capabilities to avoid missing primary quotes, especially when they are central to the user's question. Additionally, responses should be more conversational and less formal, avoiding essay-like structures to enhance realism and engagement."
+    depth: 70
+    conversational_realism: 70
+    doctrinal_fidelity: 80
+    period_word_discipline: 80
+    evidence_quality: 80
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 75
+  narrative: "The conversation begins with a clear question about the Seven Valleys and progresses through a focused exploration of 'The Valley of Search.' Jafar provides primary quotes from Bahá'u'lláh, maintaining doctrinal fidelity and evidence quality. However, there is a missed opportunity for depth in rounds 2 and 3, where Jafar initially fails to locate the text, which could have been handled more smoothly. The conversation maintains a mostly conversational tone, though it occasionally leans towards formality. Overall, the dialogue is informative and archive-worthy, with minor areas for improvement."
+  flags: []
+  improvement_plan: "Enhance Jafar's ability to handle initial failures in text retrieval by providing alternative explanations or context while searching. Encourage a more conversational tone by incorporating brief, casual remarks alongside quotes to maintain engagement. Ensure consistent depth by expanding on the implications of key concepts like patience in the spiritual journey."
 ---
+
 <div class="user-turn">
 
 The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are these seven stages — search, love, knowledge, unity, contentment, wonderment, and true poverty — and is this his actual map of the soul's journey toward God?

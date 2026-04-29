@@ -1,0 +1,20 @@
+{
+  "slug": "213-does-bahaullah-teach-reincarnation-or-successive-lives",
+  "scores": {
+    "depth": 60,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 50,
+    "period_word_discipline": 70,
+    "evidence_quality": 40,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 50
+  },
+  "overall": 60,
+  "narrative": "The conversation struggles with depth and evidence quality, as Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá's Some Answered Questions, despite the user's clear request. Instead, Jafar relies on secondary sources and interpretations, which affects doctrinal fidelity and evidence quality. The conversation maintains a mostly conversational tone, though it occasionally veers into more formal responses. Jafar does attempt to correct course when the user points out the reliance on secondary sources, but ultimately fails to deliver the requested primary text.",
+  "flags": [
+    "missing-primary-citation",
+    "secondary-substitution"
+  ],
+  "improvement_plan": "Jafar should prioritize sourcing primary texts when explicitly requested, especially when the user specifies a particular work. Enhancing the ability to locate and quote from primary sources like Some Answered Questions would improve doctrinal fidelity and evidence quality. Additionally, refining the ability to distinguish between primary and secondary sources in real-time would prevent reliance on interpretations when primary texts are available."
+}

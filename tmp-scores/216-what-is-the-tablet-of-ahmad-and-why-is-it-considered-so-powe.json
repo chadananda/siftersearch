@@ -1,0 +1,19 @@
+{
+  "slug": "216-what-is-the-tablet-of-ahmad-and-why-is-it-considered-so-powe",
+  "scores": {
+    "depth": 50,
+    "conversational_realism": 60,
+    "doctrinal_fidelity": 60,
+    "period_word_discipline": 70,
+    "evidence_quality": 50,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 55
+  },
+  "overall": 62,
+  "narrative": "The conversation struggles with depth, as Jafar repeats the same quote without addressing the user's specific questions about the promises in the Tablet of Ahmad (rounds 3, 5). The conversational tone is somewhat maintained, but Jafar's responses lack engagement with the user's queries, leading to a mechanical feel. Doctrinal fidelity is weak; Jafar fails to provide specific promises from the Tablet itself, instead offering a generic quote that doesn't directly address the user's question. Evidence quality is low, as the same quote is repeated without variation or deeper exploration. Brevity is well-maintained, with responses being concise. Correction courage is adequate, as there were no factual errors from the user to correct.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should be trained to provide more varied and contextually relevant quotations, especially when the user asks for specific doctrinal points. Enhancing the ability to engage with the user's questions directly, rather than repeating the same information, would improve depth and evidence quality."
+}

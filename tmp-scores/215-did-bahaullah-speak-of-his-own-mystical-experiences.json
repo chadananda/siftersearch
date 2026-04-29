@@ -1,0 +1,17 @@
+{
+  "slug": "215-did-bahaullah-speak-of-his-own-mystical-experiences",
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 70
+  },
+  "overall": 74,
+  "narrative": "The conversation demonstrates a reasonable depth, with Jafar providing relevant passages from Bahá'u'lláh's writings, though not always directly addressing the user's specific requests. The conversational tone is mostly maintained, with some formal moments. Doctrinal fidelity is strong, with primary texts cited appropriately. Evidence quality is decent, though some passages were not the most direct matches for the user's queries. Jafar's responses are brief and to the point, and there is a gentle correction when the user points out the mismatch of passages. Overall, the conversation is informative but could benefit from more precise alignment with the user's questions.",
+  "flags": [],
+  "improvement_plan": "Jafar should focus on selecting passages that more directly address the user's specific queries about Bahá'u'lláh's mystical experiences. Enhancing the ability to discern and prioritize the most relevant texts for a given question will improve the depth and evidence quality of the conversation."
+}

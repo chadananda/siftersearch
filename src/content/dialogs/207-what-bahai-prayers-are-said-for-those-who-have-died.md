@@ -1,7 +1,10 @@
 ---
-title: "What Bahá'í Prayers Are Said for Those Who Have Died?"
-description: "What Bahá'í Prayers Are Said for Those Who Have Died?"
-question: "Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?"
+title: What Bahá'í Prayers Are Said for Those Who Have Died?
+description: What Bahá'í Prayers Are Said for Those Who Have Died?
+question: >-
+  Are there specific Bahá'í prayers for someone who has just died, for those in
+  mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh
+  provide for a family facing death?
 topic: practice
 tags:
   - death
@@ -10,28 +13,32 @@ tags:
   - departed
   - prayers-for-departed
 rounds: 5
-qualityScore: 52
-publishedAt: 2026-04-29
-excerpt: "The conversation struggles with evidence quality and doctrinal fidelity, particularly in rounds 2 and 4 where Jafar repeats the same quote and incorrectly cites the Báb instead of Bahá'u'lláh. The fin"
+qualityScore: 60
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation struggles with evidence quality and doctrinal fidelity,
+  particularly in rounds 2 and 4 where Jafar repeats the same quote and
+  incorrectly cites the Báb instead of Bahá'u'lláh. The fin
 featured: false
-heroImage: /images/dialog/207-what-bahai-prayers-are-said-for-those-who-have-died-hero.jpg
+heroImage: >-
+  /images/dialog/207-what-bahai-prayers-are-said-for-those-who-have-died-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
-    doctrinal_fidelity: 60
-    period_word_discipline: 70
-    evidence_quality: 50
-    brevity_discipline: 60
-    correction_courage: 40
-    archive_worthy: 50
-  narrative: "The conversation struggles with evidence quality and doctrinal fidelity, particularly in rounds 2 and 4 where Jafar repeats the same quote and incorrectly cites the Báb instead of Bahá'u'lláh. The final response in round 6 finally addresses the user's question but lacks depth and fails to provide a full quote or context from the Kitáb-i-Aqdas. The conversation lacks correction courage, as seen in round 4, where Jafar does not correct the user's misconception about the source of the prayer."
+    depth: 60
+    conversational_realism: 60
+    doctrinal_fidelity: 70
+    period_word_discipline: 80
+    evidence_quality: 60
+    brevity_discipline: 70
+    correction_courage: 60
+    archive_worthy: 60
+  narrative: "The conversation begins with a relevant quote from Bahá'u'lláh but fails to address the user's specific query about the 'Prayer for the Dead' until later rounds. Jafar repeats the same quote in round 2, which doesn't advance the conversation. The user points out the need for a specific prayer, and Jafar initially provides a quote from the Báb, which is not directly relevant. Eventually, Jafar correctly identifies the 'Prayer for the Dead' in the Kitáb-i-Aqdas, but this comes after some confusion. The conversation lacks depth and evidence quality, as it doesn't consistently provide primary quotes relevant to the user's questions. Conversational realism is affected by repeated quotes and a lack of smooth progression."
   flags:
     - missing-primary-citation
-    - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize primary sources from Bahá'u'lláh when addressing questions specific to his writings. The system should be adjusted to ensure that repeated user queries prompt a more thorough search of the primary texts, especially when the user is insistent about a specific doctrinal element."
+  improvement_plan: "Jafar should ensure that each response directly addresses the user's query with relevant primary quotes. Avoid repeating the same quote unless it is directly applicable to the new question. Improve the ability to identify and provide specific prayers or texts when requested, ensuring clarity and relevance in responses."
 ---
+
 <div class="user-turn">
 
 Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?

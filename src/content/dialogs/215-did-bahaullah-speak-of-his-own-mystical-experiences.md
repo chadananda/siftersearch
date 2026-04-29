@@ -1,7 +1,10 @@
 ---
-title: "Did Bahá'u'lláh Speak of His Own Mystical Experiences?"
-description: "Did Bahá'u'lláh Speak of His Own Mystical Experiences?"
-question: "Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heaven, the experience in the Síyáh-Chál, the revelation in Baghdad. What are the major passages where he describes his own mystical/revelatory experience?"
+title: Did Bahá'u'lláh Speak of His Own Mystical Experiences?
+description: Did Bahá'u'lláh Speak of His Own Mystical Experiences?
+question: >-
+  Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heaven,
+  the experience in the Síyáh-Chál, the revelation in Baghdad. What are the
+  major passages where he describes his own mystical/revelatory experience?
 topic: mysticism
 tags:
   - bahaullah
@@ -10,27 +13,31 @@ tags:
   - maid-of-heaven
   - mystical-experience
 rounds: 5
-qualityScore: 64
-publishedAt: 2026-04-29
-excerpt: "The conversation struggles with depth and evidence quality, as Jafar provides passages that are not directly relevant to the user's question about Bahá'u'lláh's mystical experiences (Rounds 1 and 2). "
+qualityScore: 74
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation struggles with depth and evidence quality, as Jafar provides
+  passages that are not directly relevant to the user's question about
+  Bahá'u'lláh's mystical experiences (Rounds 1 and 2). 
 featured: false
-heroImage: /images/dialog/215-did-bahaullah-speak-of-his-own-mystical-experiences-hero.jpg
+heroImage: >-
+  /images/dialog/215-did-bahaullah-speak-of-his-own-mystical-experiences-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 60
-    conversational_realism: 50
-    doctrinal_fidelity: 70
+    depth: 70
+    conversational_realism: 70
+    doctrinal_fidelity: 80
     period_word_discipline: 80
-    evidence_quality: 60
-    brevity_discipline: 70
-    correction_courage: 60
-    archive_worthy: 65
-  narrative: "The conversation struggles with depth and evidence quality, as Jafar provides passages that are not directly relevant to the user's question about Bahá'u'lláh's mystical experiences (Rounds 1 and 2). There is some improvement in later rounds, but Jafar still fails to provide the most direct and relevant passages from *Gleanings* or *Epistle to the Son of the Wolf*. Conversational realism is moderate, with Jafar's responses lacking a natural flow and feeling somewhat mechanical. Correction courage is present but not strong, as Jafar does not fully address the user's repeated clarifications."
-  flags:
-    - missing-primary-citation
-    - secondary-substitution
-  improvement_plan: "Jafar should prioritize directly relevant primary sources when addressing specific doctrinal questions. The system should be trained to recognize when a user is seeking specific passages and ensure that responses are directly aligned with the user's request, avoiding tangential or unrelated quotes."
+    evidence_quality: 70
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 70
+  narrative: "The conversation demonstrates a reasonable depth, with Jafar providing relevant passages from Bahá'u'lláh's writings, though not always directly addressing the user's specific requests. The conversational tone is mostly maintained, with some formal moments. Doctrinal fidelity is strong, with primary texts cited appropriately. Evidence quality is decent, though some passages were not the most direct matches for the user's queries. Jafar's responses are brief and to the point, and there is a gentle correction when the user points out the mismatch of passages. Overall, the conversation is informative but could benefit from more precise alignment with the user's questions."
+  flags: []
+  improvement_plan: "Jafar should focus on selecting passages that more directly address the user's specific queries about Bahá'u'lláh's mystical experiences. Enhancing the ability to discern and prioritize the most relevant texts for a given question will improve the depth and evidence quality of the conversation."
 ---
+
 <div class="user-turn">
 
 Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heaven, the experience in the Síyáh-Chál, the revelation in Baghdad. What are the major passages where he describes his own mystical/revelatory experience?

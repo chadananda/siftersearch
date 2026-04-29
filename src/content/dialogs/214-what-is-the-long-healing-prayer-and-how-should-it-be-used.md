@@ -1,7 +1,11 @@
 ---
-title: "What Is the Long Healing Prayer and How Should It Be Used?"
-description: "What Is the Long Healing Prayer and How Should It Be Used?"
-question: "Bahá'u'lláh's Long Healing Prayer (Lawh-i-Anís) is one of his most famous devotional works. What is its content, what does it teach about the relationship between physical illness and spiritual reality, and how do believers actually use it?"
+title: What Is the Long Healing Prayer and How Should It Be Used?
+description: What Is the Long Healing Prayer and How Should It Be Used?
+question: >-
+  Bahá'u'lláh's Long Healing Prayer (Lawh-i-Anís) is one of his most famous
+  devotional works. What is its content, what does it teach about the
+  relationship between physical illness and spiritual reality, and how do
+  believers actually use it?
 topic: practice
 tags:
   - long-healing-prayer
@@ -10,27 +14,32 @@ tags:
   - bahaullah
   - prayer
 rounds: 5
-qualityScore: 52
-publishedAt: 2026-04-29
-excerpt: "The conversation struggles with depth and evidence quality, particularly in rounds 3 and 5 where Jafar fails to provide substantive quotes from the Long Healing Prayer that directly address the user's"
+qualityScore: 70
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation struggles with depth and evidence quality, particularly in
+  rounds 3 and 5 where Jafar fails to provide substantive quotes from the Long
+  Healing Prayer that directly address the user's
 featured: false
-heroImage: /images/dialog/214-what-is-the-long-healing-prayer-and-how-should-it-be-used-hero.jpg
+heroImage: >-
+  /images/dialog/214-what-is-the-long-healing-prayer-and-how-should-it-be-used-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
-    doctrinal_fidelity: 60
-    period_word_discipline: 70
-    evidence_quality: 40
-    brevity_discipline: 60
-    correction_courage: 50
-    archive_worthy: 50
-  narrative: "The conversation struggles with depth and evidence quality, particularly in rounds 3 and 5 where Jafar fails to provide substantive quotes from the Long Healing Prayer that directly address the user's questions. The responses often repeat the same general idea without advancing the discussion. Additionally, Jafar's inability to locate specific text in round 5 highlights a gap in evidence quality. The conversation lacks correction courage, as seen in round 4, where Jafar doesn't address the user's clarification about the nature of the quotes."
+    depth: 60
+    conversational_realism: 70
+    doctrinal_fidelity: 80
+    period_word_discipline: 80
+    evidence_quality: 60
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 65
+  narrative: "The conversation begins with a clear question about the Long Healing Prayer, but Jafar struggles to provide depth, particularly in rounds 3 and 4, where the user requests specific passages about the connection between physical and spiritual healing. Jafar's responses are mostly conversational, though there are moments where the replies could be more engaging. Doctrinal fidelity is maintained, but the evidence quality suffers due to a lack of direct quotations from the prayer that address the user's inquiry. Jafar does well in maintaining brevity and offers a gentle correction in round 5 by acknowledging the lack of explicit text. Overall, the conversation is informative but lacks the depth and specificity that would make it truly archive-worthy."
   flags:
     - missing-primary-citation
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to improve in sourcing specific, relevant passages from primary texts to address user queries directly. The system should prioritize finding and quoting relevant sections of Bahá'u'lláh's writings when asked about specific doctrinal content. Additionally, Jafar should be trained to gently correct or clarify when a user points out a misunderstanding or misquote, rather than moving on without addressing the issue."
+  improvement_plan: "Jafar should be equipped with a more comprehensive database of primary texts to ensure specific passages can be cited when requested. Additionally, enhancing the ability to provide context and explanation around quoted texts would improve depth and evidence quality."
 ---
+
 <div class="user-turn">
 
 Bahá'u'lláh's Long Healing Prayer (Lawh-i-Anís) is one of his most famous devotional works. What is its content, what does it teach about the relationship between physical illness and spiritual reality, and how do believers actually use it?

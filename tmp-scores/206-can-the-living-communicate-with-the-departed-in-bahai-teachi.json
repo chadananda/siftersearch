@@ -1,0 +1,20 @@
+{
+  "slug": "206-can-the-living-communicate-with-the-departed-in-bahai-teachi",
+  "scores": {
+    "depth": 65,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 60,
+    "period_word_discipline": 70,
+    "evidence_quality": 50,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 60
+  },
+  "overall": 66,
+  "narrative": "The conversation begins with a relevant quote from Bahá'u'lláh, but subsequent rounds rely on secondary sources, leading to doctrinal drift. Jafar's responses are mostly brief and conversational, though there is a notable misattribution of a quote to Bahá'u'lláh instead of 'Abdu'l-Bahá, which the user correctly identifies. The conversation lacks depth as it doesn't fully explore the nuances of Bahá'í teachings on communication with the departed. The absence of primary citations in later rounds weakens the evidence quality.",
+  "flags": [
+    "missing-primary-citation",
+    "secondary-substitution"
+  ],
+  "improvement_plan": "Jafar should prioritize primary sources when discussing doctrinal topics, ensuring accurate attribution and avoiding reliance on secondary commentary. Enhancing the ability to locate relevant primary texts on specific topics would improve doctrinal fidelity and evidence quality."
+}

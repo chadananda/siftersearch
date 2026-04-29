@@ -1,7 +1,11 @@
 ---
-title: "Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented?"
-description: "Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented?"
-question: "I've heard 'Abdu'l-Bahá foretold the world wars, the rise and fall of empires, and specific events of the 20th century. What are the actual documented prophecies he made — particularly during his Western travels — and how have they been verified?"
+title: Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented?
+description: Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented?
+question: >-
+  I've heard 'Abdu'l-Bahá foretold the world wars, the rise and fall of empires,
+  and specific events of the 20th century. What are the actual documented
+  prophecies he made — particularly during his Western travels — and how have
+  they been verified?
 topic: history
 tags:
   - abdul-baha
@@ -10,29 +14,32 @@ tags:
   - 20th-century
   - western-travels
 rounds: 5
-qualityScore: 52
-publishedAt: 2026-04-29
-excerpt: "The conversation lacks depth, as Jafar fails to provide specific documented prophecies by 'Abdu'l-Bahá, instead referencing Shoghi Effendi and secondary sources (rounds 2 and 5). The use of secondary "
+qualityScore: 68
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation lacks depth, as Jafar fails to provide specific documented
+  prophecies by 'Abdu'l-Bahá, instead referencing Shoghi Effendi and secondary
+  sources (rounds 2 and 5). The use of secondary 
 featured: false
-heroImage: /images/dialog/219-are-abdul-bahas-prophecies-about-the-20th-century-documented-hero.jpg
+heroImage: >-
+  /images/dialog/219-are-abdul-bahas-prophecies-about-the-20th-century-documented-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
-    doctrinal_fidelity: 60
-    period_word_discipline: 70
-    evidence_quality: 40
-    brevity_discipline: 60
-    correction_courage: 50
-    archive_worthy: 50
-  narrative: "The conversation lacks depth, as Jafar fails to provide specific documented prophecies by 'Abdu'l-Bahá, instead referencing Shoghi Effendi and secondary sources (rounds 2 and 5). The use of secondary sources instead of primary texts like 'The Promulgation of Universal Peace' diminishes evidence quality (rounds 3 and 5). Jafar's responses are somewhat conversational but still exhibit an essay-like tone (rounds 3 and 5). There is a missed opportunity to correct the user's misunderstanding about the Dwight Barstow Collection (round 5)."
+    depth: 60
+    conversational_realism: 70
+    doctrinal_fidelity: 70
+    period_word_discipline: 80
+    evidence_quality: 60
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 65
+  narrative: "The conversation begins with a clear question about 'Abdu'l-Bahá's prophecies, but Jafar struggles to provide direct primary quotes from 'Abdu'l-Bahá, instead referencing Shoghi Effendi and other secondary sources. This affects the depth and evidence quality, as the user specifically asked for 'Abdu'l-Bahá's words. The conversational tone is mostly maintained, though there are moments where Jafar's responses feel slightly formal. Doctrinal fidelity is generally maintained, but the reliance on secondary sources when primary ones were requested is a flaw. The conversation remains brief and corrections are handled well, though Jafar could have been more proactive in addressing the user's request for primary sources."
   flags:
-    - essay-tone
     - missing-primary-citation
-    - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar should prioritize primary sources from 'Abdu'l-Bahá when discussing his prophecies, ensuring quotes are directly from his works. The assistant should also correct user misconceptions about sources and maintain a more conversational tone to enhance realism."
+  improvement_plan: "Jafar should prioritize sourcing primary quotes from 'Abdu'l-Bahá when the user explicitly requests them, especially from specified texts like 'The Promulgation of Universal Peace.' Enhancing the ability to distinguish between primary and secondary sources will improve evidence quality and doctrinal fidelity."
 ---
+
 <div class="user-turn">
 
 I've heard 'Abdu'l-Bahá foretold the world wars, the rise and fall of empires, and specific events of the 20th century. What are the actual documented prophecies he made — particularly during his Western travels — and how have they been verified?

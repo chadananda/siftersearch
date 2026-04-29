@@ -1,7 +1,10 @@
 ---
-title: "What Is the Bahá'í Teaching on Visions and Dreams?"
-description: "What Is the Bahá'í Teaching on Visions and Dreams?"
-question: "I've had vivid spiritual dreams that felt meaningful, and I know Bahá'u'lláh, the Báb, and 'Abdu'l-Bahá speak of visions and dreams in their writings. What do they actually teach about the spiritual significance of dreams and visions?"
+title: What Is the Bahá'í Teaching on Visions and Dreams?
+description: What Is the Bahá'í Teaching on Visions and Dreams?
+question: >-
+  I've had vivid spiritual dreams that felt meaningful, and I know Bahá'u'lláh,
+  the Báb, and 'Abdu'l-Bahá speak of visions and dreams in their writings. What
+  do they actually teach about the spiritual significance of dreams and visions?
 topic: mysticism
 tags:
   - dreams
@@ -9,28 +12,32 @@ tags:
   - spiritual-experience
   - abdul-baha
 rounds: 5
-qualityScore: 35
-publishedAt: 2026-04-29
-excerpt: "The conversation lacks depth, with Jafar failing to provide primary sources from Bahá'í texts on dreams and visions. In round 2, Jafar incorrectly attributes a quote to Bahá'u'lláh that is not relevan"
+qualityScore: 52
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation lacks depth, with Jafar failing to provide primary sources
+  from Bahá'í texts on dreams and visions. In round 2, Jafar incorrectly
+  attributes a quote to Bahá'u'lláh that is not relevan
 featured: false
 heroImage: /images/dialog/210-what-is-the-bahai-teaching-on-visions-and-dreams-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 30
-    conversational_realism: 40
-    doctrinal_fidelity: 20
-    period_word_discipline: 50
-    evidence_quality: 10
-    brevity_discipline: 60
-    correction_courage: 50
-    archive_worthy: 20
-  narrative: "The conversation lacks depth, with Jafar failing to provide primary sources from Bahá'í texts on dreams and visions. In round 2, Jafar incorrectly attributes a quote to Bahá'u'lláh that is not relevant to the user's question. The conversation lacks doctrinal fidelity, as it substitutes secondary sources like Adib Taherzadeh's work instead of primary Bahá'í writings. Jafar also fails to correct the user's misunderstanding about the source of the quote in round 3."
+    depth: 40
+    conversational_realism: 50
+    doctrinal_fidelity: 50
+    period_word_discipline: 60
+    evidence_quality: 40
+    brevity_discipline: 70
+    correction_courage: 60
+    archive_worthy: 50
+  narrative: "The conversation struggles with depth and evidence quality, as Jafar fails to provide primary quotes from 'Abdu'l-Bahá's 'Some Answered Questions' despite the user's repeated requests. Instead, Jafar offers unrelated quotes and secondary sources, which diminishes doctrinal fidelity and evidence quality. Conversational realism is affected by Jafar's inability to engage naturally, often repeating 'II couldn't locate text on this in the corpus.' The conversation lacks the depth and specificity expected when discussing spiritual dreams and visions in the Bahá'í Faith."
   flags:
     - missing-primary-citation
     - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize primary Bahá'í texts when discussing doctrinal topics, ensuring accurate attribution and relevance. The system should be adjusted to avoid secondary sources unless they are explicitly requested or necessary for context. Additionally, Jafar should be more proactive in correcting user errors to maintain doctrinal accuracy."
+  improvement_plan: "Jafar should be equipped with a more robust search capability to locate specific primary texts, especially when the user requests them directly. Additionally, Jafar should be trained to avoid secondary sources when primary texts are available and relevant, ensuring doctrinal fidelity and evidence quality are maintained."
 ---
+
 <div class="user-turn">
 
 I've had vivid spiritual dreams that felt meaningful, and I know Bahá'u'lláh, the Báb, and 'Abdu'l-Bahá speak of visions and dreams in their writings. What do they actually teach about the spiritual significance of dreams and visions?

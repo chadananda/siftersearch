@@ -1,7 +1,11 @@
 ---
-title: "Can the Living Communicate With the Departed in Bahá'í Teaching?"
-description: "Can the Living Communicate With the Departed in Bahá'í Teaching?"
-question: "I've lost someone close to me and have heard mixed things about whether Bahá'ís believe the living can communicate with the departed. Does Bahá'u'lláh address this directly? Is prayer FOR the departed efficacious, and can they help us in return?"
+title: Can the Living Communicate With the Departed in Bahá'í Teaching?
+description: Can the Living Communicate With the Departed in Bahá'í Teaching?
+question: >-
+  I've lost someone close to me and have heard mixed things about whether
+  Bahá'ís believe the living can communicate with the departed. Does Bahá'u'lláh
+  address this directly? Is prayer FOR the departed efficacious, and can they
+  help us in return?
 topic: metaphysics
 tags:
   - death
@@ -9,28 +13,33 @@ tags:
   - prayer-for-dead
   - intercession
 rounds: 5
-qualityScore: 56
-publishedAt: 2026-04-29
-excerpt: "Round 2 quotes Shoghi Effendi instead of Bahá'u'lláh, failing to address the user's request for primary scripture. Round 3 incorrectly attributes a quote to Bahá'u'lláh that is actually from 'Abdu'l-B"
+qualityScore: 66
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  Round 2 quotes Shoghi Effendi instead of Bahá'u'lláh, failing to address the
+  user's request for primary scripture. Round 3 incorrectly attributes a quote
+  to Bahá'u'lláh that is actually from 'Abdu'l-B
 featured: false
-heroImage: /images/dialog/206-can-the-living-communicate-with-the-departed-in-bahai-teachi-hero.jpg
+heroImage: >-
+  /images/dialog/206-can-the-living-communicate-with-the-departed-in-bahai-teachi-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 60
-    conversational_realism: 50
-    doctrinal_fidelity: 55
+    depth: 65
+    conversational_realism: 70
+    doctrinal_fidelity: 60
     period_word_discipline: 70
-    evidence_quality: 40
-    brevity_discipline: 65
-    correction_courage: 60
-    archive_worthy: 50
-  narrative: "Round 2 quotes Shoghi Effendi instead of Bahá'u'lláh, failing to address the user's request for primary scripture. Round 3 incorrectly attributes a quote to Bahá'u'lláh that is actually from 'Abdu'l-Bahá, showing a lack of doctrinal fidelity and evidence quality. The conversation lacks depth, as it doesn't explore the nuances of Bahá'í teachings on communication with the departed."
+    evidence_quality: 50
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 60
+  narrative: "The conversation begins with a relevant quote from Bahá'u'lláh, but subsequent rounds rely on secondary sources, leading to doctrinal drift. Jafar's responses are mostly brief and conversational, though there is a notable misattribution of a quote to Bahá'u'lláh instead of 'Abdu'l-Bahá, which the user correctly identifies. The conversation lacks depth as it doesn't fully explore the nuances of Bahá'í teachings on communication with the departed. The absence of primary citations in later rounds weakens the evidence quality."
   flags:
     - missing-primary-citation
     - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize primary texts from Bahá'u'lláh when the user explicitly requests them, ensuring accurate attribution and avoiding secondary sources unless necessary. The system should also be trained to acknowledge when a primary source does not exist, rather than misattributing quotes."
+  improvement_plan: "Jafar should prioritize primary sources when discussing doctrinal topics, ensuring accurate attribution and avoiding reliance on secondary commentary. Enhancing the ability to locate relevant primary texts on specific topics would improve doctrinal fidelity and evidence quality."
 ---
+
 <div class="user-turn">
 
 I've lost someone close to me and have heard mixed things about whether Bahá'ís believe the living can communicate with the departed. Does Bahá'u'lláh address this directly? Is prayer FOR the departed efficacious, and can they help us in return?

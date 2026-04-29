@@ -1,0 +1,19 @@
+{
+  "slug": "204-does-the-bahai-faith-recognize-psychic-or-supernatural-power",
+  "scores": {
+    "depth": 50,
+    "conversational_realism": 60,
+    "doctrinal_fidelity": 60,
+    "period_word_discipline": 70,
+    "evidence_quality": 50,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 55
+  },
+  "overall": 62,
+  "narrative": "The conversation struggles with depth, as Jafar fails to directly address the user's question about psychic powers and Bahá'u'lláh's stance on them. The responses are somewhat repetitive and do not build on each other effectively. While the conversation maintains a conversational tone, it occasionally feels like a Q&A session. Jafar's doctrinal fidelity is weak, as it does not provide primary texts that directly address the user's query. The evidence quality is low, with few relevant primary citations. However, Jafar maintains brevity and does not miss any correction opportunities, as the user does not state any factual errors.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should be trained to better identify and provide relevant primary texts that directly address user queries, especially when discussing specific doctrinal topics. Enhancing the ability to connect user questions with appropriate passages in the Bahá'í writings would improve depth and evidence quality."
+}

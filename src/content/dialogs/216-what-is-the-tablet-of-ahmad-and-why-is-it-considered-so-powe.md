@@ -1,7 +1,11 @@
 ---
-title: "What Is the Tablet of Aḥmad and Why Is It Considered So Powerful?"
-description: "What Is the Tablet of Aḥmad and Why Is It Considered So Powerful?"
-question: "The Tablet of Aḥmad is one of the prayers Bahá'u'lláh himself attached special promises to — for those in distress, in difficulty, in danger. What does the Tablet say, what promises does Bahá'u'lláh make about it, and how is it used in practice?"
+title: What Is the Tablet of Aḥmad and Why Is It Considered So Powerful?
+description: What Is the Tablet of Aḥmad and Why Is It Considered So Powerful?
+question: >-
+  The Tablet of Aḥmad is one of the prayers Bahá'u'lláh himself attached special
+  promises to — for those in distress, in difficulty, in danger. What does the
+  Tablet say, what promises does Bahá'u'lláh make about it, and how is it used
+  in practice?
 topic: practice
 tags:
   - tablet-of-ahmad
@@ -10,27 +14,32 @@ tags:
   - bahaullah
   - promises
 rounds: 5
-qualityScore: 48
-publishedAt: 2026-04-29
-excerpt: "The conversation lacks depth, as Jafar repeatedly fails to provide specific promises or phrases from the Tablet of Ahmad itself, instead offering a generic prayer quote (rounds 3, 5, 7). The responses"
+qualityScore: 62
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation lacks depth, as Jafar repeatedly fails to provide specific
+  promises or phrases from the Tablet of Ahmad itself, instead offering a
+  generic prayer quote (rounds 3, 5, 7). The responses
 featured: false
-heroImage: /images/dialog/216-what-is-the-tablet-of-ahmad-and-why-is-it-considered-so-powe-hero.jpg
+heroImage: >-
+  /images/dialog/216-what-is-the-tablet-of-ahmad-and-why-is-it-considered-so-powe-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 50
+    depth: 50
+    conversational_realism: 60
     doctrinal_fidelity: 60
     period_word_discipline: 70
-    evidence_quality: 30
-    brevity_discipline: 60
-    correction_courage: 40
-    archive_worthy: 40
-  narrative: "The conversation lacks depth, as Jafar repeatedly fails to provide specific promises or phrases from the Tablet of Ahmad itself, instead offering a generic prayer quote (rounds 3, 5, 7). The responses are somewhat conversational but lack the realism of a genuine dialogue. Jafar does not correct the user's misunderstanding about the specific promises in the Tablet, leading to a lack of doctrinal fidelity. The evidence quality is low due to the absence of primary quotes from the Tablet of Ahmad. The conversation is not archive-worthy due to these issues."
+    evidence_quality: 50
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 55
+  narrative: "The conversation struggles with depth, as Jafar repeats the same quote without addressing the user's specific questions about the promises in the Tablet of Ahmad (rounds 3, 5). The conversational tone is somewhat maintained, but Jafar's responses lack engagement with the user's queries, leading to a mechanical feel. Doctrinal fidelity is weak; Jafar fails to provide specific promises from the Tablet itself, instead offering a generic quote that doesn't directly address the user's question. Evidence quality is low, as the same quote is repeated without variation or deeper exploration. Brevity is well-maintained, with responses being concise. Correction courage is adequate, as there were no factual errors from the user to correct."
   flags:
     - missing-primary-citation
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize sourcing primary texts directly related to the user's query, especially when specific documents like the Tablet of Ahmad are mentioned. Additionally, Jafar should be more proactive in correcting misunderstandings and providing accurate doctrinal information to ensure fidelity to the Bahá'í teachings."
+  improvement_plan: "Jafar should be trained to provide more varied and contextually relevant quotations, especially when the user asks for specific doctrinal points. Enhancing the ability to engage with the user's questions directly, rather than repeating the same information, would improve depth and evidence quality."
 ---
+
 <div class="user-turn">
 
 The Tablet of Aḥmad is one of the prayers Bahá'u'lláh himself attached special promises to — for those in distress, in difficulty, in danger. What does the Tablet say, what promises does Bahá'u'lláh make about it, and how is it used in practice?

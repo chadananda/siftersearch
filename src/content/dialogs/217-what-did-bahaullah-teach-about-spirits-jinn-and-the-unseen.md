@@ -1,7 +1,11 @@
 ---
-title: "What Did Bahá'u'lláh Teach About Spirits, Jinn, and the Unseen?"
-description: "What Did Bahá'u'lláh Teach About Spirits, Jinn, and the Unseen?"
-question: "Many traditions speak of spirits, jinn, intermediate beings between humans and angels. Does Bahá'u'lláh address the existence of such beings? What does the Bahá'í corpus say about the unseen world beyond simple 'soul / heaven / hell' categories?"
+title: 'What Did Bahá''u''lláh Teach About Spirits, Jinn, and the Unseen?'
+description: 'What Did Bahá''u''lláh Teach About Spirits, Jinn, and the Unseen?'
+question: >-
+  Many traditions speak of spirits, jinn, intermediate beings between humans and
+  angels. Does Bahá'u'lláh address the existence of such beings? What does the
+  Bahá'í corpus say about the unseen world beyond simple 'soul / heaven / hell'
+  categories?
 topic: metaphysics
 tags:
   - spirits
@@ -10,29 +14,31 @@ tags:
   - metaphysics
   - bahaullah
 rounds: 5
-qualityScore: 52
-publishedAt: 2026-04-29
-excerpt: "The conversation remains at a surface level, with Jafar providing poetic quotes without clear doctrinal context (rounds 1, 3, 5). There is a lack of direct engagement with the user's request for doctr"
+qualityScore: 68
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation remains at a surface level, with Jafar providing poetic
+  quotes without clear doctrinal context (rounds 1, 3, 5). There is a lack of
+  direct engagement with the user's request for doctr
 featured: false
-heroImage: /images/dialog/217-what-did-bahaullah-teach-about-spirits-jinn-and-the-unseen-hero.jpg
+heroImage: >-
+  /images/dialog/217-what-did-bahaullah-teach-about-spirits-jinn-and-the-unseen-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 45
-    doctrinal_fidelity: 60
-    period_word_discipline: 50
-    evidence_quality: 55
-    brevity_discipline: 70
-    correction_courage: 50
-    archive_worthy: 50
-  narrative: "The conversation remains at a surface level, with Jafar providing poetic quotes without clear doctrinal context (rounds 1, 3, 5). There is a lack of direct engagement with the user's request for doctrinal clarity on jinn and unseen entities. Jafar does not correct the user's assumption about the existence of jinn in Bahá'í teachings, leading to potential confusion (rounds 5, 7). The use of poetic language without explanation fails to distinguish between metaphor and doctrine."
-  flags:
-    - essay-tone
-    - missing-primary-citation
-    - hedge-without-position
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize doctrinal clarity over poetic citation when the user requests it, especially on topics like jinn where Bahá'í teachings may differ from other traditions. The system should guide users through the distinction between metaphorical and doctrinal language, correcting misconceptions when they arise."
+    depth: 60
+    conversational_realism: 70
+    doctrinal_fidelity: 70
+    period_word_discipline: 70
+    evidence_quality: 60
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 65
+  narrative: "The conversation maintains a generally conversational tone, though it occasionally leans towards formality. Jafar provides primary quotes, but they are often poetic and do not directly address the user's questions about jinn or unseen entities, leading to a lack of depth. The doctrinal fidelity is sound, but the conversation could benefit from more explicit connections between the quotes and the user's queries. The use of period words is mostly appropriate, though some explanations could be clearer. Overall, the conversation is informative but lacks the depth and clarity needed for a higher score."
+  flags: []
+  improvement_plan: "Jafar should aim to provide more context and explanations alongside quotes, especially when the quotes are poetic or indirect. Enhancing the ability to connect doctrinal teachings directly to user queries would improve depth and doctrinal fidelity. Additionally, ensuring that period words are clearly explained in their historical context would enhance understanding."
 ---
+
 <div class="user-turn">
 
 Many traditions speak of spirits, jinn, intermediate beings between humans and angels. Does Bahá'u'lláh address the existence of such beings? What does the Bahá'í corpus say about the unseen world beyond simple 'soul / heaven / hell' categories?

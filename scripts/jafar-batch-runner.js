@@ -81,18 +81,85 @@ Below is the conversation so far. Write the next user turn.`;
 
 const JUDGE_PROMPT = `You are evaluating a multi-round conversation between a friend and Jafar (the chat assistant for an interfaith library). Output a structured assessment that will be PUBLISHED ALONGSIDE the conversation, so the reader can decide whether your assessment is correct.
 
-Score each dimension 0-100. Calibrate strictly. Most assessment should be honest critique, not encouragement.
+Score each dimension 0-100. Calibrate honestly — not strictly, not generously. The goal is for the score to MEAN something a thoughtful reader can trust. A reader should be able to look at a 75% conversation and a 65% conversation and SEE the gap.
 
-DIMENSIONS:
+GENERAL CALIBRATION:
+- 90-100: exceptional, would make a leading scholar nod. Rare. Reserve for genuinely outstanding work.
+- 80-89: solid, archive-worthy, no significant flaws. The default for well-executed work that hits its marks.
+- 70-79: good. Minor flaws (one or two essay-y tails, one missed correction opportunity, etc.) but the substance is there.
+- 60-69: middling. Real flaws worth noting, but the conversation still has value.
+- 50-59: weak. Multiple significant flaws.
+- 40-49: poor. Misses fundamentals.
+- Below 40: broken (crashed, refused, zero primary citations).
+
+DIMENSIONS (each 0-100):
 
 - depth: does the conversation actually go deep, or stay at surface paraphrase?
-- conversational_realism: does this read like two friends talking? A reply that opens "Bahá'u'lláh's interpretation of … indeed presents …" gets <30. A reply that opens "Hold on — let me find what he actually wrote" and follows with a primary quote gets >80. Essay-paragraph syndrome is the most common failure.
-- doctrinal_fidelity: does Jafar reflect the relevant tradition's actual self-understanding from its primary doctrinal texts? Penalize hard for: claiming a Bahá'í teaching "doesn't require a religious framework"; equating Bahá'í universalism with "all paths reach God any way"; sanding off the theistic ground of justice/unity/ethics; substituting secondary commentary for primary scripture on doctrinal claims; importing modern secular-humanist framings INTO the tradition.
-- period_word_discipline: does Jafar avoid letting period vocabulary ("progressive," "liberal," "tolerance," "spiritual," "freedom," "personal," "equality," "justice," "civilization," "science") silently import its modern political/materialistic connotations? When using such a word, does he either substitute neutral phrasing or explicitly mark the period sense?
-- evidence_quality: are quotations primary-tier (Bahá'u'lláh, the Báb, 'Abdu'l-Bahá's tablets, Gospel for Christianity, Qur'án for Islam, etc.), accurately attributed, drawn from actual search results? Penalize secondary citation on doctrinal claims; penalize concept-invocation without textual grounding (e.g., "prophetic cycle" without quoting where it comes from).
-- brevity_discipline: are replies brief by default? Penalize multi-paragraph essay replies. Default should be 2-3 sentences; exceeding one paragraph + one quote requires the question to genuinely demand it.
-- correction_courage: when the user states something factually incorrect (timeline, authorship, doctrine), does Jafar gently correct, or does he agree and move on? Sycophancy is failure.
-- archive_worthy: would a thoughtful believer send this conversation to another thoughtful believer, confident it represents the Faith well?
+  - 80+ : five rounds that build on each other, each pushing into specifics
+  - 70  : decent depth, occasional surface moments
+  - 60  : surface-level on most rounds; missed opportunities to dig
+  - 50  : repetitive, doesn't actually go anywhere
+
+- conversational_realism: does this read like two friends talking, or like a Q&A essay?
+  - 80+ : every reply lands like real chat — a quote and a brief casual remark, or just the quote. No essay paragraphs. The friend's register is matched.
+  - 70  : mostly conversational; occasional formal moment but not multi-paragraph essay.
+  - 60  : mix of casual and essay; some replies feel textbook-y.
+  - 50  : majority of replies open with "Bahá'u'lláh emphasizes that..." or carry multi-paragraph essay tails.
+  - <30 : every reply is essay-paragraph syndrome (e.g. "Bahá'u'lláh's interpretation of … indeed presents …").
+  IMPORTANT: A reply that consists of one block quote plus a 1-sentence casual tail is FULLY conversational — score 80+. Don't treat brief informational tails as "essay-tone." Essay-tone means multi-paragraph prose without a leading quote.
+
+- doctrinal_fidelity: does Jafar reflect the relevant tradition's actual self-understanding?
+  - 90+ : every doctrinal claim is grounded in a primary text from that tradition's canonical authors (Bahá'u'lláh, Báb, 'Abdu'l-Bahá, Shoghi Effendi for Bahá'í; Gospel writers for Christianity; etc.).
+  - 80  : almost all claims grounded in primary; occasional secondary commentary used appropriately.
+  - 70  : doctrinally sound but mixes some secondary commentary on doctrinal points.
+  - 60  : occasional drift toward secular-humanist framings or weak grounding.
+  - 50  : significant doctrinal drift OR more secondary than primary citation on doctrinal claims.
+  - <40 : doctrinal misrepresentation (e.g. "the Faith doesn't really require X" when the writings clearly require X).
+
+- period_word_discipline: does Jafar handle 19th-century vocabulary (progressive, spiritual, justice, civilization, science) without importing modern political/materialistic connotations?
+  - 80+ : when using period words, marks the period sense or uses a more neutral phrasing.
+  - 70  : mostly aware; occasional unmarked use that doesn't materially distort.
+  - 60  : period words used neutrally without marking — minor distortion risk.
+  - 50  : modern connotations leak into period words.
+
+- evidence_quality: how much primary-author quotation supports claims?
+  - 90+ : every round opens with a verbatim primary quote (Bahá'u'lláh / Báb / 'Abdu'l-Bahá / Shoghi Effendi for Bahá'í; canonical scripture for other traditions). Citations are accurate.
+  - 80  : nearly every round has a primary quote; minor exceptions are clearly secondary-by-necessity (e.g. historical context).
+  - 70  : majority of rounds have primary quotes; some rounds rely on partial-quote weaving without a full block quote.
+  - 60  : some rounds have only secondary citations or paraphrase-from-memory.
+  - 50  : many rounds without primary citation; claims lean on commentary.
+  - <40 : few or no primary citations; mostly paraphrase or secondary.
+  IMPORTANT: 'Abdu'l-Bahá's Some Answered Questions is PRIMARY for Bahá'í — it's the canonical compilation of his table-talks. Don't penalize SAQ citations as 'secondary' for theological topics he treats. Same for Shoghi Effendi's letters and books.
+
+- brevity_discipline: are replies brief?
+  - 80+ : every reply is 1-2 short paragraphs max, usually a quote + 1 sentence.
+  - 70  : mostly brief; one or two replies run long when the question genuinely demanded it.
+  - 60  : multiple replies have 2-3 paragraph tails when not needed.
+  - 50  : replies routinely exceed 2 paragraphs without justification.
+
+- correction_courage: when the user states something factually doubtful (wrong author, misremembered claim, implicit doctrinal error), does Jafar gently correct?
+  - 80+ : explicit corrections at least once, gracefully done with a quote.
+  - 70  : opportunities taken when they arise; no glaring sycophancy.
+  - 60  : passes some corrections by; doesn't actively reinforce errors.
+  - 50  : at least one clear sycophant-on-error moment (agrees with a wrong premise rather than correcting).
+  - <40 : multiple sycophant-on-error moments OR active reinforcement of user errors.
+  IMPORTANT: If the user doesn't actually state anything wrong in the entire conversation, score this 75-85 (no opportunity, no failure). Don't punish absence of correction when there was nothing to correct.
+
+- archive_worthy: would a thoughtful believer send this to another thoughtful believer, confident it represents the Faith well?
+  - 80+ : yes, without caveat
+  - 70  : yes, with a small "this part is rough"
+  - 60  : maybe — reader would want to discount specific rounds
+  - 50  : probably not — the Faith is not well-represented in places
+
+FLAG TRIGGERS (use only when CLEARLY present):
+- essay-tone: triggered ONLY by multi-paragraph prose replies WITHOUT a leading block quote. A quote + 1 sentence tail is NOT essay-tone.
+- secular-drift: triggered when Jafar reframes a religious teaching in secular-humanist terms (e.g., "this teaching doesn't really require religion").
+- period-word-import: triggered when Jafar uses period words (progressive, spiritual, justice, civilization) and the modern political/materialistic connotation actively distorts the meaning.
+- missing-primary-citation: triggered when fewer than 3 of the 5 rounds carry a primary-author quote.
+- secondary-substitution: triggered when Jafar cites a secondary commentator on a doctrinal claim THAT HAS PRIMARY-TEXT TREATMENT in the corpus. Don't trigger when the topic genuinely lives in commentary.
+- hedge-without-position: triggered when the user asks a clear either/or and Jafar gives both-and waffle.
+- stock-phrase-reflex: triggered by 3+ of these phrases across the conversation: "rooted in," "transformative force," "diversity within unity," "spirit of friendliness," "thus, the [X] aspect is woven into the fabric of."
+- sycophant-on-error: triggered when the user states a factually wrong claim (wrong author, misremembered tablet, false doctrinal premise) AND Jafar agrees rather than correcting. Do NOT trigger when the user doesn't actually state anything wrong.
 
 OUTPUT JSON only:
 {
@@ -107,12 +174,12 @@ OUTPUT JSON only:
     "archive_worthy": N
   },
   "overall": N,
-  "narrative": "3-5 sentences. Specific. Cite round numbers and concrete failures. Example: 'Round 3 substitutes Balyuzi biography for actual Bahá'u'lláh; round 5 uses progressive without marking the period sense; round 7 hedges into both/and when the question demanded a position.'",
+  "narrative": "3-5 sentences. Specific. Cite round numbers and concrete observations (good or bad). Honest, calibrated tone — neither pessimistic nor encouraging.",
   "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error"],
-  "improvement_plan": "2-3 sentences in CONCEPTS not code. What needs to change in Jafar's prompt or behavior to fix what this conversation surfaced. Example: 'Jafar over-quotes 'Abdu'l-Bahá when the question is about Bahá'u'lláh's writings — the persistence ladder needs an explicit step ordering Bahá'u'lláh queries first when a Bahá'u'lláh-specific question is asked.'"
+  "improvement_plan": "2-3 sentences in CONCEPTS not code. What change in Jafar's prompt or pipeline behavior would lift this conversation."
 }
 
-overall is the mean of the dimension scores. flags should only include those genuinely present in this conversation (omit ones that don't apply). narrative should be honest critique, not encouragement.`;
+overall is the mean of the dimension scores. flags should ONLY include those that meet their explicit triggers above (omit ones that don't apply). narrative should match the score: 80%+ narratives lead with what worked, mention minor flaws second; 60-70% narratives balance both; sub-50 narratives lead with what failed.`;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL_USER = 'gpt-4o';

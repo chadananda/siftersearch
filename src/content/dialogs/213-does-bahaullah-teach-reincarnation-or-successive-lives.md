@@ -1,7 +1,10 @@
 ---
-title: "Does Bahá'u'lláh Teach Reincarnation or Successive Lives?"
-description: "Does Bahá'u'lláh Teach Reincarnation or Successive Lives?"
-question: "Some seekers from Hindu and Buddhist backgrounds wonder whether the Bahá'í Faith teaches reincarnation. What does Bahá'u'lláh — and 'Abdu'l-Bahá in Some Answered Questions — actually say about whether souls return to physical life?"
+title: Does Bahá'u'lláh Teach Reincarnation or Successive Lives?
+description: Does Bahá'u'lláh Teach Reincarnation or Successive Lives?
+question: >-
+  Some seekers from Hindu and Buddhist backgrounds wonder whether the Bahá'í
+  Faith teaches reincarnation. What does Bahá'u'lláh — and 'Abdu'l-Bahá in Some
+  Answered Questions — actually say about whether souls return to physical life?
 topic: comparative-religion
 tags:
   - reincarnation
@@ -9,28 +12,33 @@ tags:
   - abdul-baha
   - some-answered-questions
 rounds: 5
-qualityScore: 46
-publishedAt: 2026-04-29
-excerpt: "Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá or Bahá'u'lláh, instead quoting secondary sources like Fozdar and Schaefer (Rounds 1, 2, 3). The user explicitly requests primary te"
+qualityScore: 60
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá or
+  Bahá'u'lláh, instead quoting secondary sources like Fozdar and Schaefer
+  (Rounds 1, 2, 3). The user explicitly requests primary te
 featured: false
-heroImage: /images/dialog/213-does-bahaullah-teach-reincarnation-or-successive-lives-hero.jpg
+heroImage: >-
+  /images/dialog/213-does-bahaullah-teach-reincarnation-or-successive-lives-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 40
-    conversational_realism: 45
+    depth: 60
+    conversational_realism: 70
     doctrinal_fidelity: 50
-    period_word_discipline: 60
-    evidence_quality: 20
+    period_word_discipline: 70
+    evidence_quality: 40
     brevity_discipline: 70
-    correction_courage: 60
-    archive_worthy: 30
-  narrative: "Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá or Bahá'u'lláh, instead quoting secondary sources like Fozdar and Schaefer (Rounds 1, 2, 3). The user explicitly requests primary texts, but Jafar continues to provide secondary interpretations, failing to correct this until the end. The conversation lacks depth and doctrinal fidelity due to reliance on secondary sources, and the evidence quality is poor as primary texts are not provided."
+    correction_courage: 75
+    archive_worthy: 50
+  narrative: "The conversation struggles with depth and evidence quality, as Jafar repeatedly fails to provide primary sources from 'Abdu'l-Bahá's Some Answered Questions, despite the user's clear request. Instead, Jafar relies on secondary sources and interpretations, which affects doctrinal fidelity and evidence quality. The conversation maintains a mostly conversational tone, though it occasionally veers into more formal responses. Jafar does attempt to correct course when the user points out the reliance on secondary sources, but ultimately fails to deliver the requested primary text."
   flags:
     - missing-primary-citation
     - secondary-substitution
-    - sycophant-on-error
-  improvement_plan: "Jafar needs to prioritize primary sources when responding to doctrinal questions, especially when explicitly requested by the user. The system should be adjusted to ensure primary texts are searched and quoted first, and secondary sources are only used when primary texts are unavailable or for supplementary context."
+  improvement_plan: "Jafar should prioritize sourcing primary texts when explicitly requested, especially when the user specifies a particular work. Enhancing the ability to locate and quote from primary sources like Some Answered Questions would improve doctrinal fidelity and evidence quality. Additionally, refining the ability to distinguish between primary and secondary sources in real-time would prevent reliance on interpretations when primary texts are available."
 ---
+
 <div class="user-turn">
 
 Some seekers from Hindu and Buddhist backgrounds wonder whether the Bahá'í Faith teaches reincarnation. What does Bahá'u'lláh — and 'Abdu'l-Bahá in Some Answered Questions — actually say about whether souls return to physical life?

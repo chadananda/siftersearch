@@ -1,7 +1,11 @@
 ---
-title: "Are There Bahá'í Prayers Specifically for Protection?"
-description: "Are There Bahá'í Prayers Specifically for Protection?"
-question: "I'm going through a difficult time and people have suggested 'prayers for protection.' Does the Bahá'í corpus actually have prayers specifically for protection — from harm, from spiritual tests, from enemies? What does Bahá'u'lláh teach about how such prayer works?"
+title: Are There Bahá'í Prayers Specifically for Protection?
+description: Are There Bahá'í Prayers Specifically for Protection?
+question: >-
+  I'm going through a difficult time and people have suggested 'prayers for
+  protection.' Does the Bahá'í corpus actually have prayers specifically for
+  protection — from harm, from spiritual tests, from enemies? What does
+  Bahá'u'lláh teach about how such prayer works?
 topic: practice
 tags:
   - prayer
@@ -9,28 +13,31 @@ tags:
   - bahaullah
   - tests
 rounds: 5
-qualityScore: 62
-publishedAt: 2026-04-29
-excerpt: "The conversation maintains a moderate depth, exploring both internal and external aspects of prayer (rounds 2-5). However, Jafar repeats the same quotes without expanding on their implications, limiti"
+qualityScore: 77
+publishedAt: 2026-04-29T00:00:00.000Z
+excerpt: >-
+  The conversation maintains a moderate depth, exploring both internal and
+  external aspects of prayer (rounds 2-5). However, Jafar repeats the same
+  quotes without expanding on their implications, limiti
 featured: false
-heroImage: /images/dialog/202-are-there-bahai-prayers-specifically-for-protection-hero.jpg
+heroImage: >-
+  /images/dialog/202-are-there-bahai-prayers-specifically-for-protection-hero.jpg
+published: false
 assessment:
   scores:
-    depth: 60
-    conversational_realism: 50
-    doctrinal_fidelity: 70
-    period_word_discipline: 60
+    depth: 70
+    conversational_realism: 80
+    doctrinal_fidelity: 80
+    period_word_discipline: 80
     evidence_quality: 80
-    brevity_discipline: 70
-    correction_courage: 50
-    archive_worthy: 60
-  narrative: "The conversation maintains a moderate depth, exploring both internal and external aspects of prayer (rounds 2-5). However, Jafar repeats the same quotes without expanding on their implications, limiting depth. Conversational realism is hindered by repetitive phrasing and lack of natural dialogue flow. Jafar's responses generally align with Bahá'í teachings but could better distinguish between internal and external effects of prayer. Period vocabulary like 'protection' and 'adversaries' is used without clarifying their spiritual context (rounds 3-5)."
-  flags:
-    - essay-tone
-    - period-word-import
-    - sycophant-on-error
-  improvement_plan: "Jafar should diversify quotes and provide more context to deepen the conversation. Emphasize distinguishing between internal spiritual effects and external circumstances in Bahá'í teachings on prayer. Improve conversational flow by varying responses and avoiding repetitive phrasing. Clarify period vocabulary to prevent modern connotations from skewing understanding."
+    brevity_discipline: 80
+    correction_courage: 75
+    archive_worthy: 75
+  narrative: "The conversation maintains a good depth, exploring the dual aspects of prayer as both a source of inner strength and a potential influence on external circumstances. Jafar uses primary quotes effectively, though some rounds could have benefited from more varied citations to deepen the exploration (e.g., Round 3). The tone is conversational and matches the user's style well. Doctrinal fidelity is strong, with accurate representation of Bahá'í teachings. The conversation is brief and to the point, with no unnecessary elaboration. However, Jafar could have clarified the distinction between internal and external effects of prayer more explicitly, especially in Round 4."
+  flags: []
+  improvement_plan: "Jafar could improve by providing a broader range of primary quotes to explore different aspects of prayer, especially regarding its potential to influence external circumstances. Additionally, more explicit clarification on doctrinal nuances, such as the distinction between internal and external effects of prayer, would enhance the depth and clarity of the conversation."
 ---
+
 <div class="user-turn">
 
 I'm going through a difficult time and people have suggested 'prayers for protection.' Does the Bahá'í corpus actually have prayers specifically for protection — from harm, from spiritual tests, from enemies? What does Bahá'u'lláh teach about how such prayer works?

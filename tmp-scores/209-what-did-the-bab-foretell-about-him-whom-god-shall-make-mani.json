@@ -1,0 +1,19 @@
+{
+  "slug": "209-what-did-the-bab-foretell-about-him-whom-god-shall-make-mani",
+  "scores": {
+    "depth": 50,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 60,
+    "period_word_discipline": 80,
+    "evidence_quality": 40,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 50
+  },
+  "overall": 63,
+  "narrative": "The conversation struggles with depth and evidence quality, as Jafar fails to provide direct quotes from the Báb's writings, instead relying on secondary sources and thematic analyses. This limits the conversation's depth and doctrinal fidelity, as the user specifically requested primary texts. Conversational realism is decent, with Jafar maintaining a friendly tone, but the lack of primary citations and reliance on secondary commentary significantly detracts from the conversation's value. The user is left unsatisfied, indicating a missed opportunity for a more meaningful exchange.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should prioritize sourcing primary texts directly from the Báb when they are explicitly requested. Enhancing the ability to access and quote from primary Bahá'í texts would improve both doctrinal fidelity and evidence quality, providing a more satisfying and informative experience for users seeking specific scriptural references."
+}
