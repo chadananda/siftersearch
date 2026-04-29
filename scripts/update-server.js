@@ -346,15 +346,28 @@ async function verifyNewCode() {
  * Falls back to delete+start if reload fails.
  */
 async function swapPm2Process(name) {
-  const reloadResult = await run(`pm2 reload ${name} --update-env`);
-  if (reloadResult.success) {
+  // CRITICAL: `pm2 reload --update-env` only refreshes env vars — NOT
+  // ecosystem.config.cjs settings like max_memory_restart, kill_timeout,
+  // exp_backoff_restart_delay. Those changes are silently ignored on reload
+  // and persist as stale process attributes until the process is fully
+  // re-created. We hit this exact failure mode: max_memory_restart was
+  // raised in the config from 100M → 1500M but PM2 kept enforcing 100M
+  // because nobody had done a clean restart, causing every-30s SIGINT
+  // loops on api/worker.
+  //
+  // Fix: use `pm2 startOrReload ecosystem.config.cjs --only <name>`, which
+  // reads the canonical config file every time and applies all settings.
+  // It's graceful (new process starts before old is killed) AND picks up
+  // config changes.
+  const result = await run(`pm2 startOrReload ecosystem.config.cjs --only ${name} --update-env`);
+  if (result.success) {
     return true;
   }
-  log('warn', `Reload failed for ${name}, falling back to delete+start`);
+  log('warn', `startOrReload failed for ${name}, falling back to delete+start`);
   await run(`pm2 delete ${name}`);
-  const result = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
-  if (!result.success) {
-    log('error', `Failed to start ${name}: ${result.error}`);
+  const restart = await run(`pm2 start ecosystem.config.cjs --only ${name}`);
+  if (!restart.success) {
+    log('error', `Failed to start ${name}: ${restart.error}`);
     return false;
   }
   return true;

@@ -37,6 +37,11 @@ import { prewarmCache, POPULAR_QUERIES } from './lib/search.js';
 // This will print a detailed report and exit if required vars are missing
 checkEnvironment({ exitOnError: true });
 
+// Hoisted server reference so the shutdown handler can drain in-flight
+// requests via Fastify's close() before exit. Without this, a SIGINT
+// during a deploy would 503 every active chat stream.
+let runningServer = null;
+
 // Start server
 const start = async () => {
   try {
@@ -52,6 +57,7 @@ const start = async () => {
     }
 
     const server = await createServer();
+    runningServer = server;
     const port = parseInt(process.env.API_PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
 
@@ -169,9 +175,27 @@ const start = async () => {
   }
 };
 
-// Graceful shutdown
+// Graceful shutdown — drain in-flight requests, then clean up.
+// Critical for chat reliability during deploys: SSE streams in flight
+// must complete (not 503) when the api process is reloaded. Fastify's
+// server.close() refuses NEW connections but lets active ones finish.
+//
+// Idempotent: SIGINT during shutdown won't re-trigger.
+let shuttingDown = false;
 const shutdown = async (signal) => {
-  logger.info({ signal }, 'Shutting down');
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info({ signal }, 'Shutting down — draining in-flight requests');
+  // Stop accepting new connections + wait for in-flight requests to finish.
+  // Fastify's close() respects request lifecycle including streaming SSE.
+  if (runningServer) {
+    try {
+      await runningServer.close();
+      logger.info('Fastify server closed gracefully');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Server close error (continuing shutdown)');
+    }
+  }
   stopSyncWorker();
   stopEmbeddingWorker();
   await stopLibraryWatcher();

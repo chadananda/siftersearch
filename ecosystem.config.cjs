@@ -35,7 +35,10 @@ module.exports = {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
-      kill_timeout: 5000,
+      // 30s gives Fastify time to drain in-flight chat SSE streams
+      // (typically 5-15s each) before SIGKILL on deploy. 5s was too short —
+      // any active chat got 503'd during reloads.
+      kill_timeout: 30000,
       exp_backoff_restart_delay: 1000, // 1s, 2s, 4s, ... up to 15s
       max_restarts: 999999,   // effectively unlimited
       min_uptime: '10s',
@@ -61,6 +64,10 @@ module.exports = {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
       },
+      // 30s for HyPE sidecar batches (which include OpenAI embedding calls
+      // ~10-20s wall) to complete before SIGKILL. Default 1.6s would cut
+      // mid-batch and waste the embedding work.
+      kill_timeout: 30000,
       exp_backoff_restart_delay: 2000, // 2s, 4s, 8s, ... up to 15s
       max_restarts: 999999,   // effectively unlimited
       min_uptime: '10s',

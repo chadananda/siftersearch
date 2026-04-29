@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T15:43:01.539Z",
+  "generated": "2026-04-29T16:14:35.334Z",
   "entries": [
+    {
+      "hash": "ba914b4",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Add library-watcher + enrichment to ecosystem.config.cjs",
+      "scope": null
+    },
     {
       "hash": "0a1d23e",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Add CORS configuration tests",
       "scope": null
-    },
-    {
-      "hash": "8351fc8",
-      "date": "2026-01-06",
-      "type": "Fixed",
-      "description": "Add CORS PUT method and file_hash uniqueness migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "ba914b4",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Add library-watcher + enrichment to ecosystem.config.cjs",
+        "scope": null
+      },
       {
         "hash": "0a1d23e",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Test",
         "description": "Add CORS configuration tests",
-        "scope": null
-      },
-      {
-        "hash": "8351fc8",
-        "date": "2026-01-06",
-        "type": "Fixed",
-        "description": "Add CORS PUT method and file_hash uniqueness migration",
         "scope": null
       }
     ]
