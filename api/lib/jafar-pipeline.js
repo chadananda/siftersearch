@@ -54,7 +54,9 @@ export async function runResearchPhase({ messages, sendEvent, debug }) {
 
   const retrieved = [];
   const debugCalls = [];
-  const MAX_ROUNDS = 5;
+  // Cap at 3 rounds. Pipeline budget is ~90s end-to-end vs Cloudflare's
+  // ~100s timeout — research must leave room for craft + reflect + retry.
+  const MAX_ROUNDS = 3;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const resp = await openai.chat.completions.create({
@@ -369,19 +371,11 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
       gate_feedback: gate
     });
     retried = true;
-    // Don't re-gate; ship the second pass. Log if still failing for telemetry.
-    const reGate = await reflectionGate({
-      draft,
-      retrieved_quotes: research.retrieved_quotes,
-      user_intent: userIntent,
-      user_question: userMessage
-    });
-    if (!reGate.pass) {
-      logger.warn({ issues: reGate.issues, draftPreview: draft.slice(0, 200) }, 'gate still failing on retry; shipping anyway');
-      gate = reGate;
-    } else {
-      gate = reGate;
-    }
+    // Skip the re-gate after retry. Saves one OpenAI call per failed-gate
+    // turn (~3-5s) which is critical for staying under Cloudflare's stream
+    // timeout. Trust the retry; if persistently bad we'll catch it in the
+    // post-hoc dialog assessment.
+    gate = { pass: false, retry_attempted: true, original_issues: gate.issues };
   }
 
   return {
