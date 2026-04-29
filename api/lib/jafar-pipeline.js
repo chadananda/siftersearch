@@ -611,14 +611,13 @@ OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary a
 // fast-path orchestrator. Returns the full text at the end.
 export async function craftAnswerStream({ user_question, retrieved_quotes, conversation_summary, user_intent, onChunk, _temperature_override }) {
   const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent });
-  // Crafter uses gpt-4o (not mini) for stronger instruction-following on the
-  // forbidden-opener and no-restating rules. Mini kept inventing new restate
-  // patterns ("He emphasizes that," "This definition of nature as,"
-  // "Engaging with secular thinkers can be seen as") that the prompt
-  // and post-process strip didn't catch. The 5x cost is worth it for
-  // grounding fidelity. Speed cost: ~1-2s additional crafter latency.
+  // gpt-4o-mini for the crafter. Tried gpt-4o briefly; it ignored the
+  // block-quote format and produced inline quotes ("Here's the key
+  // passage: 'Nature...'"), which broke our markdown structure and
+  // ironically scored worse. Mini follows the structural format more
+  // reliably; restate-prose is cleaned up by the post-process strip.
   const stream = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: CRAFTER_SYSTEM },
       { role: 'user', content: userPayload }
@@ -676,7 +675,11 @@ function stripRestatementSentences(text) {
   const lines = text.split('\n');
   const out = [];
   for (const line of lines) {
-    if (line.startsWith('>') || line.trim() === '') {
+    // Skip block quotes, blank lines, and any line that contains an
+    // inline citation marker — those have URLs whose periods would
+    // break the sentence splitter, and they're the structural payload
+    // we definitely want to keep.
+    if (line.startsWith('>') || line.trim() === '' || /\]\(https?:\/\//.test(line) || line.includes('siftersearch.com/document')) {
       out.push(line);
       continue;
     }
