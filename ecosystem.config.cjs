@@ -107,6 +107,72 @@ module.exports = {
       error_file: './logs/tunnel-error.log',
       out_file: './logs/tunnel-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Library Watcher — Dropbox → SQLite ingest → Meili base index.
+    // Entry point of the autonomous content pipeline. New files dropped into
+    // the library are detected, parsed, segmented, and written to SQLite +
+    // base Meili index. Once ingested, paragraphs sit with context=NULL +
+    // hyp_questions=NULL, which is exactly what siftersearch-enrichment
+    // looks for next.
+    {
+      name: 'siftersearch-library-watcher',
+      script: 'scripts/index-library.js',
+      args: '--watch',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1500M',
+      env: {
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+      },
+      exp_backoff_restart_delay: 5000,
+      max_restarts: 999999,
+      min_uptime: '60s',
+      error_file: './logs/library-watcher-error.log',
+      out_file: './logs/library-watcher-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
+    // Enrichment — disambiguation + HyPE generation against local vLLM on
+    // boss. Iterates ALL paragraphs that still have context=NULL or
+    // hyp_questions=NULL, in priority order (highest authority first).
+    // Idempotent + resumable — every run scans from the start of the queue
+    // and only calls the LLM for paragraphs still NULL, so a crash + restart
+    // never re-does work. As paragraphs gain hyp_questions, the worker's
+    // syncHypeBatch loop picks them up within 60s and pushes to the HyPE
+    // sidecar Meili index — no manual intervention.
+    //
+    // No --religion flag: the script's priority order naturally puts the
+    // Bahá'í corpus first (highest authority), so it finishes that, then
+    // moves to other religions automatically. User adds new content to
+    // Dropbox; library-watcher ingests it; enrichment finds the new
+    // null rows and processes them in queue.
+    //
+    // NOT touched by the auto-updater's swap path (which only swaps api
+    // and worker — see swapPm2Process calls in scripts/update-server.js).
+    {
+      name: 'siftersearch-enrichment',
+      script: 'scripts/run-enrichment.js',
+      args: '--resume',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production'
+      },
+      exp_backoff_restart_delay: 10000, // 10s, 20s, 40s — gentle on boss vLLM
+      max_restarts: 999999,
+      min_uptime: '60s',
+      error_file: './logs/enrichment-error.log',
+      out_file: './logs/enrichment-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     }
   ]
 };
