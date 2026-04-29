@@ -3,120 +3,251 @@
     "title": "Do the Bahá'í Writings Speak of Mystical Experience?",
     "question": "I've heard the Bahá'í Faith called a 'practical' religion focused on social order. But mystical experience — the soul's direct encounter with the Divine — runs through Bahá'u'lláh's writings, doesn't it? What is the actual mystical core of the Faith?",
     "topic": "mysticism",
-    "tags": ["mysticism", "bahaullah", "seven-valleys", "soul"]
+    "tags": [
+      "mysticism",
+      "bahaullah",
+      "seven-valleys",
+      "soul"
+    ],
+    "slug": "200-do-the-bahai-writings-speak-of-mystical-experience"
   },
   {
     "title": "What Are the Seven Valleys and Are They Bahá'u'lláh's Map of the Mystical Path?",
     "question": "The Seven Valleys is often called Bahá'u'lláh's mystical masterpiece. What are these seven stages — search, love, knowledge, unity, contentment, wonderment, and true poverty — and is this his actual map of the soul's journey toward God?",
     "topic": "mysticism",
-    "tags": ["seven-valleys", "mysticism", "bahaullah", "spiritual-stages"]
+    "tags": [
+      "seven-valleys",
+      "mysticism",
+      "bahaullah",
+      "spiritual-stages"
+    ],
+    "slug": "201-what-are-the-seven-valleys-and-are-they-bahaullahs-map-of-th"
   },
   {
     "title": "Are There Bahá'í Prayers Specifically for Protection?",
     "question": "I'm going through a difficult time and people have suggested 'prayers for protection.' Does the Bahá'í corpus actually have prayers specifically for protection — from harm, from spiritual tests, from enemies? What does Bahá'u'lláh teach about how such prayer works?",
     "topic": "practice",
-    "tags": ["prayer", "protection", "bahaullah", "tests"]
+    "tags": [
+      "prayer",
+      "protection",
+      "bahaullah",
+      "tests"
+    ],
+    "slug": "202-are-there-bahai-prayers-specifically-for-protection"
   },
   {
     "title": "What Did Bahá'u'lláh Teach About the Greatest Name and Its Power?",
     "question": "Bahá'ís repeat 'Alláh-u-Abhá' ninety-five times daily and refer to 'the Greatest Name.' What does Bahá'u'lláh actually teach about the power of the Greatest Name? Is this just devotional, or is there something operative happening?",
     "topic": "mysticism",
-    "tags": ["greatest-name", "allah-u-abha", "prayer", "bahaullah"]
+    "tags": [
+      "greatest-name",
+      "allah-u-abha",
+      "prayer",
+      "bahaullah"
+    ],
+    "slug": "203-what-did-bahaullah-teach-about-the-greatest-name-and-its-pow"
   },
   {
     "title": "Does the Bahá'í Faith Recognize Psychic or Supernatural Powers?",
     "question": "Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?",
     "topic": "metaphysics",
-    "tags": ["psychic-powers", "supernatural", "spiritualism", "warnings"]
+    "tags": [
+      "psychic-powers",
+      "supernatural",
+      "spiritualism",
+      "warnings"
+    ],
+    "slug": "204-does-the-bahai-faith-recognize-psychic-or-supernatural-power"
   },
   {
     "title": "What Happens to the Soul After Death According to Bahá'u'lláh?",
     "question": "What does Bahá'u'lláh actually teach about what happens to the soul after physical death? Is there a journey, judgment, levels of existence? I want to understand the Bahá'í view of the afterlife from the actual writings, not just summaries.",
     "topic": "metaphysics",
-    "tags": ["afterlife", "soul", "death", "bahaullah", "next-world"]
+    "tags": [
+      "afterlife",
+      "soul",
+      "death",
+      "bahaullah",
+      "next-world"
+    ],
+    "slug": "205-what-happens-to-the-soul-after-death-according-to-bahaullah"
   },
   {
     "title": "Can the Living Communicate With the Departed in Bahá'í Teaching?",
     "question": "I've lost someone close to me and have heard mixed things about whether Bahá'ís believe the living can communicate with the departed. Does Bahá'u'lláh address this directly? Is prayer FOR the departed efficacious, and can they help us in return?",
     "topic": "metaphysics",
-    "tags": ["death", "departed-souls", "prayer-for-dead", "intercession"]
+    "tags": [
+      "death",
+      "departed-souls",
+      "prayer-for-dead",
+      "intercession"
+    ],
+    "slug": "206-can-the-living-communicate-with-the-departed-in-bahai-teachi"
   },
   {
     "title": "What Bahá'í Prayers Are Said for Those Who Have Died?",
     "question": "Are there specific Bahá'í prayers for someone who has just died, for those in mourning, or for the spiritual progress of the departed? What does Bahá'u'lláh provide for a family facing death?",
     "topic": "practice",
-    "tags": ["death", "prayer", "mourning", "departed", "prayers-for-departed"]
+    "tags": [
+      "death",
+      "prayer",
+      "mourning",
+      "departed",
+      "prayers-for-departed"
+    ],
+    "slug": "207-what-bahai-prayers-are-said-for-those-who-have-died"
   },
   {
     "title": "Did Bahá'u'lláh's Coming Fulfill Specific Prophecies of Earlier Faiths?",
     "question": "Bahá'ís claim Bahá'u'lláh's coming fulfilled prophecies in the Bible, the Qur'án, and the writings of the Báb. Which specific prophecies are claimed to be fulfilled, and how does the Bahá'í corpus argue this — particularly Bahá'u'lláh's own treatment of biblical prophecy in the Iqán?",
     "topic": "comparative-religion",
-    "tags": ["prophecy", "fulfillment", "iqan", "bible", "quran", "bab"]
+    "tags": [
+      "prophecy",
+      "fulfillment",
+      "iqan",
+      "bible",
+      "quran",
+      "bab"
+    ],
+    "slug": "208-did-bahaullahs-coming-fulfill-specific-prophecies-of-earlier"
   },
   {
     "title": "What Did the Báb Foretell About 'Him Whom God Shall Make Manifest'?",
     "question": "The Báb repeatedly foretold the coming of 'Him Whom God Shall Make Manifest.' What did he specifically promise about this Manifestation, and how do the Bahá'í writings claim Bahá'u'lláh fulfilled those promises? I want the actual texts of the Báb on this.",
     "topic": "comparative-religion",
-    "tags": ["bab", "him-whom-god-shall-manifest", "prophecy", "bahaullah"]
+    "tags": [
+      "bab",
+      "him-whom-god-shall-manifest",
+      "prophecy",
+      "bahaullah"
+    ],
+    "slug": "209-what-did-the-bab-foretell-about-him-whom-god-shall-make-mani"
   },
   {
     "title": "What Is the Bahá'í Teaching on Visions and Dreams?",
     "question": "I've had vivid spiritual dreams that felt meaningful, and I know Bahá'u'lláh, the Báb, and 'Abdu'l-Bahá speak of visions and dreams in their writings. What do they actually teach about the spiritual significance of dreams and visions?",
     "topic": "mysticism",
-    "tags": ["dreams", "visions", "spiritual-experience", "abdul-baha"]
+    "tags": [
+      "dreams",
+      "visions",
+      "spiritual-experience",
+      "abdul-baha"
+    ],
+    "slug": "210-what-is-the-bahai-teaching-on-visions-and-dreams"
   },
   {
     "title": "What Does Bahá'u'lláh Teach About Spiritual Healing?",
     "question": "Bahá'í prayers include prayers for healing, and 'Abdu'l-Bahá spoke of the spiritual causes of illness. What does Bahá'u'lláh actually teach about healing through prayer — is it metaphorical comfort, or operative spiritual power, or something else?",
     "topic": "practice",
-    "tags": ["healing", "prayer", "illness", "abdul-baha"]
+    "tags": [
+      "healing",
+      "prayer",
+      "illness",
+      "abdul-baha"
+    ],
+    "slug": "211-what-does-bahaullah-teach-about-spiritual-healing"
   },
   {
     "title": "What Are the Stations of the Soul in Bahá'í Cosmology?",
     "question": "The Bahá'í writings describe the soul as eternal and progressing through stations. What are these stations — both in this life and the next world? What do Bahá'u'lláh and 'Abdu'l-Bahá actually say about the soul's journey?",
     "topic": "metaphysics",
-    "tags": ["soul", "stations", "spiritual-progress", "next-world", "abdul-baha"]
+    "tags": [
+      "soul",
+      "stations",
+      "spiritual-progress",
+      "next-world",
+      "abdul-baha"
+    ],
+    "slug": "212-what-are-the-stations-of-the-soul-in-bahai-cosmology"
   },
   {
     "title": "Does Bahá'u'lláh Teach Reincarnation or Successive Lives?",
     "question": "Some seekers from Hindu and Buddhist backgrounds wonder whether the Bahá'í Faith teaches reincarnation. What does Bahá'u'lláh — and 'Abdu'l-Bahá in Some Answered Questions — actually say about whether souls return to physical life?",
     "topic": "comparative-religion",
-    "tags": ["reincarnation", "soul", "abdul-baha", "some-answered-questions"]
+    "tags": [
+      "reincarnation",
+      "soul",
+      "abdul-baha",
+      "some-answered-questions"
+    ],
+    "slug": "213-does-bahaullah-teach-reincarnation-or-successive-lives"
   },
   {
     "title": "What Is the Long Healing Prayer and How Should It Be Used?",
     "question": "Bahá'u'lláh's Long Healing Prayer (Lawh-i-Anís) is one of his most famous devotional works. What is its content, what does it teach about the relationship between physical illness and spiritual reality, and how do believers actually use it?",
     "topic": "practice",
-    "tags": ["long-healing-prayer", "lawh-i-anis", "healing", "bahaullah", "prayer"]
+    "tags": [
+      "long-healing-prayer",
+      "lawh-i-anis",
+      "healing",
+      "bahaullah",
+      "prayer"
+    ],
+    "slug": "214-what-is-the-long-healing-prayer-and-how-should-it-be-used"
   },
   {
     "title": "Did Bahá'u'lláh Speak of His Own Mystical Experiences?",
     "question": "Bahá'u'lláh describes his own encounters with the Divine — the Maid of Heaven, the experience in the Síyáh-Chál, the revelation in Baghdad. What are the major passages where he describes his own mystical/revelatory experience?",
     "topic": "mysticism",
-    "tags": ["bahaullah", "revelation", "siyah-chal", "maid-of-heaven", "mystical-experience"]
+    "tags": [
+      "bahaullah",
+      "revelation",
+      "siyah-chal",
+      "maid-of-heaven",
+      "mystical-experience"
+    ],
+    "slug": "215-did-bahaullah-speak-of-his-own-mystical-experiences"
   },
   {
     "title": "What Is the Tablet of Aḥmad and Why Is It Considered So Powerful?",
     "question": "The Tablet of Aḥmad is one of the prayers Bahá'u'lláh himself attached special promises to — for those in distress, in difficulty, in danger. What does the Tablet say, what promises does Bahá'u'lláh make about it, and how is it used in practice?",
     "topic": "practice",
-    "tags": ["tablet-of-ahmad", "prayer", "protection", "bahaullah", "promises"]
+    "tags": [
+      "tablet-of-ahmad",
+      "prayer",
+      "protection",
+      "bahaullah",
+      "promises"
+    ],
+    "slug": "216-what-is-the-tablet-of-ahmad-and-why-is-it-considered-so-powe"
   },
   {
     "title": "What Did Bahá'u'lláh Teach About Spirits, Jinn, and the Unseen?",
     "question": "Many traditions speak of spirits, jinn, intermediate beings between humans and angels. Does Bahá'u'lláh address the existence of such beings? What does the Bahá'í corpus say about the unseen world beyond simple 'soul / heaven / hell' categories?",
     "topic": "metaphysics",
-    "tags": ["spirits", "jinn", "unseen", "metaphysics", "bahaullah"]
+    "tags": [
+      "spirits",
+      "jinn",
+      "unseen",
+      "metaphysics",
+      "bahaullah"
+    ],
+    "slug": "217-what-did-bahaullah-teach-about-spirits-jinn-and-the-unseen"
   },
   {
     "title": "What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer?",
     "question": "Bahá'u'lláh ordained three obligatory prayers in the Aqdas. What does he specifically promise about the spiritual effect of reciting them — both for the worshipper's own soul and in the wider spiritual order?",
     "topic": "practice",
-    "tags": ["obligatory-prayer", "aqdas", "bahaullah", "promises", "prayer"]
+    "tags": [
+      "obligatory-prayer",
+      "aqdas",
+      "bahaullah",
+      "promises",
+      "prayer"
+    ],
+    "slug": "218-what-did-bahaullah-promise-to-those-who-recite-the-obligator"
   },
   {
     "title": "Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented?",
     "question": "I've heard 'Abdu'l-Bahá foretold the world wars, the rise and fall of empires, and specific events of the 20th century. What are the actual documented prophecies he made — particularly during his Western travels — and how have they been verified?",
     "topic": "history",
-    "tags": ["abdul-baha", "prophecy", "world-wars", "20th-century", "western-travels"]
+    "tags": [
+      "abdul-baha",
+      "prophecy",
+      "world-wars",
+      "20th-century",
+      "western-travels"
+    ],
+    "slug": "219-are-abdul-bahas-prophecies-about-the-20th-century-documented"
   }
 ]

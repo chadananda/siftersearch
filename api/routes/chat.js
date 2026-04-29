@@ -333,10 +333,11 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     const filters = {};
     if (religion) filters.religion = religion;
     if (collection) filters.collection = collection;
-    const searchOpts = { limit: 5, filters };
+    if (document_id) filters.documentId = document_id;
+    const searchOpts = { limit: safeLimit, filters };
     const [hybridResults, keywordResults] = await Promise.all([
       hybridSearch(query, searchOpts).catch(() => ({ hits: [] })),
-      keywordSearch(query, { limit: 3, filters }).catch(() => ({ hits: [] }))
+      keywordSearch(query, { limit: Math.max(3, Math.floor(safeLimit / 2)), filters }).catch(() => ({ hits: [] }))
     ]);
 
     // Merge and dedupe, then resort by authority-weighted score so canonical
@@ -353,7 +354,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
 
     return {
-      passages: merged.slice(0, 6).map(hit => ({
+      passages: merged.slice(0, safeLimit).map(hit => ({
         text: (hit.text || '').substring(0, 500),
         title: hit.title || 'Unknown',
         author: hit.author || '',

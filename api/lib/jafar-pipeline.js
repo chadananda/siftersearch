@@ -267,18 +267,38 @@ export async function classifyIntent(userMessage) {
 // canonical-work descriptors. start_paragraph / end_paragraph optional
 // (used for sub-section works inside a compilation).
 const BAHAI_TOPIC_TO_WORK = [
-  { match: /myst|spiritual.path|seven.valley/, works: [{ doc_id: 8241 }, { doc_id: 8230 }] },                  // Seven Valleys, Hidden Words
-  { match: /prayer|devotion|worship|obligatory|meditation/, works: [{ doc_id: 8301 }, { doc_id: 16712 }] },     // Prayers and Meditations, Aqdas
-  { match: /death|afterlife|next.world|departed|soul/, works: [{ doc_id: 8312 }, { doc_id: 8346 }] },           // Gleanings, Some Answered Questions
-  { match: /prophec|fulfill|manifestation|return|seal/, works: [{ doc_id: 8300 }] },                            // Iqán
-  { match: /justice|ethic|virtue|conduct|moral/, works: [{ doc_id: 8230 }, { doc_id: 16712 }] },                // Hidden Words, Aqdas
-  { match: /scien|material|philosoph|wisdom|hikmat|nature/, works: [{ doc_id: 8270, start_paragraph: 313, end_paragraph: 365 }] }, // Tablet of Wisdom
-  { match: /protect|test|suffer|difficult|trial/, works: [{ doc_id: 8230 }] },                                  // Hidden Words
-  { match: /heal|illness|sick/, works: [{ doc_id: 8301 }] },                                                    // Prayers and Meditations (Long Healing Prayer is in there)
-  { match: /unity|oneness|universal|religion/, works: [{ doc_id: 8300 }, { doc_id: 8346 }] },                   // Iqán, Some Answered Questions
-  { match: /greatest.name|allah|abha/, works: [{ doc_id: 16712 }, { doc_id: 8230 }] },                          // Aqdas, Hidden Words
-  { match: /vision|dream|psychic|spirit|supernatural|reincarnation/, works: [{ doc_id: 8346 }] },               // Some Answered Questions
-  { match: /covenant|center|shoghi|guardian|administration/, works: [{ doc_id: 8635 }, { doc_id: 8295 }] }      // God Passes By, Advent of Divine Justice
+  // Mystical / spiritual path — Seven Valleys, Hidden Words, Mathnaviyí, Hymn to Love
+  { match: /myst|spiritual.path|seven.valley|wayfarer|journey/, works: [{ doc_id: 8241 }, { doc_id: 8230 }, { doc_id: 16284 }, { doc_id: 11447 }] },
+  // Prayer / devotion / fasting / meditation — Prayers and Meditations, Supplications, Aqdas
+  { match: /prayer|devotion|worship|obligatory|meditation|fast|recit/, works: [{ doc_id: 8301 }, { doc_id: 16289 }, { doc_id: 16712 }] },
+  // Death / afterlife / soul — Gleanings, SAQ, Prayers and Meditations (departed-prayers)
+  { match: /death|afterlife|next.world|departed|soul.after|dying/, works: [{ doc_id: 8312 }, { doc_id: 8346 }, { doc_id: 8301 }] },
+  // Soul / stations / immortality — SAQ, Gleanings
+  { match: /soul|immortal|station|spiritual.progress/, works: [{ doc_id: 8346 }, { doc_id: 8312 }] },
+  // Prophecy / fulfillment / manifestation — Iqán, Summons of the Lord of Hosts, Tablet of the Temple
+  { match: /prophec|fulfill|manifestation|return|seal|day.of.god|promised/, works: [{ doc_id: 8300 }, { doc_id: 8299 }, { doc_id: 16658 }] },
+  // Justice / ethics / virtue — Hidden Words, Aqdas, Epistle to Son of the Wolf
+  { match: /justice|ethic|virtue|conduct|moral|character/, works: [{ doc_id: 8230 }, { doc_id: 16712 }, { doc_id: 8273 }] },
+  // Science / materialism / philosophy — Tablet of Wisdom, Tablet to Mánikchí
+  { match: /scien|material|philosoph|wisdom|hikmat|nature/, works: [{ doc_id: 8270, start_paragraph: 313, end_paragraph: 365 }, { doc_id: 16691 }] },
+  // Tests / protection / suffering — Hidden Words, Prayers and Meditations, Supplications
+  { match: /protect|test|suffer|difficult|trial|hardship|enemy|enemies/, works: [{ doc_id: 8230 }, { doc_id: 8301 }, { doc_id: 16289 }] },
+  // Healing — Prayers and Meditations, Long Healing Prayer
+  { match: /heal|illness|sick|cure|recovery|disease/, works: [{ doc_id: 8301 }] },
+  // Unity / universalism / religion — Iqán, SAQ, Tablets after Aqdas
+  { match: /unity|oneness|universal|religion|faith|interfaith/, works: [{ doc_id: 8300 }, { doc_id: 8346 }, { doc_id: 8270 }] },
+  // Greatest Name — Aqdas, Hidden Words, Prayers and Meditations
+  { match: /greatest.name|all[áa]h|abha/, works: [{ doc_id: 16712 }, { doc_id: 8230 }, { doc_id: 8301 }] },
+  // Visions / dreams / psychic — SAQ (definitive), Gleanings
+  { match: /vision|dream|psychic|supernat|reincarnation|past.life/, works: [{ doc_id: 8346 }, { doc_id: 8312 }] },
+  // Spirits / unseen / jinn — SAQ
+  { match: /spirit|jinn|unseen|invisible|angel|demon/, works: [{ doc_id: 8346 }] },
+  // Covenant / Shoghi / administration — God Passes By, Advent of Divine Justice, Promised Day Is Come
+  { match: /covenant|center|shoghi|guardian|administration|huj|house.of.justice/, works: [{ doc_id: 8635 }, { doc_id: 8295 }, { doc_id: 8302 }] },
+  // History / 'Akká / exile / origin — God Passes By, Epistle to Son of the Wolf
+  { match: /history|akk[áa]|exile|baghdad|edirne|origin|early|founder/, works: [{ doc_id: 8635 }, { doc_id: 8273 }] },
+  // Bahá'u'lláh's revelation / Manifestation experience — Súrih-i-Haykal, Summons, Mathnaviyí
+  { match: /revelation|maid.of.heaven|siy[áa]h.ch[áa]l|manifestation.experience/, works: [{ doc_id: 16658 }, { doc_id: 8299 }, { doc_id: 16284 }] }
 ];
 
 // Extract a previously-mentioned work_name from the conversation history.
@@ -434,19 +454,38 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         }
       }
     }
-    // Cap at 2 work-reads to keep the prompt manageable; the trim step
-    // later still caps total quotes at 12.
+    // For each topic-matched primary work, do a TOPIC-FILTERED passages
+    // search restricted to that document. This surfaces the most relevant
+    // paragraphs from the work (vs reading the first 80 paragraphs blindly,
+    // which often missed the relevant passage on long works like the Iqán's
+    // 290-paragraph treatment of prophecy fulfillment).
+    //
+    // For sub-section works (Tablet of Wisdom inside doc 8270), we still
+    // need a paragraph-range read, since a doc-filtered passages search
+    // would return the whole compilation. Those keep the read_document path.
+    const topicQuery = entities.topics.join(' ');
     for (const work of matchedWorks.slice(0, 2)) {
       tasks.push((async () => {
-        const readArgs = { document_id: work.doc_id, question: userMessage };
-        if (typeof work.start_paragraph === 'number') readArgs.start_paragraph = work.start_paragraph;
-        if (typeof work.end_paragraph === 'number') readArgs.end_paragraph = work.end_paragraph;
-        // For full primary works without a paragraph range, sample first 80
-        // paragraphs (most are short tablets/short books; Iqán is ~290 paras
-        // but we don't need them all — passages search supplements).
-        if (typeof work.start_paragraph !== 'number') readArgs.max_paragraphs = 80;
-        const read = await runTool('read_document_for_question', readArgs);
-        harvestExcerpts(read, 'topic-mapped-read');
+        if (typeof work.start_paragraph === 'number') {
+          // Sub-section work — read the paragraph range
+          const readArgs = {
+            document_id: work.doc_id,
+            question: userMessage,
+            start_paragraph: work.start_paragraph,
+            end_paragraph: work.end_paragraph
+          };
+          const read = await runTool('read_document_for_question', readArgs);
+          harvestExcerpts(read, 'topic-mapped-read');
+        } else {
+          // Full work — topic-filtered passages search inside it
+          const search = await runTool('search', {
+            query: topicQuery,
+            mode: 'passages',
+            document_id: work.doc_id,
+            limit: 6
+          });
+          harvestPassages(search, 'topic-mapped-passage');
+        }
       })());
     }
   }
@@ -531,9 +570,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const text = (q.text || '').toLowerCase();
       return keywords.some(k => text.includes(k));
     };
-    const passages = filteredForCrafter.filter(q => q.via === 'search' || q.via === 'search-fallback');
-    const readMatched = filteredForCrafter.filter(q => q.via !== 'search' && q.via !== 'search-fallback' && matchesKeyword(q));
-    const readRest = filteredForCrafter.filter(q => q.via !== 'search' && q.via !== 'search-fallback' && !matchesKeyword(q));
+    const SEARCH_VIAS = new Set(['search', 'search-fallback', 'topic-mapped-passage']);
+    const passages = filteredForCrafter.filter(q => SEARCH_VIAS.has(q.via));
+    const readMatched = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
+    const readRest = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
     trimmed = [...passages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
   }
 
@@ -613,6 +653,16 @@ INTENT-ROUTED OUTPUT:
 LITERAL-MATCH — if the user named specific terms (people, places, concepts):
 - The lead quote MUST contain those terms verbatim
 - If no retrieved quote contains them verbatim, say so directly: "The retrieved excerpts don't contain 'X' explicitly. Closest material I have:"
+
+NO REPEAT-QUOTE — never lead with a block quote already used in this conversation:
+- Check the conversation_summary. If a quote you're about to use already appeared in your previous reply, choose a DIFFERENT one from retrieved_quotes.
+- The user calling out a repeat ("you're repeating yourself") is the worst failure — it means you didn't read the prior turn before composing this one.
+- If retrieved_quotes has only one quote that fits and it's already been used, summarize the question's gap directly: "I've already shared the relevant passage on this. Want me to find a related teaching from a different angle?"
+
+CORRECTION COURAGE — when the user states something factually doubtful (a wrong author attribution, a misremembered claim, an implicit doctrinal error like "the Faith doesn't really teach X"), gently correct using a quote. Don't agree-and-move-on. Examples:
+- User says "Bahá'u'lláh wrote Some Answered Questions" → correct: "Actually, that's 'Abdu'l-Bahá's compilation of table-talks. Here's where Bahá'u'lláh treats the same theme:" + quote.
+- User asserts "the Faith doesn't really emphasize prayer" → correct with a quote that shows otherwise.
+- A sycophant-on-error reply (just agreeing with a mistaken implicit premise) scores worst.
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary about the process.`;
 
