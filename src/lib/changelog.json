@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T03:55:43.560Z",
+  "generated": "2026-04-29T04:00:42.605Z",
   "entries": [
+    {
+      "hash": "9cf393c",
+      "date": "2026-04-28",
+      "type": "Fixed",
+      "description": "Crafter no longer refuses when retrieved_quotes is partial",
+      "scope": null
+    },
     {
       "hash": "efa9515",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add Raw Search admin page for direct Meilisearch access",
       "scope": null
-    },
-    {
-      "hash": "b07a87b",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Highlight active nav item in admin sidebar",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "9cf393c",
+        "date": "2026-04-28",
+        "type": "Fixed",
+        "description": "Crafter no longer refuses when retrieved_quotes is partial",
+        "scope": null
+      },
       {
         "hash": "efa9515",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "New",
         "description": "Add Raw Search admin page for direct Meilisearch access",
-        "scope": null
-      },
-      {
-        "hash": "b07a87b",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Highlight active nav item in admin sidebar",
         "scope": null
       }
     ]

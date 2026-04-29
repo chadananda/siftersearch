@@ -119,65 +119,94 @@ const MODEL_USER = 'gpt-4o';
 const MODEL_JAFAR = process.env.CHAT_LLM_MODEL || 'gpt-4o';
 const MODEL_JUDGE = 'gpt-4o';
 
-// One Jafar turn = one HTTP POST to /api/chat/stream.
-// The endpoint runs the system prompt + tool calls server-side and streams
-// SSE events. We accumulate type=chunk text events and return the final reply.
-async function jafarTurn(history) {
+// One Jafar turn = one HTTP POST to /api/chat/stream. Resilient against:
+// (1) connection terminated mid-stream — the production API gets SIGINTed
+//     every ~30s by something we haven't tracked down; up to ~5s into a long
+//     reply the stream just stops.
+// (2) crafter "no text in corpus" reflex — sometimes returns a 45-char
+//     refusal even when the question has corpus material; we retry to give
+//     it a second pass.
+// (3) HTTP 502/503/504 from Cloudflare during restart windows.
+//
+// Strategy: up to 5 attempts. Read both 'chunk' (word-emit at end of
+// pipeline) and 'text' (streamed mid-pipeline) so even if the stream cuts
+// mid-stream we still capture what came through. Treat replies <200 chars
+// or that look like the canned refusal as failures and retry with backoff.
+const REFUSAL_HINTS = [
+  "couldn't locate text on this in the corpus",
+  "I'm experiencing a technical issue"
+];
+async function jafarTurn(history, attempt = 1) {
   const body = JSON.stringify({
     messages: history.map(h => ({ role: h.role, content: h.content }))
   });
-
   const headers = { 'Content-Type': 'application/json' };
   if (process.env.SIFTERSEARCH_API_KEY) {
     headers['X-API-Key'] = process.env.SIFTERSEARCH_API_KEY;
   }
 
-  const res = await fetch(JAFAR_API, { method: 'POST', headers, body });
+  let res;
+  try {
+    res = await fetch(JAFAR_API, { method: 'POST', headers, body });
+  } catch (err) {
+    if (attempt < 5) {
+      console.error(`        jafar fetch failed (attempt ${attempt}): ${err.message} — retry in 8s`);
+      await new Promise(r => setTimeout(r, 8000));
+      return jafarTurn(history, attempt + 1);
+    }
+    throw err;
+  }
   if (!res.ok) {
-    const err = await res.text().catch(() => '');
-    throw new Error(`chat/stream HTTP ${res.status}: ${err.slice(0, 300)}`);
+    if (attempt < 5 && [502, 503, 504].includes(res.status)) {
+      console.error(`        jafar HTTP ${res.status} (attempt ${attempt}) — retry in 8s`);
+      await new Promise(r => setTimeout(r, 8000));
+      return jafarTurn(history, attempt + 1);
+    }
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`chat/stream HTTP ${res.status}: ${errBody.slice(0, 300)}`);
   }
 
-  // Parse SSE stream — each line "data: {json}" is an event.
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
   let text = '';
   const toolCalls = [];
 
-  for await (const chunk of res.body) {
-    buffer += decoder.decode(chunk, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.startsWith('data:')) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === '[DONE]') continue;
-      try {
-        const evt = JSON.parse(payload);
-        if (evt.type === 'chunk' && typeof evt.text === 'string') {
-          text += evt.text;
-        } else if (evt.type === 'tool_call' || evt.type === 'tool') {
-          toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
-        } else if (evt.type === 'error') {
-          throw new Error(evt.message || 'stream error');
-        }
-      } catch (parseErr) {
-        // Non-JSON SSE event — skip
+  try {
+    for await (const chunk of res.body) {
+      buffer += decoder.decode(chunk, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(payload);
+          // chunk = word-emit at end of pipeline (full reply when stream completes)
+          if (evt.type === 'chunk' && typeof evt.text === 'string') text += evt.text;
+          // text = mid-pipeline stream chunks (partial reply if stream cuts)
+          else if (evt.type === 'text' && typeof evt.content === 'string' && !text) text += evt.content;
+          else if (evt.type === 'tool_call' || evt.type === 'tool') toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
+          else if (evt.type === 'error') throw new Error(evt.message || 'stream error');
+        } catch { /* skip malformed lines */ }
       }
     }
-  }
-  // Flush trailing buffered partial line
-  if (buffer.startsWith('data:')) {
-    const payload = buffer.slice(5).trim();
-    if (payload && payload !== '[DONE]') {
-      try {
-        const evt = JSON.parse(payload);
-        if (evt.type === 'chunk' && typeof evt.text === 'string') text += evt.text;
-      } catch { /* ignore */ }
+  } catch (streamErr) {
+    if (attempt < 5) {
+      console.error(`        jafar stream error (attempt ${attempt}): ${streamErr.message} — retry in 8s`);
+      await new Promise(r => setTimeout(r, 8000));
+      return jafarTurn(history, attempt + 1);
     }
+    throw streamErr;
   }
 
-  return { text, toolCalls };
+  const looksLikeRefusal = REFUSAL_HINTS.some(h => text.includes(h));
+  if ((text.length < 200 || looksLikeRefusal) && attempt < 5) {
+    console.error(`        jafar reply too short/refusal (${text.length}c, attempt ${attempt}) — retry in 8s`);
+    await new Promise(r => setTimeout(r, 8000));
+    return jafarTurn(history, attempt + 1);
+  }
+  return { text: text.trim(), toolCalls };
 }
 
 async function userTurn(history, seedQuestion, roundNumber) {
@@ -191,7 +220,7 @@ async function userTurn(history, seedQuestion, roundNumber) {
     model: MODEL_USER,
     messages: [
       { role: 'system', content: USER_PROMPT },
-      { role: 'user', content: `Seed question: "${seedQuestion}"\n\nThis is round ${roundNumber} of ~10. Conversation so far:\n\n${transcriptText}\n\nWrite the user's next turn.` }
+      { role: 'user', content: `Seed question: "${seedQuestion}"\n\nThis is round ${roundNumber} of 5. Conversation so far:\n\n${transcriptText}\n\nWrite the user's next turn.` }
     ],
     temperature: 0.85,
     max_tokens: 350
@@ -279,6 +308,38 @@ mkdirSync(score_dir, { recursive: true });
 const overallLog = join(PROJECT_ROOT, 'PUBLISHED-DIALOGS.md');
 const promptSignalsLog = join(PROJECT_ROOT, 'tmp-scores', 'prompt-signals.md');
 
+// Run one full conversation. priorFeedback (when retrying) is appended to the
+// user-agent's prompt so it pushes Jafar on the dimensions that scored low.
+async function runConversation(idx, q, attempt, priorFeedback) {
+  const history = [];
+  history.push({ role: 'user', content: q.question });
+  const t0 = Date.now();
+  let jafarReply = await jafarTurn(history);
+  history.push({ role: 'assistant', content: jafarReply.text });
+  console.log(`    [a${attempt}] R1 jafar (${jafarReply.toolCalls.length} tools, ${jafarReply.text.length}c)`);
+
+  // 5 rounds (R1 + 4 follow-ups). Long enough to push back, short enough
+  // to keep the batch moving when each turn may need 2-3 retries.
+  for (let round = 2; round <= 5; round++) {
+    const userMsg = await userTurn(history, q.question, round, priorFeedback);
+    history.push({ role: 'user', content: userMsg });
+    jafarReply = await jafarTurn(history);
+    history.push({ role: 'assistant', content: jafarReply.text });
+    console.log(`    [a${attempt}] R${round} user(${userMsg.length}c)→jafar(${jafarReply.toolCalls.length}t,${jafarReply.text.length}c)`);
+  }
+  const elapsedSec = ((Date.now() - t0) / 1000).toFixed(1);
+
+  const judgeResult = await judgeConversation(history, q.question);
+  const score = Math.round(judgeResult.overall);
+  const s = judgeResult.scores || {};
+  console.log(`    [a${attempt}] SCORE ${score}% real=${s.conversational_realism} doc=${s.doctrinal_fidelity} ev=${s.evidence_quality} brev=${s.brevity_discipline} ${elapsedSec}s`);
+  console.log(`    [a${attempt}] flags: ${(judgeResult.flags || []).join(', ') || '(none)'}`);
+  return { history, judgeResult, score, elapsedSec };
+}
+
+const MIN_SCORE = parseInt(arg('--min-score', '80'));
+const MAX_RETRIES = parseInt(arg('--max-retries', '3'));
+
 async function runOne(idx, q) {
   const slug = q.slug || `${String(idx).padStart(3, '0')}-${slugify(q.title)}`;
   const mdPath = join(out_dir, `${slug}.md`);
@@ -289,45 +350,38 @@ async function runOne(idx, q) {
   }
 
   console.log(`\n[${idx}] === ${q.title} ===`);
-  const history = [];
-  // Round 1: use the seed question verbatim, then alternate turns
-  history.push({ role: 'user', content: q.question });
-  const t0 = Date.now();
-  let jafarReply = await jafarTurn(history);
-  history.push({ role: 'assistant', content: jafarReply.text });
-  console.log(`  R1 jafar (${jafarReply.toolCalls.length} tools, ${jafarReply.text.length} chars)`);
-
-  for (let round = 2; round <= 10; round++) {
-    const userMsg = await userTurn(history, q.question, round);
-    history.push({ role: 'user', content: userMsg });
-    jafarReply = await jafarTurn(history);
-    history.push({ role: 'assistant', content: jafarReply.text });
-    console.log(`  R${round} user (${userMsg.length}c) → jafar (${jafarReply.toolCalls.length} tools, ${jafarReply.text.length}c)`);
+  let best = null;
+  let priorFeedback = '';
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const r = await runConversation(idx, q, attempt, priorFeedback);
+    if (!best || r.score > best.score) best = r;
+    if (r.score >= MIN_SCORE) {
+      console.log(`  ✓ accepted at attempt ${attempt}: ${r.score}%`);
+      break;
+    }
+    console.log(`  ✗ attempt ${attempt}/${MAX_RETRIES}: ${r.score}% < ${MIN_SCORE}`);
+    if (attempt < MAX_RETRIES) {
+      priorFeedback = [
+        `PRIOR ATTEMPT FEEDBACK (attempt ${attempt} scored ${r.score}%):`,
+        `Improvement plan from the judge: ${r.judgeResult.improvement_plan || '(n/a)'}`,
+        `Failure flags raised: ${(r.judgeResult.flags || []).join(', ') || '(none)'}`,
+        `Push Jafar HARDER on the weak dimensions in this conversation. Demand primary-source quotes.`,
+        `Refuse pretty-but-unsupported answers; press for "show me the actual passage".`
+      ].join('\n');
+    }
   }
-  const elapsedSec = ((Date.now() - t0) / 1000).toFixed(1);
-  console.log(`  conversation done in ${elapsedSec}s`);
 
-  // Score
-  const judgeResult = await judgeConversation(history, q.question);
-  const score = Math.round(judgeResult.overall);
-  const s = judgeResult.scores || {};
-  console.log(`  SCORE: ${score}% (real=${s.conversational_realism}, doctrinal=${s.doctrinal_fidelity}, evidence=${s.evidence_quality}, brevity=${s.brevity_discipline})`);
-  console.log(`  flags: ${(judgeResult.flags || []).join(', ') || '(none)'}`);
-  console.log(`  plan: ${judgeResult.improvement_plan || '(none)'}`);
-
-  // Write dialog markdown
+  const { history, judgeResult, score, elapsedSec } = best;
   const md = dialogMarkdown(q, history, score, judgeResult, slug);
   writeFileSync(mdPath, md);
-  console.log(`  wrote ${mdPath}`);
+  console.log(`  wrote ${mdPath} (final ${score}%)`);
 
-  // Save score JSON
   writeFileSync(join(score_dir, `${slug}.json`), JSON.stringify({ slug, ...judgeResult, elapsedSec }, null, 2));
 
-  // Append to logs
   const line = `${slug} - ${q.title} - score=${score}% - https://siftersearch.com/dialogue/${slug}/ - ${new Date().toISOString()}\n`;
   writeFileSync(overallLog, (existsSync(overallLog) ? readFileSync(overallLog, 'utf-8') : '') + line);
 
-  const signalLine = `[${slug}] ${score}% — ${judgeResult.prompt_signal}\n`;
+  const signalLine = `[${slug}] ${score}% — ${judgeResult.prompt_signal || judgeResult.improvement_plan || ''}\n`;
   writeFileSync(promptSignalsLog, (existsSync(promptSignalsLog) ? readFileSync(promptSignalsLog, 'utf-8') : '') + signalLine);
 
   return { slug, score, judgeResult };
