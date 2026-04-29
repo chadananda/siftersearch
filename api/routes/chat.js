@@ -747,7 +747,7 @@ ${corpus}`;
   };
 }
 
-async function executeTool(name, args) {
+export async function executeTool(name, args) {
   switch (name) {
     case 'search': return executeSearch(args);
     case 'library_overview': return executeLibraryOverview();

@@ -28,7 +28,7 @@
  */
 
 import { hybridSearch, keywordSearch, getStats, getMeili, INDEXES } from '../lib/search.js';
-import { executeSearch, executeLibraryOverview, SYSTEM_PROMPT, TOOLS } from './chat.js';
+import { executeSearch, executeLibraryOverview, executeFindDocumentForCitation, executeTool, SYSTEM_PROMPT, TOOLS } from './chat.js';
 import { analyzePassagesParallel } from '../lib/parallel-analyzer.js';
 import { rerank } from '../lib/reranker.js';
 import { logger } from '../lib/logger.js';
@@ -39,6 +39,26 @@ import { isUserBillable, getSubscriptionStatus, recordUsage } from '../lib/billi
 import { slugifyPath, generateDocSlug } from '../lib/slug.js';
 
 const SITE_URL = 'https://siftersearch.com';
+
+/**
+ * Summarize a tool result for debug-mode SSE events. Keeps payloads small —
+ * raw tool results can be tens of KB which isn't useful in a debug stream.
+ * Returns scalars unchanged, truncates strings to 200 chars, and arrays
+ * become {count, sample: [first 3 entries with text fields truncated]}.
+ */
+function summarizeToolResult(r) {
+  if (r == null || typeof r !== 'object') return r;
+  if (Array.isArray(r)) return { count: r.length, sample: r.slice(0, 3).map(summarizeToolResult) };
+  const out = {};
+  for (const [k, v] of Object.entries(r)) {
+    if (v == null) out[k] = v;
+    else if (typeof v === 'string') out[k] = v.length > 200 ? v.slice(0, 200) + '…' : v;
+    else if (Array.isArray(v)) out[k] = { count: v.length, sample: v.slice(0, 3).map(summarizeToolResult) };
+    else if (typeof v === 'object') out[k] = summarizeToolResult(v);
+    else out[k] = v;
+  }
+  return out;
+}
 
 /** Build canonical siftersearch.com URL for a document */
 function getDocumentUrl(doc) {
@@ -837,20 +857,34 @@ export default async function publicApiRoutes(fastify) {
           aiMessages.push(choice.message);
           sendEvent({ type: 'status', message: 'Searching sacred texts...' });
 
+          const debugMode = request.headers['x-debug-chat'] === '1' || request.headers['x-debug-chat'] === 'true';
+
           const toolResults = await Promise.all(
             choice.message.tool_calls.map(async (tc) => {
               const args = JSON.parse(tc.function.arguments || '{}');
-              let result;
-              if (tc.function.name === 'search') {
-                result = await executeSearch(args);
-                if (result.passages) citations.push(...result.passages.map(p => ({
+
+              // Debug mode: emit pre-call event with tool name + args
+              if (debugMode) {
+                sendEvent({ type: 'debug_tool_call', name: tc.function.name, args, tool_call_id: tc.id });
+              }
+
+              const result = await executeTool(tc.function.name, args);
+
+              // Citation accumulator: keep collecting passage hits from any
+              // tool that returns them (search passages mode, plus future
+              // tools that surface text passages).
+              if (tc.function.name === 'search' && result?.passages) {
+                citations.push(...result.passages.map(p => ({
                   text: p.text?.slice(0, 200), title: p.title, author: p.author,
                   religion: p.religion, collection: p.collection
                 })));
-              } else if (tc.function.name === 'library_overview') {
-                result = await executeLibraryOverview();
-              } else {
-                result = { error: `Unknown tool: ${tc.function.name}` };
+              }
+
+              // Debug mode: emit post-call summary (small payload — first
+              // 80 chars of each top-level array entry, full scalar values).
+              if (debugMode) {
+                const summary = summarizeToolResult(result);
+                sendEvent({ type: 'debug_tool_result', name: tc.function.name, tool_call_id: tc.id, summary });
               }
               return { role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) };
             })
@@ -903,6 +937,40 @@ export default async function publicApiRoutes(fastify) {
     reply.raw.end();
     logApiSearch({ query: messages[messages.length - 1]?.content, apiKeyId: request.apiKeyId, resultCount: 0, durationMs: Date.now() - startTime, searchType: 'api_chat' });
     if (request.apiKeyUserId) recordUsage(request.apiKeyUserId, request.apiKeyId, 'chat', false).catch(() => {});
+  });
+
+  /**
+   * GET /api/v1/library/find-document
+   *
+   * Locate a specific named scripture or work by title — the citation lookup.
+   * Same logic as Jafar's find_document_for_citation tool, exposed publicly
+   * so any consumer (customer-site chatbot, future tooling) can resolve
+   * named works without going through chat.
+   *
+   * Returns up to 5 candidates ranked by primary-source authority. Canonical
+   * works (Aqdas, Iqán, Hidden Words, Tablets-of-Bahaullah-Revealed-After,
+   * Gospels, Qur'án, Bhagavad Gita, etc.) get hard-resolved to known doc_ids.
+   * Sub-section ranges (e.g. "Tablet of Wisdom" → doc 8270 paragraphs
+   * 313-365) come back with start_paragraph + end_paragraph.
+   */
+  fastify.get('/library/find-document', {
+    schema: {
+      description: 'Locate a specific named scripture or work by title. Returns up to 5 candidates with authority-boosted ranking. Canonical works hard-resolve to known doc_ids; sub-section works (e.g. Tablet of Wisdom inside the compilation) return start_paragraph + end_paragraph.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      querystring: {
+        type: 'object',
+        required: ['title'],
+        properties: {
+          title: { type: 'string', description: 'The work\'s name as the user said it: "Tablet of Wisdom", "Lawh-i-Hikmat", "Gospel of John", "Bhagavad Gita".' },
+          religion: { type: 'string', description: 'Tradition filter: "Baha\'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh".' },
+          author: { type: 'string', description: 'Optional partial author name filter.' },
+          limit: { type: 'integer', minimum: 1, maximum: 20, default: 5 }
+        }
+      }
+    }
+  }, async (request) => {
+    return executeFindDocumentForCitation(request.query);
   });
 
   /**
