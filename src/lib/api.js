@@ -532,9 +532,15 @@ export const chat = {
    *   chunk | search_start | citations | complete | error
    * @param {Array} messages - [{role: 'user'|'assistant', content: string}]
    */
-  async *stream(messages, researchContext = null) {
-    const url = `${API_URL}/api/chat/stream`;
+  async *stream(messages, researchContext = null, conversationId = null) {
+    // Home-page chat is now a CLIENT of the public API (same architecture
+    // an external customer-site chatbot will use). Hits /api/v1/chat with
+    // the public API key. Maps the v1 SSE event types to the legacy types
+    // existing UI code expects (text → chunk, done → complete).
+    const url = `${API_URL}/api/v1/chat`;
+    const apiKey = import.meta.env.PUBLIC_SIFTER_API_KEY;
     const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['X-API-Key'] = apiKey;
     const uid = getUserId();
     if (uid) headers['X-User-ID'] = uid;
     if (CLIENT_VERSION) headers['X-Client-Version'] = CLIENT_VERSION;
@@ -542,6 +548,7 @@ export const chat = {
 
     const body = { messages };
     if (researchContext) body.researchContext = researchContext;
+    if (conversationId) body.conversation_id = conversationId;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -572,7 +579,15 @@ export const chat = {
           if (line.startsWith('data: ')) {
             try {
               const jsonStr = line.slice(6).trim();
-              if (jsonStr) yield JSON.parse(jsonStr);
+              if (!jsonStr) continue;
+              const evt = JSON.parse(jsonStr);
+              // v1 → legacy event-type mapping so existing ChatInterface.svelte
+              // consumers (which expect chunk/complete) keep working.
+              if (evt.type === 'text') yield { type: 'chunk', text: evt.content };
+              else if (evt.type === 'done') yield { type: 'complete', citations: evt.citations || [], conversation_id: evt.conversation_id, meta: evt.meta };
+              else if (evt.type === 'session') yield evt; // pass through; UI may want to capture conversation_id
+              else if (evt.type === 'status') yield { type: 'search_start', message: evt.message };
+              else yield evt;
             } catch (_) { /* malformed SSE chunk */ }
           }
         }
