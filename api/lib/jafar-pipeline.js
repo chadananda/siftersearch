@@ -80,7 +80,15 @@ export async function runResearchPhase({ messages, sendEvent, debug }) {
           if (debug) debugCalls.push({ name: tc.function.name, args });
           if (sendEvent) sendEvent({ type: 'debug_research_call', name: tc.function.name, args });
 
-          const result = await executeTool(tc.function.name, args);
+          // Catch any thrown error so a single failed tool doesn't kill the
+          // pipeline. Returns a structured error the orchestrator LLM can see.
+          let result;
+          try {
+            result = await executeTool(tc.function.name, args);
+          } catch (toolErr) {
+            logger.error({ err: toolErr.message, stack: toolErr.stack, tool: tc.function.name, args }, 'tool execution threw');
+            result = { error: `Tool ${tc.function.name} failed: ${toolErr.message}` };
+          }
 
           // Harvest any retrievable quotes/passages into the structured array
           if (result?.passages) {
