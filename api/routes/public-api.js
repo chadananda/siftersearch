@@ -90,6 +90,11 @@ async function apiKeyAuth(request, reply) {
   // Health endpoint is public — skip auth
   if (request.url.endsWith('/health')) return;
 
+  // Saved-conversation fetch is public-read so anonymous visitors hitting
+  // a customer site's saved share URL can render the content. Tenant comes
+  // from the ?tenant query param, not the API key.
+  if (request.method === 'GET' && /^\/api\/v1\/conversations\/[^/?]+/.test(request.url)) return;
+
   const apiKey = request.headers['x-api-key'];
 
   if (!apiKey) {
