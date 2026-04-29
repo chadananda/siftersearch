@@ -6,13 +6,13 @@
     "doctrinal_fidelity": 80,
     "period_word_discipline": 80,
     "evidence_quality": 70,
-    "brevity_discipline": 80,
+    "brevity_discipline": 70,
     "correction_courage": 75,
     "archive_worthy": 70
   },
-  "overall": 73.125,
-  "narrative": "The conversation provides a decent exploration of the Bahá'í perspective on reincarnation, with some depth achieved through multiple rounds. Jafar's responses are mostly conversational, though there are moments where the tone shifts slightly towards formality. Doctrinal fidelity is maintained with accurate references to primary texts, though the initial use of Getsinger's quote was unnecessary. Evidence quality is solid but could be improved by more direct quotations from Bahá'u'lláh earlier in the conversation. The conversation is brief and to the point, with Jafar correcting the user's misunderstanding about the symbolic nature of 'return.'",
+  "overall": 73,
+  "narrative": "The conversation provides a decent exploration of the Bahá'í perspective on reincarnation, with Jafar referencing 'Abdu'l-Bahá's explanation and Bahá'u'lláh's writings. However, the depth could be improved by more directly addressing the user's requests for specific passages from the *Iqán* and *Gleanings*. The conversational tone is mostly maintained, though some responses are slightly repetitive. Jafar's doctrinal fidelity is solid, with appropriate references to primary texts, though the evidence quality could be enhanced by more precise citations. Overall, the conversation is informative but could benefit from more direct engagement with the user's specific queries.",
   "flags": [],
-  "improvement_plan": "Jafar should prioritize primary sources from Bahá'u'lláh when addressing doctrinal questions, especially when the user explicitly requests them. Additionally, maintaining a consistently conversational tone throughout the interaction would enhance realism. Ensuring that all responses are grounded in primary texts will improve evidence quality.",
-  "elapsedSec": "110.2"
+  "improvement_plan": "Jafar should focus on directly addressing user requests for specific passages from primary texts, ensuring that responses are tailored to the user's questions. Additionally, maintaining a conversational tone while avoiding repetition will enhance the realism and engagement of the dialogue.",
+  "elapsedSec": "50.1"
 }

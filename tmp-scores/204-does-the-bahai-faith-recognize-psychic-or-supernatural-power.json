@@ -1,18 +1,18 @@
 {
   "slug": "204-does-the-bahai-faith-recognize-psychic-or-supernatural-power",
   "scores": {
-    "depth": 60,
-    "conversational_realism": 70,
-    "doctrinal_fidelity": 70,
-    "period_word_discipline": 80,
-    "evidence_quality": 60,
+    "depth": 70,
+    "conversational_realism": 60,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
     "brevity_discipline": 70,
     "correction_courage": 75,
-    "archive_worthy": 65
+    "archive_worthy": 70
   },
-  "overall": 68,
-  "narrative": "The conversation maintains a decent level of conversational realism, with Jafar mostly responding in a casual tone, though some responses feel slightly repetitive. Depth is limited as the conversation doesn't significantly progress beyond the initial question about psychic powers. Doctrinal fidelity is generally sound, but there is a reliance on Bahá'u'lláh's writings without exploring potential insights from 'Abdu'l-Bahá or Shoghi Effendi, which the user specifically requested. Evidence quality is middling due to the lack of primary quotes from 'Abdu'l-Bahá or Shoghi Effendi, despite the user's interest. Brevity is mostly maintained, though some responses could be more concise.",
+  "overall": 70.625,
+  "narrative": "The conversation maintains a decent depth, exploring the user's questions about psychic powers and Bahá'u'lláh's stance on them. However, it occasionally lacks conversational realism, with some responses feeling more like textbook explanations than a friendly chat. Doctrinal fidelity is strong, with references to primary texts like the *Kitáb-i-Íqán* and *Some Answered Questions*. Evidence quality is adequate, though not every round includes a primary quote. The conversation is generally brief, with some responses slightly longer than necessary. Correction courage is present, as Jafar clarifies the focus on spiritual insight over supernatural phenomena.",
   "flags": [],
-  "improvement_plan": "Jafar should be prompted to explore a wider range of sources within the Bahá'í Faith, especially when the user explicitly asks about specific figures like 'Abdu'l-Bahá or Shoghi Effendi. Additionally, Jafar could benefit from a more dynamic approach to conversation, ensuring each response builds on the previous one to deepen the discussion.",
-  "elapsedSec": "51.2"
+  "improvement_plan": "To enhance conversational realism, Jafar could adopt a more casual tone and avoid textbook-like explanations. Increasing the use of primary quotes in each round would improve evidence quality. Encouraging more dynamic interaction by asking follow-up questions could also deepen the conversation.",
+  "elapsedSec": "38.2"
 }

@@ -1,18 +1,18 @@
 {
   "slug": "211-what-does-bahaullah-teach-about-spiritual-healing",
   "scores": {
-    "depth": 70,
+    "depth": 75,
     "conversational_realism": 70,
     "doctrinal_fidelity": 80,
     "period_word_discipline": 70,
     "evidence_quality": 80,
     "brevity_discipline": 70,
     "correction_courage": 75,
-    "archive_worthy": 70
+    "archive_worthy": 75
   },
-  "overall": 73,
-  "narrative": "The conversation provides a decent exploration of Bahá'í teachings on healing through prayer, with Jafar quoting relevant texts from Bahá'u'lláh and 'Abdu'l-Bahá. The depth is adequate, though some rounds repeat information rather than building on previous points. Conversational realism is mostly maintained, but there are moments where Jafar's responses feel slightly repetitive. Doctrinal fidelity is strong, with appropriate primary sources cited. Evidence quality is solid, with primary quotes supporting the discussion. Brevity is generally maintained, though some responses could be more concise. Correction courage is not tested as the user does not present any factual inaccuracies.",
+  "overall": 74,
+  "narrative": "The conversation explores the nature of healing through prayer in the Bahá'í Faith, with Jafar providing a nuanced view that balances spiritual and potential physical impacts. The depth is decent, with the conversation building on the user's questions, though it occasionally circles back to similar points without advancing significantly (rounds 2-4). Conversational realism is mostly maintained, though some responses lean towards formal explanations. Doctrinal fidelity is strong, with references to Bahá'u'lláh's writings and the *Long Healing Prayer*. Evidence quality is solid, with primary sources cited in most rounds. Brevity could be improved, as some responses are longer than necessary. Correction courage is adequate, with Jafar addressing potential misconceptions without overtly correcting the user.",
   "flags": [],
-  "improvement_plan": "To improve, Jafar should focus on avoiding repetition and ensuring each response builds on the previous one. Additionally, maintaining a more conversational tone throughout would enhance realism. Encouraging more nuanced exploration of the interplay between spiritual and physical health could deepen the conversation.",
-  "elapsedSec": "49.1"
+  "improvement_plan": "To enhance depth, Jafar could more clearly differentiate between spiritual and physical healing in Bahá'í teachings, perhaps by citing specific passages that discuss these aspects. Improving conversational realism could involve using more casual language and shorter responses. Additionally, ensuring that each response advances the conversation with new insights would prevent repetition and maintain engagement.",
+  "elapsedSec": "45.2"
 }
