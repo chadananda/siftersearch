@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T16:14:35.334Z",
+  "generated": "2026-04-29T17:14:29.951Z",
   "entries": [
+    {
+      "hash": "6ccfb2c",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
+      "scope": null
+    },
     {
       "hash": "ba914b4",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
       "scope": null
-    },
-    {
-      "hash": "67e94ba",
-      "date": "2026-01-06",
-      "type": "Test",
-      "description": "Add CORS configuration tests",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "6ccfb2c",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Fix api/worker SIGINT loop + graceful shutdown for 100-parallel chat",
+        "scope": null
+      },
       {
         "hash": "ba914b4",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Fixed",
         "description": "Editor tab switching, relative paths, and X-User-Id CORS header",
-        "scope": null
-      },
-      {
-        "hash": "67e94ba",
-        "date": "2026-01-06",
-        "type": "Test",
-        "description": "Add CORS configuration tests",
         "scope": null
       }
     ]
