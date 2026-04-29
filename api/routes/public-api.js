@@ -92,8 +92,9 @@ async function apiKeyAuth(request, reply) {
 
   // Saved-conversation fetch is public-read so anonymous visitors hitting
   // a customer site's saved share URL can render the content. Tenant comes
-  // from the ?tenant query param, not the API key.
-  if (request.method === 'GET' && /^\/api\/v1\/conversations\/[^/?]+/.test(request.url)) return;
+  // from the ?tenant query param, not the API key. Same applies to the list
+  // endpoint used by remote-site sitemaps.
+  if (request.method === 'GET' && /^\/api\/v1\/conversations(\b|\/[^?]+)/.test(request.url)) return;
 
   const apiKey = request.headers['x-api-key'];
 
@@ -143,6 +144,65 @@ export default async function publicApiRoutes(fastify) {
     version: '1.0.0',
     timestamp: new Date().toISOString()
   }));
+
+  /**
+   * GET /api/v1/conversations — PUBLIC-READ list endpoint
+   *
+   * Lists published conversations for a tenant. Used by remote sites
+   * (and SifterSearch's own sitemap-dialogue.xml SSR) to enumerate what
+   * has been saved without crawling the share URLs themselves.
+   * Returns slug + minimal metadata; full content fetched per slug.
+   */
+  fastify.get('/conversations', {
+    schema: {
+      description: 'List published conversations for a tenant. Public-read; returns slug + metadata for sitemap and listing use cases.',
+      tags: ['Conversations'],
+      querystring: {
+        type: 'object',
+        properties: {
+          tenant: { type: 'string', description: 'Tenant identifier; defaults to "siftersearch".' },
+          limit: { type: 'integer', minimum: 1, maximum: 500, default: 100 },
+          offset: { type: 'integer', minimum: 0, default: 0 }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const tenant = request.query.tenant || 'siftersearch';
+    const limit = Math.min(Math.max(parseInt(request.query.limit) || 100, 1), 500);
+    const offset = Math.max(parseInt(request.query.offset) || 0, 0);
+
+    const rows = await queryAll(
+      `SELECT slug, title, description, topic, tags_json, hero_image, share_url,
+              published_at, updated_at
+       FROM published_conversations
+       WHERE tenant_id = ?
+       ORDER BY updated_at DESC, published_at DESC
+       LIMIT ? OFFSET ?`,
+      [tenant, limit, offset]
+    );
+    const totalRow = await queryOne(
+      `SELECT COUNT(*) as count FROM published_conversations WHERE tenant_id = ?`,
+      [tenant]
+    );
+    reply.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+    return {
+      tenant,
+      total: totalRow?.count || 0,
+      offset,
+      limit,
+      conversations: rows.map(r => ({
+        slug: r.slug,
+        title: r.title,
+        description: r.description,
+        topic: r.topic,
+        tags: r.tags_json ? JSON.parse(r.tags_json) : [],
+        hero_image: r.hero_image,
+        share_url: r.share_url,
+        published_at: r.published_at,
+        updated_at: r.updated_at
+      }))
+    };
+  });
 
   /**
    * GET /api/v1/conversations/:slug — PUBLIC-READ (no auth)
