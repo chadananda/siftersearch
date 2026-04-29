@@ -354,6 +354,23 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
 
   await Promise.all(tasks);
 
+  // Fallback: if every branch came back empty (named work didn't yield
+  // excerpts, topic search returned nothing), do a broader passages search
+  // using the raw user message. This catches the conversational follow-up
+  // case where the user's pushback ("show me the actual passage") doesn't
+  // map cleanly to topical keywords. Without this, the crafter would refuse
+  // with "I couldn't locate text on this in the corpus" — which is the
+  // failure mode that derails follow-up turns.
+  if (retrieved.length === 0 && userMessage && userMessage.trim()) {
+    const fallback = await runTool('search', {
+      query: userMessage.slice(0, 240),
+      mode: 'passages',
+      religion: entities.religion || undefined,
+      limit: 8
+    });
+    harvestPassages(fallback, 'search-fallback');
+  }
+
   // Trim — gpt-4o-mini's TTFT scales with prompt size. A whole tablet worth
   // of excerpts (50+ paragraphs, ~50k chars) makes the crafter slow to first
   // token. Cap at 12 entries with topic-keyword preference: passages-search

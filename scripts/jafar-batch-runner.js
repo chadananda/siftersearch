@@ -154,7 +154,8 @@ async function jafarTurn(history, attempt = 1) {
       await new Promise(r => setTimeout(r, 8000));
       return jafarTurn(history, attempt + 1);
     }
-    throw err;
+    console.error(`        jafar fetch failed after 5 attempts: ${err.message} — returning empty reply`);
+    return { text: '', toolCalls: [] };
   }
   if (!res.ok) {
     if (attempt < 5 && [502, 503, 504].includes(res.status)) {
@@ -197,7 +198,8 @@ async function jafarTurn(history, attempt = 1) {
       await new Promise(r => setTimeout(r, 8000));
       return jafarTurn(history, attempt + 1);
     }
-    throw streamErr;
+    console.error(`        jafar stream error after 5 attempts: ${streamErr.message} — returning what we got (${text.length}c)`);
+    return { text: text.trim(), toolCalls };
   }
 
   const looksLikeRefusal = REFUSAL_HINTS.some(h => text.includes(h));
