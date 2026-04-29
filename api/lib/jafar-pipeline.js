@@ -371,14 +371,40 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
     harvestPassages(fallback, 'search-fallback');
   }
 
+  // Primary-source filter — when ANY primary-tier passage exists, drop
+  // secondary commentary entirely. Otherwise the crafter weaves Esslemont
+  // / Taherzadeh / Milani into a question about Bahá'u'lláh's writings,
+  // which the judge correctly flags as secondary-substitution. Match on
+  // normalized author name (apostrophe + diacritic variants).
+  const PRIMARY_AUTHORS_NORM = [
+    'bahaullah', 'baha\'u\'llah', 'bahaullah', // Bahá'u'lláh
+    'the bab', 'bab', 'al-bab',                 // The Báb
+    'abdulbaha', 'abdu\'l-baha', 'abdulbaha',   // 'Abdu'l-Bahá
+    'shoghi effendi', 'shoghi effendi rabbani'  // Shoghi Effendi
+  ];
+  const normAuthor = (s) => (s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019\u02bc\u02bb`'"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const isPrimary = (q) => {
+    if (q.is_summary) return true; // sub-agent summary always kept
+    const a = normAuthor(q.source_author);
+    return PRIMARY_AUTHORS_NORM.some(p => a.includes(p));
+  };
+  const primaryRetrieved = retrieved.filter(isPrimary);
+  const filteredForCrafter = primaryRetrieved.length > 0 ? primaryRetrieved : retrieved;
+
   // Trim — gpt-4o-mini's TTFT scales with prompt size. A whole tablet worth
   // of excerpts (50+ paragraphs, ~50k chars) makes the crafter slow to first
   // token. Cap at 12 entries with topic-keyword preference: passages-search
   // hits (already topic-ranked) first, then work-read excerpts that contain
   // a topic keyword, then any remaining work-read excerpts.
   const MAX_QUOTES = 12;
-  let trimmed = retrieved;
-  if (retrieved.length > MAX_QUOTES) {
+  let trimmed = filteredForCrafter;
+  if (filteredForCrafter.length > MAX_QUOTES) {
     const keywords = (entities.topics || [])
       .map(t => (t || '').toLowerCase())
       .filter(t => t.length >= 3);
@@ -387,9 +413,9 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
       const text = (q.text || '').toLowerCase();
       return keywords.some(k => text.includes(k));
     };
-    const passages = retrieved.filter(q => q.via === 'search');
-    const readMatched = retrieved.filter(q => q.via !== 'search' && matchesKeyword(q));
-    const readRest = retrieved.filter(q => q.via !== 'search' && !matchesKeyword(q));
+    const passages = filteredForCrafter.filter(q => q.via === 'search' || q.via === 'search-fallback');
+    const readMatched = filteredForCrafter.filter(q => q.via !== 'search' && q.via !== 'search-fallback' && matchesKeyword(q));
+    const readRest = filteredForCrafter.filter(q => q.via !== 'search' && q.via !== 'search-fallback' && !matchesKeyword(q));
     trimmed = [...passages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
   }
 
@@ -421,11 +447,17 @@ PARTIAL-QUOTE WEAVING — defining words must be the authority's:
 - Pattern: "For Bahá'ís, faith is not merely belief but 'first, conscious knowledge'..."
 - The reader should hear the tradition's actual phrasing woven into your sentence
 
+BREVITY (hard cap):
+- Default reply length: ONE block quote + 1-2 short connecting sentences. NEVER multi-paragraph essays.
+- Maximum: 2 block quotes + 2 short sentences total. If you have more to say, the user will ask.
+- Stock-phrase reflexes are forbidden: "rooted in," "transformative force," "diversity within unity," "spirit of friendliness and fellowship," "thus, the [X] aspect is woven into the fabric of." If you find yourself writing one, delete the sentence — it's filler.
+- Each connecting sentence must do real work (introducing the quote, naming the work, flagging period-sense). No throat-clearing.
+
 INTENT-ROUTED OUTPUT:
 - user_intent="quote_request" → reply is JUST one or more block quotes with citations, MINIMAL connecting words, no commentary. Format:
     > "Exact quote." ([*Work*](url) — Author)
-- user_intent="definition" or "explain" → lead with a block quote (the most relevant excerpt), then commentary woven with partial quotes. Block quote format same as above.
-- user_intent="discuss" → quote-led with commentary, conversational pacing, but every claim still traces to retrieved_quotes
+- user_intent="definition" or "explain" → ONE block quote leading, then 1-2 short sentences weaving partial quotes. NOT an essay.
+- user_intent="discuss" → ONE block quote, then 1-2 conversational sentences. Match the user's brief register.
 
 LITERAL-MATCH — if the user named specific terms (people, places, concepts):
 - The lead quote MUST contain those terms verbatim

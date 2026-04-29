@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:04:47.929Z",
+  "generated": "2026-04-29T04:10:42.924Z",
   "entries": [
+    {
+      "hash": "7cb3a90",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Wider-search fallback + final-attempt no-throw",
+      "scope": null
+    },
     {
       "hash": "75c7a4d",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Simplify translation stats loading to fix indicator display",
       "scope": null
-    },
-    {
-      "hash": "87a9396",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "7cb3a90",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Wider-search fallback + final-attempt no-throw",
+        "scope": null
+      },
       {
         "hash": "75c7a4d",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Simplify translation stats loading to fix indicator display",
-        "scope": null
-      },
-      {
-        "hash": "87a9396",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Adjust Raw Search - 30ms debounce, 85/15 hybrid mode",
         "scope": null
       }
     ]
