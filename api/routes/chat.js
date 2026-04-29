@@ -21,6 +21,13 @@ import { slugifyPath } from '../lib/slug.js';
 
 const SITE_URL = 'https://siftersearch.com';
 
+// Module-level OpenAI client. Used by executeReadDocumentForQuestion's
+// sub-agent. Was lost when the streaming endpoint was refactored to use
+// jafar-pipeline.js — the read sub-agent silently broke with
+// "openai is not defined" until I added debug result events to the pipeline
+// and saw the error.
+const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
+
 function docUrl(doc) {
   if (!doc.slug || !doc.religion || !doc.collection) return null;
   const relSlug = slugifyPath(doc.religion);
