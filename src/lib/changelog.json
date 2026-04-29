@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T04:20:58.024Z",
+  "generated": "2026-04-29T04:36:26.630Z",
   "entries": [
+    {
+      "hash": "364062b",
+      "date": "2026-04-28",
+      "type": "Other",
+      "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
+      "scope": null
+    },
     {
       "hash": "d8de0be",
       "date": "2026-04-28",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use $effect and objects for translation stats reactivity",
       "scope": null
-    },
-    {
-      "hash": "39735b4",
-      "date": "2026-01-05",
-      "type": "Fixed",
-      "description": "Raw Search API call and add NavBar to admin layout",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-28": [
+      {
+        "hash": "364062b",
+        "date": "2026-04-28",
+        "type": "Other",
+        "description": "Dialog 051 (Tablet of Wisdom) on v2.15.x deterministic-routing",
+        "scope": null
+      },
       {
         "hash": "d8de0be",
         "date": "2026-04-28",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-05",
         "type": "Fixed",
         "description": "Use $effect and objects for translation stats reactivity",
-        "scope": null
-      },
-      {
-        "hash": "39735b4",
-        "date": "2026-01-05",
-        "type": "Fixed",
-        "description": "Raw Search API call and add NavBar to admin layout",
         "scope": null
       }
     ]

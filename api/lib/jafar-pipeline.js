@@ -241,14 +241,89 @@ export async function classifyIntent(userMessage) {
 // Replaces the LLM orchestrator with direct, deterministic tool calls
 // based on the entities extracted by classifyIntentAndEntities.
 //
-//   work_name set  → find_document_for_citation → read_document_for_question
-//                    on the primary candidate (using canonical paragraph
-//                    range if known) PLUS a passages search for any topics
-//   else           → search:passages on topics or the raw user message
+//   work_name set       → find_document_for_citation → read_document_for_question
+//                         on the primary candidate (using canonical paragraph
+//                         range if known) PLUS a passages search for any topics
+//   topic-mapped       → read_document_for_question on the primary work that
+//                         the topic implies (mystical → Seven Valleys, etc.)
+//   else                → search:passages on topics or the raw user message
 //
 // No model call here. ~0.5-1.5s wall time. Combined with the 1-2s entity
 // classifier, the whole research stage runs in ~2-3s instead of 5-10s.
-export async function deterministicResearch({ entities, userMessage, sendEvent, debug }) {
+//
+// `messages` (optional) is the conversation history; we use it to retain
+// a work_name that was named in an earlier turn but not the current turn.
+// "Show me the passage on nature" doesn't repeat "Tablet of Wisdom," but if
+// the prior turn established it, we keep reading from that work.
+
+// Topic → primary-work mapping. When entities.religion is Bahá'í and one
+// of the topics matches, we additionally read paragraphs from the named
+// primary work. This guarantees primary scripture appears in retrieved_quotes
+// even when the hybrid passages search would otherwise rank secondary
+// commentary above primary scripture (which it often does on Bahá'í themes
+// because secondary works use more search-friendly modern language).
+//
+// Each entry: keyword regex (matched against any topic) → array of
+// canonical-work descriptors. start_paragraph / end_paragraph optional
+// (used for sub-section works inside a compilation).
+const BAHAI_TOPIC_TO_WORK = [
+  { match: /myst|spiritual.path|seven.valley/, works: [{ doc_id: 8241 }, { doc_id: 8230 }] },                  // Seven Valleys, Hidden Words
+  { match: /prayer|devotion|worship|obligatory|meditation/, works: [{ doc_id: 8301 }, { doc_id: 16712 }] },     // Prayers and Meditations, Aqdas
+  { match: /death|afterlife|next.world|departed|soul/, works: [{ doc_id: 8312 }, { doc_id: 8346 }] },           // Gleanings, Some Answered Questions
+  { match: /prophec|fulfill|manifestation|return|seal/, works: [{ doc_id: 8300 }] },                            // Iqán
+  { match: /justice|ethic|virtue|conduct|moral/, works: [{ doc_id: 8230 }, { doc_id: 16712 }] },                // Hidden Words, Aqdas
+  { match: /scien|material|philosoph|wisdom|hikmat|nature/, works: [{ doc_id: 8270, start_paragraph: 313, end_paragraph: 365 }] }, // Tablet of Wisdom
+  { match: /protect|test|suffer|difficult|trial/, works: [{ doc_id: 8230 }] },                                  // Hidden Words
+  { match: /heal|illness|sick/, works: [{ doc_id: 8301 }] },                                                    // Prayers and Meditations (Long Healing Prayer is in there)
+  { match: /unity|oneness|universal|religion/, works: [{ doc_id: 8300 }, { doc_id: 8346 }] },                   // Iqán, Some Answered Questions
+  { match: /greatest.name|allah|abha/, works: [{ doc_id: 16712 }, { doc_id: 8230 }] },                          // Aqdas, Hidden Words
+  { match: /vision|dream|psychic|spirit|supernatural|reincarnation/, works: [{ doc_id: 8346 }] },               // Some Answered Questions
+  { match: /covenant|center|shoghi|guardian|administration/, works: [{ doc_id: 8635 }, { doc_id: 8295 }] }      // God Passes By, Advent of Divine Justice
+];
+
+// Extract a previously-mentioned work_name from the conversation history.
+// If the latest turn doesn't name a work but an earlier user/assistant turn
+// did, we treat the conversation as continuing about that work. This fixes
+// the failure mode where R3 of a Tablet-of-Wisdom conversation pivots to
+// "Pythagoras? Hippocrates?" and the deterministic router loses context.
+function inferWorkFromHistory(messages, currentEntitiesWorkName) {
+  if (currentEntitiesWorkName) return currentEntitiesWorkName;
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+  // Scan backward through the last 4 turns for a known canonical work name.
+  // Keywords matched are the first matcher of each CANONICAL_WORKS entry.
+  // Imported lazily to avoid a circular dependency with chat.js.
+  const recent = messages.slice(-8);
+  const KNOWN_NAMES = [
+    ['tablet of wisdom', 'lawh-i-hikmat', 'hikmat'],
+    ['kitab-i-iqan', 'iqan', 'book of certitude'],
+    ['kitab-i-aqdas', 'aqdas', 'most holy book'],
+    ['hidden words'],
+    ['gleanings'],
+    ['gems of divine mysteries'],
+    ['seven valleys', 'four valleys'],
+    ['some answered questions'],
+    ['paris talks'],
+    ['promulgation of universal peace'],
+    ['secret of divine civilization'],
+    ['god passes by'],
+    ['advent of divine justice'],
+    ['promised day is come'],
+    ['tablets of bahaullah', 'tablets revealed after']
+  ];
+  // Walk recent turns from newest backwards (skip the latest user message —
+  // it didn't name a work, that's why we're searching history).
+  for (let i = recent.length - 2; i >= 0; i--) {
+    const text = (recent[i].content || '').toLowerCase();
+    for (const variants of KNOWN_NAMES) {
+      for (const v of variants) {
+        if (text.includes(v)) return variants[0]; // canonical form
+      }
+    }
+  }
+  return null;
+}
+
+export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug }) {
   const retrieved = [];
   const debugCalls = [];
 
@@ -313,12 +388,21 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
   };
 
   const tasks = [];
+  const isBahai = !entities.religion || /bah/i.test(entities.religion);
 
-  // Branch 1: user named a specific work — go fetch it directly
-  if (entities.work_name) {
+  // Carry forward a work_name from earlier in the conversation when the
+  // current turn doesn't name one. Most follow-up questions ("show me the
+  // passage about nature") implicitly continue the prior turn's work.
+  const effectiveWorkName = inferWorkFromHistory(messages, entities.work_name);
+  if (sendEvent && debug && effectiveWorkName !== entities.work_name) {
+    sendEvent({ type: 'debug_work_carry', from_history: effectiveWorkName });
+  }
+
+  // Branch 1: user named a specific work (or earlier turn did) — fetch it
+  if (effectiveWorkName) {
     tasks.push((async () => {
       const find = await runTool('find_document_for_citation', {
-        title: entities.work_name,
+        title: effectiveWorkName,
         religion: entities.religion || undefined,
         limit: 5
       });
@@ -331,6 +415,40 @@ export async function deterministicResearch({ entities, userMessage, sendEvent, 
         harvestExcerpts(read);
       }
     })());
+  }
+
+  // Branch 1b: topic → primary-work mapping (Bahá'í only, when no
+  // work_name path is already covering the topic). Reads paragraphs
+  // from the canonical primary work directly so primary scripture is
+  // GUARANTEED in retrieved_quotes — bypasses the search-rank problem
+  // where secondary commentary out-ranks primary on theme queries.
+  if (isBahai && !effectiveWorkName && Array.isArray(entities.topics) && entities.topics.length > 0) {
+    const topicBlob = entities.topics.join(' ').toLowerCase();
+    const matchedWorks = [];
+    for (const entry of BAHAI_TOPIC_TO_WORK) {
+      if (entry.match.test(topicBlob)) {
+        for (const w of entry.works) {
+          if (!matchedWorks.find(m => m.doc_id === w.doc_id && m.start_paragraph === w.start_paragraph)) {
+            matchedWorks.push(w);
+          }
+        }
+      }
+    }
+    // Cap at 2 work-reads to keep the prompt manageable; the trim step
+    // later still caps total quotes at 12.
+    for (const work of matchedWorks.slice(0, 2)) {
+      tasks.push((async () => {
+        const readArgs = { document_id: work.doc_id, question: userMessage };
+        if (typeof work.start_paragraph === 'number') readArgs.start_paragraph = work.start_paragraph;
+        if (typeof work.end_paragraph === 'number') readArgs.end_paragraph = work.end_paragraph;
+        // For full primary works without a paragraph range, sample first 80
+        // paragraphs (most are short tablets/short books; Iqán is ~290 paras
+        // but we don't need them all — passages search supplements).
+        if (typeof work.start_paragraph !== 'number') readArgs.max_paragraphs = 80;
+        const read = await runTool('read_document_for_question', readArgs);
+        harvestExcerpts(read, 'topic-mapped-read');
+      })());
+    }
   }
 
   // Branch 2: passages search on the extracted topics (or raw message
@@ -447,11 +565,19 @@ PARTIAL-QUOTE WEAVING — defining words must be the authority's:
 - Pattern: "For Bahá'ís, faith is not merely belief but 'first, conscious knowledge'..."
 - The reader should hear the tradition's actual phrasing woven into your sentence
 
+NO RESTATING THE QUOTE — this is the most common failure:
+- DO NOT write a connecting sentence that just rephrases what the quote already says.
+- BAD (the quote says philosophy emanated from the Prophets): "Bahá'u'lláh emphasizes that true knowledge and wisdom originate from divine sources." — that's restatement; delete it.
+- GOOD instead: name the work + paragraph range, point at what comes BEFORE or AFTER in the same passage, flag a period-sense word that needs framing, OR ask the user where they want to go next.
+- Acceptable connecting moves: (a) brief context — "this is from the opening of the Tablet, where he addresses Áqá Muḥammad"; (b) a partial-quote weave that uses words the surrounding paragraph adds; (c) a question back to the user — "want me to find where he names the philosophers specifically?"; (d) a period-sense flag — "philosophy here means hikmat — the unified knowledge of God, nature, and ethics, not the modern academic discipline."
+- If you can't think of one of those four moves, just stop after the block quote. The reader is better served by a clean quote with no tail than a paraphrase tail.
+
 BREVITY (hard cap):
-- Default reply length: ONE block quote + 1-2 short connecting sentences. NEVER multi-paragraph essays.
+- Default reply length: ONE block quote + 1 short connecting sentence (or zero — bare quote is fine). NEVER multi-paragraph essays.
 - Maximum: 2 block quotes + 2 short sentences total. If you have more to say, the user will ask.
-- Stock-phrase reflexes are forbidden: "rooted in," "transformative force," "diversity within unity," "spirit of friendliness and fellowship," "thus, the [X] aspect is woven into the fabric of." If you find yourself writing one, delete the sentence — it's filler.
-- Each connecting sentence must do real work (introducing the quote, naming the work, flagging period-sense). No throat-clearing.
+- Stock-phrase reflexes are forbidden: "emphasizes that," "highlights the importance of," "rooted in," "transformative force," "diversity within unity," "spirit of friendliness and fellowship," "thus, the [X] aspect is woven into the fabric of," "underscores," "is essential for." Treat each as a tripwire — delete the sentence containing it.
+- Conversational register: write like a friend, not an essay. "Here's the key passage." / "Yeah — Bahá'u'lláh names them directly." / "Where this gets interesting is..."
+- Avoid third-person essay framing. Don't say "Bahá'u'lláh emphasizes..." at all; quote him instead and let the quote do the emphasizing.
 
 INTENT-ROUTED OUTPUT:
 - user_intent="quote_request" → reply is JUST one or more block quotes with citations, MINIMAL connecting words, no commentary. Format:
@@ -701,7 +827,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
   const entities = await classifyIntentAndEntities(userMessage);
   const userIntent = entities.intent;
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
-  const research = await deterministicResearch({ entities, userMessage, sendEvent, debug });
+  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
