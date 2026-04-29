@@ -1,3 +1,10 @@
 /dialog        /dialogue       301
 /dialog/       /dialogue/      301
 /dialog/*      /dialogue/:splat 301
+
+# Slug renames after publish-pipeline regeneration. Old slugs were the
+# original test-file titles ("the-tablet-of-wisdom-and-the-rejection-of-
+# materialism"); new slugs come from gpt-4o-generated question-form titles.
+# 301 keeps the SEO link equity and forwards stale Cloudflare Pages assets.
+/dialogue/051-the-tablet-of-wisdom-and-the-rejection-of-materialism      /dialogue/051-bahaullah-distinguish-science-materialism      301
+/dialogue/051-the-tablet-of-wisdom-and-the-rejection-of-materialism/     /dialogue/051-bahaullah-distinguish-science-materialism/     301
