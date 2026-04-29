@@ -380,14 +380,15 @@ const TOPIC_LABELS: Record<string, string> = {
        can style them like blockquotes. -->
   <script>
     (() => {
-      const ps = document.querySelectorAll('.jafar-turn p, .user-turn p');
+      // Direct children only — skip <p> already inside a <blockquote>
+      // (those already have the blockquote's quote-box styling, and tagging
+      // them too produced a doubled nested-border visual).
+      const ps = document.querySelectorAll('.jafar-turn > p, .user-turn > p');
       const QUOTE_OPEN = /^[\u201C\u201D"]/;
       for (const p of ps) {
         const t = (p.textContent || '').trim();
         if (t.length < 80) continue;
         if (!QUOTE_OPEN.test(t)) continue;
-        // Heuristic: paragraph opens with a quote and either closes with a
-        // close-quote + citation parens, or contains a citation link inline.
         if (/[\u201C\u201D"][^"\u201C\u201D]*$/.test(t) || p.querySelector('a[href*="siftersearch.com"]')) {
           p.setAttribute('data-quote-paragraph', 'true');
         }
