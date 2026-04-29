@@ -285,41 +285,63 @@ Compose the reply now.`;
   return resp.choices[0].message.content || '';
 }
 
-// Heuristic pick — score each draft on grounding signals, return the higher.
-// No LLM call. Score is the count of: block-quote lines, inline-citation
-// links, opens-with-quote bonus (for definition/quote_request/explain),
-// per-quote-citation pairing. Ties go to draft A (the higher-temperature
-// one — slightly more conversational variety).
-export function pickBestCandidate({ a, b, user_intent, retrieved_quotes }) {
-  const score = (draft) => {
-    if (!draft) return -Infinity;
-    let s = 0;
-    // Each block-quote line is +2
-    s += (draft.match(/^>\s/gm) || []).length * 2;
-    // Each siftersearch.com citation link is +2
-    s += (draft.match(/siftersearch\.com\/document\/\d+/g) || []).length * 2;
-    // Opens with a quotation mark or > (lead-with-quote bonus, except for 'discuss')
-    if (user_intent !== 'discuss' && /^[\s>"\u201C]/.test(draft.trim())) s += 3;
-    // For quote_request: shorter is better (less filler)
-    if (user_intent === 'quote_request') {
-      const wordCount = draft.split(/\s+/).length;
-      if (wordCount < 100) s += 3;
-      else if (wordCount > 250) s -= 3;
+// LLM picker — gpt-4o judges multiple gpt-4o-mini drafts and returns the
+// best one. The user's framing: 'speed of mini with the quick decision of
+// the smarter model.' Drafts are short, judgment is structured — so gpt-4o
+// finishes the pick in 2-3s.
+const PICKER_SYSTEM = `You are a quality judge. Given multiple candidate replies to the user's question, pick the SINGLE BEST one based on these criteria, in priority order:
+
+1. GROUNDING — every assertion in the chosen reply must trace to a quote in retrieved_quotes. Improvised paraphrase from training memory disqualifies a candidate.
+2. INTENT FIT — does the reply match the user's intent? quote_request → quotes only with minimal glue. definition / explain → opens with a block quote, commentary follows. discuss → quote-led, conversational.
+3. VERBATIM — block-quoted passages must match retrieved_quotes exactly.
+4. LEAD-WITH-QUOTE — for non-discuss intents, the reply should open with a block quote rather than essay.
+5. PARTIAL QUOTES — defining words in quotation marks (the authority's phrasing) rather than the crafter's restatement.
+6. LITERAL MATCH — when the user named specific terms (people, concepts), the lead quote contains them verbatim.
+
+Output JSON: {"pick": "A" | "B" | "C", "reason": "short explanation", "issues_with_others": ["..."]}.
+The 'reason' is one sentence. 'issues_with_others' (optional) is short notes on the rejected candidates — for telemetry.`;
+
+export async function pickBestCandidate({ candidates, user_intent, retrieved_quotes, user_question }) {
+  const labeled = candidates.map((c, i) => ({ label: String.fromCharCode(65 + i), text: c })); // A, B, C, ...
+  const validLabels = labeled.map(c => c.label);
+
+  const quotesPayload = retrieved_quotes.slice(0, 8).map((q, i) => `[Q${i + 1}] ${(q.text || '').slice(0, 240)}`).join('\n\n');
+  const candidatesPayload = labeled.map(c => `=== Candidate ${c.label} ===\n${c.text}`).join('\n\n');
+
+  const userPayload = `user_intent: ${user_intent}
+
+user_question: ${user_question}
+
+retrieved_quotes (the ground truth — every assertion must trace here):
+${quotesPayload}
+
+candidates:
+
+${candidatesPayload}
+
+Pick the best. Output JSON only. Pick must be one of: ${validLabels.join(', ')}.`;
+
+  try {
+    const resp = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: PICKER_SYSTEM },
+        { role: 'user', content: userPayload }
+      ],
+      temperature: 0.1,
+      max_tokens: 250,
+      response_format: { type: 'json_object' }
+    });
+    const parsed = JSON.parse(resp.choices[0].message.content);
+    const pick = labeled.find(c => c.label === parsed.pick);
+    if (pick) {
+      return { winner: pick.text, label: pick.label, reason: parsed.reason || null, issues_with_others: parsed.issues_with_others || [] };
     }
-    // For definition: prefer drafts that contain partial-quoted phrases
-    // (short quoted strings inside prose) as well as block quotes
-    if (user_intent === 'definition') {
-      const partialQuotes = (draft.match(/[\"\u201C][^"\u201C\u201D]{2,40}[\"\u201D]/g) || []).length;
-      s += partialQuotes;
-    }
-    // Penalty for paraphrase tells: training-memory phrasing patterns
-    if (/in\s+(his|the\s+\w+)\s+view/i.test(draft)) s -= 1;
-    if (/often emphasizes|generally speaking|essentially/i.test(draft)) s -= 1;
-    return s;
-  };
-  const sa = score(a);
-  const sb = score(b);
-  return sb > sa ? b : a;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'picker failed; defaulting to candidate A');
+  }
+  // Fallback: first candidate
+  return { winner: labeled[0]?.text || '', label: 'A', reason: 'picker fallback' };
 }
 
 // ─── Stage 3: Reflection gate ─────────────────────────────────────────────
@@ -429,13 +451,20 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
 
-  // Stage 2: parallel-craft-then-pick.
-  // Two crafter calls in parallel at different temperatures (0.4 and 0.2)
-  // — about the same wall-clock as one call — followed by a deterministic
-  // heuristic pick. Replaces the prior sequential craft → reflect →
-  // recraft loop. Saves 5-8s per turn.
+  // Stage 2: 3 parallel gpt-4o-mini crafters + smart gpt-4o picker.
+  // User's framing: 'speed of mini with the quick decision of the smarter
+  // model.' Three drafts at different temperatures explore variation;
+  // gpt-4o judges grounding, intent fit, and citation discipline to pick
+  // the winner. Wall clock: max(craft) + pick ≈ 4-5s + 2-3s = 6-8s total.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
-  const [draftA, draftB] = await Promise.all([
+  const candidates = await Promise.all([
+    craftAnswer({
+      user_question: userMessage,
+      retrieved_quotes: research.retrieved_quotes,
+      conversation_summary: conversationSummary,
+      user_intent: userIntent,
+      _temperature_override: 0.2
+    }),
     craftAnswer({
       user_question: userMessage,
       retrieved_quotes: research.retrieved_quotes,
@@ -448,15 +477,21 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
       retrieved_quotes: research.retrieved_quotes,
       conversation_summary: conversationSummary,
       user_intent: userIntent,
-      _temperature_override: 0.2
+      _temperature_override: 0.6
     })
   ]);
 
-  // Pick the stronger candidate via grounding heuristics. No LLM judge —
-  // simple rules: block quotes, citation links, opens-with-quote, length-
-  // appropriateness for the intent.
-  const draft = pickBestCandidate({ a: draftA, b: draftB, user_intent: userIntent, retrieved_quotes: research.retrieved_quotes });
-  const gate = { pass: true, picker: 'heuristic' };
+  if (sendEvent) sendEvent({ type: 'stage', stage: 'pick' });
+  const pickResult = await pickBestCandidate({
+    candidates,
+    user_intent: userIntent,
+    retrieved_quotes: research.retrieved_quotes,
+    user_question: userMessage
+  });
+  if (sendEvent && debug) sendEvent({ type: 'debug_pick', label: pickResult.label, reason: pickResult.reason });
+
+  const draft = pickResult.winner;
+  const gate = { pass: true, picker: 'gpt-4o', label: pickResult.label, reason: pickResult.reason };
   const retried = false;
 
   return {
