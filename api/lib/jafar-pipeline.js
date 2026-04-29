@@ -90,6 +90,20 @@ export async function runResearchPhase({ messages, sendEvent, debug }) {
             result = { error: `Tool ${tc.function.name} failed: ${toolErr.message}` };
           }
 
+          // Emit a brief result diagnostic so debug-mode consumers can see
+          // what came back (keys + counts only — not the full payload).
+          if (sendEvent) {
+            const diag = {
+              error: result?.error,
+              passages: result?.passages?.length,
+              excerpts: result?.excerpts?.length,
+              candidates: result?.candidates?.length,
+              paragraphs: result?.paragraphs?.length,
+              has_summary: !!result?.summary
+            };
+            sendEvent({ type: 'debug_research_result', name: tc.function.name, diag });
+          }
+
           // Harvest any retrievable quotes/passages into the structured array
           if (result?.passages) {
             for (const p of result.passages) {
