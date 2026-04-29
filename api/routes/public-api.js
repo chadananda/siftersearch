@@ -727,7 +727,7 @@ export default async function publicApiRoutes(fastify) {
    */
   fastify.post('/chat', {
     schema: {
-      description: 'AI research assistant that searches sacred texts and provides cited answers. Streams responses via SSE.',
+      description: 'AI research assistant that searches sacred texts and provides cited answers. Streams responses via SSE. Optionally pass conversation_id to persist the session for later /save.',
       tags: ['Chat'],
       security: [{ apiKey: [] }],
       body: {
@@ -736,7 +736,7 @@ export default async function publicApiRoutes(fastify) {
         properties: {
           messages: {
             type: 'array', minItems: 1, maxItems: 50,
-            description: 'Conversation history. Last message is the current query.',
+            description: 'Conversation history. Last message is the current query. If conversation_id is provided, only the LAST message is appended (server replays prior history from the session).',
             items: {
               type: 'object', required: ['role', 'content'],
               properties: {
@@ -745,13 +745,46 @@ export default async function publicApiRoutes(fastify) {
               }
             }
           },
-          researchContext: { type: 'string', description: 'Optional prior research context to continue from' }
+          researchContext: { type: 'string', description: 'Optional prior research context to continue from' },
+          conversation_id: { type: 'string', description: 'Optional. If provided, the server loads prior messages from chat_sessions and appends the new turn. If omitted, a fresh conversation_id is generated and returned in the first SSE event.' }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext } = request.body;
+    const { messages: clientMessages, researchContext } = request.body;
+    let { conversation_id } = request.body;
+    const tenantId = request.apiKeyTenantId || 'siftersearch';
     const startTime = Date.now();
+
+    // Session management. If conversation_id provided, load prior messages
+    // and append the new user turn. Else create a new session.
+    let messages = clientMessages;
+    let priorRoundIndex = -1;
+    if (conversation_id) {
+      const session = await queryOne(
+        `SELECT id, message_count FROM chat_sessions WHERE id = ? AND tenant_id = ?`,
+        [conversation_id, tenantId]
+      );
+      if (!session) return reply.code(404).send({ error: 'Conversation not found' });
+      const priorRows = await queryAll(
+        `SELECT round_index, role, content FROM chat_messages
+         WHERE session_id = ? ORDER BY round_index, id`,
+        [conversation_id]
+      );
+      const priorMessages = priorRows.map(r => ({ role: r.role, content: r.content }));
+      // The last client message is the new turn; prior history comes from DB
+      const newTurn = clientMessages[clientMessages.length - 1];
+      messages = [...priorMessages, newTurn];
+      priorRoundIndex = priorRows.length > 0 ? priorRows[priorRows.length - 1].round_index : -1;
+    } else {
+      // Generate a fresh conversation_id and create the session row
+      conversation_id = 'conv_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
+      await query(
+        `INSERT INTO chat_sessions (id, tenant_id, user_id, started_at, last_activity, message_count, status)
+         VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'active')`,
+        [conversation_id, tenantId, request.apiKeyUserId || null]
+      );
+    }
 
     // Set SSE headers
     reply.raw.setHeader('Content-Type', 'text/event-stream');
@@ -766,6 +799,10 @@ export default async function publicApiRoutes(fastify) {
     const sendEvent = (data) => {
       try { reply.raw.write('data: ' + JSON.stringify(data) + '\n\n'); } catch (_) { /* closed */ }
     };
+
+    // Always announce the conversation_id up-front so clients can hold onto it
+    // for follow-up turns and eventual /chat/save.
+    sendEvent({ type: 'session', conversation_id });
 
     try {
       // Use the same OpenAI + tool-calling flow as the internal chat
@@ -830,7 +867,32 @@ export default async function publicApiRoutes(fastify) {
           sendEvent({ type: 'text', content: words.slice(i, i + 3).join(' ') + ' ' });
         }
         if (citations.length > 0) sendEvent({ type: 'citations', citations });
-        sendEvent({ type: 'done', processingTimeMs: Date.now() - startTime });
+
+        // Persist the new turn pair (user + assistant) to chat_messages.
+        // The new round is whatever round comes after priorRoundIndex.
+        try {
+          const newRound = priorRoundIndex + 1;
+          const newUserMsg = clientMessages[clientMessages.length - 1];
+          await query(
+            `INSERT INTO chat_messages (session_id, round_index, role, content) VALUES (?, ?, ?, ?)`,
+            [conversation_id, newRound, newUserMsg.role, newUserMsg.content]
+          );
+          await query(
+            `INSERT INTO chat_messages (session_id, round_index, role, content) VALUES (?, ?, ?, ?)`,
+            [conversation_id, newRound, 'assistant', finalContent]
+          );
+          await query(
+            `UPDATE chat_sessions SET message_count = message_count + 2,
+               last_activity = CURRENT_TIMESTAMP WHERE id = ?`,
+            [conversation_id]
+          );
+        } catch (persistErr) {
+          // Persistence failure shouldn't break the streamed response —
+          // log and continue. The user already has their answer.
+          logger.warn({ err: persistErr.message, conversation_id }, 'failed to persist chat turn');
+        }
+
+        sendEvent({ type: 'done', processingTimeMs: Date.now() - startTime, conversation_id });
         break;
       }
     } catch (err) {
