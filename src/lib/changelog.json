@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T13:26:59.301Z",
+  "generated": "2026-04-29T13:47:36.446Z",
   "entries": [
+    {
+      "hash": "701f3df",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Bahá'í authority hierarchy + clarifying principle",
+      "scope": null
+    },
     {
       "hash": "fac2dde",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.547",
       "scope": null
-    },
-    {
-      "hash": "7bfb836",
-      "date": "2026-01-06",
-      "type": "New",
-      "description": "Add one-time migration for translation_segments to JSON",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "701f3df",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Bahá'í authority hierarchy + clarifying principle",
+        "scope": null
+      },
       {
         "hash": "fac2dde",
         "date": "2026-04-29",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-06",
         "type": "Chore",
         "description": "Bump version to 0.1.547",
-        "scope": null
-      },
-      {
-        "hash": "7bfb836",
-        "date": "2026-01-06",
-        "type": "New",
-        "description": "Add one-time migration for translation_segments to JSON",
         "scope": null
       }
     ]

@@ -1,21 +1,18 @@
 {
   "slug": "206-can-the-living-communicate-with-the-departed-in-bahai-teachi",
   "scores": {
-    "depth": 65,
+    "depth": 70,
     "conversational_realism": 70,
-    "doctrinal_fidelity": 60,
+    "doctrinal_fidelity": 80,
     "period_word_discipline": 80,
-    "evidence_quality": 50,
-    "brevity_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
     "correction_courage": 75,
-    "archive_worthy": 60
+    "archive_worthy": 70
   },
-  "overall": 66,
-  "narrative": "The conversation begins with a relevant primary quote, but quickly shifts to secondary sources, which weakens the evidence quality. Jafar's responses are mostly conversational, though there are moments where the tone becomes slightly formal. The doctrinal fidelity is compromised by reliance on secondary sources like the Dwight Barstow Collection, which are not canonical. Jafar does attempt to correct when the user points out the reliance on non-primary sources, but fails to provide a satisfactory primary source. The conversation lacks depth, as it doesn't fully explore the nuances of Bahá'í teachings on communication with the departed.",
-  "flags": [
-    "missing-primary-citation",
-    "secondary-substitution"
-  ],
-  "improvement_plan": "Jafar should prioritize primary sources from Bahá'í scripture when addressing doctrinal questions. The prompt could be adjusted to ensure Jafar seeks out canonical texts first before considering secondary sources. Additionally, Jafar should be equipped to handle user corrections more effectively by providing alternative primary sources or acknowledging the absence of direct scriptural references.",
-  "elapsedSec": "60.2"
+  "overall": 74,
+  "narrative": "The conversation maintains a decent depth, with Jafar addressing the user's questions about Bahá'í beliefs on communication with the departed and the efficacy of prayer. However, the responses could have been more specific about the doctrinal stance on the influence of the departed on the living. The conversational tone is mostly maintained, though there are moments where it leans towards formality. Jafar provides primary quotes from Bahá'u'lláh, but the initial reliance on Shoghi Effendi's quote could have been supplemented with more direct references to Bahá'u'lláh's writings earlier. Overall, the conversation is informative but could benefit from more precise doctrinal references.",
+  "flags": [],
+  "improvement_plan": "To improve, Jafar should ensure that primary sources are prioritized over secondary ones when addressing doctrinal questions, especially when the user explicitly requests it. Additionally, maintaining a consistently conversational tone while providing detailed doctrinal explanations would enhance the realism and engagement of the dialogue.",
+  "elapsedSec": "48.1"
 }

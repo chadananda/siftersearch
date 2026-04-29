@@ -10,6 +10,7 @@ tags:
   - bahaullah
 rounds: 5
 qualityScore: 69
+published: false
 publishedAt: 2026-04-29
 excerpt: "The conversation begins with a clear request for the Báb's own words, but Jafar initially provides Bahá'u'lláh's writings instead, which the user corrects in round 2. Jafar then provides some quotes f"
 featured: false

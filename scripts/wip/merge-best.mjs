@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
 const DIALOGS_DIR = join(ROOT, 'src/content/dialogs');
 const SCORES_DIR = join(ROOT, 'tmp-scores');
-const BACKUP_DIR = join(ROOT, 'tmp/wip/backup-rejudged');
+const BACKUP_DIR = join(ROOT, 'tmp/wip/backup-iter4');
 
 function readScore(jsonPath) {
   if (!existsSync(jsonPath)) return null;

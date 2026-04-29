@@ -1,17 +1,18 @@
 {
   "slug": "211-what-does-bahaullah-teach-about-spiritual-healing",
   "scores": {
-    "depth": 65,
+    "depth": 70,
     "conversational_realism": 70,
     "doctrinal_fidelity": 80,
-    "period_word_discipline": 75,
-    "evidence_quality": 70,
-    "brevity_discipline": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 80,
+    "brevity_discipline": 70,
     "correction_courage": 75,
     "archive_worthy": 70
   },
-  "overall": 72,
-  "narrative": "The conversation begins with a clear question about Bahá'u'lláh's teachings on healing through prayer, but Jafar initially provides a quote that doesn't directly address the user's query (Round 2). The user seeks clarification, and Jafar eventually provides a more relevant quote (Round 5), but the conversation lacks depth in exploring the broader context of Bahá'u'lláh's teachings on healing. Conversational realism is maintained with mostly brief responses, though some replies feel slightly repetitive. Doctrinal fidelity is strong, with primary sources cited, but the conversation could benefit from more comprehensive exploration of the topic. Overall, the exchange is informative but could be more focused and detailed.",
+  "overall": 73,
+  "narrative": "The conversation provides a decent exploration of Bahá'í teachings on healing through prayer, with Jafar quoting relevant texts from Bahá'u'lláh and 'Abdu'l-Bahá. The depth is adequate, though some rounds repeat information rather than building on previous points. Conversational realism is mostly maintained, but there are moments where Jafar's responses feel slightly repetitive. Doctrinal fidelity is strong, with appropriate primary sources cited. Evidence quality is solid, with primary quotes supporting the discussion. Brevity is generally maintained, though some responses could be more concise. Correction courage is not tested as the user does not present any factual inaccuracies.",
   "flags": [],
-  "improvement_plan": "Jafar should ensure that responses directly address the user's questions by selecting quotes that are more relevant to the specific inquiry. Additionally, providing a brief explanation or context for the quotes could enhance depth and clarity. Encouraging exploration of related writings could also enrich the conversation."
+  "improvement_plan": "To improve, Jafar should focus on avoiding repetition and ensuring each response builds on the previous one. Additionally, maintaining a more conversational tone throughout would enhance realism. Encouraging more nuanced exploration of the interplay between spiritual and physical health could deepen the conversation.",
+  "elapsedSec": "49.1"
 }

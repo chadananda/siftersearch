@@ -11,6 +11,7 @@ tags:
   - prayer
 rounds: 5
 qualityScore: 72
+published: false
 publishedAt: 2026-04-29
 excerpt: "The conversation maintains a decent depth, with Jafar providing primary quotes from Bahá'u'lláh and Shoghi Effendi, though it occasionally misses opportunities to delve deeper into the user's question"
 featured: false

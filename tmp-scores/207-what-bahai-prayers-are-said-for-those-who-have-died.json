@@ -1,20 +1,18 @@
 {
   "slug": "207-what-bahai-prayers-are-said-for-those-who-have-died",
   "scores": {
-    "depth": 60,
+    "depth": 75,
     "conversational_realism": 70,
-    "doctrinal_fidelity": 70,
+    "doctrinal_fidelity": 85,
     "period_word_discipline": 80,
-    "evidence_quality": 60,
-    "brevity_discipline": 80,
+    "evidence_quality": 80,
+    "brevity_discipline": 70,
     "correction_courage": 75,
-    "archive_worthy": 60
+    "archive_worthy": 75
   },
-  "overall": 68,
-  "narrative": "The conversation starts with a relevant question about Bahá'í prayers for the deceased and mourning, but Jafar struggles to provide specific prayers directly addressing these themes. While the conversation maintains a conversational tone, Jafar repeats the same quote without addressing the user's request for specificity. The evidence quality is lacking as Jafar does not provide primary quotes that directly address the user's query. Doctrinal fidelity is somewhat maintained, but the conversation could benefit from more precise references to Bahá'í texts that specifically address mourning and the departed. Overall, the conversation has value but misses opportunities to deepen the discussion with more targeted quotes.",
-  "flags": [
-    "missing-primary-citation"
-  ],
-  "improvement_plan": "Jafar should be programmed to better identify and retrieve specific prayers or texts that directly address user queries, especially when the user requests specificity. Enhancing the ability to distinguish between general and specific prayers in the Bahá'í corpus would improve the depth and evidence quality of the conversation.",
-  "elapsedSec": "84.3"
+  "overall": 75,
+  "narrative": "The conversation provides a solid exploration of Bahá'í prayers related to death and mourning, with Jafar offering relevant quotes from Bahá'u'lláh and the Báb. The depth is decent, with each round building on the previous one, though some opportunities for deeper exploration are missed. Conversational realism is mostly maintained, though there are occasional formal moments. Doctrinal fidelity is strong, with primary texts cited appropriately. Evidence quality is good, with primary quotes supporting claims, though some rounds could benefit from more detailed citation. Brevity discipline is mostly maintained, though some responses could be more concise. Correction courage is adequate, with Jafar addressing user queries accurately. Overall, the conversation is archive-worthy with minor areas for improvement.",
+  "flags": [],
+  "improvement_plan": "To enhance depth, Jafar could explore the spiritual implications of the prayers more thoroughly, providing additional context or interpretations from Bahá'í writings. Improving conversational realism could involve using more casual language and avoiding repetitive phrases. Ensuring all responses are concise and directly address the user's questions would also improve brevity discipline.",
+  "elapsedSec": "36.0"
 }

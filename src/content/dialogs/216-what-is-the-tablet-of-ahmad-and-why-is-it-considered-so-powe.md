@@ -11,6 +11,7 @@ tags:
   - promises
 rounds: 5
 qualityScore: 72
+published: false
 publishedAt: 2026-04-29
 excerpt: "The conversation starts with a strong question about the Tablet of Aḥmad, but Jafar initially fails to provide the text or a direct quote, which affects depth and evidence quality. The conversation im"
 featured: false

@@ -12,6 +12,7 @@ tags:
   - bab
 rounds: 5
 qualityScore: 71
+published: false
 publishedAt: 2026-04-29
 excerpt: "The conversation starts with a clear question about Bahá'u'lláh's interpretation of biblical prophecy, but Jafar's responses remain somewhat surface-level, often repeating the same quotes without dire"
 featured: false

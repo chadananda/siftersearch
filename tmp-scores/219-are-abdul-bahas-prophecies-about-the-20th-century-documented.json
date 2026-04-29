@@ -5,15 +5,16 @@
     "conversational_realism": 70,
     "doctrinal_fidelity": 70,
     "period_word_discipline": 80,
-    "evidence_quality": 60,
+    "evidence_quality": 50,
     "brevity_discipline": 80,
     "correction_courage": 75,
-    "archive_worthy": 65
+    "archive_worthy": 60
   },
   "overall": 68,
-  "narrative": "The conversation begins with a clear question about 'Abdu'l-Bahá's prophecies, but Jafar struggles to provide direct primary quotes from 'Abdu'l-Bahá, instead referencing Shoghi Effendi and other secondary sources. This affects the depth and evidence quality, as the user specifically asked for 'Abdu'l-Bahá's words. The conversational tone is mostly maintained, though there are moments where Jafar's responses feel slightly formal. Doctrinal fidelity is generally maintained, but the reliance on secondary sources when primary ones were requested is a flaw. The conversation remains brief and corrections are handled well, though Jafar could have been more proactive in addressing the user's request for primary sources.",
+  "narrative": "The conversation maintains a generally conversational tone, with Jafar responding in a way that feels natural and engaging. However, the depth is limited as Jafar repeatedly states the absence of specific texts without exploring broader contexts or secondary sources that might provide insight. Doctrinal fidelity is mostly maintained, but the lack of primary citations weakens the evidence quality, as Jafar doesn't provide direct quotes from 'Abdu'l-Bahá's writings relevant to the user's query. The conversation is brief and to the point, but the lack of substantial primary evidence makes it less archive-worthy.",
   "flags": [
     "missing-primary-citation"
   ],
-  "improvement_plan": "Jafar should prioritize sourcing primary quotes from 'Abdu'l-Bahá when the user explicitly requests them, especially from specified texts like 'The Promulgation of Universal Peace.' Enhancing the ability to distinguish between primary and secondary sources will improve evidence quality and doctrinal fidelity."
+  "improvement_plan": "Enhance Jafar's ability to access and reference primary texts or reliable secondary sources that discuss 'Abdu'l-Bahá's prophecies. Improve the retrieval system to ensure relevant documents are surfaced, and encourage Jafar to provide context or suggest further reading when specific texts aren't available.",
+  "elapsedSec": "53.6"
 }

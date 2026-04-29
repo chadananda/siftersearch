@@ -9,11 +9,11 @@ tags:
   - spiritualism
   - warnings
 rounds: 5
-qualityScore: 70
+qualityScore: 68
+published: false
 publishedAt: 2026-04-29
-excerpt: "The conversation maintains a decent level of depth, though it often circles around the user's questions without providing direct answers or specific examples, as seen in rounds 3 and 5. Jafar's respon"
+excerpt: "The conversation maintains a decent level of conversational realism, with Jafar mostly responding in a casual tone, though some responses feel slightly repetitive. Depth is limited as the conversation"
 featured: false
-heroImage: /images/dialog/204-does-the-bahai-faith-recognize-psychic-or-supernatural-power-hero.jpg
 assessment:
   scores:
     depth: 60
@@ -21,81 +21,103 @@ assessment:
     doctrinal_fidelity: 70
     period_word_discipline: 80
     evidence_quality: 60
-    brevity_discipline: 80
+    brevity_discipline: 70
     correction_courage: 75
     archive_worthy: 65
-  narrative: "The conversation maintains a decent level of depth, though it often circles around the user's questions without providing direct answers or specific examples, as seen in rounds 3 and 5. Jafar's responses are mostly conversational but occasionally lack the depth expected in doctrinal fidelity, as some claims are not strongly supported by primary texts. The use of period words is handled well, with no modern connotations distorting the meaning. Evidence quality is middling, with a reliance on general quotes rather than specific references to psychic abilities or spiritual healing. Brevity is well-maintained throughout the conversation. There were no significant errors from the user that required correction, so correction courage is rated based on the absence of such opportunities."
+  narrative: "The conversation maintains a decent level of conversational realism, with Jafar mostly responding in a casual tone, though some responses feel slightly repetitive. Depth is limited as the conversation doesn't significantly progress beyond the initial question about psychic powers. Doctrinal fidelity is generally sound, but there is a reliance on Bahá'u'lláh's writings without exploring potential insights from 'Abdu'l-Bahá or Shoghi Effendi, which the user specifically requested. Evidence quality is middling due to the lack of primary quotes from 'Abdu'l-Bahá or Shoghi Effendi, despite the user's interest. Brevity is mostly maintained, though some responses could be more concise."
   flags: []
-  improvement_plan: "Jafar should aim to provide more specific examples or stories from the Bahá'í writings when discussing topics like spiritual gifts or healing, as this would enhance evidence quality and depth. Additionally, incorporating more direct quotes related to the user's questions would improve doctrinal fidelity and provide clearer answers."
+  improvement_plan: "Jafar should be prompted to explore a wider range of sources within the Bahá'í Faith, especially when the user explicitly asks about specific figures like 'Abdu'l-Bahá or Shoghi Effendi. Additionally, Jafar could benefit from a more dynamic approach to conversation, ensuring each response builds on the previous one to deepen the discussion."
 ---
-<div class="user-turn">
+### Does Bahá'u'lláh acknowledge psychic powers?
+
+<div class="user-turn" id="round-1">
 
 Some traditions speak of psychic powers — clairvoyance, premonition, healing through spiritual means, communicating with the departed. Does Bahá'u'lláh acknowledge such powers exist? And if so, does he warn against pursuing them?
 
 </div>
 
-<div class="jafar-turn">
-
-II couldn't locate text on psychic powers or warnings against them in the corpus. The closest material speaks to the overarching power and sovereignty of God, suggesting that divine connection is more significant than any individual abilities.
-
-> "Thou art He Who from everlasting was, through the potency of His might, supreme over all things, and, through the operation of His will, was able to ordain all things. Nothing whatsoever, whether in Thy heaven or on Thy earth, can frustrate Thy purpose." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
-
-</div>
-
-<div class="user-turn">
-
-Wait, so Bahá'u'lláh doesn't specifically talk about psychic abilities? I thought there might be something more direct. What about 'Abdu'l-Bahá? Does he say anything about this stuff?
-
-</div>
+#### Bahá'u'lláh doesn't address psychic powers.
 
 <div class="jafar-turn">
 
-II couldn't find any direct references to psychic abilities in the writings of Bahá'u'lláh or 'Abdu'l-Bahá. The focus tends to be more on the spiritual connection with God and the limitations of human understanding.
+II couldn't locate text in the corpus where Bahá'u'lláh directly addresses psychic powers or warns against pursuing them. The retrieved excerpts focus more on spiritual devotion and the nearness to God rather than specific abilities like clairvoyance or communication with the departed.
 
-> "Exalted, immeasurably exalted, art Thou above the strivings of mortal man to unravel Thy mystery, to describe Thy glory, or even to hint at the nature of Thine Essence." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
+> "Unto Thee be praise, O Lord my God! I entreat Thee, by Thy signs that have encompassed the entire creation, and by the light of Thy countenance that hath illuminated all that are in heaven and on earth..." ([*Prayers and Meditations by Bahá’u’lláh*](https://siftersearch.com/document/8301) — Bahá’u’lláh)
+
+</div>
+
+### Does Bahá'u'lláh emphasize spiritual journey over abilities?
+
+<div class="user-turn" id="round-2">
+
+Hold on — that doesn't really answer the question. Bahá'u'lláh might not directly talk about "psychic powers," but what about guidance on focusing on the spiritual journey itself over these kinds of abilities? Does he say anything about that in the Hidden Words or other writings?
 
 </div>
 
-<div class="user-turn">
-
-Hmm, okay. But what about spiritual healing? I've heard stories about it in the context of the Bahá'í Faith. Does 'Abdu'l-Bahá mention anything about healing through spiritual means? Seems like it might be related.
-
-</div>
+#### Bahá'u'lláh stresses deeds over words.
 
 <div class="jafar-turn">
 
-II couldn't find a direct mention of spiritual healing in the retrieved quotes from 'Abdu'l-Bahá. However, the writings often emphasize the importance of spiritual connection and the transformative power of divine love and fellowship, which might indirectly relate to spiritual healing.
-
-> "Now is the time to cheer and refresh the down-cast through the invigorating breeze of love and fellowship, and the living waters of friendliness and charity." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
+Bah> "O Son of My Handmaid! Guidance hath ever been given by words, and now it is given by deeds. Everyone must show forth deeds that are pure and holy, for words are the property of all alike, whereas such deeds as these belong only to Our loved ones. Strive then with heart and soul to distinguish yourselves by your deeds." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
 
 </div>
 
-<div class="user-turn">
+### Does Bahá'u'lláh discourage distractions like psychic pursuits?
 
-Wait, that sounds like a metaphor for emotional or mental support, not literal healing. I've definitely heard stories about 'Abdu'l-Bahá healing people. Are you sure he didn't talk about it more directly? And what about the idea that some people are born with spiritual gifts — does that come up at all in the Bahá'í writings?
+<div class="user-turn" id="round-3">
+
+Okay, so Bahá'u'lláh emphasizes deeds and spiritual purity over words, which could imply a focus away from seeking psychic powers. But does he ever explicitly discourage pursuits that might distract from spiritual growth, like seeking these abilities? Any guidance against getting sidetracked?
 
 </div>
+
+#### Bahá'u'lláh prioritizes spiritual growth over distractions.
 
 <div class="jafar-turn">
 
-''Abdu'l-Bahá did indeed speak about healing, but it's often framed in terms of spiritual and moral upliftment rather than miraculous physical cures. The Bahá'í writings do acknowledge the existence of spiritual gifts, but they emphasize that these are ultimately expressions of God's will and purpose.
+BahBahá'u'lláh does emphasize focusing on spiritual growth and purity over pursuits that might distract, like seeking psychic powers.
 
-> "The beginning of all things is the knowledge of God, and the end of all things is strict observance of whatsoever hath been sent down from the empyrean of the Divine Will that pervadeth all that is in the heavens and all that is on the earth." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
+> "O Son of Dust! Verily I say unto thee: Of all men the most negligent is he that disputeth idly and seeketh to advance himself over his brother. Say: O brethren! Let deeds, not words, be your adorning." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
+
+This guidance suggests prioritizing actions that reflect spiritual virtues over distractions.
+
+</div>
+
+### Do 'Abdu'l-Bahá or Shoghi Effendi clarify distractions?
+
+<div class="user-turn" id="round-4">
+
+That makes sense — focusing on spiritual virtues over distractions seems like a clear message. But I'm curious, does 'Abdu'l-Bahá or Shoghi Effendi say anything more specific about this? Like, did they give any talks or letters that clarify what "distractions" could include, especially regarding these kinds of abilities or interests?
 
 </div>
 
-<div class="user-turn">
-
-Okay, but it still feels like we're circling around the main point. What about specific examples or stories of these gifts or healing that have been attributed to 'Abdu'l-Bahá? I've heard anecdotes but not seen these tied to the writings. And for those spiritual gifts, is there any guidance on how they should be used or understood within the Faith?
-
-</div>
+#### No specific mentions from 'Abdu'l-Bahá or Shoghi Effendi.
 
 <div class="jafar-turn">
 
-II couldn't find specific stories about 'Abdu'l-Bahá performing miraculous healings in the retrieved texts, but the writings do suggest that spiritual gifts and energies are latent within humans and can be revealed through divine guidance.
+II couldn't find specific mentions from 'Abdu'l-Bahá or Shoghi Effendi about what constitutes "distractions" in the context of spiritual virtues versus abilities or interests. However, Bahá'u'lláh's writings emphasize the importance of focusing on spiritual purity and justice, which suggests a turning away from pursuits that do not contribute to one's spiritual growth.
 
-> "These energies with which the Daystar of Divine bounty and Source of heavenly guidance hath endowed the reality of man lie, however, latent within him, even as the flame is hidden within the candle and the rays of light are potentially present in the lamp." ([*Gleanings from the Writings of Bahá’u’lláh*](https://siftersearch.com/document/8312) — Bahá’u’lláh)
+> "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
 
-The focus is on spiritual growth and moral upliftment rather than on miraculous acts.
+This counsel underscores the value placed on inner virtues over external distractions.
+
+</div>
+
+### Are there no specific talks on distractions?
+
+<div class="user-turn" id="round-5">
+
+Okay, but you didn't actually address what 'Abdu'l-Bahá or Shoghi Effendi might have said. Are there really no specific letters or talks that touch on this topic? I'd be surprised if they stayed completely silent on such common human interests and distractions. Can you find anything more direct from them?
+
+</div>
+
+#### No direct quotes from 'Abdu'l-Bahá or Shoghi Effendi.
+
+<div class="jafar-turn">
+
+II couldn't locate specific quotes from 'Abdu'l-Bahá or Shoghi Effendi addressing distractions in the context of spiritual virtues versus interests. However, Bahá'u'lláh's writings do emphasize the importance of focusing on spiritual growth and purity.
+
+> "O Son of Spirit! My first counsel is this: Possess a pure, kindly and radiant heart, that thine may be a sovereignty ancient, imperishable and everlasting." ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230) — Bahá’u’lláh)
+
+This guidance underscores the importance of inner purity as a foundation for spiritual sovereignty.
 
 </div>

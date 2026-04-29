@@ -10,6 +10,7 @@ tags:
   - some-answered-questions
 rounds: 5
 qualityScore: 73
+published: false
 publishedAt: 2026-04-29
 excerpt: "The conversation provides a decent exploration of the Bahá'í perspective on reincarnation, with some depth achieved through multiple rounds. Jafar's responses are mostly conversational, though there a"
 featured: false
