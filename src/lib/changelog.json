@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T02:03:15.483Z",
+  "generated": "2026-04-30T02:05:23.055Z",
   "entries": [
+    {
+      "hash": "f81cb09",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Document-QA subagent for named-work questions",
+      "scope": null
+    },
     {
       "hash": "f9c3a81",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Remove fallback file search in favor of fixing root cause",
       "scope": null
-    },
-    {
-      "hash": "8a66cad",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Convert absolute paths to relative paths in library-watcher",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "f81cb09",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Document-QA subagent for named-work questions",
+        "scope": null
+      },
       {
         "hash": "f9c3a81",
         "date": "2026-04-29",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-07",
         "type": "Other",
         "description": "Remove fallback file search in favor of fixing root cause",
-        "scope": null
-      },
-      {
-        "hash": "8a66cad",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Convert absolute paths to relative paths in library-watcher",
         "scope": null
       }
     ]

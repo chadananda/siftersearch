@@ -43,12 +43,12 @@ const SUBAGENT_TOOLS = [
     type: 'function',
     function: {
       name: 'read_paragraph_range',
-      description: 'Read a contiguous range of paragraphs from the document by paragraph_index. Use to read the opening, follow context around a search hit, or read short docs end-to-end.',
+      description: 'Read a contiguous range of paragraphs from the document by paragraph_index. Use to read the opening, follow context around a search hit, or read short docs end-to-end. Cap is 150 paragraphs per call — for a tiny doc, one call is usually enough; for medium docs, call twice covering halves.',
       parameters: {
         type: 'object',
         properties: {
           start: { type: 'integer', description: 'Inclusive start paragraph_index' },
-          count: { type: 'integer', description: 'How many paragraphs to read (cap 60)', default: 20 }
+          count: { type: 'integer', description: 'How many paragraphs to read (cap 150)', default: 30 }
         },
         required: ['start', 'count']
       }
@@ -96,9 +96,15 @@ async function buildOutline(document_id, paragraphRange) {
     ? [document_id, paragraphRange.start, paragraphRange.end]
     : [document_id];
 
-  const totalRow = await queryOne(`SELECT COUNT(*) AS n, MIN(paragraph_index) AS lo, MAX(paragraph_index) AS hi FROM content WHERE ${where}`, params);
+  const totalRow = await queryOne(
+    `SELECT COUNT(*) AS n, MIN(paragraph_index) AS lo, MAX(paragraph_index) AS hi, COALESCE(SUM(LENGTH(text)), 0) AS chars FROM content WHERE ${where}`,
+    params
+  );
   const total = totalRow?.n || 0;
   if (total === 0) return { error: 'Document is empty or unreadable' };
+  // ~4 chars per token. Conservative for English, slight over-estimate for
+  // dense scripture (Iqán averages ~3.5). Good enough for budget decisions.
+  const estimatedTokens = Math.ceil((totalRow.chars || 0) / 4);
 
   // Headings (limit 30 — enough to navigate, doesn't blow context)
   const headings = await queryAll(
@@ -115,6 +121,7 @@ async function buildOutline(document_id, paragraphRange) {
   return {
     document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
     total_paragraphs: total,
+    estimated_tokens: estimatedTokens,
     paragraph_range: { start: totalRow.lo, end: totalRow.hi },
     headings: headings.map(h => ({ paragraph_index: h.paragraph_index, heading: h.heading })),
     preview: previewRows.map(p => ({
@@ -139,7 +146,7 @@ async function searchInDocument(document_id, query, limit) {
 }
 
 async function readParagraphRange(document_id, start, count, paragraphRange) {
-  const safeCount = Math.min(Math.max(count || 20, 1), 60);
+  const safeCount = Math.min(Math.max(count || 30, 1), 150);
   let lo = start;
   let hi = start + safeCount - 1;
   if (paragraphRange) {
@@ -175,9 +182,9 @@ You have three tools:
 - read_paragraph_range: read a contiguous slice. Use for "read the opening", short docs (≤40 paragraphs read whole), or expanding around a search hit.
 
 Strategy:
-1. Call get_outline first to orient yourself.
-2. If the document is short (≤40 paragraphs in range), just read the whole thing.
-3. Otherwise, search_in_document with 1-3 different angles on the user's question, then read_paragraph_range around the best hits if you need more context.
+1. Call get_outline first to orient yourself. The outline returns estimated_tokens for the document (or sub-range).
+2. If estimated_tokens ≤ 25000 (a small document), just read the whole thing — call read_paragraph_range once or twice covering the full range. Cheaper and more accurate than searching, because you can see context.
+3. Otherwise, search_in_document with 1-3 different angles on the user's question, then read_paragraph_range around the best hits if you need surrounding context. The headings list helps you jump to specific sections.
 4. Call finish with a concise answer (1-3 sentences) and 3-5 verbatim excerpts.
 
 Critical:
