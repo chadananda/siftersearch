@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T23:44:43.872Z",
+  "generated": "2026-04-30T23:50:31.531Z",
   "entries": [
+    {
+      "hash": "4d7da34",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Embedding Buffer conversion in sites-ingester",
+      "scope": null
+    },
     {
       "hash": "3a8e3a6",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use queryAll for fix-titles script",
       "scope": null
-    },
-    {
-      "hash": "ae3a704",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to fix corrupted titles from frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "4d7da34",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Embedding Buffer conversion in sites-ingester",
+        "scope": null
+      },
       {
         "hash": "3a8e3a6",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use queryAll for fix-titles script",
-        "scope": null
-      },
-      {
-        "hash": "ae3a704",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to fix corrupted titles from frontmatter",
         "scope": null
       }
     ]

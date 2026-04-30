@@ -234,7 +234,10 @@ async function clearSupersedeesOf(deletedDocId) {
 
 async function upsertDoc(docFields, fileHash, bodyHash) {
   const now = new Date().toISOString();
-  const r = await query(`
+  // db.js's runQuery treats writes via .run() and ignores RETURNING output.
+  // For ON CONFLICT DO UPDATE, lastInsertRowid is unreliable (no insert occurred).
+  // Do the upsert, then SELECT by file_path to get the canonical id.
+  await query(`
     INSERT INTO docs
       (file_path, file_hash, body_hash, title, author, religion, collection,
        language, description, paragraph_count,
@@ -257,7 +260,6 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
       duplicate_of = NULL,
       deleted_at = NULL,
       updated_at = excluded.updated_at
-    RETURNING id
   `, [
     docFields.file_path, fileHash, bodyHash,
     docFields.title, docFields.author, docFields.religion, docFields.collection || '',
@@ -265,7 +267,9 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
     docFields.source_site || null, docFields.source_url || null, docFields.external_id || null,
     now, now
   ]);
-  return Number(r.rows?.[0]?.id || r.lastInsertRowid);
+  const row = await queryOne('SELECT id FROM docs WHERE file_path = ?', [docFields.file_path]);
+  if (!row) throw new Error(`upsertDoc: post-upsert SELECT returned no row for ${docFields.file_path}`);
+  return Number(row.id);
 }
 
 // ─── Ingest a single file ───────────────────────────────────────────────
