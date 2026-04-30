@@ -22,17 +22,24 @@ import { getDocTier } from './doc-tier.js';
 
 const SONNET_MODEL = 'claude-sonnet-4-6';
 const CONTEXT_WINDOW = 2; // target ± 2 paragraphs of context
-// Anthropic batches have a 100K-request hard cap. We use a smaller working
-// limit so a batch can complete within reasonable time and so a single API
-// failure doesn't lose hours of work.
-const MAX_REQUESTS_PER_BATCH = 10000;
+// Smaller batches keep per-submission memory pressure manageable on the
+// worker (each request carries ~50KB serialized — 2500 × 50KB ≈ 125MB
+// during create() call). Anthropic processes batches in parallel, so
+// submitting 27 small batches isn't slower than 1 big one.
+const MAX_REQUESTS_PER_BATCH = 2500;
 
 // SDK reads ANTHROPIC_API_KEY from env. Lazy-init so worker boots even
 // without the key set (key is required at submit time, not import time).
+// Long timeout for batch submission — sending 2500 requests serialized is
+// a sizable upload, even on a fast connection.
 let _client;
 function getClient() {
   if (!_client) {
-    _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    _client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      timeout: 600000,  // 10 min — generous for large batch submissions
+      maxRetries: 2
+    });
   }
   return _client;
 }
@@ -243,11 +250,13 @@ export async function submitNextBatch() {
 
   // Submit to Anthropic
   let externalBatchId;
+  const submitStart = Date.now();
+  logger.info({ batchId, requests: requests.length }, 'Calling Anthropic batches.create...');
   try {
     const client = getClient();
     const batch = await client.messages.batches.create({ requests });
     externalBatchId = batch.id;
-    logger.info({ batchId, externalBatchId, requests: requests.length }, 'Anthropic batch submitted');
+    logger.info({ batchId, externalBatchId, requests: requests.length, elapsed_ms: Date.now() - submitStart }, 'Anthropic batch submitted');
   } catch (err) {
     // Roll back the assignment so the rows can be retried
     logger.error({ err: err.message, batchId }, 'Anthropic batch submission failed');
