@@ -821,7 +821,12 @@ export async function searchHypeQuestions(query, options = {}) {
 const RRF_K = 60;
 const DEFAULT_WEIGHTS = {
   main: 1.0,    // paragraphs hybrid (text + context + paragraph embedding)
-  hype: 1.5     // HyPE question-match (highest signal — designed to answer)
+  // hype: TEMPORARILY ZEROED — local-LLM HyPE generation has quality issues
+  // (Qwen3-32B-AWQ in /no_think mode + 50-paragraph batches falls back to
+  // stock thematic boilerplate for ~50% of paragraphs). Setting to 0 means
+  // multiIndexSearch returns same results as the main paragraphs hybrid alone
+  // until the generation pipeline is rebuilt. See diagnosis around 2026-04-30.
+  hype: 0
 };
 
 /**

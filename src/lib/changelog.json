@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T02:26:02.037Z",
+  "generated": "2026-04-30T02:47:23.982Z",
   "entries": [
+    {
+      "hash": "4c45e9a",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Align HyPE doc_id filter key with executeSearch (camelCase)",
+      "scope": null
+    },
     {
       "hash": "892920a",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip already-linked documents in link-source-files",
       "scope": null
-    },
-    {
-      "hash": "f9f88bd",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use config.library.basePath in link-source-files script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "4c45e9a",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Align HyPE doc_id filter key with executeSearch (camelCase)",
+        "scope": null
+      },
       {
         "hash": "892920a",
         "date": "2026-04-29",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Skip already-linked documents in link-source-files",
-        "scope": null
-      },
-      {
-        "hash": "f9f88bd",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use config.library.basePath in link-source-files script",
         "scope": null
       }
     ]
