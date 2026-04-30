@@ -26,7 +26,10 @@ import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
 import { query, queryOne, queryAll } from '../lib/db.js';
 import { aiService } from '../lib/ai-services.js';
-import * as content from '../lib/content.js';
+// content.js exports a single named object `content` and re-exports as
+// default. Use the named export so `content.deleteParagraphsByDoc` resolves;
+// `import * as content` would land in the wrong namespace.
+import { content } from '../lib/content.js';
 
 const EMBEDDING_MODEL = config.ai.embeddings.model;
 const REINGEST_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4h — match watcher

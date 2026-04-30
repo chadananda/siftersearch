@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 57;
+const CURRENT_VERSION = 58;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2173,6 +2173,30 @@ const migrations = {
     }
     try { await query('CREATE INDEX IF NOT EXISTS idx_docs_external_id ON docs(external_id) WHERE external_id IS NOT NULL'); } catch { /* exists */ }
     logger.info('Migration 57 complete: docs.external_id added');
+  },
+
+  58: async () => {
+    // Supersession-lookup covering index.
+    //
+    // The existing idx_content_normalized_hash is partial on `embedding IS NOT
+    // NULL`, which doesn't match supersession queries (we don't filter on
+    // embedding). When the supersession query runs, SQLite picks
+    // idx_content_deleted_at instead — a column that's NULL for ~99% of rows
+    // and is therefore useless as a discriminator. Result: full content scan,
+    // 50+ seconds per query.
+    //
+    // This index covers (normalized_hash, doc_id) WHERE deleted_at IS NULL,
+    // which is exactly what `findSupersessionCandidates` queries. Includes
+    // doc_id so the query can be answered without table access.
+    logger.info('Starting migration 58: supersession-lookup covering index');
+    try {
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_content_norm_active
+        ON content(normalized_hash, doc_id)
+        WHERE deleted_at IS NULL
+      `);
+    } catch (err) { logger.warn({ err: err.message }, 'idx_content_norm_active create skipped'); }
+    logger.info('Migration 58 complete: idx_content_norm_active created');
   },
 };
 

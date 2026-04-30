@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T23:33:18.834Z",
+  "generated": "2026-04-30T23:37:53.355Z",
   "entries": [
+    {
+      "hash": "9a79d3d",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Docs.external_id column + supersession query plan",
+      "scope": null
+    },
     {
       "hash": "8a63d24",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Add temp test script",
       "scope": null
-    },
-    {
-      "hash": "f0e0163",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add Meilisearch migration script for doc_id field",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "9a79d3d",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Docs.external_id column + supersession query plan",
+        "scope": null
+      },
       {
         "hash": "8a63d24",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "Chore",
         "description": "Add temp test script",
-        "scope": null
-      },
-      {
-        "hash": "f0e0163",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add Meilisearch migration script for doc_id field",
         "scope": null
       }
     ]
