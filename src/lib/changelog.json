@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T02:23:54.955Z",
+  "generated": "2026-04-30T02:26:02.037Z",
   "entries": [
+    {
+      "hash": "892920a",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Fix HyPE stub-paragraph rehydrate (id filter -> getDocuments)",
+      "scope": null
+    },
     {
       "hash": "1df3e69",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use config.library.basePath in link-source-files script",
       "scope": null
-    },
-    {
-      "hash": "f9078c4",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Store relative paths in link-source-files script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "892920a",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Fix HyPE stub-paragraph rehydrate (id filter -> getDocuments)",
+        "scope": null
+      },
       {
         "hash": "1df3e69",
         "date": "2026-04-29",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use config.library.basePath in link-source-files script",
-        "scope": null
-      },
-      {
-        "hash": "f9078c4",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Store relative paths in link-source-files script",
         "scope": null
       }
     ]

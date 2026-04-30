@@ -780,7 +780,10 @@ export async function searchHypeQuestions(query, options = {}) {
   const meiliFilters = [];
   if (filters.religion) meiliFilters.push(`religion = "${filters.religion.replace(/"/g, '\\"')}"`);
   if (filters.collection) meiliFilters.push(`collection = "${filters.collection.replace(/"/g, '\\"')}"`);
-  if (typeof filters.doc_id === 'number') meiliFilters.push(`doc_id = ${filters.doc_id}`);
+  // Accept either camelCase (from executeSearch) or snake_case for doc_id
+  const docIdFilter = typeof filters.documentId === 'number' ? filters.documentId
+    : (typeof filters.doc_id === 'number' ? filters.doc_id : null);
+  if (docIdFilter !== null) meiliFilters.push(`doc_id = ${docIdFilter}`);
   if (filters.encumbered === false) meiliFilters.push('encumbered != 1');
 
   try {
