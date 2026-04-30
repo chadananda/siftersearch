@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 52;
+const CURRENT_VERSION = 53;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2017,6 +2017,54 @@ const migrations = {
     try { await query('CREATE INDEX IF NOT EXISTS idx_content_needs_thesis ON content(id) WHERE hyp_thesis IS NULL AND deleted_at IS NULL'); } catch { /* exists */ }
 
     logger.info('Migration 52 complete: hyp_thesis column + enrichment_batches/_pending tables');
+  },
+
+  // Version 53: Editable site content in DB. Replaces .astro source-of-truth
+  // for docs and conversations with a `doc_pages` table + extends
+  // `published_conversations` for in-place editing. Live Content Collections
+  // (Astro 5 experimental, Astro 6 stable) fetch from our admin API at
+  // request time, so editing a doc in DB → live without code deploy.
+  53: async () => {
+    logger.info('Starting migration 53: editable doc_pages + conversation body');
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS doc_pages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,            -- "indexing-layers", "research-strategy"
+        section TEXT,                          -- "research" | "agents" | "api" (nav grouping)
+        nav_label TEXT,                        -- short sidebar label (defaults to title)
+        sort_order INTEGER DEFAULT 100,
+        title TEXT NOT NULL,
+        description TEXT,                      -- meta description / social preview
+        body_md TEXT NOT NULL,                 -- markdown source — the editable artifact
+        body_html TEXT,                        -- pre-rendered HTML cache (regenerate on update)
+        layout TEXT DEFAULT 'docs',            -- which Astro layout wraps it
+        status TEXT DEFAULT 'published',       -- draft | published | archived
+        active_section TEXT,                   -- DocsLayout's activeSection slug (defaults to slug)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_by INTEGER                     -- nullable; references users(id) when known
+      )
+    `);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_doc_pages_slug ON doc_pages(slug)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_pages_section_sort ON doc_pages(section, sort_order)');
+    await query('CREATE INDEX IF NOT EXISTS idx_doc_pages_status ON doc_pages(status)');
+
+    // Extend published_conversations so the body itself is editable post-publish.
+    // Existing rows already store rounds_json; we add markdown-source fields so an
+    // editor can adjust per-round prose without re-running the LLM pipeline.
+    const pubConvCols = (await queryAll('PRAGMA table_info(published_conversations)')).map(c => c.name);
+    if (!pubConvCols.includes('body_md')) {
+      await query('ALTER TABLE published_conversations ADD COLUMN body_md TEXT');
+    }
+    if (!pubConvCols.includes('body_html')) {
+      await query('ALTER TABLE published_conversations ADD COLUMN body_html TEXT');
+    }
+    if (!pubConvCols.includes('status')) {
+      await query("ALTER TABLE published_conversations ADD COLUMN status TEXT DEFAULT 'published'");
+    }
+
+    logger.info('Migration 53 complete: doc_pages + editable conversation body');
   },
 };
 

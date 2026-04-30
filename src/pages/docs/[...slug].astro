@@ -1,0 +1,39 @@
+---
+// Dynamic SSR doc page — handles any /docs/<slug> NOT matched by a static
+// .astro file in this directory. Static files take precedence; this route
+// serves docs that live in the database via the Live Content Collections
+// loader in src/live.config.ts.
+//
+// Cloudflare edge caches responses for 5 min via the Cache-Control header
+// returned from the API. Edits to a doc through the admin API invalidate
+// that page's cache (TODO once CF_API_TOKEN is wired) so changes go live
+// without a redeploy.
+
+import { getLiveEntry } from 'astro:content';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const { slug } = Astro.params;
+
+// We accept arbitrary depth ("agents/sifter") via [...slug], so flatten to a single string
+const slugStr = Array.isArray(slug) ? slug.join('/') : (slug || '');
+
+const entry = await getLiveEntry('docs', { slug: slugStr });
+
+if (!entry) {
+  return new Response('Not found', { status: 404 });
+}
+
+const doc = entry.data;
+
+// Pass through cache headers from the API. Cloudflare reads these and
+// edge-caches accordingly.
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+---
+
+<DocsLayout
+  title={doc.title}
+  description={doc.description || ''}
+  activeSection={doc.active_section || doc.slug}
+>
+  <Fragment set:html={doc.body_html || ''} />
+</DocsLayout>

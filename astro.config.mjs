@@ -30,6 +30,15 @@ export default defineConfig({
     }
   }),
 
+  // Live Content Collections — enables fetching content from external sources
+  // (our admin API → SQLite) at request time instead of build time. Stable in
+  // Astro 6; we use the experimental flag on Astro 5 since the API is identical.
+  // Each request through `getLiveEntry()` hits our API; Cloudflare edge caching
+  // keeps origin load minimal.
+  experimental: {
+    liveContentCollections: true
+  },
+
   devToolbar: {
     enabled: false
   },

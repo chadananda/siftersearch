@@ -224,6 +224,10 @@ export async function createServer(opts = {}) {
   await server.register(anonymousRoutes, { prefix: '/api/anonymous' });
   await server.register(librarianRoutes, { prefix: '/api/librarian' });
   await server.register(publicApiRoutes, { prefix: '/api/v1' });
+  // Content (docs + conversations) — public reads at /api/v1/docs/:slug,
+  // admin writes at /api/v1/admin/docs/:slug (X-Admin-Key auth).
+  const { default: contentRoutes } = await import('./routes/content.js');
+  await server.register(contentRoutes, { prefix: '/api/v1' });
   await server.register(deployRoutes, { prefix: '/api/deploy' });
   await server.register(forumRoutes, { prefix: '/api/forum' });
   await server.register(donationRoutes, { prefix: '/api/donations' });
