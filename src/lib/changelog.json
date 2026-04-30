@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-29T19:32:13.129Z",
+  "generated": "2026-04-30T02:03:15.483Z",
   "entries": [
+    {
+      "hash": "f9c3a81",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
+      "scope": null
+    },
     {
       "hash": "23d0e6e",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Convert absolute paths to relative paths in library-watcher",
       "scope": null
-    },
-    {
-      "hash": "10c848d",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Search for source file when file_path is missing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "f9c3a81",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Treat rsync exit 24 as non-fatal (Meili transient files)",
+        "scope": null
+      },
       {
         "hash": "23d0e6e",
         "date": "2026-04-29",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Convert absolute paths to relative paths in library-watcher",
-        "scope": null
-      },
-      {
-        "hash": "10c848d",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Search for source file when file_path is missing",
         "scope": null
       }
     ]

@@ -73,6 +73,7 @@ function parseSSE(text, startTime) {
   const lines = text.split('\n').filter(l => l.startsWith('data: '));
 
   let fullText = '';
+  let gotChunk = false; // chunk = final word-emit; text = mid-pipeline. Prefer chunk if present.
   let toolsUsed = [];
   let toolArgs = [];
   let citations = [];
@@ -80,8 +81,18 @@ function parseSSE(text, startTime) {
   for (const line of lines) {
     try {
       const data = JSON.parse(line.slice(6));
-      if (data.type === 'chunk') fullText += data.text;
+      if (data.type === 'chunk' && typeof data.text === 'string') {
+        if (!gotChunk) { fullText = ''; gotChunk = true; }
+        fullText += data.text;
+      } else if (data.type === 'text' && typeof data.content === 'string' && !gotChunk) {
+        fullText += data.content;
+      }
       if (data.type === 'tool_use') toolsUsed.push(...(data.tools || []));
+      // The Jafar pipeline does retrieval via deterministicResearch (not LLM tool calls).
+      // Each search shows up as a debug_research_call event.
+      if (data.type === 'debug_research_call') {
+        toolsUsed.push(data.name || 'search');
+      }
       if (data.type === 'citations') citations = data.citations || [];
     } catch { /* skip malformed lines */ }
   }
@@ -136,6 +147,7 @@ Return ONLY a JSON object:
   "citationPresence": <1-5>,
   "citationAccuracy": <1-5>,
   "sourceAuthority": <1-5>,
+  "inlineQuoteIntegration": <1-5>,
   "topicCoverage": <1-5>,
   "logicalCoherence": <1-5>,
   "brevity": <1-5>,

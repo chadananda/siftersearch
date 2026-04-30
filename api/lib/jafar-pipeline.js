@@ -419,6 +419,8 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   }
 
   // Branch 1: user named a specific work (or earlier turn did) — fetch it
+  // and hand the document to a focused QA subagent that can search/read
+  // within it, rather than dumping 250 paragraphs into crafter context.
   if (effectiveWorkName) {
     tasks.push((async () => {
       const find = await runTool('find_document_for_citation', {
@@ -428,11 +430,30 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       });
       const primary = (find?.candidates || []).find(c => c.is_primary) || find?.candidates?.[0];
       if (primary?.document_id) {
-        const readArgs = { document_id: primary.document_id, question: userMessage };
-        if (typeof primary.start_paragraph === 'number') readArgs.start_paragraph = primary.start_paragraph;
-        if (typeof primary.end_paragraph === 'number') readArgs.end_paragraph = primary.end_paragraph;
-        const read = await runTool('read_document_for_question', readArgs);
-        harvestExcerpts(read);
+        const { answerFromDocument } = await import('./document-subagent.js');
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'document_subagent', args: { document_id: primary.document_id, work_name: effectiveWorkName } });
+        const sub = await answerFromDocument({
+          document_id: primary.document_id,
+          question: userMessage,
+          conversation_messages: messages,
+          start_paragraph: typeof primary.start_paragraph === 'number' ? primary.start_paragraph : null,
+          end_paragraph: typeof primary.end_paragraph === 'number' ? primary.end_paragraph : null,
+          sendEvent,
+          debug
+        });
+        if (sendEvent) {
+          sendEvent({
+            type: 'debug_research_result',
+            name: 'document_subagent',
+            diag: {
+              error: sub?.error,
+              excerpts: sub?.excerpts?.length || 0,
+              iterations: sub?.subagent_iterations,
+              elapsed_ms: sub?.subagent_elapsed_ms
+            }
+          });
+        }
+        harvestExcerpts(sub, 'document_subagent');
       }
     })());
   }

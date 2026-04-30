@@ -107,6 +107,24 @@ export const RUBRIC = {
     }
   },
 
+  inlineQuoteIntegration: {
+    name: 'Inline Quote Integration',
+    weight: 2.0,
+    threshold: 4,
+    description: 'Quotes are woven INTO sentences as short fragments (typically 3–15 words in quotation marks) that directly inform the answer. Block quotes are reserved for moments when a long passage genuinely needs to stand on its own — not used as a substitute for actually engaging the question. The reader should feel the assistant is answering with evidence, not dumping topical search results.',
+    scoring: {
+      1: 'No quote integration at all — either no quotes, or only block-quoted passages dropped after a generic summary with no inline engagement',
+      2: 'A few inline phrases but mostly long block quotes that aren\'t clearly tied to the user\'s actual question (topical, not responsive)',
+      3: 'Mix of inline fragments and block quotes; some fragments work, but at least one block quote feels like a search-result dump rather than load-bearing evidence',
+      4: 'Most quotes are short inline fragments that engage the question directly; block quotes appear only when the passage genuinely warrants standing alone',
+      5: 'Every quote — whether 5-word fragment or full block — does specific argumentative work answering the user\'s question. Reads like a scholar weaving sources, not a search engine listing them'
+    },
+    examples: {
+      good: 'User asks about purity of heart → "The Iqán opens with exactly this — Bahá\'u\'lláh writes that the seeker must \'cleanse himself from all that is in heaven and on earth\' before truth can be known."',
+      bad: 'User asks about purity of heart → "Here are some passages on this topic:" followed by three full block quotes with no integration into a response.'
+    }
+  },
+
   // ── EFFICIENCY ────────────────────────────────────────────────────────────
 
   brevity: {
@@ -242,6 +260,7 @@ export function getAdjustedThresholds(questionType) {
     base.citationAccuracy = 2;
     base.sourceAuthority = 1;
     base.quoteEconomy = 2;
+    base.inlineQuoteIntegration = 1;
   }
   if (questionType === 'social') {
     base.citationPresence = 1;
@@ -250,11 +269,13 @@ export function getAdjustedThresholds(questionType) {
     base.toolUsage = 1;
     base.topicCoverage = 2;
     base.noGeneralKnowledge = 2;
+    base.inlineQuoteIntegration = 1;
   }
   if (questionType === 'lookup') {
     base.citationPresence = 2; // Author lookups list titles, not quote content
     base.sourceAuthority = 2;
     base.quoteEconomy = 2;
+    base.inlineQuoteIntegration = 2;
   }
   return base;
 }
