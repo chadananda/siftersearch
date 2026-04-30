@@ -481,7 +481,10 @@ const CANONICAL_WORKS = [
   // Shoghi Effendi
   { matchers: ['god passes by'], doc_id: 8635, religion: "Baha'i" },
   { matchers: ['advent of divine justice'], doc_id: 8295, religion: "Baha'i" },
-  { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" }
+  { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" },
+  // Foundational books (tier 6-7 in the enrichment classifier)
+  { matchers: ['dawn-breakers', 'dawn breakers', 'dawnbreakers', "nabil's narrative", 'nabils narrative', "nabíl's narrative"], doc_id: 8645, religion: "Baha'i" },
+  { matchers: ["baha'u'llah and the new era", 'bahaullah and the new era', 'bahá\u2019u\u2019lláh and the new era', 'new era'], doc_id: 8314, religion: "Baha'i" }
 ];
 
 function canonicalLookup(title, religion) {

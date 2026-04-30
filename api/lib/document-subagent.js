@@ -192,10 +192,19 @@ B) EXTRACTION/LIST question — "Who are the people mentioned in chapter 2?" /
    visit in section X?" / "Summarize what happens in part 1."
    → DO NOT search by abstract concept (e.g., "characters" or "main people" —
      those are NOT semantic matches for personal names in narrative prose).
-     Instead: use get_outline to identify the relevant section's paragraph range,
-     call read_paragraph_range over that range, then YOU (the LLM reading the
-     returned text) extract the names/places/items the user asked for. The
-     extraction happens in your context after reading, not via search.
+     Instead: use get_outline to identify the relevant section's paragraph range
+     from headings, then call read_paragraph_range OVER A SUBSTANTIAL SLICE
+     (typically 30-150 paragraphs for "opening chapters" / "first part" /
+     "section X"). For long sections, use TWO read calls covering halves —
+     don't truncate to 8-10 paragraphs and give up. The whole point is to
+     have enough text in your context that you can extract the names/places/
+     items reliably; thin reads produce empty answers.
+   → Then YOU (the LLM reading the returned text) extract the names/places/
+     items the user asked for. The extraction happens in your context after
+     reading, not via search.
+   → If the doc has clear chapter headings (visible in outline.headings),
+     "opening chapters" usually means paragraphs from chapter 1 + chapter 2
+     boundaries — read the union of those ranges.
 
 C) READING / OPENING question — "Read me the opening of X" / "Show me the
    beginning of chapter Y."
