@@ -48,18 +48,68 @@ const IGNORED_PATTERNS = [
   /node_modules/,
   /\.git/,
   /\.DS_Store/,
-  // ─── External sites staging area ────────────────────────────────────
-  // The `Ocean Library/-sites/` folder holds mirrored content from external
-  // sources (oceanlibrary.com, bahai-library.com, etc.) per the sites
-  // integration plan in docs/sites-integration.md. The leading dash sorts
-  // it ahead of all religion folders alphabetically. Content here is NOT
-  // auto-ingested — each site needs its own adapter that knows the source's
-  // URL patterns, duplicate-handling policy, and provenance fields. Until
-  // those adapters exist, the watcher ignores the entire tree so users can
-  // safely stage source-site content without it landing in the corpus as
-  // an unconfigured "religion".
-  /[/\\]-sites[/\\]/,
 ];
+
+// ─── Religion-root whitelist ────────────────────────────────────────────
+// A "religion root" is any directory that contains `.religion/meta.yaml`.
+// Only files inside one of these roots are eligible for ingestion. This is
+// the canonical mechanism for excluding non-content trees like the
+// `-sites/` staging area, scratch folders, etc. — instead of maintaining a
+// blacklist, we require an explicit `.religion/meta.yaml` marker.
+//
+// The set is rebuilt at startup, refreshed when any `.religion/meta.yaml`
+// is added/changed/removed, and consulted on every ADD event and during
+// the hourly disk scan.
+let religionRoots = new Set();
+
+async function discoverReligionRoots(basePath) {
+  const roots = new Set();
+
+  async function walk(dir) {
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    // If this dir contains `.religion/meta.yaml`, mark it as a root and
+    // stop recursing — religions don't nest.
+    if (entries.some(e => e.isDirectory() && e.name === '.religion')) {
+      try {
+        await access(join(dir, '.religion', 'meta.yaml'));
+        roots.add(dir);
+        return;
+      } catch { /* meta.yaml missing — keep walking */ }
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith('.')) continue;
+      if (entry.name === 'node_modules') continue;
+      await walk(join(dir, entry.name));
+    }
+  }
+
+  await walk(basePath);
+  return roots;
+}
+
+async function refreshReligionRoots() {
+  const basePath = config.library.basePath;
+  if (!basePath) return;
+  const prev = religionRoots.size;
+  religionRoots = await discoverReligionRoots(basePath);
+  logger.info({ count: religionRoots.size, prev }, 'Religion roots refreshed');
+}
+
+function isInReligionFolder(absolutePath) {
+  for (const root of religionRoots) {
+    if (absolutePath === root) return true;
+    if (absolutePath.startsWith(root + '/') || absolutePath.startsWith(root + '\\')) return true;
+  }
+  return false;
+}
 
 let watcher = null;
 let isEnabled = false;
@@ -102,6 +152,14 @@ function toRelativePath(absolutePath) {
  */
 function queueAddEvent(filePath, eventType) {
   if (!filePath.endsWith('.md')) return;
+
+  // Religion-root gate. Only files inside a directory with `.religion/meta.yaml`
+  // are eligible for ingestion — anything else (including the `-sites/` staging
+  // area and scratch folders) is silently ignored.
+  if (!isInReligionFolder(filePath)) {
+    logger.debug({ filePath }, 'Skipping ADD: not under any religion root');
+    return;
+  }
 
   const relativePath = toRelativePath(filePath);
   pendingAdds.set(relativePath, { filePath, eventType });
@@ -388,8 +446,15 @@ async function scanLibraryForIngestion() {
       return;
     }
 
-    // Step 1: Scan all .md files on disk
-    const diskFiles = await scanDirectoryForMarkdown(basePath, basePath);
+    // Step 1: Refresh religion roots (so newly-added religion folders are
+    // discovered) and scan ONLY inside them. Files outside any religion root
+    // are not ingested.
+    await refreshReligionRoots();
+
+    const diskFiles = [];
+    for (const root of religionRoots) {
+      await scanDirectoryForMarkdown(root, basePath, diskFiles);
+    }
     watcherStats.lastScanFilesFound = diskFiles.length;
     const diskByPath = new Map(diskFiles.map(f => [f.relativePath, f]));
 
@@ -634,6 +699,13 @@ async function handleMetaYamlChange(filePath) {
   const religion = parts[0];
   const collection = metaFolder === '.collection' ? parts[metaFolderIndex - 1] : null;
 
+  // Adding or modifying a `.religion/meta.yaml` may have created (or removed)
+  // a religion root — refresh the cached set so the next ADD event / scan
+  // sees the change.
+  if (metaFolder === '.religion') {
+    await refreshReligionRoots();
+  }
+
   logger.info({ religion, collection, metaFolder }, 'meta.yaml changed - updating document authorities');
 
   // Invalidate authority cache so new values are loaded
@@ -808,7 +880,15 @@ export function startLibraryWatcher(libraryPaths) {
         queueAddEvent(path, 'change');
       }
     })
-    .on('unlink', path => queueDeleteEvent(path))
+    .on('unlink', path => {
+      // A removed `.religion/meta.yaml` retracts a religion root.
+      if (path.endsWith('meta.yaml') && /[/\\]\.religion[/\\]meta\.yaml$/.test(path)) {
+        refreshReligionRoots().catch(err =>
+          logger.error({ err: err.message, path }, 'refreshReligionRoots failed after meta.yaml unlink'));
+        return;
+      }
+      queueDeleteEvent(path);
+    })
     .on('unlinkDir', async (path) => {
       // Directory deleted - trigger immediate orphan cleanup for that path
       const relativePath = toRelativePath(path);
@@ -820,10 +900,20 @@ export function startLibraryWatcher(libraryPaths) {
       watcherStats.errors++;
       logger.error({ err: err.message }, 'Library watcher error');
     })
-    .on('ready', () => {
+    .on('ready', async () => {
+      // Discover religion roots BEFORE accepting live events so the first
+      // ADD doesn't slip past the gate while the cache is empty. chokidar
+      // is configured with ignoreInitial:true so no events fire until
+      // user activity, but this still races with any rapid changes.
+      try {
+        await refreshReligionRoots();
+      } catch (err) {
+        logger.error({ err: err.message }, 'Initial religion-root discovery failed');
+      }
+
       isEnabled = true;
       watcherStats.startedAt = new Date().toISOString();
-      logger.info({ paths }, 'Library watcher ready');
+      logger.info({ paths, religionRoots: religionRoots.size }, 'Library watcher ready');
 
       // Start periodic orphan cleanup
       orphanCleanupTimer = setInterval(cleanupOrphanedDocuments, ORPHAN_CLEANUP_INTERVAL_MS);
