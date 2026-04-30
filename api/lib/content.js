@@ -190,13 +190,23 @@ async function bulkInsertParagraphs(docId, paragraphs) {
     return {
       sql: `INSERT INTO content
         (doc_id, paragraph_index, text, content_hash, normalized_hash,
-         heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+         heading, blocktype, embedding, embedding_model,
+         hyp_thesis, hyp_questions, context, context_model, enhanced_synced,
+         external_para_id,
+         synced, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       args: [
         docId, p.paragraphIndex, p.text,
         computeContentHash(p.text), computeNormalizedHash(p.text),
         p.heading || '', p.blocktype || 'paragraph',
-        embedding, embeddingModel, ts, ts
+        embedding, embeddingModel,
+        p.hyp_thesis || null, p.hyp_questions || null,
+        p.context || null, p.context_model || null,
+        // enhanced_synced=0 always — picked up by the sync worker if there's
+        // anything to sync; if all sidecars are null, sync is a no-op.
+        0,
+        p.external_para_id || null,
+        ts, ts
       ]
     };
   });

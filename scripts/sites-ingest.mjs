@@ -24,9 +24,12 @@ const siteId = arg('--site');
 const force = args.includes('--force');
 const thresholdArg = arg('--threshold');
 const threshold = thresholdArg ? parseFloat(thresholdArg) : undefined;
+const limitArg = arg('--limit');
+const limit = limitArg ? parseInt(limitArg, 10) : undefined;
 
 const opts = { force };
 if (threshold !== undefined) opts.threshold = threshold;
+if (limit !== undefined && !Number.isNaN(limit)) opts.limit = limit;
 
 const { ingestSite, ingestAllSites } = await import(join(ROOT, 'api/services/sites-ingester.js'));
 

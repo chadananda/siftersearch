@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T23:50:31.531Z",
+  "generated": "2026-04-30T23:59:55.080Z",
   "entries": [
+    {
+      "hash": "e1d268a",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "UpsertDoc resolves docId via SELECT after upsert",
+      "scope": null
+    },
     {
       "hash": "4d7da34",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to sync Meilisearch titles with SQLite",
       "scope": null
-    },
-    {
-      "hash": "9eb0897",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use queryAll for fix-titles script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "e1d268a",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "UpsertDoc resolves docId via SELECT after upsert",
+        "scope": null
+      },
       {
         "hash": "4d7da34",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to sync Meilisearch titles with SQLite",
-        "scope": null
-      },
-      {
-        "hash": "9eb0897",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use queryAll for fix-titles script",
         "scope": null
       }
     ]
