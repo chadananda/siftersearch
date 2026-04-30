@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T14:32:02.733Z",
+  "generated": "2026-04-30T14:40:17.663Z",
   "entries": [
+    {
+      "hash": "32ef1bd",
+      "date": "2026-04-30",
+      "type": "Docs",
+      "description": "Rename chatbot-personality -> research-assistant + architecture in CLAUDE.md",
+      "scope": null
+    },
     {
       "hash": "1eec9cc",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
       "scope": null
-    },
-    {
-      "hash": "941ea7c",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Support file moves without re-indexing content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "32ef1bd",
+        "date": "2026-04-30",
+        "type": "Docs",
+        "description": "Rename chatbot-personality -> research-assistant + architecture in CLAUDE.md",
+        "scope": null
+      },
       {
         "hash": "1eec9cc",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
-        "scope": null
-      },
-      {
-        "hash": "941ea7c",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Support file moves without re-indexing content",
         "scope": null
       }
     ]

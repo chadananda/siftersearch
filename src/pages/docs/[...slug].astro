@@ -1,32 +1,47 @@
 ---
 // Dynamic SSR doc page — handles any /docs/<slug> NOT matched by a static
 // .astro file in this directory. Static files take precedence; this route
-// serves docs that live in the database via the Live Content Collections
-// loader in src/live.config.ts.
+// serves docs that live in the database.
 //
-// Cloudflare edge caches responses for 5 min via the Cache-Control header
-// returned from the API. Edits to a doc through the admin API invalidate
-// that page's cache (TODO once CF_API_TOKEN is wired) so changes go live
-// without a redeploy.
+// We fetch directly from the content API rather than going through Astro's
+// Live Content Collections, because the experimental v5 implementation
+// didn't work cleanly with @astrojs/cloudflare v12 — same effect, simpler
+// runtime path. Cloudflare edge caches the response for 5 min via the
+// Cache-Control header below; updates to the doc in DB propagate within
+// that TTL on the next request.
 
-import { getLiveEntry } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 
-const { slug } = Astro.params;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 
-// We accept arbitrary depth ("agents/sifter") via [...slug], so flatten to a single string
+const { slug } = Astro.params;
 const slugStr = Array.isArray(slug) ? slug.join('/') : (slug || '');
 
-const entry = await getLiveEntry('docs', { slug: slugStr });
+let doc = null;
+let fetchError = null;
 
-if (!entry) {
-  return new Response('Not found', { status: 404 });
+if (slugStr) {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/pages/${encodeURIComponent(slugStr)}`);
+    if (res.ok) {
+      const data = await res.json();
+      doc = data?.doc || null;
+    } else if (res.status !== 404) {
+      fetchError = `API returned ${res.status}`;
+    }
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : String(err);
+    console.error('docs/[...slug] fetch failed', { slug: slugStr, err: fetchError });
+  }
 }
 
-const doc = entry.data;
+if (!doc) {
+  // 404 for missing slugs; 500 only when the API was unreachable, so users see
+  // a real error instead of a confusing "not found" when the API is down.
+  const status = fetchError ? 502 : 404;
+  return new Response(fetchError ? `Bad gateway: ${fetchError}` : 'Not found', { status });
+}
 
-// Pass through cache headers from the API. Cloudflare reads these and
-// edge-caches accordingly.
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
 ---
 
