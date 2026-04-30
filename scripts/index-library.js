@@ -246,10 +246,27 @@ function extractMetadataFromPath(filePath, basePath) {
   };
 }
 
-// Recursively find all markdown files
-async function findMarkdownFiles(dir, basePath = dir) {
+// Walk only directories that are religion roots (contain `.religion/meta.yaml`)
+// or descendants of one. Anything else — including the `-sites/` staging area
+// and scratch trees — is silently skipped. This is the upfront equivalent of
+// the live watcher's religion-root whitelist in api/services/library-watcher.js.
+async function findMarkdownFiles(dir, basePath = dir, isInsideReligion = false) {
   const files = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return files;
+  }
+
+  // If we're not yet inside a religion, check whether this directory IS one.
+  let nowInside = isInsideReligion;
+  if (!nowInside && entries.some(e => e.isDirectory() && e.name === '.religion')) {
+    try {
+      await fs.access(path.join(dir, '.religion', 'meta.yaml'));
+      nowInside = true;
+    } catch { /* missing meta.yaml — keep walking children */ }
+  }
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
@@ -258,14 +275,18 @@ async function findMarkdownFiles(dir, basePath = dir) {
       // Skip hidden directories
       if (entry.name.startsWith('.')) continue;
 
-      // Apply religion filter
+      // Apply religion filter (CLI flag, only at top level)
       if (religionFilter && dir === basePath && entry.name !== religionFilter) {
         continue;
       }
 
-      const subFiles = await findMarkdownFiles(fullPath, basePath);
+      const subFiles = await findMarkdownFiles(fullPath, basePath, nowInside);
       files.push(...subFiles);
-    } else if (entry.name.endsWith('.md') && !entry.name.endsWith('.backup.md')) {
+    } else if (
+      nowInside &&
+      entry.name.endsWith('.md') &&
+      !entry.name.endsWith('.backup.md')
+    ) {
       files.push({
         path: fullPath,
         metadata: extractMetadataFromPath(fullPath, basePath)

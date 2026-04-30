@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T18:36:12.351Z",
+  "generated": "2026-04-30T18:38:31.476Z",
   "entries": [
+    {
+      "hash": "04c7ebe",
+      "date": "2026-04-30",
+      "type": "Other",
+      "description": "Watcher whitelists files via .religion/meta.yaml roots",
+      "scope": null
+    },
     {
       "hash": "ef89ba7",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Drop old_id column from docs table (migration 28)",
       "scope": null
-    },
-    {
-      "hash": "a9b659d",
-      "date": "2026-01-07",
-      "type": "Docs",
-      "description": "Add server deployment info to CLAUDE.md",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "04c7ebe",
+        "date": "2026-04-30",
+        "type": "Other",
+        "description": "Watcher whitelists files via .religion/meta.yaml roots",
+        "scope": null
+      },
       {
         "hash": "ef89ba7",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Drop old_id column from docs table (migration 28)",
-        "scope": null
-      },
-      {
-        "hash": "a9b659d",
-        "date": "2026-01-07",
-        "type": "Docs",
-        "description": "Add server deployment info to CLAUDE.md",
         "scope": null
       }
     ]
