@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T18:38:31.476Z",
+  "generated": "2026-04-30T19:50:36.396Z",
   "entries": [
+    {
+      "hash": "7bbb9f1",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Index-library.js upfront scan honors religion-root whitelist",
+      "scope": null
+    },
     {
       "hash": "04c7ebe",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct migration 28 schema to match production",
       "scope": null
-    },
-    {
-      "hash": "c5dd15d",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Drop old_id column from docs table (migration 28)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "7bbb9f1",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Index-library.js upfront scan honors religion-root whitelist",
+        "scope": null
+      },
       {
         "hash": "04c7ebe",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Correct migration 28 schema to match production",
-        "scope": null
-      },
-      {
-        "hash": "c5dd15d",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Drop old_id column from docs table (migration 28)",
         "scope": null
       }
     ]

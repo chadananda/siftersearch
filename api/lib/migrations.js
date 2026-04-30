@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 55;
+const CURRENT_VERSION = 56;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2123,6 +2123,44 @@ const migrations = {
     }
     try { await query('CREATE INDEX IF NOT EXISTS idx_content_not_duplicate ON content(is_duplicate) WHERE is_duplicate = 0 AND deleted_at IS NULL'); } catch { /* exists */ }
     logger.info('Migration 55 complete: is_duplicate column added');
+  },
+
+  56: async () => {
+    // External-site integration columns (OceanLibrary, etc.)
+    //
+    // docs.source_site         — provenance: 'oceanlibrary.com', NULL for ours
+    // docs.source_url          — canonical URL at the source site (used to build
+    //                            paragraph-level deep links: source_url/?paraId=NN)
+    // docs.duplicate_of        — FK to docs.id; when set, this doc is superseded
+    //                            by another (set on OUR copy when an OceanLibrary
+    //                            version supersedes it). NULL = primary.
+    // content.external_para_id — per-paragraph external ID (e.g. 'para_13' from
+    //                            OceanLibrary's Pandoc attr blocks). NULL for ours.
+    logger.info('Starting migration 56: external site integration columns');
+
+    const addColumn = async (sql, label) => {
+      try { await query(sql); logger.info({ label }, 'migration 56: column added'); }
+      catch (err) {
+        if (err.message?.includes('duplicate column')) return;
+        throw err;
+      }
+    };
+
+    await addColumn('ALTER TABLE docs ADD COLUMN source_site TEXT', 'docs.source_site');
+    await addColumn('ALTER TABLE docs ADD COLUMN source_url TEXT', 'docs.source_url');
+    await addColumn('ALTER TABLE docs ADD COLUMN duplicate_of INTEGER REFERENCES docs(id)', 'docs.duplicate_of');
+    await addColumn('ALTER TABLE content ADD COLUMN external_para_id TEXT', 'content.external_para_id');
+
+    // Indexes
+    // - source_site lookup: "all OceanLibrary docs"
+    // - duplicate_of lookup: "what supersedes this?" + "what does this supersede?"
+    // - external_para_id is per-doc-scoped; only index it within a doc since
+    //   OceanLibrary's `para_NN` ids restart at 1 in every book.
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_source_site ON docs(source_site) WHERE source_site IS NOT NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_duplicate_of ON docs(duplicate_of) WHERE duplicate_of IS NOT NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_external_para ON content(doc_id, external_para_id) WHERE external_para_id IS NOT NULL'); } catch { /* exists */ }
+
+    logger.info('Migration 56 complete: external site columns + indexes');
   },
 };
 
