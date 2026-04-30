@@ -301,6 +301,20 @@ For standalone small works, omit start_paragraph/end_paragraph and the sub-agent
         required: ['document_id', 'question']
       }
     }
+  },
+  {
+    type: 'function',
+    name: 'translate_passage',
+    description: 'Translate an Arabic, Persian, or Hebrew passage into English using JAFAR-grounded translation that follows Shoghi Effendi\'s concordance for Bahá\'í terminology and the corpus consensus for other terms. Returns the translation plus the JAFAR term analysis. Use when the user asks for a translation, asks "what is the original word for X in this passage", or wants paired original-and-English display. Cached by content hash so repeated calls are free.',
+    parameters: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'The source-language passage to translate.' },
+        source_lang: { type: 'string', enum: ['ar', 'fa', 'he', 'auto'], description: 'Source language code; "auto" or omitted = detect from script.' },
+        work_context: { type: 'string', description: 'Optional — e.g. "from Bahá\'u\'lláh\'s Tablet of Wisdom" — helps the translator match register.' }
+      },
+      required: ['text']
+    }
   }
 ];
 
@@ -784,7 +798,28 @@ export async function executeTool(name, args) {
     case 'library_overview': return executeLibraryOverview();
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
+    case 'translate_passage': return executeTranslatePassage(args);
     default: return { error: `Unknown tool: ${name}` };
+  }
+}
+
+async function executeTranslatePassage({ text, source_lang, work_context }) {
+  if (!text || !text.trim()) return { error: 'text is required' };
+  try {
+    const { translatePassage } = await import('../lib/translation-subagent.js');
+    const result = await translatePassage({
+      text,
+      source_lang: source_lang === 'auto' ? undefined : source_lang,
+      work_context
+    });
+    return {
+      translation: result.translation,
+      source_lang: result.source_lang,
+      cached: result.cached,
+      jafar_term_count: result.jafar_terms?.length || 0
+    };
+  } catch (err) {
+    return { error: err.message };
   }
 }
 

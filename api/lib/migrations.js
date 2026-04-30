@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 53;
+const CURRENT_VERSION = 54;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2067,6 +2067,43 @@ const migrations = {
     }
 
     logger.info('Migration 53 complete: doc_pages + editable conversation body');
+  },
+
+  // Version 54: Translation pairing.
+  //
+  // Adds docs.original_doc_id — for translated documents, points to the
+  // original-language doc in our own corpus when we have it. NULL otherwise
+  // (which is most non-Bahá'í-primary cases). Used by the document subagent
+  // and the translation subagent to fetch original alongside translation
+  // when a user asks for both, or to ground LLM translation in the historical
+  // concordance for that work.
+  //
+  // Also adds a small translation_cache table for memoizing CTAI-grounded
+  // translations by content hash. Translations are deterministic-enough that
+  // repeated requests for the same passage should hit cache rather than
+  // re-paying the LLM cost.
+  54: async () => {
+    logger.info('Starting migration 54: translation pairing + cache');
+    try { await query('ALTER TABLE docs ADD COLUMN original_doc_id INTEGER'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_original_doc_id ON docs(original_doc_id) WHERE original_doc_id IS NOT NULL'); } catch { /* exists */ }
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS translation_cache (
+        text_hash TEXT PRIMARY KEY,         -- sha256 of source text
+        source_lang TEXT NOT NULL,           -- 'ar' | 'fa' | 'he' | etc.
+        target_lang TEXT NOT NULL DEFAULT 'en',
+        source_text TEXT NOT NULL,
+        translation TEXT NOT NULL,
+        jafar_terms_json TEXT,               -- the JAFAR analysis used to ground this
+        model TEXT,                          -- which LLM produced the translation
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_translation_cache_lang ON translation_cache(source_lang, target_lang)');
+
+    logger.info('Migration 54 complete: original_doc_id + translation_cache');
   },
 };
 

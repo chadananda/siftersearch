@@ -373,14 +373,39 @@ export async function answerFromDocument({
     headingsByIndex = new Map(rows.map(r => [r.paragraph_index, r.heading || null]));
   }
 
+  let excerpts = finalExcerpts.map(e => ({
+    paragraph_index: e.paragraph_index,
+    text: e.text || '',
+    heading: headingsByIndex.get(e.paragraph_index) || null
+  }));
+
+  // Multilingual mode: when reading a non-English doc, attach a JAFAR-grounded
+  // English translation to each excerpt so the crafter can present the user
+  // with original + translation pairs. Only kicks in for Arabic/Persian/Hebrew
+  // source — English passes through untouched.
+  const docLang = (meta?.language || '').toLowerCase();
+  const isNonEnglishSource = ['ar', 'fa', 'he', 'arabic', 'persian', 'farsi', 'hebrew'].some(l => docLang.includes(l));
+  if (isNonEnglishSource && excerpts.length > 0) {
+    try {
+      const { translateMany } = await import('./translation-subagent.js');
+      const ctx = `from "${meta.title}"${meta.author ? ` by ${meta.author}` : ''}`;
+      excerpts = await translateMany(excerpts, { work_context: ctx });
+      if (sendEvent) {
+        sendEvent({
+          type: 'debug_subagent_translation',
+          document_id,
+          translated: excerpts.filter(e => e.translation).length
+        });
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, document_id }, 'multilingual translation pass failed');
+    }
+  }
+
   return {
     document: meta,
-    paragraphs_read: finalExcerpts.length,
-    excerpts: finalExcerpts.map(e => ({
-      paragraph_index: e.paragraph_index,
-      text: e.text || '',
-      heading: headingsByIndex.get(e.paragraph_index) || null
-    })),
+    paragraphs_read: excerpts.length,
+    excerpts,
     subagent_answer: finalAnswer,
     subagent_iterations: iterations,
     subagent_elapsed_ms: elapsedMs

@@ -377,6 +377,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     for (const e of result.excerpts) {
       retrieved.push({
         text: e.text || '',
+        // When the document subagent translated a non-English excerpt, the
+        // translation rides alongside the original text so the crafter can
+        // present both. `translation` is null for English-source content.
+        translation: e.translation || null,
+        source_lang: e.source_lang || null,
         source_title: doc.title || '',
         source_author: doc.author || '',
         citation_url: doc.id ? `https://siftersearch.com/document/${doc.id}` : null,
@@ -926,7 +931,14 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
       : `${q.source_title || 'source'} — ${q.source_author || 'unknown'}`;
     const tierTag = q.authority_tier ? ` ${TIER_LABEL[q.authority_tier] || ''}` : '';
-    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}] ${q.text}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
+    // For non-English passages, present BOTH original and JAFAR-grounded
+    // translation so the crafter can quote whichever fits the user's request
+    // (or both, when they ask for original-and-English).
+    const langTag = q.translation && q.source_lang ? ` (source lang: ${q.source_lang})` : '';
+    const bodyBlock = q.translation
+      ? `original: ${q.text}\n  translation (en): ${q.translation}`
+      : q.text;
+    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
 
   // Subagent synthesis: when a document subagent ran on a specific work, its

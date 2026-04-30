@@ -1214,6 +1214,123 @@ export default async function publicApiRoutes(fastify) {
     }
   });
 
+  // ─── Library stats ──────────────────────────────────────────────────────
+  // Single endpoint that answers "how big is the library?" / "what's in it?"
+  // for browsing-intent queries. Closes the chat-quality regression where
+  // browsing questions returned poor LLM-summarized results — these are
+  // structured aggregations the orchestrator can quote directly.
+  fastify.get('/library/stats', {
+    schema: {
+      description: 'Library-wide statistics: totals, distributions by religion/collection/language/year. Cheap to compute (single SQL pass).',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      response: {
+        200: { type: 'object', additionalProperties: true }
+      }
+    }
+  }, async (_request, _reply) => {
+    const totals = await queryOne(`
+      SELECT
+        COUNT(*) AS document_count,
+        SUM(paragraph_count) AS paragraph_count,
+        COUNT(DISTINCT author) AS author_count,
+        COUNT(DISTINCT language) AS language_count
+      FROM docs WHERE deleted_at IS NULL
+    `);
+    const byReligion = await queryAll(`
+      SELECT religion AS name, COUNT(*) AS documents, SUM(paragraph_count) AS paragraphs
+      FROM docs WHERE deleted_at IS NULL AND religion IS NOT NULL
+      GROUP BY religion ORDER BY documents DESC
+    `);
+    const byCollection = await queryAll(`
+      SELECT collection AS name, COUNT(*) AS documents
+      FROM docs WHERE deleted_at IS NULL AND collection IS NOT NULL
+      GROUP BY collection ORDER BY documents DESC LIMIT 30
+    `);
+    const byLanguage = await queryAll(`
+      SELECT COALESCE(language, 'unknown') AS code, COUNT(*) AS documents
+      FROM docs WHERE deleted_at IS NULL
+      GROUP BY language ORDER BY documents DESC
+    `);
+    const byEra = await queryAll(`
+      SELECT
+        CASE
+          WHEN year IS NULL THEN 'unknown'
+          WHEN year < 1800 THEN 'pre-1800'
+          WHEN year < 1850 THEN '1800-1849'
+          WHEN year < 1900 THEN '1850-1899'
+          WHEN year < 1950 THEN '1900-1949'
+          WHEN year < 2000 THEN '1950-1999'
+          ELSE '2000+'
+        END AS era,
+        COUNT(*) AS documents
+      FROM docs WHERE deleted_at IS NULL
+      GROUP BY era ORDER BY MIN(year)
+    `);
+    const topAuthors = await queryAll(`
+      SELECT author AS name, COUNT(*) AS documents
+      FROM docs WHERE deleted_at IS NULL AND author IS NOT NULL AND TRIM(author) != ''
+      GROUP BY author ORDER BY documents DESC LIMIT 25
+    `);
+    return {
+      totals,
+      by_religion: byReligion,
+      by_collection: byCollection,
+      by_language: byLanguage,
+      by_era: byEra,
+      top_authors: topAuthors
+    };
+  });
+
+  // ─── Document outline / TOC ─────────────────────────────────────────────
+  // Returns chapter/section structure derived from content.heading entries
+  // (which the parser already populated). Lets the chat assistant navigate
+  // a document by chapter rather than blindly reading paragraphs.
+  fastify.get('/library/documents/:id/outline', {
+    schema: {
+      description: 'Document table of contents — heading + paragraph_index pairs from the document. Useful for "show me chapter X" / "what comes after section Y" / scoping a subagent read to a specific section.',
+      tags: ['Library'],
+      security: [{ apiKey: [] }],
+      params: {
+        type: 'object',
+        properties: { id: { type: 'integer' } },
+        required: ['id']
+      }
+    }
+  }, async (request, reply) => {
+    const docId = parseInt(request.params.id, 10);
+    const doc = await queryOne(
+      'SELECT id, title, author, religion, collection, year, language, paragraph_count FROM docs WHERE id = ? AND deleted_at IS NULL',
+      [docId]
+    );
+    if (!doc) return reply.code(404).send({ error: 'document_not_found' });
+
+    const headings = await queryAll(`
+      SELECT paragraph_index, heading
+      FROM content
+      WHERE doc_id = ? AND heading IS NOT NULL AND heading != '' AND deleted_at IS NULL
+      ORDER BY paragraph_index
+    `, [docId]);
+
+    // Compute end-paragraph for each heading (= one before the next heading,
+    // or the last paragraph for the final entry). Lets the caller "read all
+    // of chapter X" without a separate range query.
+    const lastPara = await queryOne(`
+      SELECT MAX(paragraph_index) AS last FROM content WHERE doc_id = ? AND deleted_at IS NULL
+    `, [docId]);
+    const sections = headings.map((h, i) => ({
+      heading: h.heading,
+      paragraph_index: h.paragraph_index,
+      end_paragraph: i + 1 < headings.length ? headings[i + 1].paragraph_index - 1 : (lastPara?.last ?? h.paragraph_index)
+    }));
+
+    return {
+      document: doc,
+      total_paragraphs: lastPara?.last != null ? lastPara.last + 1 : 0,
+      sections
+    };
+  });
+
   // GET /api/v1/conversations/:slug is registered ABOVE the auth hook —
   // see the public-read block near /health. Defining it here would shadow
   // that public route and force API-key auth, breaking saved share URLs

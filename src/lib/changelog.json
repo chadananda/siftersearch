@@ -1,6 +1,20 @@
 {
-  "generated": "2026-04-30T14:40:17.663Z",
+  "generated": "2026-04-30T17:13:05.209Z",
   "entries": [
+    {
+      "hash": "ef89ba7",
+      "date": "2026-04-30",
+      "type": "Other",
+      "description": "List/extract questions read instead of search; wire synthesis to crafter",
+      "scope": null
+    },
+    {
+      "hash": "3526880",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "SSR doc route — direct fetch instead of getLiveEntry",
+      "scope": null
+    },
     {
       "hash": "32ef1bd",
       "date": "2026-04-30",
@@ -3486,24 +3500,24 @@
       "type": "Docs",
       "description": "Add server deployment info to CLAUDE.md",
       "scope": null
-    },
-    {
-      "hash": "011afdb",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
-      "scope": null
-    },
-    {
-      "hash": "ed45019",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "ef89ba7",
+        "date": "2026-04-30",
+        "type": "Other",
+        "description": "List/extract questions read instead of search; wire synthesis to crafter",
+        "scope": null
+      },
+      {
+        "hash": "3526880",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "SSR doc route — direct fetch instead of getLiveEntry",
+        "scope": null
+      },
       {
         "hash": "32ef1bd",
         "date": "2026-04-30",
@@ -7052,20 +7066,6 @@
         "date": "2026-01-07",
         "type": "Docs",
         "description": "Add server deployment info to CLAUDE.md",
-        "scope": null
-      },
-      {
-        "hash": "011afdb",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Update CURRENT_VERSION to 27 and fix INTEGER ID usage",
-        "scope": null
-      },
-      {
-        "hash": "ed45019",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Migrate docs.id from TEXT to INTEGER PRIMARY KEY",
         "scope": null
       }
     ]
