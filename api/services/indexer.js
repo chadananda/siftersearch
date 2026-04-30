@@ -114,6 +114,20 @@ function computeNormalizedHash(text) {
  * @param {string} [bodyHash] - Optional body_hash for lookup if file was renamed
  * @returns {Promise<Map<number, Float32Array>>} Map of paragraph_index to embedding
  */
+// Cache lookup returns bundles, not just embeddings. When a paragraph's
+// normalized_hash matches an existing row, we ALSO inherit any enrichment
+// that row already has — disambiguation context, HyPE thesis, HyPE questions —
+// so re-ingesting (or importing a verbatim copy from another source like
+// OceanLibrary) doesn't re-run paid enrichment on identical text.
+//
+// Returned shape: Map<paragraph_index, {
+//   embedding: Float32Array,
+//   embedding_model: string,
+//   hyp_thesis?: string,
+//   hyp_questions?: string,
+//   context?: string,
+//   context_model?: string
+// }>
 async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
   const cached = new Map();
 
@@ -127,7 +141,8 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
 
     if (doc) {
       const existing = await queryAll(
-        `SELECT paragraph_index, content_hash, embedding, embedding_model
+        `SELECT paragraph_index, content_hash, embedding, embedding_model,
+                hyp_thesis, hyp_questions, context, context_model
          FROM content WHERE doc_id = ? AND deleted_at IS NULL`,
         [doc.id]
       );
@@ -141,7 +156,14 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
             row.embedding_model === EMBEDDING_MODEL) {
           const buffer = row.embedding;
           if (buffer && buffer.length > 0) {
-            cached.set(row.paragraph_index, new Float32Array(buffer.buffer || buffer));
+            cached.set(row.paragraph_index, {
+              embedding: new Float32Array(buffer.buffer || buffer),
+              embedding_model: row.embedding_model,
+              hyp_thesis: row.hyp_thesis || null,
+              hyp_questions: row.hyp_questions || null,
+              context: row.context || null,
+              context_model: row.context_model || null
+            });
           }
         }
       }
@@ -162,9 +184,20 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
       const placeholders = uncachedNormalizedHashes.map(() => '?').join(',');
 
       // Global lookup by normalized_hash: finds ANY content with matching normalized text
-      // Includes all content (even soft-deleted) to maximize embedding reuse
+      // Includes all content (even soft-deleted) to maximize embedding reuse.
+      // We pull sidecar enrichment columns alongside the embedding so an
+      // ingest that sees a hash hit also inherits any disambiguation /
+      // HyPE work that was done on the prior copy.
+      // GROUP BY ensures we only return one row per hash (any row will do —
+      // the embedding+sidecar bundle for verbatim text is interchangeable).
       const globalMatches = await queryAll(
-        `SELECT normalized_hash, embedding, embedding_model
+        `SELECT normalized_hash,
+                MAX(embedding) AS embedding,
+                MAX(embedding_model) AS embedding_model,
+                MAX(hyp_thesis) AS hyp_thesis,
+                MAX(hyp_questions) AS hyp_questions,
+                MAX(context) AS context,
+                MAX(context_model) AS context_model
          FROM content
          WHERE normalized_hash IN (${placeholders})
            AND embedding IS NOT NULL
@@ -173,11 +206,18 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
         [...uncachedNormalizedHashes, EMBEDDING_MODEL]
       );
 
-      // Build normalized_hash -> embedding map from global matches
-      const globalEmbeddings = new Map();
+      // Build normalized_hash -> bundle map from global matches
+      const globalBundles = new Map();
       for (const row of globalMatches) {
         if (row.embedding && row.embedding.length > 0) {
-          globalEmbeddings.set(row.normalized_hash, new Float32Array(row.embedding.buffer || row.embedding));
+          globalBundles.set(row.normalized_hash, {
+            embedding: new Float32Array(row.embedding.buffer || row.embedding),
+            embedding_model: row.embedding_model,
+            hyp_thesis: row.hyp_thesis || null,
+            hyp_questions: row.hyp_questions || null,
+            context: row.context || null,
+            context_model: row.context_model || null
+          });
         }
       }
 
@@ -185,8 +225,8 @@ async function getCachedEmbeddings(filePath, paragraphs, bodyHash = null) {
       for (let i = 0; i < uncachedIndices.length; i++) {
         const idx = uncachedIndices[i];
         const normalizedHash = uncachedNormalizedHashes[i];
-        if (globalEmbeddings.has(normalizedHash)) {
-          cached.set(idx, globalEmbeddings.get(normalizedHash));
+        if (globalBundles.has(normalizedHash)) {
+          cached.set(idx, globalBundles.get(normalizedHash));
         }
       }
 
@@ -275,7 +315,14 @@ async function storeInLibsql(document, paragraphs) {
         heading: para.heading || '',
         blocktype: para.blocktype || 'paragraph',
         embedding: embeddingBlob,
-        embeddingModel: para.embedding ? EMBEDDING_MODEL : null
+        embeddingModel: para.embedding ? EMBEDDING_MODEL : null,
+        // Sidecar enrichment carried forward from cache hits (NULL when no hit)
+        hyp_thesis: para.hyp_thesis || null,
+        hyp_questions: para.hyp_questions || null,
+        context: para.context || null,
+        context_model: para.context_model || null,
+        // External-source paragraph ID (e.g. OceanLibrary's "para_13")
+        external_para_id: para.external_para_id || null
       });
 
       // Get the auto-generated id (lastInsertRowid)
@@ -467,14 +514,25 @@ export async function indexDocumentFromText(text, metadata = {}) {
     logger.info({ documentId: filePath, generated: newEmbeddings.length }, 'Generated new embeddings');
   }
 
-  // Merge cached and new embeddings
+  // Merge cached bundles and freshly-generated embeddings.
+  // Bundles carry sidecar enrichment (HyPE / disambig) — captured here so
+  // they ride along into storeInLibsql.
   const embeddings = [];
+  const sidecars = [];  // parallel array, same indices as embeddings
   let newEmbeddingIndex = 0;
   for (let i = 0; i < chunks.length; i++) {
     if (cachedEmbeddings.has(i)) {
-      embeddings.push(cachedEmbeddings.get(i));
+      const bundle = cachedEmbeddings.get(i);
+      embeddings.push(bundle.embedding);
+      sidecars.push({
+        hyp_thesis: bundle.hyp_thesis,
+        hyp_questions: bundle.hyp_questions,
+        context: bundle.context,
+        context_model: bundle.context_model
+      });
     } else {
       embeddings.push(newEmbeddings[newEmbeddingIndex++]);
+      sidecars.push(null);
     }
   }
 
@@ -505,14 +563,16 @@ export async function indexDocumentFromText(text, metadata = {}) {
     created_at: new Date().toISOString()
   };
 
-  // Store in SQLite first (to get auto-generated INTEGER ids)
+  // Store in SQLite first (to get auto-generated INTEGER ids).
+  // Sidecar fields ride along when the cache had a hash hit on prior enrichment.
   const libsqlParagraphs = chunks.map((text, index) => ({
     paragraph_index: index,
     text,
     content_hash: chunksWithHashes[index].hash,
     heading: extractHeading(content, text),
     blocktype: 'paragraph',
-    embedding: embeddings[index]
+    embedding: embeddings[index],
+    ...(sidecars[index] || {})
   }));
 
   const { docId, paragraphIds } = await storeInLibsql(document, libsqlParagraphs);

@@ -135,7 +135,16 @@ async function insertParagraph(docId, {
   heading = '',
   blocktype = 'paragraph',
   embedding = null,
-  embeddingModel = null
+  embeddingModel = null,
+  // Optional sidecar enrichment carried forward by the indexer's
+  // normalized-hash cache (matching paragraphs inherit prior HyPE / disambig).
+  hyp_thesis = null,
+  hyp_questions = null,
+  context = null,
+  context_model = null,
+  // Optional external paragraph ID — used by the OceanLibrary adapter to
+  // round-trip deep links (`source_url/?paraId=external_para_id`).
+  external_para_id = null
 }) {
   if (embedding && !validateEmbedding(embedding)) {
     logger.warn({ docId, paragraphIndex, size: embedding.length, expected: EXPECTED_EMBEDDING_BYTES },
@@ -148,13 +157,23 @@ async function insertParagraph(docId, {
   const normalizedHash = computeNormalizedHash(text);
   const ts = now();
 
+  // enhanced_synced=0 whenever sidecars are present so Meili picks up the
+  // carried-over HyPE on its next sync pass.
+  const hasEnrichment = !!(hyp_thesis || hyp_questions || context);
+
   return query(`
     INSERT INTO content
       (doc_id, paragraph_index, text, content_hash, normalized_hash,
-       heading, blocktype, embedding, embedding_model, synced, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+       heading, blocktype, embedding, embedding_model,
+       hyp_thesis, hyp_questions, context, context_model, enhanced_synced,
+       external_para_id,
+       synced, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
   `, [docId, paragraphIndex, text, contentHash, normalizedHash,
-      heading, blocktype, embedding, embeddingModel, ts, ts]);
+      heading, blocktype, embedding, embeddingModel,
+      hyp_thesis, hyp_questions, context, context_model, hasEnrichment ? 0 : 0,
+      external_para_id,
+      ts, ts]);
 }
 
 /**

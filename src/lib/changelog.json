@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T19:53:54.472Z",
+  "generated": "2026-04-30T19:57:19.973Z",
   "entries": [
+    {
+      "hash": "f5eb050",
+      "date": "2026-04-30",
+      "type": "Other",
+      "description": "OceanLibrary site adapter",
+      "scope": null
+    },
     {
       "hash": "7bbb9f1",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Standardize doc_id field across SQLite and Meilisearch",
       "scope": null
-    },
-    {
-      "hash": "7ba8246",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Correct migration 28 schema to match production",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "f5eb050",
+        "date": "2026-04-30",
+        "type": "Other",
+        "description": "OceanLibrary site adapter",
+        "scope": null
+      },
       {
         "hash": "7bbb9f1",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Standardize doc_id field across SQLite and Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "7ba8246",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Correct migration 28 schema to match production",
         "scope": null
       }
     ]
