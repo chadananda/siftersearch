@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 51;
+const CURRENT_VERSION = 52;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**

@@ -1,0 +1,239 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout
+  title="Indexing Layers"
+  description="How SifterSearch builds layered, sidecar indexes — disambiguation, hypothetical questions, doctrinal thesis — to make scriptural and scholarly text discoverable from many angles. Each layer has a clear purpose, a tier-aware generator, and adds search precision without re-embedding the corpus."
+  activeSection="indexing-layers"
+>
+  <h1>Indexing Layers</h1>
+  <p class="subtitle">A library of religious literature is not searchable by raw text alone. We build a stack of complementary indexes — each engineered to answer a different kind of question.</p>
+
+  <h2>The problem with one big index</h2>
+
+  <p>Every paragraph in our corpus is, by default, indexed by its <em>own text</em>. Keyword search finds passages that contain the user's query words; semantic search finds passages whose embedding is close to the query's embedding. That works well for direct lookups — <code>"He is the best beloved of all things"</code> finds the Hidden Words passage immediately.</p>
+
+  <p>But scriptural and scholarly texts are routinely searched in ways their own words don't anticipate. A user asks <em>"why does prejudice get in the way of finding truth?"</em> The Iqán's actual passage uses entirely different vocabulary — <em>"He must so cleanse his heart that no remnant of either love or hate may linger therein, lest that love blindly incline him to error, or that hate repel him away from the truth."</em> The semantic distance between the user's casual paraphrase and that 19th-century passage is large enough that the right paragraph never surfaces, even though it directly answers the question.</p>
+
+  <p>One index can't bridge that gap. So we layer.</p>
+
+  <h2>Architecture: main index plus sidecars</h2>
+
+  <p>The corpus has one <strong>main paragraph index</strong> — the canonical home for every paragraph — and a series of <strong>sidecar indexes</strong>, each storing different derived signal. At query time, we search the main index <em>and</em> every sidecar in parallel, then merge the results using <a href="https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking">Reciprocal Rank Fusion</a>. A paragraph that ranks well in multiple indexes scores higher than one that ranks in only one — surfacing passages that semantically match both <em>what the user is asking about</em> and <em>what the passage is teaching</em>.</p>
+
+  <p>Sidecars are <em>additive</em>. A new layer doesn't change the existing indexes; it just contributes another column of signal to the merge. We can ship a new layer for one corpus while leaving everything else alone.</p>
+
+  <h2>Layer 1 — Main paragraph index</h2>
+
+  <p><strong>What it stores:</strong> every paragraph's text plus a separate "context" field (a one-line resolution of pronouns and ambiguous references — see Layer 2). The full record is embedded for semantic search and tokenized for keyword matching.</p>
+
+  <p><strong>What it answers:</strong> "Find me passages whose actual words or meaning match my query."</p>
+
+  <p><strong>Example:</strong> Query <code>"Bahá'u'lláh on consultation"</code> → directly matches paragraphs containing <em>"consultation"</em> and <em>"Bahá'u'lláh"</em>, and semantically matches paragraphs about <em>"taking counsel together"</em> even when those exact words don't appear.</p>
+
+  <h2>Layer 2 — Disambiguation</h2>
+
+  <p>Most paragraphs in religious literature contain pronouns and indirect references that, in isolation, are ambiguous. <em>"He must purge his breast..."</em> — who is "He"? <em>"in this Day"</em> — which day? Standalone these phrases tell the embedding nothing.</p>
+
+  <p>Before each paragraph is embedded, we run a <strong>disambiguation pass</strong> that produces a one-line context resolution: who or what each ambiguous reference points to, given the surrounding paragraphs. The disambiguation is concatenated to the paragraph's main embedding — so a paragraph that says <em>"He"</em> is now embedded knowing "He = the true seeker."</p>
+
+  <p><strong>Example:</strong> Paragraph 248 of the Iqán reads <em>"But, O my brother, when a true seeker determineth..."</em>. Disambiguation adds: <code>seeker = the true seeker pursuing knowledge of God; my brother = generic addressee, the reader being instructed</code>. The semantic match for <code>"path of the spiritual seeker"</code> now lights up reliably.</p>
+
+  <p><strong>Value:</strong> ~15-20% of paragraphs are heavily anaphoric. Without disambiguation, those paragraphs are effectively invisible to paraphrase queries. Disambiguation isn't a separate sidecar — it lives <em>inside</em> the main index, augmenting each paragraph's embedding.</p>
+
+  <h2>Layer 3 — HyPE questions</h2>
+
+  <p>HyPE — <em>Hypothetical Paragraph Embeddings</em> — flips the search problem on its head. Instead of asking "does this paragraph match the user's query?", we precompute "what questions does this paragraph <em>answer</em>?", embed those questions, and match against them at search time.</p>
+
+  <p>For each paragraph we generate exactly five questions covering five different registers — because real users search differently from real scholars:</p>
+
+  <ol>
+    <li><strong>Conversational</strong> — how a thoughtful friend would actually ask. <em>"Why does prejudice keep us from seeing the truth?"</em></li>
+    <li><strong>Topical concept</strong> — academic framing of the central idea. <em>"Bahá'u'lláh on the prerequisites for spiritual perception."</em></li>
+    <li><strong>Philosophical implication</strong> — the doctrinal stake or what follows from this teaching. <em>"Does the Iqán teach that emotional bias is an epistemological barrier to truth?"</em></li>
+    <li><strong>Cross-tradition / connection</strong> — broader debates, traditions, or fields the passage speaks to. <em>"How does this prescription compare to Sufi fana or Christian apophatic tradition?"</em></li>
+    <li><strong>Distinctive phrase</strong> — a striking phrase from the passage itself. <em>"no remnant of either love or hate may linger therein"</em></li>
+  </ol>
+
+  <p>Each question becomes a row in the <code>hype_questions</code> sidecar index, embedded and tagged with its source paragraph_id. When a user searches, the sidecar is matched semantically — a query that <em>looks like a real user question</em> can match the question form directly, without needing semantic distance to bridge from informal-modern English to 19th-century scriptural prose.</p>
+
+  <p><strong>Value:</strong> Paraphrase, casual register, and conceptual queries land. The same paragraph becomes findable through five different "doors" — one suited to a casual user, one to a scholar, one to a comparative-religion student, etc. Without sacrificing the precision of the main paragraph index.</p>
+
+  <h2>Layer 4 — Doctrinal thesis (new)</h2>
+
+  <p>Questions are useful for matching how readers <em>ask</em>. But they don't tell us what the passage <em>actually teaches</em> as a proposition. So we add a separate one-sentence <strong>doctrinal thesis</strong> per paragraph — a precise claim, not a question.</p>
+
+  <p>Example for paragraph 248 of the Iqán:</p>
+
+  <blockquote>
+    <em>The true seeker of divine knowledge must first purify the heart of acquired learning, pride, and all attachments — including love and hate — and cultivate trust in God, patience, and silence, because inner purity is the prerequisite condition for spiritual perception and truth-seeking.</em>
+  </blockquote>
+
+  <p>The thesis goes into the same sidecar as the questions but is flagged with <code>is_thesis: 1</code>. Three uses:</p>
+
+  <ol>
+    <li><strong>Indexable as its own search target</strong> — when a user asks "what does the Iqán teach about love and hate?", the thesis matches directly even when no specific question form does.</li>
+    <li><strong>TL;DR for search results</strong> — the thesis displays alongside the paragraph, giving the reader an immediate sense of the passage's claim before they read the full text.</li>
+    <li><strong>Crafter context for the chat assistant</strong> — when our chatbot quotes a paragraph in an answer, the thesis tells it precisely what the quoted passage is making the case for, so the framing prose around the quote stays accurate.</li>
+  </ol>
+
+  <h2>How layers are generated: tiered models</h2>
+
+  <p>Not every paragraph deserves the same effort. The Iqán's treatment of epistemology demands genuine philosophical reasoning to capture; an academic paper's introductory matter does not. We tier the corpus and route each tier to an appropriate generator:</p>
+
+  <table>
+    <thead>
+      <tr><th>Tier</th><th>Source</th><th>Generator</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Shoghi Effendi (authoritative interpreter)</td><td rowspan="7">Anthropic Claude Sonnet 4.6, via the Messages Batches API</td></tr>
+      <tr><td>2</td><td>True compilations (Lights of Guidance, etc.)</td></tr>
+      <tr><td>3</td><td>'Abdu'l-Bahá</td></tr>
+      <tr><td>4</td><td>Bahá'u'lláh</td></tr>
+      <tr><td>5</td><td>The Báb</td></tr>
+      <tr><td>6</td><td>Esslemont — <em>Bahá'u'lláh and the New Era</em></td></tr>
+      <tr><td>7</td><td>Nabíl — <em>The Dawn-Breakers</em></td></tr>
+      <tr><td>8</td><td>Other religions' doctrinal works (Quran, Gospels, Tanakh, Pali Canon, Vedas, Guru Granth Sahib, etc.)</td><td rowspan="2">Local Qwen3-32B (single-paragraph mode)</td></tr>
+      <tr><td>9</td><td>Everything else (secondary scholarship, administrative letters, etc.)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Tier classification happens at <em>ingestion time</em>: when a new document lands in the library, the classifier inspects its author and title and routes future paragraphs accordingly. Adding a new Shoghi Effendi document will route it through Sonnet on the next enrichment tick — automatically.</p>
+
+  <h2>The generation prompt</h2>
+
+  <p>For tier 1-7 paragraphs (the highest-value Bahá'í primary doctrinal works), each paragraph is sent to Sonnet with a 5-paragraph context window (the target paragraph plus two before and two after) and the following prompt structure:</p>
+
+  <p><strong>System prompt:</strong></p>
+  <pre><code>{`You are generating hypothetical questions and a doctrinal thesis for a passage from sacred or scholarly literature.
+
+Document: "<title>" by <author>
+Tradition: <religion> / <collection>
+About: <description>
+
+You will see 5 paragraphs. The TARGET is [P3]. Surrounding paragraphs are CONTEXT (for resolving pronouns and references in the TARGET) — do NOT generate questions about them.
+
+<context>
+[P1] <paragraph N-2>
+[P2] <paragraph N-1>
+[P3] (TARGET) <paragraph N>
+[P4] <paragraph N+1>
+[P5] <paragraph N+2>
+</context>`}</code></pre>
+
+  <p><strong>User prompt:</strong></p>
+  <pre><code>{`For [P3] (the TARGET paragraph), produce TWO things:
+
+PART 1 — A single-sentence DOCTRINAL THESIS stating what this paragraph actually teaches as a proposition (not a question). Specific to this paragraph's actual claim — not a generic restatement. 25-50 words.
+
+PART 2 — Exactly 5 hypothetical questions covering these 5 registers (one each):
+  1. Conversational — how a thoughtful friend would ask, casual register, 8-15 words
+  2. Topical concept — academic framing of the central idea, 8-15 words
+  3. Philosophical implication — the doctrinal stake or what follows from this teaching
+  4. Cross-tradition / connection — broader debates, traditions, or fields this passage speaks to
+  5. Distinctive phrase — a striking phrase from the passage someone might search literally
+
+Use ONLY content from the TARGET paragraph. Surrounding paragraphs are for pronoun resolution only.
+
+Output format (exactly):
+THESIS: <thesis sentence>
+Q1: <conversational>
+Q2: <topical>
+Q3: <philosophical>
+Q4: <cross-tradition>
+Q5: <distinctive phrase>
+
+Nothing else.`}</code></pre>
+
+  <p>The 5-paragraph context window resolves anaphora ("He" → "the true seeker") without diluting the model's attention. The five-register split forces the model to think about the passage from multiple search-realistic angles rather than producing five variations of one question. The <code>THESIS:</code>/<code>Q1:</code>...<code>Q5:</code> output schema is parsed deterministically into the database.</p>
+
+  <h2>Coming layers</h2>
+
+  <p>The architecture is deliberately additive. Each new layer adds a sidecar without touching existing ones. Three layers we plan to ship next:</p>
+
+  <h3>Quoted authors</h3>
+
+  <p>Every quotation embedded inside a paragraph is itself a citation chain — Bahá'u'lláh quoting the Qur'án; Shoghi Effendi quoting 'Abdu'l-Bahá; Esslemont quoting Bahá'u'lláh. We'll extract the quoted text, attribute it, and store it in a <code>quoted_authors</code> sidecar. Searches like <em>"Bahá'u'lláh quoting the Imáms"</em> or <em>"Shoghi Effendi citing the Master"</em> become first-class queries — currently they're nearly impossible to express.</p>
+
+  <h3>Definitional statements</h3>
+
+  <p>Many paragraphs contain a precise definition: <em>"This is what is meant by..."</em>, <em>"By X, We mean..."</em>. These are the canonical terminological loci of a tradition. A <code>definitions</code> sidecar will index those statements separately, indexed by the term being defined. A query for <em>"definition of pious fear"</em> resolves directly to where the term is defined, bypassing the dozens of paragraphs that merely <em>use</em> the term.</p>
+
+  <h3>Graph entities</h3>
+
+  <p>People, places, events, and concepts are already extracted at the document level. The next step is connecting them <em>across</em> documents and indexing those connections — so a query for <em>"Mullá Ḥusayn's role in the Letters of the Living"</em> doesn't just match paragraphs that mention him by name, but traces the relationships through the corpus. The <code>entities</code> sidecar holds the per-paragraph entity mentions; a separate graph layer holds the relationships between them.</p>
+
+  <h2>Why this is principled</h2>
+
+  <p>The layered architecture gives us three properties we want:</p>
+
+  <ul>
+    <li><strong>Decoupled.</strong> Each layer can be regenerated independently. Discovering that the question generator was producing weak output on the Iqán doesn't require re-indexing other layers — we just rewrite that one.</li>
+    <li><strong>Interpretable.</strong> When a search result surprises us, we can see <em>which layer</em> matched it. Was this paragraph found because its text matched? Its disambiguation? One of its hypothetical questions? Its thesis? The merge log shows it.</li>
+    <li><strong>Tiered effort.</strong> The most authoritative texts get the most expensive generators. Secondary literature gets cheaper ones. The architecture doesn't assume a single quality bar across millions of paragraphs.</li>
+  </ul>
+
+  <p>Each new layer that ships is a permanent improvement. The architecture is the deliverable, not any single layer.</p>
+</DocsLayout>
+
+<style>
+  h1 {
+    margin-bottom: 0.5rem;
+  }
+  .subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin-top: 0;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border-subtle, #e5e7eb);
+  }
+  h3 {
+    margin-top: 1.75rem;
+  }
+  blockquote {
+    border-left: 3px solid var(--color-accent, #2563eb);
+    padding-left: 1rem;
+    margin: 1.25rem 0;
+    color: var(--color-text-secondary, #4b5563);
+  }
+  pre {
+    background: var(--color-bg-subtle, #f3f4f6);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  code {
+    background: var(--color-bg-subtle, #f3f4f6);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+  }
+  pre code {
+    background: transparent;
+    padding: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    font-size: 0.95rem;
+  }
+  th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-subtle, #e5e7eb);
+    vertical-align: top;
+  }
+  th {
+    background: var(--color-bg-subtle, #f9fafb);
+    font-weight: 600;
+  }
+</style>
