@@ -20,7 +20,7 @@ const ADMIN_NOCACHE = 'private, no-store';
 
 // ─── Auth: bearer-style admin key from env ────────────────────────────────────
 function requireAdminKey(req, reply) {
-  const expected = process.env.INTERNAL_ADMIN_KEY;
+  const expected = process.env.INTERNAL_API_KEY;
   if (!expected) {
     reply.code(503).send({ error: 'admin_key_unconfigured' });
     return false;
