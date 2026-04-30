@@ -13,7 +13,7 @@ import { executeSearch } from '../routes/chat.js';
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
 const SUBAGENT_MODEL = process.env.DOC_SUBAGENT_MODEL || 'gpt-4o-mini';
-const MAX_ITERATIONS = 6;
+const MAX_ITERATIONS = 8;
 
 const SUBAGENT_TOOLS = [
   {
@@ -184,14 +184,16 @@ You have three tools:
 Strategy:
 1. Call get_outline first to orient yourself. The outline returns estimated_tokens for the document (or sub-range).
 2. If estimated_tokens ≤ 25000 (a small document), just read the whole thing — call read_paragraph_range once or twice covering the full range. Cheaper and more accurate than searching, because you can see context.
-3. Otherwise, search_in_document with 1-3 different angles on the user's question, then read_paragraph_range around the best hits if you need surrounding context. The headings list helps you jump to specific sections.
-4. Call finish with a concise answer (1-3 sentences) and 3-5 verbatim excerpts.
+3. Otherwise, search_in_document semantically (embeddings, not keyword). One well-phrased conceptual query usually finds the relevant section. If the first search misses, try a re-phrasing of the same concept rather than the same words.
+4. Read_paragraph_range around the best hits to get surrounding context (the paragraphs immediately before/after).
+5. Call finish with a concise answer (1-3 sentences) and 3-5 verbatim excerpts.
 
 Critical:
 - Use ONLY this document. Do NOT use general knowledge.
-- If the document does NOT actually address the user's question, say so plainly in your answer ("This document does not address X.") and return whatever excerpts are closest.
+- Verify your excerpts actually answer the user's specific question — not just thematically adjacent material. If the best hits don't address the concept, search again with a different phrasing of the same idea.
+- If after several searches you cannot find passages addressing the question, plainly say in your answer "This document does not appear to discuss that specifically." — do not pretend related material is the answer.
 - Quote VERBATIM. Paragraph_index in excerpts must match what the tools returned.
-- Be efficient. ≤6 tool calls including finish.`;
+- You have up to ${MAX_ITERATIONS} tool calls.`;
 }
 
 function buildContextSummary(conversationMessages, currentQuestion) {
@@ -277,6 +279,14 @@ export async function answerFromDocument({
           result = await buildOutline(document_id, paragraphRange);
         } else if (name === 'search_in_document') {
           result = await searchInDocument(document_id, args.query, args.limit);
+          if (sendEvent) sendEvent({
+            type: 'debug_subagent_search_result',
+            query: args.query,
+            hits: (result?.hits || []).slice(0, 5).map(h => ({
+              paragraph_index: h.paragraph_index,
+              text: (h.text || '').slice(0, 120)
+            }))
+          });
         } else if (name === 'read_paragraph_range') {
           result = await readParagraphRange(document_id, args.start, args.count, paragraphRange);
         } else if (name === 'finish') {

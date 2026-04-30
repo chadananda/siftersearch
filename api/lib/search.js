@@ -884,18 +884,18 @@ export async function multiIndexSearch(query, options = {}) {
   });
 
   // Fetch full paragraphs for hype-only hits (those flagged _stub).
+  // The paragraphs index uses `id` as primary key but doesn't expose `id`
+  // as filterable, so we use getDocuments({ ids: [...] }) — primary-key
+  // lookup which doesn't require the field to be in filterableAttributes.
   const stubIds = [...aggregate.values()].filter(e => e.paragraph?._stub).map(e => e.paragraph.id);
   if (stubIds.length > 0) {
     try {
       const meili = getMeili();
-      // Use filter syntax for IN — Meili supports `id IN [1,2,3]`
-      const filterStr = `id IN [${stubIds.join(',')}]`;
-      const fetched = await meili.index(INDEXES.PARAGRAPHS).search('', {
-        filter: filterStr,
-        limit: stubIds.length,
-        attributesToRetrieve: ['*']
+      const fetched = await meili.index(INDEXES.PARAGRAPHS).getDocuments({
+        ids: stubIds,
+        limit: stubIds.length
       });
-      for (const doc of (fetched.hits || [])) {
+      for (const doc of (fetched.results || fetched.hits || [])) {
         const e = aggregate.get(doc.id);
         if (e) e.paragraph = { ...doc, _stub: false };
       }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T02:05:23.055Z",
+  "generated": "2026-04-30T02:23:54.955Z",
   "entries": [
+    {
+      "hash": "1df3e69",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Switch from paragraph-count to token-count for short-doc threshold",
+      "scope": null
+    },
     {
       "hash": "f81cb09",
       "date": "2026-04-29",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Store relative paths in link-source-files script",
       "scope": null
-    },
-    {
-      "hash": "8322153",
-      "date": "2026-01-07",
-      "type": "Other",
-      "description": "Remove fallback file search in favor of fixing root cause",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-29": [
+      {
+        "hash": "1df3e69",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Switch from paragraph-count to token-count for short-doc threshold",
+        "scope": null
+      },
       {
         "hash": "f81cb09",
         "date": "2026-04-29",
@@ -7057,13 +7064,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Store relative paths in link-source-files script",
-        "scope": null
-      },
-      {
-        "hash": "8322153",
-        "date": "2026-01-07",
-        "type": "Other",
-        "description": "Remove fallback file search in favor of fixing root cause",
         "scope": null
       }
     ]
