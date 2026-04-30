@@ -345,7 +345,15 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     const p = paragraphs[i];
     const bundle = bundles.get(hashes[i]);
     const emb = bundle ? bundle.embedding : newEmbeddings[newIdx++];
-    const embeddingBlob = emb ? Buffer.from(emb.buffer || emb) : null;
+    // emb may arrive as Float32Array (from cache) or as plain Array<number>
+    // (from OpenAI). Buffer.from(plainArray) interprets each element as a
+    // byte — producing a 512-byte buffer instead of 2048 — so coerce to
+    // Float32Array first to land on the correct underlying ArrayBuffer.
+    let embeddingBlob = null;
+    if (emb) {
+      const f32 = emb instanceof Float32Array ? emb : Float32Array.from(emb);
+      embeddingBlob = Buffer.from(f32.buffer, f32.byteOffset, f32.byteLength);
+    }
 
     await content.insertParagraph(docId, {
       paragraphIndex: p.paragraph_index,

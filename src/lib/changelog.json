@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T23:37:53.355Z",
+  "generated": "2026-04-30T23:44:43.872Z",
   "entries": [
+    {
+      "hash": "3a8e3a6",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Content import + supersession covering index",
+      "scope": null
+    },
     {
       "hash": "9a79d3d",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to fix corrupted titles from frontmatter",
       "scope": null
-    },
-    {
-      "hash": "79f2d84",
-      "date": "2026-01-07",
-      "type": "Chore",
-      "description": "Add temp test script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "3a8e3a6",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Content import + supersession covering index",
+        "scope": null
+      },
       {
         "hash": "9a79d3d",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to fix corrupted titles from frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "79f2d84",
-        "date": "2026-01-07",
-        "type": "Chore",
-        "description": "Add temp test script",
         "scope": null
       }
     ]
