@@ -1,0 +1,28 @@
+# Default sites registry — copy to <library_base>/-sites/sites.yaml
+# (the operational copy). The sites-ingester reads from the operational
+# copy in the library tree, NOT from this file. Keep this in sync with
+# the structure at <library_base>/-sites/sites.yaml so a wiped Dropbox
+# folder can be restored from git.
+
+sites:
+  oceanlibrary.com:
+    adapter: oceanlibrary
+    supersession_threshold: 0.80
+    cadence_minutes: 60
+    religion_map:
+      "Bahá\u2019í": "Baha'i"
+      "Bahá'í":    "Baha'i"
+      Buddhist:    Buddhist
+      Christian:   Christian
+      Confucian:   Confucian
+      Hindu:       Hindu
+      Islam:       Islam
+      Jainism:     Jain
+      Judaism:     Judaism
+      Tao:         Tao
+      Zoroastrian: Zoroastrian
+    notes: |
+      OceanLibrary.com — high-quality proofed corpus. When a book here matches
+      an existing book in our corpus by title+author+content, our copy is
+      marked duplicate_of the OL doc so search/enrichment skips ours.
+      Auto-restored if the OL file later disappears from disk.

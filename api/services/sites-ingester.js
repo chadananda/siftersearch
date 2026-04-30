@@ -32,18 +32,29 @@ const EMBEDDING_MODEL = config.ai.embeddings.model;
 const REINGEST_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4h — match watcher
 
 // ─── Site-config discovery ──────────────────────────────────────────────
+// Single registry at <library_base>/-sites/sites.yaml — see that file for
+// the schema. A repo default lives at config/sites.example.yaml in case the
+// operational copy is ever lost.
 
-async function loadSiteConfig(siteRoot) {
-  const metaPath = join(siteRoot, '.site', 'meta.yaml');
+async function loadSitesRegistry(basePath) {
+  const path = join(basePath, '-sites', 'sites.yaml');
   try {
-    const raw = await readFile(metaPath, 'utf-8');
-    return yaml.parse(raw) || {};
+    const raw = await readFile(path, 'utf-8');
+    const parsed = yaml.parse(raw) || {};
+    return parsed.sites || {};
   } catch (err) {
     if (err.code === 'ENOENT') {
-      throw new Error(`Site config missing: ${metaPath}`);
+      throw new Error(`Sites registry missing: ${path} (copy from config/sites.example.yaml)`);
     }
     throw err;
   }
+}
+
+async function loadSiteConfig(basePath, siteId) {
+  const registry = await loadSitesRegistry(basePath);
+  const cfg = registry[siteId];
+  if (!cfg) throw new Error(`Site '${siteId}' not in -sites/sites.yaml`);
+  return cfg;
 }
 
 async function loadAdapter(adapterName) {
@@ -239,7 +250,7 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
 
 // ─── Ingest a single file ───────────────────────────────────────────────
 
-async function ingestOneFile({ adapter, siteRoot, basePath, absPath, threshold, force = false }) {
+async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false }) {
   const relPath = relative(basePath, absPath);
   const text = await readFile(absPath, 'utf-8');
   const fileHash = fileHashOf(text);
@@ -261,8 +272,9 @@ async function ingestOneFile({ adapter, siteRoot, basePath, absPath, threshold, 
     return { status: 'unchanged', file: relPath };
   }
 
-  // Parse via the site adapter
-  const { docFields, paragraphs } = await adapter.parseDoc(relPath, text, { siteRoot });
+  // Parse via the site adapter — pass siteConfig so the adapter can look up
+  // its religion_map / format hints / etc. without reading config files.
+  const { docFields, paragraphs } = await adapter.parseDoc(relPath, text, { siteRoot, siteConfig });
   docFields.file_path = relPath;
 
   if (paragraphs.length === 0) {
@@ -373,7 +385,7 @@ export async function ingestSite(siteId, opts = {}) {
   if (!basePath) throw new Error('library.basePath not configured');
   const siteRoot = join(basePath, '-sites', siteId);
 
-  const siteConfig = await loadSiteConfig(siteRoot);
+  const siteConfig = await loadSiteConfig(basePath, siteId);
   const adapter = await loadAdapter(siteConfig.adapter || siteId);
   const threshold = opts.threshold ?? siteConfig.supersession_threshold ?? 0.80;
 
@@ -388,7 +400,7 @@ export async function ingestSite(siteId, opts = {}) {
   for (const abs of files) {
     try {
       const result = await ingestOneFile({
-        adapter, siteRoot, basePath, absPath: abs,
+        adapter, siteConfig, siteRoot, basePath, absPath: abs,
         threshold, force: !!opts.force
       });
       stats[result.status] = (stats[result.status] || 0) + 1;

@@ -17,43 +17,27 @@
 // and source_url so deep-links can be rebuilt later as `${source_url}/?paraId=${para_NN}`.
 //
 // Religion mapping: OceanLibrary uses 'Bahá'í', 'Jainism' etc. Our canon uses
-// 'Baha'i', 'Jain' etc. Defaults baked in below; can be overridden via
-// `-sites/oceanlibrary.com/.bridge/religion-map.yaml`.
+// 'Baha'i', 'Jain' etc. The map is supplied by the sites-ingester via
+// siteConfig.religion_map (loaded from -sites/sites.yaml).
+//
+// A baked-in fallback covers the case where someone calls parseDoc directly
+// without going through sites-ingester (tests, ad-hoc scripts).
 
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 import yaml from 'yaml';
 
-// Default religion map — OceanLibrary category → our religion column value.
-// Override with `-sites/oceanlibrary.com/.bridge/religion-map.yaml` if needed.
 const DEFAULT_RELIGION_MAP = {
   'Bahá\u2019í': "Baha'i",  // curly apostrophe variant in OceanLibrary frontmatter
-  "Bahá'í": "Baha'i",
+  "Bahá'í":  "Baha'i",
   'Buddhist': 'Buddhist',
   'Christian': 'Christian',
   'Confucian': 'Confucian',
-  'Hindu': 'Hindu',
-  'Islam': 'Islam',
-  'Jainism': 'Jain',
-  'Judaism': 'Judaism',
-  'Tao': 'Tao',
+  'Hindu':    'Hindu',
+  'Islam':    'Islam',
+  'Jainism':  'Jain',
+  'Judaism':  'Judaism',
+  'Tao':      'Tao',
   'Zoroastrian': 'Zoroastrian'
 };
-
-let _religionMapCache = null;
-
-async function loadReligionMap(siteRoot) {
-  if (_religionMapCache) return _religionMapCache;
-  const overridePath = join(siteRoot, '.bridge', 'religion-map.yaml');
-  try {
-    const content = await readFile(overridePath, 'utf-8');
-    const parsed = yaml.parse(content);
-    _religionMapCache = { ...DEFAULT_RELIGION_MAP, ...(parsed || {}) };
-  } catch {
-    _religionMapCache = DEFAULT_RELIGION_MAP;
-  }
-  return _religionMapCache;
-}
 
 // ─── Pandoc attribute parsing ────────────────────────────────────────────
 
@@ -107,13 +91,15 @@ function cleanParagraphText(text, type) {
  * @param {object} opts - { siteRoot: absolute path to -sites/oceanlibrary.com }
  * @returns {Promise<{ docFields, paragraphs, raw_frontmatter }>}
  */
-export async function parseDoc(relativePath, content, { siteRoot }) {
+export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) throw new Error('No YAML frontmatter found');
   const frontmatter = yaml.parse(fmMatch[1]) || {};
   const body = fmMatch[2];
 
-  const religionMap = await loadReligionMap(siteRoot);
+  // Religion map comes from siteConfig (loaded from -sites/sites.yaml). Fall
+  // back to the baked-in defaults when called outside the ingester pipeline.
+  const religionMap = (siteConfig && siteConfig.religion_map) || DEFAULT_RELIGION_MAP;
   const ourReligion = religionMap[frontmatter.ocean_category] || frontmatter.ocean_category;
 
   // Split body into blocks on blank lines
