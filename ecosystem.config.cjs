@@ -180,6 +180,32 @@ module.exports = {
       error_file: './logs/enrichment-error.log',
       out_file: './logs/enrichment-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+    // Sonnet API enrichment for tier 1-7 (Bahá'í primary doctrinal works).
+    // Uses Anthropic Messages Batches API to generate per-paragraph
+    // doctrinal thesis + 5 hypothetical questions. Runs in parallel with
+    // siftersearch-enrichment (which now skips tier 1-7 docs and handles
+    // tier 8-9 via local Qwen3). When new Shoghi Effendi / 'Abdu'l-Bahá /
+    // Bahá'u'lláh / Báb / etc. documents are added, paragraphs auto-route
+    // here based on doc-tier.js classification.
+    {
+      name: 'siftersearch-enrichment-api',
+      script: 'scripts/run-enrichment-api.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '500M',
+      env: {
+        NODE_ENV: 'production'
+      },
+      exp_backoff_restart_delay: 30000,  // 30s, 60s, 120s — Anthropic 429s benefit from longer backoff
+      max_restarts: 999999,
+      min_uptime: '60s',
+      error_file: './logs/enrichment-api-error.log',
+      out_file: './logs/enrichment-api-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     }
   ]
 };

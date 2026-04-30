@@ -264,6 +264,11 @@ const SKIP_TITLES = new Set([
   'a partial inventory of the works of the central figures',
 ]);
 
+// Tier classification — local enrichment processes tier 8-9 only.
+// Tier 1-7 (Bahá'í primary doctrinal) is owned by the Sonnet API path
+// (scripts/run-enrichment-api.js + api/lib/sonnet-enrichment.js).
+const { getDocTier } = await import('../api/lib/doc-tier.js');
+
 function getDocumentsInOrder(db, religion, docId, maxDocs) {
   let sql = `
     SELECT d.id, d.title, d.author, d.religion, d.collection,
@@ -302,7 +307,11 @@ function getDocumentsInOrder(db, religion, docId, maxDocs) {
   }
 
   const docs = db.prepare(sql).all(...params);
-  return docs.filter(d => !SKIP_TITLES.has(d.title?.toLowerCase()?.trim()));
+  return docs
+    .filter(d => !SKIP_TITLES.has(d.title?.toLowerCase()?.trim()))
+    // Skip tier 1-7 (Bahá'í primary doctrinal) — those are owned by the
+    // Sonnet API path. This local Qwen3 path handles tier 8-9 only.
+    .filter(d => getDocTier(d) >= 8);
 }
 
 function getDocParagraphs(db, docId) {

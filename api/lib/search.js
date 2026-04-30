@@ -320,7 +320,7 @@ export async function initializeIndexes() {
   // filtering and tier-aware ranking inside the multi-index merge.
   const hypeSettings = {
     searchableAttributes: ['question_text'],
-    filterableAttributes: ['paragraph_id', 'doc_id', 'religion', 'collection', 'authority', 'encumbered'],
+    filterableAttributes: ['paragraph_id', 'doc_id', 'religion', 'collection', 'authority', 'encumbered', 'is_thesis'],
     sortableAttributes: ['authority'],
     rankingRules: buildRankingRules(),
     pagination: { maxTotalHits: 50000 },
@@ -821,12 +821,7 @@ export async function searchHypeQuestions(query, options = {}) {
 const RRF_K = 60;
 const DEFAULT_WEIGHTS = {
   main: 1.0,    // paragraphs hybrid (text + context + paragraph embedding)
-  // hype: TEMPORARILY ZEROED — local-LLM HyPE generation has quality issues
-  // (Qwen3-32B-AWQ in /no_think mode + 50-paragraph batches falls back to
-  // stock thematic boilerplate for ~50% of paragraphs). Setting to 0 means
-  // multiIndexSearch returns same results as the main paragraphs hybrid alone
-  // until the generation pipeline is rebuilt. See diagnosis around 2026-04-30.
-  hype: 0
+  hype: 1.5     // HyPE question + thesis match (highest signal — designed to answer)
 };
 
 /**
@@ -993,12 +988,12 @@ export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100
   }
 
   const rows = await queryAll(`
-    SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions,
+    SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
            d.religion, d.collection, d.encumbered, d.title, d.author
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.enhanced_synced = 0
-      AND c.hyp_questions IS NOT NULL
+      AND (c.hyp_questions IS NOT NULL OR c.hyp_thesis IS NOT NULL)
       AND c.deleted_at IS NULL
       AND d.deleted_at IS NULL
     ORDER BY c.id
@@ -1007,18 +1002,37 @@ export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100
 
   if (rows.length === 0) return { processed: 0, indexed: 0, errors: 0 };
 
-  // Build the per-question records (paragraph_id × question_index)
-  const records = []; // { id, paragraph_id, doc_id, religion, collection, authority, encumbered, question_text }
-  const sourceParagraphIds = []; // for delete-then-insert idempotency
-  const questionTexts = []; // batched embedding inputs (parallel to records)
+  // Build the per-question records (paragraph_id × question_index).
+  // Sonnet-tier paragraphs have a hyp_thesis (one-sentence doctrinal claim)
+  // which we ALSO index as a virtual "question" entry alongside the actual
+  // questions — same paragraph_id, suffixed _t. Thesis is searchable both
+  // semantically (via embedding) and via filter on its own field.
+  const records = [];
+  const sourceParagraphIds = [];
+  const questionTexts = [];
 
   for (const row of rows) {
     const questions = parseStoredHypQuestions(row.hyp_questions);
-    if (questions.length === 0) continue;
+    const thesis = (row.hyp_thesis || '').trim();
+    if (questions.length === 0 && !thesis) continue;
     sourceParagraphIds.push(row.paragraph_id);
     let authority = 0;
     try { authority = getAuthority ? getAuthority({ author: row.author, title: row.title }) : 0; }
     catch { authority = 0; }
+    if (thesis) {
+      records.push({
+        id: `${row.paragraph_id}_t`,
+        paragraph_id: row.paragraph_id,
+        doc_id: row.doc_id,
+        religion: row.religion || null,
+        collection: row.collection || null,
+        authority,
+        encumbered: row.encumbered ? 1 : 0,
+        question_text: thesis,
+        is_thesis: 1
+      });
+      questionTexts.push(thesis);
+    }
     questions.forEach((q, qi) => {
       records.push({
         id: `${row.paragraph_id}_${qi}`,
@@ -1028,7 +1042,8 @@ export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100
         collection: row.collection || null,
         authority,
         encumbered: row.encumbered ? 1 : 0,
-        question_text: q
+        question_text: q,
+        is_thesis: 0
       });
       questionTexts.push(q);
     });
