@@ -59,10 +59,10 @@ Periodic poll of an XML/RSS feed to surface time-sensitive items to interested u
 
 ## Schema: `sites.yml`
 
-A single declarative file at `_sites/sites.yml` (inside the Ocean Library Dropbox folder) describes every integrated site. The ingestion + sync orchestration reads from this file; no code change needed to add a Type C navigation-only site.
+A single declarative file at `-sites/sites.yml` (inside the Ocean Library Dropbox folder) describes every integrated site. The ingestion + sync orchestration reads from this file; no code change needed to add a Type C navigation-only site.
 
 ```yaml
-# _sites/sites.yml
+# -sites/sites.yml
 schema_version: 1
 
 sites:
@@ -364,19 +364,19 @@ When `host_site` is set:
 
 The parameter is optional; when absent, the chat behaves as today (no site context).
 
-## Library watcher — special handling for `_sites/`
+## Library watcher — special handling for `-sites/`
 
-The library-watcher currently infers `religion` from the top-level Dropbox folder structure. That breaks for `_sites/oceanlibrary/` — we don't want OceanLibrary content tagged with `religion = 'oceanlibrary'`.
+The library-watcher currently infers `religion` from the top-level Dropbox folder structure. That breaks for `-sites/oceanlibrary/` — we don't want OceanLibrary content tagged with `religion = 'oceanlibrary'`.
 
 The convention:
 
-- Any path containing `_sites/<site-id>/...` is recognized as **mirrored content from a tracked site**.
+- Any path containing `-sites/<site-id>/...` is recognized as **mirrored content from a tracked site**.
 - The watcher consults `sites.yml` for the site config rather than parsing folder names for metadata.
-- The site-specific subfolder structure (e.g., `_sites/oceanlibrary/bahai/bahaullah/hidden-words.md`) is parsed normally for religion + author + work hierarchy, the same way as the regular Dropbox tree — but with `source_site` populated from the path's `<site-id>` segment.
+- The site-specific subfolder structure (e.g., `-sites/oceanlibrary/bahai/bahaullah/hidden-words.md`) is parsed normally for religion + author + work hierarchy, the same way as the regular Dropbox tree — but with `source_site` populated from the path's `<site-id>` segment.
 - Each ingested doc gets `source_site = <site-id>`, `source_path = <path-after-site-id>`, and either `source_id` or `source_url` populated from frontmatter or filename convention (per-site adapter decides).
-- For sitemap-only and api sites (`_sites/ctai/`, `_sites/bahaiblog/`, etc.), the watcher sees the `sitemap.cache.xml` / `pages.cache.json` files and routes to a different ingestion path that populates `site_pages` rather than `docs` + `content`.
+- For sitemap-only and api sites (`-sites/ctai/`, `-sites/bahaiblog/`, etc.), the watcher sees the `sitemap.cache.xml` / `pages.cache.json` files and routes to a different ingestion path that populates `site_pages` rather than `docs` + `content`.
 
-This means **you can drop OceanLibrary content into `_sites/oceanlibrary/` whenever ready** and the existing watcher + parser pick it up correctly without inferring "oceanlibrary" as a religion.
+This means **you can drop OceanLibrary content into `-sites/oceanlibrary/` whenever ready** and the existing watcher + parser pick it up correctly without inferring "oceanlibrary" as a religion.
 
 ## API purposes — documenting how each site is used
 

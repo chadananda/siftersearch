@@ -49,15 +49,16 @@ const IGNORED_PATTERNS = [
   /\.git/,
   /\.DS_Store/,
   // ─── External sites staging area ────────────────────────────────────
-  // The `Ocean Library/sites/` folder holds mirrored content from external
+  // The `Ocean Library/-sites/` folder holds mirrored content from external
   // sources (oceanlibrary.com, bahai-library.com, etc.) per the sites
-  // integration plan in docs/sites-integration.md. Content here is NOT
+  // integration plan in docs/sites-integration.md. The leading dash sorts
+  // it ahead of all religion folders alphabetically. Content here is NOT
   // auto-ingested — each site needs its own adapter that knows the source's
   // URL patterns, duplicate-handling policy, and provenance fields. Until
   // those adapters exist, the watcher ignores the entire tree so users can
   // safely stage source-site content without it landing in the corpus as
   // an unconfigured "religion".
-  /[/\\]sites[/\\]/,
+  /[/\\]-sites[/\\]/,
 ];
 
 let watcher = null;
