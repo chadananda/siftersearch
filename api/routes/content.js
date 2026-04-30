@@ -1,7 +1,7 @@
 // Content CRUD routes — DB-backed docs and conversations.
 //
 // Public reads (no auth):       GET /api/v1/docs/:slug   GET /api/v1/docs
-// Admin writes (X-Admin-Key):   PUT|DELETE /api/v1/admin/docs/:slug etc.
+// Admin writes (X-Admin-Key):   PUT|DELETE /api/v1/admin/pages/:slug etc.
 //
 // Bodies are stored as markdown (body_md). On every write we re-render to
 // body_html so reads can serve pre-rendered HTML — fast, no LLM, no rebuild.
@@ -46,7 +46,7 @@ function isValidSlug(slug) {
 
 export default async function contentRoutes(fastify) {
   // ─── Public: list docs (only published) ─────────────────────────────────────
-  fastify.get('/docs', async (req, reply) => {
+  fastify.get('/pages', async (req, reply) => {
     const section = req.query?.section;
     let sql = 'SELECT slug, section, nav_label, sort_order, title, description, layout, updated_at FROM doc_pages WHERE status = ?';
     const params = ['published'];
@@ -58,7 +58,7 @@ export default async function contentRoutes(fastify) {
   });
 
   // ─── Public: single doc by slug ─────────────────────────────────────────────
-  fastify.get('/docs/:slug', async (req, reply) => {
+  fastify.get('/pages/:slug', async (req, reply) => {
     const { slug } = req.params;
     if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
     const doc = await queryOne(
@@ -90,7 +90,7 @@ export default async function contentRoutes(fastify) {
   });
 
   // ─── Admin: list ALL docs (including draft + archived) ─────────────────────
-  fastify.get('/admin/docs', async (req, reply) => {
+  fastify.get('/admin/pages', async (req, reply) => {
     if (!requireAdminKey(req, reply)) return;
     const rows = await queryAll(
       `SELECT slug, section, nav_label, sort_order, title, description, status, layout,
@@ -103,7 +103,7 @@ export default async function contentRoutes(fastify) {
   });
 
   // ─── Admin: get one doc with raw markdown ─────────────────────────────────
-  fastify.get('/admin/docs/:slug', async (req, reply) => {
+  fastify.get('/admin/pages/:slug', async (req, reply) => {
     if (!requireAdminKey(req, reply)) return;
     const { slug } = req.params;
     if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
@@ -114,7 +114,7 @@ export default async function contentRoutes(fastify) {
   });
 
   // ─── Admin: upsert (create or update) a doc ─────────────────────────────
-  fastify.put('/admin/docs/:slug', async (req, reply) => {
+  fastify.put('/admin/pages/:slug', async (req, reply) => {
     if (!requireAdminKey(req, reply)) return;
     const { slug } = req.params;
     if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
@@ -181,7 +181,7 @@ export default async function contentRoutes(fastify) {
   });
 
   // ─── Admin: soft-delete a doc (status=archived) ────────────────────────
-  fastify.delete('/admin/docs/:slug', async (req, reply) => {
+  fastify.delete('/admin/pages/:slug', async (req, reply) => {
     if (!requireAdminKey(req, reply)) return;
     const { slug } = req.params;
     if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });

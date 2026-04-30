@@ -31,13 +31,13 @@ const docs = defineLiveCollection({
     async loadEntry({ filter }) {
       const slug = filter?.slug;
       if (typeof slug !== 'string') return null;
-      const data = await fetchJson(`${API_BASE}/api/v1/docs/${encodeURIComponent(slug)}`);
+      const data = await fetchJson(`${API_BASE}/api/v1/pages/${encodeURIComponent(slug)}`);
       if (!data?.doc) return null;
       return { id: data.doc.slug, data: data.doc };
     },
     async loadCollection({ filter }) {
       const qs = filter?.section ? `?section=${encodeURIComponent(filter.section)}` : '';
-      const data = await fetchJson(`${API_BASE}/api/v1/docs${qs}`);
+      const data = await fetchJson(`${API_BASE}/api/v1/pages${qs}`);
       if (!data?.docs) return [];
       return data.docs.map((d: any) => ({ id: d.slug, data: d }));
     }
