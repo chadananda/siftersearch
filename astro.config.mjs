@@ -24,6 +24,14 @@ process.env.PUBLIC_API_URL = isDev
 export default defineConfig({
   site: 'https://siftersearch.com',
   output: 'server',
+
+  // Redirects for renamed/restructured docs. Permanent (301) so search
+  // engines update their indexes. Add new entries here when moving content
+  // between slugs; the .astro file at the old slug can be deleted.
+  redirects: {
+    '/docs/chatbot-personality': '/docs/research-assistant'
+  },
+
   adapter: cloudflare({
     platformProxy: {
       enabled: true

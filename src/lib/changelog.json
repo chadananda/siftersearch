@@ -1,6 +1,41 @@
 {
-  "generated": "2026-04-30T02:47:23.982Z",
+  "generated": "2026-04-30T14:32:02.733Z",
   "entries": [
+    {
+      "hash": "1eec9cc",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Rename content routes from /docs to /pages (Swagger UI conflict)",
+      "scope": null
+    },
+    {
+      "hash": "2b54712",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Verify-hype-progress.mjs status + quality sampler",
+      "scope": null
+    },
+    {
+      "hash": "ca84367",
+      "date": "2026-04-29",
+      "type": "Fixed",
+      "description": "Bump CURRENT_VERSION 51->52 + indexing-layers docs page",
+      "scope": null
+    },
+    {
+      "hash": "8b33954",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Tier-aware HyPE pipeline (Sonnet for Bahá'í primary)",
+      "scope": null
+    },
+    {
+      "hash": "dbe8630",
+      "date": "2026-04-29",
+      "type": "Other",
+      "description": "Temporarily zero HyPE merge weight (poisoned questions)",
+      "scope": null
+    },
     {
       "hash": "4c45e9a",
       "date": "2026-04-29",
@@ -3465,45 +3500,47 @@
       "type": "New",
       "description": "Support file moves without re-indexing content",
       "scope": null
-    },
-    {
-      "hash": "689f1a8",
-      "date": "2026-01-07",
-      "type": "Docs",
-      "description": "Add synchronization architecture documentation",
-      "scope": null
-    },
-    {
-      "hash": "37d6f29",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add filename editing in document editor",
-      "scope": null
-    },
-    {
-      "hash": "863ce9a",
-      "date": "2026-01-07",
-      "type": "Refactor",
-      "description": "Simplify path handling - just use path.relative()",
-      "scope": null
-    },
-    {
-      "hash": "ddfd1d1",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use Node path module for reliable path handling in library-watcher",
-      "scope": null
-    },
-    {
-      "hash": "0d2fd25",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Skip already-linked documents in link-source-files",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-04-30": [
+      {
+        "hash": "1eec9cc",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Rename content routes from /docs to /pages (Swagger UI conflict)",
+        "scope": null
+      }
+    ],
     "2026-04-29": [
+      {
+        "hash": "2b54712",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Verify-hype-progress.mjs status + quality sampler",
+        "scope": null
+      },
+      {
+        "hash": "ca84367",
+        "date": "2026-04-29",
+        "type": "Fixed",
+        "description": "Bump CURRENT_VERSION 51->52 + indexing-layers docs page",
+        "scope": null
+      },
+      {
+        "hash": "8b33954",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Tier-aware HyPE pipeline (Sonnet for Bahá'í primary)",
+        "scope": null
+      },
+      {
+        "hash": "dbe8630",
+        "date": "2026-04-29",
+        "type": "Other",
+        "description": "Temporarily zero HyPE merge weight (poisoned questions)",
+        "scope": null
+      },
       {
         "hash": "4c45e9a",
         "date": "2026-04-29",
@@ -7029,41 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Support file moves without re-indexing content",
-        "scope": null
-      },
-      {
-        "hash": "689f1a8",
-        "date": "2026-01-07",
-        "type": "Docs",
-        "description": "Add synchronization architecture documentation",
-        "scope": null
-      },
-      {
-        "hash": "37d6f29",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add filename editing in document editor",
-        "scope": null
-      },
-      {
-        "hash": "863ce9a",
-        "date": "2026-01-07",
-        "type": "Refactor",
-        "description": "Simplify path handling - just use path.relative()",
-        "scope": null
-      },
-      {
-        "hash": "ddfd1d1",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use Node path module for reliable path handling in library-watcher",
-        "scope": null
-      },
-      {
-        "hash": "0d2fd25",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Skip already-linked documents in link-source-files",
         "scope": null
       }
     ]

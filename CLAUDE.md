@@ -54,7 +54,49 @@ npm test        # Run all tests
 npm run build   # Build (must pass)
 ```
 
-### Server Deployment
+### Architecture & Deployment
+
+The system runs across **two surfaces** — keep this distinction in mind for every change:
+
+**Surface 1: tower-nas (origin / data plane)**
+- Fastify API at `localhost:7839`, exposed publicly via Cloudflare Tunnel as `api.siftersearch.com`
+- SQLite content DB at `~/sifter/siftersearch/data/sifter.db` (the source of truth — no D1, no Turso for content)
+- PM2 processes: `siftersearch-api`, `siftersearch-worker`, `siftersearch-enrichment`, `siftersearch-enrichment-api`, `siftersearch-library-watcher`, `siftersearch-updater`, `cloudflared-tunnel`
+- Meilisearch + Dropbox + boss vLLM (boss is a separate machine for local LLM inference)
+- **Deploy path:** push to GitHub → `siftersearch-updater` polls, pulls, restarts PM2 within ~5 min. No build step; runs raw JS.
+
+**Surface 2: Cloudflare Pages + Workers (frontend / edge)**
+- Static Astro build (`output: 'server'`) deployed to Cloudflare Pages at `siftersearch.com`
+- SSR layer runs as Cloudflare Workers at the edge (via `@astrojs/cloudflare` adapter)
+- Workers fetch dynamic content from `api.siftersearch.com` at request time (Live Content Collections)
+- Cloudflare edge cache holds responses per `Cache-Control` headers (typical: `s-maxage=300, stale-while-revalidate=86400`)
+- **Deploy path:** `git commit` triggers pre-commit hook → `npm run build` → `wrangler pages deploy ./dist`. Frontend changes ONLY land via this hook.
+
+**Cloudflare's role (no application logic):** edge cache, R2 (object storage for uploads), Tunnel (exposes tower-nas API publicly), DNS.
+
+**The pre-commit hook (`.git/hooks/pre-commit`)** does, in order:
+1. lint (`npm run lint`) — fail aborts commit
+2. tests (`npm run test`) — fail aborts commit
+3. server-imports check
+4. version bump (`bump-version.js patch`)
+5. build (`npm run build`)
+6. Cloudflare Pages deploy (`wrangler pages deploy ./dist`)
+- `SKIP_CHECKS=1 git commit` skips steps 1-3 but still builds + deploys (use when lint has pre-existing unrelated errors)
+- `git commit --no-verify` skips the ENTIRE hook — frontend changes will NOT reach the live site
+
+**Three deploy paths in practice:**
+
+| Change type | How it ships | Time to live |
+|---|---|---|
+| API/backend code | regular commit + push → updater pulls | ~5 min |
+| Frontend (.astro, .svelte, layouts) | regular commit triggers pre-commit → CF Pages deploy | ~2-3 min after commit |
+| DB content (`doc_pages`, conversations, etc.) | admin API PUT (no commit needed) | edge cache TTL (~5 min) |
+
+**Editing site content without deploying code:**
+- Docs and conversations live in `doc_pages` and `published_conversations` tables (migration 53)
+- Admin CRUD at `/api/v1/admin/pages/:slug` requires `X-Admin-Key: $INTERNAL_API_KEY` header
+- Updates take effect within edge-cache TTL — no rebuild, no deploy
+- See `docs/content-architecture.md` for the full pattern
 
 **Production server:** `tower-nas` (Dell Xeon 80-core, 188GB RAM) via Tailscale
 
