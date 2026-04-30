@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 56;
+const CURRENT_VERSION = 57;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2161,6 +2161,18 @@ const migrations = {
     try { await query('CREATE INDEX IF NOT EXISTS idx_content_external_para ON content(doc_id, external_para_id) WHERE external_para_id IS NOT NULL'); } catch { /* exists */ }
 
     logger.info('Migration 56 complete: external site columns + indexes');
+  },
+
+  57: async () => {
+    // External-source canonical ID on docs. The OceanLibrary adapter writes
+    // the OL `bookid` here; future adapters use the same column. Distinct
+    // from `external_para_id` on content (per-paragraph IDs).
+    logger.info('Starting migration 57: docs.external_id');
+    try { await query('ALTER TABLE docs ADD COLUMN external_id TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_external_id ON docs(external_id) WHERE external_id IS NOT NULL'); } catch { /* exists */ }
+    logger.info('Migration 57 complete: docs.external_id added');
   },
 };
 

@@ -144,22 +144,26 @@ async function harvestBundles(normalizedHashes) {
 
 async function findSupersessionCandidates(incomingHashes, limit = 5) {
   if (incomingHashes.length === 0) return [];
-  // To avoid huge IN clauses on giant docs, chunk if needed.
+  // The original implementation joined content+docs in a single query, which
+  // confused SQLite's planner — even with idx_content_normalized_hash present,
+  // the JOIN pushed it into a near-full content scan (50s on 3.5M rows).
+  //
+  // Split into two phases:
+  //   1. Hash lookup on content alone — tiny, hits the index, returns
+  //      doc_id + match count in milliseconds.
+  //   2. Filter to candidate doc_ids and load metadata from docs table —
+  //      handful of rows, fast lookup by primary key.
   const CHUNK = 500;
-  const accum = new Map(); // doc_id -> matched_count
+  const accum = new Map();
   for (let i = 0; i < incomingHashes.length; i += CHUNK) {
     const chunk = incomingHashes.slice(i, i + CHUNK);
     const placeholders = chunk.map(() => '?').join(',');
     const rows = await queryAll(
-      `SELECT c.doc_id, COUNT(DISTINCT c.normalized_hash) AS matched
-         FROM content c
-         JOIN docs d ON d.id = c.doc_id
-        WHERE c.normalized_hash IN (${placeholders})
-          AND c.deleted_at IS NULL
-          AND d.deleted_at IS NULL
-          AND d.source_site IS NULL
-          AND d.duplicate_of IS NULL
-        GROUP BY c.doc_id`,
+      `SELECT doc_id, COUNT(DISTINCT normalized_hash) AS matched
+         FROM content
+        WHERE normalized_hash IN (${placeholders})
+          AND deleted_at IS NULL
+        GROUP BY doc_id`,
       chunk
     );
     for (const r of rows) {
@@ -167,15 +171,27 @@ async function findSupersessionCandidates(incomingHashes, limit = 5) {
     }
   }
   if (accum.size === 0) return [];
-  const sorted = [...accum.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);
-  // Hydrate doc metadata
+
+  // Take the top N doc_ids by aggregate hash overlap, then look up metadata
+  // and filter out any that are themselves source-site imports or already
+  // marked as duplicates.
+  const sorted = [...accum.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit * 4);
+  const docIds = sorted.map(([id]) => id);
+  const placeholders = docIds.map(() => '?').join(',');
+  const docs = await queryAll(
+    `SELECT id, title, author, paragraph_count, source_site, duplicate_of, deleted_at
+       FROM docs WHERE id IN (${placeholders})`,
+    docIds
+  );
+  const docMap = new Map(docs.map(d => [d.id, d]));
+
   const out = [];
   for (const [docId, matched] of sorted) {
-    const d = await queryOne(
-      'SELECT id, title, author, paragraph_count FROM docs WHERE id = ?',
-      [docId]
-    );
+    const d = docMap.get(docId);
     if (!d) continue;
+    if (d.deleted_at) continue;
+    if (d.source_site) continue;       // skip other imports
+    if (d.duplicate_of) continue;      // skip already-superseded docs
     out.push({
       doc_id: d.id,
       doc_title: d.title,
@@ -183,6 +199,7 @@ async function findSupersessionCandidates(incomingHashes, limit = 5) {
       doc_paragraph_count: d.paragraph_count || 0,
       matched_count: matched
     });
+    if (out.length >= limit) break;
   }
   return out;
 }
