@@ -68,6 +68,13 @@ const conversations = defineLiveCollection({
       );
       if (!data?.conversation) return null;
       return { id: data.conversation.slug, data: data.conversation };
+    },
+    async loadCollection() {
+      // Listing endpoint not yet implemented — return empty until needed.
+      // Index pages still use the build-time `dialogs` collection from
+      // src/content.config.ts; this live one only handles the dynamic
+      // [slug] route for individual conversations.
+      return [];
     }
   },
   schema: z.object({

@@ -1969,9 +1969,11 @@ const migrations = {
   // Anthropic Messages Batches API; for tier 8-9 by local Qwen3.
   52: async () => {
     logger.info('Starting migration 52: HyPE thesis + Sonnet batch tracking');
-    const cols = (await queryAll('PRAGMA table_info(content)')).map(c => c.name);
-    if (!cols.includes('hyp_thesis')) {
-      await query('ALTER TABLE content ADD COLUMN hyp_thesis TEXT');
+    // try/catch idempotency rather than PRAGMA table_info — the query()
+    // helper misclassifies PRAGMA as a write and runs it via stmt.run()
+    // which doesn't return row data, breaking column existence checks.
+    try { await query('ALTER TABLE content ADD COLUMN hyp_thesis TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
     }
     // Enrichment batch tracking — one row per Anthropic Messages Batches submission.
     // Records request → batch_id → status → completed_at, so the API enrichment
@@ -2053,15 +2055,15 @@ const migrations = {
     // Extend published_conversations so the body itself is editable post-publish.
     // Existing rows already store rounds_json; we add markdown-source fields so an
     // editor can adjust per-round prose without re-running the LLM pipeline.
-    const pubConvCols = (await queryAll('PRAGMA table_info(published_conversations)')).map(c => c.name);
-    if (!pubConvCols.includes('body_md')) {
-      await query('ALTER TABLE published_conversations ADD COLUMN body_md TEXT');
+    // Same try/catch pattern as content columns above.
+    try { await query('ALTER TABLE published_conversations ADD COLUMN body_md TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
     }
-    if (!pubConvCols.includes('body_html')) {
-      await query('ALTER TABLE published_conversations ADD COLUMN body_html TEXT');
+    try { await query('ALTER TABLE published_conversations ADD COLUMN body_html TEXT'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
     }
-    if (!pubConvCols.includes('status')) {
-      await query("ALTER TABLE published_conversations ADD COLUMN status TEXT DEFAULT 'published'");
+    try { await query("ALTER TABLE published_conversations ADD COLUMN status TEXT DEFAULT 'published'"); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
     }
 
     logger.info('Migration 53 complete: doc_pages + editable conversation body');
