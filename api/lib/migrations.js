@@ -10,7 +10,7 @@ import { logger } from './logger.js';
 import { generateDocSlug } from './slug.js';
 
 // Current schema version - increment when adding migrations
-const CURRENT_VERSION = 54;
+const CURRENT_VERSION = 55;
 const USER_DB_CURRENT_VERSION = 3;
 
 /**
@@ -2104,6 +2104,25 @@ const migrations = {
     await query('CREATE INDEX IF NOT EXISTS idx_translation_cache_lang ON translation_cache(source_lang, target_lang)');
 
     logger.info('Migration 54 complete: original_doc_id + translation_cache');
+  },
+
+  // Version 55: per-paragraph is_duplicate flag.
+  //
+  // Near-term primitive for sites integration — when content from an external
+  // source duplicates material we already have, we mark the duplicate copy
+  // rather than build full merge logic. Marked paragraphs are skipped by
+  // Meili sync, HyPE enrichment, and default API queries.
+  //
+  // Set manually or by a one-shot dedup script. A future "prune" job can
+  // hard-delete rows where is_duplicate = 1. See docs/sites-integration.md
+  // for the eventual full duplicate-resolution architecture.
+  55: async () => {
+    logger.info('Starting migration 55: content.is_duplicate flag');
+    try { await query('ALTER TABLE content ADD COLUMN is_duplicate INTEGER DEFAULT 0'); } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_not_duplicate ON content(is_duplicate) WHERE is_duplicate = 0 AND deleted_at IS NULL'); } catch { /* exists */ }
+    logger.info('Migration 55 complete: is_duplicate column added');
   },
 };
 

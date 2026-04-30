@@ -995,6 +995,7 @@ export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100
     WHERE c.enhanced_synced = 0
       AND (c.hyp_questions IS NOT NULL OR c.hyp_thesis IS NOT NULL)
       AND c.deleted_at IS NULL
+      AND COALESCE(c.is_duplicate, 0) = 0
       AND d.deleted_at IS NULL
     ORDER BY c.id
     LIMIT ?

@@ -143,6 +143,7 @@ export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
         WHERE doc_id IN (${placeholders})
           AND hyp_thesis IS NULL
           AND deleted_at IS NULL
+          AND COALESCE(is_duplicate, 0) = 0
         ORDER BY doc_id, paragraph_index
         LIMIT ?`,
       [...chunk, remaining]
