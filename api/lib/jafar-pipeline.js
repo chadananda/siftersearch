@@ -346,6 +346,13 @@ function inferWorkFromHistory(messages, currentEntitiesWorkName) {
 export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug }) {
   const retrieved = [];
   const debugCalls = [];
+  // Subagent syntheses — when a document subagent runs, its `answer` field
+  // (the curated synthesis for the user's question) is collected here so the
+  // crafter can use it as authoritative research context. Without this, the
+  // crafter only sees raw excerpts and has to re-do the synthesis from scratch,
+  // which loses the subagent's careful selection (e.g., recognizing that
+  // paragraphs 12-17 of Edwin Arnold's Gita ARE the opening verses).
+  const subagentSyntheses = [];
 
   const harvestPassages = (result, via = 'search') => {
     if (!result?.passages) return;
@@ -454,6 +461,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           });
         }
         harvestExcerpts(sub, 'document_subagent');
+        if (sub?.subagent_answer) {
+          subagentSyntheses.push({
+            via: 'document_subagent',
+            doc_id: primary.document_id,
+            source_title: sub.document?.title || effectiveWorkName,
+            source_author: sub.document?.author || null,
+            answer: sub.subagent_answer
+          });
+        }
       }
     })());
   }
@@ -618,7 +634,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     topics: entities.topics,
     calls: debugCalls.length
   }, 'deterministic research complete');
-  return { retrieved_quotes: trimmed, tool_calls: debugCalls };
+  return { retrieved_quotes: trimmed, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
 }
 
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
@@ -787,8 +803,8 @@ OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`
 
 // Streaming variant — yields each chunk as it arrives. Used in the
 // fast-path orchestrator. Returns the full text at the end.
-export async function craftAnswerStream({ user_question, retrieved_quotes, conversation_summary, user_intent, onChunk, _temperature_override }) {
-  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent });
+export async function craftAnswerStream({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent, onChunk, _temperature_override }) {
+  const userPayload = buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent });
   // gpt-4o for the crafter — the new answer-first prompt requires the
   // model to read the user's question, decide which retrieved_quote
   // actually addresses it (semantic relevance, not just topical keyword
@@ -889,7 +905,7 @@ function stripRestatementSentences(text) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
-function buildCrafterUserPayload({ user_question, retrieved_quotes, conversation_summary, user_intent }) {
+function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syntheses, conversation_summary, user_intent }) {
   const TIER_LABEL = {
     1: 'TIER 1 (Shoghi Effendi — supreme interpreter)',
     2: "TIER 2 ('Abdu'l-Bahá — Center of the Covenant, interpreter)",
@@ -904,6 +920,17 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, conversation
     const tierTag = q.authority_tier ? ` ${TIER_LABEL[q.authority_tier] || ''}` : '';
     return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}] ${q.text}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
+
+  // Subagent synthesis: when a document subagent ran on a specific work, its
+  // curated answer (the LLM's read of the doc for THIS question) is included
+  // here as authoritative research context. Use it to inform the framing of
+  // your reply — but quote only from retrieved_quotes for verbatim text.
+  // For LIST/EXTRACT questions ("who are the people mentioned in chapter 2?"),
+  // the synthesis IS the structured answer; weave it into the reply.
+  const synthesisBlock = (subagent_syntheses && subagent_syntheses.length > 0)
+    ? `\n\nsubagent_synthesis (a specialist sub-agent read the named work and produced this for the user's question — use as context for the reply, but quote verbatim only from retrieved_quotes above):\n\n${subagent_syntheses.map((s, i) => `[S${i + 1}] from "${s.source_title}"${s.source_author ? ` by ${s.source_author}` : ''}:\n${s.answer}`).join('\n\n')}`
+    : '';
+
   return `user_intent: ${user_intent}
 
 user_question: ${user_question}
@@ -912,7 +939,7 @@ conversation_summary: ${conversation_summary || '(this is the opening turn)'}
 
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 
-${quotesPayload || '(no quotes retrieved — reply must say so)'}
+${quotesPayload || '(no quotes retrieved — reply must say so)'}${synthesisBlock}
 
 Compose the reply now.`;
 }
@@ -1126,6 +1153,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
   const draft = await craftAnswerStream({
     user_question: userMessage,
     retrieved_quotes: research.retrieved_quotes,
+    subagent_syntheses: research.subagent_syntheses,
     conversation_summary: conversationSummary,
     user_intent: userIntent,
     _temperature_override: 0.3,

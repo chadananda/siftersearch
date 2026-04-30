@@ -181,19 +181,49 @@ You have three tools:
 - search_in_document: semantic search inside this document. Use to find relevant passages.
 - read_paragraph_range: read a contiguous slice. Use for "read the opening", short docs (≤40 paragraphs read whole), or expanding around a search hit.
 
-Strategy:
-1. Call get_outline first to orient yourself. The outline returns estimated_tokens for the document (or sub-range).
-2. If estimated_tokens ≤ 25000 (a small document), just read the whole thing — call read_paragraph_range once or twice covering the full range. Cheaper and more accurate than searching, because you can see context.
-3. Otherwise, search_in_document semantically (embeddings, not keyword). One well-phrased conceptual query usually finds the relevant section. If the first search misses, try a re-phrasing of the same concept rather than the same words.
-4. Read_paragraph_range around the best hits to get surrounding context (the paragraphs immediately before/after).
-5. Call finish with a concise answer (1-3 sentences) and 3-5 verbatim excerpts.
+First, identify the QUESTION TYPE — this changes which tools to use:
+
+A) CONCEPT question — "What does X teach about Y?" / "Where does X discuss Z?"
+   → search_in_document is the right tool. Find passages that match the concept,
+     then read_paragraph_range around the best hits for context.
+
+B) EXTRACTION/LIST question — "Who are the people mentioned in chapter 2?" /
+   "List the documents cited in the opening" / "What places does the narrator
+   visit in section X?" / "Summarize what happens in part 1."
+   → DO NOT search by abstract concept (e.g., "characters" or "main people" —
+     those are NOT semantic matches for personal names in narrative prose).
+     Instead: use get_outline to identify the relevant section's paragraph range,
+     call read_paragraph_range over that range, then YOU (the LLM reading the
+     returned text) extract the names/places/items the user asked for. The
+     extraction happens in your context after reading, not via search.
+
+C) READING / OPENING question — "Read me the opening of X" / "Show me the
+   beginning of chapter Y."
+   → Skip search entirely. read_paragraph_range over the requested range
+     and return the actual text.
+
+Workflow:
+1. Call get_outline FIRST to see total_paragraphs, estimated_tokens, headings.
+2. Choose strategy based on question type:
+   - Type A (concept): search_in_document with one well-phrased query, then read context around hits.
+   - Type B (extract/list): read_paragraph_range over the relevant section (use headings to bound).
+   - Type C (reading): read_paragraph_range over the requested range.
+3. If estimated_tokens ≤ 25000 (small doc), just read it whole regardless of type.
+4. Call finish with a concise answer (1-3 sentences for concept questions; for
+   list/extract questions, the answer should BE the list, structured in markdown)
+   plus 3-5 verbatim excerpts that ground the answer.
 
 Critical:
 - Use ONLY this document. Do NOT use general knowledge.
-- Verify your excerpts actually answer the user's specific question — not just thematically adjacent material. If the best hits don't address the concept, search again with a different phrasing of the same idea.
-- If after several searches you cannot find passages addressing the question, plainly say in your answer "This document does not appear to discuss that specifically." — do not pretend related material is the answer.
+- For LIST questions, your answer field should contain the structured list itself
+  (markdown bullets fine). The crafter that uses your output will quote excerpts
+  and rely on your synthesis text for the list itself.
+- For CONCEPT questions, verify excerpts actually answer the specific question,
+  not thematically adjacent material.
+- If after several reads/searches you cannot find what's asked, plainly say
+  "This document does not appear to discuss that specifically." — do not invent.
 - Quote VERBATIM. Paragraph_index in excerpts must match what the tools returned.
-- You have up to ${MAX_ITERATIONS} tool calls.`;
+- You have up to ${MAX_ITERATIONS} tool calls — favor reading over re-searching.`;
 }
 
 function buildContextSummary(conversationMessages, currentQuestion) {
