@@ -36,6 +36,7 @@ const DELETE_DELAY_MS = 60000;  // Hold deletes for 60s waiting for matching ADD
 const REINGEST_COOLDOWN_MS = 4 * 60 * 60 * 1000;  // 4 hours - files must be stable this long before ingestion
 const ORPHAN_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;  // Check for orphans every 5 minutes
 const LIBRARY_SCAN_INTERVAL_MS = 60 * 60 * 1000;  // Scan library for stable files every hour
+const SITES_INGEST_INTERVAL_MS = 60 * 60 * 1000;  // Run external-site ingest every hour
 const IGNORED_PATTERNS = [
   // Ignore dotfiles/dotfolders EXCEPT .religion/ and .collection/ (metadata folders)
   (path) => {
@@ -115,6 +116,7 @@ let watcher = null;
 let isEnabled = false;
 let orphanCleanupTimer = null;
 let libraryScanTimer = null;
+let sitesIngestTimer = null;
 let watcherStats = {
   startedAt: null,
   filesIngested: 0,
@@ -836,6 +838,36 @@ async function handleMetaYamlChange(filePath) {
 }
 
 /**
+ * Run one pass of the external-site ingester. Imports lazily so the watcher
+ * doesn't pay the cost of pulling the OpenAI client at boot — only when the
+ * first tick fires (5 min in). Logged at info level so a missing
+ * -sites/sites.yaml shows up cleanly without crashing the watcher.
+ */
+async function runSitesIngestTick() {
+  if (!isEnabled) return;
+  try {
+    const { ingestAllSites } = await import('./sites-ingester.js');
+    const result = await ingestAllSites();
+    logger.info({ sites: result.sites?.length || 0 }, 'Sites-ingester tick complete');
+    for (const s of (result.sites || [])) {
+      if (s.error) {
+        logger.warn({ siteId: s.siteId, err: s.error }, 'Sites-ingester: site failed');
+      } else {
+        logger.info({ siteId: s.siteId, stats: s.stats, reconcile: s.reconcile }, 'Sites-ingester: site ok');
+      }
+    }
+  } catch (err) {
+    if (err.message?.includes('Sites registry missing')) {
+      // No sites configured — perfectly normal, don't spam errors.
+      logger.debug('Sites-ingester: no -sites/sites.yaml, skipping tick');
+      return;
+    }
+    watcherStats.errors++;
+    logger.error({ err: err.message }, 'Sites-ingester tick failed');
+  }
+}
+
+/**
  * Start the library watcher
  * @param {string|string[]} libraryPaths - Path(s) to watch
  */
@@ -924,6 +956,15 @@ export function startLibraryWatcher(libraryPaths) {
       libraryScanTimer = setInterval(scanLibraryForIngestion, LIBRARY_SCAN_INTERVAL_MS);
       // Run initial scan after 30 seconds (let system stabilize)
       setTimeout(scanLibraryForIngestion, 30000);
+
+      // External-site ingester (OceanLibrary, etc.) — runs on its own cadence
+      // alongside the religion-root scan. Sites are staged in -sites/ outside
+      // the religion whitelist, so they're invisible to the watcher's live
+      // events; this scheduled tick is what drives them in.
+      sitesIngestTimer = setInterval(runSitesIngestTick, SITES_INGEST_INTERVAL_MS);
+      // Stagger the first run 5 minutes after the initial library scan
+      // so the two heavy passes don't collide on cold start.
+      setTimeout(runSitesIngestTick, 5 * 60 * 1000);
     });
 }
 
@@ -952,6 +993,12 @@ export async function stopLibraryWatcher() {
     if (libraryScanTimer) {
       clearInterval(libraryScanTimer);
       libraryScanTimer = null;
+    }
+
+    // Clear sites ingest timer
+    if (sitesIngestTimer) {
+      clearInterval(sitesIngestTimer);
+      sitesIngestTimer = null;
     }
 
     // Clear pending deletes and their timers
