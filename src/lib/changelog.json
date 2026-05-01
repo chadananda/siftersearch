@@ -1,6 +1,13 @@
 {
-  "generated": "2026-04-30T23:59:55.080Z",
+  "generated": "2026-05-01T00:23:01.153Z",
   "entries": [
+    {
+      "hash": "2ee72d9",
+      "date": "2026-04-30",
+      "type": "Other",
+      "description": "Bulk-insert paragraphs in one transaction + --limit subset",
+      "scope": null
+    },
     {
       "hash": "e1d268a",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
       "scope": null
-    },
-    {
-      "hash": "6ab38c6",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to sync Meilisearch titles with SQLite",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "2ee72d9",
+        "date": "2026-04-30",
+        "type": "Other",
+        "description": "Bulk-insert paragraphs in one transaction + --limit subset",
+        "scope": null
+      },
       {
         "hash": "e1d268a",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add script to sync Meilisearch paragraphs to SQLite content table",
-        "scope": null
-      },
-      {
-        "hash": "6ab38c6",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to sync Meilisearch titles with SQLite",
         "scope": null
       }
     ]

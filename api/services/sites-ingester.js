@@ -156,7 +156,11 @@ async function findSupersessionCandidates(incomingHashes, limit = 5) {
   //      doc_id + match count in milliseconds.
   //   2. Filter to candidate doc_ids and load metadata from docs table —
   //      handful of rows, fast lookup by primary key.
-  const CHUNK = 500;
+  //
+  // Chunk size: 100 (down from 500). Smaller chunks distribute work more
+  // evenly so any single cold-cache I/O doesn't dominate. Total query count
+  // is higher but each query stays in the warm-cache regime once primed.
+  const CHUNK = 100;
   const accum = new Map();
   for (let i = 0; i < incomingHashes.length; i += CHUNK) {
     const chunk = incomingHashes.slice(i, i + CHUNK);
@@ -424,6 +428,22 @@ export async function ingestSite(siteId, opts = {}) {
   const threshold = opts.threshold ?? siteConfig.supersession_threshold ?? 0.80;
 
   logger.info({ siteId, adapter: siteConfig.adapter || siteId, threshold }, 'Sites-ingester: starting');
+
+  // Pre-warm the supersession index. Run a tiny no-op query against
+  // idx_content_norm_active so SQLite pages it into memory before the
+  // first real supersession query (which would otherwise pay 50s+ of
+  // cold-cache I/O). Cheap: a single index probe with a never-matching
+  // hash pulls in the index pages we'll need.
+  try {
+    const t0 = Date.now();
+    await queryAll(
+      `SELECT doc_id FROM content WHERE normalized_hash = ? AND deleted_at IS NULL LIMIT 1`,
+      ['__warm_cache__']
+    );
+    logger.info({ ms: Date.now() - t0 }, 'Sites-ingester: index pre-warm complete');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Sites-ingester: pre-warm failed (non-fatal)');
+  }
 
   let files = await walkSite(siteRoot);
   // Optional subset for validation runs.

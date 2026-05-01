@@ -26,6 +26,14 @@ function createContentConnection() {
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 30000');
+  // Bump page cache to ~512MB. Default 2MB is far too small for this DB —
+  // the content table indexes alone are ~50MB and we hammer them with
+  // sites-ingester supersession queries. With a generous cache, the
+  // normalized_hash + active partial indexes stay resident in RAM and
+  // 50s cold-cache spikes go away. Each connection gets its own cache;
+  // the worker / library-watcher / ingester all benefit.
+  db.pragma('cache_size = -524288');  // negative = KiB; 512 MB
+  db.pragma('mmap_size = 1073741824'); // 1 GB mmap for read-mostly workloads
   logger.info({ path }, 'Content DB connected (local)');
   return db;
 }
