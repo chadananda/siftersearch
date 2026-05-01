@@ -438,17 +438,137 @@ These purpose strings are exposed to the orchestrator as part of the system prom
 
 ## Implementation phasing
 
-| Phase | Work | Effort |
+| Phase | Work | Status |
 |---|---|---|
-| **0: Schema + sites.yml loader** | Migration adding `source_*` columns + `site_pages` + `site_feed_items` tables. Loader that parses sites.yml at boot. | 0.5 day |
-| **1: Generic mirror adapter framework** | `api/lib/sources/` interface (`enumerate`, `fetch`, `parse`). Three-layer duplicate detector. Tier-driven resolution policy. | 1 day |
-| **2: OceanLibrary adapter + bulk import** | Site-specific discover/fetch/parse. One-time bulk pull. Authority promotion: every canonical work in OceanLibrary becomes the primary; current supplemental versions become alternates. | 2-3 days |
-| **3: bahai-library.com adapter** | Custom parser for their markdown content. PDF staging strategy (don't auto-ingest OCR'd PDFs; queue for review). | 2-3 days |
-| **4: oceanoflights.org adapter** | Specifically for original-language Bahá'í material. May need extra care on Persian/Arabic segmentation alignment. | 1-2 days |
-| **5: Sitemap-only + feed-monitoring** | Type C and D sites — sitemap pull, page-summary generation (cheap LLM pass per page), feed polling. | 1-2 days |
-| **6: Search-side integration** | `source` filter, `include_alternates`, back-link rendering using `content_url_template`. UI surfacing of source provenance. | 0.5 day |
+| **0: Schema + registry loader** | Migration 56 (`docs.source_site`, `source_url`, `duplicate_of`; `content.external_para_id`), migration 57 (`docs.external_id`), migration 58 (`idx_content_norm_active` covering index for supersession). Registry at `<base>/-sites/sites.yaml` with repo default at `config/sites.example.yaml`. | ✅ shipped |
+| **1: Generic adapter framework** | `api/services/site-adapters/<id>.js` contract — `parseDoc(relPath, content, { siteConfig })` and `detectSupersedee(incoming, candidates, opts)`. Sites-ingester at `api/services/sites-ingester.js` orchestrates. Sidecar harvest (HyPE / disambig / external_para_id) on `normalized_hash` cache hit so verbatim paragraphs inherit prior enrichment for free. | ✅ shipped |
+| **2: OceanLibrary adapter + bulk import** | Pandoc-attr-block parser, religion map (Bahá'í→Baha'i, Jainism→Jain, etc.), title+author fuzzy + symmetric paragraph-hash threshold (default 0.80) for supersession. Bulk import via `node scripts/sites-ingest.mjs --site oceanlibrary.com --force`. Auto-restore on file-delete reverses supersession. | ✅ shipped |
+| **3: bahai-library.com adapter** | Custom parser for their markdown content. PDF staging strategy (don't auto-ingest OCR'd PDFs; queue for review). | pending |
+| **4: oceanoflights.org adapter** | Original-language Bahá'í material. Persian/Arabic segmentation alignment with our existing corpus. | pending |
+| **5: Sitemap-only + feed-monitoring** | Type C and D sites — sitemap pull, page-summary generation, feed polling. | pending |
+| **6: Search-side integration** | `source` filter, `include_alternates`, back-link rendering. UI surfacing of source provenance. Back-link URL composition is already supported in `docs.source_url + content.external_para_id`. | partial |
 
-Total: ~9-12 dev-days for the full integration of all five mirror/API sites + sitemap navigation for the rest.
+---
+
+## Operational guide
+
+### Current shape
+
+A site lives at `<library_base>/-sites/<site-id>/`. The `-sites/` parent is excluded from the religion-root whitelist used by the live watcher (`api/services/library-watcher.js`), so files in here never auto-ingest as ordinary content. They flow in only through the **sites-ingester**, which is hooked into the existing `siftersearch-library-watcher` PM2 process via an hourly setInterval (`SITES_INGEST_INTERVAL_MS`).
+
+The full pipeline per file:
+
+1. Discover via walk of `-sites/<id>/` (skipping `.bridge/`, `.site/`, dotfolders)
+2. mtime stability gate (4h cooldown — Dropbox safety) unless `--force`
+3. file_hash short-circuit when the doc already exists and content is unchanged
+4. Adapter `parseDoc()` → normalized `docFields` + `paragraphs[]` with `external_para_id`
+5. `harvestBundles()` — global `normalized_hash` lookup that returns `{embedding, hyp_thesis, hyp_questions, context, context_model}` per matching paragraph. Sidecars carry forward.
+6. OpenAI embedding call ONLY for cache misses
+7. `findSupersessionCandidates()` — top docs by paragraph-hash overlap. Filtered to non-import, non-superseded, non-deleted candidates.
+8. Adapter `detectSupersedee()` decides yes/no using fuzzy title + fuzzy author + symmetric paragraph-overlap threshold
+9. Bulk insert: doc upsert (re-resolved via `SELECT id` after `ON CONFLICT DO UPDATE`), then `bulkInsertParagraphs` in a single transaction
+10. If supersession detected → `markSuperseded()` sets `duplicate_of` on our copy and propagates `is_duplicate=1` to its paragraphs
+11. After all files: `reconcileDeletes()` soft-deletes import docs whose files vanished and **auto-restores** any of our docs that were `duplicate_of` them
+
+### Adding a new site (runbook)
+
+For any new site under `-sites/<new-site-id>/` — Type A mirror, the pattern OceanLibrary uses — adding it is **two files**:
+
+**1. Registry entry** in `<library_base>/-sites/sites.yaml`:
+
+```yaml
+sites:
+  bahai-library.com:
+    adapter: bahai-library
+    supersession_threshold: 0.70   # looser than OL — proofing inconsistent
+    cadence_minutes: 360           # poll less aggressively
+    religion_map:                  # {their religion} → {our religion}
+      "Bahá'í":   "Baha'i"
+      Christian:  Christian
+      # ... whatever religions the site uses
+    notes: |
+      Vast secondary Bahá'í collection — pilgrim notes + scholarship.
+      Lower threshold because their text varies more from our canonical.
+```
+
+Update `config/sites.example.yaml` to mirror the change so a wiped Dropbox folder can be restored from git.
+
+**2. Adapter** at `api/services/site-adapters/<adapter-name>.js` exporting two functions. Use `oceanlibrary.js` as the template:
+
+```js
+export async function parseDoc(relativePath, content, { siteConfig }) {
+  // Your site-specific markdown / format parser. Return:
+  //   { docFields: { title, author, religion, source_site, source_url,
+  //                  external_id, file_path, paragraph_count, ... },
+  //     paragraphs: [{ paragraph_index, text, heading, blocktype,
+  //                    external_para_id }] }
+  //
+  // - religion: pulled from siteConfig.religion_map[<theirs>] for
+  //             cross-site consistency
+  // - external_para_id: per-paragraph ID for deep-link rebuild
+  //                     (`source_url/?paraId=external_para_id` or whatever
+  //                     the site's URL convention is)
+}
+
+export function detectSupersedee(incomingDoc, candidates, opts) {
+  // Decide whether this incoming doc supersedes any of our existing docs.
+  // candidates is sorted DESC by matched_count.
+  // Return { supersedes: doc_id|null, reason, candidates_inspected }.
+  //
+  // OL uses fuzzy title + fuzzy author + symmetric paragraph-overlap
+  // (default 0.80). Re-export _internal helpers from oceanlibrary.js if
+  // you want to reuse the same logic.
+}
+```
+
+That's it. The next sites-ingester tick (or `node scripts/sites-ingest.mjs --site <new-site-id>`) will pick it up.
+
+### Running / debugging
+
+```bash
+# Manual full run for a site
+node scripts/sites-ingest.mjs --site oceanlibrary.com [--force] [--threshold 0.85] [--limit 10]
+
+# Skip the 4h Dropbox cooldown (use after confirmed full sync)
+--force
+
+# First N files only (alphabetical) — useful for validation
+--limit 10
+
+# Override the registry's supersession_threshold for one-off runs
+--threshold 0.70
+```
+
+Useful queries while watching:
+
+```sql
+-- Per-site status
+SELECT source_site, COUNT(*) AS docs,
+       SUM(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) AS active
+  FROM docs WHERE source_site IS NOT NULL
+ GROUP BY source_site;
+
+-- Which of our docs got superseded by which OL doc
+SELECT ours.id, ours.title, theirs.id AS their_id, theirs.source_site
+  FROM docs ours JOIN docs theirs ON ours.duplicate_of = theirs.id
+ WHERE ours.duplicate_of IS NOT NULL
+ LIMIT 20;
+
+-- Supersession-candidate hash overlap for a specific incoming doc
+-- (use to debug "why didn't this match?"):
+SELECT doc_id, COUNT(DISTINCT normalized_hash) AS matched
+  FROM content
+ WHERE normalized_hash IN (... hashes from the new doc ...)
+   AND deleted_at IS NULL
+ GROUP BY doc_id ORDER BY matched DESC LIMIT 5;
+```
+
+### Performance notes
+
+- The `idx_content_norm_active` covering index on `(normalized_hash, doc_id) WHERE deleted_at IS NULL` is what makes supersession queries fast. Run `ANALYZE content` if it's been added but the planner is still picking a different index.
+- Connection-level `cache_size = -524288` (512 MB) and `mmap_size = 1 GB` set in `db.js` — keeps the supersession index resident in memory, eliminates 50s cold-cache spikes seen on the original implementation.
+- Supersession query chunks at 100 hashes (down from 500) for smoother I/O distribution.
+- A pre-warm probe runs at the top of `ingestSite()` so the index is paged in before the first real query.
 
 ---
 
