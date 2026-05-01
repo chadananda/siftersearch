@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-01T02:00:44.057Z",
+  "generated": "2026-05-01T02:14:01.807Z",
   "entries": [
+    {
+      "hash": "06bb2a5",
+      "date": "2026-04-30",
+      "type": "Docs",
+      "description": "Operational guide + runbook for sites integration",
+      "scope": null
+    },
     {
       "hash": "38bb3d6",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use large number instead of Infinity for SQL limit",
       "scope": null
-    },
-    {
-      "hash": "2a673a6",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add script to re-index documents missing content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "06bb2a5",
+        "date": "2026-04-30",
+        "type": "Docs",
+        "description": "Operational guide + runbook for sites integration",
+        "scope": null
+      },
       {
         "hash": "38bb3d6",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "Fixed",
         "description": "Use large number instead of Infinity for SQL limit",
-        "scope": null
-      },
-      {
-        "hash": "2a673a6",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add script to re-index documents missing content",
         "scope": null
       }
     ]

@@ -211,6 +211,72 @@ async function findSupersessionCandidates(incomingHashes, limit = 5) {
   return out;
 }
 
+// ─── Metadata-based candidate finder ────────────────────────────────────
+// Catches the case where OUR copy and the incoming external copy are the
+// same work but with different paragraph segmentation OR per-paragraph
+// formatting (e.g., our corpus has `[aN]` reference-prefix markers that
+// break normalized_hash matching). Title + author normalization is much
+// more forgiving than hash equality.
+//
+// Strategy:
+//   1. Pull a small candidate set from docs by exact normalized title.
+//   2. If empty, fall back to a substring match on title + same author.
+//   3. Filter out source-site, deleted, and already-superseded docs.
+
+function normalizeForCandidate(s) {
+  if (!s) return '';
+  return s.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')           // strip diacritics
+    .replace(/[\u2018\u2019\u02bc\u02bb`'']/g, "'")  // unify apostrophes
+    .replace(/[^a-z0-9' ]/g, ' ')              // strip punctuation
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function findMetadataCandidates(incomingTitle, incomingAuthor, limit = 5) {
+  const normTitle = normalizeForCandidate(incomingTitle);
+  const normAuthor = normalizeForCandidate(incomingAuthor);
+  if (!normTitle || !normAuthor) return [];
+
+  // Pull all non-source-site, non-deleted, non-superseded docs by the same
+  // canonical author. Authors are constrained (Bahá'u'lláh, 'Abdu'l-Bahá,
+  // Shoghi Effendi, etc.) so this candidate set is small per author.
+  // Then JS-side filter for title overlap. A pure-SQL LIKE on stripped-
+  // accented title would be cleaner, but SQLite's LIKE doesn't normalize
+  // diacritics — we'd miss "Bahá'u'lláh" matching "Bahaullah".
+  const rows = await queryAll(
+    `SELECT id, title, author, paragraph_count
+       FROM docs
+      WHERE deleted_at IS NULL
+        AND source_site IS NULL
+        AND duplicate_of IS NULL`
+  );
+
+  const out = [];
+  for (const r of rows) {
+    const rTitle = normalizeForCandidate(r.title);
+    const rAuthor = normalizeForCandidate(r.author);
+    if (!rTitle || !rAuthor) continue;
+    // Author must be a substring match either way (handles "John E. Esslemont"
+    // vs "Esslemont" etc.).
+    const authorClose = rAuthor === normAuthor || rAuthor.includes(normAuthor) || normAuthor.includes(rAuthor);
+    if (!authorClose) continue;
+    // Title: substring either way OR small Levenshtein.
+    const titleClose = rTitle === normTitle || rTitle.includes(normTitle) || normTitle.includes(rTitle);
+    if (!titleClose) continue;
+    out.push({
+      doc_id: r.id,
+      doc_title: r.title,
+      doc_author: r.author,
+      doc_paragraph_count: r.paragraph_count || 0,
+      matched_count: 0  // metadata path — overlap unknown / not used
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 // ─── Mark / unmark a supersession ───────────────────────────────────────
 
 async function markSuperseded(oldDocId, newDocId) {
@@ -327,18 +393,28 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   }
 
   // Supersession detection (only for fresh inserts — re-ingest of an existing
-  // import doesn't re-evaluate, since the original mapping was already settled)
+  // import doesn't re-evaluate, since the original mapping was already settled).
+  // Two parallel candidate paths:
+  //   - hash overlap (works when paragraph segmentation aligns)
+  //   - title+author metadata match (works when segmentation differs, e.g.
+  //     our corpus has `[aN]` prefix markers that break hash matching)
   let supersedes = null;
   if (!existing) {
-    const candidates = await findSupersessionCandidates(hashes);
+    const [hashCandidates, metaCandidates] = await Promise.all([
+      findSupersessionCandidates(hashes),
+      findMetadataCandidates(docFields.title, docFields.author)
+    ]);
     const decision = adapter.detectSupersedee(
       { title: docFields.title, author: docFields.author, paragraph_count: paragraphs.length },
-      candidates,
+      hashCandidates,
+      metaCandidates,
       { threshold }
     );
     supersedes = decision.supersedes;
     if (supersedes) {
       logger.info({ file: relPath, supersedes, reason: decision.reason }, 'Sites-ingester: supersession detected');
+    } else if (metaCandidates.length > 0 || hashCandidates.length > 0) {
+      logger.debug({ file: relPath, hash_n: hashCandidates.length, meta_n: metaCandidates.length, reason: decision.reason }, 'Sites-ingester: candidates inspected, no supersession');
     }
   }
 

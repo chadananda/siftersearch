@@ -225,30 +225,35 @@ function fuzzyAuthorMatch(a, b) {
  * Decide whether an incoming OceanLibrary doc supersedes an existing one in
  * our corpus.
  *
- * Logic:
- *   1. Hash-overlap candidates: top docs that share normalized_hash with the
- *      incoming paragraphs (callerprovides this map: incoming hash → matching
- *      existing { doc_id, count }).
- *   2. For the top candidate, fuzzy-match title + author.
- *   3. Symmetric content threshold: min(matched/incoming_count,
- *      matched/existing_count) >= threshold (default 0.80).
+ * Two independent signals — either is sufficient:
  *
- * The caller is responsible for the SQL — this function takes the already-
- * computed candidate list so the adapter is fast and unit-testable.
+ *   A. Hash overlap (existing path): candidates from `findSupersessionCandidates`.
+ *      If symmetric paragraph-overlap >= threshold AND title+author fuzzy-match,
+ *      supersede. This is the strong signal when both corpora segment paragraphs
+ *      identically.
+ *
+ *   B. Metadata match (new path): candidates from `findMetadataCandidates`
+ *      where title and author match after normalization. Necessary because
+ *      our existing corpus has `[aN]` reference-prefix markers + slightly
+ *      different paragraph segmentation than OceanLibrary, so verbatim-text
+ *      paragraphs hash differently and signal A produces 0% overlap on
+ *      genuinely-identical works.
+ *      Sanity gate: paragraph count within 0.4..2.5 ratio (catches truncated
+ *      excerpts and multi-work compilations posing under a canonical title).
+ *
+ * Either candidate list may be passed; we union them and evaluate.
  *
  * @param {object} incomingDoc - { title, author, paragraph_count }
- * @param {Array<{ doc_id, doc_title, doc_author, doc_paragraph_count, matched_count }>} candidates
+ * @param {Array} hashCandidates - from findSupersessionCandidates
+ * @param {Array} metadataCandidates - from findMetadataCandidates (optional)
  * @param {object} opts - { threshold = 0.80 }
  * @returns {{ supersedes: number|null, reason: string, candidates_inspected }}
  */
-export function detectSupersedee(incomingDoc, candidates, opts = {}) {
+export function detectSupersedee(incomingDoc, hashCandidates, metadataCandidates = [], opts = {}) {
   const threshold = opts.threshold ?? 0.80;
-  if (!candidates || candidates.length === 0) {
-    return { supersedes: null, reason: 'no candidates', candidates_inspected: 0 };
-  }
 
-  // Candidates should be sorted by matched_count DESC. Inspect the top.
-  for (const c of candidates) {
+  // Signal A — hash-overlap path. Candidates already sorted DESC by matched.
+  for (const c of hashCandidates || []) {
     const titleOk = fuzzyTitleMatch(incomingDoc.title, c.doc_title);
     const authorOk = fuzzyAuthorMatch(incomingDoc.author, c.doc_author);
     const symRatio = Math.min(
@@ -258,16 +263,39 @@ export function detectSupersedee(incomingDoc, candidates, opts = {}) {
     if (titleOk && authorOk && symRatio >= threshold) {
       return {
         supersedes: c.doc_id,
-        reason: `title+author match, ${(symRatio * 100).toFixed(1)}% paragraph overlap (${c.matched_count}/${incomingDoc.paragraph_count} new vs ${c.doc_paragraph_count} existing)`,
-        candidates_inspected: candidates.length
+        reason: `hash-match: title+author OK, ${(symRatio * 100).toFixed(1)}% paragraph overlap (${c.matched_count}/${incomingDoc.paragraph_count} new vs ${c.doc_paragraph_count} existing)`,
+        candidates_inspected: (hashCandidates?.length || 0) + (metadataCandidates?.length || 0)
       };
     }
   }
 
+  // Signal B — metadata-match path. Falls back when paragraph segmentation
+  // differs (e.g., our `[aN]` prefix tokens prevent verbatim hash matches).
+  for (const c of metadataCandidates || []) {
+    const titleOk = fuzzyTitleMatch(incomingDoc.title, c.doc_title);
+    const authorOk = fuzzyAuthorMatch(incomingDoc.author, c.doc_author);
+    if (!titleOk || !authorOk) continue;
+    // Paragraph-count sanity gate. 0.4..2.5 covers normal segmentation
+    // differences without admitting truncated excerpts or compilations.
+    const ratio = incomingDoc.paragraph_count / Math.max(c.doc_paragraph_count, 1);
+    if (ratio < 0.4 || ratio > 2.5) {
+      continue;
+    }
+    return {
+      supersedes: c.doc_id,
+      reason: `metadata-match: title+author OK, paragraph count ${incomingDoc.paragraph_count} vs ${c.doc_paragraph_count} (ratio ${ratio.toFixed(2)})`,
+      candidates_inspected: (hashCandidates?.length || 0) + (metadataCandidates?.length || 0)
+    };
+  }
+
+  const total = (hashCandidates?.length || 0) + (metadataCandidates?.length || 0);
+  if (total === 0) {
+    return { supersedes: null, reason: 'no candidates', candidates_inspected: 0 };
+  }
   return {
     supersedes: null,
-    reason: `top candidate (doc_id=${candidates[0].doc_id}) failed title/author/threshold check`,
-    candidates_inspected: candidates.length
+    reason: `${total} candidates inspected, none passed title/author/threshold gates`,
+    candidates_inspected: total
   };
 }
 
