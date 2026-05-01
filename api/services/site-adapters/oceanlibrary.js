@@ -102,8 +102,28 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const religionMap = (siteConfig && siteConfig.religion_map) || DEFAULT_RELIGION_MAP;
   const ourReligion = religionMap[frontmatter.ocean_category] || frontmatter.ocean_category;
 
-  // Split body into blocks on blank lines
-  const rawBlocks = body.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+  // Split body into blocks on blank lines.
+  //
+  // Footnote definitions (`[^N]: …`) at the end of OL files are written on
+  // consecutive lines with no blank-line separation, so they collapse into
+  // one giant block (e.g. the Aqdas's 209 footnotes → one 143 KB block →
+  // OpenAI 8192-token embed rejection). Pre-split any block containing
+  // footnote definitions on the per-line `[^…]:` pattern, then drop the
+  // footnote sub-blocks entirely — they're reference apparatus, not body
+  // text, and the inline footnote markers (`[^N]`) inside paragraphs are
+  // sufficient for the reader to recognise the citation.
+  const rawBlocks = body.split(/\n{2,}/)
+    .flatMap(b => {
+      // If the block contains footnote definitions, split each one off and
+      // discard them.
+      if (/^\[\^[^\]]+\]:/m.test(b)) {
+        return b.split(/\n(?=\[\^[^\]]+\]:)/)
+          .filter(part => !/^\[\^[^\]]+\]:/.test(part.trim()));
+      }
+      return [b];
+    })
+    .map(b => b.trim())
+    .filter(Boolean);
 
   const paragraphs = [];
   let currentHeading = '';

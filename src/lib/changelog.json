@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-01T02:14:01.807Z",
+  "generated": "2026-05-01T02:38:54.703Z",
   "entries": [
+    {
+      "hash": "382c795",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Title+author metadata path for supersession detection",
+      "scope": null
+    },
     {
       "hash": "06bb2a5",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add body_hash for metadata-only updates",
       "scope": null
-    },
-    {
-      "hash": "e1a81e7",
-      "date": "2026-01-07",
-      "type": "Fixed",
-      "description": "Use large number instead of Infinity for SQL limit",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "382c795",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Title+author metadata path for supersession detection",
+        "scope": null
+      },
       {
         "hash": "06bb2a5",
         "date": "2026-04-30",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-07",
         "type": "New",
         "description": "Add body_hash for metadata-only updates",
-        "scope": null
-      },
-      {
-        "hash": "e1a81e7",
-        "date": "2026-01-07",
-        "type": "Fixed",
-        "description": "Use large number instead of Infinity for SQL limit",
         "scope": null
       }
     ]
