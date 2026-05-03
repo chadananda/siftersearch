@@ -377,17 +377,74 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
       merged.sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
     }
 
+    // Enrich hits with source-site provenance + external paragraph IDs so
+    // OL (and other sites) can render proper deep-links. The Meili paragraph
+    // index doesn't carry these fields — pull them from SQLite at result time
+    // (one keyed lookup per result, batched).
+    const top = merged.slice(0, safeLimit);
+    const docIds = [...new Set(top.map(h => h.doc_id || h.document_id).filter(Boolean))];
+    let docMeta = new Map();
+    if (docIds.length > 0) {
+      const placeholders = docIds.map(() => '?').join(',');
+      const docRows = await queryAll(
+        `SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
+        docIds
+      );
+      docMeta = new Map(docRows.map(r => [r.id, r]));
+    }
+    // Pull external_para_id per (doc_id, paragraph_index) for OL hits.
+    const olHits = top.filter(h => {
+      const m = docMeta.get(h.doc_id || h.document_id);
+      return m && m.source_site;
+    });
+    let paraExtIds = new Map();
+    if (olHits.length > 0) {
+      // Build (doc_id, paragraph_index) → external_para_id map. One IN per doc.
+      for (const docId of new Set(olHits.map(h => h.doc_id || h.document_id))) {
+        const indices = olHits
+          .filter(h => (h.doc_id || h.document_id) === docId)
+          .map(h => h.paragraph_index);
+        const placeholders = indices.map(() => '?').join(',');
+        const rows = await queryAll(
+          `SELECT paragraph_index, external_para_id FROM content
+            WHERE doc_id = ? AND paragraph_index IN (${placeholders}) AND deleted_at IS NULL`,
+          [docId, ...indices]
+        );
+        for (const r of rows) {
+          if (r.external_para_id) {
+            paraExtIds.set(`${docId}:${r.paragraph_index}`, r.external_para_id);
+          }
+        }
+      }
+    }
+
     return {
-      passages: merged.slice(0, safeLimit).map(hit => ({
-        text: (hit.text || '').substring(0, 500),
-        title: hit.title || 'Unknown',
-        author: hit.author || '',
-        religion: hit.religion || '',
-        collection: hit.collection || '',
-        document_id: hit.doc_id || hit.document_id,
-        paragraph_index: hit.paragraph_index,
-        ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
-      }))
+      passages: top.map(hit => {
+        const docId = hit.doc_id || hit.document_id;
+        const meta = docMeta.get(docId);
+        const extParaId = paraExtIds.get(`${docId}:${hit.paragraph_index}`);
+        const result = {
+          text: (hit.text || '').substring(0, 500),
+          title: hit.title || 'Unknown',
+          author: hit.author || '',
+          religion: hit.religion || '',
+          collection: hit.collection || '',
+          document_id: docId,
+          paragraph_index: hit.paragraph_index,
+          ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
+        };
+        // External-site provenance: surface source_site + ready-to-use deep link
+        if (meta?.source_site && meta?.source_url) {
+          result.source_site = meta.source_site;
+          if (extParaId) {
+            result.source_url = `${meta.source_url}/?paraId=${extParaId}`;
+            result.external_para_id = extParaId;
+          } else {
+            result.source_url = meta.source_url; // doc-level fallback
+          }
+        }
+        return result;
+      })
     };
   }
 

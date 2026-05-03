@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-01T02:38:54.703Z",
+  "generated": "2026-05-03T03:24:10.431Z",
   "entries": [
+    {
+      "hash": "8fd1e55",
+      "date": "2026-04-30",
+      "type": "Fixed",
+      "description": "Skip footnote definitions in OceanLibrary adapter",
+      "scope": null
+    },
     {
       "hash": "382c795",
       "date": "2026-04-30",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Skip AI segmentation for punctuated English text",
       "scope": null
-    },
-    {
-      "hash": "32be47e",
-      "date": "2026-01-07",
-      "type": "New",
-      "description": "Add body_hash for metadata-only updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-04-30": [
+      {
+        "hash": "8fd1e55",
+        "date": "2026-04-30",
+        "type": "Fixed",
+        "description": "Skip footnote definitions in OceanLibrary adapter",
+        "scope": null
+      },
       {
         "hash": "382c795",
         "date": "2026-04-30",
@@ -7057,15 +7064,6 @@
         "date": "2026-01-08",
         "type": "Performance",
         "description": "Skip AI segmentation for punctuated English text",
-        "scope": null
-      }
-    ],
-    "2026-01-07": [
-      {
-        "hash": "32be47e",
-        "date": "2026-01-07",
-        "type": "New",
-        "description": "Add body_hash for metadata-only updates",
         "scope": null
       }
     ]
