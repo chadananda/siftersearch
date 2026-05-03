@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-03T03:24:10.431Z",
+  "generated": "2026-05-03T03:41:52.965Z",
   "entries": [
+    {
+      "hash": "0445c8f",
+      "date": "2026-05-02",
+      "type": "Other",
+      "description": "Surface source_site + per-paragraph deep links",
+      "scope": null
+    },
     {
       "hash": "8fd1e55",
       "date": "2026-04-30",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Support HTML comments for section headings in unsegmented RTL texts",
       "scope": null
-    },
-    {
-      "hash": "a21480e",
-      "date": "2026-01-08",
-      "type": "Performance",
-      "description": "Skip AI segmentation for punctuated English text",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-02": [
+      {
+        "hash": "0445c8f",
+        "date": "2026-05-02",
+        "type": "Other",
+        "description": "Surface source_site + per-paragraph deep links",
+        "scope": null
+      }
+    ],
     "2026-04-30": [
       {
         "hash": "8fd1e55",
@@ -7057,13 +7066,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "Support HTML comments for section headings in unsegmented RTL texts",
-        "scope": null
-      },
-      {
-        "hash": "a21480e",
-        "date": "2026-01-08",
-        "type": "Performance",
-        "description": "Skip AI segmentation for punctuated English text",
         "scope": null
       }
     ]

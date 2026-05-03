@@ -56,7 +56,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  */
 async function getDocumentMeta(docId) {
   return queryOne(`
-    SELECT id, title, author, religion, collection, language, year, description, filename
+    SELECT id, title, author, religion, collection, language, year, description, filename,
+           duplicate_of, deleted_at, source_site
     FROM docs WHERE id = ?
   `, [docId]);
 }
@@ -116,6 +117,38 @@ async function syncDocument(docId) {
   const paragraphs = await content.getDirtyParagraphsForDoc(docId);
   if (paragraphs.length === 0) return { success: true, synced: 0 };
 
+  // Doc-level removal path. When the doc has been superseded (duplicate_of
+  // set) or soft-deleted, the whole thing comes out of Meili: delete every
+  // paragraph and the doc record itself, mark all dirty rows synced. Saves
+  // index storage and prevents marked-duplicate copies from showing up in
+  // search results alongside the canonical version.
+  if (doc.duplicate_of != null || doc.deleted_at != null) {
+    const meili2 = meili;
+    try {
+      const documentsIndex = meili2.index('documents');
+      const paragraphsIndex = meili2.index('paragraphs');
+      const paraIds = paragraphs.map(p => p.id);
+      // Delete doc + paragraphs in parallel
+      const [docTask, paraTask] = await Promise.all([
+        documentsIndex.deleteDocument(doc.id),
+        paragraphsIndex.deleteDocuments(paraIds)
+      ]);
+      await waitForMeiliTask(meili2, docTask);
+      await waitForMeiliTask(meili2, paraTask);
+      await content.markSynced(paraIds);
+      logger.info({ docId, paragraphs: paraIds.length, reason: doc.duplicate_of ? 'duplicate' : 'deleted' }, 'Document removed from Meilisearch');
+      return { success: true, synced: paraIds.length, removed: true };
+    } catch (err) {
+      logger.error({ docId, err: err.message }, 'Failed to remove duplicate/deleted document from Meilisearch');
+      return { success: false, reason: err.message };
+    }
+  }
+
+  // Per-paragraph split: rows with is_duplicate=1 OR deleted_at set get
+  // DELETED from Meili; the rest go through the normal upsert path.
+  const toDelete = paragraphs.filter(p => p.is_duplicate || p.deleted_at);
+  const toUpsert = paragraphs.filter(p => !p.is_duplicate && !p.deleted_at);
+
   const authority = getAuthority(doc);
 
   const meiliDoc = {
@@ -136,7 +169,7 @@ async function syncDocument(docId) {
     created_at: new Date().toISOString()
   };
 
-  const meiliParagraphs = paragraphs.map(p => {
+  const meiliParagraphs = toUpsert.map(p => {
     let embedding = blobToFloatArray(p.embedding);
     if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
       embedding = null; // Wrong dimensions — FTS-only (logged at doc level below)
@@ -170,9 +203,9 @@ async function syncDocument(docId) {
     return record;
   });
 
-  const wrongDimCount = meiliParagraphs.filter(p => !p._vectors && paragraphs.find(pp => pp.id === p.id)?.embedding).length;
+  const wrongDimCount = meiliParagraphs.filter(p => !p._vectors && toUpsert.find(pp => pp.id === p.id)?.embedding).length;
   if (wrongDimCount > 0) {
-    logger.warn({ docId, wrongDimCount, total: paragraphs.length }, 'Paragraphs with wrong-dimension embeddings (FTS-only)');
+    logger.warn({ docId, wrongDimCount, total: toUpsert.length }, 'Paragraphs with wrong-dimension embeddings (FTS-only)');
   }
 
   try {
@@ -181,6 +214,13 @@ async function syncDocument(docId) {
 
     // Submit document (don't wait for completion)
     const docTask = await documentsIndex.addDocuments([meiliDoc]);
+
+    // Submit per-paragraph DELETEs for is_duplicate / deleted rows. One
+    // batched delete-by-id call covers them all.
+    let deleteTask = null;
+    if (toDelete.length > 0) {
+      deleteTask = await paragraphsIndex.deleteDocuments(toDelete.map(p => p.id));
+    }
 
     // Submit all paragraph batches without waiting — collect task UIDs for verification
     const submittedBatches = []; // { taskUid, ids }
@@ -199,6 +239,15 @@ async function syncDocument(docId) {
     // Wait for the doc task and all paragraph tasks to complete
     await waitForMeiliTask(meili, docTask);
     const confirmedIds = [];
+    if (deleteTask) {
+      try {
+        await waitForMeiliTask(meili, deleteTask);
+        confirmedIds.push(...toDelete.map(p => p.id));
+        logger.info({ docId, removed: toDelete.length }, 'Removed duplicate/deleted paragraphs from Meilisearch');
+      } catch (err) {
+        logger.error({ docId, err: err.message }, 'Meilisearch delete task failed — will retry next cycle');
+      }
+    }
     for (const batch of submittedBatches) {
       try {
         await waitForMeiliTask(meili, batch.taskUid);

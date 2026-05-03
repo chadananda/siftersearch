@@ -750,13 +750,18 @@ async function getDirtyParagraphsBatch(limit = 50) {
  * Get dirty paragraphs for a specific document.
  */
 async function getDirtyParagraphsForDoc(docId, limit = 500) {
-  // embedding column excluded — worker reads 512-dim vectors from embedding_cache.db
+  // embedding column excluded — worker reads 512-dim vectors from embedding_cache.db.
+  // Includes both deleted_at IS NULL and deleted_at IS NOT NULL rows: when
+  // a paragraph is soft-deleted OR marked is_duplicate=1, we still need to
+  // drive its REMOVAL from Meili. The worker decides upsert vs. delete from
+  // the is_duplicate / deleted_at flags.
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
            embedding_model, content_hash, normalized_hash,
-           translation, translation_segments, context
+           translation, translation_segments, context,
+           is_duplicate, deleted_at
     FROM content
-    WHERE doc_id = ? AND synced = 0 AND deleted_at IS NULL
+    WHERE doc_id = ? AND synced = 0
     ORDER BY paragraph_index
     LIMIT ?
   `, [docId, limit]);
