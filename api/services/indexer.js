@@ -21,6 +21,10 @@ import { getAuthority } from '../lib/authority.js';
 import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } from '../lib/db.js';
 import { content } from '../lib/content.js';
 import { detectLanguageFeatures } from './segmenter.js';
+import {
+  normalizeForEmbedding as sharedNormalizeForEmbedding,
+  hashNormalized as sharedHashNormalized
+} from '../lib/text-normalize.js';
 import { config } from '../lib/config.js';
 import { hashContent, parseMarkdownFrontmatter } from './ingester.js';
 
@@ -83,25 +87,11 @@ function computeContentHash(text, context = '') {
  * @param {string} text - The paragraph text
  * @returns {string} Normalized text
  */
-function normalizeForEmbedding(text) {
-  return text
-    .replace(/<[^>]+>/g, '')           // Remove HTML tags
-    .replace(/\s+/g, ' ')              // Collapse whitespace
-    .replace(/[^\p{L}\p{N}\s]/gu, '')  // Remove punctuation (keep letters, numbers, spaces)
-    .toLowerCase()
-    .trim();
-}
-
-/**
- * Compute normalized hash for embedding deduplication
- * Same semantic content across documents will have same normalized_hash
- * @param {string} text - The paragraph text
- * @returns {string} MD5 hash of normalized text
- */
-function computeNormalizedHash(text) {
-  const normalized = normalizeForEmbedding(text);
-  return crypto.createHash('md5').update(normalized).digest('hex');
-}
+// Aliased imports — see api/lib/text-normalize.js for the canonical
+// implementations. The local names are kept so internal call sites in this
+// file don't need to change.
+const normalizeForEmbedding = sharedNormalizeForEmbedding;
+const computeNormalizedHash = sharedHashNormalized;
 
 /**
  * Get cached embeddings from libsql for paragraphs that haven't changed
@@ -338,9 +328,14 @@ async function storeInLibsql(document, paragraphs) {
 }
 
 /**
- * Parse document text into paragraphs/chunks
+ * Chunk markdown document text into embedder-sized paragraphs.
+ *
+ * Disambiguated from `parseDocument` in api/services/ingester.js — the
+ * ingester one returns full document records (frontmatter + paragraphs +
+ * metadata) for the ingestion pipeline; this one returns ONLY the chunked
+ * text array suitable for embedding generation.
  */
-export function parseDocument(text, options = {}) {
+export function chunkDocumentForIndexing(text, options = {}) {
   const {
     maxChunkSize = CHUNK_CONFIG.maxChunkSize,
     minChunkSize = CHUNK_CONFIG.minChunkSize,
@@ -474,8 +469,8 @@ export async function indexDocumentFromText(text, metadata = {}) {
     description: extractedMeta.description || metadata.description || description
   };
 
-  // Parse into chunks
-  const chunks = parseDocument(content);
+  // Chunk into embedder-sized blocks
+  const chunks = chunkDocumentForIndexing(content);
 
   if (chunks.length === 0) {
     throw new Error('Document has no content to index');
@@ -988,7 +983,7 @@ export async function getEmbeddingCacheStats() {
 }
 
 export const indexer = {
-  parseDocument,
+  chunkDocumentForIndexing,
   parseMarkdownFrontmatter,
   indexDocumentFromText,
   batchIndexDocuments,

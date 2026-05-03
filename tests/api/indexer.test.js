@@ -5,7 +5,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseDocument, parseMarkdownFrontmatter } from '../../api/services/indexer.js';
+// Tests use the local alias `parseDocument` for the chunker — keeps the test
+// readable while the production code uses the disambiguated name.
+import { chunkDocumentForIndexing as parseDocument, parseMarkdownFrontmatter } from '../../api/services/indexer.js';
 
 describe('Document Parser', () => {
   describe('parseDocument', () => {

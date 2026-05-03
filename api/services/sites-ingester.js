@@ -19,7 +19,6 @@
 
 import { readFile, readdir, stat } from 'fs/promises';
 import { join, relative } from 'path';
-import { createHash } from 'crypto';
 import yaml from 'yaml';
 
 import { logger } from '../lib/logger.js';
@@ -30,6 +29,10 @@ import { aiService } from '../lib/ai-services.js';
 // default. Use the named export so `content.deleteParagraphsByDoc` resolves;
 // `import * as content` would land in the wrong namespace.
 import { content } from '../lib/content.js';
+import {
+  hashNormalized as normalizedHash,
+  hashContent as fileHashOf
+} from '../lib/text-normalize.js';
 
 const EMBEDDING_MODEL = config.ai.embeddings.model;
 const REINGEST_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4h — match watcher
@@ -69,18 +72,9 @@ async function loadAdapter(adapterName) {
 }
 
 // ─── Hash helpers ───────────────────────────────────────────────────────
-
-const HTML_RE = /<[^>]+>/g;
-const NON_WORD_RE = /[^\p{L}\p{N}\s]/gu;
-function normalizeForEmbedding(t) {
-  return t.replace(HTML_RE, '').replace(/\s+/g, ' ').replace(NON_WORD_RE, '').toLowerCase().trim();
-}
-function normalizedHash(text) {
-  return createHash('md5').update(normalizeForEmbedding(text)).digest('hex');
-}
-function fileHashOf(text) {
-  return createHash('md5').update(text).digest('hex');
-}
+// Delegated to api/lib/text-normalize.js (imported at the top of this file)
+// so the regex used to dedup paragraphs cannot drift between this service,
+// the ingester, and the indexer.
 
 // ─── Walk a site for .md files ──────────────────────────────────────────
 
