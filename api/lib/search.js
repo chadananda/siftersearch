@@ -540,49 +540,14 @@ export async function semanticSearch(query, options = {}) {
  * @param {object} options.filters - {religion, collection, doc_id, encumbered}
  * @returns {Object} { hits: [{paragraph_id, doc_id, religion, authority, question_text, _semanticScore}], ... }
  */
+// HyPE search delegated to api/lib/search/hype.js.
+import {
+  searchHypeQuestions as _searchHypeQuestions,
+  syncHypeBatch as _syncHypeBatch
+} from './search/hype.js';
+
 export async function searchHypeQuestions(query, options = {}) {
-  const meili = getMeili();
-  if (!meili || !query || !query.trim()) return { hits: [] };
-  const { limit = 10, filters = {} } = options;
-
-  // Generate embedding for the user's query — same embedder as paragraphs
-  // so vector geometry is comparable across indexes.
-  let vector;
-  try {
-    const { embedding } = await createEmbedding(query, { caller: 'hype-search' });
-    vector = embedding;
-  } catch (err) {
-    logger.warn({ err: err.message }, 'HyPE search: embedding generation failed');
-    return { hits: [] };
-  }
-
-  const meiliFilters = [];
-  if (filters.religion) meiliFilters.push(`religion = "${filters.religion.replace(/"/g, '\\"')}"`);
-  if (filters.collection) meiliFilters.push(`collection = "${filters.collection.replace(/"/g, '\\"')}"`);
-  // Accept either camelCase (from executeSearch) or snake_case for doc_id
-  const docIdFilter = typeof filters.documentId === 'number' ? filters.documentId
-    : (typeof filters.doc_id === 'number' ? filters.doc_id : null);
-  if (docIdFilter !== null) meiliFilters.push(`doc_id = ${docIdFilter}`);
-  if (filters.encumbered === false) meiliFilters.push('encumbered != 1');
-
-  try {
-    const result = await meili.index(INDEXES.HYPE_QUESTIONS).search(query, {
-      vector,
-      hybrid: { semanticRatio: 0.85, embedder: 'default' },
-      limit,
-      ...(meiliFilters.length ? { filter: meiliFilters.join(' AND ') } : {}),
-      showRankingScore: true,
-      attributesToRetrieve: ['id', 'paragraph_id', 'doc_id', 'religion', 'collection', 'authority', 'question_text']
-    });
-    const hits = (result.hits || []).map(h => ({
-      ...h,
-      _semanticScore: h._rankingScore || 0
-    }));
-    return { hits, processingTimeMs: result.processingTimeMs };
-  } catch (err) {
-    logger.warn({ err: err.message, query }, 'HyPE search failed');
-    return { hits: [] };
-  }
+  return _searchHypeQuestions({ getMeili, INDEXES }, query, options);
 }
 
 // ─── Multi-index merged search (RRF) ──────────────────────────────────────
@@ -735,158 +700,9 @@ export async function multiIndexSearch(query, options = {}) {
  * Storage format: newline-separated, already de-numbered/de-bulleted by
  * parseHyPEResponse. Filter empty lines defensively.
  */
-function parseStoredHypQuestions(raw) {
-  if (!raw || typeof raw !== 'string') return [];
-  // Some old rows may have been stored as JSON arrays — handle both
-  if (raw.startsWith('[')) {
-    try {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) return arr.map(q => String(q).trim()).filter(Boolean);
-    } catch { /* fall through to newline split */ }
-  }
-  return raw.split('\n').map(s => s.trim()).filter(Boolean);
-}
-
-/**
- * Sync a batch of HyPE-enriched paragraphs to the sidecar index.
- * Returns { processed, indexed, errors } counts.
- *
- * @param {object} options
- * @param {function} options.queryAll - SQL query function (queryAll from api/lib/db.js)
- * @param {function} options.query - SQL exec function (query from api/lib/db.js)
- * @param {function} options.getAuthority - authority lookup (from api/lib/authority.js)
- * @param {number} options.limit - max paragraphs per batch
- */
-export async function syncHypeBatch({ queryAll, query, getAuthority, limit = 100 } = {}) {
-  if (!queryAll || !query) {
-    throw new Error('syncHypeBatch requires queryAll and query (from api/lib/db.js)');
-  }
-  const meili = getMeili();
-  if (!meili) {
-    return { processed: 0, indexed: 0, errors: 0, skipped: 'meili-unavailable' };
-  }
-
-  const rows = await queryAll(`
-    SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
-           d.religion, d.collection, d.encumbered, d.title, d.author
-    FROM content c
-    JOIN docs d ON d.id = c.doc_id
-    WHERE c.enhanced_synced = 0
-      AND (c.hyp_questions IS NOT NULL OR c.hyp_thesis IS NOT NULL)
-      AND c.deleted_at IS NULL
-      AND COALESCE(c.is_duplicate, 0) = 0
-      AND d.deleted_at IS NULL
-    ORDER BY c.id
-    LIMIT ?
-  `, [limit]);
-
-  if (rows.length === 0) return { processed: 0, indexed: 0, errors: 0 };
-
-  // Build the per-question records (paragraph_id × question_index).
-  // Sonnet-tier paragraphs have a hyp_thesis (one-sentence doctrinal claim)
-  // which we ALSO index as a virtual "question" entry alongside the actual
-  // questions — same paragraph_id, suffixed _t. Thesis is searchable both
-  // semantically (via embedding) and via filter on its own field.
-  const records = [];
-  const sourceParagraphIds = [];
-  const questionTexts = [];
-
-  for (const row of rows) {
-    const questions = parseStoredHypQuestions(row.hyp_questions);
-    const thesis = (row.hyp_thesis || '').trim();
-    if (questions.length === 0 && !thesis) continue;
-    sourceParagraphIds.push(row.paragraph_id);
-    let authority = 0;
-    try { authority = getAuthority ? getAuthority({ author: row.author, title: row.title }) : 0; }
-    catch { authority = 0; }
-    if (thesis) {
-      records.push({
-        id: `${row.paragraph_id}_t`,
-        paragraph_id: row.paragraph_id,
-        doc_id: row.doc_id,
-        religion: row.religion || null,
-        collection: row.collection || null,
-        authority,
-        encumbered: row.encumbered ? 1 : 0,
-        question_text: thesis,
-        is_thesis: 1
-      });
-      questionTexts.push(thesis);
-    }
-    questions.forEach((q, qi) => {
-      records.push({
-        id: `${row.paragraph_id}_${qi}`,
-        paragraph_id: row.paragraph_id,
-        doc_id: row.doc_id,
-        religion: row.religion || null,
-        collection: row.collection || null,
-        authority,
-        encumbered: row.encumbered ? 1 : 0,
-        question_text: q,
-        is_thesis: 0
-      });
-      questionTexts.push(q);
-    });
-  }
-
-  if (records.length === 0) {
-    // All rows had empty hyp_questions — mark them synced anyway so we don't loop
-    if (sourceParagraphIds.length > 0) {
-      const placeholders = sourceParagraphIds.map(() => '?').join(',');
-      await query(`UPDATE content SET enhanced_synced = 1 WHERE id IN (${placeholders})`, sourceParagraphIds);
-    }
-    return { processed: rows.length, indexed: 0, errors: 0 };
-  }
-
-  // Batch-embed all questions. createEmbeddings handles internal batching.
-  let embeddings;
-  try {
-    const result = await createEmbeddings(questionTexts, { caller: 'hype-sync' });
-    embeddings = result.embeddings;
-  } catch (err) {
-    logger.error({ err: err.message, count: questionTexts.length }, 'HyPE sync: embedding generation failed');
-    return { processed: 0, indexed: 0, errors: rows.length };
-  }
-  if (!Array.isArray(embeddings) || embeddings.length !== records.length) {
-    logger.error({ got: embeddings?.length, expected: records.length }, 'HyPE sync: embedding count mismatch');
-    return { processed: 0, indexed: 0, errors: rows.length };
-  }
-
-  // Attach embeddings — format MUST match what other workers use:
-  // `_vectors: { default: <flat array> }`. The shorthand `{embeddings, regenerate}`
-  // form is silently accepted by Meili but doesn't actually populate the vector
-  // store (numberOfEmbeddings stays 0). Verified against sync-processor.js:168.
-  const meiliDocs = records.map((r, i) => ({
-    ...r,
-    _vectors: { default: embeddings[i] }
-  }));
-
-  // Idempotency: delete prior rows for these paragraph_ids, then insert.
-  // Meili supports filter-based delete on a primary-keyed index.
-  try {
-    const filterStr = `paragraph_id IN [${sourceParagraphIds.join(',')}]`;
-    await meili.index(INDEXES.HYPE_QUESTIONS).deleteDocuments({ filter: filterStr });
-  } catch (err) {
-    logger.warn({ err: err.message }, 'HyPE sync: prior-rows delete failed (continuing)');
-  }
-
-  try {
-    await meili.index(INDEXES.HYPE_QUESTIONS).addDocuments(meiliDocs, { primaryKey: 'id' });
-  } catch (err) {
-    logger.error({ err: err.message, count: meiliDocs.length }, 'HyPE sync: addDocuments failed');
-    return { processed: 0, indexed: 0, errors: rows.length };
-  }
-
-  // Mark source paragraphs synced
-  const placeholders = sourceParagraphIds.map(() => '?').join(',');
-  await query(`UPDATE content SET enhanced_synced = 1 WHERE id IN (${placeholders})`, sourceParagraphIds);
-
-  logger.info({
-    paragraphs: rows.length,
-    questions_indexed: meiliDocs.length
-  }, 'HyPE sidecar sync batch complete');
-
-  return { processed: rows.length, indexed: meiliDocs.length, errors: 0 };
+// syncHypeBatch delegated to api/lib/search/hype.js (imported above as _syncHypeBatch).
+export async function syncHypeBatch(opts = {}) {
+  return _syncHypeBatch({ getMeili, INDEXES }, opts);
 }
 
 /**
