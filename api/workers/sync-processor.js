@@ -699,11 +699,19 @@ function shutdown() {
   }, 60000);
 }
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+// Only start the worker loop when this file is run directly (PM2 entry).
+// When imported as a module (tests), the consumer wires up its own state.
+const isMain = import.meta.url === `file://${process.argv[1]}` ||
+               process.argv[1]?.endsWith('sync-processor.js');
+if (isMain) {
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+  workerLoop().catch(err => {
+    logger.error({ err: err.message }, 'Sync processor crashed');
+    process.exit(1);
+  });
+}
 
-// Start
-workerLoop().catch(err => {
-  logger.error({ err: err.message }, 'Sync processor crashed');
-  process.exit(1);
-});
+// Exported for tests — syncDocument is the central pipeline operation.
+// Production callers should still use the worker loop (PM2 entry).
+export { syncDocument, getDocumentMeta };

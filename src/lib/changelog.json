@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-03T03:41:52.965Z",
+  "generated": "2026-05-03T04:34:56.491Z",
   "entries": [
+    {
+      "hash": "7db1d60",
+      "date": "2026-05-02",
+      "type": "Other",
+      "description": "Skip indexing duplicates + remove existing from Meili",
+      "scope": null
+    },
     {
       "hash": "0445c8f",
       "date": "2026-05-02",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "AI structural analysis for RTL text segmentation",
       "scope": null
-    },
-    {
-      "hash": "d5a2e1b",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Support HTML comments for section headings in unsegmented RTL texts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-02": [
+      {
+        "hash": "7db1d60",
+        "date": "2026-05-02",
+        "type": "Other",
+        "description": "Skip indexing duplicates + remove existing from Meili",
+        "scope": null
+      },
       {
         "hash": "0445c8f",
         "date": "2026-05-02",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-08",
         "type": "New",
         "description": "AI structural analysis for RTL text segmentation",
-        "scope": null
-      },
-      {
-        "hash": "d5a2e1b",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Support HTML comments for section headings in unsegmented RTL texts",
         "scope": null
       }
     ]

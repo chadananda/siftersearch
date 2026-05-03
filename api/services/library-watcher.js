@@ -1057,3 +1057,13 @@ export async function triggerLibraryScan() {
     filesIngested: watcherStats.lastScanFilesIngested
   };
 }
+
+// Exported for tests — private helpers for the religion-root whitelist.
+// Not part of the public API; consumers should use startLibraryWatcher.
+export const _internal = {
+  discoverReligionRoots,
+  isInReligionFolder,
+  setReligionRootsForTest: (roots) => { religionRoots = new Set(roots); },
+  getReligionRootsForTest: () => new Set(religionRoots),
+  IGNORED_PATTERNS
+};
