@@ -14,113 +14,30 @@ import { getImportProgress, getIngestionProgress, getIndexingProgress, getCached
 
 let client = null;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Search Results Cache (LRU with TTL)
-// Increased from 100/5min to 500/15min for better cache hit rate
-// ─────────────────────────────────────────────────────────────────────────────
+// In-memory cache extracted to api/lib/search/cache.js. Re-exported here so
+// existing importers (api/index.js prewarmCache call, agent-librarian.js
+// getSearchCacheStats, etc.) keep working unchanged.
+import {
+  getCachedSearch,
+  setCachedSearch,
+  clearSearchCache,
+  getSearchCacheStats,
+  POPULAR_QUERIES
+} from './search/cache.js';
 
-const SEARCH_CACHE_MAX_SIZE = 500;  // Max cached queries (increased from 100)
-const SEARCH_CACHE_TTL_MS = 15 * 60 * 1000;  // 15 minute TTL (increased from 5min)
-
-// Map<cacheKey, { hits, estimatedTotalHits, timestamp }>
-const searchCache = new Map();
-
-/**
- * Generate cache key from query (normalized)
- */
-function getCacheKey(query) {
-  return query.toLowerCase().trim();
-}
+export { clearSearchCache, getSearchCacheStats, POPULAR_QUERIES };
 
 /**
- * Get cached search results if still valid
- * @param {string} query - Search query
- * @param {boolean} trackStats - Whether to increment hit/miss counters (default true)
- */
-function getCachedSearch(query, trackStats = true) {
-  const key = getCacheKey(query);
-  const cached = searchCache.get(key);
-
-  if (!cached) {
-    if (trackStats) cacheMisses++;
-    return null;
-  }
-
-  // Check TTL
-  if (Date.now() - cached.timestamp > SEARCH_CACHE_TTL_MS) {
-    searchCache.delete(key);
-    if (trackStats) cacheMisses++;
-    return null;
-  }
-
-  // Move to end (LRU behavior)
-  searchCache.delete(key);
-  searchCache.set(key, cached);
-
-  if (trackStats) cacheHits++;
-  return cached;
-}
-
-/**
- * Store search results in cache
- */
-function setCachedSearch(query, hits, estimatedTotalHits) {
-  const key = getCacheKey(query);
-
-  // Evict oldest entries if at capacity
-  while (searchCache.size >= SEARCH_CACHE_MAX_SIZE) {
-    const oldestKey = searchCache.keys().next().value;
-    searchCache.delete(oldestKey);
-  }
-
-  searchCache.set(key, {
-    hits,
-    estimatedTotalHits,
-    timestamp: Date.now()
-  });
-}
-
-/**
- * Clear search cache (for testing or manual refresh)
- */
-export function clearSearchCache() {
-  searchCache.clear();
-  logger.debug('Search cache cleared');
-}
-
-// Track cache hits/misses for performance monitoring
-let cacheHits = 0;
-let cacheMisses = 0;
-
-/**
- * Get search cache stats with hit rate
- */
-export function getSearchCacheStats() {
-  const total = cacheHits + cacheMisses;
-  return {
-    size: searchCache.size,
-    maxSize: SEARCH_CACHE_MAX_SIZE,
-    ttlMs: SEARCH_CACHE_TTL_MS,
-    hits: cacheHits,
-    misses: cacheMisses,
-    hitRate: total > 0 ? (cacheHits / total * 100).toFixed(1) + '%' : 'N/A'
-  };
-}
-
-/**
- * Pre-warm the search cache with common queries
- * Called during server startup for faster initial responses
- * @param {string[]} queries - Array of common queries to pre-warm
+ * Pre-warm the cache with common queries. Stays in this file because it
+ * calls keywordSearch which lives below; extracting it would create a
+ * circular import.
  */
 export async function prewarmCache(queries) {
   logger.info({ queryCount: queries.length }, 'Pre-warming search cache');
-
   const startTime = Date.now();
   let warmed = 0;
-
   for (const query of queries) {
     try {
-      // Only prewarm if not already cached
       if (!getCachedSearch(query)) {
         await keywordSearch(query, { limit: 10 });
         warmed++;
@@ -129,43 +46,10 @@ export async function prewarmCache(queries) {
       logger.warn({ query, err: err.message }, 'Failed to pre-warm cache for query');
     }
   }
-
   const elapsedMs = Date.now() - startTime;
   logger.info({ warmed, totalQueries: queries.length, elapsedMs }, 'Search cache pre-warmed');
   return { warmed, elapsedMs };
 }
-
-/**
- * Popular queries to pre-warm on startup
- * Core spiritual concepts that users frequently search for
- */
-export const POPULAR_QUERIES = [
-  // Core concepts
-  'prayer',
-  'love',
-  'God',
-  'faith',
-  'peace',
-  'unity',
-  'justice',
-  'truth',
-  'soul',
-  'spirit',
-  // Common phrases
-  'divine unity',
-  'spiritual growth',
-  'world peace',
-  'inner peace',
-  'purpose of life',
-  // Central figures
-  "Bahá'u'lláh",
-  "Abdu'l-Baha",
-  'Shoghi Effendi',
-  // Practices
-  'meditation',
-  'fasting',
-  'pilgrimage'
-];
 
 /**
  * Check if Meilisearch is enabled
@@ -495,120 +379,15 @@ export async function hybridSearch(query, options = {}) {
   };
 }
 
-/**
- * Simple Levenshtein distance for short strings
- */
-function levenshtein(a, b) {
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
-
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      matrix[i][j] = b[i-1] === a[j-1]
-        ? matrix[i-1][j-1]
-        : Math.min(matrix[i-1][j-1] + 1, matrix[i][j-1] + 1, matrix[i-1][j] + 1);
-    }
-  }
-  return matrix[b.length][a.length];
-}
-
-/**
- * Strip Arabic diacritics (tashkeel) for normalization.
- * Range U+064B–U+065F covers fathah, dammah, kasrah, shadda, sukun, etc.
- */
-function stripTashkeel(text) {
-  return text.replace(/[\u064B-\u065F\u0670]/g, '');
-}
-
-/**
- * Check if text contains a fuzzy match for a term
- * Allows typos based on Meilisearch rules: 1 typo for 5+ chars, 2 for 9+ chars
- * @param {string} text - Text to search in
- * @param {string} term - Term to find
- * @returns {boolean} True if fuzzy match found
- */
-function textContainsFuzzy(text, term) {
-  const lowerText = stripTashkeel(text.toLowerCase());
-  const lowerTerm = stripTashkeel(term.toLowerCase());
-
-  // Exact or prefix match (fast path)
-  // Use Unicode-aware word boundary for Arabic support
-  if (lowerText.includes(lowerTerm)) return true;
-
-  // Fuzzy match: extract words and check Levenshtein distance
-  // Meilisearch: 1 typo for 5-8 chars, 2 typos for 9+ chars
-  const maxTypos = lowerTerm.length >= 9 ? 2 : (lowerTerm.length >= 5 ? 1 : 0);
-  if (maxTypos === 0) return false; // No typo tolerance for short terms
-
-  // Extract words using Unicode-aware pattern (supports Arabic, Latin, etc.)
-  const words = lowerText.match(/[\p{L}\p{N}]+/gu) || [];
-  return words.some(word => {
-    // Only compare words of similar length (within 2 chars)
-    if (Math.abs(word.length - lowerTerm.length) > 2) return false;
-    return levenshtein(word, lowerTerm) <= maxTypos;
-  });
-}
-
-/**
- * Check if text contains all query terms (with fuzzy/typo tolerance)
- * @param {Object} hit - Meilisearch hit with text
- * @param {string[]} terms - Query terms (min 2 chars, non-stop-words)
- * @returns {boolean} True if all terms have matches
- */
-function hasAllTermMatches(hit, terms) {
-  const text = hit.text || '';
-  return terms.every(term => textContainsFuzzy(text, term));
-}
-
-/**
- * Calculate phrase match score for ranking
- * Higher score = better match (exact phrase > proximity > scattered)
- * @param {string} text - Text to score
- * @param {string} query - Original query (with stop words)
- * @param {string[]} terms - Query terms (without stop words)
- * @returns {number} Score (0-100)
- */
-function calculatePhraseScore(text, query, terms) {
-  const lowerText = stripTashkeel(text.toLowerCase());
-  const lowerQuery = stripTashkeel(query.toLowerCase());
-
-  // Exact phrase match (highest priority) - score 100
-  if (lowerText.includes(lowerQuery)) {
-    return 100;
-  }
-
-  // Check for terms appearing close together (within ~50 chars)
-  // Build a regex that allows words between terms
-  if (terms.length >= 2) {
-    // Try to find all terms within a 100-char window
-    const positions = terms.map(term => {
-      const idx = lowerText.indexOf(stripTashkeel(term));
-      return idx;
-    }).filter(p => p >= 0);
-
-    if (positions.length === terms.length) {
-      const minPos = Math.min(...positions);
-      const maxPos = Math.max(...positions);
-      const spread = maxPos - minPos;
-
-      // Close proximity (within 100 chars) - score 50-80
-      if (spread < 100) {
-        return 80 - Math.floor(spread / 5); // 80 for adjacent, down to 60 for 100 chars apart
-      }
-      // Medium proximity (100-300 chars) - score 30-50
-      if (spread < 300) {
-        return 50 - Math.floor((spread - 100) / 10);
-      }
-    }
-  }
-
-  // All terms present but scattered - score 10
-  return 10;
-}
+// Fuzzy text helpers extracted to api/lib/search/fuzzy.js. They're pure
+// functions with no DB or Meili dependencies.
+import {
+  levenshtein,
+  stripTashkeel,
+  textContainsFuzzy,
+  hasAllTermMatches,
+  calculatePhraseScore
+} from './search/fuzzy.js';
 
 /**
  * Keyword-only search (faster, no embedding needed)
