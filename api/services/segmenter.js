@@ -15,6 +15,7 @@ import { logger } from '../lib/logger.js';
 import { content } from '../lib/content.js';
 import { wrapSentence, stripMarkers, hasMarkers, validateMarkers, verifyMarkedText } from '../lib/markers.js';
 import { segmentHebrew } from '../lib/segmenter-hebrew.js';
+import { isAiSegmentedLanguage } from '../lib/constants/languages.js';
 
 /**
  * Configuration for segmentation
@@ -136,8 +137,7 @@ export function getSegmentationStatus(body, meta = {}) {
 
   // Only Arabic-script languages need AI segmentation — English and other
   // LTR languages come with punctuation and paragraph structure already present
-  const AI_SEGMENTED_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
-  if (!AI_SEGMENTED_LANGUAGES.includes(language)) {
+  if (!isAiSegmentedLanguage(language)) {
     return { status: 'no-segmentation-needed', language, reason: `Language "${language}" uses standard punctuation` };
   }
 

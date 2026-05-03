@@ -18,6 +18,7 @@ import { detectLanguageFeatures, batchAddSentenceMarkers, segmentUnpunctuatedDoc
 import { generateDocSlug, slugifyPath } from '../lib/slug.js';
 import { pushRedirect } from '../lib/cloudflare-redirects.js';
 import { deleteDocument as deleteFromMeilisearch } from '../lib/search.js';
+import { isAiSegmentedLanguage } from '../lib/constants/languages.js';
 import { stripMarkers, hasMarkers, validateMarkers } from '../lib/markers.js';
 import config from '../lib/config.js';
 import { content } from '../lib/content.js';
@@ -1495,11 +1496,10 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     };
   }
 
-  // Validate paragraph lengths for non-RTL languages only
-  // RTL languages (Arabic, Farsi, Hebrew, Urdu) use AI segmentation which handles long text
-  // English and other LTR languages must have properly-segmented paragraphs in advance
-  const AI_SEGMENTED_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
-  const languageUsesAISegmentation = AI_SEGMENTED_LANGUAGES.includes(finalMeta.language);
+  // Validate paragraph lengths for non-RTL languages only.
+  // RTL languages (Arabic, Farsi, Hebrew, Urdu) use AI segmentation which handles long text;
+  // English and other LTR languages must have properly-segmented paragraphs in advance.
+  const languageUsesAISegmentation = isAiSegmentedLanguage(finalMeta.language);
 
   if (!languageUsesAISegmentation) {
     const oversizedChunks = chunks
