@@ -87,9 +87,11 @@ const start = async () => {
     // site-only chatbots will route to their own indexes.
     try {
       const { setSiteRegistry } = await import('./lib/search/scope.js');
+      const { setAuthoritySiteRegistry } = await import('./lib/authority.js');
       const { loadAllSiteConfigs } = await import('./services/sites-ingester.js');
       const configs = await loadAllSiteConfigs();
       setSiteRegistry(configs);
+      setAuthoritySiteRegistry(configs);
       const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').map(c => c.id);
       const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').map(c => c.id);
       logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Site registry loaded');

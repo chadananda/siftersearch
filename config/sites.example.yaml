@@ -34,11 +34,14 @@
 sites:
   oceanlibrary.com:
     adapter: oceanlibrary
-    scope: supplemental
-    authority_default: 7
+    scope: primary                   # OL IS the canonical proofread version of
+                                     # primary corpus material; supersession
+                                     # marks our copies as duplicate_of OL docs
     encumbered: false
-    hype_policy: auto
-    meili_index_prefix: ol
+    hype_policy: auto                # OL has full HyPE coverage — original behavior
+    # No meili_index_prefix → shares the primary `paragraphs` index. No
+    # authority_default — real authority comes from religion + collection
+    # meta.yaml just like any other primary doc.
     supersession_threshold: 0.80
     cadence_minutes: 60
     religion_map:

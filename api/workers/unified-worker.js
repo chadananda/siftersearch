@@ -574,6 +574,8 @@ async function workerLoop() {
     const configs = await loadAllSiteConfigs();
     siteRegistryByDomain = configs;
     setSiteRegistry(configs);
+    const { setAuthoritySiteRegistry } = await import('../lib/authority.js');
+    setAuthoritySiteRegistry(configs);
     const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').length;
     const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').length;
     logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Worker: site registry loaded');

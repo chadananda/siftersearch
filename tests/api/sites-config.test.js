@@ -37,8 +37,15 @@ describe('sites.example.yaml — parsing + required fields', () => {
     }
   });
 
-  it('every site declares a meili_index_prefix', () => {
+  it('every site with a per-site index has a valid prefix; primary-shared sites omit prefix', () => {
     for (const [id, cfg] of Object.entries(example)) {
+      // scope: primary or null prefix → shares the primary `paragraphs` index;
+      // no prefix needed (oceanlibrary.com pattern).
+      if (cfg.scope === 'primary' || cfg.meili_index_prefix === null) {
+        expect(cfg.meili_index_prefix, `${id} should have null/absent prefix when sharing primary`).toBeFalsy();
+        continue;
+      }
+      // Site-only and non-primary supplementals MUST have a clean prefix.
       expect(cfg.meili_index_prefix, `${id} missing meili_index_prefix`).toBeTruthy();
       expect(cfg.meili_index_prefix).toMatch(/^[a-z][a-z0-9]*$/);
     }

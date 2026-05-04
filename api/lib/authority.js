@@ -132,7 +132,7 @@ export function getAuthority(doc) {
   }
 
   const libAuth = loadLibraryAuthority();
-  const { religion, collection } = doc;
+  const { religion, collection, source_site } = doc;
 
   // 2. Check collection-specific authority from meta.yaml (primary source)
   if (religion && collection && libAuth.collections[religion]?.[collection] !== undefined) {
@@ -144,7 +144,20 @@ export function getAuthority(doc) {
     return libAuth.religions[religion];
   }
 
-  // 4. Fallback to author-based authority (Central Figures)
+  // 4. External-site authority floor from sites.yaml. Lazy-load to avoid
+  // circular import (scope.js doesn't import from authority.js).
+  // Supplementals like bahai-library.com (authority_default 3) get a low
+  // ranking floor here; primary docs at the SAME relevance score outrank
+  // them. Site-only sites land here too if their content somehow leaks
+  // into a search context, but the scope wall should prevent that.
+  if (source_site) {
+    const cfg = getSiteRegistryConfig(source_site);
+    if (cfg && typeof cfg.authority_default === 'number') {
+      return Math.min(10, Math.max(0, cfg.authority_default));
+    }
+  }
+
+  // 5. Fallback to author-based authority (Central Figures)
   if (doc.author) {
     for (const [authorPattern, authorityValue] of Object.entries(AUTHOR_AUTHORITY)) {
       if (doc.author.includes(authorPattern)) {
@@ -153,8 +166,22 @@ export function getAuthority(doc) {
     }
   }
 
-  // 5. Return global default
+  // 6. Return global default
   return DEFAULT_AUTHORITY;
+}
+
+// Site registry hook. Wired at boot from api/index.js + worker startup so
+// getAuthority can read authority_default per source_site without a circular
+// import on api/lib/search/scope.js (scope.js → authority.js would create
+// the cycle). Defaults to null, meaning step 4 silently skips and we fall
+// through to author-based authority.
+let _siteRegistryRef = null;
+export function setAuthoritySiteRegistry(registry) {
+  _siteRegistryRef = registry || null;
+}
+function getSiteRegistryConfig(sourceSite) {
+  if (!_siteRegistryRef) return null;
+  return _siteRegistryRef[sourceSite] || null;
 }
 
 /**
