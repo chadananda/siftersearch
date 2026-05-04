@@ -16,12 +16,14 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili, syncHypeBatch } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
+import { setSiteRegistry } from '../lib/search/scope.js';
+import { loadAllSiteConfigs } from '../services/sites-ingester.js';
 import { getNextPendingJob as getNextPendingTranslationJob, cleanupExpiredJobs, updateJobHeartbeat, recoverStuckJobs, markJobForRetry } from '../services/jobs.js';
 import { processTranslationJob } from '../services/translation.js';
 import { processAudioJob } from '../services/audio.js';
@@ -29,6 +31,11 @@ import { notifyJobComplete, processEmailQueue } from '../services/email.js';
 import { JOB_TYPES } from '../services/jobs.js';
 import { reportUsageToStripe } from '../lib/billing.js';
 import { runBackup, shouldRunBackup } from '../lib/backup.js';
+
+// Site registry populated at boot from sites.yaml. Used to resolve
+// source_site → meili_index_prefix for sync routing AND to drive the
+// site-only DB sync loop. Empty = primary-only routing (pre-sites behavior).
+let siteRegistryByDomain = {};
 
 // ============================================================
 // Configuration
@@ -121,7 +128,20 @@ async function processSyncJob(job) {
       return;
     }
     const documentsIndex = meili.index('documents');
-    const paragraphsIndex = meili.index('paragraphs');
+    // Resolve a doc's source_site → Meili paragraph index name.
+    // Primary docs (source_site IS NULL) → 'paragraphs'. Supplementals
+    // route to siftersearch_<prefix>_paragraphs based on sites.yaml. Null
+    // prefix (OL pattern) keeps docs in the primary index.
+    const indexNameForDoc = (doc) => {
+      if (!doc?.source_site) return 'paragraphs';
+      const cfg = siteRegistryByDomain[doc.source_site];
+      if (!cfg) {
+        logger.warn({ source_site: doc.source_site, doc_id: doc.id }, 'Sync routing: no registry entry, using primary index');
+        return 'paragraphs';
+      }
+      if (!cfg.meili_index_prefix) return 'paragraphs';
+      return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
+    };
     // Process one doc at a time, paragraph batches of PARA_BATCH_SIZE.
     // Large docs (10K+ paragraphs) would OOM if loaded all at once.
     while (!isShuttingDown) {
@@ -173,6 +193,10 @@ async function processSyncJob(job) {
               religion: doc.religion, collection: doc.collection, language: doc.language,
               year: doc.year ? parseInt(doc.year, 10) : null, authority,
               heading: p.heading || '', blocktype: p.blocktype || 'paragraph',
+              source_site: doc.source_site || null,
+              source_url: doc.source_url || null,
+              external_para_id: p.external_para_id || null,
+              pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
               created_at: new Date().toISOString(),
               _vectors: { default: embedding }
             });
@@ -182,9 +206,10 @@ async function processSyncJob(job) {
             logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
           }
           try {
-            await paragraphsIndex.addDocuments(meiliParas);
+            const targetIndex = meili.index(indexNameForDoc(doc));
+            await targetIndex.addDocuments(meiliParas);
           } catch (err) {
-            logger.error({ err: err.message, docId: doc.id, batchSize: meiliParas.length }, 'Paragraph batch failed');
+            logger.error({ err: err.message, docId: doc.id, source_site: doc.source_site, batchSize: meiliParas.length }, 'Paragraph batch failed');
             failedItems += meiliParas.length;
           }
           // Always mark synced — even on Meilisearch failure, don't retry the same batch forever
@@ -386,11 +411,91 @@ async function runHypeSyncCycle() {
   lastHypeSyncTime = Date.now();
 }
 
+// Sync site-only DB content to per-site Meili indexes. Site-only sites live
+// in their own SQLite at data/sites/<prefix>.db (separate from main sifter.db);
+// the main sync_jobs table doesn't cover them, so we pump them from the
+// periodic-tasks loop. Idempotent: only synced=0 rows pushed; flag flips
+// after Meili confirms the task. Per-site failures logged but never kill
+// the loop.
+async function runSiteOnlySyncCycle() {
+  const meili = await getMeili();
+  if (!meili) return;
+  const siteOnlyConfigs = Object.values(siteRegistryByDomain).filter(c => c.scope === 'site-only');
+  if (siteOnlyConfigs.length === 0) return;
+
+  for (const cfg of siteOnlyConfigs) {
+    if (isShuttingDown) return;
+    try {
+      const synced = await syncOneSiteOnlyDb(meili, cfg);
+      if (synced > 0) {
+        logger.info({ site: cfg.id, synced }, 'Site-only DB sync batch complete');
+      }
+    } catch (err) {
+      logger.error({ site: cfg.id, err: err.message }, 'Site-only DB sync failed');
+    }
+  }
+}
+
+async function syncOneSiteOnlyDb(meili, cfg) {
+  const siteDb = await getSiteDb(cfg.id, cfg.meili_index_prefix);
+  const indexName = `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
+  const idx = meili.index(indexName);
+  let total = 0;
+  while (!isShuttingDown) {
+    const batch = siteDb.prepare(`
+      SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
+             c.embedding, c.embedding_model, c.normalized_hash,
+             c.external_para_id, c.pdf_page, c.language,
+             d.title, d.author, d.filename, d.source_url, d.source_site
+      FROM content c
+      JOIN docs d ON d.id = c.doc_id
+      WHERE c.synced = 0 AND c.deleted_at IS NULL
+      ORDER BY c.id
+      LIMIT 200
+    `).all();
+    if (batch.length === 0) break;
+
+    const meiliDocs = batch.map(p => {
+      const embedding = blobToFloatArray(p.embedding);
+      return {
+        // Composite ID prevents collisions across the site-only indexes,
+        // which all share the global Meili namespace.
+        id: `${cfg.meili_index_prefix}_${p.id}`,
+        site_para_id: p.id,
+        doc_id: p.doc_id,
+        paragraph_index: p.paragraph_index,
+        text: p.text,
+        title: p.title,
+        author: p.author,
+        filename: p.filename,
+        source_site: p.source_site,
+        source_url: p.source_url,
+        external_para_id: p.external_para_id,
+        pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
+        heading: p.heading || '',
+        blocktype: p.blocktype || 'paragraph',
+        language: p.language || 'en',
+        ...(embedding ? { _vectors: { default: embedding } } : {})
+      };
+    });
+    await idx.addDocuments(meiliDocs);
+    const ids = batch.map(p => p.id);
+    const placeholders = ids.map(() => '?').join(',');
+    siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
+    total += batch.length;
+    if (batch.length < 200) break;
+  }
+  return total;
+}
+
 async function runPeriodicTasks() {
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
   if (now - lastHypeSyncTime >= HYPE_SYNC_INTERVAL_MS) await runHypeSyncCycle();
+  // Site-only DBs live outside main DB; periodic pump every cycle (cheap
+  // when the queue is empty).
+  await runSiteOnlySyncCycle();
   if (now - lastJobCleanupTime >= JOB_CLEANUP_INTERVAL_MS) {
     try {
       const cleaned = await cleanupExpiredJobs();
@@ -460,6 +565,22 @@ async function workerLoop() {
   lastFullSyncTime = Date.now();
   lastJobCleanupTime = Date.now();
   lastUsageReportTime = Date.now();
+
+  // Load sites.yaml so source_site → meili_index_prefix routing works during
+  // sync. Site-only DB sync depends on this registry too. Failure is non-
+  // fatal — without registry entries, supplemental rows route to the primary
+  // index with a warning and site-only DBs are simply not pumped.
+  try {
+    const configs = await loadAllSiteConfigs();
+    siteRegistryByDomain = configs;
+    setSiteRegistry(configs);
+    const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').length;
+    const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').length;
+    logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Worker: site registry loaded');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Worker: site registry not loaded (continuing with primary-only routing)');
+  }
+
   logger.info('Unified worker ready');
   while (!isShuttingDown) {
     try {

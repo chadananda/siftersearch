@@ -716,10 +716,13 @@ async function propagateEmbeddings() {
  * Get documents that have dirty (synced=0) paragraphs.
  */
 async function getDocsWithDirtyParagraphs(limit = 50) {
-  // Subquery on partial index is fast; avoids full JOIN scan
+  // Subquery on partial index is fast; avoids full JOIN scan.
+  // source_site + source_url included so the sync worker can route paragraphs
+  // to per-site Meili indexes and surface deeplinks back to the external page.
   return queryAll(`
     SELECT d.id, d.title, d.author, d.religion, d.collection,
-           d.language, d.year, d.description, d.filename
+           d.language, d.year, d.description, d.filename,
+           d.source_site, d.source_url, d.scope
     FROM docs d
     WHERE d.id IN (
       SELECT DISTINCT doc_id FROM content
@@ -759,10 +762,13 @@ async function getDirtyParagraphsForDoc(docId, limit = 500) {
   // a paragraph is soft-deleted OR marked is_duplicate=1, we still need to
   // drive its REMOVAL from Meili. The worker decides upsert vs. delete from
   // the is_duplicate / deleted_at flags.
+  // pdf_page + external_para_id support per-paragraph deeplinks for crawler-
+  // ingested PDF docs (see api/services/site-adapters/site2rag.js).
   return queryAll(`
     SELECT id, doc_id, paragraph_index, text, heading, blocktype,
            embedding_model, content_hash, normalized_hash,
            translation, translation_segments, context,
+           external_para_id, pdf_page,
            is_duplicate, deleted_at
     FROM content
     WHERE doc_id = ? AND synced = 0

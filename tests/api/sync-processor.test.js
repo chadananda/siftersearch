@@ -115,6 +115,8 @@ const SCHEMA = `
     embedding BLOB, embedding_model TEXT,
     translation TEXT, translation_segments TEXT, context TEXT,
     is_duplicate INTEGER DEFAULT 0,
+    external_para_id TEXT,
+    pdf_page INTEGER,
     synced INTEGER DEFAULT 0,
     deleted_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
