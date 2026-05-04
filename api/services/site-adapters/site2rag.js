@@ -44,7 +44,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const m = content.match(FRONTMATTER_RE);
   if (!m) throw new Error('No YAML frontmatter found');
 
-  const frontmatter = yaml.parse(m[1]) || {};
+  const frontmatter = parseFrontmatterTolerant(m[1]);
   const body = m[2] || '';
   const isPdf = frontmatter.mime_type === 'application/pdf';
 
@@ -70,6 +70,46 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   };
 
   return { docFields, paragraphs, raw_frontmatter: frontmatter };
+}
+
+// The crawler frontmatter sometimes contains unquoted strings with `: `
+// (e.g. `title: Fire Tablet (Lawh-i-Qad...): study outline`), which strict
+// YAML rejects as a "nested mapping in compact form". Pre-quote single-line
+// scalar values that have a `: ` so the YAML parser sees a clean string.
+// Multi-line keys (lists, nested objects) are detected via leading whitespace
+// or trailing `:` and left untouched.
+function parseFrontmatterTolerant(raw) {
+  const lines = raw.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Multi-line key (`authors:` followed by indented children) — preserve.
+    if (/^\s/.test(line) || /^\s*-\s/.test(line)) { out.push(line); continue; }
+    const m = line.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/);
+    if (!m) { out.push(line); continue; }
+    const [, key, value] = m;
+    if (value === '') { out.push(line); continue; } // multi-line key
+    // Already quoted? leave alone.
+    if (/^['"`].*['"`]$/.test(value)) { out.push(line); continue; }
+    // JSON-ish array/object? leave alone.
+    if (/^[[{]/.test(value)) { out.push(line); continue; }
+    // Pure number / bool / date — leave alone.
+    if (/^-?\d+(\.\d+)?$/.test(value)) { out.push(line); continue; }
+    if (/^(true|false|null|~)$/i.test(value)) { out.push(line); continue; }
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) { out.push(line); continue; }
+    // Has `: ` inside? quote it. Escape internal double quotes.
+    if (/:\s/.test(value)) {
+      const escaped = value.replace(/"/g, '\\"');
+      out.push(`${key}: "${escaped}"`);
+      continue;
+    }
+    out.push(line);
+  }
+  try {
+    return yaml.parse(out.join('\n')) || {};
+  } catch (err) {
+    throw new Error(`Frontmatter parse failed: ${err.message}`);
+  }
 }
 
 /**

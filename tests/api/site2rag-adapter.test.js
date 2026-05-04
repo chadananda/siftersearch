@@ -317,6 +317,73 @@ mime_type: text/html
   });
 });
 
+describe('site2rag adapter — tolerant frontmatter (real-world quirks)', () => {
+  it('handles unquoted titles with `: ` inside (bahai-library.com pattern)', async () => {
+    const md = `---
+source_url: https://bahai-library.com/1003
+domain: bahai-library.com
+title: Qayyum-al-'Asma: Notes on Joseph
+mime_type: text/html
+---
+First paragraph of body content.
+`;
+    const result = await parseDoc('1003.md', md, { siteConfig: { id: 'bahai-library.com' } });
+    expect(result.docFields.title).toBe("Qayyum-al-'Asma: Notes on Joseph");
+    expect(result.paragraphs.length).toBeGreaterThan(0);
+  });
+
+  it('handles multiple colons in titles', async () => {
+    const md = `---
+source_url: https://example.com/x
+title: Fire Tablet (Lawh-i-Qad Ihtaraqa'l-Mukhlisun): Tablet study outline
+mime_type: text/html
+---
+Body.
+`;
+    const result = await parseDoc('x.md', md, { siteConfig: { id: 'bahai-library.com' } });
+    expect(result.docFields.title).toBe("Fire Tablet (Lawh-i-Qad Ihtaraqa'l-Mukhlisun): Tablet study outline");
+  });
+
+  it('preserves quoted values without re-quoting', async () => {
+    const md = `---
+source_url: https://example.com/x
+title: "Already: Quoted"
+mime_type: text/html
+---
+Body.
+`;
+    const result = await parseDoc('x.md', md, { siteConfig: { id: 'bahai-library.com' } });
+    expect(result.docFields.title).toBe('Already: Quoted');
+  });
+
+  it('preserves multi-line YAML structures (authors array)', async () => {
+    const md = `---
+source_url: https://oceanoflights.org/x
+title: Some Title
+authors:
+  - name: Bahá'u'lláh
+mime_type: text/html
+---
+Body paragraph.
+`;
+    const result = await parseDoc('x.md', md, { siteConfig: { id: 'oceanoflights.org' } });
+    expect(result.docFields.author).toBe("Bahá'u'lláh");
+  });
+
+  it('preserves content_hash with sha256: prefix (no space after colon)', async () => {
+    const md = `---
+source_url: https://example.com/x
+title: Plain title
+content_hash: sha256:ac2ea040b2eda43e420a780742b9c320a4e30a720434faf58982695230f171f8
+mime_type: text/html
+---
+Body.
+`;
+    const result = await parseDoc('x.md', md, { siteConfig: { id: 'bahai-library.com' } });
+    expect(result.raw_frontmatter.content_hash).toContain('sha256:');
+  });
+});
+
 describe('site2rag adapter — detectSupersedee', () => {
   it('always returns supersedes:null in v1 (supplementals never replace primary)', () => {
     const result = detectSupersedee(
