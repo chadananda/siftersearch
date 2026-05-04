@@ -452,4 +452,54 @@ export const migrations = {
     } catch (err) { logger.warn({ err: err.message }, 'idx_content_hype_to_sync create skipped'); }
     logger.info('Migration 59 complete: idx_content_hype_to_sync created');
   },
+
+  60: async () => {
+    // Three-class scope model for external-site content.
+    //
+    // docs.scope ∈ {'primary', 'supplemental', 'site-only'} controls which
+    // search code paths can see the row:
+    //   - 'primary'      → curated corpus, default Jafar
+    //   - 'supplemental' → external sites visible in default Jafar at low authority
+    //   - 'site-only'    → never appears in default Jafar (its content lives in a
+    //                      separate per-site SQLite under data/sites/<prefix>.db,
+    //                      so this column value won't appear in main DB; reserved
+    //                      for completeness)
+    //
+    // Backfill rule: existing rows with source_site IS NOT NULL are
+    // 'supplemental' (currently just oceanlibrary.com); everything else is
+    // 'primary'.
+    //
+    // Also adds content.pdf_page — for PDF-derived crawler MD, the source PDF
+    // page number per paragraph. Combined with docs.source_url at search time
+    // to build deeplinks like `<source_url>#page=<pdf_page>`. NULL for
+    // HTML-derived content.
+    //
+    // Indexes added: idx_docs_scope, idx_docs_source_site (filter speed for
+    // scope-aware search), idx_content_is_duplicate (filter speed for the
+    // sync worker which must skip duplicates).
+    logger.info('Starting migration 60: docs.scope, content.pdf_page, scope/source_site indexes');
+    try {
+      await query(`ALTER TABLE docs ADD COLUMN scope TEXT NOT NULL DEFAULT 'primary'`);
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    try {
+      await query(`ALTER TABLE content ADD COLUMN pdf_page INTEGER`);
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    await query(`UPDATE docs SET scope = 'supplemental' WHERE source_site IS NOT NULL AND scope = 'primary'`);
+
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_scope ON docs(scope) WHERE deleted_at IS NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_docs_source_site ON docs(source_site) WHERE source_site IS NOT NULL'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_content_is_duplicate ON content(is_duplicate) WHERE is_duplicate = 1'); } catch { /* exists */ }
+
+    // ANALYZE so the planner picks up the new indexes immediately. Same
+    // pattern as migration 58. Skip on test DBs (in-memory) where ANALYZE
+    // is a no-op anyway.
+    try { await query('ANALYZE docs'); } catch { /* skip */ }
+    try { await query('ANALYZE content'); } catch { /* skip */ }
+
+    logger.info('Migration 60 complete: scope + pdf_page columns + indexes added');
+  },
 };

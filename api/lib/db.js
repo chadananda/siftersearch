@@ -10,10 +10,14 @@
  */
 
 import Database from 'better-sqlite3';
+import { mkdirSync } from 'node:fs';
+import path from 'node:path';
 import { logger } from './logger.js';
+import { runSiteMigrations } from './migrations/site.js';
 
 let contentDb = null;
 let userDb = null;
+const siteDbCache = new Map();
 
 function stripFilePrefix(url) {
   if (!url) return null;
@@ -60,6 +64,41 @@ export async function getDb() {
 export async function getUserDb() {
   if (userDb === null) userDb = createUserConnection();
   return userDb || await getDb();
+}
+
+// Site-only DBs: one SQLite file per site at data/sites/<safe-id>.db.
+// Walled off from primary — default Jafar never opens these connections, so
+// site-only content cannot leak into RAG. Connections are lazy and cached;
+// migrations run once on first connect.
+//
+// `siteId` is the sites.yaml key (e.g., 'bahaiteachings.org'). The filename
+// uses `meili_index_prefix` from the site config (e.g., 'bt') if available,
+// otherwise the sanitized siteId.
+export async function getSiteDb(siteId, indexPrefix) {
+  if (!siteId) throw new Error('getSiteDb requires siteId');
+  const key = indexPrefix || siteId;
+  let db = siteDbCache.get(key);
+  if (db) return db;
+
+  const safe = (indexPrefix || siteId).toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+  const dir = path.resolve('./data/sites');
+  mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, `${safe}.db`);
+
+  db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 30000');
+  // Smaller cache than primary — site-only DBs are <500MB each; 64MB cache
+  // leaves room for many concurrent sites without consuming primary's headroom.
+  db.pragma('cache_size = -65536');
+  db.pragma('mmap_size = 268435456');
+
+  instrumentDb(db, `site-${safe}`);
+  runSiteMigrations(db, siteId);
+
+  siteDbCache.set(key, db);
+  logger.info({ siteId, path: dbPath }, 'Site DB connected');
+  return db;
 }
 
 export const getBatchDb = getDb;
