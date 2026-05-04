@@ -80,6 +80,23 @@ const start = async () => {
       }
     }
 
+    // Load sites.yaml into the search-scope registry. Skipping this is
+    // non-fatal — the search layer falls back to "primary only" scope, which
+    // matches pre-sites behavior. But once the registry is loaded, default
+    // Jafar will include supplementals (bahai-library, oceanoflights) and
+    // site-only chatbots will route to their own indexes.
+    try {
+      const { setSiteRegistry } = await import('./lib/search/scope.js');
+      const { loadAllSiteConfigs } = await import('./services/sites-ingester.js');
+      const configs = await loadAllSiteConfigs();
+      setSiteRegistry(configs);
+      const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').map(c => c.id);
+      const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').map(c => c.id);
+      logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Site registry loaded');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Site registry not loaded (no sites.yaml found, scope = primary only)');
+    }
+
     // Seed admin user if configured
     try {
       const adminResult = await seedAdminUser();

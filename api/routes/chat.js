@@ -320,7 +320,7 @@ For standalone small works, omit start_paragraph/end_paragraph and the sub-agent
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10 }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10, scope_config }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -355,7 +355,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
 
     let merged;
     try {
-      const result = await multiIndexSearch(query, { limit: safeLimit, filters });
+      const result = await multiIndexSearch(query, { limit: safeLimit, filters, scope_config });
       merged = (result.hits || []).map(hit => ({
         ...hit,
         _matched_via_hype: !!hit.matched_hype
@@ -363,7 +363,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     } catch (err) {
       logger.warn({ err: err.message }, 'multiIndexSearch failed, falling back to legacy path');
       const [hybridResults, keywordResults] = await Promise.all([
-        hybridSearch(query, { limit: safeLimit, filters }).catch(() => ({ hits: [] })),
+        hybridSearch(query, { limit: safeLimit, filters, scope_config }).catch(() => ({ hits: [] })),
         keywordSearch(query, { limit: Math.max(3, Math.floor(safeLimit / 2)), filters }).catch(() => ({ hits: [] }))
       ]);
       const seen = new Set();
@@ -849,9 +849,12 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   };
 }
 
-export async function executeTool(name, args) {
+// Optional `ctx` carries scope_config (resolved from chatbot_location at the
+// pipeline entry point) so per-call site-scoping flows through to search.
+// Tools that don't need scope just ignore ctx.
+export async function executeTool(name, args, ctx = {}) {
   switch (name) {
-    case 'search': return executeSearch(args);
+    case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config });
     case 'library_overview': return executeLibraryOverview();
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
@@ -901,12 +904,17 @@ export default async function chatRoutes(fastify) {
             }
           },
           conversationId: { type: 'string' },
-          researchContext: { type: 'string' }
+          researchContext: { type: 'string' },
+          // Site-scoped chatbot location (e.g. 'bahaiteachings.org'). When
+          // set, search is restricted to that site's scope (site-only sites
+          // see only their own content; supplemental sites see the default
+          // scope). Default Jafar leaves this null.
+          chatbot_location: { type: 'string', maxLength: 128 }
         }
       }
     }
   }, async (request, reply) => {
-    const { messages, researchContext } = request.body;
+    const { messages, researchContext, chatbot_location } = request.body;
     const userId = request.user?.sub?.toString() || getAnonymousUserId(request);
 
     // Set headers directly on raw response — reply.header() doesn't survive flushHeaders()
@@ -932,7 +940,8 @@ export default async function chatRoutes(fastify) {
       const result = await runJafarPipeline({
         messages: messages.map(m => ({ role: m.role, content: m.content })),
         sendEvent,
-        debug
+        debug,
+        chatbot_location
       });
 
       // Word-by-word emit so the existing dialogue UI's typing animation

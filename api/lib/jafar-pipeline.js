@@ -23,6 +23,7 @@ import OpenAI from 'openai';
 import { logger } from './logger.js';
 import { config } from './config.js';
 import { executeTool, TOOLS } from '../routes/chat.js';
+import { getScopeForLocation } from './search/scope.js';
 
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
@@ -49,7 +50,7 @@ Always call at least one retrieval tool before saying "done". If a search return
 //
 // Sends SSE heartbeats every 15s during the research loop so Cloudflare
 // doesn't drop the connection during slow sub-agent OpenAI calls.
-export async function runResearchPhase({ messages, sendEvent, debug }) {
+export async function runResearchPhase({ messages, sendEvent, debug, scope_config }) {
   let heartbeat = null;
   if (sendEvent) {
     heartbeat = setInterval(() => {
@@ -57,13 +58,13 @@ export async function runResearchPhase({ messages, sendEvent, debug }) {
     }, 15000);
   }
   try {
-    return await runResearchPhaseInner({ messages, sendEvent, debug });
+    return await runResearchPhaseInner({ messages, sendEvent, debug, scope_config });
   } finally {
     if (heartbeat) clearInterval(heartbeat);
   }
 }
 
-async function runResearchPhaseInner({ messages, sendEvent, debug }) {
+async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config }) {
   const aiMessages = [
     { role: 'system', content: RESEARCH_SYSTEM },
     ...messages.map(m => ({ role: m.role, content: m.content }))
@@ -101,7 +102,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug }) {
           // pipeline. Returns a structured error the orchestrator LLM can see.
           let result;
           try {
-            result = await executeTool(tc.function.name, args);
+            result = await executeTool(tc.function.name, args, { scope_config });
           } catch (toolErr) {
             logger.error({ err: toolErr.message, stack: toolErr.stack, tool: tc.function.name, args }, 'tool execution threw');
             result = { error: `Tool ${tc.function.name} failed: ${toolErr.message}` };
@@ -343,7 +344,7 @@ function inferWorkFromHistory(messages, currentEntitiesWorkName) {
   return null;
 }
 
-export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug }) {
+export async function deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config }) {
   const retrieved = [];
   const debugCalls = [];
   // Subagent syntheses — when a document subagent runs, its `answer` field
@@ -399,7 +400,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     if (sendEvent) sendEvent({ type: 'debug_research_call', name, args });
     let result;
     try {
-      result = await executeTool(name, args);
+      result = await executeTool(name, args, { scope_config });
     } catch (toolErr) {
       logger.error({ err: toolErr.message, tool: name, args }, 'deterministic tool execution threw');
       result = { error: toolErr.message };
@@ -1145,8 +1146,17 @@ export function summarizeConversation(messages) {
 //
 // `sendEvent` (optional): SSE event emitter for debug-mode streaming
 // `debug` (optional): if true, emit debug_* SSE events at each stage
-export async function runJafarPipeline({ messages, sendEvent, debug }) {
+export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_location }) {
   const userMessage = messages[messages.length - 1].content;
+
+  // Resolve scope_config once at pipeline entry. Site-only chatbot locations
+  // (e.g. 'bahaiteachings.org') restrict search to that site's index ONLY —
+  // no primary corpus, no other supplementals. Default Jafar (no location)
+  // uses the default scope (primary + all supplementals).
+  const scope_config = chatbot_location ? getScopeForLocation(chatbot_location) : undefined;
+  if (sendEvent && debug && chatbot_location) {
+    sendEvent({ type: 'debug_scope', chatbot_location, scope_config });
+  }
 
   // Stage 1: classify intent + entities (1 mini call ~1-2s), then run
   // deterministic retrieval directly from the entities (no LLM) ~0.5-1.5s.
@@ -1155,7 +1165,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug }) {
   const entities = await classifyIntentAndEntities(userMessage);
   const userIntent = entities.intent;
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
-  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug });
+  const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config });
 
   // Conversation summary
   const conversationSummary = summarizeConversation(messages);
