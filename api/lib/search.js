@@ -72,16 +72,11 @@ export function getMeili() {
   return client;
 }
 
-// Index names
-export const INDEXES = {
-  DOCUMENTS: 'documents',
-  PARAGRAPHS: 'paragraphs',
-  // Sidecar enrichment indexes — each entry is one enrichment shard with
-  // its own embedding, pointing back to the parent paragraph by paragraph_id.
-  // Enables adding new enrichment layers (HyPE, future: summaries, entities,
-  // glossary tags) without re-embedding existing paragraphs.
-  HYPE_QUESTIONS: 'hype_questions'
-};
+// Index names. The canonical INDEXES const is now re-exported from the
+// scope-aware registry so search code can resolve per-site indexes via the
+// same source of truth.
+import { INDEXES, getScopeIndexes, getDefaultScope } from './search/scope.js';
+export { INDEXES };
 
 /**
  * Build ranking rules with authority at the configured position.
@@ -297,7 +292,14 @@ export async function hybridSearch(query, options = {}) {
   } = options;
 
   const meili = getMeili();
-  const index = meili.index(INDEXES.PARAGRAPHS);
+  // Resolve target indexes from scope_config. Default = primary only
+  // (preserves existing behavior for callers that don't pass scope_config).
+  // Site-only locations are excluded from the default by getDefaultScope.
+  const scopeConfig = options.scope_config || { primary: true, sites: [] };
+  const targetIndexNames = getScopeIndexes(scopeConfig);
+  if (targetIndexNames.length === 0) {
+    return { hits: [], totalHits: 0, query };
+  }
 
   // Build filter string
   const filterParts = [];
@@ -362,20 +364,41 @@ export async function hybridSearch(query, options = {}) {
     searchParams.vector = vector;
   }
 
-  const results = await index.search(query, searchParams);
+  // Fan out across all target indexes in parallel. For the common
+  // single-index case (default scope, no per-site indexes registered yet)
+  // this collapses to one call — no overhead.
+  const indexResults = await Promise.all(
+    targetIndexNames.map(name =>
+      meili.index(name).search(query, searchParams).catch(err => {
+        // Per-index missing/empty (common before sync) shouldn't kill the
+        // whole search. Log and return empty for that index.
+        logger.warn({ err: err.message, index: name }, 'hybridSearch: per-index search failed (continuing)');
+        return { hits: [], processingTimeMs: 0, estimatedTotalHits: 0, query };
+      })
+    )
+  );
+
+  const allHits = indexResults.flatMap(r => r.hits || []);
+  const totalProcessingMs = indexResults.reduce((s, r) => s + (r.processingTimeMs || 0), 0);
+  const estimated = indexResults.reduce((s, r) => s + (r.estimatedTotalHits || 0), 0);
+
+  // Sort by Meili ranking score (comparable across indexes since they share
+  // ranking rules from initializeIndexes) before authority rerank.
+  allHits.sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
 
   // Authority reranking: blend Meilisearch relevance with the per-doc authority
   // score so canonical sources surface above citing/derivative works at the
   // same relevance tier. Runs unconditionally — callers don't opt in.
-  const reranked = rerankByAuthority(results.hits).slice(offset, offset + limit);
+  const reranked = rerankByAuthority(allHits).slice(offset, offset + limit);
 
   return {
     hits: reranked,
-    query: results.query,
-    processingTimeMs: results.processingTimeMs,
-    estimatedTotalHits: results.estimatedTotalHits,
+    query,
+    processingTimeMs: totalProcessingMs,
+    estimatedTotalHits: estimated,
     limit,
-    offset
+    offset,
+    _scopeIndexes: targetIndexNames
   };
 }
 
@@ -586,15 +609,24 @@ export async function multiIndexSearch(query, options = {}) {
   const weights = { ...DEFAULT_WEIGHTS, ...(options.weights || {}) };
   const filters = options.filters || {};
 
+  // scope_config plumbed through so site-only queries reach the right Meili
+  // index (and ONLY the right index — hard rule for site-only).
+  const scope_config = options.scope_config;
+
   const [mainResult, hypeResult] = await Promise.all([
-    hybridSearch(query, { limit: overFetch, filters }).catch(err => {
+    hybridSearch(query, { limit: overFetch, filters, scope_config }).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
     }),
-    searchHypeQuestions(query, { limit: overFetch, filters }).catch(err => {
-      logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
-      return { hits: [] };
-    })
+    // HyPE: only query when scope includes primary. Site-only sites don't
+    // have HyPE (gated off in v1), and supplementals don't either. The
+    // primary `hype_questions` index is the only one populated.
+    (!scope_config || scope_config.primary)
+      ? searchHypeQuestions(query, { limit: overFetch, filters }).catch(err => {
+          logger.warn({ err: err.message }, 'multiIndexSearch: hype failed');
+          return { hits: [] };
+        })
+      : Promise.resolve({ hits: [] })
   ]);
 
   // RRF aggregation by paragraph_id
