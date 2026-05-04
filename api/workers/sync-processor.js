@@ -25,12 +25,19 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
 
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { getMeili } from '../lib/search.js';
 import { content } from '../lib/content.js';
 import { getAuthority } from '../lib/authority.js';
 import { runMigrations } from '../lib/migrations.js';
+import { setSiteRegistry } from '../lib/search/scope.js';
+import { loadAllSiteConfigs } from '../services/sites-ingester.js';
+
+// Registry populated at boot from sites.yaml. Used to resolve source_site →
+// meili_index_prefix for sync routing AND to drive the site-only DB sync loop.
+// Empty = no external sites configured (sync only main paragraphs index).
+let siteRegistryByDomain = {};
 
 // Configuration
 const BATCH_SIZE = 50;  // Small batches = fast Meili indexing + frequent progress updates
@@ -499,6 +506,20 @@ async function processJob(job) {
     const documentsIndex = meili.index('documents');
     const paragraphsIndex = meili.index('paragraphs');
 
+    // Resolve source_site → Meili paragraph-index name. Primary corpus
+    // (source_site IS NULL) → 'paragraphs'. Supplementals → per-site index.
+    // The registry is populated at boot from sites.yaml; missing entries
+    // fall back to primary so a stray supplemental row doesn't get dropped.
+    const indexNameForSourceSite = (sourceSite) => {
+      if (!sourceSite) return 'paragraphs';
+      const cfg = siteRegistryByDomain[sourceSite];
+      if (!cfg || !cfg.meili_index_prefix) {
+        logger.warn({ source_site: sourceSite }, 'Sync routing: no registry entry, using primary index');
+        return 'paragraphs';
+      }
+      return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
+    };
+
     while (!isShuttingDown) {
       // Read a flat batch of dirty paragraphs with doc metadata joined in
       const batch = await content.getDirtyParagraphsBatch(BATCH_SIZE);
@@ -530,15 +551,19 @@ async function processJob(job) {
         }
       }
 
-      // Build Meilisearch paragraph objects
+      // Build Meilisearch paragraph objects, grouped by destination index.
+      // Primary docs (source_site IS NULL) → 'paragraphs'. Supplementals
+      // route to siftersearch_<prefix>_paragraphs based on sites.yaml.
       let wrongDimCount = 0;
-      const meiliParas = batch.map(p => {
+      const groups = new Map(); // indexName → meiliDoc[]
+
+      for (const p of batch) {
         let embedding = blobToFloatArray(p.embedding);
         if (embedding && embedding.length !== content.EXPECTED_EMBEDDING_DIMS) {
           embedding = null;
           wrongDimCount++;
         }
-        return {
+        const meiliDoc = {
           id: p.id, doc_id: p.doc_id,
           paragraph_index: p.paragraph_index, text: p.text,
           context: p.context || null,
@@ -552,23 +577,41 @@ async function processJob(job) {
           encumbered: p.encumbered ? 1 : 0,
           heading: p.heading || '',
           blocktype: p.blocktype || 'paragraph',
+          source_site: p.source_site || null,
+          source_url: p.source_url || null,
+          external_para_id: p.external_para_id || null,
+          pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
           created_at: new Date().toISOString(),
           ...(embedding ? { _vectors: { default: embedding } } : {})
         };
-      });
+        const indexName = indexNameForSourceSite(p.source_site);
+        if (!groups.has(indexName)) groups.set(indexName, []);
+        groups.get(indexName).push(meiliDoc);
+      }
 
       if (wrongDimCount > 0) {
         logger.warn({ wrongDimCount, batchSize: batch.length }, 'Wrong-dimension embeddings (FTS-only)');
       }
 
-      // Submit to Meilisearch and wait for confirmation
-      try {
-        const task = await paragraphsIndex.addDocuments(meiliParas);
-        await waitForMeiliTask(meili, task.taskUid);
-      } catch (err) {
-        logger.error({ err: err.message, batchSize: meiliParas.length }, 'Failed to submit paragraph batch');
-        failedItems += meiliParas.length;
-        // Continue to next batch rather than dying
+      // Submit each group to its destination Meili index. Per-index failure
+      // doesn't kill the whole batch — failed groups bump failedItems and
+      // we continue with the rest. Synced flag still flips so we don't get
+      // stuck retrying the same batch.
+      let groupErrors = 0;
+      for (const [indexName, docs] of groups) {
+        try {
+          const task = await meili.index(indexName).addDocuments(docs);
+          await waitForMeiliTask(meili, task.taskUid);
+        } catch (err) {
+          logger.error({ err: err.message, indexName, batchSize: docs.length }, 'Failed to submit paragraph batch to per-site index');
+          groupErrors += docs.length;
+        }
+      }
+      if (groupErrors > 0) {
+        failedItems += groupErrors;
+      }
+      if (groupErrors === batch.length) {
+        // All groups failed — back off and try again later.
         await delay(1000);
         continue;
       }
@@ -612,6 +655,100 @@ async function runPeriodicTasksIfDue() {
   const now = Date.now();
   if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) await runCleanupCycle();
   if (now - lastFullSyncTime >= FULL_SYNC_INTERVAL_MS) await runFullSyncCheck();
+  // Sync each site-only DB on every idle cycle. Site-only DBs are small
+  // (bahaiteachings ~30 MB / 60K paragraphs); a full pass is cheap and we
+  // can't rely on sync_jobs since those live only in the main DB.
+  await syncSiteOnlyDbs();
+}
+
+/**
+ * Sync site-only DB content to per-site Meili indexes.
+ *
+ * Each site-only site lives in its own SQLite at data/sites/<prefix>.db.
+ * The main sync_jobs table doesn't cover these — they need their own pump.
+ * Idempotent: only rows with synced=0 are pushed; flag flips after Meili
+ * confirms the task.
+ *
+ * Per-site failures (missing DB, Meili rejection, etc.) are logged but
+ * don't kill the loop — other sites keep syncing. Empty registry = no-op.
+ */
+async function syncSiteOnlyDbs() {
+  const meili = await getMeili();
+  if (!meili) return;
+  const siteOnlyConfigs = Object.values(siteRegistryByDomain).filter(c => c.scope === 'site-only');
+  if (siteOnlyConfigs.length === 0) return;
+
+  for (const cfg of siteOnlyConfigs) {
+    if (isShuttingDown) return;
+    try {
+      const synced = await syncOneSiteOnlyDb(meili, cfg);
+      if (synced > 0) {
+        logger.info({ site: cfg.id, synced }, 'Site-only DB sync batch complete');
+      }
+    } catch (err) {
+      logger.error({ site: cfg.id, err: err.message }, 'Site-only DB sync failed');
+    }
+  }
+}
+
+async function syncOneSiteOnlyDb(meili, cfg) {
+  const siteDb = await getSiteDb(cfg.id, cfg.meili_index_prefix);
+  const indexName = `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
+  const idx = meili.index(indexName);
+  let total = 0;
+
+  // Pump batches until the queue drains or shutdown fires.
+  while (!isShuttingDown) {
+    const batch = siteDb.prepare(`
+      SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
+             c.embedding, c.embedding_model, c.normalized_hash,
+             c.external_para_id, c.pdf_page, c.language,
+             d.title, d.author, d.filename, d.source_url, d.source_site
+      FROM content c
+      JOIN docs d ON d.id = c.doc_id
+      WHERE c.synced = 0 AND c.deleted_at IS NULL
+      ORDER BY c.id
+      LIMIT ?
+    `).all(BATCH_SIZE);
+
+    if (batch.length === 0) break;
+
+    const meiliDocs = batch.map(p => {
+      const embedding = blobToFloatArray(p.embedding);
+      const validEmbedding = embedding && embedding.length === content.EXPECTED_EMBEDDING_DIMS ? embedding : null;
+      return {
+        // Composite ID prevents primary-key collisions across the site indexes,
+        // even though each site has its own index in v1.
+        id: `${cfg.meili_index_prefix}_${p.id}`,
+        site_para_id: p.id,
+        doc_id: p.doc_id,
+        paragraph_index: p.paragraph_index,
+        text: p.text,
+        title: p.title,
+        author: p.author,
+        filename: p.filename,
+        source_site: p.source_site,
+        source_url: p.source_url,
+        external_para_id: p.external_para_id,
+        pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null,
+        heading: p.heading || '',
+        blocktype: p.blocktype || 'paragraph',
+        language: p.language || 'en',
+        ...(validEmbedding ? { _vectors: { default: validEmbedding } } : {})
+      };
+    });
+
+    const task = await idx.addDocuments(meiliDocs);
+    await waitForMeiliTask(meili, task.taskUid);
+
+    // Mark synced — same as main DB sync, only after Meili confirms.
+    const ids = batch.map(p => p.id);
+    const placeholders = ids.map(() => '?').join(',');
+    siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
+    total += batch.length;
+    if (batch.length < BATCH_SIZE) break;
+  }
+  return total;
 }
 
 /**
@@ -634,6 +771,21 @@ async function workerLoop() {
   // Skip initializeIndexes() — it queues settingsUpdate tasks in Meilisearch
   // on every restart, and those tasks block the entire queue while Meili rebuilds
   // indexes on 2M+ documents. The API server handles index initialization.
+
+  // Load sites.yaml so source_site → meili_index_prefix routing works during
+  // sync. Skipping is non-fatal — without registry entries, supplemental
+  // paragraphs route to the primary index with a warning. Site-only DB sync
+  // requires this registry to know which DB files to walk.
+  try {
+    const configs = await loadAllSiteConfigs();
+    siteRegistryByDomain = configs;
+    setSiteRegistry(configs);
+    const supplemental = Object.values(configs).filter(c => c.scope === 'supplemental').length;
+    const siteOnly = Object.values(configs).filter(c => c.scope === 'site-only').length;
+    logger.info({ supplemental, site_only: siteOnly, total: Object.keys(configs).length }, 'Sync worker: site registry loaded');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Sync worker: site registry not loaded (continuing with primary-only routing)');
+  }
 
   // On startup: any job stuck in 'running' was abandoned mid-flight — requeue it
   logger.info('Checking for stuck sync jobs...');

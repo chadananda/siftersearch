@@ -739,10 +739,10 @@ async function getDirtyParagraphsBatch(limit = 50) {
   return queryAll(`
     SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
            CASE WHEN c.embedding_model = 'text-embedding-3-large' THEN c.embedding ELSE NULL END as embedding,
-           c.embedding_model, c.content_hash, c.normalized_hash,
+           c.embedding_model, c.content_hash, c.normalized_hash, c.external_para_id, c.pdf_page,
            c.translation, c.translation_segments, c.context,
            d.title, d.author, d.filename, d.religion, d.collection,
-           d.language, d.year, d.description
+           d.language, d.year, d.description, d.source_site, d.source_url
     FROM content c
     JOIN docs d ON d.id = c.doc_id
     WHERE c.synced = 0 AND c.deleted_at IS NULL
