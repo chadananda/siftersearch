@@ -117,7 +117,14 @@ export function parseSonnetResponse(text) {
 export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
   // Grab ALL docs (we'll classify in-process — tier classification is too
   // complex to push down into SQL with all the transliteration variants).
-  const docs = await queryAll('SELECT id, author, religion, collection, title, description FROM docs WHERE deleted_at IS NULL');
+  //
+  // HyPE gate: skip docs from external sites — supplementals get hype_policy
+  // from sites.yaml and v1 forces 'never' for all of them. Site-only sites
+  // live in their own SQLite and are structurally invisible to this query
+  // anyway, but the source_site IS NULL filter is the canonical guard.
+  // Per-site hype_policy resolution is deferred to v2 (oceanoflights.org is
+  // the obvious first opt-in candidate given its central-figure metadata).
+  const docs = await queryAll('SELECT id, author, religion, collection, title, description FROM docs WHERE deleted_at IS NULL AND source_site IS NULL');
   const tier1to7DocIds = [];
   const tierByDocId = new Map();
   for (const doc of docs) {

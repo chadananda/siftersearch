@@ -270,12 +270,17 @@ const SKIP_TITLES = new Set([
 const { getDocTier } = await import('../api/lib/doc-tier.js');
 
 function getDocumentsInOrder(db, religion, docId, maxDocs) {
+  // HyPE gate: skip docs from external sites (supplemental + site-only).
+  // v1 hard rule — supplementals don't get HyPE; site-only sites live in
+  // their own SQLite and are invisible to this query anyway. Per-site
+  // hype_policy resolution deferred to v2.
   let sql = `
     SELECT d.id, d.title, d.author, d.religion, d.collection,
            d.year, d.language, d.description, d.paragraph_count
     FROM docs d
     WHERE d.deleted_at IS NULL AND d.paragraph_count > 0
       AND d.paragraph_count < 10000
+      AND d.source_site IS NULL
   `;
   const params = [];
 
