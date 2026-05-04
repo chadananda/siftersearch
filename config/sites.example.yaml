@@ -21,6 +21,10 @@
 #   meili_index_prefix  - short id used for Meili index names
 #                         (siftersearch_<prefix>_paragraphs, etc.)
 #                         AND for the site-only DB filename (data/sites/<prefix>.db)
+#   site_root           - OPTIONAL absolute path. When set, the ingester walks
+#                         this path instead of <library>/-sites/<siteId>.
+#                         Use for crawler trees that live OUTSIDE the Dropbox
+#                         library (so Dropbox doesn't sync 1 GB+ of MD).
 #   cadence_minutes     - advisory; ingester ticks come from library-watcher
 #   supersession_threshold - hash-overlap ratio for primary-corpus supersession
 #                            (only meaningful for the original oceanlibrary.com flow)
@@ -60,6 +64,7 @@ sites:
 
   bahai-library.com:
     adapter: site2rag
+    site_root: /tank/site2rag/websites_md/bahai-library.com
     scope: supplemental
     authority_default: 3
     encumbered: false
@@ -76,6 +81,7 @@ sites:
 
   oceanoflights.org:
     adapter: site2rag
+    site_root: /tank/site2rag/websites_md/oceanoflights.org
     scope: supplemental
     authority_default: 5
     encumbered: false
@@ -89,6 +95,7 @@ sites:
 
   bahaiteachings.org:
     adapter: site2rag
+    site_root: /tank/site2rag/websites_md/bahaiteachings.org
     scope: site-only
     authority_default: 0
     encumbered: false

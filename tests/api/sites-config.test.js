@@ -99,4 +99,29 @@ describe('sites-ingester withDefaults', () => {
     const cfg = normalize('example.com', {});
     expect(cfg.id).toBe('example.com');
   });
+
+  it('preserves site_root when set (for crawler trees outside the library)', () => {
+    const cfg = normalize('bahai-library.com', {
+      adapter: 'site2rag',
+      site_root: '/tank/site2rag/websites_md/bahai-library.com',
+    });
+    expect(cfg.site_root).toBe('/tank/site2rag/websites_md/bahai-library.com');
+  });
+
+  it('site_root defaults to null when absent (uses <library>/-sites/<id> convention)', () => {
+    const cfg = normalize('oceanlibrary.com', { adapter: 'oceanlibrary' });
+    expect(cfg.site_root).toBeNull();
+  });
+});
+
+describe('sites.example.yaml — site_root convention', () => {
+  it('all crawler-derived sites set site_root to /tank/site2rag/websites_md/<id>', () => {
+    expect(example['bahai-library.com'].site_root).toBe('/tank/site2rag/websites_md/bahai-library.com');
+    expect(example['oceanoflights.org'].site_root).toBe('/tank/site2rag/websites_md/oceanoflights.org');
+    expect(example['bahaiteachings.org'].site_root).toBe('/tank/site2rag/websites_md/bahaiteachings.org');
+  });
+
+  it('oceanlibrary.com (in-library convention) does NOT set site_root', () => {
+    expect(example['oceanlibrary.com'].site_root).toBeUndefined();
+  });
 });

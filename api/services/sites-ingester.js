@@ -72,6 +72,10 @@ function withDefaults(siteId, cfg) {
     cadence_minutes: typeof cfg.cadence_minutes === 'number' ? cfg.cadence_minutes : 360,
     supersession_threshold: cfg.supersession_threshold ?? 0.80,
     religion_map: cfg.religion_map || null,
+    // Optional absolute path. When set, ingestSite walks this path instead
+    // of <library>/-sites/<siteId>. Required for crawler trees outside the
+    // Dropbox library so Dropbox doesn't try to sync 1 GB+ of MD.
+    site_root: cfg.site_root || null,
     notes: cfg.notes || ''
   };
 }
@@ -597,9 +601,15 @@ async function reconcileDeletes(siteId, basePath, diskPaths) {
 export async function ingestSite(siteId, opts = {}) {
   const basePath = config.library.basePath;
   if (!basePath) throw new Error('library.basePath not configured');
-  const siteRoot = join(basePath, '-sites', siteId);
 
   const siteConfig = await loadSiteConfig(basePath, siteId);
+  // site_root override: when set in sites.yaml, the ingester walks that
+  // absolute path instead of `<basePath>/-sites/<siteId>`. Used for crawler-
+  // produced trees that live OUTSIDE the Dropbox library (e.g. /tank/site2rag/
+  // websites_md/<site>) — Dropbox would otherwise try to sync 1 GB+ of MD.
+  // Default = the in-library convention, preserved for OceanLibrary.
+  const siteRoot = siteConfig.site_root || join(basePath, '-sites', siteId);
+
   const adapter = await loadAdapter(siteConfig.adapter || siteId);
   const threshold = opts.threshold ?? siteConfig.supersession_threshold ?? 0.80;
 
