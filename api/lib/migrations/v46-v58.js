@@ -425,4 +425,31 @@ export const migrations = {
     } catch (err) { logger.warn({ err: err.message }, 'idx_content_norm_active create skipped'); }
     logger.info('Migration 58 complete: idx_content_norm_active created');
   },
+
+  59: async () => {
+    // HyPE sync queue partial index.
+    //
+    // syncHypeBatch (api/lib/search/hype.js) pulls paragraphs that have been
+    // enriched (hyp_questions or hyp_thesis populated) but not yet synced to
+    // the HyPE sidecar Meili index. With 4M+ rows in content and 99% having
+    // deleted_at IS NULL, the planner was picking idx_content_deleted_at and
+    // scanning the whole table — 54s per batch — driving worker into a death
+    // spiral against the PM2 memory cap. This partial index matches the exact
+    // WHERE clause and lets the batch return in <200ms.
+    //
+    // The query in hype.js uses INDEXED BY to force the planner onto this
+    // index even after table stats change.
+    logger.info('Starting migration 59: HyPE sync queue partial index');
+    try {
+      await query(`
+        CREATE INDEX IF NOT EXISTS idx_content_hype_to_sync
+        ON content(id)
+        WHERE enhanced_synced = 0
+          AND deleted_at IS NULL
+          AND (hyp_questions IS NOT NULL OR hyp_thesis IS NOT NULL)
+          AND COALESCE(is_duplicate, 0) = 0
+      `);
+    } catch (err) { logger.warn({ err: err.message }, 'idx_content_hype_to_sync create skipped'); }
+    logger.info('Migration 59 complete: idx_content_hype_to_sync created');
+  },
 };

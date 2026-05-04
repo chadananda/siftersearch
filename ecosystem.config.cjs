@@ -27,8 +27,10 @@ module.exports = {
       // 188GB RAM box — be generous. The previous 500M (and stale 100M
       // PM2 runtime) caused 30-second restart loops during normal search
       // load: any reranking + KV cache spike pushed past the limit and
-      // PM2 killed the process mid-request.
-      max_memory_restart: '1500M',
+      // PM2 killed the process mid-request. Bumped to 3G (2026-05-04) —
+      // 1.5G was still tight enough that a single chat with reranking +
+      // search cache + Jafar pipeline could trip it.
+      max_memory_restart: '3G',
       // NO wait_ready — it caused death spirals when Meilisearch was slow
       wait_ready: false,
       env: {
@@ -58,8 +60,12 @@ module.exports = {
       autorestart: true,
       watch: false,
       // Worker batches LLM calls + holds embedding payloads in memory.
-      // Same reasoning as the API: be generous on a 188GB box.
-      max_memory_restart: '1500M',
+      // Same reasoning as the API: be generous on a 188GB box. Bumped to
+      // 4G (2026-05-04) — HyPE sync batch holds 100 paragraphs worth of
+      // text + 600 embeddings (3072 dims × Float32) + Meili payload, plus
+      // SQLite mmap. 1.5G was tight enough to SIGTERM mid-batch and burn
+      // the embedding work.
+      max_memory_restart: '4G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
@@ -131,7 +137,7 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       watch: false,
-      max_memory_restart: '1500M',
+      max_memory_restart: '3G',
       env: {
         NODE_ENV: 'production',
         MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''

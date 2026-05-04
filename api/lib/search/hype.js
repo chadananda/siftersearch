@@ -101,10 +101,14 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
     return { processed: 0, indexed: 0, errors: 0, skipped: 'meili-unavailable' };
   }
 
+  // INDEXED BY forces the planner onto idx_content_hype_to_sync (migration 59).
+  // Without the hint, SQLite picks idx_content_deleted_at — a 99%-of-rows
+  // index that turns this batch into a 54-second scan and pushes the worker
+  // past its PM2 memory cap. With the hint: <200ms on 4M rows.
   const rows = await queryAll(`
     SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
            d.religion, d.collection, d.encumbered, d.title, d.author
-    FROM content c
+    FROM content c INDEXED BY idx_content_hype_to_sync
     JOIN docs d ON d.id = c.doc_id
     WHERE c.enhanced_synced = 0
       AND (c.hyp_questions IS NOT NULL OR c.hyp_thesis IS NOT NULL)
