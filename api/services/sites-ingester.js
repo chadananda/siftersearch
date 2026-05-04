@@ -701,20 +701,29 @@ export async function loadAllSiteConfigs() {
 export { loadSiteConfig, withDefaults as _normalizeSiteConfig };
 
 export async function ingestAllSites(opts = {}) {
-  const basePath = config.library.basePath;
-  const sitesRoot = join(basePath, '-sites');
-  let entries = [];
-  try { entries = await readdir(sitesRoot, { withFileTypes: true }); } catch { return { sites: [] }; }
+  // Iterate the sites.yaml registry, NOT the -sites/ directory listing.
+  // Crawler-derived sites set `site_root` to an absolute path OUTSIDE the
+  // Dropbox library (so Dropbox doesn't sync 1 GB+ of MD), and therefore
+  // have no directory inside `<library>/-sites/`. Walking the directory
+  // would silently skip them.
+  //
+  // Each site is wrapped in its own try/catch — one site failing does NOT
+  // block the others. Errors are logged + reported in the result object.
+  let configs;
+  try {
+    configs = await loadAllSiteConfigs();
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Sites-ingester: registry not loadable, skipping tick');
+    return { sites: [] };
+  }
   const results = [];
-  for (const e of entries) {
-    if (!e.isDirectory()) continue;
-    if (e.name.startsWith('.')) continue;
+  for (const siteId of Object.keys(configs)) {
     try {
-      const r = await ingestSite(e.name, opts);
+      const r = await ingestSite(siteId, opts);
       results.push(r);
     } catch (err) {
-      logger.error({ siteId: e.name, err: err.message }, 'Sites-ingester: site failed');
-      results.push({ siteId: e.name, error: err.message });
+      logger.error({ siteId, err: err.message }, 'Sites-ingester: site failed');
+      results.push({ siteId, error: err.message });
     }
   }
   return { sites: results };
