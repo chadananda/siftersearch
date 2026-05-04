@@ -7,6 +7,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { instrumentDb } from './db.js';
 
 let db = null;
 
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS embedding_cache (
 
 export async function initEmbeddingCache(dbPath) {
   const path = dbPath.startsWith('file:') ? dbPath.slice(5) : dbPath;
-  db = new Database(path);
+  db = instrumentDb(new Database(path), 'embedding-cache');
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 30000');
   db.exec(CREATE_TABLE_SQL);

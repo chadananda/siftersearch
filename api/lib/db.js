@@ -35,7 +35,7 @@ function createContentConnection() {
   db.pragma('cache_size = -524288');  // negative = KiB; 512 MB
   db.pragma('mmap_size = 1073741824'); // 1 GB mmap for read-mostly workloads
   logger.info({ path }, 'Content DB connected (local)');
-  return db;
+  return instrumentDb(db, 'content');
 }
 
 function createUserConnection() {
@@ -49,7 +49,7 @@ function createUserConnection() {
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 30000');
   logger.info({ path }, 'User DB connected');
-  return db;
+  return instrumentDb(db, 'user');
 }
 
 export async function getDb() {
@@ -69,9 +69,63 @@ const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || 
 function logQueryTiming(sql, params, startTime, dbName) {
   const duration = Date.now() - startTime;
   if (duration >= SLOW_QUERY_THRESHOLD_MS) {
-    const shortSql = sql.replace(/\s+/g, ' ').trim().slice(0, 200);
+    const shortSql = (sql || '').replace(/\s+/g, ' ').trim().slice(0, 200);
     logger.warn({ duration, sql: shortSql, params: params?.length > 5 ? `[${params.length} params]` : params, db: dbName }, `Slow query (${duration}ms)`);
   }
+}
+
+// Instrument a better-sqlite3 Database instance so every prepare/transaction/exec
+// is timed against SLOW_QUERY_THRESHOLD_MS. This is the single source of truth
+// for slow-query visibility across the codebase: any module that calls getDb()
+// (or wraps a sidecar connection via instrumentDb) gets free coverage.
+//
+// Statements are mutated in place — pluck()/raw()/expand() return `this`, so
+// chained calls keep the instrumented methods. Transactions are timed at the
+// batch level (individual statements inside a txn are also timed via prepare).
+export function instrumentDb(db, dbName) {
+  if (db.__instrumented) return db;
+
+  const origPrepare = db.prepare.bind(db);
+  db.prepare = (sql) => {
+    const stmt = origPrepare(sql);
+    for (const method of ['get', 'all', 'run']) {
+      const orig = stmt[method].bind(stmt);
+      stmt[method] = (...args) => {
+        const start = Date.now();
+        const result = orig(...args);
+        logQueryTiming(sql, args, start, dbName);
+        return result;
+      };
+    }
+    return stmt;
+  };
+
+  const origTransaction = db.transaction.bind(db);
+  db.transaction = (fn) => {
+    const txn = origTransaction(fn);
+    const wrap = (mode) => (...args) => {
+      const start = Date.now();
+      const result = (mode ? txn[mode] : txn)(...args);
+      logQueryTiming(`TRANSACTION${mode ? ` (${mode})` : ''}`, null, start, dbName);
+      return result;
+    };
+    const wrapped = wrap();
+    wrapped.deferred = wrap('deferred');
+    wrapped.immediate = wrap('immediate');
+    wrapped.exclusive = wrap('exclusive');
+    return wrapped;
+  };
+
+  const origExec = db.exec.bind(db);
+  db.exec = (sql) => {
+    const start = Date.now();
+    const result = origExec(sql);
+    logQueryTiming(sql, null, start, dbName);
+    return result;
+  };
+
+  Object.defineProperty(db, '__instrumented', { value: true, enumerable: false });
+  return db;
 }
 
 function runQuery(db, sql, params) {

@@ -10,6 +10,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { instrumentDb } from './db.js';
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS graph_entities (
@@ -141,7 +142,7 @@ function getEntityWithRelations(db, entityId) {
 
 export async function initGraphDb(dbPath) {
   const path = dbPath.startsWith('file:') ? dbPath.slice(5) : dbPath;
-  const client = new Database(path);
+  const client = instrumentDb(new Database(path), 'graph');
   client.pragma('journal_mode = WAL');
   client.pragma('busy_timeout = 30000');
   client.exec(SCHEMA);
