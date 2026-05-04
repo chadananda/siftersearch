@@ -61,14 +61,28 @@ async function loadSitesRegistry(basePath) {
 // 'never' (no enrichment cost). meili_index_prefix derives from the site
 // hostname if absent.
 function withDefaults(siteId, cfg) {
+  const scope = cfg.scope || 'supplemental';
+  // meili_index_prefix:
+  //   - explicit value wins
+  //   - site-only sites MUST have one (used for DB filename + index); compute
+  //     a sane default from siteId if absent
+  //   - supplementals without an explicit prefix → null, meaning "share the
+  //     primary `paragraphs` index" (OceanLibrary's existing pattern — its
+  //     data is already there and shouldn't be split)
+  let prefix = cfg.meili_index_prefix;
+  if (prefix === undefined || prefix === null) {
+    prefix = scope === 'site-only'
+      ? siteId.replace(/\.[a-z]+$/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)
+      : null;
+  }
   return {
     id: siteId,
     adapter: cfg.adapter,
-    scope: cfg.scope || 'supplemental',
+    scope,
     authority_default: typeof cfg.authority_default === 'number' ? cfg.authority_default : 5,
     encumbered: cfg.encumbered === true,
     hype_policy: cfg.hype_policy || 'never',
-    meili_index_prefix: cfg.meili_index_prefix || siteId.replace(/\.[a-z]+$/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16),
+    meili_index_prefix: prefix,
     cadence_minutes: typeof cfg.cadence_minutes === 'number' ? cfg.cadence_minutes : 360,
     supersession_threshold: cfg.supersession_threshold ?? 0.80,
     religion_map: cfg.religion_map || null,

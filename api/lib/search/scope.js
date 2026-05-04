@@ -69,6 +69,10 @@ export function getDefaultScope() {
   if (!siteRegistry) return { primary: true, sites: [] };
   const sites = [];
   for (const cfg of Object.values(siteRegistry)) {
+    // Only supplementals with their own per-site index need to be added to
+    // the scope's sites list. Supplementals that share the primary index
+    // (cfg.meili_index_prefix is null — OceanLibrary's pattern) are already
+    // covered by `primary: true`.
     if (cfg.scope === 'supplemental' && cfg.meili_index_prefix) {
       sites.push(cfg.meili_index_prefix);
     }

@@ -513,10 +513,13 @@ async function processJob(job) {
     const indexNameForSourceSite = (sourceSite) => {
       if (!sourceSite) return 'paragraphs';
       const cfg = siteRegistryByDomain[sourceSite];
-      if (!cfg || !cfg.meili_index_prefix) {
+      if (!cfg) {
         logger.warn({ source_site: sourceSite }, 'Sync routing: no registry entry, using primary index');
         return 'paragraphs';
       }
+      // null/empty prefix = "share the primary index" (oceanlibrary.com's
+      // existing pattern). Per-site indexes only when explicitly configured.
+      if (!cfg.meili_index_prefix) return 'paragraphs';
       return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
     };
 

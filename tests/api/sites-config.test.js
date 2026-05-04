@@ -74,7 +74,10 @@ describe('sites-ingester withDefaults', () => {
     expect(cfg.hype_policy).toBe('never');
     expect(cfg.encumbered).toBe(false);
     expect(cfg.cadence_minutes).toBe(360);
-    expect(cfg.meili_index_prefix).toBeTruthy();
+    // For supplementals without an explicit prefix, prefix is null —
+    // meaning "share the primary `paragraphs` index" (OceanLibrary's
+    // existing pattern). Per-site indexes only when explicitly opted in.
+    expect(cfg.meili_index_prefix).toBeNull();
   });
 
   it('preserves explicit fields without overriding', () => {
@@ -90,9 +93,16 @@ describe('sites-ingester withDefaults', () => {
     expect(cfg.meili_index_prefix).toBe('bt');
   });
 
-  it('derives meili_index_prefix from siteId when absent', () => {
-    const cfg = normalize('foo.org', { adapter: 'site2rag' });
+  it('derives meili_index_prefix from siteId when scope=site-only and prefix absent', () => {
+    // Site-only sites MUST have a prefix (used for the SQLite filename and
+    // Meili index name). When absent, withDefaults computes one from siteId.
+    const cfg = normalize('foo.org', { adapter: 'site2rag', scope: 'site-only' });
     expect(cfg.meili_index_prefix).toBe('foo');
+  });
+
+  it('supplemental sites get null prefix when absent (share primary index)', () => {
+    const cfg = normalize('foo.org', { adapter: 'site2rag', scope: 'supplemental' });
+    expect(cfg.meili_index_prefix).toBeNull();
   });
 
   it('always sets id to the siteId argument', () => {
