@@ -23,7 +23,7 @@ import yaml from 'yaml';
 
 import { logger } from '../lib/logger.js';
 import { config } from '../lib/config.js';
-import { query, queryOne, queryAll } from '../lib/db.js';
+import { query, queryOne, queryAll, getSiteDb } from '../lib/db.js';
 import { aiService } from '../lib/ai-services.js';
 // content.js exports a single named object `content` and re-exports as
 // default. Use the named export so `content.deleteParagraphsByDoc` resolves;
@@ -56,11 +56,31 @@ async function loadSitesRegistry(basePath) {
   }
 }
 
+// Apply sensible defaults so a sparse sites.yaml entry still works. The
+// defaults are conservative: scope='supplemental' (not site-only), hype_policy
+// 'never' (no enrichment cost). meili_index_prefix derives from the site
+// hostname if absent.
+function withDefaults(siteId, cfg) {
+  return {
+    id: siteId,
+    adapter: cfg.adapter,
+    scope: cfg.scope || 'supplemental',
+    authority_default: typeof cfg.authority_default === 'number' ? cfg.authority_default : 5,
+    encumbered: cfg.encumbered === true,
+    hype_policy: cfg.hype_policy || 'never',
+    meili_index_prefix: cfg.meili_index_prefix || siteId.replace(/\.[a-z]+$/i, '').replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16),
+    cadence_minutes: typeof cfg.cadence_minutes === 'number' ? cfg.cadence_minutes : 360,
+    supersession_threshold: cfg.supersession_threshold ?? 0.80,
+    religion_map: cfg.religion_map || null,
+    notes: cfg.notes || ''
+  };
+}
+
 async function loadSiteConfig(basePath, siteId) {
   const registry = await loadSitesRegistry(basePath);
   const cfg = registry[siteId];
   if (!cfg) throw new Error(`Site '${siteId}' not in -sites/sites.yaml`);
-  return cfg;
+  return withDefaults(siteId, cfg);
 }
 
 async function loadAdapter(adapterName) {
@@ -296,7 +316,7 @@ async function clearSupersedeesOf(deletedDocId) {
 
 // ─── Doc upsert (used for both new and re-ingest) ───────────────────────
 
-async function upsertDoc(docFields, fileHash, bodyHash) {
+async function upsertDoc(docFields, fileHash, bodyHash, scope = 'primary') {
   const now = new Date().toISOString();
   // db.js's runQuery treats writes via .run() and ignores RETURNING output.
   // For ON CONFLICT DO UPDATE, lastInsertRowid is unreliable (no insert occurred).
@@ -305,9 +325,9 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
     INSERT INTO docs
       (file_path, file_hash, body_hash, title, author, religion, collection,
        language, description, paragraph_count,
-       source_site, source_url, external_id,
+       source_site, source_url, external_id, scope,
        created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(file_path) DO UPDATE SET
       file_hash = excluded.file_hash,
       body_hash = excluded.body_hash,
@@ -321,6 +341,7 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
       source_site = excluded.source_site,
       source_url = excluded.source_url,
       external_id = excluded.external_id,
+      scope = excluded.scope,
       duplicate_of = NULL,
       deleted_at = NULL,
       updated_at = excluded.updated_at
@@ -329,6 +350,7 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
     docFields.title, docFields.author, docFields.religion, docFields.collection || '',
     docFields.language || 'en', docFields.description || '', docFields.paragraph_count || 0,
     docFields.source_site || null, docFields.source_url || null, docFields.external_id || null,
+    scope,
     now, now
   ]);
   const row = await queryOne('SELECT id FROM docs WHERE file_path = ?', [docFields.file_path]);
@@ -336,9 +358,92 @@ async function upsertDoc(docFields, fileHash, bodyHash) {
   return Number(row.id);
 }
 
+// ─── Site-only DB ops ───────────────────────────────────────────────────
+// Site-only sites (e.g. bahaiteachings.org) live in their own SQLite at
+// data/sites/<prefix>.db with a strict subset of the primary schema. These
+// helpers write to that DB directly via the better-sqlite3 connection so we
+// don't have to fork the entire content.js helper layer.
+//
+// The connection is instrumented (slow-query log auto-tags `db: 'site-<prefix>'`)
+// and migrations run on first connect (see api/lib/migrations/site.js).
+
+async function siteDbFindDoc(siteDb, filePath) {
+  return siteDb
+    .prepare('SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL')
+    .get(filePath) || null;
+}
+
+async function siteDbUpsertDoc(siteDb, docFields, fileHash, bodyHash) {
+  const now = new Date().toISOString();
+  siteDb.prepare(`
+    INSERT INTO docs
+      (file_path, file_hash, body_hash, title, author, religion, collection,
+       language, description, paragraph_count,
+       source_site, source_url, external_id, encumbered,
+       created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(file_path) DO UPDATE SET
+      file_hash = excluded.file_hash,
+      body_hash = excluded.body_hash,
+      title = excluded.title,
+      author = excluded.author,
+      religion = excluded.religion,
+      collection = excluded.collection,
+      language = excluded.language,
+      description = excluded.description,
+      paragraph_count = excluded.paragraph_count,
+      source_site = excluded.source_site,
+      source_url = excluded.source_url,
+      external_id = excluded.external_id,
+      encumbered = excluded.encumbered,
+      deleted_at = NULL,
+      updated_at = excluded.updated_at
+  `).run(
+    docFields.file_path, fileHash, bodyHash,
+    docFields.title, docFields.author, docFields.religion, docFields.collection || '',
+    docFields.language || 'en', docFields.description || '', docFields.paragraph_count || 0,
+    docFields.source_site || null, docFields.source_url || null, docFields.external_id || null,
+    docFields.encumbered ? 1 : 0,
+    now, now
+  );
+  const row = siteDb.prepare('SELECT id FROM docs WHERE file_path = ?').get(docFields.file_path);
+  if (!row) throw new Error(`siteDbUpsertDoc: post-upsert SELECT returned no row for ${docFields.file_path}`);
+  return Number(row.id);
+}
+
+function siteDbReplaceContent(siteDb, docId, paragraphs) {
+  const txn = siteDb.transaction((rows) => {
+    siteDb.prepare('DELETE FROM content WHERE doc_id = ?').run(docId);
+    const stmt = siteDb.prepare(`
+      INSERT INTO content
+        (doc_id, paragraph_index, text, normalized_hash,
+         heading, blocktype, language, embedding, embedding_model,
+         external_para_id, pdf_page,
+         synced, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `);
+    const now = new Date().toISOString();
+    for (const p of rows) {
+      stmt.run(
+        docId, p.paragraphIndex, p.text, p.normalizedHash,
+        p.heading || '', p.blocktype || 'paragraph', p.language || 'en',
+        p.embedding, p.embedding ? p.embeddingModel : null,
+        p.external_para_id || null,
+        typeof p.pdf_page === 'number' ? p.pdf_page : null,
+        now, now
+      );
+    }
+  });
+  txn(paragraphs);
+}
+
 // ─── Ingest a single file ───────────────────────────────────────────────
 
 async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath, threshold, force = false }) {
+  const scope = siteConfig.scope || 'supplemental';
+  const isSiteOnly = scope === 'site-only';
+  const siteDb = isSiteOnly ? await getSiteDb(siteConfig.id, siteConfig.meili_index_prefix) : null;
+
   const relPath = relative(basePath, absPath);
   const text = await readFile(absPath, 'utf-8');
   const fileHash = fileHashOf(text);
@@ -347,32 +452,32 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
   if (!force) {
     const st = await stat(absPath);
     if (Date.now() - st.mtimeMs < REINGEST_COOLDOWN_MS) {
-      return { status: 'skipped_cooldown', file: relPath };
+      return { status: 'skipped_cooldown', file: relPath, scope };
     }
   }
 
-  // Skip if unchanged
-  const existing = await queryOne(
-    'SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL',
-    [relPath]
-  );
+  // Skip if unchanged — query the right DB based on scope.
+  const existing = isSiteOnly
+    ? await siteDbFindDoc(siteDb, relPath)
+    : await queryOne('SELECT id, file_hash FROM docs WHERE file_path = ? AND deleted_at IS NULL', [relPath]);
   if (!force && existing && existing.file_hash === fileHash) {
-    return { status: 'unchanged', file: relPath };
+    return { status: 'unchanged', file: relPath, scope };
   }
 
   // Parse via the site adapter — pass siteConfig so the adapter can look up
   // its religion_map / format hints / etc. without reading config files.
   const { docFields, paragraphs } = await adapter.parseDoc(relPath, text, { siteRoot, siteConfig });
   docFields.file_path = relPath;
+  if (siteConfig.encumbered) docFields.encumbered = true;
 
   if (paragraphs.length === 0) {
-    return { status: 'empty', file: relPath };
+    return { status: 'empty', file: relPath, scope };
   }
 
-  // Compute hashes for supersession lookup + cache
+  // Compute hashes for cache lookup. Always harvest from main `content`
+  // table — the embedding cache is cross-corpus, so a paragraph appearing in
+  // both bahaiteachings.org and primary reuses the existing embedding.
   const hashes = paragraphs.map(p => normalizedHash(p.text));
-
-  // Cache lookup (sidecar harvest)
   const bundles = await harvestBundles([...new Set(hashes)]);
 
   // Generate embeddings for misses
@@ -386,14 +491,10 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     newEmbeddings = await aiService('embedding').embed(missTexts, { caller: 'sites-ingester' });
   }
 
-  // Supersession detection (only for fresh inserts — re-ingest of an existing
-  // import doesn't re-evaluate, since the original mapping was already settled).
-  // Two parallel candidate paths:
-  //   - hash overlap (works when paragraph segmentation aligns)
-  //   - title+author metadata match (works when segmentation differs, e.g.
-  //     our corpus has `[aN]` prefix markers that break hash matching)
+  // Supersession only runs for primary/supplemental on the main DB. Site-only
+  // ingest never replaces primary docs (separate DB; structurally isolated).
   let supersedes = null;
-  if (!existing) {
+  if (!isSiteOnly && !existing) {
     const [hashCandidates, metaCandidates] = await Promise.all([
       findSupersessionCandidates(hashes),
       findMetadataCandidates(docFields.title, docFields.author)
@@ -412,16 +513,8 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     }
   }
 
-  // Upsert doc
-  const bodyHash = fileHashOf(text.replace(/^---\n[\s\S]*?\n---\n/, ''));
-  const docId = await upsertDoc(docFields, fileHash, bodyHash);
-
-  // Replace content via single transaction. Per-row insertParagraph was
-  // ~200ms each due to per-row index updates; bulkInsertParagraphs wraps the
-  // whole set in one transaction so the WAL fsync amortizes across hundreds
-  // of inserts. Brings book-ingest time from ~2 min to ~5-10 sec.
-  await content.deleteParagraphsByDoc(docId);
-
+  // Build the bulk-insert rows. Same shape regardless of target DB; the
+  // site-DB writer just ignores enrichment fields.
   let newIdx = 0;
   const bulkParagraphs = paragraphs.map((p, i) => {
     const bundle = bundles.get(hashes[i]);
@@ -439,24 +532,37 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
       text: p.text,
       heading: p.heading || '',
       blocktype: p.blocktype || 'paragraph',
+      language: p.language || 'en',
+      normalizedHash: hashes[i],
       embedding: embeddingBlob,
       embeddingModel: emb ? EMBEDDING_MODEL : null,
       hyp_thesis: bundle?.hyp_thesis || null,
       hyp_questions: bundle?.hyp_questions || null,
       context: bundle?.context || null,
       context_model: bundle?.context_model || null,
-      external_para_id: p.external_para_id || null
+      external_para_id: p.external_para_id || null,
+      pdf_page: typeof p.pdf_page === 'number' ? p.pdf_page : null
     };
   });
-  await content.bulkInsertParagraphs(docId, bulkParagraphs);
 
-  // Mark supersession
-  if (supersedes) await markSuperseded(supersedes, docId);
+  const bodyHash = fileHashOf(text.replace(/^---\n[\s\S]*?\n---\n/, ''));
+
+  let docId;
+  if (isSiteOnly) {
+    docId = await siteDbUpsertDoc(siteDb, docFields, fileHash, bodyHash);
+    siteDbReplaceContent(siteDb, docId, bulkParagraphs);
+  } else {
+    docId = await upsertDoc(docFields, fileHash, bodyHash, scope);
+    await content.deleteParagraphsByDoc(docId);
+    await content.bulkInsertParagraphs(docId, bulkParagraphs);
+    if (supersedes) await markSuperseded(supersedes, docId);
+  }
 
   return {
     status: existing ? 're-ingested' : 'new',
     file: relPath,
     doc_id: docId,
+    scope,
     paragraphs: paragraphs.length,
     cache_hits: bundles.size,
     new_embeddings: newEmbeddings.length,
@@ -553,6 +659,22 @@ export async function ingestSite(siteId, opts = {}) {
 }
 
 // ─── Convenience: discover and run all sites ────────────────────────────
+
+// Public registry helpers. Used by the search-scope registry (Phase E) and
+// by tests. `loadAllSiteConfigs` returns a map siteId → normalized config
+// (with defaults applied), so consumers don't need to call withDefaults
+// themselves.
+export async function loadAllSiteConfigs() {
+  const basePath = config.library.basePath;
+  const registry = await loadSitesRegistry(basePath);
+  const out = {};
+  for (const [siteId, cfg] of Object.entries(registry)) {
+    out[siteId] = withDefaults(siteId, cfg);
+  }
+  return out;
+}
+
+export { loadSiteConfig, withDefaults as _normalizeSiteConfig };
 
 export async function ingestAllSites(opts = {}) {
   const basePath = config.library.basePath;

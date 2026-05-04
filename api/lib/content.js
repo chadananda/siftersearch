@@ -192,9 +192,9 @@ async function bulkInsertParagraphs(docId, paragraphs) {
         (doc_id, paragraph_index, text, content_hash, normalized_hash,
          heading, blocktype, embedding, embedding_model,
          hyp_thesis, hyp_questions, context, context_model, enhanced_synced,
-         external_para_id,
+         external_para_id, pdf_page,
          synced, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       args: [
         docId, p.paragraphIndex, p.text,
         computeContentHash(p.text), computeNormalizedHash(p.text),
@@ -206,6 +206,10 @@ async function bulkInsertParagraphs(docId, paragraphs) {
         // anything to sync; if all sidecars are null, sync is a no-op.
         0,
         p.external_para_id || null,
+        // pdf_page is null for primary corpus + HTML-derived sites; set for
+        // PDF-derived MD via the site2rag adapter so search results can build
+        // deeplinks like `<source_url>#page=<pdf_page>`.
+        typeof p.pdf_page === 'number' ? p.pdf_page : null,
         ts, ts
       ]
     };

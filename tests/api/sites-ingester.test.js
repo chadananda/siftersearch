@@ -38,8 +38,25 @@ vi.mock('../../api/lib/db.js', () => {
     const txn = rawDb.transaction((list) => list.map(({ sql, args = [] }) => rawDb.prepare(sql).run(...args)));
     return txn(stmts);
   }
-  return { query, queryOne, queryAll, getDb, transaction, getBatchDb: getDb };
+  // Site-only routing: each call to getSiteDb returns a per-prefix in-memory
+  // DB. Tests of site-only scope assert against these handles to confirm
+  // primary DB isolation.
+  async function getSiteDb(siteId, indexPrefix) {
+    const key = indexPrefix || siteId;
+    if (!siteRawDbs.has(key)) {
+      const sdb = new Database(':memory:');
+      sdb.pragma('foreign_keys = OFF');
+      sdb.exec(SITE_SCHEMA);
+      siteRawDbs.set(key, sdb);
+    }
+    return siteRawDbs.get(key);
+  }
+  return { query, queryOne, queryAll, getDb, getSiteDb, transaction, getBatchDb: getDb };
 });
+
+// In-memory site DBs keyed by meili_index_prefix. Tests can read these
+// directly to assert per-site isolation.
+const siteRawDbs = new Map();
 
 vi.mock('../../api/lib/ai-services.js', () => ({
   aiService: () => ({
@@ -88,6 +105,7 @@ const SCHEMA = `
     external_id TEXT,
     duplicate_of INTEGER,
     deleted_at TEXT,
+    scope TEXT NOT NULL DEFAULT 'primary',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
@@ -110,6 +128,7 @@ const SCHEMA = `
     enhanced_synced INTEGER DEFAULT 0,
     external_para_id TEXT,
     is_duplicate INTEGER DEFAULT 0,
+    pdf_page INTEGER,
     synced INTEGER DEFAULT 0,
     deleted_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -120,9 +139,60 @@ const SCHEMA = `
     ON content(normalized_hash, doc_id) WHERE deleted_at IS NULL;
 `;
 
+// Mirrors api/lib/migrations/site.js — strict subset of primary schema for
+// site-only sites. NO enrichment / translation / dedup columns.
+const SITE_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_path TEXT UNIQUE,
+    file_hash TEXT,
+    filename TEXT,
+    title TEXT,
+    author TEXT,
+    religion TEXT,
+    collection TEXT,
+    language TEXT DEFAULT 'en',
+    year INTEGER,
+    description TEXT,
+    paragraph_count INTEGER DEFAULT 0,
+    body_hash TEXT,
+    file_mtime TEXT,
+    source_site TEXT,
+    source_url TEXT,
+    external_id TEXT,
+    encumbered INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS content (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    doc_id INTEGER NOT NULL,
+    paragraph_index INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    normalized_hash TEXT,
+    heading TEXT,
+    blocktype TEXT DEFAULT 'paragraph',
+    language TEXT,
+    embedding BLOB,
+    embedding_model TEXT,
+    synced INTEGER DEFAULT 0,
+    external_para_id TEXT,
+    pdf_page INTEGER,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TEXT
+  );
+`;
+
 function resetDb() {
   rawDb.exec(`DROP TABLE IF EXISTS content; DROP TABLE IF EXISTS docs;`);
   rawDb.exec(SCHEMA);
+  // Wipe + re-init the per-site in-memory DBs too so each test starts clean.
+  for (const [, sdb] of siteRawDbs) {
+    sdb.exec(`DROP TABLE IF EXISTS content; DROP TABLE IF EXISTS docs; DROP TABLE IF EXISTS _schema_version;`);
+    sdb.exec(SITE_SCHEMA);
+  }
 }
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────
@@ -169,6 +239,50 @@ const SITES_YAML = `sites:
       Tao: Tao
       Zoroastrian: Zoroastrian
       Confucian: Confucian
+  bt-test:
+    adapter: site2rag
+    scope: site-only
+    authority_default: 0
+    hype_policy: never
+    meili_index_prefix: bttest
+  balib-test:
+    adapter: site2rag
+    scope: supplemental
+    authority_default: 3
+    hype_policy: never
+    meili_index_prefix: balibtest
+`;
+
+const FIXTURE_BAHAITEACHINGS = `---
+source_url: https://bahaiteachings.org/article-slug
+title: Why I Believe in Unity
+authors:
+  - name: Some Author Name
+mime_type: text/html
+domain: bahaiteachings.org
+---
+The first paragraph of an opinion essay.
+
+A second paragraph reflecting on personal experience.
+
+The conclusion paragraph.
+`;
+
+const FIXTURE_BAHAILIB_PDF = `---
+source_url: https://bahai-library.com/pdf/test.pdf
+domain: bahai-library.com
+title: test_pdf
+mime_type: application/pdf
+pages: 1
+host_page_url: https://bahai-library.com/pdf/
+---
+<span data-pdf-page="1" data-pdf-para="1" data-pdf-src="https://bahai-library.com/pdf/test.pdf#page=1"></span>
+
+First paragraph from page 1 of the test PDF.
+
+<span data-pdf-page="1" data-pdf-para="2" data-pdf-src="https://bahai-library.com/pdf/test.pdf#page=1"></span>
+
+Second paragraph from page 1.
 `;
 
 let tmpBase;
@@ -177,10 +291,12 @@ async function setupFixtureSite() {
   tmpBase = await mkdtemp(join(tmpdir(), 'sitesingest-'));
   process.env.SITES_INGEST_TEST_BASE = tmpBase;
   await mkdir(join(tmpBase, '-sites', 'testsite'), { recursive: true });
+  await mkdir(join(tmpBase, '-sites', 'bt-test'), { recursive: true });
+  await mkdir(join(tmpBase, '-sites', 'balib-test'), { recursive: true });
   await writeFile(join(tmpBase, '-sites', 'sites.yaml'), SITES_YAML, 'utf-8');
-  // Backdate so the cooldown check passes (mtime > 4h ago not required when
-  // we pass force:true, but we also test the unforced path).
   await writeFile(join(tmpBase, '-sites', 'testsite', 'test-doc.md'), FIXTURE_OL_DOC, 'utf-8');
+  await writeFile(join(tmpBase, '-sites', 'bt-test', 'unity.md'), FIXTURE_BAHAITEACHINGS, 'utf-8');
+  await writeFile(join(tmpBase, '-sites', 'balib-test', 'pdf-doc.md'), FIXTURE_BAHAILIB_PDF, 'utf-8');
   return tmpBase;
 }
 
@@ -294,5 +410,86 @@ describe('Sites ingester (integration)', () => {
     // Either status is acceptable: file is unchanged OR within cooldown.
     expect(result.stats.errors).toBe(0);
     expect(result.stats.new).toBe(0);
+  });
+
+  // ─── Site-only routing — the critical isolation rule ─────────────────────
+
+  it('site-only ingest writes to the per-site DB, NOT main DB', async () => {
+    const result = await ingester.ingestSite('bt-test', { force: true });
+    expect(result.stats.errors).toBe(0);
+    expect(result.stats.new).toBe(1);
+
+    // CRITICAL: main DB must have ZERO rows from bahaiteachings.org
+    const mainDocs = rawDb.prepare(
+      `SELECT COUNT(*) AS n FROM docs WHERE source_site = 'bt-test'`
+    ).get().n;
+    expect(mainDocs).toBe(0);
+
+    const mainContent = rawDb.prepare(`SELECT COUNT(*) AS n FROM content`).get().n;
+    expect(mainContent).toBe(0);
+
+    // The site DB MUST have the doc + paragraphs
+    const siteDb = siteRawDbs.get('bttest');
+    expect(siteDb).toBeDefined();
+    const siteDoc = siteDb.prepare(
+      `SELECT * FROM docs WHERE source_site = 'bt-test'`
+    ).get();
+    expect(siteDoc).toBeTruthy();
+    expect(siteDoc.title).toBe('Why I Believe in Unity');
+    const siteContent = siteDb.prepare(`SELECT COUNT(*) AS n FROM content`).get().n;
+    expect(siteContent).toBe(3);
+  });
+
+  it('supplemental ingest (scope=supplemental) writes to main DB with scope=supplemental', async () => {
+    const result = await ingester.ingestSite('balib-test', { force: true });
+    expect(result.stats.errors).toBe(0);
+    expect(result.stats.new).toBe(1);
+
+    const doc = rawDb.prepare(
+      `SELECT * FROM docs WHERE source_site = 'balib-test'`
+    ).get();
+    expect(doc).toBeTruthy();
+    expect(doc.scope).toBe('supplemental');
+
+    // PDF page metadata flows through to content rows
+    const paras = rawDb.prepare(
+      `SELECT * FROM content WHERE doc_id = ? ORDER BY paragraph_index`
+    ).all(doc.id);
+    expect(paras.length).toBe(2);
+    expect(paras[0].pdf_page).toBe(1);
+    expect(paras[1].pdf_page).toBe(1);
+    expect(paras[0].external_para_id).toBe('p1.1');
+    expect(paras[1].external_para_id).toBe('p1.2');
+
+    // Site DB for supplementals: NOT touched (supplementals share main DB)
+    const supplementalSiteDb = siteRawDbs.get('balibtest');
+    if (supplementalSiteDb) {
+      const n = supplementalSiteDb.prepare(`SELECT COUNT(*) AS n FROM docs`).get().n;
+      expect(n).toBe(0);
+    }
+  });
+
+  it('supplemental ingest does NOT trigger supersession against primary docs (scope=supplemental never replaces primary in v1)', async () => {
+    // Pre-seed primary corpus with a paragraph that hash-matches the
+    // supplemental fixture. With site2rag adapter, detectSupersedee returns
+    // null, so primary should remain untouched.
+    rawDb.prepare(`INSERT INTO docs (file_path, title, author, religion, paragraph_count, scope) VALUES (?, ?, ?, ?, ?, ?)`)
+      .run('Bahai/primary.md', 'Primary Doc', 'Primary Author', "Baha'i", 1, 'primary');
+    const primaryDocId = rawDb.prepare(`SELECT id FROM docs WHERE file_path = 'Bahai/primary.md'`).get().id;
+
+    await ingester.ingestSite('balib-test', { force: true });
+
+    const primary = rawDb.prepare(`SELECT duplicate_of FROM docs WHERE id = ?`).get(primaryDocId);
+    expect(primary.duplicate_of).toBeNull();
+  });
+
+  it('site-only ingest does NOT call into main-DB harvest for paragraphs not in main (just no cache hit)', async () => {
+    // bahaiteachings paragraphs are unique opinion content — no overlap with
+    // any seeded primary content. Cache hits = 0 expected.
+    const result = await ingester.ingestSite('bt-test', { force: true });
+    const r = result.stats || {};
+    // No assertion needed beyond "ingest succeeded without leaking to main"
+    expect(r.errors).toBe(0);
+    expect(rawDb.prepare(`SELECT COUNT(*) AS n FROM docs`).get().n).toBe(0);
   });
 });

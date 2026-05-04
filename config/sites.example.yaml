@@ -3,10 +3,38 @@
 # copy in the library tree, NOT from this file. Keep this in sync with
 # the structure at <library_base>/-sites/sites.yaml so a wiped Dropbox
 # folder can be restored from git.
+#
+# Per-site fields (all sites):
+#   adapter             - module name in api/services/site-adapters/
+#   scope               - 'primary' | 'supplemental' | 'site-only'
+#                         primary       → curated; default Jafar (NOT for external sites)
+#                         supplemental  → visible in default Jafar at low authority
+#                         site-only     → walled off; only visible to a chatbot
+#                                         whose location matches this site
+#   authority_default   - 0-10; ranking floor for hits from this site
+#   encumbered          - bool; if true, search shows a preview only
+#   hype_policy         - 'never' | 'central-figures' | 'auto'
+#                         never           → skip HyPE generation for this site (v1 default)
+#                         central-figures → only paragraphs by Bahá'u'lláh / Báb /
+#                                           'Abdu'l-Bahá / Shoghi Effendi (v2)
+#                         auto            → normal HyPE pipeline (primary corpus)
+#   meili_index_prefix  - short id used for Meili index names
+#                         (siftersearch_<prefix>_paragraphs, etc.)
+#                         AND for the site-only DB filename (data/sites/<prefix>.db)
+#   cadence_minutes     - advisory; ingester ticks come from library-watcher
+#   supersession_threshold - hash-overlap ratio for primary-corpus supersession
+#                            (only meaningful for the original oceanlibrary.com flow)
+#   religion_map        - adapter-specific frontmatter→canon mapping
+#   notes               - free text
 
 sites:
   oceanlibrary.com:
     adapter: oceanlibrary
+    scope: supplemental
+    authority_default: 7
+    encumbered: false
+    hype_policy: auto
+    meili_index_prefix: ol
     supersession_threshold: 0.80
     cadence_minutes: 60
     religion_map:
@@ -22,7 +50,53 @@ sites:
       Tao:         Tao
       Zoroastrian: Zoroastrian
     notes: |
-      OceanLibrary.com — high-quality proofed corpus. When a book here matches
-      an existing book in our corpus by title+author+content, our copy is
-      marked duplicate_of the OL doc so search/enrichment skips ours.
-      Auto-restored if the OL file later disappears from disk.
+      OceanLibrary.com — high-quality proofed corpus. Existing supersession
+      flow: when a book here matches an existing book in our primary corpus
+      by title+author+content, our copy is marked duplicate_of the OL doc.
+      Auto-restored if the OL file disappears.
+      hype_policy: auto preserves the existing behavior — OL docs go through
+      the same enrichment pipeline as primary, since this is the original
+      supplemental and we already have HyPE coverage for it.
+
+  bahai-library.com:
+    adapter: site2rag
+    scope: supplemental
+    authority_default: 3
+    encumbered: false
+    hype_policy: never
+    meili_index_prefix: balib
+    cadence_minutes: 360
+    notes: |
+      Mixed-quality archive (66K MD files, 721 MB). HTML + PDF-derived MD
+      with <span data-pdf-page> page-anchor markers for paragraph-level PDF
+      deeplinks. No author field in frontmatter — adapter falls back to
+      filename prefix.
+      hype_policy: never — skip HyPE for the whole site in v1. Cost-bounded
+      until GPU/Sonnet capacity expands.
+
+  oceanoflights.org:
+    adapter: site2rag
+    scope: supplemental
+    authority_default: 5
+    encumbered: false
+    hype_policy: never
+    meili_index_prefix: ool
+    cadence_minutes: 360
+    notes: |
+      Quality supplementary; structured authors metadata including central
+      figures (Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi). First candidate
+      for v2 hype_policy: central-figures opt-in once the GPU budget allows.
+
+  bahaiteachings.org:
+    adapter: site2rag
+    scope: site-only
+    authority_default: 0
+    encumbered: false
+    hype_policy: never
+    meili_index_prefix: bt
+    cadence_minutes: 360
+    notes: |
+      Opinion essays (~3,500 articles, 30 MB). Site-scoped chatbot only.
+      HARD RULE: default Jafar must return ZERO hits from this site. Lives
+      in its own SQLite at data/sites/bt.db; default search code paths
+      never open this connection.
