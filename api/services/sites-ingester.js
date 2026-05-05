@@ -509,10 +509,19 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
     newEmbeddings = await aiService('embedding').embed(missTexts, { caller: 'sites-ingester' });
   }
 
-  // Supersession only runs for primary/supplemental on the main DB. Site-only
-  // ingest never replaces primary docs (separate DB; structurally isolated).
+  // Supersession runs ONLY for scope=primary external sources (currently just
+  // OceanLibrary — its content IS the canonical proofread version, and its
+  // ingest marks our copies as duplicate_of OL via detectSupersedee).
+  //
+  // Supplementals (bahai-library, oceanoflights) are additive — they NEVER
+  // replace primary, so the candidate queries are pure waste. Skipping them
+  // saves ~300-500ms per file × 60K files ≈ 5-9 hours on a full bahai-library
+  // ingest. site2rag adapter's detectSupersedee returns null anyway.
+  //
+  // Site-only DBs are structurally isolated from primary — no supersession
+  // possible. Already covered by isSiteOnly above.
   let supersedes = null;
-  if (!isSiteOnly && !existing) {
+  if (siteConfig.scope === 'primary' && !existing) {
     const [hashCandidates, metaCandidates] = await Promise.all([
       findSupersessionCandidates(hashes),
       findMetadataCandidates(docFields.title, docFields.author)

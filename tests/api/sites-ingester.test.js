@@ -226,6 +226,7 @@ A third substantive paragraph, completing the section with a teaching on detachm
 const SITES_YAML = `sites:
   testsite:
     adapter: oceanlibrary
+    scope: primary
     supersession_threshold: 0.80
     cadence_minutes: 60
     religion_map:

@@ -103,7 +103,10 @@ export async function getSiteDb(siteId, indexPrefix) {
 
 export const getBatchDb = getDb;
 
-const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '15', 10);
+// 150ms threshold filters out routine INSERT/UPDATE chatter (ai_usage logging,
+// small bulk inserts) and surfaces actually-slow queries — the ones that
+// matter for tuning. Bumped from 15ms after observing the log was 99% noise.
+const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '150', 10);
 
 function logQueryTiming(sql, params, startTime, dbName) {
   const duration = Date.now() - startTime;
