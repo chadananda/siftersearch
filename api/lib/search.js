@@ -966,9 +966,10 @@ export async function healthCheck() {
 import {
   extractMatchingSentences,
   highlightBestSentence,
-  enrichHitsWithExcerpts
+  enrichHitsWithExcerpts,
+  STOP_WORDS
 } from './search/highlighting.js';
-export { extractMatchingSentences, highlightBestSentence, enrichHitsWithExcerpts };
+export { extractMatchingSentences, highlightBestSentence, enrichHitsWithExcerpts, STOP_WORDS };
 
 
 // ─── mergeSearchResults ───────────────────────────────────────────────────────

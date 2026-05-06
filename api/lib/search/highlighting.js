@@ -271,7 +271,7 @@ function extractSentenceAtPosition(text, position, contextSentences = 1) {
 /**
  * Common English stop words that should not be highlighted in search results
  */
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
   'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
   'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
