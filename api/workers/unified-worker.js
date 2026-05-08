@@ -216,7 +216,13 @@ async function processSyncJob(job) {
           let confirmed = false;
           try {
             const targetIndex = meili.index(indexNameForDoc(doc));
-            const task = await targetIndex.addDocuments(meiliParas);
+            // Explicit primaryKey is REQUIRED for the per-site indexes. Docs
+            // contain `id`, `doc_id`, `external_para_id` — Meili refuses to
+            // infer when multiple fields end with `id`, returning
+            // "primary key inference failed" and rejecting the whole batch.
+            // The main `paragraphs` index already has primaryKey='id' set;
+            // passing it again is a no-op (Meili validates equality).
+            const task = await targetIndex.addDocuments(meiliParas, { primaryKey: 'id' });
             await waitForMeiliTask(meili, task, 60000);
             confirmed = true;
           } catch (err) {
@@ -494,7 +500,8 @@ async function syncOneSiteOnlyDb(meili, cfg) {
     // confirmation before flipping synced=1 in the site DB. Otherwise a
     // worker crash mid-flight loses data silently (SQLite thinks rows are
     // synced; Meili never received them; future iterations skip).
-    const task = await idx.addDocuments(meiliDocs);
+    // Explicit primaryKey:'id' — see same comment on the main DB path.
+    const task = await idx.addDocuments(meiliDocs, { primaryKey: 'id' });
     await waitForMeiliTask(meili, task, 60000);
     const ids = batch.map(p => p.id);
     const placeholders = ids.map(() => '?').join(',');
