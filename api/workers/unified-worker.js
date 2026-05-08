@@ -205,15 +205,27 @@ async function processSyncJob(job) {
           if (cacheMisses > 0) {
             logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
           }
+          // Verified sync: enqueue addDocuments, await Meili task confirmation,
+          // mark synced ONLY if Meili confirms. Previously the worker flipped
+          // synced=1 immediately after the API call, which silently lost data
+          // when the worker process died mid-flight (Meili never received the
+          // task; SQLite thought it was synced; future iterations skipped the
+          // rows). 60s timeout is generous given typical task duration is
+          // sub-second; on timeout we leave synced=0 so a future iteration
+          // retries (Meili dedups on primary key, so retry is safe).
+          let confirmed = false;
           try {
             const targetIndex = meili.index(indexNameForDoc(doc));
-            await targetIndex.addDocuments(meiliParas);
+            const task = await targetIndex.addDocuments(meiliParas);
+            await waitForMeiliTask(meili, task, 60000);
+            confirmed = true;
           } catch (err) {
             logger.error({ err: err.message, docId: doc.id, source_site: doc.source_site, batchSize: meiliParas.length }, 'Paragraph batch failed');
             failedItems += meiliParas.length;
           }
-          // Always mark synced — even on Meilisearch failure, don't retry the same batch forever
-          await content.markSynced(paraIds);
+          if (confirmed) {
+            await content.markSynced(paraIds);
+          }
           completedItems += paraIds.length;
           docParasProcessed += paraIds.length;
           meiliParas.length = 0;
@@ -478,7 +490,12 @@ async function syncOneSiteOnlyDb(meili, cfg) {
         ...(embedding ? { _vectors: { default: embedding } } : {})
       };
     });
-    await idx.addDocuments(meiliDocs);
+    // Same verified-sync pattern as the main DB path: await Meili task
+    // confirmation before flipping synced=1 in the site DB. Otherwise a
+    // worker crash mid-flight loses data silently (SQLite thinks rows are
+    // synced; Meili never received them; future iterations skip).
+    const task = await idx.addDocuments(meiliDocs);
+    await waitForMeiliTask(meili, task, 60000);
     const ids = batch.map(p => p.id);
     const placeholders = ids.map(() => '?').join(',');
     siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
