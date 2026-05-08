@@ -142,6 +142,61 @@ async function processSyncJob(job) {
       if (!cfg.meili_index_prefix) return 'paragraphs';
       return `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
     };
+    // Cross-doc batching + pipelined in-flight tasks.
+    //
+    // Per-doc serial sync was bottlenecked by ~21 paras/batch averaging 4.5s
+    // of Meili HNSW indexing → ~2.7 paras/sec. Two stacked optimizations:
+    //
+    //  1. Cross-doc buffer: accumulate paragraphs from multiple short docs
+    //     into one buffer keyed by destination index. Flush at FLUSH_PARAS.
+    //     Amortizes per-task setup cost across more docs.
+    //
+    //  2. Pipelined enqueue: keep up to PIPELINE_LIMIT addDocuments tasks
+    //     in flight. Worker doesn't wait for the current task before
+    //     enqueuing the next — Meili processes serially per index, but the
+    //     worker can pipeline its enqueue + drain. await happens when we
+    //     dequeue (and that's where markSynced flips, preserving the
+    //     verified-sync invariant).
+    //
+    // Memory bound: PIPELINE_LIMIT=4 × FLUSH_PARAS=200 × ~12KB/para ≈ 10MB.
+    const PIPELINE_LIMIT = 4;
+    const FLUSH_PARAS = 200;
+    const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
+    const inFlight = [];         // [{task, paraIds, indexName}]
+
+    const drainOldest = async () => {
+      if (inFlight.length === 0) return;
+      const oldest = inFlight.shift();
+      let confirmed = false;
+      try {
+        await waitForMeiliTask(meili, oldest.task, 60000);
+        confirmed = true;
+      } catch (err) {
+        logger.error({ err: err.message, indexName: oldest.indexName, batchSize: oldest.paraIds.length }, 'Pipelined batch failed');
+        failedItems += oldest.paraIds.length;
+      }
+      if (confirmed) await content.markSynced(oldest.paraIds);
+      completedItems += oldest.paraIds.length;
+    };
+
+    const flushBuffer = async (indexName, force = false) => {
+      const buf = buffer.get(indexName);
+      if (!buf || buf.paras.length === 0) return;
+      if (!force && buf.paras.length < FLUSH_PARAS) return;
+      while (inFlight.length >= PIPELINE_LIMIT) await drainOldest();
+      const paras = buf.paras;
+      const paraIds = buf.paraIds;
+      buffer.set(indexName, { paras: [], paraIds: [] });
+      try {
+        const task = await meili.index(indexName).addDocuments(paras, { primaryKey: 'id' });
+        inFlight.push({ task, paraIds, indexName });
+      } catch (err) {
+        logger.error({ err: err.message, indexName, batchSize: paras.length }, 'Failed to enqueue addDocuments');
+        failedItems += paras.length;
+        // Don't mark synced — retry next iteration (Meili dedups by id).
+      }
+    };
+
     // Process one doc at a time, paragraph batches of PARA_BATCH_SIZE.
     // Large docs (10K+ paragraphs) would OOM if loaded all at once.
     while (!isShuttingDown) {
@@ -205,37 +260,17 @@ async function processSyncJob(job) {
           if (cacheMisses > 0) {
             logger.debug({ cacheHits, cacheMisses, batchSize: meiliParas.length }, 'Sync batch: cache misses will be FTS-only');
           }
-          // Verified sync: enqueue addDocuments, await Meili task confirmation,
-          // mark synced ONLY if Meili confirms. Previously the worker flipped
-          // synced=1 immediately after the API call, which silently lost data
-          // when the worker process died mid-flight (Meili never received the
-          // task; SQLite thought it was synced; future iterations skipped the
-          // rows). 60s timeout is generous given typical task duration is
-          // sub-second; on timeout we leave synced=0 so a future iteration
-          // retries (Meili dedups on primary key, so retry is safe).
-          let confirmed = false;
-          try {
-            const targetIndex = meili.index(indexNameForDoc(doc));
-            // Explicit primaryKey is REQUIRED for the per-site indexes. Docs
-            // contain `id`, `doc_id`, `external_para_id` — Meili refuses to
-            // infer when multiple fields end with `id`, returning
-            // "primary key inference failed" and rejecting the whole batch.
-            // The main `paragraphs` index already has primaryKey='id' set;
-            // passing it again is a no-op (Meili validates equality).
-            const task = await targetIndex.addDocuments(meiliParas, { primaryKey: 'id' });
-            await waitForMeiliTask(meili, task, 60000);
-            confirmed = true;
-          } catch (err) {
-            logger.error({ err: err.message, docId: doc.id, source_site: doc.source_site, batchSize: meiliParas.length }, 'Paragraph batch failed');
-            failedItems += meiliParas.length;
-          }
-          if (confirmed) {
-            await content.markSynced(paraIds);
-          }
-          completedItems += paraIds.length;
+          // Append to per-index buffer; flush asynchronously when full.
+          // markSynced + completedItems both happen later in drainOldest()
+          // when the corresponding pipelined task confirms — preserves the
+          // verified-sync invariant.
+          const indexName = indexNameForDoc(doc);
+          const buf = buffer.get(indexName) || { paras: [], paraIds: [] };
+          buf.paras.push(...meiliParas);
+          buf.paraIds.push(...paraIds);
+          buffer.set(indexName, buf);
           docParasProcessed += paraIds.length;
-          meiliParas.length = 0;
-          paraIds.length = 0;
+          await flushBuffer(indexName);
           await delay(YIELD_DELAY_MS);
         }
         docsProcessed++;
@@ -254,8 +289,18 @@ async function processSyncJob(job) {
       await query(`UPDATE sync_jobs SET completed_items = ?, failed_items = ? WHERE id = ?`, [completedItems, failedItems, job.id]);
       await delay(DOC_DELAY_MS);
     }
+
+    // End of doc loop. Force-flush any remaining buffered paragraphs and
+    // drain in-flight tasks so synced=1 propagates and progress is accurate.
+    for (const indexName of [...buffer.keys()]) {
+      await flushBuffer(indexName, true);
+    }
+    while (inFlight.length > 0 && !isShuttingDown) await drainOldest();
+
     if (isShuttingDown) {
-      logger.info({ jobId: job.id, completedItems, failedItems }, 'Shutdown mid-job — requeueing');
+      logger.info({ jobId: job.id, completedItems, failedItems, inFlight: inFlight.length }, 'Shutdown mid-job — requeueing');
+      // Drain whatever can still finish quickly before requeue.
+      while (inFlight.length > 0) await drainOldest();
       await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL WHERE id = ?`, [job.id]);
       currentSyncJobId = null;
       return;
@@ -459,6 +504,25 @@ async function syncOneSiteOnlyDb(meili, cfg) {
   const indexName = `siftersearch_${cfg.meili_index_prefix}_paragraphs`;
   const idx = meili.index(indexName);
   let total = 0;
+  // Pipelined enqueue: keep up to PIPELINE_LIMIT addDocuments tasks in flight.
+  // Worker pulls + enqueues the next batch while Meili indexes the previous
+  // ones. markSynced flips only after Meili confirms — same verified-sync
+  // invariant as the main DB path.
+  const PIPELINE_LIMIT = 4;
+  const inFlight = []; // [{task, ids}]
+  const drainOldest = async () => {
+    if (inFlight.length === 0) return;
+    const { task, ids } = inFlight.shift();
+    try {
+      await waitForMeiliTask(meili, task, 60000);
+      const placeholders = ids.map(() => '?').join(',');
+      siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
+      total += ids.length;
+    } catch (err) {
+      logger.error({ site: cfg.id, err: err.message, batchSize: ids.length }, 'Site-only pipelined batch failed');
+      // Don't mark synced — retry next iteration (Meili dedups by id).
+    }
+  };
   while (!isShuttingDown) {
     const batch = siteDb.prepare(`
       SELECT c.id, c.doc_id, c.paragraph_index, c.text, c.heading, c.blocktype,
@@ -496,19 +560,18 @@ async function syncOneSiteOnlyDb(meili, cfg) {
         ...(embedding ? { _vectors: { default: embedding } } : {})
       };
     });
-    // Same verified-sync pattern as the main DB path: await Meili task
-    // confirmation before flipping synced=1 in the site DB. Otherwise a
-    // worker crash mid-flight loses data silently (SQLite thinks rows are
-    // synced; Meili never received them; future iterations skip).
-    // Explicit primaryKey:'id' — see same comment on the main DB path.
-    const task = await idx.addDocuments(meiliDocs, { primaryKey: 'id' });
-    await waitForMeiliTask(meili, task, 60000);
-    const ids = batch.map(p => p.id);
-    const placeholders = ids.map(() => '?').join(',');
-    siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
-    total += batch.length;
+    // Wait if we've hit the pipeline limit before enqueuing the next batch.
+    while (inFlight.length >= PIPELINE_LIMIT) await drainOldest();
+    try {
+      const task = await idx.addDocuments(meiliDocs, { primaryKey: 'id' });
+      inFlight.push({ task, ids: batch.map(p => p.id) });
+    } catch (err) {
+      logger.error({ site: cfg.id, err: err.message, batchSize: batch.length }, 'Failed to enqueue site-only addDocuments');
+    }
     if (batch.length < 200) break;
   }
+  // Drain remaining in-flight tasks before returning.
+  while (inFlight.length > 0) await drainOldest();
   return total;
 }
 
