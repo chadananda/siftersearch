@@ -169,7 +169,7 @@ async function processSyncJob(job) {
       const oldest = inFlight.shift();
       let confirmed = false;
       try {
-        await waitForMeiliTask(meili, oldest.task, 60000);
+        await waitForMeiliTask(meili, oldest.task, 300000);
         confirmed = true;
       } catch (err) {
         logger.error({ err: err.message, indexName: oldest.indexName, batchSize: oldest.paraIds.length }, 'Pipelined batch failed');
@@ -222,10 +222,21 @@ async function processSyncJob(job) {
           logger.error({ err: err.message, docId: doc.id }, 'Failed to submit document metadata');
         }
 
-        // Process paragraphs in batches
+        // Process paragraphs in batches.
+        //
+        // pendingIds prevents re-buffering the same rows. Without this, the
+        // inner loop re-fetches `synced=0` rows on every iteration — which
+        // INCLUDES rows we've already buffered or sent in-flight, because
+        // markSynced doesn't flip until drainOldest runs (later).
+        // Effect of the bug: a 1-paragraph doc would be buffered hundreds
+        // of times until the pipeline drained, generating massive Meili
+        // duplicate-update tasks and 95% timeout-failure rate (observed).
+        const pendingIds = new Set();
         let docParasProcessed = 0;
         while (!isShuttingDown) {
-          const paragraphs = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
+          const fetched = await content.getDirtyParagraphsForDoc(doc.id, PARA_BATCH_SIZE);
+          // Skip rows already buffered/in-flight in this doc loop iteration.
+          const paragraphs = fetched.filter(p => !pendingIds.has(p.id));
           if (paragraphs.length === 0) break;
           const normalizedHashes = paragraphs.map(p => p.normalized_hash).filter(Boolean);
           const cachedVectors = await content.getEmbeddingsFromCache(normalizedHashes);
@@ -233,6 +244,7 @@ async function processSyncJob(job) {
           const paraIds = [];
           let cacheHits = 0, cacheMisses = 0;
           for (const p of paragraphs) {
+            pendingIds.add(p.id);
             let embedding = null;
             if (p.normalized_hash && cachedVectors.has(p.normalized_hash)) {
               embedding = cachedVectors.get(p.normalized_hash);
@@ -514,7 +526,7 @@ async function syncOneSiteOnlyDb(meili, cfg) {
     if (inFlight.length === 0) return;
     const { task, ids } = inFlight.shift();
     try {
-      await waitForMeiliTask(meili, task, 60000);
+      await waitForMeiliTask(meili, task, 300000);
       const placeholders = ids.map(() => '?').join(',');
       siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
       total += ids.length;
