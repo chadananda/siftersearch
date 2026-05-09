@@ -199,10 +199,31 @@ async function processSyncJob(job) {
 
     // Process one doc at a time, paragraph batches of PARA_BATCH_SIZE.
     // Large docs (10K+ paragraphs) would OOM if loaded all at once.
+    //
+    // inFlightDocIds tracks docs whose paragraphs we've already buffered/
+    // queued in this run. Without it, the outer loop spins on the same
+    // doc — getDocsWithDirtyParagraphs returns docs by `synced=0` rows,
+    // and our buffer/inFlight pipeline doesn't flip synced until drain.
+    // So a doc whose paras are queued but not yet drained still looks
+    // dirty to the outer fetch. Combined with cross-doc batching, the
+    // worker would re-process the same doc dozens of times before drain.
+    const inFlightDocIds = new Set();
     while (!isShuttingDown) {
-      const docs = await content.getDocsWithDirtyParagraphs(1);
-      if (docs.length === 0) break;
-      const doc = docs[0];
+      const docs = await content.getDocsWithDirtyParagraphs(10);
+      const fresh = docs.filter(d => !inFlightDocIds.has(d.id));
+      if (fresh.length === 0) {
+        // All visible-dirty docs are already in our pipeline. Drain one
+        // task to release some IDs back, then re-check. If nothing in
+        // flight either, we're truly done.
+        if (inFlight.length === 0) break;
+        await drainOldest();
+        // After drain, paragraphs from the oldest task are now synced=1.
+        // Their docs are no longer dirty. Clear the set and re-fetch.
+        inFlightDocIds.clear();
+        continue;
+      }
+      const doc = fresh[0];
+      inFlightDocIds.add(doc.id);
 
       try {
         let authority;
