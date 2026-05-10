@@ -502,4 +502,18 @@ export const migrations = {
 
     logger.info('Migration 60 complete: scope + pdf_page columns + indexes added');
   },
+
+  61: async () => {
+    // Add block_attrs TEXT to content — stores the full set of hugo-style block
+    // attributes ({pdf_page=42 .class #id key="value"}) as a JSON object.
+    // pdf_page is already its own column; block_attrs preserves everything else
+    // for future use (e.g. anchor IDs, CSS classes, custom keys from PDF pipeline).
+    logger.info('Starting migration 61: content.block_attrs');
+    try {
+      await query(`ALTER TABLE content ADD COLUMN block_attrs TEXT`);
+    } catch (err) {
+      if (!err.message?.includes('duplicate column')) throw err;
+    }
+    logger.info('Migration 61 complete: content.block_attrs added');
+  },
 };

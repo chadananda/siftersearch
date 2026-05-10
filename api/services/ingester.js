@@ -854,7 +854,8 @@ export async function parseDocumentWithBlocks(text, options = {}) {
     .filter(block => block.content && block.content.length >= minChunkSize)
     .map(block => ({
       text: block.content,
-      blocktype: block.type
+      blocktype: block.type,
+      attrs: block.attrs || null
     }));
 
   logger.debug({
@@ -1820,6 +1821,13 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
     const chunk = chunks[index];
     const chunkText = chunk.text;
     const blocktype = chunk.blocktype || BLOCK_TYPES.PARAGRAPH;
+    const attrs = chunk.attrs || null;
+    const pdfPage = attrs?.pdf_page ? parseInt(attrs.pdf_page, 10) || null : null;
+    // Persist non-pdf_page attrs as JSON; omit pdf_page since it has its own column
+    const blockAttrsJson = attrs && Object.keys(attrs).some(k => k !== 'pdf_page')
+      ? JSON.stringify(Object.fromEntries(Object.entries(attrs).filter(([k]) => k !== 'pdf_page')))
+      : null;
+
     // Use word hash (ignoring markers) for comparison
     // Same words with different sentence/phrase boundaries = same paragraph
     const wordHash = hashContentWords(chunkText);
@@ -1834,7 +1842,6 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       // Only update position and sync flag if they differ
       reusedCount++;
       const reuseText = existing.text;  // Use DB text with existing markers
-      const reuseHash = existing.content_hash;  // Keep existing hash
 
       // Only mark as needing sync if position changed
       // TODO: migrate to content.bulkReplace() for full content API coverage
@@ -1842,28 +1849,30 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
       updateStatements.push({
         sql: `
           UPDATE content
-          SET paragraph_index = ?, heading = ?, blocktype = ?${positionChanged ? ', synced = 0' : ''}
+          SET paragraph_index = ?, heading = ?, blocktype = ?, pdf_page = ?, block_attrs = ?${positionChanged ? ', synced = 0' : ''}
           WHERE id = ?
         `,
         args: [
           index,
           extractHeading(content, reuseText),
           blocktype,
+          pdfPage,
+          blockAttrsJson,
           existing.id
         ]
       });
       // Mark as used so we don't delete it later
       existingParagraphs.delete(wordHash);
     } else {
-      // New paragraph - insert it with blocktype
+      // New paragraph - insert it with blocktype and block attrs
       // Let SQLite auto-generate INTEGER id (matches Meilisearch rowid)
       // TODO: migrate to content.bulkReplace() for full content API coverage
       newCount++;
       insertStatements.push({
         sql: `
           INSERT INTO content
-          (doc_id, paragraph_index, text, content_hash, normalized_hash, heading, blocktype)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          (doc_id, paragraph_index, text, content_hash, normalized_hash, heading, blocktype, pdf_page, block_attrs)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         args: [
           finalDocId,
@@ -1872,7 +1881,9 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
           contentHash,
           computeNormalizedHash(chunkText),
           extractHeading(content, chunkText),
-          blocktype
+          blocktype,
+          pdfPage,
+          blockAttrsJson
         ]
       });
     }

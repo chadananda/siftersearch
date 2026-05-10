@@ -14,7 +14,7 @@ import { userMigrations, USER_DB_CURRENT_VERSION } from './user.js';
 
 // Combined dispatch table — version => async () => void
 export const migrations = { ...v1to25, ...v26to45, ...v46to58 };
-export const CURRENT_VERSION = 60;
+export const CURRENT_VERSION = 61;
 export { USER_DB_CURRENT_VERSION, userMigrations };
 
 /** Get current schema version (content DB) */

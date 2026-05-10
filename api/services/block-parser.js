@@ -109,10 +109,34 @@ function addParagraphBlocks(text, blocks) {
 }
 
 /**
+ * Parse a hugo/goldmark/kramdown block attribute string into a plain object.
+ * Input: `{pdf_page=42 #my-id .my-class lang="en"}`
+ * Output: { pdf_page: '42', id: 'my-id', class: 'my-class', lang: 'en' }
+ * Returns null if the line is not a block attribute line.
+ */
+export function parseBlockAttrs(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) return null;
+  const inner = trimmed.slice(1, -1).trim();
+  if (!inner) return null;
+
+  const attrs = {};
+  // Match: key="value", key='value', key=value, #id, .class
+  const tokenPattern = /([#.])(\S+)|(\w[\w-]*)=(?:"([^"]*)"|'([^']*)'|(\S+))/g;
+  let match;
+  while ((match = tokenPattern.exec(inner)) !== null) {
+    if (match[1] === '#') attrs.id = match[2];
+    else if (match[1] === '.') attrs.class = (attrs.class ? attrs.class + ' ' : '') + match[2];
+    else attrs[match[3]] = match[4] ?? match[5] ?? match[6];
+  }
+  return Object.keys(attrs).length > 0 ? attrs : null;
+}
+
+/**
  * Parse markdown text into typed blocks
  *
  * @param {string} text - Raw markdown text
- * @returns {Array<{type: string, content: string, raw: string}>} Array of blocks
+ * @returns {Array<{type: string, content: string, raw: string, attrs?: object}>} Array of blocks
  */
 export function parseMarkdownBlocks(text) {
   if (!text || typeof text !== 'string') {
@@ -158,8 +182,22 @@ export function parseMarkdownBlocks(text) {
       continue;
     }
 
-    // Check for heading (# ## ###)
-    const headingMatch = line.match(/^(#{1,3}) (.+)$/);
+    // Check for standalone block attribute line {key=val #id .class} — applies to preceding block
+    const blockAttrs = parseBlockAttrs(line);
+    if (blockAttrs) {
+      // Flush pending paragraph first, then attach attrs to the last block
+      if (currentParagraph.length) {
+        addParagraphBlocks(currentParagraph.join('\n'), blocks);
+        currentParagraph = [];
+      }
+      if (blocks.length > 0) {
+        blocks[blocks.length - 1].attrs = { ...blocks[blocks.length - 1].attrs, ...blockAttrs };
+      }
+      continue;
+    }
+
+    // Check for heading (# ## ###), with optional inline attrs: ## Title {#id}
+    const headingMatch = line.match(/^(#{1,3}) (.+?)(?:\s+(\{[^}]+\})\s*)?$/);
     if (headingMatch) {
       // Flush any pending paragraph
       if (currentParagraph.length) {
@@ -172,11 +210,16 @@ export function parseMarkdownBlocks(text) {
                          level === 2 ? BLOCK_TYPES.HEADING2 :
                          BLOCK_TYPES.HEADING3;
 
-      blocks.push({
+      const block = {
         type: headingType,
         content: headingMatch[2].trim(),
         raw: line
-      });
+      };
+      if (headingMatch[3]) {
+        const inlineAttrs = parseBlockAttrs(headingMatch[3]);
+        if (inlineAttrs) block.attrs = inlineAttrs;
+      }
+      blocks.push(block);
       continue;
     }
 

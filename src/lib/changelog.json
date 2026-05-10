@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T13:33:02.902Z",
+  "generated": "2026-05-10T13:39:54.723Z",
   "entries": [
+    {
+      "hash": "2f31360",
+      "date": "2026-05-10",
+      "type": "New",
+      "description": "Auto-chunk oversized English paragraphs + admin auto-chunked tab",
+      "scope": null
+    },
     {
       "hash": "02cea68",
       "date": "2026-05-09",
@@ -3493,16 +3500,18 @@
       "type": "Other",
       "description": "Meilisearch orphan cleanup script",
       "scope": null
-    },
-    {
-      "hash": "eab6aa9",
-      "date": "2026-01-08",
-      "type": "Other",
-      "description": "Redirect creation script",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-10": [
+      {
+        "hash": "2f31360",
+        "date": "2026-05-10",
+        "type": "New",
+        "description": "Auto-chunk oversized English paragraphs + admin auto-chunked tab",
+        "scope": null
+      }
+    ],
     "2026-05-09": [
       {
         "hash": "02cea68",
@@ -7071,13 +7080,6 @@
         "date": "2026-01-08",
         "type": "Other",
         "description": "Meilisearch orphan cleanup script",
-        "scope": null
-      },
-      {
-        "hash": "eab6aa9",
-        "date": "2026-01-08",
-        "type": "Other",
-        "description": "Redirect creation script",
         "scope": null
       }
     ]
