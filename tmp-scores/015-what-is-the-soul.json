@@ -1,0 +1,40 @@
+{
+  "slug": "015-what-is-the-soul",
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 90,
+    "period_word_discipline": 80,
+    "evidence_quality": 85,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 75
+  },
+  "overall": 77,
+  "narrative": "The conversation provides a solid exploration of the Bahá'í perspective on the soul, with Jafar grounding his responses in primary texts, particularly from Bahá'u'lláh's *Gleanings*. The depth is decent, as the discussion builds on the initial question about the soul's nature and immortality, but it could have explored more diverse sources beyond *Gleanings*. Conversational realism is mostly maintained, though some responses lean towards formality. Jafar effectively uses period vocabulary without modern distortion and corrects the user gently when needed. However, the conversation could benefit from more varied primary sources to enhance evidence quality.",
+  "flags": [],
+  "improvement_plan": "Encourage Jafar to diversify primary sources beyond *Gleanings* to provide a broader perspective. Enhance conversational realism by ensuring responses remain consistently casual and aligned with the user's tone. Encourage more explicit connections between doctrinal points and primary texts to deepen the exploration.",
+  "roundSummaries": [
+    {
+      "q": "What is the soul according to texts",
+      "a": "Bahá'u'lláh's view on the soul"
+    },
+    {
+      "q": "Is the soul's immortality literal",
+      "a": "Soul's immortality is literal"
+    },
+    {
+      "q": "Soul's progress after death",
+      "a": "Soul's progress is spiritual ascent"
+    },
+    {
+      "q": "Details on soul's progress",
+      "a": "Progress involves moral development"
+    },
+    {
+      "q": "Direct texts on soul's progress",
+      "a": "Bahá'u'lláh's direct statements"
+    }
+  ],
+  "elapsedSec": "71.7"
+}

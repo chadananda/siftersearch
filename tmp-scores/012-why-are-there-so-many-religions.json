@@ -1,0 +1,44 @@
+{
+  "slug": "012-why-are-there-so-many-religions",
+  "scores": {
+    "depth": 80,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 90,
+    "period_word_discipline": 80,
+    "evidence_quality": 80,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 80,
+    "citation_integrity": 60
+  },
+  "overall": 78.125,
+  "narrative": "The conversation effectively explores the Bahá'í perspective on religious diversity, using primary texts to support claims. Jafar maintains a conversational tone and provides doctrinally sound explanations, particularly in rounds 2 and 3. However, citation integrity is weakened by the use of fallback links without paragraph-level anchoring, and some inline quotes are not hyperlinked. Despite these citation issues, the conversation remains informative and engaging.",
+  "flags": [
+    "fallback-link-only",
+    "unlinked-inline-quote"
+  ],
+  "improvement_plan": "Enhance the citation system to provide paragraph-level deep links and ensure inline quotes are hyperlinked directly. This will improve citation integrity and allow users to verify sources more easily, increasing trust in the information provided.",
+  "roundSummaries": [
+    {
+      "q": "Why so many religions exist",
+      "a": "Religious diversity is divine plan"
+    },
+    {
+      "q": "Conflicts among different faiths",
+      "a": "Unity through Word of God"
+    },
+    {
+      "q": "Purpose of different Manifestations",
+      "a": "Manifestations reveal time-suited truths"
+    },
+    {
+      "q": "Cycle of revelation explained",
+      "a": "Cycle adapts to age's needs"
+    },
+    {
+      "q": "Reconciling eternal truth with change",
+      "a": "Truth constant, expression evolves"
+    }
+  ],
+  "elapsedSec": "97.3"
+}

@@ -1,0 +1,40 @@
+{
+  "slug": "014-is-wealth-spiritually-dangerous",
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 85,
+    "period_word_discipline": 80,
+    "evidence_quality": 85,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 80
+  },
+  "overall": 80,
+  "narrative": "The conversation effectively explores the nuanced perspectives on wealth in Bahá'í and Christian teachings, with Jafar providing primary citations from Bahá'u'lláh's *The Hidden Words*. The dialogue maintains a conversational tone, with Jafar's responses being concise and relevant. The conversation could have delved deeper into the comparison between stewardship and total renunciation, but it still offers a solid exploration of the topic. Jafar's doctrinal fidelity is strong, with accurate references to Bahá'í texts, and the use of period vocabulary is well-handled.",
+  "flags": [],
+  "improvement_plan": "To enhance depth, Jafar could incorporate more comparative analysis between the Bahá'í and Christian perspectives, especially on the themes of stewardship versus renunciation. Encouraging more explicit connections between the teachings of different traditions would enrich the conversation.",
+  "roundSummaries": [
+    {
+      "q": "What do scriptures say about wealth",
+      "a": "Wealth is a barrier and test"
+    },
+    {
+      "q": "Is wealth a barrier in Bahá'í writings",
+      "a": "Yes, it's in The Hidden Words"
+    },
+    {
+      "q": "Comparison with rich young ruler parable",
+      "a": "Bahá'í writings urge action too"
+    },
+    {
+      "q": "Stewardship versus total renunciation",
+      "a": "Emphasizes stewardship and generosity"
+    },
+    {
+      "q": "Bahá'í view on radical sacrifice",
+      "a": "Speaks to profound sacrifice"
+    }
+  ],
+  "elapsedSec": "75.1"
+}

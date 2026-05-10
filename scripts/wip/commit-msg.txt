@@ -1,0 +1,61 @@
+Enrichment: tier-aware HyPE pipeline (Sonnet for Bahá'í primary)
+
+Permanent ingestion-time routing of paragraphs to the right enrichment
+model based on document tier:
+
+  Tier 1-7 (Bahá'í primary doctrinal) -> Anthropic Sonnet 4.6 via
+                                          Messages Batches API
+    1 Shoghi Effendi  2 True compilations  3 'Abdu'l-Bahá
+    4 Bahá'u'lláh  5 The Báb  6 Esslemont's New Era
+    7 Nabíl's Dawn-Breakers
+  Tier 8-9 (other religions doctrinal + everything else)
+                                          -> existing local Qwen3 path
+
+Each paragraph gets a single-sentence DOCTRINAL THESIS plus 5
+hypothetical questions across 5 registers (conversational, topical,
+philosophical, cross-tradition, distinctive phrase). Both indexed in
+the Meili hype_questions sidecar with a new is_thesis flag for filter.
+
+When new Shoghi Effendi / Bahá'u'lláh / Báb / etc. documents are
+ingested by the library-watcher, paragraphs auto-route through the
+Sonnet path on the next enrichment-api worker tick.
+
+What this commit adds:
+- migration 52: hyp_thesis column, enrichment_batches and
+  enrichment_pending tables, new index for needs-thesis lookup
+- api/lib/doc-tier.js: pure tier classifier with verified author
+  transliteration variants and specific-book overrides for Esslemont
+  and Nabíl
+- api/lib/sonnet-enrichment.js: Anthropic Messages Batches integration
+  with depth-demanding prompt (thesis + 5-register questions, target
+  +/- 2 paragraph context window)
+- scripts/run-enrichment-api.js: PM2 worker that periodically enqueues
+  new tier 1-7 paragraphs, submits batches, polls for completion,
+  writes thesis + questions back to content
+- ecosystem.config.cjs: new siftersearch-enrichment-api process
+- scripts/drop-existing-hype.mjs: one-shot to clear poisoned hyp data
+  before bootstrap
+
+What this commit changes:
+- scripts/run-enrichment.js: filters out tier 1-7 docs (owned by API
+  path now) so the two enrichment paths don't fight
+- api/lib/search.js: hype merge weight back to 1.5 (was zeroed during
+  poisoning diagnosis); HyPE sync queries now also pull hyp_thesis and
+  index it as a virtual question entry with is_thesis=1
+- src/lib/changelog.json updated by tooling
+
+Bootstrap order on tower-nas:
+  1. git pull (this commit)
+  2. node scripts/migrate.js  -- adds the new schema
+  3. pm2 stop siftersearch-enrichment
+  4. node scripts/drop-existing-hype.mjs --confirm
+  5. pm2 start ecosystem.config.cjs --only siftersearch-enrichment-api
+  6. pm2 start siftersearch-enrichment   -- handles tier 8-9
+  7. monitor; first batch should land within ~15 min
+
+Estimated cost for tier 1-7 bootstrap (~67K paragraphs):
+  Sonnet 4.6 batch, 5-para context, ~50-token thesis + 5 questions
+  ≈ $260 (output-bound). Going forward, new tier 1-7 paragraphs from
+  fresh ingest will incur per-paragraph cost (~$0.004 each).
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>

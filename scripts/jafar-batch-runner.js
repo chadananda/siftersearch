@@ -20,6 +20,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { generateAndUploadDialogImage } from './generate-dialog-images.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
@@ -498,6 +499,25 @@ async function runOne(idx, q) {
   const md = dialogMarkdown(q, history, score, judgeResult, slug);
   writeFileSync(mdPath, md);
   console.log(`  wrote ${mdPath} (final ${score}%)`);
+
+  // Auto-generate and upload hero image to R2 for any dialog that passes
+  if (score >= MIN_SCORE) {
+    const heroPrompt = q.heroPrompt || `A meditative scene evoking the theme: "${q.title}". Loose dreamlike imagery, no human faces, soft and contemplative.`;
+    try {
+      console.log(`  generating hero image for ${slug}...`);
+      const heroPath = await generateAndUploadDialogImage(slug, heroPrompt);
+      if (heroPath) {
+        const updated = readFileSync(mdPath, 'utf-8').replace(
+          /^(---\n[\s\S]*?)(\n---\n)/,
+          `$1\nheroImage: ${heroPath}$2`
+        );
+        writeFileSync(mdPath, updated);
+        console.log(`  hero image → R2 (${heroPath})`);
+      }
+    } catch (imgErr) {
+      console.error(`  hero image FAILED: ${imgErr.message} (dialog still saved)`);
+    }
+  }
 
   writeFileSync(join(score_dir, `${slug}.json`), JSON.stringify({ slug, ...judgeResult, elapsedSec }, null, 2));
 

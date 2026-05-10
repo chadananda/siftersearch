@@ -1,0 +1,40 @@
+{
+  "slug": "011-what-is-prayer-actually-for",
+  "scores": {
+    "depth": 85,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 90,
+    "period_word_discipline": 80,
+    "evidence_quality": 90,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 85
+  },
+  "overall": 83,
+  "narrative": "The conversation effectively explores the purpose and mechanics of prayer in the Bahá'í Faith, with Jafar providing detailed explanations supported by primary texts. Each round builds on the previous one, deepening the understanding of prayer as a transformative process. The dialogue maintains a conversational tone, with Jafar matching the user's informal style while providing doctrinally sound responses. Primary citations are used effectively, enhancing the credibility of the discussion. The conversation is archive-worthy, with minor room for improvement in brevity and conversational realism.",
+  "flags": [],
+  "improvement_plan": "To enhance conversational realism, Jafar could incorporate more casual language and shorter responses to better mimic a natural dialogue. Additionally, ensuring that all responses remain concise without sacrificing depth would improve brevity discipline.",
+  "roundSummaries": [
+    {
+      "q": "Purpose of prayer in Bahá'í Faith",
+      "a": "Prayer transforms us, not God"
+    },
+    {
+      "q": "Meaning of 'burning away the veils'",
+      "a": "Prayer removes barriers to divine"
+    },
+    {
+      "q": "Veils and human flaws or nature",
+      "a": "Veils from flaws and human nature"
+    },
+    {
+      "q": "Nature of existence and God's grace",
+      "a": "Grace is freely given, not earned"
+    },
+    {
+      "q": "Effort in prayer if grace is free",
+      "a": "Effort prepares us to receive grace"
+    }
+  ],
+  "elapsedSec": "27.8"
+}

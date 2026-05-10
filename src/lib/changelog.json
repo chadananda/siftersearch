@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T22:30:43.200Z",
+  "generated": "2026-05-10T22:39:17.882Z",
   "entries": [
+    {
+      "hash": "1875aac",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
+      "scope": null
+    },
     {
       "hash": "f30153c",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add partial slug matching for document URLs",
       "scope": null
-    },
-    {
-      "hash": "2508670",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Prevent bad redirects to general/general paths",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "1875aac",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Dialog hero images — generate via gpt-image-1, serve from CF Pages static",
+        "scope": null
+      },
       {
         "hash": "f30153c",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add partial slug matching for document URLs",
-        "scope": null
-      },
-      {
-        "hash": "2508670",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Prevent bad redirects to general/general paths",
         "scope": null
       }
     ]

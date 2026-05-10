@@ -10,8 +10,6 @@ const KEY_PREFIX = 'siftersearch.com';
 function toCdnPath(local) {
   if (!local) return null;
   if (local.startsWith('http://') || local.startsWith('https://')) return null;
-  // /images/* paths are static files deployed to CF Pages — serve them directly
-  if (local.startsWith('/images/')) return null;
   return `${KEY_PREFIX}/${local.replace(/^\/+/, '').replace(/^images\//, '')}`;
 }
 

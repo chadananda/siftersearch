@@ -1,0 +1,24 @@
+{
+  "title": "Why Is Beauty a Bahá'í Concern?",
+  "description": "On the doctrinal foundation of beauty in the Bahá'í Faith — beauty as reflection of divine attributes, in worship, architecture, and the Word.",
+  "question": "Why is beauty a specific concern in the Bahá'í Faith — is there a doctrine behind it, or just an aesthetic preference?",
+  "topic": "ethics",
+  "tags": ["bahai", "beauty", "aesthetics", "worship", "calligraphy", "mashriqul-adhkar", "bahaullah", "abdul-baha"],
+  "keywords": ["Bahá'í view of beauty", "Mashriqu'l-Adhkár architecture", "Bahá'í aesthetics", "calligraphy in Bahá'í worship", "Mishkín-Qalam"],
+  "score": 72,
+  "heroImage": "/images/dialog/052-why-is-beauty-a-bah-concern-hero.jpg",
+  "outPath": "src/content/dialogs/052-why-is-beauty-a-bah-concern.md",
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 75,
+    "period_word_discipline": 70,
+    "evidence_quality": 65,
+    "brevity_discipline": 80,
+    "correction_courage": 65,
+    "archive_worthy": 70
+  },
+  "narrative": "A clear improvement over the prior round. Two actual primary quotes appeared with citations: 'Beauty has dawned, the lights of God shine bright. Flee the prison of your self' (linked to siftersearch entry 11631) and the opening of the Hidden Words ('Possess a pure, kindly and radiant heart…'). Both are correctly attributed and the second is quoted accurately. The conversation engaged real tensions (beauty vs. ostentation) and concrete questions (calligraphy, devotional aesthetic, architecture). Two soft spots: an Iqán claim about beauty-as-divine-handiwork was asserted then quietly walked back when Jafar searched and didn't find it (better behavior than fabricating, but the claim should have been retracted, not ignored); and the architecture answer was paraphrase rather than quoting Shoghi Effendi's actual guidance on the Mashriqu'l-Adhkár. Still — this is what the new prompt is supposed to produce: real quotes, no Socrates/Plato hallucination, doctrine-grounded answers.",
+  "flags": ["asserted-then-walked-back", "missing-shoghi-effendi-quote", "stock-phrase-residue"],
+  "improvement_plan": "Two prompt nudges. (1) When Jafar asserts X is in source Y, then searches and can't find it, the rule should be 'retract the claim explicitly' — not silently move on. Add: 'If you've made an attributed claim and the search comes up empty, say so directly: I asserted X is in the Iqán; I cannot locate it. The claim should not stand.' (2) For architectural / institutional questions about the Faith (Mashriqu'l-Adhkár, House of Justice, etc.), Shoghi Effendi's letters are the primary source — push Jafar to search 'Shoghi Effendi Mashriqu'l-Adhkár' explicitly when this kind of question comes up."
+}

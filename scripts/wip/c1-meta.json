@@ -1,0 +1,24 @@
+{
+  "title": "The Tablet of Wisdom and the Rejection of Materialism",
+  "description": "On the Tablet of Wisdom's argument against materialism, and how Bahá'u'lláh distinguishes that from a rejection of science.",
+  "question": "The Tablet of Wisdom (Lawh-i-Hikmat) addresses the origins of philosophy and rejects pure materialism. How does Bahá'u'lláh distinguish his rejection of materialism from a rejection of science?",
+  "topic": "philosophy",
+  "tags": ["bahai", "materialism", "tablet-of-wisdom", "philosophy", "science", "bahaullah"],
+  "keywords": ["Bahá'í view of materialism", "Lawh-i-Hikmat", "Tablet of Wisdom", "religion and science Bahá'í", "two wings metaphor"],
+  "score": 55,
+  "heroImage": "/images/dialog/051-the-tablet-of-wisdom-and-the-rejection-of-materialism-hero.jpg",
+  "outPath": "src/content/dialogs/051-the-tablet-of-wisdom-and-the-rejection-of-materialism.md",
+  "scores": {
+    "depth": 55,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 50,
+    "period_word_discipline": 60,
+    "evidence_quality": 25,
+    "brevity_discipline": 75,
+    "correction_courage": 50,
+    "archive_worthy": 35
+  },
+  "narrative": "Jafar's tone is conversational and properly brief — that part works. But evidence quality is the controlling failure: across nine rounds Jafar produced ZERO direct quotes from any primary source, despite multiple search and read_document_for_question attempts. The opening hallucinated a familiar trope (that Bahá'u'lláh 'praises Socrates and Plato' in the Tablet) and then walked it back when pressed but never actually corrected the claim or quoted what IS in the Tablet. The historical detail (Tablet addressed to Nabíl-i-Akbar, written in 'Akká) is correct, and the two-wings metaphor is correctly attributed to 'Abdu'l-Bahá. But the entire substantive content — what materialism IS, how Bahá'u'lláh distinguishes it from science, how the teaching translates to practice — was paraphrased from general knowledge with secular-humanist framings ('betterment of humanity', 'ethical implications') leaking in. Reads as a reasonable conversation between two people who don't actually have access to the relevant texts.",
+  "flags": ["missing-primary-citation", "stock-phrase-reflex", "secular-drift", "tool-failure"],
+  "improvement_plan": "The blocker is not the prompt — it's that read_document_for_question reported failure on the Tablet of Wisdom across multiple attempts. Either the document isn't indexed under a name Jafar's search can find, the sub-agent JSON parse is failing silently, or the corpus search is returning a different document_id than the actual Tablet. Three concrete next steps: (1) test the search tool directly with 'Lawh-i-Hikmat' and 'Tablet of Wisdom' to see what document_ids are returned and whether the actual text is in there; (2) instrument read_document_for_question to log when the sub-agent's JSON output fails to parse so we can distinguish 'document not findable' from 'sub-agent crashed'; (3) if the Tablet's English text exists in the corpus but isn't being matched, audit the Bahá'í primary works to see which others are similarly missing. Until that's addressed, retrying this same conversation will produce the same evidence failure."
+}

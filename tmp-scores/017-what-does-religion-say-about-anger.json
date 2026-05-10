@@ -1,0 +1,42 @@
+{
+  "slug": "017-what-does-religion-say-about-anger",
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 70,
+    "period_word_discipline": 80,
+    "evidence_quality": 60,
+    "brevity_discipline": 80,
+    "correction_courage": 80,
+    "archive_worthy": 70
+  },
+  "overall": 73,
+  "narrative": "The conversation explores the concept of anger across religious teachings, with a focus on Bahá'í perspectives. Jafar initially relies on secondary sources, but later provides primary quotes from 'The Hidden Words' by Bahá'u'lláh, which enhances the discussion. The conversation maintains a mostly conversational tone, though it occasionally drifts into formal explanations. Jafar effectively corrects a misquote by the user, demonstrating good correction courage. However, the initial reliance on secondary sources and the lack of primary quotes in some rounds slightly weaken the evidence quality.",
+  "flags": [
+    "missing-primary-citation"
+  ],
+  "improvement_plan": "Jafar should prioritize primary sources from the start, especially when discussing doctrinal points, to strengthen evidence quality. Additionally, maintaining a consistently conversational tone throughout the discussion would improve realism. Encouraging more back-and-forth dialogue could also deepen the conversation.",
+  "roundSummaries": [
+    {
+      "q": "Is anger always a sin?",
+      "a": "Anger isn't inherently sinful"
+    },
+    {
+      "q": "Primary texts on anger?",
+      "a": "No direct quotes found"
+    },
+    {
+      "q": "Hidden Words on anger?",
+      "a": "Self-control emphasized in Hidden Words"
+    },
+    {
+      "q": "Reflection as anger management?",
+      "a": "Self-reflection ties to humility"
+    },
+    {
+      "q": "Correcting misquote on faults",
+      "a": "Focus inward for anger management"
+    }
+  ],
+  "elapsedSec": "99.4"
+}

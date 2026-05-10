@@ -1,0 +1,24 @@
+{
+  "title": "Music, Worship, and Bahá'í Practice",
+  "description": "On the Bahá'í teaching about music — what's allowed in the House of Worship, what's encouraged outside it, and where music sits in the doctrine.",
+  "question": "What does the Bahá'í Faith teach about music in worship?",
+  "topic": "practice",
+  "tags": ["bahai", "music", "worship", "practice", "mashriqul-adhkar", "abdul-baha"],
+  "keywords": ["Bahá'í music", "music in House of Worship", "Bahá'í aesthetics", "Bahá'í practice", "vocal music worship"],
+  "score": 64,
+  "heroImage": "/images/dialog/053-music-worship-and-bah-practice-hero.jpg",
+  "outPath": "src/content/dialogs/053-music-worship-and-bah-practice.md",
+  "scores": {
+    "depth": 60,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 70,
+    "period_word_discipline": 65,
+    "evidence_quality": 55,
+    "brevity_discipline": 80,
+    "correction_courage": 70,
+    "archive_worthy": 55
+  },
+  "narrative": "Conversation truncated at four rounds because the API returned a 520 on the fifth user message. Within the four completed rounds: a Lights of Guidance citation arrived for the vocal-only rule in Houses of Worship (legitimate compilation source). On the second quote — 'Music is the heart's own language' — Jafar misattributed it to Bahá'u'lláh while citing Star of the West, which records 'Abdu'l-Bahá's talks; when challenged, Jafar correctly self-corrected. That correction-under-pressure is exactly the right behavior, but the initial misattribution shouldn't have happened. The conversation never reached the actual Aqdas passage on music as 'a ladder for the soul' (the API failed mid-search), so the article ends without anchoring Bahá'u'lláh's own treatment of music in primary scripture.",
+  "flags": ["misattributed-quote-corrected", "api-truncation", "missing-aqdas-anchor"],
+  "improvement_plan": "Two issues: (1) Jafar attributed an 'Abdu'l-Bahá talk to Bahá'u'lláh on first reach and corrected only when pressed. The prompt rule against unbacked claims needs to extend to wrong-author claims: 'Before attributing a quote to a specific author, verify the citation source genuinely is from that author. Star of the West and Lights of Guidance are compilations and talks — not Bahá'u'lláh's own pen.' (2) The conversation hit a 520 on a search round, killing it mid-flow. The runner should retry on 5xx and not just terminate. Separately, the underlying API stability (tower-nas) seems to drop briefly when redeploying — investigate whether PM2 reload causes connection drops mid-stream."
+}

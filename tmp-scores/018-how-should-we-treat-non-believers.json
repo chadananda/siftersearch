@@ -1,0 +1,40 @@
+{
+  "slug": "018-how-should-we-treat-non-believers",
+  "scores": {
+    "depth": 80,
+    "conversational_realism": 75,
+    "doctrinal_fidelity": 90,
+    "period_word_discipline": 85,
+    "evidence_quality": 90,
+    "brevity_discipline": 80,
+    "correction_courage": 85,
+    "archive_worthy": 85
+  },
+  "overall": 83,
+  "narrative": "The conversation effectively explores Bahá'í teachings on how believers should treat those of different or no faith, with Jafar providing relevant quotes from Bahá'u'lláh's writings. The depth is solid, with each round building on the previous, and doctrinal fidelity is strong, with accurate references to primary texts. Conversational realism is mostly maintained, though some responses are slightly formal. Evidence quality is high, with consistent primary citations. Jafar corrects the user's misunderstanding about the focus of the Iqán, enhancing correction courage.",
+  "flags": [],
+  "improvement_plan": "To improve conversational realism, Jafar could adopt a slightly more casual tone to better match the user's style. Additionally, ensuring that all responses are concise without losing depth would enhance brevity discipline.",
+  "roundSummaries": [
+    {
+      "q": "Scriptures on treating non-believers",
+      "a": "Unity and acceptance emphasized"
+    },
+    {
+      "q": "Verification of Iqán quotes",
+      "a": "Quotes confirmed from Iqán"
+    },
+    {
+      "q": "Iqán on interaction with non-believers",
+      "a": "Understanding over exclusion encouraged"
+    },
+    {
+      "q": "Explicit guidance on treating non-believers",
+      "a": "Aqdas advises kindness and understanding"
+    },
+    {
+      "q": "Handling hostility towards Bahá'í Faith",
+      "a": "Gentleness and patience advised"
+    }
+  ],
+  "elapsedSec": "116.4"
+}
