@@ -176,8 +176,14 @@ OUTPUT JSON only:
   "overall": N,
   "narrative": "3-5 sentences. Specific. Cite round numbers and concrete observations (good or bad). Honest, calibrated tone — neither pessimistic nor encouraging.",
   "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error"],
-  "improvement_plan": "2-3 sentences in CONCEPTS not code. What change in Jafar's prompt or pipeline behavior would lift this conversation."
+  "improvement_plan": "2-3 sentences in CONCEPTS not code. What change in Jafar's prompt or pipeline behavior would lift this conversation.",
+  "roundSummaries": [
+    {"q": "5-8 word question headline for round 1", "a": "5-8 word answer headline for round 1"},
+    {"q": "5-8 word question headline for round 2", "a": "5-8 word answer headline for round 2"}
+  ]
 }
+
+roundSummaries: one entry per round (user+jafar pair). "q" captures the user's question in 5-8 words as a short headline (no trailing punctuation). "a" captures Jafar's key claim in 5-8 words. These become the TOC labels and FAQPage schema entries — make them specific and useful, not generic.
 
 overall is the mean of the dimension scores. flags should ONLY include those that meet their explicit triggers above (omit ones that don't apply). narrative should match the score: 80%+ narratives lead with what worked, mention minor flaws second; 60-70% narratives balance both; sub-50 narratives lead with what failed.`;
 
@@ -335,15 +341,33 @@ function slugify(s) {
 const TOPIC_LABELS = ['theology','ethics','social-order','politics','history','comparative-religion','mysticism','practice','modern-challenges','word-meaning','metaphysics','philosophy'];
 const VALID_TOPIC = new Set(TOPIC_LABELS);
 
+function summarizeTurn(text, maxLen = 72) {
+  const plain = text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*?([^*]+)\*\*?/g, '$1')
+    .replace(/\n+/g, ' ')
+    .trim();
+  const first = plain.split(/(?<=[.!?])\s/, 1)[0].trim();
+  const candidate = first.length > 0 && first.length <= maxLen ? first : plain.slice(0, maxLen);
+  return candidate.length < plain.length ? candidate.replace(/\s+\S*$/, '…') : candidate;
+}
+
 function dialogMarkdown(q, history, score, judgeResult, slug) {
   const parts = [];
+  const roundSummaries = judgeResult.roundSummaries || [];
   for (let i = 0; i < history.length; i += 2) {
     const u = history[i];
     const a = history[i + 1];
     if (!u || !a) break;
-    // Wrap each turn in a div so the detail page can style speakers visually
-    // (italic+indent for user, avatar+normal for Jafar) without "You"/"Jafar" labels.
-    parts.push(`<div class="user-turn">`, '', u.content, '', '</div>', '');
+    const roundN = Math.floor(i / 2) + 1;
+    const rs = roundSummaries[roundN - 1] || {};
+    // h3/h4: nearly invisible visually (0.22 opacity in CSS) but essential
+    // for the TOC rail, FAQPage JSON-LD schema, and scrollspy.
+    const qHead = rs.q || summarizeTurn(u.content);
+    const aHead = rs.a || summarizeTurn(a.content);
+    parts.push(`### ${qHead}`, '');
+    parts.push(`<div class="user-turn" id="round-${roundN}">`, '', u.content, '', '</div>', '');
+    parts.push(`#### ${aHead}`, '');
     parts.push(`<div class="jafar-turn">`, '', a.content, '', '</div>', '');
   }
 

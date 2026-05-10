@@ -52,7 +52,15 @@
       "WebFetch(domain:upload.wikimedia.org)",
       "WebFetch(domain:fontawesome.cc)",
       "WebFetch(domain:qwenlm.github.io)",
-      "Bash(ssh chad@tower-nas ' *)"
+      "Bash(ssh chad@tower-nas ' *)",
+      "Bash(ssh chad@tower-nas 'sqlite3 ~/sifter/siftersearch/data/sifter.db \"PRAGMA table_info\\(content\\)\" 2>/dev/null | grep -q hyp_thesis')",
+      "Bash(ssh chad@tower-nas 'tail -F ~/sifter/siftersearch/logs/enrichment-api-out.log ~/sifter/siftersearch/logs/enrichment-api-error.log 2>/dev/null')",
+      "Bash(rm -f .git/index.lock)",
+      "Bash(rtk git *)",
+      "Bash(rtk git -c commit.gpgsign=false commit --no-verify -m 'Sonnet enrichment: smaller batches + better logging + SDK timeout *)",
+      "Bash(ssh chad@tower-nas 'sqlite3 ~/sifter/siftersearch/data/sifter.db \"SELECT COUNT\\(*\\) FROM enrichment_batches WHERE external_batch_id IS NOT NULL\"')",
+      "Bash(ssh chad@tower-nas 'sqlite3 ~/sifter/siftersearch/data/sifter.db \"SELECT COUNT\\(*\\) FROM enrichment_batches WHERE status IN \\(\\\\\"submitted\\\\\",\\\\\"in_progress\\\\\"\\) AND id > 45\"')",
+      "WebFetch(domain:docs.astro.build)"
     ]
   }
 }

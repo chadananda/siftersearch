@@ -208,3 +208,6 @@
 218-what-did-bahaullah-promise-to-those-who-recite-the-obligator - What Did Bahá'u'lláh Promise to Those Who Recite the Obligatory Prayer? - score=65% - https://siftersearch.com/dialogue/218-what-did-bahaullah-promise-to-those-who-recite-the-obligator/ - 2026-04-29T14:18:57.513Z
 219-are-abdul-bahas-prophecies-about-the-20th-century-documented - Are 'Abdu'l-Bahá's Prophecies About the 20th Century Documented? - score=66% - https://siftersearch.com/dialogue/219-are-abdul-bahas-prophecies-about-the-20th-century-documented/ - 2026-04-29T14:19:46.672Z
 007-progressive-revelation-teleological-or-cyclical - Progressive Revelation — Teleological or Cyclical? - score=84% - https://siftersearch.com/dialogue/007-progressive-revelation-teleological-or-cyclical/ - 2026-05-10T19:11:33.656Z
+008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=74% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:45:53.613Z
+008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=81% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:48:24.444Z
+008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=73% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:52:19.744Z
