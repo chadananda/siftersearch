@@ -371,8 +371,9 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
     parts.push(`<div class="jafar-turn">`, '', a.content, '', '</div>', '');
   }
 
-  // Hero image already on disk at /images/dialog/{slug}-hero.jpg
-  const heroPath = `/images/dialog/${slug}-hero.jpg`;
+  // Hero image path — only set if the file actually exists in R2/public
+  // Leave blank so the index page renders the SVG gradient placeholder.
+  const heroPath = null;
 
   // Assessment block — visible per-article meta-commentary
   const scores = judgeResult.scores || {};
@@ -394,7 +395,7 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
     `publishedAt: ${new Date().toISOString().slice(0, 10)}`,
     `excerpt: ${JSON.stringify((narrative || '').slice(0, 200))}`,
     `featured: ${score >= 80 ? 'true' : 'false'}`,
-    `heroImage: ${heroPath}`,
+    ...(heroPath ? [`heroImage: ${heroPath}`] : []),
     'assessment:',
     '  scores:',
     ...Object.entries(scores).map(([k, v]) => `    ${k}: ${v}`),

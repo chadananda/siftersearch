@@ -14,7 +14,6 @@ qualityScore: 69
 publishedAt: 2026-05-10
 excerpt: "The conversation explores the compatibility of science and religion in Bahá'í texts, but lacks depth in primary citations. Jafar's responses are somewhat repetitive, focusing on philosophers' belief i"
 featured: false
-heroImage: /images/dialog/010-can-science-and-religion-coexist-hero.jpg
 assessment:
   scores:
     depth: 70

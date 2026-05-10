@@ -14,7 +14,6 @@ qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores Bahá'í teachings on how believers should treat those of different or no faith, with Jafar providing relevant quotes from Bahá'u'lláh's writings. The depth is soli"
 featured: true
-heroImage: /images/dialog/018-how-should-we-treat-non-believers-hero.jpg
 assessment:
   scores:
     depth: 80

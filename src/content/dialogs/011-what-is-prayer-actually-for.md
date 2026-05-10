@@ -14,7 +14,6 @@ qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the purpose and mechanics of prayer in the Bahá'í Faith, with Jafar providing detailed explanations supported by primary texts. Each round builds on the previous "
 featured: true
-heroImage: /images/dialog/011-what-is-prayer-actually-for-hero.jpg
 assessment:
   scores:
     depth: 85

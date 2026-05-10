@@ -14,7 +14,6 @@ qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the Bahá'í perspective on religious diversity, with Jafar providing well-grounded responses using primary texts like the *Kitáb-i-Íqán*. Each round builds on the "
 featured: true
-heroImage: /images/dialog/012-why-are-there-so-many-religions-hero.jpg
 assessment:
   scores:
     depth: 85

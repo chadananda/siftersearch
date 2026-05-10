@@ -14,7 +14,6 @@ qualityScore: 85
 publishedAt: 2026-05-10
 excerpt: "This conversation is well-executed, with Jafar providing detailed insights into Bahá'í teachings on the afterlife, supported by primary quotes from *Gleanings*. The dialogue maintains a conversational"
 featured: true
-heroImage: /images/dialog/009-what-happens-after-we-die-hero.jpg
 assessment:
   scores:
     depth: 85

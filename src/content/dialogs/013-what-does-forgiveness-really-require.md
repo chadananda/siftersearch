@@ -14,7 +14,6 @@ qualityScore: 75
 publishedAt: 2026-05-10
 excerpt: "The conversation explores the conditions for forgiveness in religious texts, particularly within the Bahá'í Faith. Jafar provides a nuanced view of forgiveness, citing the Báb and 'Abdu'l-Bahá, and ad"
 featured: false
-heroImage: /images/dialog/013-what-does-forgiveness-really-require-hero.jpg
 assessment:
   scores:
     depth: 75

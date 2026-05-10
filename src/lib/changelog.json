@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T21:21:17.840Z",
+  "generated": "2026-05-10T21:26:22.299Z",
   "entries": [
+    {
+      "hash": "f3dc3e5",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Add published: true to all new dialogs so they appear on index",
+      "scope": null
+    },
     {
       "hash": "1f73924",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to fix documents with frontmatter in first paragraph",
       "scope": null
-    },
-    {
-      "hash": "1b246e9",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Strip duplicate frontmatter blocks from document content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "f3dc3e5",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Add published: true to all new dialogs so they appear on index",
+        "scope": null
+      },
       {
         "hash": "1f73924",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add script to fix documents with frontmatter in first paragraph",
-        "scope": null
-      },
-      {
-        "hash": "1b246e9",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Strip duplicate frontmatter blocks from document content",
         "scope": null
       }
     ]

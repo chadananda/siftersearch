@@ -14,7 +14,6 @@ qualityScore: 80
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the nuanced perspectives on wealth in Bahá'í and Christian teachings, with Jafar providing primary citations from Bahá'u'lláh's *The Hidden Words*. The dialogue m"
 featured: true
-heroImage: /images/dialog/014-is-wealth-spiritually-dangerous-hero.jpg
 assessment:
   scores:
     depth: 75

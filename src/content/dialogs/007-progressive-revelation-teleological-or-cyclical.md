@@ -14,7 +14,6 @@ qualityScore: 84
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the Bahá'í concept of progressive revelation, balancing the teleological and cyclical aspects. Jafar provides primary quotes from Bahá'u'lláh, particularly from *"
 featured: true
-heroImage: /images/dialog/007-progressive-revelation-teleological-or-cyclical-hero.jpg
 assessment:
   scores:
     depth: 85

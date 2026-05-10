@@ -14,7 +14,6 @@ qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the concept of justice in Bahá'í teachings, contrasting it with modern interpretations. Jafar provides depth by discussing both personal and societal dimensions o"
 featured: true
-heroImage: /images/dialog/019-what-is-justice-according-to-scripture-hero.jpg
 assessment:
   scores:
     depth: 85
