@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T14:25:28.714Z",
+  "generated": "2026-05-10T14:45:15.751Z",
   "entries": [
+    {
+      "hash": "8539a2a",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Cloudflared wrapper cleans stale connectors before restart",
+      "scope": null
+    },
     {
       "hash": "f5fd67c",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent sentences ending with prepositions",
       "scope": null
-    },
-    {
-      "hash": "0b788dd",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Trailing text after last sentence ending ALWAYS carried forward",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "8539a2a",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Cloudflared wrapper cleans stale connectors before restart",
+        "scope": null
+      },
       {
         "hash": "f5fd67c",
         "date": "2026-05-10",
@@ -7073,13 +7080,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Prevent sentences ending with prepositions",
-        "scope": null
-      },
-      {
-        "hash": "0b788dd",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Trailing text after last sentence ending ALWAYS carried forward",
         "scope": null
       }
     ]

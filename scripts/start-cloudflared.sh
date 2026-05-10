@@ -12,4 +12,4 @@ echo "[cloudflared] Cleaning up stale connections..."
 cloudflared tunnel cleanup "$TUNNEL" 2>&1 || true
 
 echo "[cloudflared] Starting tunnel..."
-exec cloudflared tunnel --config "$CONFIG" run "$TUNNEL"
+exec cloudflared tunnel --config "$CONFIG" --protocol http2 run "$TUNNEL"
