@@ -423,11 +423,11 @@ async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
   return results;
 }
 
-// Batch size for scan processing — avoids overwhelming DB/ingester
-const SCAN_BATCH_SIZE = 50;
-// Polite pause after each batch so the API stays responsive during long scans.
-// Keeps ingestion at ~80% of capacity; configurable via SCAN_THROTTLE_MS env var.
-const SCAN_THROTTLE_MS = parseInt(process.env.SCAN_THROTTLE_MS ?? '150', 10);
+// Time-based throttle: work for WORK_WINDOW_MS then pause for PAUSE_MS.
+// ~23% idle regardless of document size (100KB stub vs 20MB book).
+// Tune via env: SCAN_WORK_MS / SCAN_PAUSE_MS.
+const SCAN_WORK_MS = parseInt(process.env.SCAN_WORK_MS ?? '500', 10);
+const SCAN_PAUSE_MS = parseInt(process.env.SCAN_PAUSE_MS ?? '150', 10);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /**
@@ -480,51 +480,49 @@ async function scanLibraryForIngestion() {
     let errorCount = 0;
 
     // Step 3a: Find files to ingest or re-ingest (on disk, compare against DB)
-    // Process in batches to avoid overwhelming the system
+    // Time-based throttle: work for SCAN_WORK_MS then pause for SCAN_PAUSE_MS.
+    // Gives ~23% idle regardless of document size (100KB stub vs 20MB book).
     const diskPathsSorted = [...diskByPath.keys()];
-    for (let batchStart = 0; batchStart < diskPathsSorted.length; batchStart += SCAN_BATCH_SIZE) {
-      const batch = diskPathsSorted.slice(batchStart, batchStart + SCAN_BATCH_SIZE);
+    let lastYieldTime = Date.now();
 
-      for (const relativePath of batch) {
-        const diskFile = diskByPath.get(relativePath);
-        try {
-          const content = await readFile(diskFile.absolutePath, 'utf-8');
-          const diskHash = hashContent(content.trim());
-          const dbDoc = dbByPath.get(relativePath);
+    for (const relativePath of diskPathsSorted) {
+      const diskFile = diskByPath.get(relativePath);
+      try {
+        const content = await readFile(diskFile.absolutePath, 'utf-8');
+        const diskHash = hashContent(content.trim());
+        const dbDoc = dbByPath.get(relativePath);
 
-          if (dbDoc && dbDoc.file_hash === diskHash) {
-            // Unchanged — skip
-            skippedCount++;
-            continue;
-          }
-
-          const isNew = !dbDoc;
-          const fileStat = await stat(diskFile.absolutePath);
-          const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
-
-          if (result.skipped) {
-            skippedCount++;
-          } else if (isNew) {
-            ingestedCount++;
-            watcherStats.filesIngested++;
-            logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: new file ingested');
-            await sleep(50); // yield after each write so other processes can use the DB
-          } else {
-            reingestedCount++;
-            watcherStats.reingests++;
-            logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: changed file re-ingested');
-            await sleep(50);
-          }
-        } catch (err) {
-          errorCount++;
-          watcherStats.errors++;
-          logger.error({ err: err.message, filePath: relativePath }, 'Library scan: failed to process file');
+        if (dbDoc && dbDoc.file_hash === diskHash) {
+          skippedCount++;
+          continue;
         }
+
+        const isNew = !dbDoc;
+        const fileStat = await stat(diskFile.absolutePath);
+        const result = await ingestDocument(content, { file_mtime: fileStat.mtime.toISOString() }, relativePath);
+
+        if (result.skipped) {
+          skippedCount++;
+        } else if (isNew) {
+          ingestedCount++;
+          watcherStats.filesIngested++;
+          logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: new file ingested');
+        } else {
+          reingestedCount++;
+          watcherStats.reingests++;
+          logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: changed file re-ingested');
+        }
+      } catch (err) {
+        errorCount++;
+        watcherStats.errors++;
+        logger.error({ err: err.message, filePath: relativePath }, 'Library scan: failed to process file');
       }
 
-      // Polite pause between batches — lets the API handle requests and prevents
-      // DB write pressure from monopolising the system during large scans.
-      await sleep(SCAN_THROTTLE_MS);
+      // Pause periodically so reads/API can get DB access.
+      if (Date.now() - lastYieldTime >= SCAN_WORK_MS) {
+        await sleep(SCAN_PAUSE_MS);
+        lastYieldTime = Date.now();
+      }
     }
 
     // Step 3b: Find DB docs whose files no longer exist on disk → soft-delete

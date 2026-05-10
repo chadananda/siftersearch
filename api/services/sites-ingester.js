@@ -665,9 +665,12 @@ export async function ingestSite(siteId, opts = {}) {
   const stats = { new: 0, re_ingested: 0, unchanged: 0, skipped_cooldown: 0, empty: 0, errors: 0, supersedes: 0 };
   const errors = [];
 
-  const siteThrottleMs = parseInt(process.env.SCAN_THROTTLE_MS ?? '150', 10);
+  // Time-based throttle: work for SCAN_WORK_MS then pause for SCAN_PAUSE_MS.
+  // ~23% idle regardless of document size (100KB stub vs 20MB book).
+  const siteWorkMs = parseInt(process.env.SCAN_WORK_MS ?? '500', 10);
+  const sitePauseMs = parseInt(process.env.SCAN_PAUSE_MS ?? '150', 10);
   const siteSleep = ms => new Promise(r => setTimeout(r, ms));
-  let filesSinceYield = 0;
+  let lastYieldTime = Date.now();
 
   for (const abs of files) {
     try {
@@ -677,19 +680,15 @@ export async function ingestSite(siteId, opts = {}) {
       });
       stats[result.status] = (stats[result.status] || 0) + 1;
       if (result.supersedes) stats.supersedes++;
-
-      // Polite throttle: yield after each write, pause every 50 files
-      if (result.status === 'new' || result.status === 're_ingested') {
-        await siteSleep(50);
-      }
-      if (++filesSinceYield >= 50) {
-        await siteSleep(siteThrottleMs);
-        filesSinceYield = 0;
-      }
     } catch (err) {
       stats.errors++;
       errors.push({ file: relative(basePath, abs), error: err.message });
       logger.error({ file: relative(basePath, abs), err: err.message }, 'Sites-ingester: file failed');
+    }
+
+    if (Date.now() - lastYieldTime >= siteWorkMs) {
+      await siteSleep(sitePauseMs);
+      lastYieldTime = Date.now();
     }
   }
 
