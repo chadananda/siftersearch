@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T23:13:56.823Z",
+  "generated": "2026-05-10T23:42:56.403Z",
   "entries": [
+    {
+      "hash": "dd3b872",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
+      "scope": null
+    },
     {
       "hash": "824f17b",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
       "scope": null
-    },
-    {
-      "hash": "7b60188",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Properly unregister service worker and await cache clearing before PWA reload",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "dd3b872",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Hero image transform — 1536×600 matches clamp(280px,38vh,480px) display height",
+        "scope": null
+      },
       {
         "hash": "824f17b",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
-        "scope": null
-      },
-      {
-        "hash": "7b60188",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Properly unregister service worker and await cache clearing before PWA reload",
         "scope": null
       }
     ]

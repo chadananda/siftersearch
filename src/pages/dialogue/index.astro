@@ -1,31 +1,22 @@
 ---
-// Dialog index — artsy listing of all published dialogs, grouped by topic
-// with tag cloud, quality scores, and decorative watercolor headers.
+// Dialog index — live listing from API (published_conversations table).
+// No prerender — content is live, no rebuild needed to add/update dialogs.
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
-import { getCollection } from 'astro:content';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 import { cardUrl } from '../../lib/imagekit.js';
 
-// Prerender at build time — content is static between deploys.
-export const prerender = true;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const res = await fetch(`${API_BASE}/api/v1/dialogs`);
+const { dialogs = [] } = res.ok ? await res.json() : {};
 
-const all = await getCollection('dialogs');
+// Normalize API rows — tags_json is a JSON string
+const dialogs_norm = dialogs.map(d => ({
+  ...d,
+  tags: JSON.parse(d.tags_json || '[]'),
+}));
 
-// Only published dialogs. New + recently-updated float to the top so the
-// reader always lands on the freshest content.
-const dialogs = all
-  .filter(d => d.data.published === true)
-  .sort((a, b) => {
-    const da = (a.data.updatedAt ?? a.data.publishedAt).getTime();
-    const db = (b.data.updatedAt ?? b.data.publishedAt).getTime();
-    if (da !== db) return db - da;
-    if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
-    return (b.data.qualityScore ?? 0) - (a.data.qualityScore ?? 0);
-  });
-
-// Group by topic
 const TOPIC_LABELS: Record<string, string> = {
   'theology': 'Theology',
   'ethics': 'Ethics',
@@ -41,30 +32,27 @@ const TOPIC_LABELS: Record<string, string> = {
   'philosophy': 'Philosophy',
 };
 
-const byTopic = new Map<string, typeof dialogs>();
-for (const d of dialogs) {
-  const arr = byTopic.get(d.data.topic) ?? [];
+const byTopic = new Map<string, typeof dialogs_norm>();
+for (const d of dialogs_norm) {
+  const arr = byTopic.get(d.topic) ?? [];
   arr.push(d);
-  byTopic.set(d.data.topic, arr);
+  byTopic.set(d.topic, arr);
 }
 
-// Tag-cloud: only tags shared by ≥2 published dialogs are surfaced.
-// Below that threshold the tag isn't useful as a navigation handle.
 const tagCounts = new Map<string, number>();
-for (const d of dialogs) {
-  for (const t of d.data.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+for (const d of dialogs_norm) {
+  for (const t of d.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
 }
 const tagList = Array.from(tagCounts.entries())
   .filter(([, n]) => n >= 2)
   .sort((a, b) => b[1] - a[1])
   .slice(0, 40);
-// Set of multi-article tags so card tag chips can decide whether to link.
 const multiTagSet = new Set(tagList.map(([t]) => t));
 
-const totalDialogs = dialogs.length;
-const totalRounds = dialogs.reduce((s, d) => s + d.data.rounds, 0);
-const avgScore = dialogs.length
-  ? Math.round(dialogs.reduce((s, d) => s + (d.data.qualityScore ?? 0), 0) / dialogs.length)
+const totalDialogs = dialogs_norm.length;
+const totalRounds = dialogs_norm.reduce((s, d) => s + (d.rounds_count || 0), 0);
+const avgScore = dialogs_norm.length
+  ? Math.round(dialogs_norm.reduce((s, d) => s + (d.score || 0), 0) / dialogs_norm.length)
   : 0;
 
 const description = `Long-form dialogues exploring ${totalDialogs} deep questions in Bahá'í teachings, comparative theology, and philosophy. Each conversation goes ten or more rounds — questioning assumptions, examining word definitions across centuries, and weighing actual textual evidence.`;
@@ -127,47 +115,45 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
     <section class="recent-block">
       <header class="topic-header">
         <h2>Most recent</h2>
-        <span class="topic-count">{dialogs.length}</span>
+        <span class="topic-count">{dialogs_norm.length}</span>
       </header>
       <div class="cards">
-        {dialogs.map(d => {
-          const slug = d.id.replace(/\.md$/, '');
-          return (
-            <article class="card" data-featured={d.data.featured}>
-              {d.data.heroImage && (
+        {dialogs_norm.map(d => (
+            <article class="card" data-featured={d.featured}>
+              {d.hero_image && (
                 <div class="card-image">
-                  <img src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
+                  <img src={cardUrl(d.hero_image)} alt={d.title} loading="lazy" />
                 </div>
               )}
-              {!d.data.heroImage && (
+              {!d.hero_image && (
                 <div class="card-image card-image-placeholder" aria-hidden="true">
                   <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
                     <defs>
-                      <radialGradient id={`p-${d.id}-1`} cx="30%" cy="40%" r="55%">
+                      <radialGradient id={`p-${d.slug}-1`} cx="30%" cy="40%" r="55%">
                         <stop offset="0%" stop-color="rgba(56,114,184,0.6)" />
                         <stop offset="100%" stop-color="rgba(20,52,98,0.1)" />
                       </radialGradient>
-                      <radialGradient id={`p-${d.id}-2`} cx="75%" cy="65%" r="45%">
+                      <radialGradient id={`p-${d.slug}-2`} cx="75%" cy="65%" r="45%">
                         <stop offset="0%" stop-color="rgba(140,180,220,0.5)" />
                         <stop offset="100%" stop-color="rgba(20,52,98,0)" />
                       </radialGradient>
                     </defs>
                     <rect width="400" height="240" fill="rgba(20,52,98,0.4)" />
-                    <rect width="400" height="240" fill={`url(#p-${d.id}-1)`} />
-                    <rect width="400" height="240" fill={`url(#p-${d.id}-2)`} />
+                    <rect width="400" height="240" fill={`url(#p-${d.slug}-1)`} />
+                    <rect width="400" height="240" fill={`url(#p-${d.slug}-2)`} />
                   </svg>
                 </div>
               )}
               <div class="card-body">
-                <a class="card-topic" href={`/dialogue/category/${d.data.topic}/`}>{TOPIC_LABELS[d.data.topic] ?? d.data.topic}</a>
-                <h3><a class="card-title-link" href={`/dialogue/${slug}/`}>{sq(d.data.title)}</a></h3>
-                <p class="card-summary">{sq(d.data.description)}</p>
+                <a class="card-topic" href={`/dialogue/category/${d.topic}/`}>{TOPIC_LABELS[d.topic] ?? d.topic}</a>
+                <h3><a class="card-title-link" href={`/dialogue/${d.slug}/`}>{sq(d.title)}</a></h3>
+                <p class="card-summary">{sq(d.description)}</p>
                 <div class="card-meta">
-                  {typeof d.data.qualityScore === 'number' && (
-                    <span class="score" data-score={d.data.qualityScore}>{d.data.qualityScore}%</span>
+                  {d.score > 0 && (
+                    <span class="score" data-score={d.score}>{d.score}%</span>
                   )}
-                  <span class="rounds">{d.data.rounds} rounds</span>
-                  {d.data.tags.slice(0, 3).map(t => (
+                  <span class="rounds">{d.rounds_count} rounds</span>
+                  {d.tags.slice(0, 3).map(t => (
                     multiTagSet.has(t)
                       ? <a class="card-tag link" href={`/dialogue/tag/${encodeURIComponent(t)}/`}>{t}</a>
                       : <span class="card-tag">{t}</span>
@@ -175,12 +161,11 @@ const description = `Long-form dialogues exploring ${totalDialogs} deep question
                 </div>
               </div>
             </article>
-          );
-        })}
+        ))}
       </div>
     </section>
 
-    {dialogs.length === 0 && (
+    {dialogs_norm.length === 0 && (
       <section class="empty">
         <p>The first dialogues are being prepared. Check back shortly.</p>
       </section>

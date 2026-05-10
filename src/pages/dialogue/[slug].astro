@@ -1,80 +1,59 @@
 ---
-// Individual dialog page — long-form rendering of a User ↔ Jafar conversation
-// with rich typography, citation styling, and watercolor decorative elements.
+// Individual dialog page — live from API (published_conversations table).
+// SSR: fetches by slug at request time, no prerender, no getStaticPaths.
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
-import { getCollection, render } from 'astro:content';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 import { heroUrl, cardUrl } from '../../lib/imagekit.js';
 
-// Prerender all dialog pages at build time. Required in Astro `output: 'server'`
-// mode for getStaticPaths to actually generate routes. Without this the
-// slug param has no props at runtime and rendering 500s.
-export const prerender = true;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const { slug } = Astro.params;
 
-export async function getStaticPaths() {
-  const all = await getCollection('dialogs');
-  // Each detail page also gets the full published list (for the Related sidebar
-  // and cross-linking footer). We compute it once per build and pass via props.
-  const published = all.filter(d => d.data.published === true);
-  return all.map(d => ({
-    params: { slug: d.id.replace(/\.md$/, '') },
-    props: {
-      dialog: d,
-      allPublished: published.map(p => ({
-        slug: p.id.replace(/\.md$/, ''),
-        title: p.data.title,
-        topic: p.data.topic,
-        tags: p.data.tags,
-        description: p.data.description,
-        publishedAt: p.data.publishedAt.toISOString(),
-        heroImage: p.data.heroImage,
-        score: p.data.qualityScore,
-      })),
-    },
-  }));
-}
+// Fetch this dialog and all published dialogs in parallel
+const [dialogRes, allRes] = await Promise.all([
+  fetch(`${API_BASE}/api/v1/dialogs/${slug}`),
+  fetch(`${API_BASE}/api/v1/dialogs`),
+]);
 
-const { dialog, allPublished } = Astro.props;
-const { Content, headings } = await render(dialog);
-const data = dialog.data;
+if (!dialogRes.ok) return Astro.redirect('/404');
+const { dialog } = await dialogRes.json();
+const { dialogs: allPublished = [] } = allRes.ok ? await allRes.json() : {};
 
-// Related dialogs = other published dialogs that share at least one tag.
-// Ranked by # shared tags desc, then recency. Cap at 12.
-const currentSlug = dialog.id.replace(/\.md$/, '');
+const data = {
+  ...dialog,
+  tags: JSON.parse(dialog.tags_json || '[]'),
+  keywords: JSON.parse(dialog.keywords_json || '[]'),
+  roundTitles: JSON.parse(dialog.round_titles_json || '[]'),
+  assessment: dialog.assessment_json ? JSON.parse(dialog.assessment_json) : null,
+};
+
+// Related dialogs — share at least one tag
 const tagSet = new Set(data.tags);
 const related = allPublished
-  .filter(p => p.slug !== currentSlug)
-  .map(p => ({
-    ...p,
-    overlap: p.tags.filter(t => tagSet.has(t)).length
-  }))
+  .filter(p => p.slug !== slug)
+  .map(p => ({ ...p, tags: JSON.parse(p.tags_json || '[]') }))
+  .map(p => ({ ...p, overlap: p.tags.filter(t => tagSet.has(t)).length }))
   .filter(p => p.overlap > 0)
-  .sort((a, b) => b.overlap - a.overlap || (new Date(b.publishedAt)).getTime() - (new Date(a.publishedAt)).getTime())
+  .sort((a, b) => b.overlap - a.overlap || new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
   .slice(0, 12);
 
-// "All published" used for the right rail when there's room.
-const allRecent = allPublished
-  .slice()
-  .sort((a, b) => (new Date(b.publishedAt)).getTime() - (new Date(a.publishedAt)).getTime());
+const allRecent = [...allPublished].sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
-// Tag counts across the published corpus. We only render a tag chip if at
-// least two articles share it (otherwise the tag page would be a dead end).
 const tagCounts = new Map<string, number>();
 for (const p of allPublished) {
-  for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+  for (const t of JSON.parse(p.tags_json || '[]')) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
 }
 const linkableTags = data.tags.filter(t => (tagCounts.get(t) || 0) >= 2);
 
-// Schema.org structured data — Article wrapper
+// Schema.org structured data
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": data.title,
   "description": data.description,
-  "datePublished": data.publishedAt.toISOString(),
-  "dateModified": (data.updatedAt ?? data.publishedAt).toISOString(),
+  "datePublished": data.published_at,
+  "dateModified": data.updated_at || data.published_at,
   "author": [
     { "@type": "Person", "name": "Reader" },
     { "@type": "SoftwareApplication", "name": "Jafar (SifterSearch)" }
@@ -84,33 +63,20 @@ const articleSchema = {
     "name": "SifterSearch",
     "logo": { "@type": "ImageObject", "url": "https://siftersearch.com/logo.svg" }
   },
-  "image": data.heroImage ? `https://siftersearch.com${data.heroImage}` : undefined,
+  "image": data.hero_image ? heroUrl(data.hero_image) : undefined,
   "keywords": data.tags.join(', ')
 };
 
-// FAQPage schema — every round (h3 question summary + Jafar's prose answer)
-// becomes a Q&A entry. Strong rich-result signal for Google: the conversation
-// renders in search as a collapsible FAQ stack. Pulled from Astro's headings
-// (h3 = question summary) and the markdown body (jafar-turn divs hold the
-// prose answers).
-const roundQuestions = headings.filter(h => h.depth === 3);
+// FAQPage schema — built from round_titles_json + body_html jafar-turn divs
 const jafarTurnRegex = /<div class="jafar-turn">([\s\S]*?)<\/div>/g;
 const jafarAnswers: string[] = [];
-{
-  // body is in the rendered HTML; we don't have direct access. Pull from the
-  // raw markdown via the import (gray-matter loaded by Astro's content).
-  // Fallback: empty array — FAQPage will be omitted if we can't pair.
-  const raw = (dialog.body || '');
-  let m;
-  while ((m = jafarTurnRegex.exec(raw)) !== null) {
-    // Strip surrounding whitespace and any HTML; keep markdown as-is so
-    // the Answer.text field is human-readable.
-    const text = m[1].trim();
-    if (text) jafarAnswers.push(text);
-  }
+let m;
+while ((m = jafarTurnRegex.exec(dialog.body_html || '')) !== null) {
+  const text = m[1].replace(/<[^>]+>/g, '').trim();
+  if (text) jafarAnswers.push(text);
 }
-const faqEntries = roundQuestions
-  .map((q, i) => ({ q: q.text, a: jafarAnswers[i] }))
+const faqEntries = data.roundTitles
+  .map((rt, i) => ({ q: rt.user, a: jafarAnswers[i] }))
   .filter(p => p.q && p.a);
 const faqSchema = faqEntries.length >= 3 ? {
   "@context": "https://schema.org",
@@ -118,16 +84,10 @@ const faqSchema = faqEntries.length >= 3 ? {
   "mainEntity": faqEntries.map(p => ({
     "@type": "Question",
     "name": p.q,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      // Strip the markdown blockquote prefix so the answer reads cleanly
-      // in search results. Cap at ~600 chars per answer.
-      "text": p.a.replace(/^>\s*/gm, '').slice(0, 600)
-    }
+    "acceptedAnswer": { "@type": "Answer", "text": p.a.slice(0, 600) }
   }))
 } : null;
 
-// Topic label
 const TOPIC_LABELS: Record<string, string> = {
   'theology': 'Theology',
   'ethics': 'Ethics',
@@ -147,7 +107,7 @@ const TOPIC_LABELS: Record<string, string> = {
 <Layout
   title={`${sq(data.title)} — Dialog`}
   description={sq(data.description)}
-  image={data.heroImage ?? '/og-image.png'}
+  image={data.hero_image ?? '/og-image.png'}
   type="article"
 >
   <Fragment slot="head">
@@ -161,8 +121,8 @@ const TOPIC_LABELS: Record<string, string> = {
 
   <article class="dialog-page">
     <div class="dialog-hero">
-      {data.heroImage ? (
-        <img class="hero-image" src={heroUrl(data.heroImage)} alt={data.title} />
+      {data.hero_image ? (
+        <img class="hero-image" src={heroUrl(data.hero_image)} alt={data.title} />
       ) : (
         <div class="hero-watercolor" aria-hidden="true">
           <svg viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid slice">
@@ -199,19 +159,19 @@ const TOPIC_LABELS: Record<string, string> = {
           {sq(data.question)}
         </p>
         <div class="dialog-meta">
-          {typeof data.qualityScore === 'number' && (
+          {data.score > 0 && (
             <span class="meta-score">
               <span class="meta-label">Quality</span>
-              <strong>{data.qualityScore}%</strong>
+              <strong>{data.score}%</strong>
             </span>
           )}
           <span class="meta-rounds">
             <span class="meta-label">Rounds</span>
-            <strong>{data.rounds}</strong>
+            <strong>{data.rounds_count}</strong>
           </span>
           <span class="meta-date">
             <span class="meta-label">Published</span>
-            <strong>{data.publishedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            <strong>{new Date(data.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
           </span>
         </div>
         {linkableTags.length > 0 && (
@@ -228,37 +188,20 @@ const TOPIC_LABELS: Record<string, string> = {
         <aside class="toc-rail" aria-label="Conversation rounds">
           <p class="rail-label">Conversation</p>
           <ol class="toc-list">
-            {(() => {
-              // Pair each h3 (user question) with its following h4 (Jafar's answer).
-              // Both come from Astro's `headings`. h3 anchors to round-N (the user-turn div).
-              const items = [];
-              let roundN = 0;
-              for (let i = 0; i < headings.length; i++) {
-                const h = headings[i];
-                if (h.depth === 3) {
-                  roundN++;
-                  const next = headings[i + 1];
-                  const answer = next && next.depth === 4 ? next : null;
-                  items.push({ q: h, a: answer, n: roundN });
-                }
-              }
-              return items.map(item => (
-                <li class="toc-round">
-                  <a class="toc-q" href={`#round-${item.n}`}>{sq(item.q.text)}</a>
-                  {item.a && (
-                    <a class="toc-a" href={`#${item.a.slug}`}>{sq(item.a.text)}</a>
-                  )}
-                </li>
-              ));
-            })()}
+            {data.roundTitles.map((rt, i) => (
+              <li class="toc-round">
+                <a class="toc-q" href={`#round-${i + 1}`}>{sq(rt.user)}</a>
+                {rt.jafar && <a class="toc-a" href={`#round-${i + 1}-answer`}>{sq(rt.jafar)}</a>}
+              </li>
+            ))}
             <li class="toc-spacer" />
-            <li><a href="#assessment" class="toc-assess">Assessment</a></li>
+            {data.assessment && <li><a href="#assessment" class="toc-assess">Assessment</a></li>}
           </ol>
         </aside>
 
         <!-- CENTER: the dialog body itself -->
         <div class="dialog-body prose">
-          <Content />
+          <Fragment set:html={dialog.body_html} />
         </div>
 
         <!-- RIGHT: Related conversations (shared tags) -->
@@ -271,7 +214,7 @@ const TOPIC_LABELS: Record<string, string> = {
               {related.map(r => (
                 <li>
                   <a href={`/dialogue/${r.slug}/`} class="related-card">
-                    {r.heroImage && <img src={cardUrl(r.heroImage)} alt="" loading="lazy" />}
+                    {r.hero_image && <img src={cardUrl(r.hero_image)} alt="" loading="lazy" />}
                     <span class="related-text">
                       <span class="related-title">{sq(r.title)}</span>
                       <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>
@@ -363,7 +306,7 @@ const TOPIC_LABELS: Record<string, string> = {
           {allRecent.length > 0 && (
             <div class="footer-col">
               <h4>Recent dialogs</h4>
-              {allRecent.slice(0, 5).filter(r => r.slug !== currentSlug).slice(0, 5).map(r => (
+              {allRecent.slice(0, 5).filter(r => r.slug !== slug).slice(0, 5).map(r => (
                 <a href={`/dialogue/${r.slug}/`}>{sq(r.title)}</a>
               ))}
             </div>

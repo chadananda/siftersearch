@@ -516,4 +516,27 @@ export const migrations = {
     }
     logger.info('Migration 61 complete: content.block_attrs added');
   },
+
+  62: async () => {
+    // Extend published_conversations to support the full dialog schema:
+    // score, featured, hero_prompt, round_titles_json, assessment_json,
+    // rounds_count. These fields are set by the batch-runner and admin API;
+    // the Astro dialog pages read them instead of markdown frontmatter,
+    // making dialogs live-editable without rebuilds.
+    logger.info('Starting migration 62: published_conversations dialog fields');
+    const addCol = async (sql) => {
+      try { await query(sql); }
+      catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    await addCol('ALTER TABLE published_conversations ADD COLUMN score INTEGER DEFAULT 0');
+    await addCol('ALTER TABLE published_conversations ADD COLUMN featured INTEGER DEFAULT 0');
+    await addCol('ALTER TABLE published_conversations ADD COLUMN hero_prompt TEXT');
+    await addCol('ALTER TABLE published_conversations ADD COLUMN round_titles_json TEXT');
+    await addCol('ALTER TABLE published_conversations ADD COLUMN assessment_json TEXT');
+    await addCol('ALTER TABLE published_conversations ADD COLUMN rounds_count INTEGER DEFAULT 0');
+    try { await query('CREATE INDEX IF NOT EXISTS idx_pubconv_tenant_status_score ON published_conversations(tenant_id, status, score DESC)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_pubconv_tenant_featured ON published_conversations(tenant_id, featured) WHERE featured = 1'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_pubconv_tenant_topic ON published_conversations(tenant_id, topic)'); } catch { /* exists */ }
+    logger.info('Migration 62 complete: dialog fields added to published_conversations');
+  },
 };

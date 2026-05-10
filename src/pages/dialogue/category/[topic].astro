@@ -1,14 +1,19 @@
 ---
-// Per-category landing page (broad topic — Comparative Religion, Ethics, etc.).
-// Generated for every topic with at least one published dialog.
+// Per-category landing page — live from API.
 import Layout from '../../../layouts/Layout.astro';
 import LiquidBackground from '../../../components/LiquidBackground.svelte';
 import NavBar from '../../../components/common/NavBar.svelte';
-import { getCollection } from 'astro:content';
 import { smartQuotes as sq } from '../../../lib/smart-quotes.js';
 import { cardUrl } from '../../../lib/imagekit.js';
 
-export const prerender = true;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const { topic } = Astro.params;
+
+const res = await fetch(`${API_BASE}/api/v1/dialogs?topic=${encodeURIComponent(topic)}`);
+const { dialogs: raw = [] } = res.ok ? await res.json() : {};
+const dialogs = raw.map(d => ({ ...d, tags: JSON.parse(d.tags_json || '[]') }));
+
+if (dialogs.length === 0) return Astro.redirect('/dialogue/');
 
 const TOPIC_LABELS: Record<string, string> = {
   'theology': 'Theology', 'ethics': 'Ethics', 'social-order': 'Social Order',
@@ -17,28 +22,6 @@ const TOPIC_LABELS: Record<string, string> = {
   'word-meaning': 'Word & Meaning', 'metaphysics': 'Metaphysics', 'philosophy': 'Philosophy',
 };
 
-export async function getStaticPaths() {
-  const all = await getCollection('dialogs');
-  const published = all.filter(d => d.data.published === true);
-  const byTopic = new Map<string, typeof published>();
-  for (const d of published) {
-    const arr = byTopic.get(d.data.topic) ?? [];
-    arr.push(d);
-    byTopic.set(d.data.topic, arr);
-  }
-  return Array.from(byTopic.entries()).map(([topic, dialogs]) => ({
-    params: { topic },
-    props: {
-      topic,
-      dialogs: dialogs.sort((a, b) =>
-        (b.data.updatedAt ?? b.data.publishedAt).getTime() -
-        (a.data.updatedAt ?? a.data.publishedAt).getTime()
-      )
-    }
-  }));
-}
-
-const { topic, dialogs } = Astro.props;
 const label = TOPIC_LABELS[topic] ?? topic;
 const description = `${dialogs.length} long-form ${label.toLowerCase()} dialogues — primary-source-grounded conversations on faith, doctrine, and meaning.`;
 ---
@@ -57,16 +40,14 @@ const description = `${dialogs.length} long-form ${label.toLowerCase()} dialogue
 
     <div class="cards">
       {dialogs.map(d => (
-        <a class="card" href={`/dialogue/${d.id.replace(/\.md$/, '')}/`}>
-          {d.data.heroImage && (
-            <img class="card-image" src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
+        <a class="card" href={`/dialogue/${d.slug}/`}>
+          {d.hero_image && (
+            <img class="card-image" src={cardUrl(d.hero_image)} alt={d.title} loading="lazy" />
           )}
           <div class="card-body">
-            <h3>{sq(d.data.title)}</h3>
-            <p>{sq(d.data.description)}</p>
-            {typeof d.data.qualityScore === 'number' && (
-              <span class="score">{d.data.qualityScore}%</span>
-            )}
+            <h3>{sq(d.title)}</h3>
+            <p>{sq(d.description)}</p>
+            {d.score > 0 && <span class="score">{d.score}%</span>}
           </div>
         </a>
       ))}

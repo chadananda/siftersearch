@@ -1,42 +1,19 @@
 ---
-// Per-tag landing page. Generated only for tags shared by ≥2 published
-// dialogs (the bar for surfacing a tag to users at all). SEO-rich:
-// title/description tuned to the tag, lists every dialog with that tag.
+// Per-tag landing page — live from API.
 import Layout from '../../../layouts/Layout.astro';
 import LiquidBackground from '../../../components/LiquidBackground.svelte';
 import NavBar from '../../../components/common/NavBar.svelte';
-import { getCollection } from 'astro:content';
 import { smartQuotes as sq } from '../../../lib/smart-quotes.js';
 import { cardUrl } from '../../../lib/imagekit.js';
 
-export const prerender = true;
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const { tag } = Astro.params;
 
-export async function getStaticPaths() {
-  const all = await getCollection('dialogs');
-  const published = all.filter(d => d.data.published === true);
-  const tagToDialogs = new Map<string, typeof published>();
-  for (const d of published) {
-    for (const t of d.data.tags) {
-      const arr = tagToDialogs.get(t) ?? [];
-      arr.push(d);
-      tagToDialogs.set(t, arr);
-    }
-  }
-  return Array.from(tagToDialogs.entries())
-    .filter(([, dialogs]) => dialogs.length >= 2)
-    .map(([tag, dialogs]) => ({
-      params: { tag },
-      props: {
-        tag,
-        dialogs: dialogs.sort((a, b) =>
-          (b.data.updatedAt ?? b.data.publishedAt).getTime() -
-          (a.data.updatedAt ?? a.data.publishedAt).getTime()
-        )
-      }
-    }));
-}
+const res = await fetch(`${API_BASE}/api/v1/dialogs?tag=${encodeURIComponent(tag)}`);
+const { dialogs: raw = [] } = res.ok ? await res.json() : {};
+const dialogs = raw.map(d => ({ ...d, tags: JSON.parse(d.tags_json || '[]') }));
 
-const { tag, dialogs } = Astro.props;
+if (dialogs.length === 0) return Astro.redirect('/dialogue/');
 
 const TOPIC_LABELS: Record<string, string> = {
   'theology': 'Theology', 'ethics': 'Ethics', 'social-order': 'Social Order',
@@ -63,17 +40,15 @@ const description = `${dialogs.length} long-form dialogues exploring "${tagDispl
 
     <div class="cards">
       {dialogs.map(d => (
-        <a class="card" href={`/dialogue/${d.id.replace(/\.md$/, '')}/`}>
-          {d.data.heroImage && (
-            <img class="card-image" src={cardUrl(d.data.heroImage)} alt={d.data.title} loading="lazy" />
+        <a class="card" href={`/dialogue/${d.slug}/`}>
+          {d.hero_image && (
+            <img class="card-image" src={cardUrl(d.hero_image)} alt={d.title} loading="lazy" />
           )}
           <div class="card-body">
-            <span class="card-topic">{TOPIC_LABELS[d.data.topic] ?? d.data.topic}</span>
-            <h3>{sq(d.data.title)}</h3>
-            <p>{sq(d.data.description)}</p>
-            {typeof d.data.qualityScore === 'number' && (
-              <span class="score">{d.data.qualityScore}%</span>
-            )}
+            <span class="card-topic">{TOPIC_LABELS[d.topic] ?? d.topic}</span>
+            <h3>{sq(d.title)}</h3>
+            <p>{sq(d.description)}</p>
+            {d.score > 0 && <span class="score">{d.score}%</span>}
           </div>
         </a>
       ))}

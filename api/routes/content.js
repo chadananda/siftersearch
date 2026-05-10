@@ -194,4 +194,126 @@ export default async function contentRoutes(fastify) {
     reply.header('Cache-Control', ADMIN_NOCACHE);
     return { ok: true, slug, status: 'archived' };
   });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // DIALOGS — published_conversations rows with tenant_id='siftersearch'
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const DIALOG_TENANT = 'siftersearch';
+
+  const DIALOG_LIST_COLS = `
+    slug, title, description, question, topic, tags_json, keywords_json,
+    excerpt, hero_image, score, featured, rounds_count, published_at, updated_at`;
+
+  const DIALOG_FULL_COLS = `
+    slug, title, description, question, topic, tags_json, keywords_json,
+    excerpt, hero_image, hero_prompt, score, featured, rounds_count,
+    round_titles_json, assessment_json, body_html, body_md, published_at, updated_at`;
+
+  // ─── Public: list published dialogs ─────────────────────────────────────
+  fastify.get('/dialogs', async (req, reply) => {
+    const { topic, tag, featured, limit: lim = '100' } = req.query ?? {};
+    let sql = `SELECT ${DIALOG_LIST_COLS} FROM published_conversations
+               WHERE tenant_id = ? AND COALESCE(status,'published') = 'published'`;
+    const params = [DIALOG_TENANT];
+    if (topic) { sql += ' AND topic = ?'; params.push(topic); }
+    if (featured === 'true') { sql += ' AND featured = 1'; }
+    if (tag) { sql += ` AND tags_json LIKE ?`; params.push(`%"${tag}"%`); }
+    sql += ' ORDER BY published_at DESC, score DESC LIMIT ?';
+    params.push(Math.min(parseInt(lim) || 100, 500));
+    const rows = await queryAll(sql, params);
+    reply.header('Cache-Control', PUBLIC_CACHE);
+    return { dialogs: rows };
+  });
+
+  // ─── Public: single dialog by slug ──────────────────────────────────────
+  fastify.get('/dialogs/:slug', async (req, reply) => {
+    const { slug } = req.params;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
+    const dialog = await queryOne(
+      `SELECT ${DIALOG_FULL_COLS} FROM published_conversations
+       WHERE tenant_id = ? AND slug = ? AND COALESCE(status,'published') = 'published'`,
+      [DIALOG_TENANT, slug]
+    );
+    if (!dialog) return reply.code(404).send({ error: 'not_found' });
+    reply.header('Cache-Control', PUBLIC_CACHE);
+    return { dialog };
+  });
+
+  // ─── Admin: upsert dialog ────────────────────────────────────────────────
+  fastify.put('/admin/dialogs/:slug', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+    const { slug } = req.params;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
+
+    const b = req.body || {};
+    if (!b.title || !b.body_md) return reply.code(400).send({ error: 'missing_field', fields: ['title', 'body_md'] });
+
+    const html = renderMarkdown(b.body_md);
+    const existing = await queryOne(
+      'SELECT id FROM published_conversations WHERE tenant_id = ? AND slug = ?',
+      [DIALOG_TENANT, slug]
+    );
+
+    const vals = [
+      b.title,
+      b.description || null,
+      b.question || null,
+      b.topic || null,
+      b.tags_json || '[]',
+      b.keywords_json || '[]',
+      b.excerpt || null,
+      b.hero_image || null,
+      b.hero_prompt || null,
+      typeof b.score === 'number' ? b.score : 0,
+      b.featured ? 1 : 0,
+      typeof b.rounds_count === 'number' ? b.rounds_count : 0,
+      b.round_titles_json || null,
+      b.assessment_json || null,
+      b.body_md,
+      html,
+      b.status || 'published',
+    ];
+
+    if (existing) {
+      await query(
+        `UPDATE published_conversations SET
+          title=?, description=?, question=?, topic=?, tags_json=?, keywords_json=?,
+          excerpt=?, hero_image=?, hero_prompt=?, score=?, featured=?, rounds_count=?,
+          round_titles_json=?, assessment_json=?, body_md=?, body_html=?, status=?,
+          updated_at=CURRENT_TIMESTAMP
+         WHERE tenant_id=? AND slug=?`,
+        [...vals, DIALOG_TENANT, slug]
+      );
+      logger.info({ slug, action: 'update' }, 'dialog: updated');
+    } else {
+      await query(
+        `INSERT INTO published_conversations
+          (tenant_id, slug, title, description, question, topic, tags_json, keywords_json,
+           excerpt, hero_image, hero_prompt, score, featured, rounds_count,
+           round_titles_json, assessment_json, body_md, body_html, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [DIALOG_TENANT, slug, ...vals]
+      );
+      logger.info({ slug, action: 'create' }, 'dialog: created');
+    }
+
+    reply.header('Cache-Control', ADMIN_NOCACHE);
+    return { ok: true, slug };
+  });
+
+  // ─── Admin: soft-delete dialog ───────────────────────────────────────────
+  fastify.delete('/admin/dialogs/:slug', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+    const { slug } = req.params;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
+    await query(
+      `UPDATE published_conversations SET status='archived', updated_at=CURRENT_TIMESTAMP
+       WHERE tenant_id=? AND slug=?`,
+      [DIALOG_TENANT, slug]
+    );
+    logger.info({ slug, action: 'archive' }, 'dialog: archived');
+    reply.header('Cache-Control', ADMIN_NOCACHE);
+    return { ok: true, slug, status: 'archived' };
+  });
 }
