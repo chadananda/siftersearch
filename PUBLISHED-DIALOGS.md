@@ -215,3 +215,8 @@
 008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=74% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-10T19:59:24.395Z
 009-what-happens-after-we-die - What Happens After We Die? - score=81% - https://siftersearch.com/dialogue/009-what-happens-after-we-die/ - 2026-05-10T19:59:38.382Z
 009-what-happens-after-we-die - What Happens After We Die? - score=85% - https://siftersearch.com/dialogue/009-what-happens-after-we-die/ - 2026-05-10T20:01:42.596Z
+010-can-science-and-religion-coexist - Can Science and Religion Coexist? - score=72% - https://siftersearch.com/dialogue/010-can-science-and-religion-coexist/ - 2026-05-10T20:04:09.636Z
+011-what-is-prayer-actually-for - What Is Prayer Actually For? - score=83% - https://siftersearch.com/dialogue/011-what-is-prayer-actually-for/ - 2026-05-10T20:05:04.122Z
+010-can-science-and-religion-coexist - Can Science and Religion Coexist? - score=69% - https://siftersearch.com/dialogue/010-can-science-and-religion-coexist/ - 2026-05-10T20:05:38.195Z
+012-why-are-there-so-many-religions - Why Are There So Many Religions? - score=83% - https://siftersearch.com/dialogue/012-why-are-there-so-many-religions/ - 2026-05-10T20:06:55.459Z
+012-why-are-there-so-many-religions - Why Are There So Many Religions? - score=83% - https://siftersearch.com/dialogue/012-why-are-there-so-many-religions/ - 2026-05-10T20:07:16.224Z

@@ -418,7 +418,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (docIds.length > 0) {
       const placeholders = docIds.map(() => '?').join(',');
       const docRows = await queryAll(
-        `SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
+        `SELECT id, slug, filename, religion, collection, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
         docIds
       );
       docMeta = new Map(docRows.map(r => [r.id, r]));
@@ -464,14 +464,19 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           paragraph_index: hit.paragraph_index,
           ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
         };
-        // External-site provenance: surface source_site + ready-to-use deep link
+        // Deep-link priority: external source_url (OceanLibrary para) > internal para anchor
         if (meta?.source_site && meta?.source_url) {
           result.source_site = meta.source_site;
-          if (extParaId) {
-            result.source_url = `${meta.source_url}/?paraId=${extParaId}`;
-            result.external_para_id = extParaId;
-          } else {
-            result.source_url = meta.source_url; // doc-level fallback
+          result.source_url = extParaId
+            ? `${meta.source_url}/?paraId=${extParaId}`
+            : meta.source_url;
+          if (extParaId) result.external_para_id = extParaId;
+        } else if (meta) {
+          // Primary library doc — build /library/{religion}/{collection}/{slug}#p{idx}
+          const docSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
+          if (docSlug && meta.religion && meta.collection) {
+            const base = `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}`;
+            result.source_url = hit.paragraph_index != null ? `${base}#p${hit.paragraph_index}` : base;
           }
         }
         return result;
