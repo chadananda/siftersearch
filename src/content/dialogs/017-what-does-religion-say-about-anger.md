@@ -9,6 +9,7 @@ tags:
   - self-control
   - virtue
 rounds: 5
+published: true
 qualityScore: 73
 publishedAt: 2026-05-10
 excerpt: "The conversation explores the concept of anger across religious teachings, with a focus on Bahá'í perspectives. Jafar initially relies on secondary sources, but later provides primary quotes from 'The"

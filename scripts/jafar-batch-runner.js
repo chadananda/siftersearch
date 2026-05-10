@@ -390,6 +390,7 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
     ...(q.tags || []).map(t => `  - ${t}`),
     `rounds: ${Math.floor(history.length / 2)}`,
     `qualityScore: ${score}`,
+    `published: true`,
     `publishedAt: ${new Date().toISOString().slice(0, 10)}`,
     `excerpt: ${JSON.stringify((narrative || '').slice(0, 200))}`,
     `featured: ${score >= 80 ? 'true' : 'false'}`,

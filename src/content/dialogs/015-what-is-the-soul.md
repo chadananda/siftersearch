@@ -9,6 +9,7 @@ tags:
   - consciousness
   - immortality
 rounds: 5
+published: true
 qualityScore: 77
 publishedAt: 2026-05-10
 excerpt: "The conversation provides a solid exploration of the Bahá'í perspective on the soul, with Jafar grounding his responses in primary texts, particularly from Bahá'u'lláh's *Gleanings*. The depth is dece"

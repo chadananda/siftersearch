@@ -9,6 +9,7 @@ tags:
   - mercy
   - reconciliation
 rounds: 5
+published: true
 qualityScore: 75
 publishedAt: 2026-05-10
 excerpt: "The conversation explores the conditions for forgiveness in religious texts, particularly within the Bahá'í Faith. Jafar provides a nuanced view of forgiveness, citing the Báb and 'Abdu'l-Bahá, and ad"

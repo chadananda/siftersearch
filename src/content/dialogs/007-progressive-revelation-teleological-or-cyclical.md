@@ -9,6 +9,7 @@ tags:
   - history
   - eschatology
 rounds: 5
+published: true
 qualityScore: 84
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the Bahá'í concept of progressive revelation, balancing the teleological and cyclical aspects. Jafar provides primary quotes from Bahá'u'lláh, particularly from *"

@@ -9,6 +9,7 @@ tags:
   - divine-response
   - faith
 rounds: 5
+published: true
 qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the nature of prayer in the Bahá'í Faith, using primary texts to substantiate claims about divine interaction. Jafar maintains a conversational tone throughout, w"

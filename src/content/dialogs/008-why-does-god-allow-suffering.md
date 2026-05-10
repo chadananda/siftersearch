@@ -9,6 +9,7 @@ tags:
   - evil
   - divine-will
 rounds: 5
+published: true
 qualityScore: 74
 publishedAt: 2026-05-10
 excerpt: "The conversation provides a thoughtful exploration of the Bahá'í perspective on suffering, with Jafar referencing primary texts like the *Hidden Words* and *Kitáb-i-Íqán*. The depth is decent, as the "

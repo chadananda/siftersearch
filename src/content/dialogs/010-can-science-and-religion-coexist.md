@@ -9,6 +9,7 @@ tags:
   - faith
   - materialism
 rounds: 5
+published: true
 qualityScore: 69
 publishedAt: 2026-05-10
 excerpt: "The conversation explores the compatibility of science and religion in Bahá'í texts, but lacks depth in primary citations. Jafar's responses are somewhat repetitive, focusing on philosophers' belief i"

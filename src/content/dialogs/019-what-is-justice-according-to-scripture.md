@@ -9,6 +9,7 @@ tags:
   - social-order
   - equity
 rounds: 5
+published: true
 qualityScore: 83
 publishedAt: 2026-05-10
 excerpt: "The conversation effectively explores the concept of justice in Bahá'í teachings, contrasting it with modern interpretations. Jafar provides depth by discussing both personal and societal dimensions o"

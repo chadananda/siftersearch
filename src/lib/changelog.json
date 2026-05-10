@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T20:33:06.976Z",
+  "generated": "2026-05-10T21:21:17.840Z",
   "entries": [
+    {
+      "hash": "1f73924",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Improve dialogs 019 (83%) after further run",
+      "scope": null
+    },
     {
       "hash": "4c949fb",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strip duplicate frontmatter blocks from document content",
       "scope": null
-    },
-    {
-      "hash": "acc986e",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "1f73924",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Improve dialogs 019 (83%) after further run",
+        "scope": null
+      },
       {
         "hash": "4c949fb",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Strip duplicate frontmatter blocks from document content",
-        "scope": null
-      },
-      {
-        "hash": "acc986e",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
         "scope": null
       }
     ]
