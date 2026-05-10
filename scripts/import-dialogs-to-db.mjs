@@ -89,19 +89,19 @@ function extractRoundTitles(body) {
 
 // Parse the nested assessment block from frontmatter lines
 function extractAssessment(fmStr) {
-  const assessMatch = fmStr.match(/^assessment:\n([\s\S]*?)(?=^\w|\Z)/m);
+  const assessMatch = fmStr.match(/^assessment:\n([\s\S]*?)(?=^\w|$)/m);
   if (!assessMatch) return null;
   const block = assessMatch[1];
 
   const scores = {};
-  const scoresMatch = block.match(/scores:\n([\s\S]*?)(?=\n\s*\w+:|\Z)/);
+  const scoresMatch = block.match(/scores:\n([\s\S]*?)(?=\n\s*\w+:|$)/);
   if (scoresMatch) {
     for (const m of scoresMatch[1].matchAll(/^\s+(\w+):\s*(\d+)/gm)) {
       scores[m[1]] = parseInt(m[2]);
     }
   }
   const narrativeMatch = block.match(/narrative:\s*"([\s\S]*?)"\n/);
-  const flagsMatch = block.match(/flags:\n([\s\S]*?)(?=\n\s*\w+:|\Z)/);
+  const flagsMatch = block.match(/flags:\n([\s\S]*?)(?=\n\s*\w+:|$)/);
   const planMatch = block.match(/improvement_plan:\s*"([\s\S]*?)"\n/);
 
   const flags = [];

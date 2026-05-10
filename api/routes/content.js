@@ -270,6 +270,7 @@ export default async function contentRoutes(fastify) {
       typeof b.rounds_count === 'number' ? b.rounds_count : 0,
       b.round_titles_json || null,
       b.assessment_json || null,
+      b.rounds_json || '[]',
       b.body_md,
       html,
       b.status || 'published',
@@ -280,7 +281,7 @@ export default async function contentRoutes(fastify) {
         `UPDATE published_conversations SET
           title=?, description=?, question=?, topic=?, tags_json=?, keywords_json=?,
           excerpt=?, hero_image=?, hero_prompt=?, score=?, featured=?, rounds_count=?,
-          round_titles_json=?, assessment_json=?, body_md=?, body_html=?, status=?,
+          round_titles_json=?, assessment_json=?, rounds_json=?, body_md=?, body_html=?, status=?,
           updated_at=CURRENT_TIMESTAMP
          WHERE tenant_id=? AND slug=?`,
         [...vals, DIALOG_TENANT, slug]
@@ -291,8 +292,8 @@ export default async function contentRoutes(fastify) {
         `INSERT INTO published_conversations
           (tenant_id, slug, title, description, question, topic, tags_json, keywords_json,
            excerpt, hero_image, hero_prompt, score, featured, rounds_count,
-           round_titles_json, assessment_json, body_md, body_html, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           round_titles_json, assessment_json, rounds_json, body_md, body_html, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [DIALOG_TENANT, slug, ...vals]
       );
       logger.info({ slug, action: 'create' }, 'dialog: created');

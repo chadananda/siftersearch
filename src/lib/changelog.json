@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T23:42:56.403Z",
+  "generated": "2026-05-10T23:54:44.151Z",
   "entries": [
+    {
+      "hash": "ee7f898",
+      "date": "2026-05-10",
+      "type": "New",
+      "description": "Dialog content → API-backed (published_conversations table)",
+      "scope": null
+    },
     {
       "hash": "dd3b872",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
       "scope": null
-    },
-    {
-      "hash": "b4214e6",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "ee7f898",
+        "date": "2026-05-10",
+        "type": "New",
+        "description": "Dialog content → API-backed (published_conversations table)",
+        "scope": null
+      },
       {
         "hash": "dd3b872",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
-        "scope": null
-      },
-      {
-        "hash": "b4214e6",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add cache-control headers to 301 redirects (1 hour max-age)",
         "scope": null
       }
     ]
