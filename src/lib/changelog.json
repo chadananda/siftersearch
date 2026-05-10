@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T21:51:29.573Z",
+  "generated": "2026-05-10T21:59:16.921Z",
   "entries": [
+    {
+      "hash": "1159589",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
+      "scope": null
+    },
     {
       "hash": "5a90c1d",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Handle legacy frontmatter without opening --- delimiter",
       "scope": null
-    },
-    {
-      "hash": "cefa05c",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Clear file_hash in addition to body_hash to force re-ingestion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "1159589",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Escape backticks in chat.js SYSTEM_PROMPT (broke API restart) + publish only at MIN_SCORE",
+        "scope": null
+      },
       {
         "hash": "5a90c1d",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Handle legacy frontmatter without opening --- delimiter",
-        "scope": null
-      },
-      {
-        "hash": "cefa05c",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Clear file_hash in addition to body_hash to force re-ingestion",
         "scope": null
       }
     ]

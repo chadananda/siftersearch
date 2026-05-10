@@ -478,11 +478,12 @@ const TOPIC_LABELS: Record<string, string> = {
   /* Three-column layout: TOC (260px) | body (flex) | related (320px) */
   .dialog-layout {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr) 320px;
+    grid-template-columns: 1fr;
     gap: 2.5rem;
     align-items: start;
     margin-top: 2rem;
   }
+  .toc-rail, .related-rail { display: none; }
   .toc-rail, .related-rail {
     position: sticky;
     top: 5rem;
@@ -627,24 +628,35 @@ const TOPIC_LABELS: Record<string, string> = {
     font-style: italic;
   }
 
-  /* Below 1100px: hide right rail. Below 900px: hide both rails (mobile). */
-  @media (max-width: 1100px) {
+  /* Very wide (≥1400px): toc | body | related (three columns, original layout) */
+  @media (min-width: 1400px) {
     .dialog-layout {
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: 260px minmax(0, 1fr) 320px;
     }
-    .related-rail { display: none; }
+    .toc-rail   { order: 1; display: block; }
+    .dialog-body { order: 2; }
+    .related-rail { order: 3; display: block; }
   }
-  @media (max-width: 900px) {
+
+  /* Normal wide (1000px–1399px): related | body (toc hidden, related on left) */
+  @media (min-width: 1000px) and (max-width: 1399px) {
+    .dialog-layout {
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+    .toc-rail    { display: none; }
+    .related-rail { order: 1; display: block; }
+    .dialog-body  { order: 2; }
+  }
+
+  /* Below 1000px: hide both rails (single column). */
+  @media (max-width: 999px) {
     .dialog-layout {
       grid-template-columns: 1fr;
     }
     .toc-rail, .related-rail {
       position: static;
       max-height: none;
-    }
-    .toc-rail {
-      order: 2;
-      margin-top: 2rem;
+      display: none;
     }
   }
 
