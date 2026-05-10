@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T21:40:45.701Z",
+  "generated": "2026-05-10T21:51:29.573Z",
   "entries": [
+    {
+      "hash": "5a90c1d",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
+      "scope": null
+    },
     {
       "hash": "546345b",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Clear file_hash in addition to body_hash to force re-ingestion",
       "scope": null
-    },
-    {
-      "hash": "a96d91f",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add script to remove duplicate frontmatter from source files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "5a90c1d",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Citation_integrity in judge + quote-text-as-link in crafter + delete hallucinated dialog 012",
+        "scope": null
+      },
       {
         "hash": "546345b",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Clear file_hash in addition to body_hash to force re-ingestion",
-        "scope": null
-      },
-      {
-        "hash": "a96d91f",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add script to remove duplicate frontmatter from source files",
         "scope": null
       }
     ]

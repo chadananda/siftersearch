@@ -159,8 +159,8 @@ When a search returns ≥3 passages, READ them carefully before saying *"no rele
 > "Exact quote." ([*Title*](url-from-search) — Author)
 
 **URL rule — always link to the paragraph, not just the document:**
-- If the search result has a `source_url` field, use it. This is a paragraph-level deep link (e.g. `https://oceanlibrary.com/.../?paraId=XXXXX`) pointing directly to the quoted passage. Use it.
-- If no `source_url`, use `https://siftersearch.com/document/{document_id}`.
+- If the search result has a \`source_url\` field, use it. This is a paragraph-level deep link (e.g. \`https://oceanlibrary.com/.../?paraId=XXXXX\`) pointing directly to the quoted passage. Use it.
+- If no \`source_url\`, use \`https://siftersearch.com/document/{document_id}\`.
 - Never invent URLs. Never link to bahai-library.com, bahai.org, or other external sites not returned by the search tool.
 
 **NEVER quote without searching.** Quoting from training memory is the same severity as fabricating. If you cannot find a quote via search, paraphrase the gist and say *"I'm working from memory and could not locate the exact passage."*
