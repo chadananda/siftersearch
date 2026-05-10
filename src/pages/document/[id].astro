@@ -1,0 +1,25 @@
+---
+// /document/{id} → redirect to canonical /library/{religion}/{collection}/{slug}
+// Exists so that Jafar citation links (siftersearch.com/document/{id}) resolve
+// to real pages rather than 404ing.
+const { id } = Astro.params;
+const docId = parseInt(id, 10);
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+let redirectUrl = '/library/';
+
+if (docId > 0) {
+  try {
+    const res = await fetch(`${API_BASE}/api/documents/${docId}`);
+    if (res.ok) {
+      const data = await res.json();
+      const doc = data?.document;
+      if (doc?.slug && doc?.religion && doc?.collection) {
+        redirectUrl = `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${doc.slug}`;
+      }
+    }
+  } catch { /* fall through to library root */ }
+}
+
+return Astro.redirect(redirectUrl, 301);
+---

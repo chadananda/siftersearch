@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T20:08:47.156Z",
+  "generated": "2026-05-10T20:32:18.557Z",
   "entries": [
+    {
+      "hash": "b1fe797",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "/document/{id} redirect page + proper paragraph-level citation URLs",
+      "scope": null
+    },
     {
       "hash": "e87caa0",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use unique IDs for content rows to avoid hash collisions",
       "scope": null
-    },
-    {
-      "hash": "6063de5",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "b1fe797",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "/document/{id} redirect page + proper paragraph-level citation URLs",
+        "scope": null
+      },
       {
         "hash": "e87caa0",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Use unique IDs for content rows to avoid hash collisions",
-        "scope": null
-      },
-      {
-        "hash": "6063de5",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add --branch main and retry logic to Cloudflare deploy in pre-commit hook",
         "scope": null
       }
     ]
