@@ -50,7 +50,7 @@ function saveState(state) {
 
 function extractCurrentPrompt() {
   const chatJs = readFileSync(PROMPT_FILE, 'utf-8');
-  const match = chatJs.match(/const SYSTEM_PROMPT = `([\s\S]*?)`;/);
+  const match = chatJs.match(/export const SYSTEM_PROMPT = `([\s\S]*?)`;/);
   if (!match) throw new Error('Could not extract SYSTEM_PROMPT from chat.js');
   return match[1];
 }
@@ -58,9 +58,12 @@ function extractCurrentPrompt() {
 function writePrompt(newPrompt) {
   const chatJs = readFileSync(PROMPT_FILE, 'utf-8');
   const updated = chatJs.replace(
-    /const SYSTEM_PROMPT = `[\s\S]*?`;/,
-    'const SYSTEM_PROMPT = `' + newPrompt + '`;'
+    /export const SYSTEM_PROMPT = `[\s\S]*?`;/,
+    'export const SYSTEM_PROMPT = `' + newPrompt + '`;'
   );
+  if (!updated.includes('export const SYSTEM_PROMPT')) {
+    throw new Error('writePrompt: replacement failed — SYSTEM_PROMPT not found after write');
+  }
   writeFileSync(PROMPT_FILE, updated);
 }
 
@@ -173,18 +176,20 @@ ${state.history.map(h => `- Iteration ${h.iteration}: ${h.passRate}% pass, avg $
 
 ## Your Task
 Analyze the failure patterns and produce an IMPROVED system prompt. Rules:
-1. The prompt must stay under 2000 characters (current GPT-4o context budget)
-2. DO NOT add examples or few-shot — they waste tokens. Use clear rules.
-3. Focus on the TOP 2-3 failure patterns. Don't try to fix everything at once.
-4. Keep what's working. Don't change rules that are already producing good scores.
-5. Be specific: "search with religion filter" is better than "search well"
-6. The prompt is for GPT-4o with function calling — it understands structured rules.
+1. The prompt is a rich multi-section document (~20KB). Preserve ALL existing sections — do not delete or collapse them.
+2. Make TARGETED edits to the TOP 2-3 failure patterns only. Add no more than 200 words net. Remove words to offset additions.
+3. DO NOT add examples unless the existing examples section is already present and you're adding one parallel example.
+4. Focus on the dimensions most below threshold. "Inline Quote Integration" (3.39/4 threshold) is the biggest gap right now.
+5. Keep what's working — dimensions passing threshold must not regress.
+6. Be specific: "weave 3-15 word fragments in quotes into your prose" beats "quote well".
+7. The prompt is for a multi-stage pipeline: orchestrator (research) → crafter (composes reply) → reflector (checks grounding). Edits to SYSTEM_PROMPT affect all three stages.
+8. Current prompt length: ${currentPrompt.length} characters. Stay within 10% of that.
 
 Return your response as JSON:
 {
-  "analysis": "<3-4 sentences: what's the root cause of the failures?>",
-  "changes": ["<specific change 1>", "<specific change 2>"],
-  "newPrompt": "<the complete new system prompt — everything between the backticks>"
+  "analysis": "<3-4 sentences: root cause of the top failures, specifically referencing the failure diagnoses above>",
+  "changes": ["<specific targeted change 1>", "<specific targeted change 2>"],
+  "newPrompt": "<the complete updated system prompt — full text, all sections preserved, only targeted edits applied>"
 }`;
 
   let data;
@@ -200,7 +205,7 @@ Return your response as JSON:
           model: 'gpt-4o',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.3,
-          max_tokens: 3000
+          max_tokens: 16000
         })
       });
       data = await res.json();
@@ -283,9 +288,18 @@ async function main() {
 
     // 3. Apply the new prompt if it looks safe
     if (improvement.newPrompt) {
-      // Safety check: new prompt must be within reasonable length
-      if (improvement.newPrompt.length > 3000) {
-        console.log('  New prompt too long (' + improvement.newPrompt.length + ' chars) — skipping.');
+      // Safety check: prompt must not shrink by >30% (GPT-4o sometimes collapses the prompt)
+      // or grow by >20% (runaway additions)
+      const currentLen = extractCurrentPrompt().length;
+      const newLen = improvement.newPrompt.length;
+      if (newLen < currentLen * 0.7) {
+        console.log(`  New prompt too short (${newLen} vs ${currentLen} chars) — likely truncated, skipping.`);
+        state.history[state.history.length - 1].change = 'skipped (too short — likely truncated)';
+        saveState(state);
+        continue;
+      }
+      if (newLen > currentLen * 1.2) {
+        console.log(`  New prompt too long (${newLen} vs ${currentLen} chars) — runaway additions, skipping.`);
         state.history[state.history.length - 1].change = 'skipped (too long)';
         saveState(state);
         continue;
