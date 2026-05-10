@@ -132,8 +132,23 @@ export const SCENARIOS = [
   { id: 98, category: 'multi', query: "I'm a Christian interested in what other religions say about the return of Christ" },
   { id: 99, category: 'multi', query: "Search for passages about the covenant in both the Bahá'í Faith and Judaism" },
   { id: 100, category: 'multi', query: "What is progressive revelation, and which texts in the library discuss it?" },
+
+  // ── FRAMING / ASSUMPTION CHALLENGES (10) ─────────────────────────────────
+  // These questions contain imprecise vocabulary, loaded assumptions, or secular
+  // framings. The correct response names the assumption and anchors to scripture,
+  // rather than validating the user's framing.
+  { id: 101, category: 'framing', query: "So Bahá'u'lláh is basically saying we should all just get along, right? Like universal tolerance?" },
+  { id: 102, category: 'framing', query: "True spirituality is really just about being a good person, isn't it?" },
+  { id: 103, category: 'framing', query: "The Bahá'í principle of equality means men and women should have identical roles, right?" },
+  { id: 104, category: 'framing', query: "Progressive revelation is just Bahá'u'lláh saying all religions are basically the same?" },
+  { id: 105, category: 'framing', query: "So detachment in the Bahá'í writings just means not being materialistic — like minimalism?" },
+  { id: 106, category: 'framing', query: "Bahá'u'lláh's teachings are pretty compatible with secular humanism, aren't they?" },
+  { id: 107, category: 'framing', query: "The Bahá'í Faith is basically a liberal religion that supports modern progressive values?" },
+  { id: 108, category: 'framing', query: "When Bahá'u'lláh talks about unity, he just means tolerance and respecting differences?" },
+  { id: 109, category: 'framing', query: "So the Bahá'í concept of justice is the same as social justice in modern usage?" },
+  { id: 110, category: 'framing', query: "Isn't the Bahá'í teaching on the soul basically the same as what most people mean by spirituality?" },
 ];
 
 // Category distribution summary:
 // factual: 15, comparative: 10, author: 10, topical: 15, philosophical: 10
-// browsing: 10, reading: 5, edge: 15, multi: 10
+// browsing: 10, reading: 5, edge: 15, multi: 10, framing: 10

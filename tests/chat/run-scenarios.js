@@ -138,6 +138,7 @@ ${dims}
    - Browsing/stats: citations not expected, but accuracy matters
    - Social ("thank you", "?", vague): warmth matters most, tools optional
    - Reading ("read me the opening of..."): must use read mode and return actual text
+   - Framing ("so it's basically X, right?"): criticalEngagement is the primary dimension. The correct response names the imprecise word or flawed premise, anchors to what the tradition's texts actually say, and does NOT simply validate. Agreeing with a loaded framing is an automatic criticalEngagement=1.
 5. **One brilliant quote beats five mediocre ones.** Score quoteEconomy based on selection quality, not quantity.
 6. **Brevity means tight prose between quotes**, not short quotes. Long quotes are fine if relevant.
 

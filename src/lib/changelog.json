@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T15:47:22.836Z",
+  "generated": "2026-05-10T18:18:42.281Z",
   "entries": [
+    {
+      "hash": "2daa436",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Add question-behind-question stance + fix iterate loop for v7+",
+      "scope": null
+    },
     {
       "hash": "1d60e90",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add ingestion progress display to home page",
       "scope": null
-    },
-    {
-      "hash": "1c133b2",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Improve language detection using character ratio",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "2daa436",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Add question-behind-question stance + fix iterate loop for v7+",
+        "scope": null
+      },
       {
         "hash": "1d60e90",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add ingestion progress display to home page",
-        "scope": null
-      },
-      {
-        "hash": "1c133b2",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Improve language detection using character ratio",
         "scope": null
       }
     ]
