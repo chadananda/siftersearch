@@ -11,7 +11,7 @@
   const auth = getAuthState();
 
   // Tab state
-  let activeTab = $state('failures'); // 'failures' or 'oversized'
+  let activeTab = $state('failures'); // 'failures', 'oversized', or 'auto_chunked'
 
   // Failures state
   let items = $state([]);
@@ -34,6 +34,12 @@
   let oversizedTotal = $state(0);
   let oversizedParagraphsTotal = $state(0);
 
+  // Auto-chunked state
+  let autoChunkedItems = $state([]);
+  let autoChunkedLoading = $state(false);
+  let autoChunkedError = $state(null);
+  let autoChunkedTotal = $state(0);
+
   // Selected failure for detail view
   let selectedFailure = $state(null);
 
@@ -44,7 +50,7 @@
 
     // Only load data if authenticated admin
     if (auth.isAuthenticated && ['admin', 'superadmin', 'editor'].includes(auth.user?.tier)) {
-      await Promise.all([loadFailures(), loadSummary(), loadOversized()]);
+      await Promise.all([loadFailures(), loadSummary(), loadOversized(), loadAutoChunked()]);
     } else {
       loading = false;
     }
@@ -202,10 +208,39 @@
     }
   }
 
+  async function loadAutoChunked() {
+    autoChunkedLoading = true;
+    autoChunkedError = null;
+    try {
+      const data = await failures.getList({ errorType: 'auto_chunked', resolved: 'all', limit: 200, offset: 0 });
+      autoChunkedItems = data.failures || [];
+      autoChunkedTotal = data.total || 0;
+    } catch (err) {
+      autoChunkedError = err.message || 'Failed to load auto-chunked documents';
+    } finally {
+      autoChunkedLoading = false;
+    }
+  }
+
+  async function handleDismissAutoChunked(id) {
+    actionLoading = id;
+    try {
+      await failures.dismiss(id);
+      await loadAutoChunked();
+    } catch (err) {
+      alert(err.message || 'Failed to dismiss');
+    } finally {
+      actionLoading = null;
+    }
+  }
+
   function switchTab(tab) {
     activeTab = tab;
     if (tab === 'oversized' && oversizedDocs.length === 0 && !oversizedLoading) {
       loadOversized();
+    }
+    if (tab === 'auto_chunked' && autoChunkedItems.length === 0 && !autoChunkedLoading) {
+      loadAutoChunked();
     }
   }
 </script>
@@ -236,9 +271,70 @@
           <span class="tab-badge warning">{oversizedTotal}</span>
         {/if}
       </button>
+      <button
+        class="tab {activeTab === 'auto_chunked' ? 'active' : ''}"
+        onclick={() => switchTab('auto_chunked')}
+      >
+        Auto-Chunked
+        {#if autoChunkedTotal > 0}
+          <span class="tab-badge info">{autoChunkedTotal}</span>
+        {/if}
+      </button>
     </div>
 
-    {#if activeTab === 'failures'}
+    {#if activeTab === 'auto_chunked'}
+      <!-- Auto-Chunked Tab -->
+      <div class="summary-box">
+        <div class="summary-stat main">
+          <span class="stat-value info-text">{autoChunkedTotal}</span>
+          <span class="stat-label">Documents Auto-Chunked</span>
+        </div>
+      </div>
+
+      <p class="help-text">
+        These English documents had oversized paragraphs (likely missing line breaks from PDF conversion)
+        and were automatically split at sentence boundaries. Review source files and add proper paragraph
+        breaks to improve segmentation quality, then re-ingest.
+      </p>
+
+      {#if autoChunkedError}
+        <div class="error-banner">{autoChunkedError}</div>
+      {/if}
+
+      {#if autoChunkedLoading}
+        <div class="loading">Loading auto-chunked documents...</div>
+      {:else if autoChunkedItems.length === 0}
+        <div class="empty-state"><p>No auto-chunked documents found.</p></div>
+      {:else}
+        <div class="failures-list">
+          {#each autoChunkedItems as item (item.id)}
+            <div class="failure-card {item.resolved ? 'resolved' : ''}">
+              <div class="failure-header">
+                <span class="error-type info">auto chunked</span>
+                <span class="failure-date">{formatDate(item.created_at)}</span>
+              </div>
+              <div class="failure-file">
+                <strong>{item.file_name || 'Unknown file'}</strong>
+                {#if item.file_path}
+                  <span class="file-path">{item.file_path}</span>
+                {/if}
+              </div>
+              <div class="failure-message">{item.error_message}</div>
+              <div class="failure-actions">
+                <a href="/admin/edit?path={encodeURIComponent(item.file_path || '')}" class="btn btn-primary">Edit Source</a>
+                <button
+                  class="btn btn-danger"
+                  onclick={() => handleDismissAutoChunked(item.id)}
+                  disabled={actionLoading === item.id}
+                >
+                  {actionLoading === item.id ? 'Dismissing...' : 'Dismiss'}
+                </button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    {:else if activeTab === 'failures'}
       <!-- Summary Stats -->
       {#if summary}
         <div class="summary-box">
@@ -745,6 +841,18 @@
 
   .tab-badge.warning {
     background: var(--warning, #f59e0b);
+  }
+
+  .tab-badge.info {
+    background: var(--info, #3b82f6);
+  }
+
+  .info-text {
+    color: var(--info, #3b82f6) !important;
+  }
+
+  .error-type.info {
+    background: var(--info, #3b82f6);
   }
 
   /* Oversized Paragraphs */

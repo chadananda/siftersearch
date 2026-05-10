@@ -1471,7 +1471,7 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
 
   // Parse into chunks/paragraphs with blocktype awareness
   // Uses AI segmentation for RTL languages without punctuation (unless skipAISegmentation)
-  const { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
+  let { chunks, autoSegmented } = await parseDocumentWithBlocks(contentToProcess, {
     language: finalMeta.language,
     skipAISegmentation
   });
@@ -1487,52 +1487,77 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   }
 
   // Validate paragraph lengths for non-RTL languages only.
-  // RTL languages (Arabic, Farsi, Hebrew, Urdu) use AI segmentation which handles long text;
-  // English and other LTR languages must have properly-segmented paragraphs in advance.
+  // RTL languages (Arabic, Farsi, Hebrew, Urdu) use AI segmentation which handles long text.
   const languageUsesAISegmentation = isAiSegmentedLanguage(finalMeta.language);
+  const isEnglish = !finalMeta.language || finalMeta.language === 'en';
 
   if (!languageUsesAISegmentation) {
-    const oversizedChunks = chunks
-      .map((chunk, idx) => ({ idx, length: chunk.text?.length || 0, preview: chunk.text?.substring(0, 100) }))
+    const oversizedIdxs = chunks
+      .map((chunk, idx) => ({ idx, length: chunk.text?.length || 0 }))
       .filter(c => c.length > MAX_PARAGRAPH_LENGTH);
 
-    if (oversizedChunks.length > 0) {
-      const errorMessage = `Document has ${oversizedChunks.length} paragraph(s) exceeding ${MAX_PARAGRAPH_LENGTH} characters. ` +
-                           `Longest: ${Math.max(...oversizedChunks.map(c => c.length))} chars at paragraph ${oversizedChunks[0].idx + 1}. ` +
-                           `Please split long paragraphs manually.`;
-
-      // Log to document_failures table
-      await logDocumentFailure({
-        filePath: relativePath,
-        fileName: relativePath?.split('/').pop(),
-        errorType: 'oversized_paragraph',
-        errorMessage,
-        details: {
-          oversizedCount: oversizedChunks.length,
-          maxLength: MAX_PARAGRAPH_LENGTH,
-          language: finalMeta.language,
-          paragraphs: oversizedChunks.map(c => ({
-            index: c.idx,
-            length: c.length,
-            preview: c.preview
-          }))
+    if (oversizedIdxs.length > 0) {
+      if (isEnglish) {
+        // English: auto-recover instead of rejecting.
+        // Markdown tables (majority of lines are |-delimited) are nav/TOC noise — drop them.
+        // Genuine oversized prose is sentence-split into MAX_PARAGRAPH_LENGTH chunks.
+        let autoChunkedCount = 0;
+        const recoveredChunks = [];
+        for (const chunk of chunks) {
+          if ((chunk.text?.length || 0) <= MAX_PARAGRAPH_LENGTH) {
+            recoveredChunks.push(chunk);
+            continue;
+          }
+          const lines = chunk.text.split('\n');
+          const tableLineRatio = lines.filter(l => l.trim().startsWith('|')).length / lines.length;
+          if (tableLineRatio > 0.5) continue; // drop markdown tables — not useful search content
+          const splitTexts = parseDocument(chunk.text, { maxChunkSize: MAX_PARAGRAPH_LENGTH });
+          for (const t of splitTexts) recoveredChunks.push({ ...chunk, text: t });
+          autoChunkedCount++;
         }
-      });
 
-      logger.error({
-        relativePath,
-        language: finalMeta.language,
-        oversizedCount: oversizedChunks.length,
-        maxAllowed: MAX_PARAGRAPH_LENGTH,
-        longest: Math.max(...oversizedChunks.map(c => c.length))
-      }, 'Document rejected: oversized paragraphs');
-
-      return {
-        documentId: existingDoc?.id ?? null,
-        paragraphCount: 0,
-        status: 'error',
-        error: errorMessage
-      };
+        if (autoChunkedCount > 0) {
+          chunks = recoveredChunks;
+          await logDocumentFailure({
+            filePath: relativePath,
+            fileName: relativePath?.split('/').pop(),
+            errorType: 'auto_chunked',
+            errorMessage: `${autoChunkedCount} oversized paragraph(s) were auto-split at sentence boundaries.`,
+            details: { autoChunkedCount, language: finalMeta.language }
+          });
+          logger.warn({ relativePath, autoChunkedCount }, 'Document auto-chunked: oversized paragraphs split at sentence boundaries');
+        }
+      } else {
+        // Non-English LTR: source needs manual fixing — reject and flag.
+        const errorMessage = `Document has ${oversizedIdxs.length} paragraph(s) exceeding ${MAX_PARAGRAPH_LENGTH} characters. ` +
+                             `Longest: ${Math.max(...oversizedIdxs.map(c => c.length))} chars at paragraph ${oversizedIdxs[0].idx + 1}. ` +
+                             `Please split long paragraphs manually.`;
+        await logDocumentFailure({
+          filePath: relativePath,
+          fileName: relativePath?.split('/').pop(),
+          errorType: 'oversized_paragraph',
+          errorMessage,
+          details: {
+            oversizedCount: oversizedIdxs.length,
+            maxLength: MAX_PARAGRAPH_LENGTH,
+            language: finalMeta.language,
+            paragraphs: oversizedIdxs.map(c => ({ index: c.idx, length: c.length }))
+          }
+        });
+        logger.error({
+          relativePath,
+          language: finalMeta.language,
+          oversizedCount: oversizedIdxs.length,
+          maxAllowed: MAX_PARAGRAPH_LENGTH,
+          longest: Math.max(...oversizedIdxs.map(c => c.length))
+        }, 'Document rejected: oversized paragraphs');
+        return {
+          documentId: existingDoc?.id ?? null,
+          paragraphCount: 0,
+          status: 'error',
+          error: errorMessage
+        };
+      }
     }
   }
 

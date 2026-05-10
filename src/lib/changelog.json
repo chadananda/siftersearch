@@ -1,6 +1,181 @@
 {
-  "generated": "2026-05-03T06:47:21.316Z",
+  "generated": "2026-05-10T13:33:02.902Z",
   "entries": [
+    {
+      "hash": "02cea68",
+      "date": "2026-05-09",
+      "type": "Fixed",
+      "description": "Outer sync loop tracks inFlightDocIds — break per-doc retry storm",
+      "scope": null
+    },
+    {
+      "hash": "2811f36",
+      "date": "2026-05-09",
+      "type": "Fixed",
+      "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
+      "scope": null
+    },
+    {
+      "hash": "f17b93b",
+      "date": "2026-05-08",
+      "type": "Performance",
+      "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
+      "scope": null
+    },
+    {
+      "hash": "c449787",
+      "date": "2026-05-08",
+      "type": "Fixed",
+      "description": "Explicit primaryKey on per-site Meili addDocuments",
+      "scope": null
+    },
+    {
+      "hash": "e4a03d0",
+      "date": "2026-05-07",
+      "type": "Fixed",
+      "description": "Verified Meili sync — await task confirmation before flipping synced=1",
+      "scope": null
+    },
+    {
+      "hash": "1fcdd0d",
+      "date": "2026-05-05",
+      "type": "Fixed",
+      "description": "Export STOP_WORDS from search/highlighting.js — Phase 4g regression",
+      "scope": null
+    },
+    {
+      "hash": "f1fd80b",
+      "date": "2026-05-05",
+      "type": "Performance",
+      "description": "Gate supersession to scope=primary; raise slow-query threshold to 150ms",
+      "scope": null
+    },
+    {
+      "hash": "fb8c94f",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
+      "scope": null
+    },
+    {
+      "hash": "cf3e54e",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
+      "scope": null
+    },
+    {
+      "hash": "76cf445",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
+      "scope": null
+    },
+    {
+      "hash": "00b2949",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
+      "scope": null
+    },
+    {
+      "hash": "a519c4a",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
+      "scope": null
+    },
+    {
+      "hash": "ba41d5a",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "Meili_index_prefix=null means \"share primary index\" (preserves OL)",
+      "scope": null
+    },
+    {
+      "hash": "bb9e361",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Site_root override field — crawler trees outside Dropbox",
+      "scope": null
+    },
+    {
+      "hash": "424d464",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Sync-processor routes paragraphs to per-site Meili indexes (Phase G)",
+      "scope": null
+    },
+    {
+      "hash": "59344d0",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Jafar pipeline accepts chatbot_location + boot-time site registry (E3)",
+      "scope": null
+    },
+    {
+      "hash": "fdd2966",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Scope-aware search federation (Phases E1+E2)",
+      "scope": null
+    },
+    {
+      "hash": "14e49da",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "HyPE enqueue gate — skip external sites in v1 (Phase F)",
+      "scope": null
+    },
+    {
+      "hash": "caf8132",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
+      "scope": null
+    },
+    {
+      "hash": "c649210",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
+      "scope": null
+    },
+    {
+      "hash": "eee36af",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
+      "scope": null
+    },
+    {
+      "hash": "c454641",
+      "date": "2026-05-04",
+      "type": "Other",
+      "description": "Full slow-query coverage — instrumentDb() wraps every connection",
+      "scope": null
+    },
+    {
+      "hash": "d0ee7db",
+      "date": "2026-05-04",
+      "type": "Fixed",
+      "description": "HyPE sync death-spiral — partial index + INDEXED BY hint + saner memory caps",
+      "scope": null
+    },
+    {
+      "hash": "2c8ad95",
+      "date": "2026-05-03",
+      "type": "Refactor",
+      "description": "Update worker-status.json with session 2 + production verification",
+      "scope": null
+    },
+    {
+      "hash": "36d7a84",
+      "date": "2026-05-02",
+      "type": "Refactor",
+      "description": "Worker-status.json — overnight session summary",
+      "scope": null
+    },
     {
       "hash": "7db1d60",
       "date": "2026-05-02",
@@ -3325,185 +3500,197 @@
       "type": "Other",
       "description": "Redirect creation script",
       "scope": null
-    },
-    {
-      "hash": "88af05a",
-      "date": "2026-01-08",
-      "type": "Other",
-      "description": "Production database fix script",
-      "scope": null
-    },
-    {
-      "hash": "248e7fd",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Prevent sentence markers in English texts + require file_path",
-      "scope": null
-    },
-    {
-      "hash": "d75040d",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Reingest script resets body_hash to force full re-ingestion",
-      "scope": null
-    },
-    {
-      "hash": "1d85649",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Only add sentence markers for RTL texts, not English",
-      "scope": null
-    },
-    {
-      "hash": "31d93ac",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Library preview matches book view with floating paragraph numbers",
-      "scope": null
-    },
-    {
-      "hash": "79d2630",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Religion/collection come ONLY from path, ignore frontmatter",
-      "scope": null
-    },
-    {
-      "hash": "3754d45",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Path-based collection takes precedence over frontmatter",
-      "scope": null
-    },
-    {
-      "hash": "1574a36",
-      "date": "2026-01-08",
-      "type": "Chore",
-      "description": "Remove one-time fix-collections script",
-      "scope": null
-    },
-    {
-      "hash": "3e9d563",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Reingest script uses correct library base path",
-      "scope": null
-    },
-    {
-      "hash": "dabb8e8",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Extract collection from path when not in frontmatter",
-      "scope": null
-    },
-    {
-      "hash": "6c08a7d",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Remove rule-based sentence length validation",
-      "scope": null
-    },
-    {
-      "hash": "8db7658",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Prevent segmenter from producing word fragments",
-      "scope": null
-    },
-    {
-      "hash": "d449677",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add dual progress bars for import and indexing",
-      "scope": null
-    },
-    {
-      "hash": "ff92fd9",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add deployment verification script",
-      "scope": null
-    },
-    {
-      "hash": "7f6ebc9",
-      "date": "2026-01-08",
-      "type": "Test",
-      "description": "Add BDD tests for ingestion progress bar",
-      "scope": null
-    },
-    {
-      "hash": "cd06088",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Use correct CSS variable for ingestion progress bar fill",
-      "scope": null
-    },
-    {
-      "hash": "ef61209",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add two-tier BDD testing infrastructure",
-      "scope": null
-    },
-    {
-      "hash": "1f8a97d",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "Add dev:prod and test:bdd:prod scripts",
-      "scope": null
-    },
-    {
-      "hash": "e7fc50b",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Calculate ingestionProgress even when Meilisearch disabled",
-      "scope": null
-    },
-    {
-      "hash": "3c2bb81",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Add ingestionProgress to search stats endpoint",
-      "scope": null
-    },
-    {
-      "hash": "8747c19",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Simplify RTL segmentation, add ingestion progress",
-      "scope": null
-    },
-    {
-      "hash": "1323078",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "JSON extraction from AI response with code blocks",
-      "scope": null
-    },
-    {
-      "hash": "5fa2fb6",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "English text passes through unchanged - no segmentation",
-      "scope": null
-    },
-    {
-      "hash": "88a54f0",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Use correct aiService API for structural analysis",
-      "scope": null
-    },
-    {
-      "hash": "787e268",
-      "date": "2026-01-08",
-      "type": "New",
-      "description": "AI structural analysis for RTL text segmentation",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-09": [
+      {
+        "hash": "02cea68",
+        "date": "2026-05-09",
+        "type": "Fixed",
+        "description": "Outer sync loop tracks inFlightDocIds — break per-doc retry storm",
+        "scope": null
+      },
+      {
+        "hash": "2811f36",
+        "date": "2026-05-09",
+        "type": "Fixed",
+        "description": "Sync-loop pendingIds + bump Meili timeout 60s→300s — break retry storm",
+        "scope": null
+      }
+    ],
+    "2026-05-08": [
+      {
+        "hash": "f17b93b",
+        "date": "2026-05-08",
+        "type": "Performance",
+        "description": "Cross-doc batching + pipelined addDocuments — 5-10x sync throughput",
+        "scope": null
+      },
+      {
+        "hash": "c449787",
+        "date": "2026-05-08",
+        "type": "Fixed",
+        "description": "Explicit primaryKey on per-site Meili addDocuments",
+        "scope": null
+      }
+    ],
+    "2026-05-07": [
+      {
+        "hash": "e4a03d0",
+        "date": "2026-05-07",
+        "type": "Fixed",
+        "description": "Verified Meili sync — await task confirmation before flipping synced=1",
+        "scope": null
+      }
+    ],
+    "2026-05-05": [
+      {
+        "hash": "1fcdd0d",
+        "date": "2026-05-05",
+        "type": "Fixed",
+        "description": "Export STOP_WORDS from search/highlighting.js — Phase 4g regression",
+        "scope": null
+      },
+      {
+        "hash": "f1fd80b",
+        "date": "2026-05-05",
+        "type": "Performance",
+        "description": "Gate supersession to scope=primary; raise slow-query threshold to 150ms",
+        "scope": null
+      }
+    ],
+    "2026-05-04": [
+      {
+        "hash": "fb8c94f",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "IngestAllSites walks sites.yaml registry, not -sites/ directory",
+        "scope": null
+      },
+      {
+        "hash": "cf3e54e",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "Oceanlibrary.com is scope=primary; wire authority_default to ranking",
+        "scope": null
+      },
+      {
+        "hash": "76cf445",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "10-scenario search-merging suite + Phase H smoke deploy verified (v1 done)",
+        "scope": null
+      },
+      {
+        "hash": "00b2949",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "Site2rag tolerates unquoted titles with `: ` (real-world frontmatter)",
+        "scope": null
+      },
+      {
+        "hash": "a519c4a",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "Phase G routing was on wrong worker — apply to unified-worker.js",
+        "scope": null
+      },
+      {
+        "hash": "ba41d5a",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "Meili_index_prefix=null means \"share primary index\" (preserves OL)",
+        "scope": null
+      },
+      {
+        "hash": "bb9e361",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Site_root override field — crawler trees outside Dropbox",
+        "scope": null
+      },
+      {
+        "hash": "424d464",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Sync-processor routes paragraphs to per-site Meili indexes (Phase G)",
+        "scope": null
+      },
+      {
+        "hash": "59344d0",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Jafar pipeline accepts chatbot_location + boot-time site registry (E3)",
+        "scope": null
+      },
+      {
+        "hash": "fdd2966",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Scope-aware search federation (Phases E1+E2)",
+        "scope": null
+      },
+      {
+        "hash": "14e49da",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "HyPE enqueue gate — skip external sites in v1 (Phase F)",
+        "scope": null
+      },
+      {
+        "hash": "caf8132",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Scope-aware sites-ingester routing + sites.yaml schema (Phases C+D)",
+        "scope": null
+      },
+      {
+        "hash": "c649210",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Site2rag adapter — generic crawler-MD parser for supplemental sites",
+        "scope": null
+      },
+      {
+        "hash": "eee36af",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Supplemental sites foundation — migration 60 + getSiteDb infra",
+        "scope": null
+      },
+      {
+        "hash": "c454641",
+        "date": "2026-05-04",
+        "type": "Other",
+        "description": "Full slow-query coverage — instrumentDb() wraps every connection",
+        "scope": null
+      },
+      {
+        "hash": "d0ee7db",
+        "date": "2026-05-04",
+        "type": "Fixed",
+        "description": "HyPE sync death-spiral — partial index + INDEXED BY hint + saner memory caps",
+        "scope": null
+      }
+    ],
+    "2026-05-03": [
+      {
+        "hash": "2c8ad95",
+        "date": "2026-05-03",
+        "type": "Refactor",
+        "description": "Update worker-status.json with session 2 + production verification",
+        "scope": null
+      }
+    ],
     "2026-05-02": [
+      {
+        "hash": "36d7a84",
+        "date": "2026-05-02",
+        "type": "Refactor",
+        "description": "Worker-status.json — overnight session summary",
+        "scope": null
+      },
       {
         "hash": "7db1d60",
         "date": "2026-05-02",
@@ -6891,181 +7078,6 @@
         "date": "2026-01-08",
         "type": "Other",
         "description": "Redirect creation script",
-        "scope": null
-      },
-      {
-        "hash": "88af05a",
-        "date": "2026-01-08",
-        "type": "Other",
-        "description": "Production database fix script",
-        "scope": null
-      },
-      {
-        "hash": "248e7fd",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Prevent sentence markers in English texts + require file_path",
-        "scope": null
-      },
-      {
-        "hash": "d75040d",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Reingest script resets body_hash to force full re-ingestion",
-        "scope": null
-      },
-      {
-        "hash": "1d85649",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Only add sentence markers for RTL texts, not English",
-        "scope": null
-      },
-      {
-        "hash": "31d93ac",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Library preview matches book view with floating paragraph numbers",
-        "scope": null
-      },
-      {
-        "hash": "79d2630",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Religion/collection come ONLY from path, ignore frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "3754d45",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Path-based collection takes precedence over frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "1574a36",
-        "date": "2026-01-08",
-        "type": "Chore",
-        "description": "Remove one-time fix-collections script",
-        "scope": null
-      },
-      {
-        "hash": "3e9d563",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Reingest script uses correct library base path",
-        "scope": null
-      },
-      {
-        "hash": "dabb8e8",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Extract collection from path when not in frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "6c08a7d",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Remove rule-based sentence length validation",
-        "scope": null
-      },
-      {
-        "hash": "8db7658",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Prevent segmenter from producing word fragments",
-        "scope": null
-      },
-      {
-        "hash": "d449677",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add dual progress bars for import and indexing",
-        "scope": null
-      },
-      {
-        "hash": "ff92fd9",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add deployment verification script",
-        "scope": null
-      },
-      {
-        "hash": "7f6ebc9",
-        "date": "2026-01-08",
-        "type": "Test",
-        "description": "Add BDD tests for ingestion progress bar",
-        "scope": null
-      },
-      {
-        "hash": "cd06088",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Use correct CSS variable for ingestion progress bar fill",
-        "scope": null
-      },
-      {
-        "hash": "ef61209",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add two-tier BDD testing infrastructure",
-        "scope": null
-      },
-      {
-        "hash": "1f8a97d",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "Add dev:prod and test:bdd:prod scripts",
-        "scope": null
-      },
-      {
-        "hash": "e7fc50b",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Calculate ingestionProgress even when Meilisearch disabled",
-        "scope": null
-      },
-      {
-        "hash": "3c2bb81",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Add ingestionProgress to search stats endpoint",
-        "scope": null
-      },
-      {
-        "hash": "8747c19",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Simplify RTL segmentation, add ingestion progress",
-        "scope": null
-      },
-      {
-        "hash": "1323078",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "JSON extraction from AI response with code blocks",
-        "scope": null
-      },
-      {
-        "hash": "5fa2fb6",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "English text passes through unchanged - no segmentation",
-        "scope": null
-      },
-      {
-        "hash": "88a54f0",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Use correct aiService API for structural analysis",
-        "scope": null
-      },
-      {
-        "hash": "787e268",
-        "date": "2026-01-08",
-        "type": "New",
-        "description": "AI structural analysis for RTL text segmentation",
         "scope": null
       }
     ]
