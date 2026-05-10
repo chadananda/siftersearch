@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T13:39:54.723Z",
+  "generated": "2026-05-10T13:52:02.142Z",
   "entries": [
+    {
+      "hash": "d874ec7",
+      "date": "2026-05-10",
+      "type": "New",
+      "description": "Parse and persist hugo-style block attributes from markdown",
+      "scope": null
+    },
     {
       "hash": "2f31360",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove arbitrary sentence count limit from segmentation",
       "scope": null
-    },
-    {
-      "hash": "3c9f8ed",
-      "date": "2026-01-08",
-      "type": "Other",
-      "description": "Meilisearch orphan cleanup script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "d874ec7",
+        "date": "2026-05-10",
+        "type": "New",
+        "description": "Parse and persist hugo-style block attributes from markdown",
+        "scope": null
+      },
       {
         "hash": "2f31360",
         "date": "2026-05-10",
@@ -7073,13 +7080,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Remove arbitrary sentence count limit from segmentation",
-        "scope": null
-      },
-      {
-        "hash": "3c9f8ed",
-        "date": "2026-01-08",
-        "type": "Other",
-        "description": "Meilisearch orphan cleanup script",
         "scope": null
       }
     ]

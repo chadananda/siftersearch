@@ -425,6 +425,10 @@ async function scanDirectoryForMarkdown(dirPath, basePath, results = []) {
 
 // Batch size for scan processing — avoids overwhelming DB/ingester
 const SCAN_BATCH_SIZE = 50;
+// Polite pause after each batch so the API stays responsive during long scans.
+// Keeps ingestion at ~80% of capacity; configurable via SCAN_THROTTLE_MS env var.
+const SCAN_THROTTLE_MS = parseInt(process.env.SCAN_THROTTLE_MS ?? '150', 10);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /**
  * Hourly library scan using disk-vs-database comparison.
@@ -504,10 +508,12 @@ async function scanLibraryForIngestion() {
             ingestedCount++;
             watcherStats.filesIngested++;
             logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: new file ingested');
+            await sleep(50); // yield after each write so other processes can use the DB
           } else {
             reingestedCount++;
             watcherStats.reingests++;
             logger.info({ filePath: relativePath, documentId: result.documentId }, 'Library scan: changed file re-ingested');
+            await sleep(50);
           }
         } catch (err) {
           errorCount++;
@@ -515,6 +521,10 @@ async function scanLibraryForIngestion() {
           logger.error({ err: err.message, filePath: relativePath }, 'Library scan: failed to process file');
         }
       }
+
+      // Polite pause between batches — lets the API handle requests and prevents
+      // DB write pressure from monopolising the system during large scans.
+      await sleep(SCAN_THROTTLE_MS);
     }
 
     // Step 3b: Find DB docs whose files no longer exist on disk → soft-delete
