@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores the Bahá'í concept of progressive revelation, balancing the teleological and cyclical aspects. Jafar provides primary quotes from Bahá'u'lláh, particularly from *Gleanings* and *Kitáb-i-Íqán*, to substantiate claims, demonstrating strong doctrinal fidelity and evidence quality. The dialogue maintains a conversational tone, with Jafar addressing the user's requests for more specific quotations. The interaction is concise, with most responses being brief and to the point. Jafar also corrects the user's interpretation gracefully, enhancing the conversation's depth and correction courage."
   flags: []
   improvement_plan: "To enhance future interactions, Jafar could further refine the balance between providing detailed explanations and maintaining brevity. Additionally, ensuring that all responses consistently open with a primary quote could further solidify evidence quality and doctrinal fidelity."
+heroImage: /images/dialog/007-progressive-revelation-teleological-or-cyclical-hero.jpg
 ---
 <div class="user-turn">
 

@@ -52,7 +52,7 @@ function parseFrontmatter(text, filename) {
 
 async function r2Exists(slug) {
   try {
-    execFileSync(WRANGLER, ['r2', 'object', 'get', `${R2_BUCKET}/${R2_KEY_PREFIX}/${slug}-hero.jpg`, '--pipe'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    execFileSync(WRANGLER, ['r2', 'object', 'get', `${R2_BUCKET}/${R2_KEY_PREFIX}/${slug}-hero.jpg`, '--pipe', '--remote'], { stdio: ['ignore', 'pipe', 'ignore'] });
     return true;
   } catch { return false; }
 }
@@ -82,7 +82,8 @@ export async function generateAndUploadDialogImage(slug, heroPrompt) {
       'r2', 'object', 'put',
       `${R2_BUCKET}/${R2_KEY_PREFIX}/${slug}-hero.jpg`,
       '--file', tmpFile,
-      '--content-type', 'image/jpeg'
+      '--content-type', 'image/jpeg',
+      '--remote'
     ], { stdio: 'inherit' });
   } finally {
     unlinkSync(tmpFile);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T22:49:30.798Z",
+  "generated": "2026-05-10T23:03:59.536Z",
   "entries": [
+    {
+      "hash": "c814e1c",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
+      "scope": null
+    },
     {
       "hash": "f299e9d",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add missing slug field to collection and religion document queries",
       "scope": null
-    },
-    {
-      "hash": "571e1a6",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Error out when religion/collection missing instead of using fake defaults",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "c814e1c",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Switch CDN from R2 public URL to ImageKit endpoint for proper image sizing",
+        "scope": null
+      },
       {
         "hash": "f299e9d",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Add missing slug field to collection and religion document queries",
-        "scope": null
-      },
-      {
-        "hash": "571e1a6",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Error out when religion/collection missing instead of using fake defaults",
         "scope": null
       }
     ]
