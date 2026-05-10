@@ -17,6 +17,6 @@ export function ikUrl(local, tr) {
   return `${CDN_BASE}/${path}${tr ? `?tr=${tr}` : ''}`;
 }
 
-export function heroUrl(local)   { return ikUrl(local, 'w-1536,h-1024,q-80'); }
+export function heroUrl(local)   { return ikUrl(local, 'w-1536,h-600,fo-auto,q-80'); }
 export function cardUrl(local)   { return ikUrl(local, 'w-640,h-400,fo-auto,q-75'); }
 export function avatarUrl(local) { return ikUrl(local, 'w-128,h-128,fo-auto'); }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T23:03:59.536Z",
+  "generated": "2026-05-10T23:13:56.823Z",
   "entries": [
+    {
+      "hash": "824f17b",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
+      "scope": null
+    },
     {
       "hash": "c814e1c",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Properly unregister service worker and await cache clearing before PWA reload",
       "scope": null
-    },
-    {
-      "hash": "4e9cf5f",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Add missing slug field to collection and religion document queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "824f17b",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Add --remote flag to wrangler R2 uploads — images now reach Cloudflare R2",
+        "scope": null
+      },
       {
         "hash": "c814e1c",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Properly unregister service worker and await cache clearing before PWA reload",
-        "scope": null
-      },
-      {
-        "hash": "4e9cf5f",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Add missing slug field to collection and religion document queries",
         "scope": null
       }
     ]
