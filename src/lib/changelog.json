@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T21:59:16.921Z",
+  "generated": "2026-05-10T22:20:52.205Z",
   "entries": [
+    {
+      "hash": "1162fde",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Related articles column moves to left on normal wide screens",
+      "scope": null
+    },
     {
       "hash": "1159589",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Handle pattern 3 - duplicate YAML without delimiters",
       "scope": null
-    },
-    {
-      "hash": "46d7f9c",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Handle legacy frontmatter without opening --- delimiter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "1162fde",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Related articles column moves to left on normal wide screens",
+        "scope": null
+      },
       {
         "hash": "1159589",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Handle pattern 3 - duplicate YAML without delimiters",
-        "scope": null
-      },
-      {
-        "hash": "46d7f9c",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Handle legacy frontmatter without opening --- delimiter",
         "scope": null
       }
     ]
