@@ -94,6 +94,16 @@ GENERAL CALIBRATION:
 
 DIMENSIONS (each 0-100):
 
+- citation_integrity: are the quotes real, the links deep, and the quoted text itself hyperlinked?
+  - 90+ : every inline quote fragment IS the hyperlink (i.e. "[fragment text](url)" format), links go to paragraph-level deep URLs (OceanLibrary ?paraId= or /library/…#pN), and all quoted passages are consistent with the cited document's actual content (no training-memory substitutes).
+  - 80  : nearly all inline quote fragments are hyperlinked; one or two citations use /document/{id} fallback format but the quotes are traceable.
+  - 70  : some inline quotes are not hyperlinked (link is on the title only); or one quote appears inconsistent with the cited source.
+  - 60  : most citation links are /document/{id} fallbacks with no paragraph-level anchoring; inline quote text is rarely the hyperlink.
+  - 50  : citation links are all fallback /document/{id} format AND the inline quoted text is never the hyperlink.
+  - <40 : one or more quoted passages appear to be fabricated or attributed to the wrong work (training-memory substitution).
+  NOTE: "/document/{id}" format links (e.g. siftersearch.com/document/8241) are fallback redirects — they are NOT deep paragraph links. Deep links include OceanLibrary URLs with ?paraId= or /library/…#pN anchors. Score below 70 if ALL citation links are this fallback format.
+  NOTE: "The text of the quote" should be the hyperlink. Format: "[fragment text](url)" — not "([*Title*](url))". If the quoted text itself is NOT the hyperlink, score below 70 for this dimension.
+
 - depth: does the conversation actually go deep, or stay at surface paraphrase?
   - 80+ : five rounds that build on each other, each pushing into specifics
   - 70  : decent depth, occasional surface moments
@@ -160,6 +170,10 @@ FLAG TRIGGERS (use only when CLEARLY present):
 - hedge-without-position: triggered when the user asks a clear either/or and Jafar gives both-and waffle.
 - stock-phrase-reflex: triggered by 3+ of these phrases across the conversation: "rooted in," "transformative force," "diversity within unity," "spirit of friendliness," "thus, the [X] aspect is woven into the fabric of."
 - sycophant-on-error: triggered when the user states a factually wrong claim (wrong author, misremembered tablet, false doctrinal premise) AND Jafar agrees rather than correcting. Do NOT trigger when the user doesn't actually state anything wrong.
+- unverified-quote: triggered when a quoted passage is attributed to a specific work but the quote appears inconsistent with that work's actual content, or is attributed to a passage number/location that doesn't match the text (strong signal of training-memory substitution).
+- fallback-link-only: triggered when ALL citation links in the conversation use /document/{id} fallback format (e.g. siftersearch.com/document/8241) with zero paragraph-level deep links. This indicates the research stage didn't produce usable source_url data.
+- bahai-bias-unprompted: triggered when the question is a general interfaith or cross-tradition question (not asking specifically about Bahá'í) AND every single quote Jafar gives is from Bahá'í scripture — no quotes from the other traditions the question covers.
+- unlinked-inline-quote: triggered when inline quoted text (text in "quotation marks") is NOT itself a hyperlink — i.e. the link appears only as ([*Title*](url)) after the text instead of as "[quoted text](url)" within the sentence.
 
 OUTPUT JSON only:
 {
@@ -171,11 +185,12 @@ OUTPUT JSON only:
     "evidence_quality": N,
     "brevity_discipline": N,
     "correction_courage": N,
-    "archive_worthy": N
+    "archive_worthy": N,
+    "citation_integrity": N
   },
   "overall": N,
   "narrative": "3-5 sentences. Specific. Cite round numbers and concrete observations (good or bad). Honest, calibrated tone — neither pessimistic nor encouraging.",
-  "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error"],
+  "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error", "unverified-quote", "fallback-link-only", "bahai-bias-unprompted", "unlinked-inline-quote"],
   "improvement_plan": "2-3 sentences in CONCEPTS not code. What change in Jafar's prompt or pipeline behavior would lift this conversation.",
   "roundSummaries": [
     {"q": "5-8 word question headline for round 1", "a": "5-8 word answer headline for round 1"},

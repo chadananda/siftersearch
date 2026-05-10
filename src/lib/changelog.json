@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T21:26:22.299Z",
+  "generated": "2026-05-10T21:40:45.701Z",
   "entries": [
+    {
+      "hash": "546345b",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Remove heroImage from new dialogs — use SVG placeholder instead of broken img tags",
+      "scope": null
+    },
     {
       "hash": "f3dc3e5",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to remove duplicate frontmatter from source files",
       "scope": null
-    },
-    {
-      "hash": "cf6a336",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add script to fix documents with frontmatter in first paragraph",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "546345b",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Remove heroImage from new dialogs — use SVG placeholder instead of broken img tags",
+        "scope": null
+      },
       {
         "hash": "f3dc3e5",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add script to remove duplicate frontmatter from source files",
-        "scope": null
-      },
-      {
-        "hash": "cf6a336",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add script to fix documents with frontmatter in first paragraph",
         "scope": null
       }
     ]

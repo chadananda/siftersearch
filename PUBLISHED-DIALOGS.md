@@ -243,3 +243,4 @@
 019-what-is-justice-according-to-scripture - What Is Justice According to the Scriptures? - score=83% - https://siftersearch.com/dialogue/019-what-is-justice-according-to-scripture/ - 2026-05-10T20:32:27.719Z
 019-what-is-justice-according-to-scripture - What Is Justice According to the Scriptures? - score=83% - https://siftersearch.com/dialogue/019-what-is-justice-according-to-scripture/ - 2026-05-10T20:32:38.328Z
 018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=76% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:32:50.372Z
+018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=83% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:35:00.481Z
