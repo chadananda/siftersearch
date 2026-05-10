@@ -6,7 +6,7 @@
 set -e
 
 CONFIG="$HOME/.cloudflared/config-siftersearch.yml"
-TUNNEL="siftersearch-api"
+TUNNEL="siftersearch-v2"
 
 echo "[cloudflared] Cleaning up stale connections..."
 cloudflared tunnel cleanup "$TUNNEL" 2>&1 || true

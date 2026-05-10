@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T14:45:15.751Z",
+  "generated": "2026-05-10T14:49:46.868Z",
   "entries": [
+    {
+      "hash": "634e42b",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Cloudflared uses http2 protocol to avoid QUIC stale-connector 502s",
+      "scope": null
+    },
     {
       "hash": "8539a2a",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Word-based hashing for re-segmentation preserves embeddings",
       "scope": null
-    },
-    {
-      "hash": "ddbb46a",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Prevent sentences ending with prepositions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "634e42b",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Cloudflared uses http2 protocol to avoid QUIC stale-connector 502s",
+        "scope": null
+      },
       {
         "hash": "8539a2a",
         "date": "2026-05-10",
@@ -7071,15 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Word-based hashing for re-segmentation preserves embeddings",
-        "scope": null
-      }
-    ],
-    "2026-01-08": [
-      {
-        "hash": "ddbb46a",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Prevent sentences ending with prepositions",
         "scope": null
       }
     ]
