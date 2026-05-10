@@ -211,3 +211,7 @@
 008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=74% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:45:53.613Z
 008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=81% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:48:24.444Z
 008-backbiting-vs-honest-criticism - Backbiting vs Honest Criticism - score=73% - https://siftersearch.com/dialogue/008-backbiting-vs-honest-criticism/ - 2026-05-10T19:52:19.744Z
+008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=83% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-10T19:57:07.724Z
+008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=74% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-10T19:59:24.395Z
+009-what-happens-after-we-die - What Happens After We Die? - score=81% - https://siftersearch.com/dialogue/009-what-happens-after-we-die/ - 2026-05-10T19:59:38.382Z
+009-what-happens-after-we-die - What Happens After We Die? - score=85% - https://siftersearch.com/dialogue/009-what-happens-after-we-die/ - 2026-05-10T20:01:42.596Z

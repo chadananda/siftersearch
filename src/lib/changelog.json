@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T19:54:56.035Z",
+  "generated": "2026-05-10T20:03:43.171Z",
   "entries": [
+    {
+      "hash": "66ab98c",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Jafar citation URLs — use source_url (OceanLibrary para deep-link) when available",
+      "scope": null
+    },
     {
       "hash": "168f73c",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add re-import button and make view/edit always visible on library items",
       "scope": null
-    },
-    {
-      "hash": "e8d9f37",
-      "date": "2026-01-09",
-      "type": "Chore",
-      "description": "Bump version to 0.1.603",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "66ab98c",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Jafar citation URLs — use source_url (OceanLibrary para deep-link) when available",
+        "scope": null
+      },
       {
         "hash": "168f73c",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add re-import button and make view/edit always visible on library items",
-        "scope": null
-      },
-      {
-        "hash": "e8d9f37",
-        "date": "2026-01-09",
-        "type": "Chore",
-        "description": "Bump version to 0.1.603",
         "scope": null
       }
     ]
