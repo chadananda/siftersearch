@@ -1,0 +1,113 @@
+[
+  {
+    "id": 7,
+    "category": "factual",
+    "query": "What did Bahá'u'lláh teach about the oneness of humanity?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Bahá'u'lláh's teachings on the oneness of humanity are profound and central to His message. He elevates \"the unity of mankind\" above all other aspirations, emphasizing its importance in countless writings ([*Tablet to Mánikchí Sáhib*](https://siftersearch.com/document/16692)). This principle is not just a lofty ideal but a practical goal, as Shoghi Effendi describes it as the \"World Unity the Goal\" of Bahá'u'lláh's vision ([*The World Order of Bahá’u’lláh*](https://siftersearch.com/document/16277)). The teachings call for a transformation in how we see each other, urging us to \"sanctify your souls\" and detach from worldly divisions to truly understand and embrace this unity ([*The Kitáb-i-Íqán*](https://siftersearch.com/document/8300)).",
+    "toolsUsed": [],
+    "toolCallCount": 0,
+    "citationCount": 0,
+    "durationMs": 4796,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 3,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 3,
+      "quoteEconomy": 4,
+      "instructionFollowing": 2,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the lack of tool usage; it did not search the library for relevant content, relying instead on general knowledge. To improve, the assistant should have conducted a search to provide accurate quotes directly from Bahá'u'lláh's writings on the oneness of humanity."
+    },
+    "overall": 3.61,
+    "failures": [
+      "toolUsage",
+      "inlineQuoteIntegration",
+      "instructionFollowing"
+    ],
+    "diagnosis": "The primary issue with this response is the lack of tool usage; it did not search the library for relevant content, relying instead on general knowledge. To improve, the assistant should have conducted a search to provide accurate quotes directly from Bahá'u'lláh's writings on the oneness of humanity."
+  },
+  {
+    "id": 45,
+    "category": "topical",
+    "query": "Find passages about love in the Bahá'í writings",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Bahá'u'lláh beautifully describes love as \"the Beloved’s splendour in the world,\" highlighting its divine nature and presence in our lives ([*A Hymn to Love*](https://siftersearch.com/document/11447)). He also uses the metaphor of fragrance, saying love sheds \"the Beloved’s fragrance upon the soul,\" symbolizing the bounties and beauty of God that love brings to us ([*A Hymn to Love*](https://siftersearch.com/document/11447)). Furthermore, love is described as \"the Companion of the soul,\" suggesting that it is an intimate friend and comforter, always present to solace and support us ([*A Hymn to Love*](https://siftersearch.com/document/11447)). These passages reflect the profound and multifaceted nature of love in the Bahá'í writings.",
+    "toolsUsed": [],
+    "toolCallCount": 0,
+    "citationCount": 0,
+    "durationMs": 4294,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 3,
+      "citationAccuracy": 1,
+      "sourceAuthority": 1,
+      "inlineQuoteIntegration": 2,
+      "topicCoverage": 3,
+      "logicalCoherence": 3,
+      "brevity": 3,
+      "quoteEconomy": 1,
+      "instructionFollowing": 1,
+      "warmth": 3,
+      "noHallucination": 1,
+      "noGeneralKnowledge": 1,
+      "diagnosis": "The assistant did not use the library tools at all, relying solely on general knowledge, which is a critical error. Additionally, the quotes provided are not verified as real from the library, leading to hallucination issues. To improve, the assistant should perform a search for relevant passages in the Bahá'í writings using the appropriate tools."
+    },
+    "overall": 1.74,
+    "failures": [
+      "toolUsage",
+      "citationPresence",
+      "citationAccuracy",
+      "sourceAuthority",
+      "topicCoverage",
+      "logicalCoherence",
+      "inlineQuoteIntegration",
+      "quoteEconomy",
+      "instructionFollowing",
+      "noHallucination",
+      "noGeneralKnowledge"
+    ],
+    "diagnosis": "The assistant did not use the library tools at all, relying solely on general knowledge, which is a critical error. Additionally, the quotes provided are not verified as real from the library, leading to hallucination issues. To improve, the assistant should perform a search for relevant passages in the Bahá'í writings using the appropriate tools."
+  },
+  {
+    "id": 95,
+    "category": "multi",
+    "query": "What does Bahá'u'lláh say about justice, and where can I read more?",
+    "questionType": "research",
+    "status": "FAIL",
+    "response": "Bahá'u'lláh places great emphasis on justice, describing it as \"the best beloved of all things\" in His sight ([*The Hidden Words*](https://siftersearch.com/document/8230)). He encourages us to \"turn not away therefrom\" and to see and know \"with thine own eyes\" rather than relying on others' perceptions ([*The Hidden Words*](https://siftersearch.com/document/8230)). Justice is both a divine and human attribute, a \"gift\" and a \"sign of My loving-kindness\" that allows us to rule ourselves and others with \"pure justice\" ([*Paradise of Justice*](https://siftersearch.com/document/11446)). If you're interested in exploring these teachings further, you might want to read Bahá'u'lláh's *Paradise of Justice* and *The Hidden Words*.",
+    "toolsUsed": [],
+    "toolCallCount": 0,
+    "citationCount": 0,
+    "durationMs": 3841,
+    "scores": {
+      "toolUsage": 1,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The primary issue with this response is the lack of tool usage; it did not search the library for relevant documents, which is essential for a research query. To improve, the assistant should have conducted a search to provide more accurate and comprehensive citations from the library."
+    },
+    "overall": 4.08,
+    "failures": [
+      "toolUsage"
+    ],
+    "diagnosis": "The primary issue with this response is the lack of tool usage; it did not search the library for relevant documents, which is essential for a research query. To improve, the assistant should have conducted a search to provide more accurate and comprehensive citations from the library."
+  }
+]

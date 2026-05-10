@@ -1,0 +1,105 @@
+[
+  {
+    "id": 7,
+    "category": "factual",
+    "query": "What did Bahá'u'lláh teach about the oneness of humanity?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh teaches that the \"unity of mankind\" is a fundamental principle, elevating it \"above all human aspirations\" ([*Tablet to Mánikchí Sáhib*](https://siftersearch.com/document/16692)). This vision of oneness is not just a lofty ideal but a practical goal, as Shoghi Effendi describes \"World Unity\" as the ultimate aim of Bahá'u'lláh's teachings ([*The World Order of Bahá’u’lláh*](https://siftersearch.com/document/16277)). The oneness of humanity is central to the Bahá'í Faith, calling for a transformation of individual and collective consciousness to recognize our shared humanity.",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 4021,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 4,
+      "citationAccuracy": 4,
+      "sourceAuthority": 4,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 3,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve by integrating the quotes more seamlessly into the narrative. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+    },
+    "overall": 4.32,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library and provides relevant quotes, but it could improve by integrating the quotes more seamlessly into the narrative. Additionally, while the warmth is present, it could be enhanced to create a more engaging tone."
+  },
+  {
+    "id": 45,
+    "category": "topical",
+    "query": "Find passages about love in the Bahá'í writings",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh beautifully describes love as \"the Beloved’s splendour in the world,\" highlighting its divine nature and presence in our lives ([*A Hymn to Love*](https://siftersearch.com/document/11447)). He also portrays love as shedding \"the Beloved’s fragrance upon the soul,\" suggesting that love brings the \"bounties of the Beloved\" and reflects the \"Beauty of God\" ([*A Hymn to Love*](https://siftersearch.com/document/11447)). Furthermore, love is seen as \"the Companion of the soul,\" serving as an \"intimate friend\" and \"comforter\" ([*A Hymn to Love*](https://siftersearch.com/document/11447)). These images convey the profound and nurturing role of love in the Bahá'í writings.",
+    "toolsUsed": [
+      "search"
+    ],
+    "toolCallCount": 1,
+    "citationCount": 0,
+    "durationMs": 4101,
+    "scores": {
+      "toolUsage": 4,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 4,
+      "topicCoverage": 4,
+      "logicalCoherence": 4,
+      "brevity": 4,
+      "quoteEconomy": 4,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response effectively uses the library to find relevant passages and integrates them well into the answer. However, it could improve by reducing the number of quotes from the same document to enhance quote economy and avoid redundancy. Selecting the most impactful quote would strengthen the response further."
+    },
+    "overall": 4.55,
+    "failures": [],
+    "diagnosis": "The response effectively uses the library to find relevant passages and integrates them well into the answer. However, it could improve by reducing the number of quotes from the same document to enhance quote economy and avoid redundancy. Selecting the most impactful quote would strengthen the response further."
+  },
+  {
+    "id": 95,
+    "category": "multi",
+    "query": "What does Bahá'u'lláh say about justice, and where can I read more?",
+    "questionType": "research",
+    "status": "PASS",
+    "response": "Bahá'u'lláh places immense importance on justice, describing it as \"the best beloved of all things in My sight\" and urging us to \"neglect it not\" so that He may \"confide in thee\" ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230)). Justice, according to Bahá'u'lláh, allows us to \"see with thine own eyes and not through the eyes of others,\" emphasizing personal understanding and fairness ([*The Hidden Words of Bahá’u’lláh*](https://siftersearch.com/document/8230)). For a deeper exploration, you might want to read Bahá'u'lláh's \"Paradise of Justice,\" where justice is described as a divine and human quality, a \"gift\" that can \"cleanse mankind from the defilement of oppression\" ([*Paradise of Justice*](https://siftersearch.com/document/11446)).",
+    "toolsUsed": [
+      "search",
+      "search",
+      "search"
+    ],
+    "toolCallCount": 3,
+    "citationCount": 0,
+    "durationMs": 4112,
+    "scores": {
+      "toolUsage": 5,
+      "citationPresence": 5,
+      "citationAccuracy": 5,
+      "sourceAuthority": 5,
+      "inlineQuoteIntegration": 5,
+      "topicCoverage": 5,
+      "logicalCoherence": 5,
+      "brevity": 4,
+      "quoteEconomy": 5,
+      "instructionFollowing": 5,
+      "warmth": 4,
+      "noHallucination": 5,
+      "noGeneralKnowledge": 5,
+      "diagnosis": "The response is strong overall, with excellent tool usage, citation presence, and authority. The only minor issue is brevity; while the content is relevant, it could be slightly more concise without losing meaning. Streamlining some phrases would enhance clarity."
+    },
+    "overall": 4.92,
+    "failures": [],
+    "diagnosis": "The response is strong overall, with excellent tool usage, citation presence, and authority. The only minor issue is brevity; while the content is relevant, it could be slightly more concise without losing meaning. Streamlining some phrases would enhance clarity."
+  }
+]

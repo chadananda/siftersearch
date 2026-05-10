@@ -649,8 +649,78 @@ const fmtShort = (n) => {
     is the fastest way to explore what is already working and what still needs improvement.
   </p>
 
+  <h2>Planned Sidecar Layers</h2>
+
+  <p>
+    The architecture is intentionally <em>additive</em>. Each search-quality
+    improvement comes as a new sidecar — a new column on every paragraph, or a
+    new index that joins to <code>content.id</code>. The four layers below are
+    designed but not yet built; this section documents the intent so the
+    eventual implementation matches the roadmap.
+  </p>
+
+  <h3>1. Graph Object — per-paragraph entity + quotation extraction</h3>
+  <p>
+    Every paragraph gets a structured JSON sidecar capturing what's
+    <em>in</em> the paragraph as data, not as prose. Six categories:
+  </p>
+  <ul>
+    <li><strong>People</strong> — proper names with role tags (speaker / subject / recorder / addressee). Canonical forms resolved (e.g., "the Guardian" → "Shoghi Effendi").</li>
+    <li><strong>Places & organizations</strong> — geographic and institutional references.</li>
+    <li><strong>Events with dates</strong> — "Declaration of the Báb (1844-05-23)", "Conference of Badasht (summer 1848)".</li>
+    <li><strong>Quotations with attribution chains</strong> — the verbatim quoted span, the speaker (canonicalized), the addressee, the recorder (for pilgrim notes / memoirs), the date, and the attribution strength (direct / reported / paraphrased / translated). This is the layer that makes scholarly use of secondary sources possible.</li>
+    <li><strong>Citations to other works</strong> — when this paragraph references the <em>Aqdas</em> or <em>Qur'án</em> 21:107, the citation is captured with locator and resolved to a corpus document when found.</li>
+    <li><strong>Concepts</strong> — open-vocabulary doctrinal/thematic tags. No closed taxonomy; deduplication happens at index time.</li>
+    <li><strong>Relations</strong> — minimal subject-predicate-object triples between entities ("'Abdu'l-Bahá visited London", "Mullá Ḥusayn was the first Letter of the Living").</li>
+  </ul>
+
+  <h3>2. Unique-Quote Detection</h3>
+  <p>
+    A boolean sidecar (<code>content.has_unique_quote</code>) marking
+    paragraphs that contain attributed quotations <em>not</em> present in our
+    primary corpus. The scholarly value is novel material: a Shoghi Effendi
+    statement preserved only in a pilgrim note, an 'Abdu'l-Bahá talk recorded
+    in a memoir but never published in <em>Promulgation</em> — these are
+    research gold but currently invisible unless you happen to keyword-match
+    the exact wording. Computed once at extraction time by checking each
+    quoted span against tier 1-4 paragraph embeddings; flips to true only
+    when at least one extracted quote has no near-duplicate in the
+    canonical corpus.
+  </p>
+
+  <h3>3. Speaker-Intent Search Routing</h3>
+  <p>
+    A small but important routing rule: when the user query names a primary
+    figure as a <em>speaker</em> ("what did Shoghi Effendi say about X" /
+    "find statements by 'Abdu'l-Bahá on Y"), the orchestrator bypasses the
+    default authority-tier filter that drops secondary sources. Pilgrim
+    notes and memoirs become first-class results for these queries and the
+    crafter is trusted to attribute correctly per-paragraph. Queries
+    containing the word <em>unique</em> additionally bias toward tier 5+
+    sources where novel quotations live.
+  </p>
+
+  <h3>4. Conversation Memory Layer</h3>
+  <p>
+    The orchestrator currently treats each turn as fresh. Multi-step research
+    workflows — "study chapter 2 of <em>Dawn-Breakers</em>, list the people
+    mentioned" → "now do the same for documents mentioned in those chapters"
+    → "for each person, give me a research summary" — require persistent
+    session context. The <code>chat_sessions</code> table already exists from
+    earlier work; the missing piece is the pipeline reading from it on each
+    turn so referents like "those chapters" or "each person" resolve to
+    concrete prior context rather than re-prompting the user.
+  </p>
+
+  <p>
+    These four layers compose: speaker-intent routing benefits from
+    quotation-attribution data in the graph object; unique-quote detection
+    is a derivative of the graph object's quotations field; memory ties
+    everything together for serious research use.
+  </p>
+
   <hr />
-  <p style="font-size: 0.8rem; color: var(--text-muted);">Last updated: March 2026</p>
+  <p style="font-size: 0.8rem; color: var(--text-muted);">Last updated: April 2026</p>
 </DocsLayout>
 
 <style>

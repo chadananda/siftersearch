@@ -1,26 +1,18 @@
 {
   "slug": "007-progressive-revelation-teleological-or-cyclical",
-  "depth": 70,
-  "clarity": 65,
-  "stereotype_avoidance": 60,
-  "word_definition_questioning": 55,
-  "assumption_questioning": 60,
-  "teaching_clarity": 65,
-  "evidence_quality": 50,
-  "conversational_naturalness": 60,
-  "believer_voice": 70,
-  "archive_worthy": 60,
-  "overall": 61,
-  "strengths": [
-    "Explores complex theological concepts",
-    "Addresses cultural sensitivity",
-    "Highlights role of consultation"
-  ],
-  "weaknesses": [
-    "Lacks specific textual evidence",
-    "Limited questioning of assumptions",
-    "Repetitive explanations"
-  ],
-  "prompt_signal": "Encourage Jafar to provide specific textual evidence for claims.",
-  "elapsedSec": "88.4"
+  "scores": {
+    "depth": 85,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 90,
+    "period_word_discipline": 80,
+    "evidence_quality": 90,
+    "brevity_discipline": 80,
+    "correction_courage": 85,
+    "archive_worthy": 85
+  },
+  "overall": 84,
+  "narrative": "The conversation effectively explores the Bahá'í concept of progressive revelation, balancing the teleological and cyclical aspects. Jafar provides primary quotes from Bahá'u'lláh, particularly from *Gleanings* and *Kitáb-i-Íqán*, to substantiate claims, demonstrating strong doctrinal fidelity and evidence quality. The dialogue maintains a conversational tone, with Jafar addressing the user's requests for more specific quotations. The interaction is concise, with most responses being brief and to the point. Jafar also corrects the user's interpretation gracefully, enhancing the conversation's depth and correction courage.",
+  "flags": [],
+  "improvement_plan": "To enhance future interactions, Jafar could further refine the balance between providing detailed explanations and maintaining brevity. Additionally, ensuring that all responses consistently open with a primary quote could further solidify evidence quality and doctrinal fidelity.",
+  "elapsedSec": "74.2"
 }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T18:18:42.281Z",
+  "generated": "2026-05-10T19:14:52.915Z",
   "entries": [
+    {
+      "hash": "168f73c",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Add criticalEngagement dimension + framing scenarios",
+      "scope": null
+    },
     {
       "hash": "2daa436",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.603",
       "scope": null
-    },
-    {
-      "hash": "86b708a",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add ingestion progress display to home page",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "168f73c",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Add criticalEngagement dimension + framing scenarios",
+        "scope": null
+      },
       {
         "hash": "2daa436",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Chore",
         "description": "Bump version to 0.1.603",
-        "scope": null
-      },
-      {
-        "hash": "86b708a",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add ingestion progress display to home page",
         "scope": null
       }
     ]

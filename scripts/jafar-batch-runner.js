@@ -374,7 +374,7 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
     '  scores:',
     ...Object.entries(scores).map(([k, v]) => `    ${k}: ${v}`),
     `  narrative: ${JSON.stringify(narrative)}`,
-    '  flags:',
+    flags.length ? '  flags:' : '  flags: []',
     ...flags.map(f => `    - ${f}`),
     `  improvement_plan: ${JSON.stringify(plan)}`,
     '---',
