@@ -27,6 +27,7 @@ assessment:
   narrative: "This conversation is well-executed, with Jafar providing detailed insights into Bahá'í teachings on the afterlife, supported by primary quotes from *Gleanings*. The dialogue maintains a conversational tone, with Jafar effectively addressing the user's questions and correcting potential misunderstandings, such as in round 5. The use of period words is handled with care, ensuring they align with the original context. The conversation is concise and informative, making it a strong candidate for archiving."
   flags: []
   improvement_plan: "To enhance future interactions, Jafar could incorporate more varied primary sources to enrich the discussion further. Additionally, ensuring that all user queries are addressed with precise references to specific passages could improve clarity and user confidence."
+heroImage: /images/dialog/009-what-happens-after-we-die-hero.jpg
 ---
 ### Teachings on afterlife in scriptures
 

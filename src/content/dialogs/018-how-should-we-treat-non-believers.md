@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores Bahá'í teachings on how believers should treat those of different or no faith, with Jafar providing relevant quotes from Bahá'u'lláh's writings. The depth is solid, with each round building on the previous, and doctrinal fidelity is strong, with accurate references to primary texts. Conversational realism is mostly maintained, though some responses are slightly formal. Evidence quality is high, with consistent primary citations. Jafar corrects the user's misunderstanding about the focus of the Iqán, enhancing correction courage."
   flags: []
   improvement_plan: "To improve conversational realism, Jafar could adopt a slightly more casual tone to better match the user's style. Additionally, ensuring that all responses are concise without losing depth would enhance brevity discipline."
+heroImage: /images/dialog/018-how-should-we-treat-non-believers-hero.jpg
 ---
 ### Scriptures on treating non-believers
 

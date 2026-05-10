@@ -30,6 +30,7 @@ assessment:
     - fallback-link-only
     - unlinked-inline-quote
   improvement_plan: "Enhance the citation system to provide paragraph-level deep links and ensure inline quotes are hyperlinked directly. This will improve citation integrity and allow users to verify sources more easily, increasing trust in the information provided."
+heroImage: /images/dialog/012-why-are-there-so-many-religions-hero.jpg
 ---
 ### Why so many religions exist
 

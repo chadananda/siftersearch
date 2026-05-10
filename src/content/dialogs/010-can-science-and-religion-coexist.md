@@ -28,6 +28,7 @@ assessment:
   flags:
     - missing-primary-citation
   improvement_plan: "Jafar should incorporate more direct primary quotes from Bahá'u'lláh when discussing doctrinal points, especially when the user seeks explicit statements. Enhancing the pipeline to prioritize primary texts over secondary interpretations would improve doctrinal fidelity and evidence quality."
+heroImage: /images/dialog/010-can-science-and-religion-coexist-hero.jpg
 ---
 ### Compatibility of science and religion
 

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T22:20:52.205Z",
+  "generated": "2026-05-10T22:30:43.200Z",
   "entries": [
+    {
+      "hash": "f30153c",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Dialog 012 regenerated (78%, unpublished — fallback-link-only, needs deep links)",
+      "scope": null
+    },
     {
       "hash": "1162fde",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Prevent bad redirects to general/general paths",
       "scope": null
-    },
-    {
-      "hash": "01f5fc8",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Handle pattern 3 - duplicate YAML without delimiters",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "f30153c",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Dialog 012 regenerated (78%, unpublished — fallback-link-only, needs deep links)",
+        "scope": null
+      },
       {
         "hash": "1162fde",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Prevent bad redirects to general/general paths",
-        "scope": null
-      },
-      {
-        "hash": "01f5fc8",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Handle pattern 3 - duplicate YAML without delimiters",
         "scope": null
       }
     ]

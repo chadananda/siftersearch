@@ -28,6 +28,7 @@ assessment:
   flags:
     - missing-primary-citation
   improvement_plan: "Jafar should prioritize primary sources from the start, especially when discussing doctrinal points, to strengthen evidence quality. Additionally, maintaining a consistently conversational tone throughout the discussion would improve realism. Encouraging more back-and-forth dialogue could also deepen the conversation."
+heroImage: /images/dialog/017-what-does-religion-say-about-anger-hero.jpg
 ---
 ### Is anger always a sin?
 

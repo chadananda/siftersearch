@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores the purpose and mechanics of prayer in the Bahá'í Faith, with Jafar providing detailed explanations supported by primary texts. Each round builds on the previous one, deepening the understanding of prayer as a transformative process. The dialogue maintains a conversational tone, with Jafar matching the user's informal style while providing doctrinally sound responses. Primary citations are used effectively, enhancing the credibility of the discussion. The conversation is archive-worthy, with minor room for improvement in brevity and conversational realism."
   flags: []
   improvement_plan: "To enhance conversational realism, Jafar could incorporate more casual language and shorter responses to better mimic a natural dialogue. Additionally, ensuring that all responses remain concise without sacrificing depth would improve brevity discipline."
+heroImage: /images/dialog/011-what-is-prayer-actually-for-hero.jpg
 ---
 ### Purpose of prayer in Bahá'í Faith
 

@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation provides a solid exploration of the Bahá'í perspective on the soul, with Jafar grounding his responses in primary texts, particularly from Bahá'u'lláh's *Gleanings*. The depth is decent, as the discussion builds on the initial question about the soul's nature and immortality, but it could have explored more diverse sources beyond *Gleanings*. Conversational realism is mostly maintained, though some responses lean towards formality. Jafar effectively uses period vocabulary without modern distortion and corrects the user gently when needed. However, the conversation could benefit from more varied primary sources to enhance evidence quality."
   flags: []
   improvement_plan: "Encourage Jafar to diversify primary sources beyond *Gleanings* to provide a broader perspective. Enhance conversational realism by ensuring responses remain consistently casual and aligned with the user's tone. Encourage more explicit connections between doctrinal points and primary texts to deepen the exploration."
+heroImage: /images/dialog/015-what-is-the-soul-hero.jpg
 ---
 ### What is the soul according to texts
 

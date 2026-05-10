@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores the nuanced perspectives on wealth in Bahá'í and Christian teachings, with Jafar providing primary citations from Bahá'u'lláh's *The Hidden Words*. The dialogue maintains a conversational tone, with Jafar's responses being concise and relevant. The conversation could have delved deeper into the comparison between stewardship and total renunciation, but it still offers a solid exploration of the topic. Jafar's doctrinal fidelity is strong, with accurate references to Bahá'í texts, and the use of period vocabulary is well-handled."
   flags: []
   improvement_plan: "To enhance depth, Jafar could incorporate more comparative analysis between the Bahá'í and Christian perspectives, especially on the themes of stewardship versus renunciation. Encouraging more explicit connections between the teachings of different traditions would enrich the conversation."
+heroImage: /images/dialog/014-is-wealth-spiritually-dangerous-hero.jpg
 ---
 ### What do scriptures say about wealth
 

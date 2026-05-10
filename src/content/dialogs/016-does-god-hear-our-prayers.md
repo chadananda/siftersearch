@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores the nature of prayer in the Bahá'í Faith, using primary texts to substantiate claims about divine interaction. Jafar maintains a conversational tone throughout, with responses that are concise and grounded in Bahá'í writings, such as the *Kitáb-i-Íqán* and *Prayers and Meditations*. The discussion delves into both internal and external manifestations of divine response, providing a comprehensive view. While the conversation is doctrinally sound and well-supported by evidence, there could be more explicit differentiation between personal and historical divine responses in the context of prayer."
   flags: []
   improvement_plan: "To enhance the conversation, Jafar could more clearly differentiate between personal and historical responses to prayer, ensuring that the user understands the context of each citation. Additionally, Jafar could incorporate more direct quotes when discussing external manifestations of prayer to strengthen the connection between personal prayers and tangible outcomes."
+heroImage: /images/dialog/016-does-god-hear-our-prayers-hero.jpg
 ---
 ### Are prayers heard by God
 

@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation effectively explores the concept of justice in Bahá'í teachings, contrasting it with modern interpretations. Jafar provides depth by discussing both personal and societal dimensions of justice, supported by primary texts like the *Kitáb-i-Aqdas*. The dialogue maintains a conversational tone, with Jafar's responses being concise and relevant. The use of primary sources is strong, enhancing doctrinal fidelity. However, Jafar could have more explicitly addressed the user's concerns about individual freedom versus community justice in the final rounds."
   flags: []
   improvement_plan: "Jafar could improve by more directly addressing user concerns about individual freedom versus community justice, perhaps by providing additional context or examples from the Bahá'í writings. Ensuring that each response fully engages with the user's question would enhance the depth and clarity of the conversation."
+heroImage: /images/dialog/019-what-is-justice-according-to-scripture-hero.jpg
 ---
 ### Meaning of justice in scriptures
 

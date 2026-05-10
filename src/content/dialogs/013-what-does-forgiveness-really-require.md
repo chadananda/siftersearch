@@ -27,6 +27,7 @@ assessment:
   narrative: "The conversation explores the conditions for forgiveness in religious texts, particularly within the Bahá'í Faith. Jafar provides a nuanced view of forgiveness, citing the Báb and 'Abdu'l-Bahá, and addresses the user's questions about personal forgiveness. However, the conversation could have been improved with more primary quotes, especially from 'Abdu'l-Bahá, earlier in the discussion (round 3). Jafar maintains doctrinal fidelity and period word discipline well, and the conversation remains mostly brief and conversational."
   flags: []
   improvement_plan: "Jafar should prioritize providing primary quotes earlier in the conversation to strengthen evidence quality. Additionally, ensuring that responses are consistently conversational and less formal would enhance realism. Encouraging Jafar to directly address user queries with specific primary text references would improve depth."
+heroImage: /images/dialog/013-what-does-forgiveness-really-require-hero.jpg
 ---
 ### Is forgiveness unconditional in religion
 
