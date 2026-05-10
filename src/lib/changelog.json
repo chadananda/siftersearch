@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T14:00:22.330Z",
+  "generated": "2026-05-10T14:25:28.714Z",
   "entries": [
+    {
+      "hash": "f5fd67c",
+      "date": "2026-05-10",
+      "type": "Performance",
+      "description": "Time-based throttle for library-watcher + sites-ingester",
+      "scope": null
+    },
     {
       "hash": "fef00d7",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Trailing text after last sentence ending ALWAYS carried forward",
       "scope": null
-    },
-    {
-      "hash": "9197ce6",
-      "date": "2026-01-08",
-      "type": "Fixed",
-      "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "f5fd67c",
+        "date": "2026-05-10",
+        "type": "Performance",
+        "description": "Time-based throttle for library-watcher + sites-ingester",
+        "scope": null
+      },
       {
         "hash": "fef00d7",
         "date": "2026-05-10",
@@ -7073,13 +7080,6 @@
         "date": "2026-01-08",
         "type": "Fixed",
         "description": "Trailing text after last sentence ending ALWAYS carried forward",
-        "scope": null
-      },
-      {
-        "hash": "9197ce6",
-        "date": "2026-01-08",
-        "type": "Fixed",
-        "description": "Handle chunk boundaries to prevent mid-phrase sentence cuts",
         "scope": null
       }
     ]

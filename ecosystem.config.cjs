@@ -106,11 +106,13 @@ module.exports = {
     },
 
     // Cloudflare Tunnel (routes api.siftersearch.com -> localhost:7839)
+    // Uses a wrapper script that runs `cloudflared tunnel cleanup` before
+    // connecting, so stale QUIC connectors from previous runs don't linger
+    // in CF's edge and cause 502s after any restart.
     {
       name: 'cloudflared-tunnel',
-      script: 'cloudflared',
-      args: 'tunnel --config ' + path.join(os.homedir(), '.cloudflared', 'config-siftersearch.yml') + ' run siftersearch-api',
-      interpreter: 'none',
+      script: './scripts/start-cloudflared.sh',
+      interpreter: 'bash',
       exec_mode: 'fork',
       watch: false,
       autorestart: true,
