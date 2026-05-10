@@ -240,3 +240,6 @@
 018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=74% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:28:26.962Z
 018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=80% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:30:31.732Z
 019-what-is-justice-according-to-scripture - What Is Justice According to the Scriptures? - score=74% - https://siftersearch.com/dialogue/019-what-is-justice-according-to-scripture/ - 2026-05-10T20:31:25.285Z
+019-what-is-justice-according-to-scripture - What Is Justice According to the Scriptures? - score=83% - https://siftersearch.com/dialogue/019-what-is-justice-according-to-scripture/ - 2026-05-10T20:32:27.719Z
+019-what-is-justice-according-to-scripture - What Is Justice According to the Scriptures? - score=83% - https://siftersearch.com/dialogue/019-what-is-justice-according-to-scripture/ - 2026-05-10T20:32:38.328Z
+018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=76% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:32:50.372Z

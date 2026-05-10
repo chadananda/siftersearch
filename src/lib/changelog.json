@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T20:32:18.557Z",
+  "generated": "2026-05-10T20:33:06.976Z",
   "entries": [
+    {
+      "hash": "4c949fb",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Add 12 world-religion Q&A dialogs (008-019) + fix /document redirect",
+      "scope": null
+    },
     {
       "hash": "b1fe797",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
       "scope": null
-    },
-    {
-      "hash": "8aa3d76",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use unique IDs for content rows to avoid hash collisions",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "4c949fb",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Add 12 world-religion Q&A dialogs (008-019) + fix /document redirect",
+        "scope": null
+      },
       {
         "hash": "b1fe797",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Manually strip frontmatter when gray-matter fails to parse malformed YAML",
-        "scope": null
-      },
-      {
-        "hash": "8aa3d76",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use unique IDs for content rows to avoid hash collisions",
         "scope": null
       }
     ]
