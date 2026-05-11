@@ -1,6 +1,55 @@
 {
-  "generated": "2026-05-11T11:34:01.064Z",
+  "generated": "2026-05-11T12:40:45.569Z",
   "entries": [
+    {
+      "hash": "8b8f1f0",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Catalog queries skip LLM search loop, return library_overview directly",
+      "scope": null
+    },
+    {
+      "hash": "73cfdb9",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Inject library_overview into retrieved_quotes for catalog queries",
+      "scope": null
+    },
+    {
+      "hash": "53c1075",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Pre-fetch library_overview for catalog queries before LLM research phase",
+      "scope": null
+    },
+    {
+      "hash": "4b9dae4",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Remove catalog examples from search tool — route to library_overview",
+      "scope": null
+    },
+    {
+      "hash": "3602135",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Add canonical works for non-Bahai scriptures + browsing routing",
+      "scope": null
+    },
+    {
+      "hash": "e56592e",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Exclude image-markdown paragraphs from enrichment enqueue",
+      "scope": null
+    },
+    {
+      "hash": "8a91a1a",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
+      "scope": null
+    },
     {
       "hash": "fa30a70",
       "date": "2026-05-10",
@@ -3451,58 +3500,60 @@
       "type": "Fixed",
       "description": "PWA update uses 2-min cooldown instead of permanent block",
       "scope": null
-    },
-    {
-      "hash": "30cb95c",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Use Meilisearch stats API for indexing progress",
-      "scope": null
-    },
-    {
-      "hash": "66d944f",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Always include _vectors in Meilisearch sync (null to opt-out)",
-      "scope": null
-    },
-    {
-      "hash": "eedf7d6",
-      "date": "2026-01-11",
-      "type": "New",
-      "description": "Add stable LibSQL paragraph count to ingestionProgress",
-      "scope": null
-    },
-    {
-      "hash": "8c9eeb9",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Use correct doc_id field for Meilisearch facet query",
-      "scope": null
-    },
-    {
-      "hash": "f56fbf0",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Add proper Meilisearch indexing progress to library stats",
-      "scope": null
-    },
-    {
-      "hash": "5e55a19",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Remove misleading Meilisearch indexing progress bar",
-      "scope": null
-    },
-    {
-      "hash": "0d283af",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Default dark mode and hide misleading indexing progress",
-      "scope": null
     }
   ],
   "grouped": {
+    "2026-05-11": [
+      {
+        "hash": "8b8f1f0",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Catalog queries skip LLM search loop, return library_overview directly",
+        "scope": null
+      },
+      {
+        "hash": "73cfdb9",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Inject library_overview into retrieved_quotes for catalog queries",
+        "scope": null
+      },
+      {
+        "hash": "53c1075",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Pre-fetch library_overview for catalog queries before LLM research phase",
+        "scope": null
+      },
+      {
+        "hash": "4b9dae4",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Remove catalog examples from search tool — route to library_overview",
+        "scope": null
+      },
+      {
+        "hash": "3602135",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Add canonical works for non-Bahai scriptures + browsing routing",
+        "scope": null
+      },
+      {
+        "hash": "e56592e",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Exclude image-markdown paragraphs from enrichment enqueue",
+        "scope": null
+      },
+      {
+        "hash": "8a91a1a",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Skip short/HTML paragraphs in enrichment enqueue (≥100 chars, no HTML)",
+        "scope": null
+      }
+    ],
     "2026-05-10": [
       {
         "hash": "fa30a70",
@@ -7025,55 +7076,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "PWA update uses 2-min cooldown instead of permanent block",
-        "scope": null
-      },
-      {
-        "hash": "30cb95c",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Use Meilisearch stats API for indexing progress",
-        "scope": null
-      },
-      {
-        "hash": "66d944f",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Always include _vectors in Meilisearch sync (null to opt-out)",
-        "scope": null
-      },
-      {
-        "hash": "eedf7d6",
-        "date": "2026-01-11",
-        "type": "New",
-        "description": "Add stable LibSQL paragraph count to ingestionProgress",
-        "scope": null
-      },
-      {
-        "hash": "8c9eeb9",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Use correct doc_id field for Meilisearch facet query",
-        "scope": null
-      },
-      {
-        "hash": "f56fbf0",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Add proper Meilisearch indexing progress to library stats",
-        "scope": null
-      },
-      {
-        "hash": "5e55a19",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Remove misleading Meilisearch indexing progress bar",
-        "scope": null
-      },
-      {
-        "hash": "0d283af",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Default dark mode and hide misleading indexing progress",
         "scope": null
       }
     ]

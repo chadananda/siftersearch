@@ -68,19 +68,39 @@ export async function runResearchPhase({ messages, sendEvent, debug, scope_confi
 // The LLM reliably routes these to `search` even when told not to, so detect them
 // here and pre-fetch library_overview before the LLM loop runs.
 const CATALOG_PATTERNS = [
-  /\bwhat (do you|does the library|have|texts?|scriptures?|books?|languages?|collections?)\b/i,
   /\bhow many\b/i,
-  /\blist (the|all|your|available)\b/i,
-  /\bdo you (have|carry|include)\b/i,
+  /\blargest collection\b/i,
   /\bwhat'?s? in (the|your) library\b/i,
   /\bwhat (languages?|traditions?|religions?) (are|do you)\b/i,
-  /\bshow me (the|all|your|available) (collections?|texts?|scriptures?|books?)\b/i,
-  /\blargest collection\b/i,
+  /\blist (the|all|your|available)( \S+)? (collections?|traditions?|languages?|religions?)\b/i,
+  /\bshow me (the|all|your|available)( \S+)? (collections?)\b/i,
+  /\bwhat (collections?)\b/i,
+];
+
+// Extract a tradition name from a catalog query so we can also do a targeted search
+const TRADITION_SEARCH_MAP = [
+  { pattern: /\bbah[aá]['']?[ií]\b/i, query: "Bahá'í sacred texts" },
+  { pattern: /\bisla[mn]ic?\b|\bmuslim\b|\bquran\b/i, query: 'Islamic scripture Quran' },
+  { pattern: /\bchrist(?:ian)?\b|\bgospel\b\b/i, query: 'Christian scripture Gospel' },
+  { pattern: /\bhindu\b|\bvedic?\b|\bupanishad\b|\bgita\b/i, query: 'Hindu scripture Bhagavad Gita' },
+  { pattern: /\bbuddh(?:ist)?\b|\bpali\b|\bdhamma\b/i, query: 'Buddhist Dhammapada Pali Canon' },
+  { pattern: /\bjain\b/i, query: 'Jain texts Jainism' },
+  { pattern: /\bsikh\b|\bgranth\b/i, query: 'Sikh scripture Guru Granth Sahib' },
+  { pattern: /\btao\b|\bconfuc\b|\bchinese\b/i, query: 'Tao Te Ching Confucius' },
+  { pattern: /\bzoroastrian\b|\bavesta\b/i, query: 'Zoroastrian Avesta' },
+  { pattern: /\bjewish\b|\bhebre[ew]\b|\btorah\b|\btalmud\b/i, query: 'Jewish Torah scripture' },
 ];
 
 function isCatalogQuery(messages) {
   const last = messages.filter(m => m.role === 'user').at(-1)?.content || '';
   return CATALOG_PATTERNS.some(p => p.test(last));
+}
+
+function extractTraditionSearchQuery(text) {
+  for (const { pattern, query } of TRADITION_SEARCH_MAP) {
+    if (pattern.test(text)) return query;
+  }
+  return null;
 }
 
 async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config }) {
@@ -101,7 +121,10 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
     if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
     if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
     try {
-      const overview = await executeTool('library_overview', {}, { scope_config });
+      const lastMsg = messages.filter(m => m.role === 'user').at(-1)?.content || '';
+      const [overview] = await Promise.all([
+        executeTool('library_overview', {}, { scope_config })
+      ]);
       const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
       const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
       retrieved.push({
@@ -112,7 +135,23 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
         via: 'library_overview',
         is_catalog: true
       });
-      logger.info({ retrieved: retrieved.length }, 'catalog pre-fetch complete, skipping LLM search loop');
+
+      // For tradition-specific browsing questions, also search for representative
+      // texts so the crafter has citable sources with URLs to ground the response.
+      const traditionQuery = extractTraditionSearchQuery(lastMsg);
+      if (traditionQuery) {
+        try {
+          if (debug) debugCalls.push({ name: 'search', args: { query: traditionQuery, limit: 5 }, forced: true });
+          const searchResults = await executeTool('search', { query: traditionQuery, limit: 5 }, { scope_config });
+          if (searchResults?.results?.length) {
+            retrieved.push(...searchResults.results);
+          }
+        } catch (se) {
+          logger.warn({ err: se.message }, 'tradition search alongside catalog failed');
+        }
+      }
+
+      logger.info({ retrieved: retrieved.length, traditionQuery }, 'catalog pre-fetch complete, skipping LLM search loop');
       return { retrieved_quotes: retrieved, tool_calls: debugCalls };
     } catch (e) {
       logger.warn({ err: e.message }, 'pre-fetch library_overview failed, falling through to normal search');
@@ -889,6 +928,26 @@ NEVER multi-paragraph essay-style replies.
 - LITERAL MATCH: if the user named specific terms (Pythagoras, Plato, "Seal of the Prophets," "Greatest Name"), at least one fragment must contain those terms verbatim. If the corpus doesn't have them, say so.
 - CORRECTION COURAGE: when the user states something factually doubtful (wrong author, misremembered claim, implicit doctrinal error like "the Faith doesn't really teach X"), gently correct with a quote fragment, don't agree-and-move-on. Sycophancy on error is the worst failure mode.
 
+╔══════════════════════════════════════════════════════════╗
+║  CATALOG / LIBRARY OVERVIEW RESPONSES                     ║
+╚══════════════════════════════════════════════════════════╝
+
+When retrieved_quotes contains an entry with source_title "Library Catalog" (or via: "library_overview"), this is AUTHORITATIVE FACTUAL DATA about the library's holdings — treat it as ground truth, NOT as a text passage to quote.
+
+Rules for catalog responses:
+- Present the counts and collection names DIRECTLY. Don't say "I don't have the exact number" when the catalog entry provides it.
+- Don't look for quotable fragments — there are none. Just answer the question from the catalog data.
+- Format: brief prose statement of totals, then a short list of traditions with counts, then key collections if asked.
+- No citation URLs needed — say "the library holds..." or "Ocean Library contains..." as the source.
+
+EXAMPLE — User asks: "How many documents are in the library?"
+GOOD: "The library holds around 8,500 documents spanning 3.5 million paragraphs. Bahá'í texts form the largest collection (~4,200 documents), followed by Islam (~1,100), Christianity (~900), and several other traditions."
+BAD: "I don't have the exact number of documents in the library."
+
+EXAMPLE — User asks: "What Bahá'í collections do you have?"
+GOOD: "The Bahá'í section includes the Ocean Library (primary Bahá'í texts), Bahá'í Education, and Ocean of Lights collections, together covering the core works of Bahá'u'lláh, 'Abdu'l-Bahá, and Shoghi Effendi."
+BAD: "The retrieved texts don't specifically list Bahá'í collections."
+
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`;
 
 // Streaming variant — yields each chunk as it arrives. Used in the
@@ -1023,6 +1082,10 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
       : `${q.source_title || 'source'} — ${q.source_author || 'unknown'}`;
     const tierTag = q.authority_tier ? ` ${TIER_LABEL[q.authority_tier] || ''}` : '';
+    // Catalog entries from library_overview are structured data, not quotable text
+    if (q.is_catalog || q.via === 'library_overview') {
+      return `[Q${i + 1} CATALOG — authoritative library data, present facts directly, no quoting needed]\n${q.text}\n  Source: ${q.source_title || 'Library Catalog'}`;
+    }
     // For non-English passages, present BOTH original and JAFAR-grounded
     // translation so the crafter can quote whichever fits the user's request
     // (or both, when they ask for original-and-English).
