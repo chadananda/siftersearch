@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T20:38:51.697Z",
+  "generated": "2026-05-11T20:41:18.386Z",
   "entries": [
+    {
+      "hash": "6ddc2be",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Authority-weight RRF sort in multiIndexSearch before diversity cap",
+      "scope": null
+    },
     {
       "hash": "01ad03a",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use Meilisearch match positions for fuzzy all-terms filter",
       "scope": null
-    },
-    {
-      "hash": "2b89f15",
-      "date": "2026-01-12",
-      "type": "New",
-      "description": "Boost exact phrase matches to top of search results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "6ddc2be",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Authority-weight RRF sort in multiIndexSearch before diversity cap",
+        "scope": null
+      },
       {
         "hash": "01ad03a",
         "date": "2026-05-11",
@@ -7065,15 +7072,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Use Meilisearch match positions for fuzzy all-terms filter",
-        "scope": null
-      }
-    ],
-    "2026-01-12": [
-      {
-        "hash": "2b89f15",
-        "date": "2026-01-12",
-        "type": "New",
-        "description": "Boost exact phrase matches to top of search results",
         "scope": null
       }
     ]

@@ -840,13 +840,15 @@ export async function multiIndexSearch(query, options = {}) {
   // (main + hype RRF contribution) that can undo the per-religion diversity from
   // hybridSearch — applying it here ensures the final window is also diverse.
   const isCrossTraditionMIS = !filters.religion && !filters.collection && !filters.author;
+  // Authority-blend sort: for any unfiltered or religion-filtered query, blend authority
+  // into the RRF score so primary texts (auth=8-10) beat secondary books (auth=5) for
+  // their tradition/author diversity slots. HyPE adds secondary hits that otherwise undo
+  // the per-author cap applied in hybridSearch.
+  const needsAuthorityBlend = isCrossTraditionMIS || (filters.religion && !filters.collection && !filters.author);
   const allSorted = [...aggregate.values()]
     .filter(e => e.paragraph && !e.paragraph._stub)
     .sort((a, b) => {
-      // For cross-tradition: blend authority into RRF so primary texts beat secondary
-      // books for their tradition's diversity slots. HyPE adds Bahá'í hits that could
-      // otherwise crowd out Bahá'u'lláh primary texts via pure RRF score ordering.
-      if (isCrossTraditionMIS) {
+      if (needsAuthorityBlend) {
         const authA = computeAuthorityScore({ ...a.paragraph, _rankingScore: a.score });
         const authB = computeAuthorityScore({ ...b.paragraph, _rankingScore: b.score });
         if (Math.abs(authB - authA) > 1e-7) return authB - authA;
@@ -860,6 +862,13 @@ export async function multiIndexSearch(query, options = {}) {
     // Tighter than hybridSearch's 40% because multiIndexSearch is the user-facing output.
     const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'religion');
     finalEntries = diverse.map(h => h._entry);
+  } else if (filters.religion && !filters.collection && !filters.author) {
+    // Religion-filtered: apply author diversity so primary-text authors (Muhammad, Matthew)
+    // surface alongside commentary authors (Fananapazir, Momen). HyPE can add multiple hits
+    // per commentary author that bypass the hybridSearch author cap.
+    const filteredHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
+    const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.4)), 'author');
+    finalEntries = diverseFiltered.map(h => h._entry);
   } else {
     finalEntries = allSorted.slice(0, limit);
   }
