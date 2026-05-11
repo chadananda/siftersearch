@@ -138,6 +138,35 @@ function rerankByAuthority(hits) {
 }
 
 /**
+ * Enforce cross-tradition diversity when no religion filter is active.
+ * Caps any single religion at maxPerReligion hits in the final window so
+ * a voluminous corpus (e.g. Bahá'í secondary) can't crowd out primary
+ * scripture from other traditions. After the per-religion cap is filled,
+ * remaining slots are filled from the overflow (still sorted by authority).
+ */
+function diversifyHits(hits, limit, maxPerReligion) {
+  const counts = new Map();
+  const selected = [];
+  const overflow = [];
+  for (const hit of hits) {
+    const r = hit.religion || '__unknown__';
+    const n = counts.get(r) || 0;
+    if (n < maxPerReligion) {
+      selected.push(hit);
+      counts.set(r, n + 1);
+    } else {
+      overflow.push(hit);
+    }
+    if (selected.length >= limit) break;
+  }
+  for (const hit of overflow) {
+    if (selected.length >= limit) break;
+    selected.push(hit);
+  }
+  return selected;
+}
+
+/**
  * Compute internal fetch size so authority reranking has room to pull canonical
  * hits up from just outside the requested window. Capped at maxResults.
  */
@@ -403,7 +432,16 @@ export async function hybridSearch(query, options = {}) {
   // Authority reranking: blend Meilisearch relevance with the per-doc authority
   // score so canonical sources surface above citing/derivative works at the
   // same relevance tier. Runs unconditionally — callers don't opt in.
-  const reranked = rerankByAuthority(allHits).slice(offset, offset + limit);
+  const authorityRanked = rerankByAuthority(allHits);
+
+  // Diversity enforcement: when no religion filter, cap any single tradition at
+  // 3 results per 8 requested so the large Bahá'í corpus can't crowd out
+  // scripture from other traditions. Skipped when the caller explicitly asks
+  // for a specific religion (the filter itself provides scoping).
+  const maxPerReligion = Math.max(2, Math.ceil(limit * 0.4));
+  const reranked = (!filters.religion && offset === 0)
+    ? diversifyHits(authorityRanked, limit, maxPerReligion)
+    : authorityRanked.slice(offset, offset + limit);
 
   return {
     hits: reranked,
