@@ -547,19 +547,48 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const MAX_QUOTES = 12;
   let trimmed = filteredForCrafter;
   if (filteredForCrafter.length > MAX_QUOTES) {
-    const keywords = (entities.topics || [])
-      .map(t => (t || '').toLowerCase())
-      .filter(t => t.length >= 3);
-    const matchesKeyword = (q) => {
-      if (!keywords.length) return false;
-      const text = (q.text || '').toLowerCase();
-      return keywords.some(k => text.includes(k));
-    };
+    // When per-tradition searches ran, interleave round-robin so every tradition
+    // gets at least 1 slot. Simple slice would drop the last-resolved tradition
+    // (Promise.all resolve order) entirely when trimming 15→12.
+    const tradGroups = {};
     const SEARCH_VIAS = new Set(['search', 'search-fallback', 'topic-mapped-passage']);
-    const passages = filteredForCrafter.filter(q => SEARCH_VIAS.has(q.via));
-    const readMatched = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
-    const readRest = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
-    trimmed = [...passages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
+    const otherPassages = [];
+    for (const q of filteredForCrafter) {
+      if (q.via?.startsWith('traditions-')) {
+        if (!tradGroups[q.via]) tradGroups[q.via] = [];
+        tradGroups[q.via].push(q);
+      } else if (SEARCH_VIAS.has(q.via)) {
+        otherPassages.push(q);
+      }
+    }
+    const tradKeys = Object.keys(tradGroups);
+    if (tradKeys.length > 0) {
+      // Round-robin: 1 from each tradition per round until MAX_QUOTES filled
+      const selected = [];
+      let round = 0;
+      while (selected.length < MAX_QUOTES) {
+        let added = 0;
+        for (const key of tradKeys) {
+          if (selected.length >= MAX_QUOTES) break;
+          if (tradGroups[key].length > round) { selected.push(tradGroups[key][round]); added++; }
+        }
+        if (added === 0) break;
+        round++;
+      }
+      trimmed = selected;
+    } else {
+      const keywords = (entities.topics || [])
+        .map(t => (t || '').toLowerCase())
+        .filter(t => t.length >= 3);
+      const matchesKeyword = (q) => {
+        if (!keywords.length) return false;
+        const text = (q.text || '').toLowerCase();
+        return keywords.some(k => text.includes(k));
+      };
+      const readMatched = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
+      const readRest = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
+      trimmed = [...otherPassages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
+    }
   }
 
   logger.info({
@@ -791,6 +820,20 @@ export async function craftAnswerStream({ user_question, retrieved_quotes, subag
   // entire offending sentence rather than the opener alone, since the rest
   // of that sentence is also restatement.
   return stripRestatementSentences(full);
+}
+
+// Strip markdown links whose URLs are not in the set of retrieved citation_urls.
+// Prevents the crafter from emitting hallucinated URLs from training memory.
+// Unlinks the fragment text so the words remain but the fabricated link disappears.
+export function stripUngroundedLinks(text, retrievedQuotes) {
+  if (!text) return text;
+  const validUrls = new Set(
+    (retrievedQuotes || []).map(q => q.citation_url).filter(Boolean)
+  );
+  if (validUrls.size === 0) return text;
+  return text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (match, fragment, url) => {
+    return validUrls.has(url) ? match : fragment;
+  });
 }
 
 // Drop sentences that begin with a forbidden restating opener. Operates on
@@ -1136,7 +1179,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   const onChunk = (text) => {
     if (sendEvent) sendEvent({ type: 'text', content: text });
   };
-  const draft = await craftAnswerStream({
+  const rawDraft = await craftAnswerStream({
     user_question: userMessage,
     retrieved_quotes: research.retrieved_quotes,
     subagent_syntheses: research.subagent_syntheses,
@@ -1145,6 +1188,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     _temperature_override: 0.3,
     onChunk
   });
+  const draft = stripUngroundedLinks(rawDraft, research.retrieved_quotes);
   const gate = { pass: true, picker: 'streamed-no-pick' };
   const retried = false;
 
