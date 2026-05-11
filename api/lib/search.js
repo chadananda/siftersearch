@@ -860,9 +860,19 @@ export async function multiIndexSearch(query, options = {}) {
       }
       return b.score - a.score;
     });
+  // Deduplicate: cap at 1 paragraph per source document so multiple passages from
+  // the same book don't crowd out content from other works.
+  const docDedup = new Map();
+  const sortedDeduped = allSorted.filter(e => {
+    const docId = e.paragraph?.doc_id ?? '__nodoc__';
+    const n = docDedup.get(docId) || 0;
+    if (n < 1) { docDedup.set(docId, n + 1); return true; }
+    return false;
+  });
+
   let finalEntries;
   if (isCrossTraditionMIS) {
-    const rrfHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
+    const rrfHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
     // Cap at 25% per tradition (max 2 of 8) so at least 6 other tradition slots exist.
     // Tighter than hybridSearch's 40% because multiIndexSearch is the user-facing output.
     const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'religion');
@@ -871,11 +881,11 @@ export async function multiIndexSearch(query, options = {}) {
     // Religion-filtered: apply author diversity so primary-text authors (Muhammad, Matthew)
     // surface alongside commentary authors (Fananapazir, Momen). HyPE can add multiple hits
     // per commentary author that bypass the hybridSearch author cap.
-    const filteredHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
+    const filteredHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
     const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'author');
     finalEntries = diverseFiltered.map(h => h._entry);
   } else {
-    finalEntries = allSorted.slice(0, limit);
+    finalEntries = sortedDeduped.slice(0, limit);
   }
 
   const hits = finalEntries.map(e => ({

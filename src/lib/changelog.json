@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T21:27:17.534Z",
+  "generated": "2026-05-11T21:36:28.336Z",
   "entries": [
+    {
+      "hash": "7f10dde",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "HyPE multi-question accumulation — deduplicate paragraph_id in RRF merge",
+      "scope": null
+    },
     {
       "hash": "ac5ed6a",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove sentence wrapper from search results, only bold keywords",
       "scope": null
-    },
-    {
-      "hash": "782a2d0",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Restore highlighting in search results, rename Chat to Search in navbar",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "7f10dde",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "HyPE multi-question accumulation — deduplicate paragraph_id in RRF merge",
+        "scope": null
+      },
       {
         "hash": "ac5ed6a",
         "date": "2026-05-11",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Remove sentence wrapper from search results, only bold keywords",
-        "scope": null
-      },
-      {
-        "hash": "782a2d0",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Restore highlighting in search results, rename Chat to Search in navbar",
         "scope": null
       }
     ]
