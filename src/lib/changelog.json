@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T01:51:42.899Z",
+  "generated": "2026-05-11T02:04:19.624Z",
   "entries": [
+    {
+      "hash": "848cd60",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
+      "scope": null
+    },
     {
       "hash": "eb53627",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
       "scope": null
-    },
-    {
-      "hash": "6ed1421",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "848cd60",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Tier filter only for Baha'i-specific questions; multi-tradition crafter; debug_research event",
+        "scope": null
+      },
       {
         "hash": "eb53627",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Remove bg-surface-0 override + add box-shadow to BilingualView paper container",
-        "scope": null
-      },
-      {
-        "hash": "6ed1421",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
         "scope": null
       }
     ]

@@ -493,9 +493,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // When NO work is named, run parallel per-tradition searches so that
   // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
   // traditions from retrieved_quotes. Each tradition gets its own slot.
-  const passageQuery = entities.topics?.length
-    ? entities.topics.join(' ')
-    : userMessage;
+  // Use the full user message for passage search — topic keywords joined with
+  // spaces lose question structure and return wrong passages (e.g. "love
+  // neighbors enemies" retrieves Deuteronomy instead of Matthew 5:44).
+  const passageQuery = userMessage.slice(0, 300);
   if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
       // General question — search across traditions in parallel so the crafter
