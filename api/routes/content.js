@@ -11,6 +11,7 @@
 import { marked } from 'marked';
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
+import { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } from '../lib/publish-pipeline.js';
 
 // Edge cache headers for public reads. 5-min Cloudflare cache + 24h
 // stale-while-revalidate keeps origin load near zero on hot pages while
@@ -320,5 +321,136 @@ export default async function contentRoutes(fastify) {
     logger.info({ slug, action: 'archive' }, 'dialog: archived');
     reply.header('Cache-Control', ADMIN_NOCACHE);
     return { ok: true, slug, status: 'archived' };
+  });
+
+  // ─── Admin: save a conversation as a dialog ────────────────────────────────
+  // Takes a messages array (alternating user/assistant) + optional metadata.
+  // Runs the publish pipeline (metadata generation, round summaries, optional
+  // anonymization) and upserts into published_conversations.
+  //
+  // POST /api/v1/admin/conversations/save
+  // Body: { messages, slug?, title?, description?, topic?, tags?, keywords?,
+  //         excerpt?, hero_image?, hero_prompt?, anonymize?, score?, featured?,
+  //         status? }
+  fastify.post('/admin/conversations/save', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+
+    const b = req.body || {};
+    let { messages } = b;
+
+    if (!Array.isArray(messages) || messages.length < 2) {
+      return reply.code(400).send({ error: 'messages array with at least 2 entries required' });
+    }
+
+    // Optionally anonymize user turns before publishing
+    if (b.anonymize) {
+      try { messages = await anonymizeUserTurns(messages); }
+      catch (e) { logger.warn({ err: e.message }, 'anonymize failed, using original'); }
+    }
+
+    // Generate metadata if title not provided
+    let meta;
+    if (!b.title) {
+      meta = await generatePublishMetadata({ messages, topic_hint: b.topic });
+    } else {
+      meta = {
+        title: b.title,
+        description: b.description || '',
+        slug: b.slug || b.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 70),
+        topic: b.topic || 'theology',
+        tags: b.tags || [],
+        keywords: b.keywords || [],
+        excerpt: b.excerpt || ''
+      };
+    }
+
+    const slug = b.slug || meta.slug;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug', slug });
+
+    // Generate per-round h3/h4 summaries
+    const rounds = pairRounds(messages);
+    let roundSummaries = [];
+    try { roundSummaries = await generateRoundSummaries(rounds); }
+    catch (e) { logger.warn({ err: e.message }, 'round summaries failed'); }
+
+    // Build body_md from messages + round summaries
+    const bodyParts = [];
+    for (let i = 0; i < rounds.length; i++) {
+      const r = rounds[i];
+      const rs = roundSummaries[i] || {};
+      const n = i + 1;
+      const qHead = rs.question || `Round ${n}`;
+      const aHead = rs.answer || `Response ${n}`;
+      bodyParts.push(`### ${qHead}`, '');
+      bodyParts.push(`<div class="user-turn" id="round-${n}">`, '', r.user, '', '</div>', '');
+      bodyParts.push(`#### ${aHead}`, '');
+      bodyParts.push(`<div class="jafar-turn">`, '', r.jafar, '', '</div>', '');
+    }
+    const body_md = bodyParts.join('\n');
+
+    const roundTitlesJson = JSON.stringify(
+      roundSummaries.map(rs => ({ user: rs.question || '', jafar: rs.answer || '' }))
+    );
+
+    const question = messages.find(m => m.role === 'user')?.content || '';
+
+    const vals = [
+      meta.title,
+      meta.description || b.description || null,
+      question.slice(0, 1000),
+      meta.topic || b.topic || null,
+      JSON.stringify(meta.tags || b.tags || []),
+      JSON.stringify(meta.keywords || b.keywords || []),
+      meta.excerpt || b.excerpt || null,
+      b.hero_image || null,
+      b.hero_prompt || null,
+      typeof b.score === 'number' ? b.score : 0,
+      b.featured ? 1 : 0,
+      rounds.length,
+      roundTitlesJson,
+      null, // assessment_json — not generated here
+      '[]', // rounds_json legacy
+      body_md,
+      b.status || 'published',
+    ];
+
+    const existing = await queryOne(
+      'SELECT id FROM published_conversations WHERE tenant_id = ? AND slug = ?',
+      [DIALOG_TENANT, slug]
+    );
+
+    if (existing) {
+      await query(
+        `UPDATE published_conversations SET
+          title=?, description=?, question=?, topic=?, tags_json=?, keywords_json=?,
+          excerpt=?, hero_image=?, hero_prompt=?, score=?, featured=?, rounds_count=?,
+          round_titles_json=?, assessment_json=?, rounds_json=?, body_md=?, status=?,
+          updated_at=CURRENT_TIMESTAMP
+         WHERE tenant_id=? AND slug=?`,
+        [...vals, DIALOG_TENANT, slug]
+      );
+      logger.info({ slug, action: 'update' }, 'dialog: saved from conversation');
+    } else {
+      await query(
+        `INSERT INTO published_conversations
+          (tenant_id, slug, title, description, question, topic, tags_json, keywords_json,
+           excerpt, hero_image, hero_prompt, score, featured, rounds_count,
+           round_titles_json, assessment_json, rounds_json, body_md, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [DIALOG_TENANT, slug, ...vals]
+      );
+      logger.info({ slug, action: 'create' }, 'dialog: saved from conversation');
+    }
+
+    reply.header('Cache-Control', ADMIN_NOCACHE);
+    return {
+      ok: true,
+      slug,
+      url: `https://siftersearch.com/dialogue/${slug}/`,
+      title: meta.title,
+      topic: meta.topic,
+      tags: meta.tags,
+      rounds: rounds.length,
+    };
   });
 }

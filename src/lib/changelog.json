@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:51:49.073Z",
+  "generated": "2026-05-11T00:54:43.905Z",
   "entries": [
+    {
+      "hash": "af84d84",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Interfaith-first by example — multi-tradition default, replace Baha'i-only examples",
+      "scope": null
+    },
     {
       "hash": "d33a8cf",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
       "scope": null
-    },
-    {
-      "hash": "7b589dc",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "af84d84",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Interfaith-first by example — multi-tradition default, replace Baha'i-only examples",
+        "scope": null
+      },
       {
         "hash": "d33a8cf",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
-        "scope": null
-      },
-      {
-        "hash": "7b589dc",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
         "scope": null
       }
     ]
