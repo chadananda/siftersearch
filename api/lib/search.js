@@ -213,7 +213,15 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   const seen = new Set();
   const allHits = [];
   for (const result of (response.results || [])) {
-    const sorted = [...(result.hits || [])].sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
+    // Sort by authority-weighted score so primary texts (auth=10) get quota slots
+    // over secondary books at the same semantic relevance tier. Falls back to raw
+    // ranking score as tiebreaker so semantic relevance still governs within a tier.
+    const sorted = [...(result.hits || [])].sort((a, b) => {
+      const sa = computeAuthorityScore(a);
+      const sb = computeAuthorityScore(b);
+      if (Math.abs(sb - sa) > 0.005) return sb - sa;
+      return (b._rankingScore || 0) - (a._rankingScore || 0);
+    });
     let count = 0;
     for (const hit of sorted) {
       if (count >= perReligionLimit) break;
