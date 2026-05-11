@@ -192,7 +192,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       indexUid: indexName,
       q: query,
       filter,
-      limit: overFetchForRerank(perReligionLimit),
+      limit: Math.max(15, overFetchForRerank(perReligionLimit)),
       offset: 0,
       showRankingScore: true,
       showMatchesPosition: true,

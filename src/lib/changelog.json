@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T20:25:18.142Z",
+  "generated": "2026-05-11T20:29:47.182Z",
   "entries": [
+    {
+      "hash": "bb7900f",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Authority-sort within crossTraditionSearch — primary texts win quota slots",
+      "scope": null
+    },
     {
       "hash": "88ecaf2",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Use info level for filter logs",
       "scope": null
-    },
-    {
-      "hash": "483ea78",
-      "date": "2026-01-12",
-      "type": "Other",
-      "description": "Add logging to keywordSearch filter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "bb7900f",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Authority-sort within crossTraditionSearch — primary texts win quota slots",
+        "scope": null
+      },
       {
         "hash": "88ecaf2",
         "date": "2026-05-11",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-12",
         "type": "Other",
         "description": "Use info level for filter logs",
-        "scope": null
-      },
-      {
-        "hash": "483ea78",
-        "date": "2026-01-12",
-        "type": "Other",
-        "description": "Add logging to keywordSearch filter",
         "scope": null
       }
     ]
