@@ -350,6 +350,30 @@ For standalone small works, omit start_paragraph/end_paragraph and the sub-agent
   },
   {
     type: 'function',
+    function: {
+      name: 'library_count',
+      description: `Count documents matching any combination of filters. Use when the user asks filtered coverage questions:
+- "How many documents do you have from bahai-library.com?" → site: "bahai-library.com"
+- "How many books by Udo Shaefer?" → author: "Udo Shaefer"
+- "How many Islamic texts do you carry in Arabic?" → religion: "Islam", language: "Arabic"
+- "How many primary-source Bahá'í documents?" → religion: "Baha'i", scope: "primary"
+Returns the count plus up to 5 sample titles so you can verify the filter is working.
+For an unfiltered total of the whole library, use library_overview instead.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          author:     { type: 'string', description: 'Partial author name (e.g. "Udo Shaefer", "Bahá\'u\'lláh")' },
+          religion:   { type: 'string', description: 'Tradition name (e.g. "Baha\'i", "Buddhist", "Islam", "Hindu")' },
+          site:       { type: 'string', description: 'Source website domain (e.g. "bahai-library.com", "oceanlibrary.com")' },
+          language:   { type: 'string', description: 'Language name (e.g. "Arabic", "Persian", "French", "English")' },
+          collection: { type: 'string', description: 'Collection name — partial match (e.g. "Pali Canon", "Gleanings")' },
+          scope:      { type: 'string', enum: ['primary', 'supplemental'], description: '"primary" = Ocean Library curated docs; "supplemental" = external site documents (e.g. bahai-library.com)' }
+        }
+      }
+    }
+  },
+  {
+    type: 'function',
     name: 'translate_passage',
     description: 'Translate an Arabic, Persian, or Hebrew passage into English using JAFAR-grounded translation that follows Shoghi Effendi\'s concordance for Bahá\'í terminology and the corpus consensus for other terms. Returns the translation plus the JAFAR term analysis. Use when the user asks for a translation, asks "what is the original word for X in this passage", or wants paired original-and-English display. Cached by content hash so repeated calls are free.',
     parameters: {
@@ -937,6 +961,32 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   };
 }
 
+export async function executeLibraryCount({ author, religion, site, language, collection, scope } = {}) {
+  const conditions = ['deleted_at IS NULL'];
+  const params = [];
+  if (author)     { conditions.push('author LIKE ?');      params.push(`%${author}%`); }
+  if (religion)   { conditions.push('religion LIKE ?');    params.push(`%${religion}%`); }
+  if (site)       { conditions.push('source_site LIKE ?'); params.push(`%${site}%`); }
+  if (language)   { conditions.push('language LIKE ?');    params.push(`%${language}%`); }
+  if (collection) { conditions.push('collection LIKE ?');  params.push(`%${collection}%`); }
+  if (scope)      { conditions.push('scope = ?');          params.push(scope); }
+
+  const where = conditions.join(' AND ');
+  const [countRow, samples] = await Promise.all([
+    queryOne(`SELECT COUNT(*) as count FROM docs WHERE ${where}`, params),
+    queryAll(`SELECT title, author, religion, collection, source_site, year FROM docs WHERE ${where} ORDER BY year DESC LIMIT 5`, params)
+  ]);
+
+  return {
+    count: countRow.count,
+    filters: Object.fromEntries(Object.entries({ author, religion, site, language, collection, scope }).filter(([, v]) => v)),
+    sample_documents: samples.map(d => ({
+      title: d.title, author: d.author, religion: d.religion,
+      collection: d.collection, site: d.source_site, year: d.year
+    }))
+  };
+}
+
 // Optional `ctx` carries scope_config (resolved from chatbot_location at the
 // pipeline entry point) so per-call site-scoping flows through to search.
 // Tools that don't need scope just ignore ctx.
@@ -944,6 +994,7 @@ export async function executeTool(name, args, ctx = {}) {
   switch (name) {
     case 'search': return executeSearch({ ...args, scope_config: ctx.scope_config });
     case 'library_overview': return executeLibraryOverview();
+    case 'library_count': return executeLibraryCount(args);
     case 'find_document_for_citation': return executeFindDocumentForCitation(args);
     case 'read_document_for_question': return executeReadDocumentForQuestion(args);
     case 'translate_passage': return executeTranslatePassage(args);

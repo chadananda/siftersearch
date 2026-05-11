@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T14:05:12.359Z",
+  "generated": "2026-05-11T14:52:40.681Z",
   "entries": [
+    {
+      "hash": "127d46e",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Add languages to library_overview + filter null religion from catalog text",
+      "scope": null
+    },
     {
       "hash": "b4290e5",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Add BDD tests for quick search mode",
       "scope": null
-    },
-    {
-      "hash": "59622d4",
-      "date": "2026-01-11",
-      "type": "Chore",
-      "description": "Bump version to 0.1.662",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "127d46e",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Add languages to library_overview + filter null religion from catalog text",
+        "scope": null
+      },
       {
         "hash": "b4290e5",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Test",
         "description": "Add BDD tests for quick search mode",
-        "scope": null
-      },
-      {
-        "hash": "59622d4",
-        "date": "2026-01-11",
-        "type": "Chore",
-        "description": "Bump version to 0.1.662",
         "scope": null
       }
     ]

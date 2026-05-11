@@ -31,10 +31,11 @@ const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPEN
 
 const RESEARCH_SYSTEM = `You are the RESEARCH PHASE of a multi-stage assistant. Your sole job is to retrieve material from the corpus that the next stage will use to compose a reply. You do NOT write the user-facing answer.
 
-For the user's latest question, call retrieval tools (search, find_document_for_citation, read_document_for_question, library_overview) until you have enough quotes to ground a reply. When done, respond with a brief plain-text "done" message — your prose is discarded.
+For the user's latest question, call retrieval tools (search, find_document_for_citation, read_document_for_question, library_overview, library_count) until you have enough quotes to ground a reply. When done, respond with a brief plain-text "done" message — your prose is discarded.
 
 Routing rules:
-- Catalog/coverage questions ("what do you have", "list the X collections", "how many Buddhist texts", "what languages", "what's in the library", "do you have any X") → call library_overview FIRST. Do NOT use search for these — search returns passages, not catalog data. library_overview returns doc counts per religion and collection names.
+- Filtered count questions ("how many books by Udo Shaefer?", "how many docs from bahai-library.com?", "how many Islamic texts in Arabic?") → call library_count with the appropriate filters (author, site, religion, language, scope). Do NOT use search.
+- Unfiltered catalog questions ("what do you have", "list the collections", "how many Buddhist texts total", "what languages") → call library_overview FIRST. Do NOT use search for these — search returns passages, not catalog data.
 - Specific named works (Tablet of Wisdom, Iqán, Hidden Words, Quran, Bhagavad Gita, Tao Te Ching, Gospel of John, Guru Granth Sahib, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate
 - Doctrinal concepts (materialism, justice, the soul, faith, detachment, etc.) → search with mode:"passages" + religion filter
 - Specific named figures (Bahá'u'lláh, 'Abdu'l-Bahá, Plato in a tradition's text, etc.) → search with their name + the topic
@@ -97,6 +98,30 @@ const TRADITION_SEARCH_MAP = [
 function isCatalogQuery(messages) {
   const last = messages.filter(m => m.role === 'user').at(-1)?.content || '';
   return CATALOG_PATTERNS.some(p => p.test(last));
+}
+
+// Extract structured catalog filters from a user message for library_count.
+// Returns an object with any combination of: author, religion, site, language, scope.
+// Empty object means no specific filters detected → use library_overview instead.
+function extractCatalogFilters(message) {
+  const filters = {};
+  // Site domain (e.g. "bahai-library.com", "oceanlibrary.com")
+  const siteMatch = message.match(/\b([\w-]+\.(?:com|org|net|edu))\b/i);
+  if (siteMatch) filters.site = siteMatch[1];
+  // Author: "by First Last" — capitalised 1–4 word name
+  const authorMatch = message.match(/\bby\s+([A-Z][a-záéíóúāīū]+(?:\s+[A-Z][a-záéíóúāīū]+){0,3})/);
+  if (authorMatch) filters.author = authorMatch[1];
+  // Language: "in Arabic", "in Persian", etc.
+  const langMatch = message.match(/\bin\s+(Arabic|Persian|Farsi|French|German|English|Spanish|Turkish|Russian|Chinese|Japanese|Korean)\b/i);
+  if (langMatch) filters.language = langMatch[1];
+  // Scope
+  if (/\bprimary\b/i.test(message)) filters.scope = 'primary';
+  else if (/\bsupplemental\b|\bexternal\b/i.test(message)) filters.scope = 'supplemental';
+  // Tradition — only when combined with another filter (tradition alone goes to library_overview)
+  for (const { pattern, religion } of TRADITION_SEARCH_MAP) {
+    if (pattern.test(message)) { filters.religion = religion; break; }
+  }
+  return filters;
 }
 
 // Returns { query, religion } for a targeted tradition search, or null for generic
@@ -486,47 +511,77 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   };
 
   // Catalog pre-fetch: for library overview/browsing questions, skip the
-  // per-tradition search loop entirely and call library_overview directly.
-  // The LLM search loop sends the raw question to Meilisearch and gets
-  // irrelevant passage results; the catalog gives accurate counts + collections.
-  // A companion tradition search gives the crafter citable sources with URLs.
+  // per-tradition search loop entirely and return authoritative count data.
+  // Two paths:
+  //   1. Filtered (author/site/language/scope) → library_count with extracted filters
+  //   2. Unfiltered → library_overview (full aggregate, cached)
+  // Both paths add a companion search for citable passages.
   if (isCatalogQuery(messages)) {
-    if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
-    if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
-    try {
-      const overview = await executeTool('library_overview', {}, { scope_config });
-      const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
-      const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
-      const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
-      retrieved.push({
-        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
-        source_title: 'Library Catalog',
-        source_author: 'Ocean Library',
-        citation_url: null,
-        via: 'library_overview',
-        is_catalog: true
-      });
-      // Companion search: gives the crafter actual quoted passages with URLs.
-      // Use religion filter when a tradition is named so we get actual texts
-      // from that tradition rather than secondary sources that mention it.
-      const tradition = extractTraditionSearch(userMessage);
-      const companionArgs = tradition
-        ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
-        : { query: 'sacred scripture wisdom', limit: 5 };
+    const catalogFilters = extractCatalogFilters(userMessage);
+    // A filter is "specific" if it includes anything beyond religion alone —
+    // religion alone is covered by library_overview + tradition companion search.
+    const nonReligionFilters = Object.keys(catalogFilters).filter(k => k !== 'religion');
+    const isFiltered = nonReligionFilters.length > 0;
+
+    if (isFiltered) {
+      // Filtered catalog query: call library_count with extracted params
       try {
-        if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
-        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
-        const searchResults = await executeTool('search', companionArgs, { scope_config });
-        if (searchResults?.passages?.length) {
-          harvestPassages(searchResults, 'catalog_companion');
-        }
-      } catch (se) {
-        logger.warn({ err: se.message }, 'catalog companion search failed');
+        if (debug) debugCalls.push({ name: 'library_count', args: catalogFilters, forced: true });
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_count', args: catalogFilters, forced: true });
+        const countResult = await executeTool('library_count', catalogFilters, { scope_config });
+        const filterDesc = Object.entries(catalogFilters).map(([k, v]) => `${k}="${v}"`).join(', ');
+        const sampleLines = (countResult.sample_documents || []).map(d =>
+          `  - ${d.title}${d.author ? ' by ' + d.author : ''}${d.year ? ' (' + d.year + ')' : ''}`
+        ).join('\n');
+        retrieved.push({
+          text: `Library count (${filterDesc}):\nMatching documents: ${countResult.count}\n\nSample titles:\n${sampleLines}`,
+          source_title: 'Library Catalog',
+          source_author: 'Ocean Library',
+          citation_url: null,
+          via: 'library_count',
+          is_catalog: true,
+          catalog_count: countResult.count,
+          catalog_filters: catalogFilters
+        });
+        logger.info({ filters: catalogFilters, count: countResult.count }, 'filtered catalog query complete');
+        return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+      } catch (e) {
+        logger.warn({ err: e.message }, 'library_count failed, falling through to normal research');
       }
-      logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
-      return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
-    } catch (e) {
-      logger.warn({ err: e.message }, 'catalog pre-fetch failed, falling through to normal research');
+    } else {
+      // Unfiltered catalog: library_overview + companion search
+      if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
+      if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
+      try {
+        const overview = await executeTool('library_overview', {}, { scope_config });
+        const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
+        const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+        const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
+        retrieved.push({
+          text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
+          source_title: 'Library Catalog',
+          source_author: 'Ocean Library',
+          citation_url: null,
+          via: 'library_overview',
+          is_catalog: true
+        });
+        const tradition = extractTraditionSearch(userMessage);
+        const companionArgs = tradition
+          ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
+          : { query: 'sacred scripture wisdom', limit: 5 };
+        try {
+          if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
+          if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
+          const searchResults = await executeTool('search', companionArgs, { scope_config });
+          if (searchResults?.passages?.length) harvestPassages(searchResults, 'catalog_companion');
+        } catch (se) {
+          logger.warn({ err: se.message }, 'catalog companion search failed');
+        }
+        logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
+        return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+      } catch (e) {
+        logger.warn({ err: e.message }, 'catalog pre-fetch failed, falling through to normal research');
+      }
     }
   }
 
@@ -986,22 +1041,26 @@ NEVER multi-paragraph essay-style replies.
 ║  CATALOG / LIBRARY OVERVIEW RESPONSES                     ║
 ╚══════════════════════════════════════════════════════════╝
 
-When retrieved_quotes contains an entry labeled [Q# CATALOG], this is AUTHORITATIVE FACTUAL DATA about the library's holdings — treat it as ground truth, NOT as a passage to quote verbatim.
+When retrieved_quotes contains [Q# CATALOG] or [Q# CATALOG COUNT], this is AUTHORITATIVE FACTUAL DATA — treat it as ground truth, not as a passage to quote.
+
+Two types:
+- [Q# CATALOG] — full library overview (totals by tradition, collections, languages)
+- [Q# CATALOG COUNT] — filtered count with exact number matching specific criteria (author, site, language, etc.)
 
 TWO-PART catalog response (REQUIRED):
-1. CATALOG DATA — state the counts and collection names DIRECTLY from the [CATALOG] entry. Don't say "I don't have the exact number" when the catalog provides it. Say "The library holds X documents" or "Buddhist texts: 858 documents."
-2. COMPANION CITATIONS — the other retrieved_quotes (tagged via: "catalog_companion") are REAL passages from the library. Pick 1-2 and cite them with inline hyperlinks in the normal "[fragment](url)" format. This shows the reader actual content, not just statistics.
+1. CATALOG DATA — state the count or data DIRECTLY. Never say "I don't have the exact number" when the catalog provides it.
+2. COMPANION CITATIONS — if other retrieved_quotes exist (catalog_companion), pick 1-2 and cite with inline "[fragment](url)" links. For CATALOG COUNT with no companion passages, just give the count and a brief note about what those documents contain.
 
-Format: one or two factual sentences from catalog data, then weave in one inline citation to demonstrate actual content.
+Format: one or two factual sentences from catalog data, then optionally weave in one inline citation.
 
-EXAMPLE — User asks: "How many Buddhist texts do you have?"
-GOOD: "The library has 858 Buddhist documents, including the Pali Canon and several collections of Theravāda texts. As the Dhammapada puts it, ["all that we are is the result of what we have thought"](url) — a principle that runs through every tradition here."
-BAD: "The library has a number of Buddhist texts" [no count, no citation]
-BAD: "I don't have the exact number of Buddhist documents in the library."
+EXAMPLE — "How many Buddhist texts do you have?"
+GOOD: "The library has 858 Buddhist documents, including the Pali Canon and Theravāda collections. As the Dhammapada puts it, ["all that we are is the result of what we have thought"](url)."
 
-EXAMPLE — User asks: "What Bahá'í collections do you have?"
-GOOD: "The Bahá'í section has 5,659 documents across the Ocean Library, Bahá'í Education, and Ocean of Lights collections. The core texts include Bahá'u'lláh's own words: the Hidden Words instructs us to ["meditate on the end of all being"](url) — one of hundreds of such passages available."
-BAD: "The retrieved texts don't specifically list Bahá'í collections."
+EXAMPLE — "How many documents from bahai-library.com?"
+GOOD: "The library includes 35,931 documents from bahai-library.com — essays, study guides, translations, and academic papers on Bahá'í history and scholarship."
+
+EXAMPLE — "How many books by Udo Schaefer?"
+GOOD: "The library holds 12 works by Udo Schaefer, covering Bahá'í jurisprudence, theology, and comparative religion."
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`;
 
@@ -1137,9 +1196,12 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
       ? `[*${q.source_title || 'source'}*](${q.citation_url}) — ${q.source_author || 'unknown'}`
       : `${q.source_title || 'source'} — ${q.source_author || 'unknown'}`;
     const tierTag = q.authority_tier ? ` ${TIER_LABEL[q.authority_tier] || ''}` : '';
-    // Catalog entries from library_overview are structured data, not quotable text
-    if (q.is_catalog || q.via === 'library_overview') {
-      return `[Q${i + 1} CATALOG — authoritative library data, present facts directly, no quoting needed]\n${q.text}\n  Source: ${q.source_title || 'Library Catalog'}`;
+    // Catalog entries (library_overview or library_count) are structured data, not quotable text
+    if (q.is_catalog || q.via === 'library_overview' || q.via === 'library_count') {
+      const label = q.via === 'library_count'
+        ? `[Q${i + 1} CATALOG COUNT — exact filtered count, state the number directly]`
+        : `[Q${i + 1} CATALOG — authoritative library data, present facts directly, no quoting needed]`;
+      return `${label}\n${q.text}\n  Source: ${q.source_title || 'Library Catalog'}`;
     }
     // For non-English passages, present BOTH original and JAFAR-grounded
     // translation so the crafter can quote whichever fits the user's request
