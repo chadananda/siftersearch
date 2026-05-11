@@ -487,23 +487,42 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     })());
   }
 
-  // Branch 2: passages search on the extracted topics (or raw message
-  // if no topics). Always runs — even alongside a work_name lookup —
-  // because a topic match elsewhere in the corpus often complements
-  // the named-work passage. No religion filter: the crafter selects
-  // from whatever traditions the corpus returns.
+  // Branch 2: passages search.
+  // When a specific work is named, one unrestricted search is enough —
+  // the subagent already fetched the primary work above.
+  // When NO work is named, run parallel per-tradition searches so that
+  // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
+  // traditions from retrieved_quotes. Each tradition gets its own slot.
   const passageQuery = entities.topics?.length
     ? entities.topics.join(' ')
     : userMessage;
   if (passageQuery && passageQuery.trim()) {
-    tasks.push((async () => {
-      const search = await runTool('search', {
-        query: passageQuery,
-        mode: 'passages',
-        limit: 8
-      });
-      harvestPassages(search);
-    })());
+    if (!effectiveWorkName) {
+      // General question — search across traditions in parallel so the crafter
+      // sees balanced representation. Limit 3 per tradition, 5 traditions = 15 max.
+      const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
+      for (const religion of INTERFAITH_TRADITIONS) {
+        tasks.push((async () => {
+          const search = await runTool('search', {
+            query: passageQuery,
+            mode: 'passages',
+            religion,
+            limit: 3
+          });
+          harvestPassages(search, `traditions-${religion.toLowerCase()}`);
+        })());
+      }
+    } else {
+      // Work named — one unrestricted search to complement the subagent
+      tasks.push((async () => {
+        const search = await runTool('search', {
+          query: passageQuery,
+          mode: 'passages',
+          limit: 8
+        });
+        harvestPassages(search);
+      })());
+    }
   }
 
   await Promise.all(tasks);

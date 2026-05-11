@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T01:20:53.631Z",
+  "generated": "2026-05-11T01:32:29.771Z",
   "entries": [
+    {
+      "hash": "b5d349a",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Remove religion routing from research — search all traditions, context-aware classifier",
+      "scope": null
+    },
     {
       "hash": "b8edec8",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
       "scope": null
-    },
-    {
-      "hash": "348ed87",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "b5d349a",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Remove religion routing from research — search all traditions, context-aware classifier",
+        "scope": null
+      },
       {
         "hash": "b8edec8",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
-        "scope": null
-      },
-      {
-        "hash": "348ed87",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
         "scope": null
       }
     ]
