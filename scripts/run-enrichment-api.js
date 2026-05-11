@@ -57,12 +57,8 @@ async function tick() {
       } catch (enqErr) {
         logger.warn({ err: enqErr.message }, 'enrichment-api: enqueue failed (will retry next tick)');
       }
-      // Propagation runs after enqueue; batched so it never holds lock > ~1s at a time.
-      try {
-        await propagateHypeFromNormalizedHash();
-      } catch (propErr) {
-        logger.warn({ err: propErr.message }, 'enrichment-api: HyPE propagation failed (non-fatal)');
-      }
+      // Propagation is handled by the embedding-worker's 10-min propagation cycle.
+      // Skipped here to avoid blocking submitNextBatch with a long-running UPDATE.
     }
 
     if (now - lastSubmit > SUBMIT_INTERVAL_MS) {

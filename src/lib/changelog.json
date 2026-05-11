@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T05:47:12.696Z",
+  "generated": "2026-05-11T05:50:47.875Z",
   "entries": [
+    {
+      "hash": "a9ef722",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
+      "scope": null
+    },
     {
       "hash": "8d85df7",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show search results when searchMode is active",
       "scope": null
-    },
-    {
-      "hash": "c34ddda",
-      "date": "2026-01-11",
-      "type": "Refactor",
-      "description": "Use source instead of custom parser for .env-secrets",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "a9ef722",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Batch propagateHypeFromNormalizedHash to avoid minute-long write lock",
+        "scope": null
+      },
       {
         "hash": "8d85df7",
         "date": "2026-05-10",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Show search results when searchMode is active",
-        "scope": null
-      },
-      {
-        "hash": "c34ddda",
-        "date": "2026-01-11",
-        "type": "Refactor",
-        "description": "Use source instead of custom parser for .env-secrets",
         "scope": null
       }
     ]
