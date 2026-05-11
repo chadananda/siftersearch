@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:35:38.556Z",
+  "generated": "2026-05-11T00:37:27.478Z",
   "entries": [
+    {
+      "hash": "7c7b025",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Use h3/h4 heading summaries, not full Q&A text",
+      "scope": null
+    },
     {
       "hash": "5db87ce",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Only assign heading to immediately following paragraph",
       "scope": null
-    },
-    {
-      "hash": "32de4df",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "YAML frontmatter serialization with special characters",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "7c7b025",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Use h3/h4 heading summaries, not full Q&A text",
+        "scope": null
+      },
       {
         "hash": "5db87ce",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Only assign heading to immediately following paragraph",
-        "scope": null
-      },
-      {
-        "hash": "32de4df",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "YAML frontmatter serialization with special characters",
         "scope": null
       }
     ]
