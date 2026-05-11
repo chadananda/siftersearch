@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T02:43:27.137Z",
+  "generated": "2026-05-11T02:48:04.709Z",
   "entries": [
+    {
+      "hash": "e2bead7",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Primary-text collection filter + paragraph dedup for interfaith search",
+      "scope": null
+    },
     {
       "hash": "98b8cbf",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use single paper-content path for all preview languages",
       "scope": null
-    },
-    {
-      "hash": "f0b6b63",
-      "date": "2026-01-10",
-      "type": "Refactor",
-      "description": "Move paper styles to global.css for reuse",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "e2bead7",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Primary-text collection filter + paragraph dedup for interfaith search",
+        "scope": null
+      },
       {
         "hash": "98b8cbf",
         "date": "2026-05-10",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-10",
         "type": "Fixed",
         "description": "Use single paper-content path for all preview languages",
-        "scope": null
-      },
-      {
-        "hash": "f0b6b63",
-        "date": "2026-01-10",
-        "type": "Refactor",
-        "description": "Move paper styles to global.css for reuse",
         "scope": null
       }
     ]

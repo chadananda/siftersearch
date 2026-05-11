@@ -286,6 +286,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
           mode: { type: 'string', enum: ['passages', 'documents', 'count', 'read'], description: 'passages: search content for relevant quotes (default). documents: find/list books by metadata. count: just return how many match. read: fetch paragraphs from a specific document_id.', default: 'passages' },
           religion: { type: 'string', description: 'Filter by religion (e.g. "Baha\'i", "Islam", "Buddhist", "Judaism")' },
           collection: { type: 'string', description: 'Filter by collection name' },
+          language: { type: 'string', description: 'Filter by document language code (e.g. "en" for English, "ar" for Arabic)' },
           document_id: { type: 'integer', description: 'For mode "read" — the document ID to fetch content from' },
           start: { type: 'integer', description: 'For mode "read" — starting paragraph index', default: 0 },
           limit: { type: 'integer', description: 'Max results (default 10, max 100). Use higher limits when user asks for a complete list.', default: 10 }
@@ -363,7 +364,7 @@ For standalone small works, omit start_paragraph/end_paragraph and the sub-agent
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, document_id, start = 0, limit = 10, scope_config }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, language, document_id, start = 0, limit = 10, scope_config }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -394,6 +395,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     const filters = {};
     if (religion) filters.religion = religion;
     if (collection) filters.collection = collection;
+    if (language) filters.language = language;
     if (document_id) filters.documentId = document_id;
 
     let merged;
@@ -430,7 +432,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (docIds.length > 0) {
       const placeholders = docIds.map(() => '?').join(',');
       const docRows = await queryAll(
-        `SELECT id, slug, filename, religion, collection, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
+        `SELECT id, slug, filename, religion, collection, language, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
         docIds
       );
       docMeta = new Map(docRows.map(r => [r.id, r]));
@@ -472,6 +474,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           author: hit.author || '',
           religion: hit.religion || '',
           collection: hit.collection || '',
+          language: hit.language || meta?.language || null,
           document_id: docId,
           paragraph_index: hit.paragraph_index,
           ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})

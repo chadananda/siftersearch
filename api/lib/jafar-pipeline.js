@@ -336,6 +336,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         paragraph_index: p.paragraph_index,
         religion: p.religion || null,
         collection: p.collection || null,
+        source_lang: p.language || null,
         via
       });
     }
@@ -463,30 +464,32 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // collection filter to prefer primary texts. Without collection filter,
       // Bahá'í-authored commentary filed under Islam/Christian gets ranked ahead
       // of the Qur'an, Bible, Pali Canon, etc. Each tradition's primary texts:
-      //   Islam → "Foundational Texts" (Qur'an translations, major Tafsir)
+      //   Islam → "Foundational Texts" (Qur'an + classical Tafsir by Islamic scholars)
       //   Christian → "Bible and Translations"
       //   Buddhist → "Pali Canon"
       //   Judaism → "Torah and Tanakh" (broadest primary-text collection)
       //   Baha'i → no filter (all Bahá'í content is authentic)
-      // We run two searches per tradition: primary texts first (higher priority
-      // in round-robin), then a broader search to supplement when primary is thin.
-      const PRIMARY_COLLECTIONS = {
-        "Islam": "Foundational Texts",
-        "Christian": "Bible and Translations",
-        "Buddhist": "Pali Canon",
-        "Judaism": "Torah and Tanakh",
+      // Non-English passages (Arabic, Farsi, Hebrew) are translated inline
+      // after retrieval so the crafter can quote them in English while
+      // preserving the original in the citation.
+      // Two searches per tradition: primary (collection-filtered) then broad.
+      const PRIMARY_SEARCHES = {
+        "Islam":    { collection: "Foundational Texts" },
+        "Christian":{ collection: "Bible and Translations" },
+        "Buddhist": { collection: "Pali Canon" },
+        "Judaism":  { collection: "Torah and Tanakh" },
       };
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
-        const primaryCollection = PRIMARY_COLLECTIONS[religion];
+        const primaryOpts = PRIMARY_SEARCHES[religion];
         tasks.push((async () => {
           // Primary: scripture/foundational collection for non-Bahá'í traditions
-          if (primaryCollection) {
+          if (primaryOpts) {
             const primary = await runTool('search', {
               query: passageQuery,
               mode: 'passages',
               religion,
-              collection: primaryCollection,
+              ...primaryOpts,
               limit: 3
             });
             harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
@@ -516,6 +519,31 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   }
 
   await Promise.all(tasks);
+
+  // Inline translation — after all parallel searches complete, translate any
+  // non-English passages (Arabic, Farsi, Hebrew) so the crafter can quote them.
+  // Batched with Promise.all; typically 0-4 passages, ~0.5s additional latency.
+  const nonEnglish = retrieved.filter(q =>
+    q.source_lang && q.source_lang !== 'en' && !q.translation && q.text?.trim()
+  );
+  if (nonEnglish.length > 0) {
+    await Promise.all(nonEnglish.map(async (q) => {
+      try {
+        const resp = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'Translate this religious scripture passage to English. Preserve theological terminology and literary register. Output only the translation, no commentary.' },
+            { role: 'user', content: q.text }
+          ],
+          max_tokens: 400,
+          temperature: 0.1
+        });
+        q.translation = resp.choices[0].message.content.trim();
+      } catch (err) {
+        logger.warn({ err: err.message, lang: q.source_lang }, 'passage translation failed');
+      }
+    }));
+  }
 
   // Fallback: if every branch came back empty, do a broader search on the
   // raw user message. Catches conversational follow-ups that don't map to
