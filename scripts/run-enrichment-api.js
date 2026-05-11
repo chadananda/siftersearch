@@ -49,7 +49,11 @@ async function tick() {
   const now = Date.now();
   try {
     if (now - lastEnqueue > ENQUEUE_INTERVAL_MS) {
-      await propagateHypeFromNormalizedHash();
+      try {
+        await propagateHypeFromNormalizedHash();
+      } catch (propErr) {
+        logger.warn({ err: propErr.message }, 'enrichment-api: HyPE propagation failed (non-fatal, continuing)');
+      }
       const queued = await enqueueParagraphsForBatch({ limit: 50000 });
       if (queued > 0) logger.info({ queued }, 'enrichment-api: enqueued new paragraphs');
       lastEnqueue = now;
