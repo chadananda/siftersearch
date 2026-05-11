@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T12:55:46.304Z",
+  "generated": "2026-05-11T12:58:18.905Z",
   "entries": [
+    {
+      "hash": "d071e5a",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Companion search uses religion filter for tradition-specific browsing queries",
+      "scope": null
+    },
     {
       "hash": "9bafe42",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Consistent styling for quick search results",
       "scope": null
-    },
-    {
-      "hash": "1f601f7",
-      "date": "2026-01-11",
-      "type": "Performance",
-      "description": "Use integer rowid for Meilisearch paragraph IDs",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "d071e5a",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Companion search uses religion filter for tradition-specific browsing queries",
+        "scope": null
+      },
       {
         "hash": "9bafe42",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Consistent styling for quick search results",
-        "scope": null
-      },
-      {
-        "hash": "1f601f7",
-        "date": "2026-01-11",
-        "type": "Performance",
-        "description": "Use integer rowid for Meilisearch paragraph IDs",
         "scope": null
       }
     ]
