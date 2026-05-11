@@ -73,8 +73,10 @@ const CATALOG_PATTERNS = [
   /\bwhat'?s? in (the|your) library\b/i,
   /\bwhat (languages?|traditions?|religions?) (are|do you)\b/i,
   /\blist (the|all|your|available)( \S+)? (collections?|traditions?|languages?|religions?)\b/i,
-  /\bshow me (the|all|your|available)( \S+)? (collections?)\b/i,
+  /\bshow me (the|all|your|available)( \S+)? (collections?|texts?|scriptures?)\b/i,
   /\bwhat (collections?)\b/i,
+  /\bwhat (?:\w+ )?scriptures?\b/i,
+  /\bdo you (have|carry|include)\b/i,
 ];
 
 // Extract a tradition name from a catalog query so we can also do a targeted search

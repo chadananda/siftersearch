@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T12:45:30.152Z",
+  "generated": "2026-05-11T12:47:44.734Z",
   "entries": [
+    {
+      "hash": "1c86fab",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Catalog pre-fetch — Bahá'í regex (Unicode word boundary) + always search alongside catalog",
+      "scope": null
+    },
     {
       "hash": "e94d783",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Rescue embeddings migration script",
       "scope": null
-    },
-    {
-      "hash": "78d9a3d",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Hide internal tech stack from UI, show meaningful indexing progress",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "1c86fab",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Catalog pre-fetch — Bahá'í regex (Unicode word boundary) + always search alongside catalog",
+        "scope": null
+      },
       {
         "hash": "e94d783",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Other",
         "description": "Rescue embeddings migration script",
-        "scope": null
-      },
-      {
-        "hash": "78d9a3d",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Hide internal tech stack from UI, show meaningful indexing progress",
         "scope": null
       }
     ]
