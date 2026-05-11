@@ -1230,6 +1230,8 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
         source_title: q.source_title,
         source_author: q.source_author,
         authority_tier: q.authority_tier,
+        source_lang: q.source_lang || null,
+        translation: q.translation ? q.translation.slice(0, 150) : null,
         text: (q.text || '').slice(0, 150),
         citation_url: q.citation_url
       }))
