@@ -764,8 +764,13 @@ export async function multiIndexSearch(query, options = {}) {
   // index (and ONLY the right index — hard rule for site-only).
   const scope_config = options.scope_config;
 
+  // For religion-filtered queries, use more keyword weight (0.3 semantic) so exact
+  // scripture text (e.g. Sura CXII for Al-Ikhlas) beats semantically adjacent surahs
+  // that score high via embedding but are thematically different. Cross-tradition
+  // queries keep 0.5 (default) for better conceptual discovery.
+  const mainSemanticRatio = (filters.religion && !filters.collection) ? 0.3 : 0.5;
   const [mainResult, hypeResult] = await Promise.all([
-    hybridSearch(query, { limit: overFetch, filters, scope_config }).catch(err => {
+    hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio }).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
       return { hits: [] };
     }),
