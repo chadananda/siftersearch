@@ -879,10 +879,11 @@ export async function multiIndexSearch(query, options = {}) {
     finalEntries = diverse.map(h => h._entry);
   } else if (filters.religion && !filters.collection && !filters.author) {
     // Religion-filtered: apply author diversity so primary-text authors (Muhammad, Matthew)
-    // surface alongside commentary authors (Fananapazir, Momen). HyPE can add multiple hits
-    // per commentary author that bypass the hybridSearch author cap.
+    // surface alongside commentary authors (Fananapazir, Momen). HyPE dedup is now in place
+    // so 33% (max 3 of 8) is safe — higher than 25% to allow 3 surahs/gospels per author
+    // rather than capping at 2, which could exclude the most relevant (e.g. actual Al-Ikhlas).
     const filteredHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
-    const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'author');
+    const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.33)), 'author');
     finalEntries = diverseFiltered.map(h => h._entry);
   } else {
     finalEntries = sortedDeduped.slice(0, limit);

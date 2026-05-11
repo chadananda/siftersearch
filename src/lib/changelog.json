@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T21:36:28.336Z",
+  "generated": "2026-05-11T21:41:02.759Z",
   "entries": [
+    {
+      "hash": "3e4a0ad",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Deduplicate hits by doc_id — prevent same book appearing multiple times",
+      "scope": null
+    },
     {
       "hash": "7f10dde",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Make suggestion shortcuts respect current search mode (quick vs AI)",
       "scope": null
-    },
-    {
-      "hash": "de24aea",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Remove sentence wrapper from search results, only bold keywords",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "3e4a0ad",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Deduplicate hits by doc_id — prevent same book appearing multiple times",
+        "scope": null
+      },
       {
         "hash": "7f10dde",
         "date": "2026-05-11",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-13",
         "type": "New",
         "description": "Make suggestion shortcuts respect current search mode (quick vs AI)",
-        "scope": null
-      },
-      {
-        "hash": "de24aea",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Remove sentence wrapper from search results, only bold keywords",
         "scope": null
       }
     ]
