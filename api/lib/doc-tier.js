@@ -44,6 +44,39 @@ const SPECIFIC_BOOKS = [
 
 const SPECIFIC_BOOK_DOC_IDS = new Map(SPECIFIC_BOOKS.map(b => [b.doc_id, b.tier]));
 
+// Primary doctrinal texts from other traditions — routed to Anthropic batch API
+// (same as Bahá'í tier 1-7) with CONTEXT_WINDOW=0 (model already knows these texts).
+//
+// Local (non-OL) docs: matched by {religion, collection} extracted from folder path.
+// OL docs: matched by file_path substring (stored as path relative to library root).
+const PRIMARY_DOCTRINAL_LOCAL = [
+  { religion: 'Buddhist',  collection: 'Pali Canon' },
+  { religion: 'Sikh',      collection: 'Guru Granth Sahib' },
+  { religion: 'Hindu',     collection: 'Vedas and Upanishads' },
+  // Arabic Qur'an lives under Islam/Foundational Texts/ — title disambiguates
+  { religion: 'Islam',     collection: 'Foundational Texts', titlePattern: /qur.?an/i },
+];
+
+const PRIMARY_DOCTRINAL_OL_PATHS = [
+  '/The Bible (KJV)/',
+  '/The Quran (Rodwell)/',
+  '/The Tanakh (JPS 1917)/',
+];
+
+export function isPrimaryDoctrinal(doc) {
+  const fp = String(doc.file_path || '');
+  for (const sub of PRIMARY_DOCTRINAL_OL_PATHS) {
+    if (fp.includes(sub)) return true;
+  }
+  for (const sig of PRIMARY_DOCTRINAL_LOCAL) {
+    if (doc.religion !== sig.religion) continue;
+    if (doc.collection !== sig.collection) continue;
+    if (sig.titlePattern && !sig.titlePattern.test(doc.title || '')) continue;
+    return true;
+  }
+  return false;
+}
+
 // Other-religion doctrinal tags — covers the religion field's known values
 const OTHER_RELIGION_DOCTRINAL = new Set([
   'Islam', 'Christian', 'Christianity',
@@ -159,6 +192,16 @@ export function getDocTier(doc) {
  */
 export function getEnrichmentModel(tier) {
   return (tier >= 1 && tier <= 7) ? 'sonnet' : 'local';
+}
+
+/**
+ * Context window for HyPE generation.
+ * Primary doctrinal canonical scripture uses 0 — model already knows these texts.
+ * Bahá'í tier 1-7 uses 2 — pronoun resolution benefits from surrounding paragraphs.
+ */
+export function getContextWindow(doc, tier) {
+  if (tier >= 1 && tier <= 7) return 2;
+  return 0;
 }
 
 /**

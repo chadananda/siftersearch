@@ -18,10 +18,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from './logger.js';
 import { query, queryAll, queryOne, transaction } from './db.js';
-import { getDocTier } from './doc-tier.js';
+import { getDocTier, isPrimaryDoctrinal, getContextWindow } from './doc-tier.js';
 
 const SONNET_MODEL = 'claude-sonnet-4-6';
-const CONTEXT_WINDOW = 2; // target ± 2 paragraphs of context
 // Smaller batches keep per-submission memory pressure manageable on the
 // worker (each request carries ~50KB serialized — 2500 × 50KB ≈ 125MB
 // during create() call). Anthropic processes batches in parallel, so
@@ -46,11 +45,34 @@ function getClient() {
 
 // ─── Prompt construction ─────────────────────────────────────────────────────
 
+function collectionDisplay(doc) {
+  // OL docs have a hex hash in collection — not useful to show. Fall back to religion.
+  if (/^[0-9a-f]{20,}$/i.test(doc.collection || '')) return doc.religion || 'unknown';
+  return doc.collection || doc.religion || 'unknown';
+}
+
 function buildSystemPrompt(doc, windowParas, targetPos) {
+  const tradition = `${doc.religion || 'unknown'} / ${collectionDisplay(doc)}`;
+  const singlePara = windowParas.length === 1;
+
+  if (singlePara) {
+    return `You are generating hypothetical questions and a doctrinal thesis for a passage from sacred or scholarly literature.
+
+Document: "${doc.title}" by ${doc.author}
+Tradition: ${tradition}
+${doc.description ? 'About: ' + doc.description.slice(0, 300) : ''}
+
+Analyze the following passage:
+
+<passage>
+${windowParas[0].text}
+</passage>`;
+  }
+
   return `You are generating hypothetical questions and a doctrinal thesis for a passage from sacred or scholarly literature.
 
 Document: "${doc.title}" by ${doc.author}
-Tradition: ${doc.religion || 'unknown'} / ${doc.collection || 'unknown'}
+Tradition: ${tradition}
 ${doc.description ? 'About: ' + doc.description.slice(0, 300) : ''}
 
 You will see ${windowParas.length} paragraphs. The TARGET is [P${targetPos}]. Surrounding paragraphs are CONTEXT (for resolving pronouns and references in the TARGET) — do NOT generate questions about them.
@@ -60,8 +82,9 @@ ${windowParas.map((p, i) => `[P${i + 1}]${i + 1 === targetPos ? ' (TARGET)' : ''
 </context>`;
 }
 
-function buildUserPrompt(targetPos) {
-  return `For [P${targetPos}] (the TARGET paragraph), produce TWO things:
+function buildUserPrompt(targetPos, singlePara = false) {
+  const target = singlePara ? 'this passage' : `[P${targetPos}] (the TARGET paragraph)`;
+  return `For ${target}, produce TWO things:
 
 PART 1 — A single-sentence DOCTRINAL THESIS stating what this paragraph actually teaches as a proposition (not a question). Specific to this paragraph's actual claim — not a generic restatement. 25-50 words.
 
@@ -72,7 +95,7 @@ PART 2 — Exactly 5 hypothetical questions covering these 5 registers (one each
   4. Cross-tradition / connection — broader debates, traditions, or fields this passage speaks to
   5. Distinctive phrase — a striking phrase from the passage someone might search literally
 
-Use ONLY content from the TARGET paragraph. Surrounding paragraphs are for pronoun resolution only.
+Use ONLY content from the passage. Surrounding paragraphs (if any) are for pronoun resolution only.
 
 Output format (exactly):
 THESIS: <thesis sentence>
@@ -149,34 +172,37 @@ export async function propagateHypeFromNormalizedHash() {
  * Returns count of newly queued paragraphs.
  */
 export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
-  // Grab ALL docs (we'll classify in-process — tier classification is too
-  // complex to push down into SQL with all the transliteration variants).
-  //
-  // HyPE gate: skip docs from external sites — supplementals get hype_policy
-  // from sites.yaml and v1 forces 'never' for all of them. Site-only sites
-  // live in their own SQLite and are structurally invisible to this query
-  // anyway, but the source_site IS NULL filter is the canonical guard.
-  // Per-site hype_policy resolution is deferred to v2 (oceanoflights.org is
-  // the obvious first opt-in candidate given its central-figure metadata).
-  const docs = await queryAll('SELECT id, author, religion, collection, title, description FROM docs WHERE deleted_at IS NULL AND source_site IS NULL');
-  const tier1to7DocIds = [];
+  // Grab all docs for classification. Include OceanLibrary.com docs since primary
+  // doctrinal texts (KJV, Rodwell, Tanakh JPS) live there. All other external sites
+  // remain excluded — supplementals don't get HyPE and site-only sites use their
+  // own SQLite which is structurally invisible here.
+  const docs = await queryAll(
+    `SELECT id, author, religion, collection, title, description, file_path FROM docs
+      WHERE deleted_at IS NULL
+        AND (source_site IS NULL OR source_site = 'oceanlibrary.com')`
+  );
+  const sonnetDocIds = [];
   const tierByDocId = new Map();
   for (const doc of docs) {
     const tier = getDocTier(doc);
     if (tier >= 1 && tier <= 7) {
-      tier1to7DocIds.push(doc.id);
+      sonnetDocIds.push(doc.id);
       tierByDocId.set(doc.id, tier);
+    } else if (isPrimaryDoctrinal(doc)) {
+      sonnetDocIds.push(doc.id);
+      // Store as tier 8 so they queue after Bahá'í primary but before nothing
+      tierByDocId.set(doc.id, 8);
     }
   }
-  if (tier1to7DocIds.length === 0) return 0;
+  if (sonnetDocIds.length === 0) return 0;
 
   // Find paragraphs in those docs that don't yet have a thesis.
   // Process in chunks of 500 doc_ids per query to avoid SQLite's
   // expression-tree depth limit on huge IN (...) clauses.
   const CHUNK_SIZE = 500;
   let totalQueued = 0;
-  for (let i = 0; i < tier1to7DocIds.length && totalQueued < limit; i += CHUNK_SIZE) {
-    const chunk = tier1to7DocIds.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < sonnetDocIds.length && totalQueued < limit; i += CHUNK_SIZE) {
+    const chunk = sonnetDocIds.slice(i, i + CHUNK_SIZE);
     const placeholders = chunk.map(() => '?').join(',');
     const remaining = limit - totalQueued;
     const rows = await queryAll(
@@ -200,7 +226,7 @@ export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
     totalQueued += rows.length;
   }
 
-  logger.info({ total: totalQueued, tier_docs: tier1to7DocIds.length }, 'enqueueParagraphsForBatch complete');
+  logger.info({ total: totalQueued, tier_docs: sonnetDocIds.length }, 'enqueueParagraphsForBatch complete');
   return totalQueued;
 }
 
@@ -214,13 +240,15 @@ async function buildBatchRequest(contentId) {
   );
   if (!target) return null;
   const doc = await queryOne(
-    'SELECT id, author, religion, collection, title, description FROM docs WHERE id = ? AND deleted_at IS NULL',
+    'SELECT id, author, religion, collection, title, description, file_path FROM docs WHERE id = ? AND deleted_at IS NULL',
     [target.doc_id]
   );
   if (!doc) return null;
 
-  const lo = Math.max(0, target.paragraph_index - CONTEXT_WINDOW);
-  const hi = target.paragraph_index + CONTEXT_WINDOW;
+  const tier = getDocTier(doc);
+  const cw = getContextWindow(doc, tier);
+  const lo = Math.max(0, target.paragraph_index - cw);
+  const hi = target.paragraph_index + cw;
   const windowParas = await queryAll(
     `SELECT paragraph_index, text FROM content
       WHERE doc_id = ? AND paragraph_index >= ? AND paragraph_index <= ?
@@ -229,6 +257,7 @@ async function buildBatchRequest(contentId) {
   );
   if (windowParas.length === 0) return null;
   const targetPos = windowParas.findIndex(p => p.paragraph_index === target.paragraph_index) + 1;
+  const singlePara = windowParas.length === 1;
 
   return {
     custom_id: `c${contentId}`,
@@ -237,7 +266,7 @@ async function buildBatchRequest(contentId) {
       max_tokens: 350,
       temperature: 0.3,
       system: buildSystemPrompt(doc, windowParas, targetPos),
-      messages: [{ role: 'user', content: buildUserPrompt(targetPos) }]
+      messages: [{ role: 'user', content: buildUserPrompt(targetPos, singlePara) }]
     }
   };
 }

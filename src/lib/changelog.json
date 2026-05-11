@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T04:19:47.144Z",
+  "generated": "2026-05-11T04:36:12.462Z",
   "entries": [
+    {
+      "hash": "5349505",
+      "date": "2026-05-10",
+      "type": "New",
+      "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
+      "scope": null
+    },
     {
       "hash": "6bedeba",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add quick search mode toggle with lightning button",
       "scope": null
-    },
-    {
-      "hash": "0e7481b",
-      "date": "2026-01-10",
-      "type": "New",
-      "description": "Structured preview with paragraph numbers and stripped markdown",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "5349505",
+        "date": "2026-05-10",
+        "type": "New",
+        "description": "HyPE propagation via normalized_hash — wired into ingestion pipeline",
+        "scope": null
+      },
       {
         "hash": "6bedeba",
         "date": "2026-05-10",
@@ -7067,15 +7074,6 @@
         "date": "2026-01-11",
         "type": "New",
         "description": "Add quick search mode toggle with lightning button",
-        "scope": null
-      }
-    ],
-    "2026-01-10": [
-      {
-        "hash": "0e7481b",
-        "date": "2026-01-10",
-        "type": "New",
-        "description": "Structured preview with paragraph numbers and stripped markdown",
         "scope": null
       }
     ]
