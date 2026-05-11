@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T15:26:25.453Z",
+  "generated": "2026-05-11T15:27:36.790Z",
   "entries": [
+    {
+      "hash": "9943755",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "PRIMARY_DOCTRINAL_PATHS — add Bhagavad Gita, Tao Te Ching, Pickthall Quran for Sonnet HyPE",
+      "scope": null
+    },
     {
       "hash": "efef973",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use doc_id (INTEGER) instead of document_id for Meilisearch filters",
       "scope": null
-    },
-    {
-      "hash": "21c0c63",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Extend mark tags to cover complete words in search highlighting",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "9943755",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "PRIMARY_DOCTRINAL_PATHS — add Bhagavad Gita, Tao Te Ching, Pickthall Quran for Sonnet HyPE",
+        "scope": null
+      },
       {
         "hash": "efef973",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Use doc_id (INTEGER) instead of document_id for Meilisearch filters",
-        "scope": null
-      },
-      {
-        "hash": "21c0c63",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Extend mark tags to cover complete words in search highlighting",
         "scope": null
       }
     ]

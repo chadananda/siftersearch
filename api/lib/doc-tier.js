@@ -56,7 +56,7 @@ const PRIMARY_DOCTRINAL_PATHS = [
   // OL Islam — Rodwell canonical English translation (also matches Sura I sub-doc)
   '/The Quran (Rodwell)/',
   // OL Islam — Pickthall translation
-  '/The Meaning of the Glorious Qur'án (Pickthall)',
+  '/The Meaning of the Glorious',
   // OL Judaism — JPS 1917 (covers all 39 Tanakh books)
   '/The Tanakh (JPS 1917)/',
   // Local library — Pali Canon individual suttas
