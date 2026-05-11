@@ -20,8 +20,7 @@ import { cleanForEmbedding } from '../lib/text-normalize.js';
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
 const BATCH_SIZE = 500;               // Max texts to fetch from DB per cycle
-const MAX_TOKENS_PER_REQUEST = 60000;  // Conservative: actual Arabic/Hebrew 4+ chars/token vs naive 2
-const CHARS_PER_TOKEN = 4;            // Arabic/Hebrew worst case: 1 char ≈ 1–4 tokens; use 4 for safety
+const MAX_CHARS_PER_REQUEST = 50000;   // Hard char cap; Arabic/Hebrew ≈ 2+ tokens/char → ~100K tokens max
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
 const DB_WRITE_DELAY_MS = 0;          // No delay — standalone process, no event loop contention
@@ -114,12 +113,11 @@ async function runEmbeddingCycle() {
       return;
     }
 
-    // Skip individual paragraphs that are too large for a single API call
-    const MAX_SINGLE_TOKENS = 8000; // OpenAI max per text is 8191 tokens
+    // MAX_CHARS already filters oversized paragraphs at the DB level; this is a safety net.
     const validRows = rows.filter(row => {
-      const estTokens = Math.ceil((row.text || '').length / CHARS_PER_TOKEN);
-      if (estTokens > MAX_SINGLE_TOKENS) {
-        logger.warn({ id: row.id, chars: (row.text || '').length, estTokens }, 'Skipping oversized paragraph');
+      const chars = (row.text || '').length;
+      if (chars > MAX_CHARS) {
+        logger.warn({ id: row.id, chars }, 'Skipping oversized paragraph');
         return false;
       }
       return true;
@@ -127,19 +125,20 @@ async function runEmbeddingCycle() {
 
     if (validRows.length === 0) { isRunning = false; return; }
 
-    // Split into token-safe sub-batches to stay under OpenAI's per-request limit
+    // Split into char-bounded sub-batches. Arabic/Hebrew can be 2+ tokens/char
+    // so we cap on total character count, not estimated tokens.
     const subBatches = [];
     let currentBatch = [];
-    let currentTokens = 0;
+    let currentChars = 0;
     for (const row of validRows) {
-      const estTokens = Math.ceil((row.text || '').length / CHARS_PER_TOKEN);
-      if (currentBatch.length > 0 && currentTokens + estTokens > MAX_TOKENS_PER_REQUEST) {
+      const chars = (row.text || '').length;
+      if (currentBatch.length > 0 && currentChars + chars > MAX_CHARS_PER_REQUEST) {
         subBatches.push(currentBatch);
         currentBatch = [];
-        currentTokens = 0;
+        currentChars = 0;
       }
       currentBatch.push(row);
-      currentTokens += estTokens;
+      currentChars += chars;
     }
     if (currentBatch.length > 0) subBatches.push(currentBatch);
 
