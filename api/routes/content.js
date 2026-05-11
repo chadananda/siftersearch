@@ -212,7 +212,7 @@ export default async function contentRoutes(fastify) {
   const DIALOG_FULL_COLS = `
     slug, title, description, question, topic, tags_json, keywords_json,
     excerpt, hero_image, hero_prompt, score, featured, rounds_count,
-    round_titles_json, assessment_json, body_html, body_md, published_at, updated_at`;
+    round_titles_json, assessment_json, body_md, published_at, updated_at`;
 
   // ─── Public: list published dialogs ─────────────────────────────────────
   fastify.get('/dialogs', async (req, reply) => {
@@ -226,7 +226,7 @@ export default async function contentRoutes(fastify) {
     sql += ' ORDER BY published_at DESC, score DESC LIMIT ?';
     params.push(Math.min(parseInt(lim) || 100, 500));
     const rows = await queryAll(sql, params);
-    reply.header('Cache-Control', PUBLIC_CACHE);
+    reply.header('Cache-Control', ADMIN_NOCACHE);
     return { dialogs: rows };
   });
 
@@ -240,7 +240,9 @@ export default async function contentRoutes(fastify) {
       [DIALOG_TENANT, slug]
     );
     if (!dialog) return reply.code(404).send({ error: 'not_found' });
-    reply.header('Cache-Control', PUBLIC_CACHE);
+    // Render body_html at request time — not stored in DB
+    dialog.body_html = renderMarkdown(dialog.body_md);
+    reply.header('Cache-Control', ADMIN_NOCACHE);
     return { dialog };
   });
 
@@ -253,7 +255,6 @@ export default async function contentRoutes(fastify) {
     const b = req.body || {};
     if (!b.title || !b.body_md) return reply.code(400).send({ error: 'missing_field', fields: ['title', 'body_md'] });
 
-    const html = renderMarkdown(b.body_md);
     const existing = await queryOne(
       'SELECT id FROM published_conversations WHERE tenant_id = ? AND slug = ?',
       [DIALOG_TENANT, slug]
@@ -276,7 +277,6 @@ export default async function contentRoutes(fastify) {
       b.assessment_json || null,
       b.rounds_json || '[]',
       b.body_md,
-      html,
       b.status || 'published',
     ];
 
@@ -285,7 +285,7 @@ export default async function contentRoutes(fastify) {
         `UPDATE published_conversations SET
           title=?, description=?, question=?, topic=?, tags_json=?, keywords_json=?,
           excerpt=?, hero_image=?, hero_prompt=?, score=?, featured=?, rounds_count=?,
-          round_titles_json=?, assessment_json=?, rounds_json=?, body_md=?, body_html=?, status=?,
+          round_titles_json=?, assessment_json=?, rounds_json=?, body_md=?, status=?,
           updated_at=CURRENT_TIMESTAMP
          WHERE tenant_id=? AND slug=?`,
         [...vals, DIALOG_TENANT, slug]
@@ -296,8 +296,8 @@ export default async function contentRoutes(fastify) {
         `INSERT INTO published_conversations
           (tenant_id, slug, title, description, question, topic, tags_json, keywords_json,
            excerpt, hero_image, hero_prompt, score, featured, rounds_count,
-           round_titles_json, assessment_json, rounds_json, body_md, body_html, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           round_titles_json, assessment_json, rounds_json, body_md, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [DIALOG_TENANT, slug, ...vals]
       );
       logger.info({ slug, action: 'create' }, 'dialog: created');
