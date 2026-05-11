@@ -92,36 +92,30 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
   const retrieved = [];
   const debugCalls = [];
 
-  // Pre-fetch library_overview for catalog questions — the LLM ignores routing
-  // instructions and always reaches for `search`, which returns passages not catalog data.
+  // For catalog/coverage questions, skip the LLM search loop entirely.
+  // The LLM always reaches for `search` (which returns text passages), drowning
+  // out the catalog data. Instead: call library_overview directly, inject the
+  // structured catalog into retrieved_quotes, and return — the craft stage
+  // composes the response from catalog data alone.
   if (isCatalogQuery(messages)) {
     if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
     if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
     try {
       const overview = await executeTool('library_overview', {}, { scope_config });
-      // Inject as a synthetic tool exchange so the research LLM sees the catalog data
-      const fakeCallId = 'forced_overview_0';
-      aiMessages.push({
-        role: 'assistant',
-        content: null,
-        tool_calls: [{ id: fakeCallId, type: 'function', function: { name: 'library_overview', arguments: '{}' } }]
-      });
-      aiMessages.push({ role: 'tool', tool_call_id: fakeCallId, content: JSON.stringify(overview) });
-
-      // Also add a plain-text summary to retrieved so the CRAFT stage can use it.
-      // The crafter only sees retrieved_quotes, not aiMessages.
       const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
       const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
       retrieved.push({
-        text: `Library catalog snapshot:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy religion:\n${religionLines}\n\nCollections:\n${collectionLines}`,
+        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}`,
         source_title: 'Library Catalog',
         source_author: 'Ocean Library',
         citation_url: null,
         via: 'library_overview',
         is_catalog: true
       });
+      logger.info({ retrieved: retrieved.length }, 'catalog pre-fetch complete, skipping LLM search loop');
+      return { retrieved_quotes: retrieved, tool_calls: debugCalls };
     } catch (e) {
-      logger.warn({ err: e.message }, 'pre-fetch library_overview failed');
+      logger.warn({ err: e.message }, 'pre-fetch library_overview failed, falling through to normal search');
     }
   }
 
