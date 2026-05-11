@@ -222,6 +222,8 @@ export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
           AND hyp_thesis IS NULL
           AND deleted_at IS NULL
           AND COALESCE(is_duplicate, 0) = 0
+          AND length(text) >= 100
+          AND text NOT LIKE '<%'
         ORDER BY doc_id, paragraph_index
         LIMIT ?`,
       [...chunk, remaining]

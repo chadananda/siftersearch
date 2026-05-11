@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T05:50:47.875Z",
+  "generated": "2026-05-11T11:34:01.064Z",
   "entries": [
+    {
+      "hash": "fa30a70",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
+      "scope": null
+    },
     {
       "hash": "a9ef722",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Default dark mode and hide misleading indexing progress",
       "scope": null
-    },
-    {
-      "hash": "a0ed63f",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Show search results when searchMode is active",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "fa30a70",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Skip propagation in enrichment-api hot path to unblock submitNextBatch",
+        "scope": null
+      },
       {
         "hash": "a9ef722",
         "date": "2026-05-10",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Default dark mode and hide misleading indexing progress",
-        "scope": null
-      },
-      {
-        "hash": "a0ed63f",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Show search results when searchMode is active",
         "scope": null
       }
     ]
