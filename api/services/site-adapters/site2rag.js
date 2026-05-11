@@ -58,7 +58,7 @@ export async function parseDoc(relativePath, content, { siteConfig } = {}) {
   const docFields = {
     title: String(frontmatter.title ?? '').trim(),
     author,
-    religion: null,
+    religion: frontmatter.religion || siteConfig?.default_religion || null,
     collection: null,
     description: '',
     language: frontmatter.language || 'en',

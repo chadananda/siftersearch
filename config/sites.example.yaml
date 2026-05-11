@@ -69,6 +69,7 @@ sites:
     adapter: site2rag
     site_root: /tank/site2rag/websites_md/bahai-library.com
     scope: supplemental
+    default_religion: "Baha'i"
     authority_default: 3
     encumbered: false
     hype_policy: never
@@ -86,6 +87,7 @@ sites:
     adapter: site2rag
     site_root: /tank/site2rag/websites_md/oceanoflights.org
     scope: supplemental
+    default_religion: "Baha'i"
     authority_default: 5
     encumbered: false
     hype_policy: never
@@ -100,6 +102,7 @@ sites:
     adapter: site2rag
     site_root: /tank/site2rag/websites_md/bahaiteachings.org
     scope: site-only
+    default_religion: "Baha'i"
     authority_default: 0
     encumbered: false
     hype_policy: never

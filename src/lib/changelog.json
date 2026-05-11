@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T19:06:06.523Z",
+  "generated": "2026-05-11T19:18:47.822Z",
   "entries": [
+    {
+      "hash": "f2412cc",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Authority for primary scriptures + stronger authority influence",
+      "scope": null
+    },
     {
       "hash": "7d2b703",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Require all search words to match (AND not OR)",
       "scope": null
-    },
-    {
-      "hash": "987b927",
-      "date": "2026-01-12",
-      "type": "Fixed",
-      "description": "Show library stats when quick search input is empty",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "f2412cc",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Authority for primary scriptures + stronger authority influence",
+        "scope": null
+      },
       {
         "hash": "7d2b703",
         "date": "2026-05-11",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-12",
         "type": "Fixed",
         "description": "Require all search words to match (AND not OR)",
-        "scope": null
-      },
-      {
-        "hash": "987b927",
-        "date": "2026-01-12",
-        "type": "Fixed",
-        "description": "Show library stats when quick search input is empty",
         "scope": null
       }
     ]

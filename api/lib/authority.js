@@ -25,8 +25,11 @@ const CACHE_TTL_MS = 60000; // Reload every 60 seconds
 
 // Author-based authority overrides (Central Figures, institutions, primary scripture authors).
 // Matched by exact equality — avoids false positives like "Muhammad Husayn Tabatabai"
-// matching the prophet "Muhammad".
+// matching the prophet "Muhammad" or "John Calvin" matching the apostle "John".
+// OceanLibrary stores individual book authors as the canonical name (e.g. "Matthew",
+// "John", "Siddhartha Buddha") — exact match is safe and necessary here.
 const AUTHOR_AUTHORITY = {
+  // Bahá'í Central Figures
   "Bahá'u'lláh": 10,
   "Baha'u'llah": 10,
   "The Báb": 10,
@@ -36,8 +39,18 @@ const AUTHOR_AUTHORITY = {
   "Abdul-Baha": 9,
   "Shoghi Effendi": 9,
   "Universal House of Justice": 8,
-  // OceanLibrary Quran surahs: author field = "Muhammad" (exact)
+  // Islamic scripture — OceanLibrary Quran surahs have author="Muhammad" (exact)
   "Muhammad": 10,
+  // Christian scripture — OceanLibrary individual Gospel/Epistle books
+  "Matthew": 10,
+  "Mark": 10,
+  "Luke": 10,
+  "John": 10,
+  "Paul": 10,
+  // Buddhist primary texts — OceanLibrary attribution
+  "Siddhartha Buddha": 10,
+  "Gautama Buddha": 10,
+  "The Buddha": 10,
 };
 
 const DEFAULT_AUTHORITY = 5;

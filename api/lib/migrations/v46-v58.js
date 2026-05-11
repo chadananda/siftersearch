@@ -539,4 +539,47 @@ export const migrations = {
     try { await query('CREATE INDEX IF NOT EXISTS idx_pubconv_tenant_topic ON published_conversations(tenant_id, topic)'); } catch { /* exists */ }
     logger.info('Migration 62 complete: dialog fields added to published_conversations');
   },
+
+  63: async () => {
+    // Backfill docs.religion for supplemental site docs where religion is NULL.
+    //
+    // The site2rag adapter historically set religion=NULL for all crawler-derived
+    // docs. These sites are single-religion (Bahá'í), so NULL causes two problems:
+    //   1. Authority lookups fall through to global default (5) instead of using
+    //      religion-based authority from library meta.yaml.
+    //   2. They add invisible volume to cross-tradition result pollution.
+    //
+    // Known mappings:
+    //   bahai-library.com   → Baha'i
+    //   oceanoflights.org   → Baha'i
+    //   bahaiteachings.org  → Baha'i (site-only, separate DB, but safe to set)
+    //
+    // Ocean Library (oceanlibrary.com) already sets religion from ocean_category
+    // frontmatter via religion_map — only docs WITHOUT a mapped category land as
+    // NULL there. Those are set to 'General' by the adapter already; this
+    // migration leaves OL docs alone.
+    //
+    // The site2rag adapter now reads siteConfig.default_religion at parse time;
+    // this migration backfills the existing data.
+    logger.info('Starting migration 63: backfill religion for supplemental site docs');
+    const siteReligions = [
+      ['bahai-library.com', "Baha'i"],
+      ['oceanoflights.org', "Baha'i"],
+      ['bahaiteachings.org', "Baha'i"],
+    ];
+    for (const [site, religion] of siteReligions) {
+      const { count } = await queryOne(
+        'SELECT COUNT(*) as count FROM docs WHERE source_site = ? AND religion IS NULL',
+        [site]
+      );
+      if (count > 0) {
+        await query(
+          'UPDATE docs SET religion = ? WHERE source_site = ? AND religion IS NULL',
+          [religion, site]
+        );
+        logger.info({ site, religion, count }, 'Migration 63: backfilled religion');
+      }
+    }
+    logger.info('Migration 63 complete: supplemental site religion backfill done');
+  },
 };
