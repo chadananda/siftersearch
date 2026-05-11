@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T02:14:05.411Z",
+  "generated": "2026-05-11T02:19:29.626Z",
   "entries": [
+    {
+      "hash": "af39eb0",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Per-tradition trimming + URL hallucination guard",
+      "scope": null
+    },
     {
       "hash": "ff2e68e",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Proper RTL styling for BilingualView preview",
       "scope": null
-    },
-    {
-      "hash": "63dd0eb",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Apply text color only to RTL content in BilingualView",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "af39eb0",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Per-tradition trimming + URL hallucination guard",
+        "scope": null
+      },
       {
         "hash": "ff2e68e",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Proper RTL styling for BilingualView preview",
-        "scope": null
-      },
-      {
-        "hash": "63dd0eb",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Apply text color only to RTL content in BilingualView",
         "scope": null
       }
     ]
