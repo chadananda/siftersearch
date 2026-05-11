@@ -105,13 +105,25 @@ function buildRankingRules() {
  * Compute the authority-weighted score for a single hit.
  * final = relevance * (1 + boost * (authority - 5) / 5)
  * authority 5 is neutral; 10 boosts (+boost*100%), 1 penalizes.
- * Missing authority defaults to 5 so undecorated hits are unaffected.
+ *
+ * Authority is computed LIVE from hit metadata rather than reading the pre-stored
+ * hit.authority value. This means authority.js changes take effect immediately at
+ * search time without requiring a full Meilisearch resync. hit.authority is only
+ * used as fallback when metadata fields are missing (e.g. HyPE index hits).
  */
 function computeAuthorityScore(hit) {
   const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
-  const auth = typeof hit.authority === 'number' ? hit.authority : 5;
+  // Live authority computation from hit metadata; fall back to stored value if available
+  const liveAuth = getAuthority({
+    author: hit.author || null,
+    religion: hit.religion || null,
+    collection: hit.collection || null,
+    source_site: hit.source_site || null,
+    authority: null // don't pass stored authority — force live computation
+  });
+  const auth = typeof liveAuth === 'number' ? liveAuth : (typeof hit.authority === 'number' ? hit.authority : 5);
   const boost = config.search.authorityBoost ?? 0.3;
-  // Floor at 0 — with boost >= 1.0 and auth=1, raw result goes negative
+  // Floor at 0 — with boost >= 1.0 and auth=1, raw result can be negative
   return Math.max(0, rel * (1 + boost * ((auth - 5) / 5)));
 }
 
