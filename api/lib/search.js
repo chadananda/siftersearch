@@ -867,7 +867,7 @@ export async function multiIndexSearch(query, options = {}) {
     // surface alongside commentary authors (Fananapazir, Momen). HyPE can add multiple hits
     // per commentary author that bypass the hybridSearch author cap.
     const filteredHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
-    const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.4)), 'author');
+    const diverseFiltered = diversifyHits(filteredHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'author');
     finalEntries = diverseFiltered.map(h => h._entry);
   } else {
     finalEntries = allSorted.slice(0, limit);

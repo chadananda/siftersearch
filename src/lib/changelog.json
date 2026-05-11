@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T20:41:18.386Z",
+  "generated": "2026-05-11T20:47:00.233Z",
   "entries": [
+    {
+      "hash": "9bd1586",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Authority-weighted sort + author diversity in multiIndexSearch for filtered queries",
+      "scope": null
+    },
     {
       "hash": "6ddc2be",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use Levenshtein distance for fuzzy all-terms matching",
       "scope": null
-    },
-    {
-      "hash": "4b47287",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use Meilisearch match positions for fuzzy all-terms filter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "9bd1586",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Authority-weighted sort + author diversity in multiIndexSearch for filtered queries",
+        "scope": null
+      },
       {
         "hash": "6ddc2be",
         "date": "2026-05-11",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Use Levenshtein distance for fuzzy all-terms matching",
-        "scope": null
-      },
-      {
-        "hash": "4b47287",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use Meilisearch match positions for fuzzy all-terms filter",
         "scope": null
       }
     ]
