@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:54:43.905Z",
+  "generated": "2026-05-11T01:07:57.304Z",
   "entries": [
+    {
+      "hash": "5ed913f",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "POST /admin/conversations/save — save chat messages as a published dialog",
+      "scope": null
+    },
     {
       "hash": "af84d84",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
       "scope": null
-    },
-    {
-      "hash": "dcb1d37",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "5ed913f",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "POST /admin/conversations/save — save chat messages as a published dialog",
+        "scope": null
+      },
       {
         "hash": "af84d84",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
-        "scope": null
-      },
-      {
-        "hash": "dcb1d37",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Ensure all para.text uses renderBlockContent for proper heading/blockquote rendering",
         "scope": null
       }
     ]

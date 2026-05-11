@@ -199,7 +199,7 @@ intent: ONE of
 
 work_name: if the user names a specific scriptural work (Tablet of Wisdom, Iqán, Hidden Words, Gospel of John, Bhagavad Gita, Some Answered Questions, etc.), extract that name as the user phrased it. Else null.
 
-religion: ONE of "Baha'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh", "Jain", "Confucian", "Tao", "Zoroastrian" — based on context. Default to "Baha'i" if Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi, the Báb, or Bahá'í texts are referenced. Else "Baha'i" if no other tradition is signaled (this app's primary corpus). Null only if explicitly cross-tradition.
+religion: ONE of "Baha'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh", "Jain", "Confucian", "Tao", "Zoroastrian" — set ONLY when a specific tradition is clearly named or implied by the question (e.g. user says "Bahá'u'lláh", "the Gospel", "the Qur'án", "Buddhist teaching on X"). Null when the question is general, comparative, or cross-tradition — e.g. "what do the scriptures say about...", "how should we treat...", "is there a religious basis for...". Never default to "Baha'i" just because no tradition is named. "Baha'i" only when Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi, the Báb, or specific Bahá'í texts are explicitly referenced.
 
 topics: 1-3 lowercase topical keywords for passage search (e.g. "materialism", "justice", "soul"). Period vocabulary preferred over modern phrasing. Empty array if work_name covers it.
 
@@ -219,15 +219,16 @@ export async function classifyIntentAndEntities(userMessage) {
     });
     const parsed = JSON.parse(resp.choices[0].message.content);
     const validIntents = ['quote_request', 'definition', 'explain', 'discuss'];
+    const validReligions = ["Baha'i","Christian","Islam","Buddhist","Hindu","Judaism","Sikh","Jain","Confucian","Tao","Zoroastrian"];
     return {
       intent: validIntents.includes(parsed.intent) ? parsed.intent : 'discuss',
       work_name: parsed.work_name || null,
-      religion: parsed.religion || 'Baha\'i',
+      religion: validReligions.includes(parsed.religion) ? parsed.religion : null,
       topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : []
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
-    return { intent: 'discuss', work_name: null, religion: 'Baha\'i', topics: [] };
+    return { intent: 'discuss', work_name: null, religion: null, topics: [] };
   }
 }
 
@@ -421,7 +422,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   };
 
   const tasks = [];
-  const isBahai = !entities.religion || /bah/i.test(entities.religion);
+  const isBahai = !!entities.religion && /bah/i.test(entities.religion);
 
   // Carry forward a work_name from earlier in the conversation when the
   // current turn doesn't name one. Most follow-up questions ("show me the
