@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T01:07:57.304Z",
+  "generated": "2026-05-11T01:20:53.631Z",
   "entries": [
+    {
+      "hash": "b8edec8",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
+      "scope": null
+    },
     {
       "hash": "5ed913f",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
       "scope": null
-    },
-    {
-      "hash": "c294f1c",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "b8edec8",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Intent classifier no longer defaults religion to Baha'i for general questions",
+        "scope": null
+      },
       {
         "hash": "5ed913f",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Use marked.parseInline for heading blocktypes to handle markdown links",
-        "scope": null
-      },
-      {
-        "hash": "c294f1c",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add CSS styling for h1/h2/h3/h4/blockquote in paragraph-text + support heading4 blocktype",
         "scope": null
       }
     ]

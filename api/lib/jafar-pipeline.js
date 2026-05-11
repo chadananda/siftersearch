@@ -189,7 +189,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
 // Replaces both the standalone classifyIntent and the LLM orchestrator —
 // the heaviest call in the pipeline. Total: 1 mini call (~1-2s) instead of
 // gpt-4o-with-tools (~5-7s).
-const INTENT_SYSTEM = `Classify the user's message and extract retrieval entities. Output JSON ONLY.
+const INTENT_SYSTEM = `Classify the user's latest message and extract retrieval entities. Use RECENT CONVERSATION CONTEXT (when provided) to resolve pronouns and implicit references — e.g. if the prior turn established "non-believers" as the topic, a follow-up "what about the Gospel?" means Gospel + non-believers. Output JSON ONLY.
 
 intent: ONE of
 - "quote_request": user asks for a quote/passage/verse/text excerpt explicitly. Words like "show me", "quote me", "find the verse", "give me the passage".
@@ -197,21 +197,31 @@ intent: ONE of
 - "explain": user asks how something works, why a teaching exists, or what a tradition says about a topic.
 - "discuss": general conversation, follow-up commentary, opinion, open exploration.
 
-work_name: if the user names a specific scriptural work (Tablet of Wisdom, Iqán, Hidden Words, Gospel of John, Bhagavad Gita, Some Answered Questions, etc.), extract that name as the user phrased it. Else null.
+work_name: if the user names a specific scriptural work (Tablet of Wisdom, Iqán, Hidden Words, Gospel of John, Bhagavad Gita, Some Answered Questions, etc.) — in this turn OR in prior turns if still the active subject — extract it as the user phrased it. Else null.
 
-religion: ONE of "Baha'i", "Christian", "Islam", "Buddhist", "Hindu", "Judaism", "Sikh", "Jain", "Confucian", "Tao", "Zoroastrian" — set ONLY when a specific tradition is clearly named or implied by the question (e.g. user says "Bahá'u'lláh", "the Gospel", "the Qur'án", "Buddhist teaching on X"). Null when the question is general, comparative, or cross-tradition — e.g. "what do the scriptures say about...", "how should we treat...", "is there a religious basis for...". Never default to "Baha'i" just because no tradition is named. "Baha'i" only when Bahá'u'lláh, 'Abdu'l-Bahá, Shoghi Effendi, the Báb, or specific Bahá'í texts are explicitly referenced.
+topics: 1-3 lowercase topical keywords for passage search that capture what the user actually wants to find, combining this turn AND prior context. Period vocabulary preferred. Empty array if work_name covers it.
 
-topics: 1-3 lowercase topical keywords for passage search (e.g. "materialism", "justice", "soul"). Period vocabulary preferred over modern phrasing. Empty array if work_name covers it.
+Output: {"intent": "...", "work_name": "..."|null, "topics": [...]}`;
 
-Output: {"intent": "...", "work_name": "..."|null, "religion": "..."|null, "topics": [...]}`;
+export async function classifyIntentAndEntities(userMessage, recentMessages = []) {
+  // Build a short context snippet from the last 2 turns (user + assistant pairs)
+  // so the classifier can resolve follow-up questions that rely on prior context.
+  const contextLines = [];
+  const recent = recentMessages.slice(-4); // last 2 pairs
+  for (const m of recent) {
+    if (m.role === 'user') contextLines.push(`USER: ${m.content.slice(0, 300)}`);
+    else if (m.role === 'assistant') contextLines.push(`JAFAR: ${m.content.slice(0, 200)}`);
+  }
+  const contextBlock = contextLines.length
+    ? `RECENT CONVERSATION:\n${contextLines.join('\n')}\n\n`
+    : '';
 
-export async function classifyIntentAndEntities(userMessage) {
   try {
     const resp = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: INTENT_SYSTEM },
-        { role: 'user', content: userMessage }
+        { role: 'user', content: `${contextBlock}CURRENT MESSAGE: ${userMessage}` }
       ],
       temperature: 0.0,
       max_tokens: 200,
@@ -219,16 +229,14 @@ export async function classifyIntentAndEntities(userMessage) {
     });
     const parsed = JSON.parse(resp.choices[0].message.content);
     const validIntents = ['quote_request', 'definition', 'explain', 'discuss'];
-    const validReligions = ["Baha'i","Christian","Islam","Buddhist","Hindu","Judaism","Sikh","Jain","Confucian","Tao","Zoroastrian"];
     return {
       intent: validIntents.includes(parsed.intent) ? parsed.intent : 'discuss',
       work_name: parsed.work_name || null,
-      religion: validReligions.includes(parsed.religion) ? parsed.religion : null,
       topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 3) : []
     };
   } catch (err) {
     logger.warn({ err: err.message }, 'intent+entity classification failed; defaulting');
-    return { intent: 'discuss', work_name: null, religion: null, topics: [] };
+    return { intent: 'discuss', work_name: null, topics: [] };
   }
 }
 
@@ -422,7 +430,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   };
 
   const tasks = [];
-  const isBahai = !!entities.religion && /bah/i.test(entities.religion);
 
   // Carry forward a work_name from earlier in the conversation when the
   // current turn doesn't name one. Most follow-up questions ("show me the
@@ -439,7 +446,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     tasks.push((async () => {
       const find = await runTool('find_document_for_citation', {
         title: effectiveWorkName,
-        religion: entities.religion || undefined,
         limit: 5
       });
       const primary = (find?.candidates || []).find(c => c.is_primary) || find?.candidates?.[0];
@@ -481,63 +487,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     })());
   }
 
-  // Branch 1b: topic → primary-work mapping (Bahá'í only, when no
-  // work_name path is already covering the topic). Reads paragraphs
-  // from the canonical primary work directly so primary scripture is
-  // GUARANTEED in retrieved_quotes — bypasses the search-rank problem
-  // where secondary commentary out-ranks primary on theme queries.
-  if (isBahai && !effectiveWorkName && Array.isArray(entities.topics) && entities.topics.length > 0) {
-    const topicBlob = entities.topics.join(' ').toLowerCase();
-    const matchedWorks = [];
-    for (const entry of BAHAI_TOPIC_TO_WORK) {
-      if (entry.match.test(topicBlob)) {
-        for (const w of entry.works) {
-          if (!matchedWorks.find(m => m.doc_id === w.doc_id && m.start_paragraph === w.start_paragraph)) {
-            matchedWorks.push(w);
-          }
-        }
-      }
-    }
-    // For each topic-matched primary work, do a TOPIC-FILTERED passages
-    // search restricted to that document. This surfaces the most relevant
-    // paragraphs from the work (vs reading the first 80 paragraphs blindly,
-    // which often missed the relevant passage on long works like the Iqán's
-    // 290-paragraph treatment of prophecy fulfillment).
-    //
-    // For sub-section works (Tablet of Wisdom inside doc 8270), we still
-    // need a paragraph-range read, since a doc-filtered passages search
-    // would return the whole compilation. Those keep the read_document path.
-    const topicQuery = entities.topics.join(' ');
-    for (const work of matchedWorks.slice(0, 2)) {
-      tasks.push((async () => {
-        if (typeof work.start_paragraph === 'number') {
-          // Sub-section work — read the paragraph range
-          const readArgs = {
-            document_id: work.doc_id,
-            question: userMessage,
-            start_paragraph: work.start_paragraph,
-            end_paragraph: work.end_paragraph
-          };
-          const read = await runTool('read_document_for_question', readArgs);
-          harvestExcerpts(read, 'topic-mapped-read');
-        } else {
-          // Full work — topic-filtered passages search inside it
-          const search = await runTool('search', {
-            query: topicQuery,
-            mode: 'passages',
-            document_id: work.doc_id,
-            limit: 6
-          });
-          harvestPassages(search, 'topic-mapped-passage');
-        }
-      })());
-    }
-  }
-
   // Branch 2: passages search on the extracted topics (or raw message
   // if no topics). Always runs — even alongside a work_name lookup —
   // because a topic match elsewhere in the corpus often complements
-  // the named-work passage.
+  // the named-work passage. No religion filter: the crafter selects
+  // from whatever traditions the corpus returns.
   const passageQuery = entities.topics?.length
     ? entities.topics.join(' ')
     : userMessage;
@@ -546,7 +500,6 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const search = await runTool('search', {
         query: passageQuery,
         mode: 'passages',
-        religion: entities.religion || undefined,
         limit: 8
       });
       harvestPassages(search);
@@ -555,18 +508,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 
   await Promise.all(tasks);
 
-  // Fallback: if every branch came back empty (named work didn't yield
-  // excerpts, topic search returned nothing), do a broader passages search
-  // using the raw user message. This catches the conversational follow-up
-  // case where the user's pushback ("show me the actual passage") doesn't
-  // map cleanly to topical keywords. Without this, the crafter would refuse
-  // with "I couldn't locate text on this in the corpus" — which is the
-  // failure mode that derails follow-up turns.
+  // Fallback: if every branch came back empty, do a broader search on the
+  // raw user message. Catches conversational follow-ups that don't map to
+  // topic keywords.
   if (retrieved.length === 0 && userMessage && userMessage.trim()) {
     const fallback = await runTool('search', {
       query: userMessage.slice(0, 240),
       mode: 'passages',
-      religion: entities.religion || undefined,
       limit: 8
     });
     harvestPassages(fallback, 'search-fallback');
@@ -1170,7 +1118,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // deterministic retrieval directly from the entities (no LLM) ~0.5-1.5s.
   // Total research wall time ~2-3s vs the prior gpt-4o-with-tools 5-10s.
   if (sendEvent) sendEvent({ type: 'stage', stage: 'research' });
-  const entities = await classifyIntentAndEntities(userMessage);
+  const entities = await classifyIntentAndEntities(userMessage, messages.slice(0, -1));
   const userIntent = entities.intent;
   if (sendEvent && debug) sendEvent({ type: 'debug_intent', intent: userIntent, entities });
   const research = await deterministicResearch({ entities, userMessage, messages, sendEvent, debug, scope_config });
