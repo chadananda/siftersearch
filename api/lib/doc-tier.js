@@ -69,6 +69,8 @@ const PRIMARY_DOCTRINAL_PATHS = [
   '/The Bhagavad Gita (Song Celestial',
   // OL Taoism — Tao Te Ching (Legge translation)
   'Lao-tzu, Tao Te Ching',
+  // Local library — Zoroastrian Avesta (all subfolders: Vendidad, Yasna, Yashts, Khordeh)
+  '/Zoroastrian/Avesta',
   // Local library — Arabic Qur'an (the specific /Quran/ subfolder, not Tafsir)
   '/Foundational Texts/Quran/Qur',
 ];
