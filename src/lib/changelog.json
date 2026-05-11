@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T19:58:46.192Z",
+  "generated": "2026-05-11T20:00:38.448Z",
   "entries": [
+    {
+      "hash": "eb02d56",
+      "date": "2026-05-11",
+      "type": "New",
+      "description": "Federated per-religion search for cross-tradition queries",
+      "scope": null
+    },
     {
       "hash": "28d09a2",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Smart search highlighting with stop words filter",
       "scope": null
-    },
-    {
-      "hash": "936f951",
-      "date": "2026-01-12",
-      "type": "Fixed",
-      "description": "Exclude .backup.md files from library indexing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "eb02d56",
+        "date": "2026-05-11",
+        "type": "New",
+        "description": "Federated per-religion search for cross-tradition queries",
+        "scope": null
+      },
       {
         "hash": "28d09a2",
         "date": "2026-05-11",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-12",
         "type": "New",
         "description": "Smart search highlighting with stop words filter",
-        "scope": null
-      },
-      {
-        "hash": "936f951",
-        "date": "2026-01-12",
-        "type": "Fixed",
-        "description": "Exclude .backup.md files from library indexing",
         "scope": null
       }
     ]

@@ -184,11 +184,14 @@ const CROSS_TRADITION_RELIGIONS = [
  * before authority reranking even gets a chance to run.
  */
 async function crossTraditionSearch(meili, indexName, query, vector, params, perReligionLimit) {
+  const { extraFilter } = params;
   const subQueries = CROSS_TRADITION_RELIGIONS.map(religion => {
+    const religionFilter = `religion = "${religion}"`;
+    const filter = extraFilter ? `${religionFilter} AND ${extraFilter}` : religionFilter;
     const q = {
       indexUid: indexName,
       q: query,
-      filter: `religion = "${religion}"`,
+      filter,
       limit: overFetchForRerank(perReligionLimit),
       offset: 0,
       showRankingScore: true,
@@ -471,6 +474,15 @@ export async function hybridSearch(query, options = {}) {
   // and no filterTerms, run one Meilisearch sub-query PER tradition in a single
   // multiSearch call, take top N from each, then merge + authority-rerank.
   const isCrossTradition = !filters.religion && !filters.collection && !filters.author && !filterTerms.length && offset === 0;
+
+  // Extra filter parts that apply even in cross-tradition mode (language, year, doc_id).
+  // The religion filter is added per sub-query in crossTraditionSearch instead.
+  const extraFilterParts = [];
+  if (filters.language) extraFilterParts.push(`language = "${filters.language}"`);
+  if (filters.yearFrom) extraFilterParts.push(`year >= ${filters.yearFrom}`);
+  if (filters.yearTo) extraFilterParts.push(`year <= ${filters.yearTo}`);
+  if (filters.documentId) extraFilterParts.push(`doc_id = ${filters.documentId}`);
+  const extraFilter = extraFilterParts.length > 0 ? extraFilterParts.join(' AND ') : null;
   const perReligionLimit = isCrossTradition
     ? Math.max(2, Math.ceil((offset + limit) / CROSS_TRADITION_RELIGIONS.length) + 1)
     : 0;
@@ -484,7 +496,7 @@ export async function hybridSearch(query, options = {}) {
     allHits = [];
     for (const indexName of targetIndexNames) {
       const hits = await crossTraditionSearch(meili, indexName, query, vector, {
-        semanticRatio, attributesToRetrieve, attributesToHighlight, highlightPreTag, highlightPostTag
+        semanticRatio, attributesToRetrieve, attributesToHighlight, highlightPreTag, highlightPostTag, extraFilter
       }, perReligionLimit).catch(err => {
         logger.warn({ err: err.message, index: indexName }, 'hybridSearch: cross-tradition search failed (continuing)');
         return [];
