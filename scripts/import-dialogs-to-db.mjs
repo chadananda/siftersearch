@@ -66,27 +66,26 @@ function parseFrontmatter(text) {
   return { fm, body };
 }
 
-// Extract round titles from actual turn content as [{user, jafar}] pairs.
-// Q = first sentence of user question (already question-form); A = first clause of jafar answer.
+// Extract round titles from h3/h4 headings as [{user, jafar}] pairs.
+// h3 = short question summary; h4 = short answer summary.
 function extractRoundTitles(body) {
-  const userBlocks = [...body.matchAll(/<div class="user-turn"[^>]*>([\s\S]*?)<\/div>/g)];
-  const jafarBlocks = [...body.matchAll(/<div class="jafar-turn"[^>]*>([\s\S]*?)<\/div>/g)];
-
-  return userBlocks.map((um, i) => {
-    const userRaw = um[1].replace(/<[^>]+>/g, '').trim();
-    // First sentence up to ? (question form) or first 100 chars
-    const qMatch = userRaw.match(/^([^?]+\?)/);
-    const user = (qMatch ? qMatch[1] : userRaw.split(/[.!]/)[0]).trim().slice(0, 120);
-
-    const jafarRaw = (jafarBlocks[i]?.[1] || '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // strip markdown links
-      .replace(/<[^>]+>/g, '')                  // strip HTML tags
-      .trim();
-    // First sentence of jafar's answer (answer-form statement)
-    const jafar = jafarRaw.split(/(?<=[.!?])\s+/)[0].trim().slice(0, 120);
-
-    return { user, jafar };
-  });
+  const titles = [];
+  const lines = body.split('\n');
+  let pending = null;
+  for (const line of lines) {
+    const h3 = line.match(/^### (.+)$/);
+    const h4 = line.match(/^#### (.+)$/);
+    if (h3) {
+      if (pending) titles.push(pending);
+      pending = { user: h3[1].trim(), jafar: '' };
+    } else if (h4 && pending) {
+      pending.jafar = h4[1].trim();
+      titles.push(pending);
+      pending = null;
+    }
+  }
+  if (pending) titles.push(pending);
+  return titles;
 }
 
 // Parse the nested assessment block from frontmatter lines
