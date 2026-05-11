@@ -7,7 +7,6 @@
 //   node scripts/fix-html-embeddings.mjs --run    # execute
 
 import Database from 'better-sqlite3';
-import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
