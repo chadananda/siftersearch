@@ -138,22 +138,25 @@ function rerankByAuthority(hits) {
 }
 
 /**
- * Enforce cross-tradition diversity when no religion filter is active.
- * Caps any single religion at maxPerReligion hits in the final window so
- * a voluminous corpus (e.g. Bahá'í secondary) can't crowd out primary
- * scripture from other traditions. After the per-religion cap is filled,
- * remaining slots are filled from the overflow (still sorted by authority).
+ * Enforce diversity across a hit list by capping any single value of `field`
+ * to `maxPer` hits. After per-value caps are filled, remaining slots are filled
+ * from overflow (still sorted by authority score).
+ *
+ * Used in two modes:
+ *   field='religion' — cross-tradition diversity for unfiltered queries
+ *   field='author'   — within-religion diversity for religion-filtered queries,
+ *                      ensures primary scripture authors surface alongside commentary
  */
-function diversifyHits(hits, limit, maxPerReligion) {
+function diversifyHits(hits, limit, maxPer, field = 'religion') {
   const counts = new Map();
   const selected = [];
   const overflow = [];
   for (const hit of hits) {
-    const r = hit.religion || '__unknown__';
-    const n = counts.get(r) || 0;
-    if (n < maxPerReligion) {
+    const key = hit[field] || '__unknown__';
+    const n = counts.get(key) || 0;
+    if (n < maxPer) {
       selected.push(hit);
-      counts.set(r, n + 1);
+      counts.set(key, n + 1);
     } else {
       overflow.push(hit);
     }
@@ -434,14 +437,19 @@ export async function hybridSearch(query, options = {}) {
   // same relevance tier. Runs unconditionally — callers don't opt in.
   const authorityRanked = rerankByAuthority(allHits);
 
-  // Diversity enforcement: when no religion filter, cap any single tradition at
-  // 3 results per 8 requested so the large Bahá'í corpus can't crowd out
-  // scripture from other traditions. Skipped when the caller explicitly asks
-  // for a specific religion (the filter itself provides scoping).
-  const maxPerReligion = Math.max(2, Math.ceil(limit * 0.4));
-  const reranked = (!filters.religion && offset === 0)
-    ? diversifyHits(authorityRanked, limit, maxPerReligion)
-    : authorityRanked.slice(offset, offset + limit);
+  // Diversity enforcement: cap any single grouping to prevent one author/tradition
+  // from flooding results. Two levels:
+  //   Unfiltered: cap per religion (max 40%) so Bahá'í secondary can't crowd out scripture
+  //   Religion-filtered: cap per author (max 50%) so commentary doesn't crowd out
+  //     primary scripture (e.g. Bahá'u'lláh commentary on Quran vs actual Quran surahs)
+  let reranked;
+  if (offset !== 0) {
+    reranked = authorityRanked.slice(offset, offset + limit);
+  } else if (!filters.religion) {
+    reranked = diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.4)), 'religion');
+  } else {
+    reranked = diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.5)), 'author');
+  }
 
   return {
     hits: reranked,
