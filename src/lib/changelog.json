@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T01:32:29.771Z",
+  "generated": "2026-05-11T01:51:42.899Z",
   "entries": [
+    {
+      "hash": "eb53627",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Parallel per-tradition search for general questions — prevents Baha'i corpus dominance",
+      "scope": null
+    },
     {
       "hash": "b5d349a",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
       "scope": null
-    },
-    {
-      "hash": "36afe13",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "eb53627",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Parallel per-tradition search for general questions — prevents Baha'i corpus dominance",
+        "scope": null
+      },
       {
         "hash": "b5d349a",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "New",
         "description": "Add marked-footnote extension for footnote rendering + clear repeated headings from DB",
-        "scope": null
-      },
-      {
-        "hash": "36afe13",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Strip sentence markers from BilingualView and DocumentDetail previews",
         "scope": null
       }
     ]

@@ -573,8 +573,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     return 5;
   };
   for (const q of retrieved) q.authority_tier = tierOf(q);
+  // Apply Bahá'í authority-tier filtering ONLY for work-specific questions.
+  // For general/interfaith questions the parallel per-tradition searches
+  // intentionally fetched non-Bahá'í quotes — filtering them out here would
+  // negate that work entirely and re-introduce corpus dominance.
   const hasPrimary = retrieved.some(q => q.authority_tier <= 4);
-  const filteredForCrafter = hasPrimary
+  const filteredForCrafter = (effectiveWorkName && hasPrimary)
     ? retrieved.filter(q => q.authority_tier <= 4)
     : retrieved;
 
@@ -613,7 +617,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
 
 // ─── Stage 2: Craft ───────────────────────────────────────────────────────
 
-const CRAFTER_SYSTEM = `You are Jafar — a wise, curious Bahá'í friend in conversation. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes and asking follow-up questions.
+const CRAFTER_SYSTEM = `You are Jafar — a wise, curious friend deeply read in the primary texts of the world's religious traditions. The texts are open in front of you (provided as retrieved_quotes). Your job is to ANSWER THE QUESTION the person actually asked, weaving the tradition's own words into your prose like a thoughtful friend would — not dumping block quotes and asking follow-up questions.
 
 ╔══════════════════════════════════════════════════════════╗
 ║  THE FUNDAMENTAL PATTERN: EMBEDDED QUOTE FRAGMENTS        ║
@@ -694,22 +698,24 @@ You can use 1-3 fragments from the same quote, OR pull fragments from 2-3 differ
 The quotation marks make the fragment the AUTHORITY's words. The surrounding prose is YOUR engagement with those words. The reader hears both voices interleaved.
 
 ╔══════════════════════════════════════════════════════════╗
-║  AUTHORITY HIERARCHY — the Bahá'í clarifying principle    ║
+║  MULTI-TRADITION DEFAULT / BAHÁ'Í AUTHORITY HIERARCHY     ║
 ╚══════════════════════════════════════════════════════════╝
 
-Each successor is the AUTHORITATIVE INTERPRETER of those who came before:
+FOR GENERAL/INTERFAITH QUESTIONS (no specific tradition named):
+Draw from ALL traditions represented in retrieved_quotes. If you have passages from Christianity, Islam, Judaism, Buddhism, and Bahá'í — use all of them. Quote the Gospel for Christian teaching, the Qur'án for Islamic teaching, the Dhammapada for Buddhist teaching. Give each tradition its own voice. Do not default to Bahá'í simply because more Bahá'í material appears in the corpus.
+
+FOR BAHÁ'Í-SPECIFIC QUESTIONS (user asks about a named Bahá'í work, or explicitly about Bahá'í teaching):
+Apply the clarifying principle — each successor is the AUTHORITATIVE INTERPRETER of those who came before:
 - TIER 1: Shoghi Effendi (Guardian, supreme interpreter — God Passes By, Advent of Divine Justice, Promised Day Is Come, World Order letters)
 - TIER 2: 'Abdu'l-Bahá (Center of the Covenant — Some Answered Questions, Paris Talks, Promulgation of Universal Peace, Tablets of the Divine Plan, Secret of Divine Civilization)
 - TIER 3: Bahá'u'lláh (Manifestation/Source — Aqdas, Iqán, Hidden Words, Gleanings, Seven Valleys, Tablets, Prayers and Meditations)
 - TIER 4: The Báb (Manifestation — Bayán)
 - TIER 5: secondary scholarship (Esslemont, Taherzadeh, Hatcher, etc. — last resort)
 
-Each retrieved quote is tagged with its tier in the input. Apply the hierarchy to which authority leads:
-
+Each retrieved quote is tagged with its tier in the input. For Bahá'í-specific questions:
 - "What does the Faith teach about X?" → lead with TIER 1 (Shoghi Effendi) if available; supplement with TIER 2-3.
 - "What does Bahá'u'lláh say about X?" → lead with TIER 3 (Bahá'u'lláh's own words); supplement with TIER 1-2's authoritative reading.
 - Interpretive question ("what does X mean?", "how should we understand Y?") → strongly favor TIER 1 / TIER 2; their interpretive role IS the answer.
-- Historical question (when, who, what happened) → Shoghi Effendi's God Passes By is often the authoritative narrative.
 
 Attribute by name when possible — it makes the chain visible:
 - "Shoghi Effendi reads it as '[fragment]'..."
@@ -1151,6 +1157,21 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
   // The crafter's structural isolation (sees only retrieved_quotes, no
   // general-knowledge fallback) is what enforces grounding — multi-
   // candidate selection was nice-to-have, not load-bearing.
+  if (sendEvent && debug) {
+    sendEvent({
+      type: 'debug_research',
+      retrieved_count: research.retrieved_quotes.length,
+      quotes: research.retrieved_quotes.map(q => ({
+        via: q.via,
+        religion: q.religion,
+        source_title: q.source_title,
+        source_author: q.source_author,
+        authority_tier: q.authority_tier,
+        text: (q.text || '').slice(0, 150),
+        citation_url: q.citation_url
+      }))
+    });
+  }
   if (sendEvent) sendEvent({ type: 'stage', stage: 'craft' });
   const onChunk = (text) => {
     if (sendEvent) sendEvent({ type: 'text', content: text });
