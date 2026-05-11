@@ -20,8 +20,8 @@ import { cleanForEmbedding } from '../lib/text-normalize.js';
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
 const BATCH_SIZE = 500;               // Max texts to fetch from DB per cycle
-const MAX_TOKENS_PER_REQUEST = 200000; // Stay well under OpenAI's 300K limit
-const CHARS_PER_TOKEN = 2;            // Worst case: Hebrew/Arabic ~2 chars per token
+const MAX_TOKENS_PER_REQUEST = 60000;  // Conservative: actual Arabic/Hebrew 4+ chars/token vs naive 2
+const CHARS_PER_TOKEN = 4;            // Arabic/Hebrew worst case: 1 char ≈ 1–4 tokens; use 4 for safety
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
                                       // Content over this MUST be re-segmented, not truncated
 const DB_WRITE_DELAY_MS = 0;          // No delay — standalone process, no event loop contention
