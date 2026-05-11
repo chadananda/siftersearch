@@ -826,13 +826,25 @@ export async function multiIndexSearch(query, options = {}) {
     }
   }
 
-  // Sort by RRF score, drop entries that couldn't be fetched, limit
-  const sorted = [...aggregate.values()]
+  // Sort by RRF score, drop entries that couldn't be fetched.
+  // For cross-tradition queries (no religion filter), apply the same per-religion
+  // diversity cap used in hybridSearch. HyPE gives Bahá'í hits a double-boost
+  // (main + hype RRF contribution) that can undo the per-religion diversity from
+  // hybridSearch — applying it here ensures the final window is also diverse.
+  const isCrossTraditionMIS = !filters.religion && !filters.collection && !filters.author;
+  const allSorted = [...aggregate.values()]
     .filter(e => e.paragraph && !e.paragraph._stub)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .sort((a, b) => b.score - a.score);
+  let finalEntries;
+  if (isCrossTraditionMIS) {
+    const rrfHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
+    const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.4)), 'religion');
+    finalEntries = diverse.map(h => h._entry);
+  } else {
+    finalEntries = allSorted.slice(0, limit);
+  }
 
-  const hits = sorted.map(e => ({
+  const hits = finalEntries.map(e => ({
     ...e.paragraph,
     _rrfScore: e.score,
     ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
