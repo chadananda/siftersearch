@@ -34,9 +34,9 @@ const RESEARCH_SYSTEM = `You are the RESEARCH PHASE of a multi-stage assistant. 
 For the user's latest question, call retrieval tools (search, find_document_for_citation, read_document_for_question, library_overview) until you have enough quotes to ground a reply. When done, respond with a brief plain-text "done" message — your prose is discarded.
 
 Routing rules:
+- Catalog/coverage questions ("what do you have", "list the X collections", "how many Buddhist texts", "what languages", "what's in the library", "do you have any X") → call library_overview FIRST. Do NOT use search for these — search returns passages, not catalog data. library_overview returns doc counts per religion and collection names.
+- Specific named works (Tablet of Wisdom, Iqán, Hidden Words, Quran, Bhagavad Gita, Tao Te Ching, Gospel of John, Guru Granth Sahib, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate
 - Doctrinal concepts (materialism, justice, the soul, faith, detachment, etc.) → search with mode:"passages" + religion filter
-- Specific named works (Tablet of Wisdom, Iqán, Hidden Words, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate
-- Library-scope or coverage questions → library_overview
 - Specific named figures (Bahá'u'lláh, 'Abdu'l-Bahá, Plato in a tradition's text, etc.) → search with their name + the topic
 
 Always call at least one retrieval tool before saying "done". If a search returns nothing useful, broaden your query and try again rather than giving up. The next stage cannot retrieve — only you can.`;

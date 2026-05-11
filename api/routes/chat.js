@@ -607,7 +607,29 @@ const CANONICAL_WORKS = [
   { matchers: ['promised day is come'], doc_id: 8302, religion: "Baha'i" },
   // Foundational books (tier 6-7 in the enrichment classifier)
   { matchers: ['dawn-breakers', 'dawn breakers', 'dawnbreakers', "nabil's narrative", 'nabils narrative', "nabíl's narrative"], doc_id: 8645, religion: "Baha'i" },
-  { matchers: ["baha'u'llah and the new era", 'bahaullah and the new era', 'bahá\u2019u\u2019lláh and the new era', 'new era'], doc_id: 8314, religion: "Baha'i" }
+  { matchers: ["baha'u'llah and the new era", 'bahaullah and the new era', 'bahá\u2019u\u2019lláh and the new era', 'new era'], doc_id: 8314, religion: "Baha'i" },
+
+  // Islam — Qur'an
+  { matchers: ['quran', "qur'an", 'koran', 'quran rodwell', 'rodwell quran'], doc_id: 16943, religion: 'Islam' },
+  { matchers: ['quran pickthall', 'pickthall quran', 'meaning of the glorious'], doc_id: 16930, religion: 'Islam' },
+
+  // Christianity — Gospels
+  { matchers: ['gospel of john', 'john gospel', 'gospel john'], doc_id: 20989, religion: 'Christian' },
+  { matchers: ['gospel of matthew', 'matthew gospel', 'gospel matthew'], doc_id: 20992, religion: 'Christian' },
+  { matchers: ['gospel of luke', 'luke gospel', 'gospel luke'], doc_id: 20990, religion: 'Christian' },
+  { matchers: ['gospel of mark', 'mark gospel', 'gospel mark'], doc_id: 20991, religion: 'Christian' },
+
+  // Hinduism — Bhagavad Gita, Dhammapada
+  { matchers: ['bhagavad gita', 'bhagavad-gita', 'gita', 'song celestial', 'bhagavadgita'], doc_id: 17365, religion: 'Hindu' },
+
+  // Buddhism — Dhammapada (most accessible single text)
+  { matchers: ['dhammapada'], doc_id: 20925, religion: 'Buddhist' },
+
+  // Taoism — Tao Te Ching (largest English translation)
+  { matchers: ['tao te ching', 'tao-te-ching', 'daodejing', 'dao de jing', 'tao te king', 'laozi', 'lao tzu', 'lao-tzu'], doc_id: 18780, religion: 'Tao' },
+
+  // Sikhism — Guru Granth Sahib (lead volume)
+  { matchers: ['guru granth sahib', 'granth sahib', 'adi granth'], doc_id: 20186, religion: 'Sikh' }
 ];
 
 function canonicalLookup(title, religion) {

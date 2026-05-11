@@ -218,9 +218,15 @@ async function runScenario(scenario) {
     const scores = await judgeResponse(query, response.text, response.toolsUsed, questionType);
     const overall = calculateOverallScore(scores);
 
-    // Check against ADJUSTED thresholds for this question type
+    // Check against ADJUSTED thresholds for this question type.
+    // If the judge returned undefined (N/A) for a dimension, treat it as
+    // passing when the threshold is ≤ 1 (i.e. "not applicable" category).
     const failures = Object.entries(adjustedThresholds)
-      .filter(([dim, min]) => (scores[dim] || 0) < min)
+      .filter(([dim, min]) => {
+        const score = scores[dim];
+        if (score === undefined || score === null) return min > 1;
+        return score < min;
+      })
       .map(([dim]) => dim);
 
     const status = failures.length === 0 ? 'PASS' : 'FAIL';
