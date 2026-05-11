@@ -169,6 +169,61 @@ function diversifyHits(hits, limit, maxPer, field = 'religion') {
   return selected;
 }
 
+// Traditions to query in parallel for cross-tradition searches (no religion filter).
+// Ordered by typical corpus size so Baha'i gets its fair share, not dominance.
+const CROSS_TRADITION_RELIGIONS = [
+  "Baha'i", 'Christian', 'Islam', 'Buddhist', 'Judaism',
+  'Hindu', 'Zoroastrian', 'Tao', 'Confucian', 'Sikh', 'Jain'
+];
+
+/**
+ * Federate search across all traditions when no religion filter is active.
+ * Runs one Meilisearch sub-query per religion in a single multiSearch call,
+ * then takes the top N from each religion and merges. This prevents the
+ * large Bahá'í corpus from crowding out other traditions at the Meili level,
+ * before authority reranking even gets a chance to run.
+ */
+async function crossTraditionSearch(meili, indexName, query, vector, params, perReligionLimit) {
+  const subQueries = CROSS_TRADITION_RELIGIONS.map(religion => {
+    const q = {
+      indexUid: indexName,
+      q: query,
+      filter: `religion = "${religion}"`,
+      limit: overFetchForRerank(perReligionLimit),
+      offset: 0,
+      showRankingScore: true,
+      showMatchesPosition: true,
+      matchingStrategy: 'last',  // use 'last' for religion sub-queries to improve recall
+      attributesToRetrieve: params.attributesToRetrieve,
+      attributesToHighlight: params.attributesToHighlight,
+      highlightPreTag: params.highlightPreTag,
+      highlightPostTag: params.highlightPostTag,
+    };
+    if (vector) {
+      q.hybrid = { semanticRatio: params.semanticRatio, embedder: 'default' };
+      q.vector = vector;
+    }
+    return q;
+  });
+
+  const response = await meili.multiSearch({ queries: subQueries });
+  const seen = new Set();
+  const allHits = [];
+  for (const result of (response.results || [])) {
+    const sorted = [...(result.hits || [])].sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
+    let count = 0;
+    for (const hit of sorted) {
+      if (count >= perReligionLimit) break;
+      if (!seen.has(hit.id)) {
+        seen.add(hit.id);
+        allHits.push(hit);
+        count++;
+      }
+    }
+  }
+  return allHits;
+}
+
 /**
  * Compute internal fetch size so authority reranking has room to pull canonical
  * hits up from just outside the requested window. Capped at maxResults.
@@ -410,26 +465,50 @@ export async function hybridSearch(query, options = {}) {
     searchParams.vector = vector;
   }
 
-  // Fan out across all target indexes in parallel. For the common
-  // single-index case (default scope, no per-site indexes registered yet)
-  // this collapses to one call — no overhead.
-  const indexResults = await Promise.all(
-    targetIndexNames.map(name =>
-      meili.index(name).search(query, searchParams).catch(err => {
-        // Per-index missing/empty (common before sync) shouldn't kill the
-        // whole search. Log and return empty for that index.
-        logger.warn({ err: err.message, index: name }, 'hybridSearch: per-index search failed (continuing)');
-        return { hits: [], processingTimeMs: 0, estimatedTotalHits: 0, query };
-      })
-    )
-  );
+  // Unfiltered cross-tradition queries need special handling: the Bahá'í corpus is
+  // ~96% of all documents, so a single unfederated search returns only Bahá'í results
+  // regardless of authority reranking. Fix: when no religion/collection/author filter
+  // and no filterTerms, run one Meilisearch sub-query PER tradition in a single
+  // multiSearch call, take top N from each, then merge + authority-rerank.
+  const isCrossTradition = !filters.religion && !filters.collection && !filters.author && !filterTerms.length && offset === 0;
+  const perReligionLimit = isCrossTradition
+    ? Math.max(2, Math.ceil((offset + limit) / CROSS_TRADITION_RELIGIONS.length) + 1)
+    : 0;
 
-  const allHits = indexResults.flatMap(r => r.hits || []);
-  const totalProcessingMs = indexResults.reduce((s, r) => s + (r.processingTimeMs || 0), 0);
-  const estimated = indexResults.reduce((s, r) => s + (r.estimatedTotalHits || 0), 0);
+  let allHits;
+  let totalProcessingMs = 0;
+  let estimated = 0;
 
-  // Sort by Meili ranking score (comparable across indexes since they share
-  // ranking rules from initializeIndexes) before authority rerank.
+  if (isCrossTradition) {
+    // Federated per-religion search: one sub-query per tradition, single multiSearch call.
+    allHits = [];
+    for (const indexName of targetIndexNames) {
+      const hits = await crossTraditionSearch(meili, indexName, query, vector, {
+        semanticRatio, attributesToRetrieve, attributesToHighlight, highlightPreTag, highlightPostTag
+      }, perReligionLimit).catch(err => {
+        logger.warn({ err: err.message, index: indexName }, 'hybridSearch: cross-tradition search failed (continuing)');
+        return [];
+      });
+      allHits.push(...hits);
+    }
+  } else {
+    // Fan out across all target indexes in parallel. For the common
+    // single-index case (default scope, no per-site indexes registered yet)
+    // this collapses to one call — no overhead.
+    const indexResults = await Promise.all(
+      targetIndexNames.map(name =>
+        meili.index(name).search(query, searchParams).catch(err => {
+          logger.warn({ err: err.message, index: name }, 'hybridSearch: per-index search failed (continuing)');
+          return { hits: [], processingTimeMs: 0, estimatedTotalHits: 0, query };
+        })
+      )
+    );
+    allHits = indexResults.flatMap(r => r.hits || []);
+    totalProcessingMs = indexResults.reduce((s, r) => s + (r.processingTimeMs || 0), 0);
+    estimated = indexResults.reduce((s, r) => s + (r.estimatedTotalHits || 0), 0);
+  }
+
+  // Sort by Meili ranking score before authority rerank.
   allHits.sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
 
   // Authority reranking: blend Meilisearch relevance with the per-doc authority
@@ -437,19 +516,11 @@ export async function hybridSearch(query, options = {}) {
   // same relevance tier. Runs unconditionally — callers don't opt in.
   const authorityRanked = rerankByAuthority(allHits);
 
-  // Diversity enforcement: cap any single grouping to prevent one author/tradition
-  // from flooding results. Two levels:
-  //   Unfiltered: cap per religion (max 40%) so Bahá'í secondary can't crowd out scripture
-  //   Religion-filtered: cap per author (max 50%) so commentary doesn't crowd out
-  //     primary scripture (e.g. Bahá'u'lláh commentary on Quran vs actual Quran surahs)
-  let reranked;
-  if (offset !== 0) {
-    reranked = authorityRanked.slice(offset, offset + limit);
-  } else if (!filters.religion) {
-    reranked = diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.4)), 'religion');
-  } else {
-    reranked = diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.5)), 'author');
-  }
+  // For filtered queries, cap any single author at 50% so commentary authors
+  // (e.g. Bahá'u'lláh writing on Islamic topics) don't crowd out primary scripture.
+  const reranked = (!isCrossTradition && offset === 0 && filters.religion)
+    ? diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.5)), 'author')
+    : authorityRanked.slice(offset, offset + limit);
 
   return {
     hits: reranked,
