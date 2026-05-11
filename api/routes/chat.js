@@ -636,8 +636,10 @@ const CANONICAL_WORKS = [
   { matchers: ["baha'u'llah and the new era", 'bahaullah and the new era', 'bahá\u2019u\u2019lláh and the new era', 'new era'], doc_id: 8314, religion: "Baha'i" },
 
   // Islam — Qur'an
-  { matchers: ['quran', "qur'an", 'koran', 'quran rodwell', 'rodwell quran'], doc_id: 16943, religion: 'Islam' },
-  { matchers: ['quran pickthall', 'pickthall quran', 'meaning of the glorious'], doc_id: 16930, religion: 'Islam' },
+  // Specific suras first (more specific matches win over generic 'quran')
+  { matchers: ['surah fatiha', 'sura fatiha', 'al-fatiha', 'al fatiha', 'opening chapter', 'first chapter of the quran', 'surah al-fatiha', 'sura i', 'surah 1', 'fatiha'], doc_id: 21104, religion: 'Islam' },
+  { matchers: ['quran', "qur'an", 'koran', 'quran rodwell', 'rodwell quran'], doc_id: 21343, religion: 'Islam' },
+  { matchers: ['quran pickthall', 'pickthall quran', 'meaning of the glorious'], doc_id: 21207, religion: 'Islam' },
 
   // Christianity — Gospels
   { matchers: ['gospel of john', 'john gospel', 'gospel john'], doc_id: 20989, religion: 'Christian' },
@@ -645,14 +647,16 @@ const CANONICAL_WORKS = [
   { matchers: ['gospel of luke', 'luke gospel', 'gospel luke'], doc_id: 20990, religion: 'Christian' },
   { matchers: ['gospel of mark', 'mark gospel', 'gospel mark'], doc_id: 20991, religion: 'Christian' },
 
-  // Hinduism — Bhagavad Gita, Dhammapada
-  { matchers: ['bhagavad gita', 'bhagavad-gita', 'gita', 'song celestial', 'bhagavadgita'], doc_id: 17365, religion: 'Hindu' },
+  // Hinduism — Bhagavad Gita. Paras 0-11 are title/preface; actual dialogue
+  // (Dhritirashtra's opening question, Arjuna's response) starts at para 12.
+  { matchers: ['bhagavad gita', 'bhagavad-gita', 'gita', 'song celestial', 'bhagavadgita'], doc_id: 17365, religion: 'Hindu', start_paragraph: 12 },
 
   // Buddhism — Dhammapada (most accessible single text)
   { matchers: ['dhammapada'], doc_id: 20925, religion: 'Buddhist' },
 
-  // Taoism — Tao Te Ching (largest English translation)
-  { matchers: ['tao te ching', 'tao-te-ching', 'daodejing', 'dao de jing', 'tao te king', 'laozi', 'lao tzu', 'lao-tzu'], doc_id: 18780, religion: 'Tao' },
+  // Taoism — Legge translation (doc 21293, 239 paras) starts with the actual
+  // text immediately. The Gia-fu Feng version (18780) has 4 metadata paras first.
+  { matchers: ['tao te ching', 'tao-te-ching', 'daodejing', 'dao de jing', 'tao te king', 'laozi', 'lao tzu', 'lao-tzu'], doc_id: 21293, religion: 'Tao' },
 
   // Sikhism — Guru Granth Sahib (lead volume)
   { matchers: ['guru granth sahib', 'granth sahib', 'adi granth'], doc_id: 20186, religion: 'Sikh' }
