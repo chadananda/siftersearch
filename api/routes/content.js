@@ -36,7 +36,11 @@ function requireAdminKey(req, reply) {
 function renderMarkdown(md) {
   if (!md) return '';
   marked.setOptions({ gfm: true, breaks: false });
-  return marked.parse(md);
+  let html = marked.parse(md);
+  // Add sequential id="round-N-answer" to jafar-turn divs so TOC deep-links work
+  let n = 0;
+  html = html.replace(/<div class="jafar-turn">/g, () => `<div class="jafar-turn" id="round-${++n}-answer">`);
+  return html;
 }
 
 // Slug validator — kebab-case, no slashes

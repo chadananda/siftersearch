@@ -40,11 +40,7 @@ const related = allPublished
 
 const allRecent = [...allPublished].sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
-const tagCounts = new Map<string, number>();
-for (const p of allPublished) {
-  for (const t of JSON.parse(p.tags_json || '[]')) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
-}
-const linkableTags = data.tags.filter(t => (tagCounts.get(t) || 0) >= 2);
+const linkableTags = data.tags;
 
 // Schema.org structured data
 const articleSchema = {
@@ -107,7 +103,7 @@ const TOPIC_LABELS: Record<string, string> = {
 <Layout
   title={`${sq(data.title)} — Dialog`}
   description={sq(data.description)}
-  image={data.hero_image ?? '/og-image.png'}
+  image={data.hero_image ? heroUrl(data.hero_image) : '/og-image.png'}
   type="article"
 >
   <Fragment slot="head">

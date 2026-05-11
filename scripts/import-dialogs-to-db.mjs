@@ -66,43 +66,47 @@ function parseFrontmatter(text) {
   return { fm, body };
 }
 
-// Extract round titles from body markdown as [{user, jafar}] pairs
+// Extract round titles from actual turn content as [{user, jafar}] pairs.
+// Q = first sentence of user question (already question-form); A = first clause of jafar answer.
 function extractRoundTitles(body) {
-  const titles = [];
-  const lines = body.split('\n');
-  let pending = null;
-  for (const line of lines) {
-    const h3 = line.match(/^### (.+)$/);
-    const h4 = line.match(/^#### (.+)$/);
-    if (h3) {
-      if (pending) titles.push(pending);
-      pending = { user: h3[1].trim(), jafar: '' };
-    } else if (h4 && pending) {
-      pending.jafar = h4[1].trim();
-      titles.push(pending);
-      pending = null;
-    }
-  }
-  if (pending) titles.push(pending);
-  return titles;
+  const userBlocks = [...body.matchAll(/<div class="user-turn"[^>]*>([\s\S]*?)<\/div>/g)];
+  const jafarBlocks = [...body.matchAll(/<div class="jafar-turn"[^>]*>([\s\S]*?)<\/div>/g)];
+
+  return userBlocks.map((um, i) => {
+    const userRaw = um[1].replace(/<[^>]+>/g, '').trim();
+    // First sentence up to ? (question form) or first 100 chars
+    const qMatch = userRaw.match(/^([^?]+\?)/);
+    const user = (qMatch ? qMatch[1] : userRaw.split(/[.!]/)[0]).trim().slice(0, 120);
+
+    const jafarRaw = (jafarBlocks[i]?.[1] || '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // strip markdown links
+      .replace(/<[^>]+>/g, '')                  // strip HTML tags
+      .trim();
+    // First sentence of jafar's answer (answer-form statement)
+    const jafar = jafarRaw.split(/(?<=[.!?])\s+/)[0].trim().slice(0, 120);
+
+    return { user, jafar };
+  });
 }
 
 // Parse the nested assessment block from frontmatter lines
 function extractAssessment(fmStr) {
-  const assessMatch = fmStr.match(/^assessment:\n([\s\S]*?)(?=^\w|$)/m);
+  // Capture all indented lines under assessment: (stops at next top-level key)
+  const assessMatch = fmStr.match(/^assessment:\n((?:[ \t][^\n]*\n?)*)/m);
   if (!assessMatch) return null;
   const block = assessMatch[1];
 
   const scores = {};
-  const scoresMatch = block.match(/scores:\n([\s\S]*?)(?=\n\s*\w+:|$)/);
+  // Score lines are indented deeper (4+ spaces) than the top-level assessment keys (2 spaces)
+  const scoresMatch = block.match(/scores:\n((?:[ \t]{4}[^\n]+\n?)*)/);
   if (scoresMatch) {
     for (const m of scoresMatch[1].matchAll(/^\s+(\w+):\s*(\d+)/gm)) {
       scores[m[1]] = parseInt(m[2]);
     }
   }
-  const narrativeMatch = block.match(/narrative:\s*"([\s\S]*?)"\n/);
+  const narrativeMatch = block.match(/narrative:\s*"([\s\S]*?)"(?:\n|$)/);
   const flagsMatch = block.match(/flags:\n([\s\S]*?)(?=\n\s*\w+:|$)/);
-  const planMatch = block.match(/improvement_plan:\s*"([\s\S]*?)"\n/);
+  const planMatch = block.match(/improvement_plan:\s*"([\s\S]*?)"(?:\n|$)/);
 
   const flags = [];
   if (flagsMatch) {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-10T23:54:44.151Z",
+  "generated": "2026-05-11T00:19:28.404Z",
   "entries": [
+    {
+      "hash": "c932341",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Add rounds_json to dialog upsert (NOT NULL constraint)",
+      "scope": null
+    },
     {
       "hash": "ee7f898",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Render paragraph headings through markdown to handle links",
       "scope": null
-    },
-    {
-      "hash": "e42cb42",
-      "date": "2026-01-09",
-      "type": "New",
-      "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "c932341",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Add rounds_json to dialog upsert (NOT NULL constraint)",
+        "scope": null
+      },
       {
         "hash": "ee7f898",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Render paragraph headings through markdown to handle links",
-        "scope": null
-      },
-      {
-        "hash": "e42cb42",
-        "date": "2026-01-09",
-        "type": "New",
-        "description": "Add route guards to protected pages (library, profile, settings, referrals, admin)",
         "scope": null
       }
     ]
