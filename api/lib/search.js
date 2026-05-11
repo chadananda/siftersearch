@@ -222,10 +222,6 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
       if (Math.abs(sb - sa) > 0.005) return sb - sa;
       return (b._rankingScore || 0) - (a._rankingScore || 0);
     });
-    // DEBUG: log top hits for Bahai sub-query
-    if ((result.hits||[]).length > 0 && result.hits[0]?.religion === "Baha'i") {
-      logger.info({ top3: sorted.slice(0,3).map(h=>({auth: computeAuthorityScore(h).toFixed(3), rel: (h._rankingScore||0).toFixed(3), author: h.author, title: h.title?.slice(0,30)})) }, 'crossTradition: Bahai sub-query top-3 after authority sort');
-    }
     let count = 0;
     for (const hit of sorted) {
       if (count >= perReligionLimit) break;
@@ -846,7 +842,17 @@ export async function multiIndexSearch(query, options = {}) {
   const isCrossTraditionMIS = !filters.religion && !filters.collection && !filters.author;
   const allSorted = [...aggregate.values()]
     .filter(e => e.paragraph && !e.paragraph._stub)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      // For cross-tradition: blend authority into RRF so primary texts beat secondary
+      // books for their tradition's diversity slots. HyPE adds Bahá'í hits that could
+      // otherwise crowd out Bahá'u'lláh primary texts via pure RRF score ordering.
+      if (isCrossTraditionMIS) {
+        const authA = computeAuthorityScore({ ...a.paragraph, _rankingScore: a.score });
+        const authB = computeAuthorityScore({ ...b.paragraph, _rankingScore: b.score });
+        if (Math.abs(authB - authA) > 1e-7) return authB - authA;
+      }
+      return b.score - a.score;
+    });
   let finalEntries;
   if (isCrossTraditionMIS) {
     const rrfHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
