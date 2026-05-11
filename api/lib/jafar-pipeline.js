@@ -500,7 +500,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             query: passageQuery,
             mode: 'passages',
             religion,
-            limit: primaryCollection ? 2 : 3
+            limit: primaryOpts ? 2 : 3
           });
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
