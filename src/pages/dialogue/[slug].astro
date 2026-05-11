@@ -567,28 +567,28 @@ const TOPIC_LABELS: Record<string, string> = {
     font-style: italic;
   }
 
-  /* Very wide (≥1400px): toc | body | related (three columns, original layout) */
-  @media (min-width: 1400px) {
+  /* Very wide (≥1200px): toc | body | related (three columns) */
+  @media (min-width: 1200px) {
     .dialog-layout {
-      grid-template-columns: 260px minmax(0, 1fr) 320px;
+      grid-template-columns: 240px minmax(0, 1fr) 280px;
     }
     .toc-rail   { order: 1; display: block; }
     .dialog-body { order: 2; }
     .related-rail { order: 3; display: block; }
   }
 
-  /* Normal wide (1000px–1399px): related | body (toc hidden, related on left) */
-  @media (min-width: 1000px) and (max-width: 1399px) {
+  /* Normal wide (860px–1199px): toc | body (two columns, related hidden) */
+  @media (min-width: 860px) and (max-width: 1199px) {
     .dialog-layout {
-      grid-template-columns: 260px minmax(0, 1fr);
+      grid-template-columns: 220px minmax(0, 1fr);
     }
-    .toc-rail    { display: none; }
-    .related-rail { order: 1; display: block; }
+    .toc-rail    { order: 1; display: block; }
     .dialog-body  { order: 2; }
+    .related-rail { display: none; }
   }
 
-  /* Below 1000px: hide both rails (single column). */
-  @media (max-width: 999px) {
+  /* Below 860px: hide both rails (single column). */
+  @media (max-width: 859px) {
     .dialog-layout {
       grid-template-columns: 1fr;
     }
