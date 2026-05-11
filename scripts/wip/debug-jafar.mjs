@@ -11,12 +11,12 @@ const ROOT = join(__dirname, '../..');
 dotenv.config({ path: join(ROOT, '.env-secrets') });
 dotenv.config({ path: join(ROOT, '.env-public') });
 
-const CHAT_API = 'https://api.siftersearch.com/api/chat/stream?debug=1';
+const CHAT_API = 'https://api.siftersearch.com/api/chat/stream';
 
 async function chatDebug(messages) {
   const res = await fetch(CHAT_API, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Chat': '1' },
     body: JSON.stringify({ messages: messages.map(m => ({ role: m.role, content: m.content })) })
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -36,9 +36,10 @@ async function chatDebug(messages) {
       if (!payload || payload === '[DONE]') continue;
       try {
         const evt = JSON.parse(payload);
+        // 'chunk' is the final re-emit from the route after pipeline completes;
+        // 'text' is the streaming crafter output. Use only 'chunk' to avoid doubles.
         if (evt.type === 'chunk') text += evt.text || '';
-        else if (evt.type === 'text') text += evt.content || '';
-        else if (evt.type?.startsWith('debug_') || evt.type === 'stage') {
+        else if (evt.type !== 'chunk') {
           debugEvents.push(evt);
         }
       } catch { /* skip malformed */ }
@@ -67,8 +68,10 @@ for (const q of questions) {
     } else if (evt.type === 'debug_research') {
       console.log(`  [research] ${evt.retrieved_count} quotes retrieved:`);
       for (const q of evt.quotes) {
-        console.log(`    via=${q.via} religion=${q.religion} tier=${q.authority_tier} author="${q.source_author}"`);
-        console.log(`      "${q.text.slice(0, 80)}"`);
+        const langTag = q.source_lang ? ` lang=${q.source_lang}` : '';
+        const translated = q.translation ? ` [TRANSLATED: "${q.translation.slice(0, 60)}"]` : '';
+        console.log(`    via=${q.via} religion=${q.religion} tier=${q.authority_tier}${langTag} author="${q.source_author}"`);
+        console.log(`      "${q.text.slice(0, 80)}"${translated}`);
         console.log(`      url: ${q.citation_url || 'NONE'}`);
       }
     } else if (evt.type === 'stage') {

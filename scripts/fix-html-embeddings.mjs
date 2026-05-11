@@ -20,7 +20,7 @@ dotenv.config({ path: join(ROOT, '.env-public') });
 
 const DRY_RUN = !process.argv.includes('--run');
 const CONTENT_DB = process.env.TURSO_DATABASE_URL?.replace('file:', '') || join(ROOT, 'data/sifter.db');
-const CACHE_DB = process.env.EMBEDDING_CACHE_PATH || join(ROOT, 'data/embedding-cache.db');
+const CACHE_DB = process.env.EMBEDDING_CACHE_PATH || join(ROOT, 'data/embedding_cache.db');
 
 function normalizeForHash(text) {
   return text

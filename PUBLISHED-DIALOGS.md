@@ -246,3 +246,5 @@
 018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=83% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-10T20:35:00.481Z
 012-why-are-there-so-many-religions - Why Are There So Many Religions? - score=76% - https://siftersearch.com/dialogue/012-why-are-there-so-many-religions/ - 2026-05-10T21:45:39.496Z
 012-why-are-there-so-many-religions - Why Are There So Many Religions? - score=78% - https://siftersearch.com/dialogue/012-why-are-there-so-many-religions/ - 2026-05-10T22:19:53.810Z
+018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=71% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-11T01:02:54.451Z
+018-how-should-we-treat-non-believers - How Should We Treat Non-Believers? - score=70% - https://siftersearch.com/dialogue/018-how-should-we-treat-non-believers/ - 2026-05-11T01:28:14.112Z

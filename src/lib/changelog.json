@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T22:18:23.121Z",
+  "generated": "2026-05-11T22:24:05.797Z",
   "entries": [
+    {
+      "hash": "f47e8d3",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "CleanForEmbedding — strip HTML before embedding, preserve case/punctuation",
+      "scope": null
+    },
     {
       "hash": "73c5c45",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Separate suggestions for search vs chat mode",
       "scope": null
-    },
-    {
-      "hash": "588c016",
-      "date": "2026-01-13",
-      "type": "Style",
-      "description": "Add visible button outline to chat toggle",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "f47e8d3",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "CleanForEmbedding — strip HTML before embedding, preserve case/punctuation",
+        "scope": null
+      },
       {
         "hash": "73c5c45",
         "date": "2026-05-11",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-13",
         "type": "New",
         "description": "Separate suggestions for search vs chat mode",
-        "scope": null
-      },
-      {
-        "hash": "588c016",
-        "date": "2026-01-13",
-        "type": "Style",
-        "description": "Add visible button outline to chat toggle",
         "scope": null
       }
     ]

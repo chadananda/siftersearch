@@ -1,40 +1,31 @@
 {
   "slug": "018-how-should-we-treat-non-believers",
   "scores": {
-    "depth": 80,
-    "conversational_realism": 75,
-    "doctrinal_fidelity": 90,
-    "period_word_discipline": 85,
-    "evidence_quality": 90,
-    "brevity_discipline": 80,
-    "correction_courage": 85,
-    "archive_worthy": 85
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
   },
-  "overall": 83,
-  "narrative": "The conversation effectively explores Bahá'í teachings on how believers should treat those of different or no faith, with Jafar providing relevant quotes from Bahá'u'lláh's writings. The depth is solid, with each round building on the previous, and doctrinal fidelity is strong, with accurate references to primary texts. Conversational realism is mostly maintained, though some responses are slightly formal. Evidence quality is high, with consistent primary citations. Jafar corrects the user's misunderstanding about the focus of the Iqán, enhancing correction courage.",
-  "flags": [],
-  "improvement_plan": "To improve conversational realism, Jafar could adopt a slightly more casual tone to better match the user's style. Additionally, ensuring that all responses are concise without losing depth would enhance brevity discipline.",
+  "overall": 70,
+  "narrative": "The conversation provides a decent exploration of how different religious texts address the treatment of non-believers. Jafar effectively includes perspectives from the Bahá'í, Christian, and Islamic scriptures, maintaining doctrinal fidelity. However, the conversation lacks depth in some areas, with responses occasionally glossing over complex issues. Citation integrity is weak, with most links using fallback formats and not directly linking to the quoted text. The conversation maintains a conversational tone, though some responses are slightly formal.",
+  "flags": [
+    "fallback-link-only"
+  ],
+  "improvement_plan": "To improve, Jafar should ensure that all citations are paragraph-level deep links and that the quoted text itself is hyperlinked. Additionally, responses should delve deeper into the nuances of the texts, providing a more comprehensive analysis of the themes discussed.",
   "roundSummaries": [
     {
-      "q": "Scriptures on treating non-believers",
+      "q": "How should believers treat non-believers",
       "a": "Unity and acceptance emphasized"
     },
     {
-      "q": "Verification of Iqán quotes",
-      "a": "Quotes confirmed from Iqán"
-    },
-    {
-      "q": "Iqán on interaction with non-believers",
-      "a": "Understanding over exclusion encouraged"
-    },
-    {
-      "q": "Explicit guidance on treating non-believers",
-      "a": "Aqdas advises kindness and understanding"
-    },
-    {
-      "q": "Handling hostility towards Bahá'í Faith",
-      "a": "Gentleness and patience advised"
+      "q": "What do Gospels and Qur'án say",
+      "a": "Compassion and understanding emphasized"
     }
   ],
-  "elapsedSec": "116.4"
+  "elapsedSec": "64.6"
 }
