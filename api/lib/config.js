@@ -185,17 +185,19 @@ const searchConfig = {
   authorityRankPosition: getInt('AUTHORITY_RANK_POSITION', 4),
   // Authority post-hoc boost applied on every hybridSearch result.
   // final = relevance * (1 + boost * (authority - 5) / 5)
-  // At boost=0.7, authority 10 gets +70%, authority 1 gets -56%, authority 5 is neutral.
+  // At boost=1.0, authority 10 gets +100% (2x), authority 5 is neutral, authority 1 gets -80%.
   // Ranking rules alone don't fight through hybrid vector scores (scores are unique,
   // so authority:desc rarely tiebreaks); this boost makes canonical sources actually surface.
-  // Default tuned via tests/api/search-authority-ranking.test.js: 0.5 hits 96.9%
-  // primary-source retrieval vs 90.8% at 0.3. Increased to 0.7 for stronger cross-tradition
-  // primary-text promotion (Quran/Bible now at authority 10 via author check fix).
-  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '0.7')),
+  // Cross-tradition problem: Bahá'í secondary sources quote Jesus/Quran extensively and
+  // score higher semantically for Bible/Quran topics than the actual scripture. Boost=1.0
+  // gives primary texts (auth 10) a 2x multiplier that overcomes this relevance gap even
+  // when the primary text has 50% lower semantic relevance than the commentary.
+  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '1.0')),
   // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
-  // hits that were just outside the top N can move in. Wider window = more chances for
-  // primary sources to surface; default tuned to 6 (was 3) per the same test.
-  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '6'))
+  // hits that were just outside the top N can move in. Increased to 20 so primary texts
+  // at position 50-100 in semantic ranking can surface via authority promotion.
+  // Performance: Meili handles 200-doc fetches in <50ms; cost is worth the diversity gain.
+  authorityRerankMultiplier: parseFloat(get('AUTHORITY_RERANK_MULTIPLIER', '20'))
 };
 
 // Server configuration

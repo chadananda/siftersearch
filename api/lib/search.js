@@ -111,7 +111,8 @@ function computeAuthorityScore(hit) {
   const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
   const auth = typeof hit.authority === 'number' ? hit.authority : 5;
   const boost = config.search.authorityBoost ?? 0.3;
-  return rel * (1 + boost * ((auth - 5) / 5));
+  // Floor at 0 — with boost >= 1.0 and auth=1, raw result goes negative
+  return Math.max(0, rel * (1 + boost * ((auth - 5) / 5)));
 }
 
 /**
