@@ -4,6 +4,8 @@
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
+import DialogScrollSpy from '../../components/dialogue/DialogScrollSpy.svelte';
+import DialogQuoteMarker from '../../components/dialogue/DialogQuoteMarker.svelte';
 import { smartQuotes as sq } from '../../lib/smart-quotes.js';
 import { heroUrl, cardUrl } from '../../lib/imagekit.js';
 
@@ -180,7 +182,7 @@ const TOPIC_LABELS: Record<string, string> = {
       </header>
 
       <div class="dialog-layout">
-        <!-- LEFT: Table of contents (round-by-round) -->
+        <!-- LEFT: TOC + related below it (stacked in the left column) -->
         <aside class="toc-rail" aria-label="Conversation rounds">
           <p class="rail-label">Conversation</p>
           <ol class="toc-list">
@@ -193,40 +195,31 @@ const TOPIC_LABELS: Record<string, string> = {
             <li class="toc-spacer" />
             {data.assessment && <li><a href="#assessment" class="toc-assess">Assessment</a></li>}
           </ol>
+
+          {related.length > 0 && (
+            <div class="toc-related">
+              <p class="rail-label">Related</p>
+              <ul class="related-list">
+                {related.map(r => (
+                  <li>
+                    <a href={`/dialogue/${r.slug}/`} class="related-card">
+                      {r.hero_image && <img src={cardUrl(r.hero_image)} alt="" loading="lazy" />}
+                      <span class="related-text">
+                        <span class="related-title">{sq(r.title)}</span>
+                        <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </aside>
 
         <!-- CENTER: the dialog body itself -->
         <div class="dialog-body prose">
           <Fragment set:html={dialog.body_html} />
         </div>
-
-        <!-- RIGHT: Related conversations (shared tags) -->
-        <aside class="related-rail" aria-label="Related conversations">
-          <p class="rail-label">Related conversations</p>
-          {related.length === 0 ? (
-            <p class="rail-empty">No related dialogs yet.</p>
-          ) : (
-            <ul class="related-list">
-              {related.map(r => (
-                <li>
-                  <a href={`/dialogue/${r.slug}/`} class="related-card">
-                    {r.hero_image && <img src={cardUrl(r.hero_image)} alt="" loading="lazy" />}
-                    <span class="related-text">
-                      <span class="related-title">{sq(r.title)}</span>
-                      <span class="related-topic">{TOPIC_LABELS[r.topic] ?? r.topic}</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {related.length > 0 && (
-            <p class="rail-explainer">
-              Sharing tags with this dialog: {Array.from(tagSet).slice(0, 5).join(', ')}.
-            </p>
-          )}
-        </aside>
       </div>
 
       {data.assessment && (
@@ -317,68 +310,8 @@ const TOPIC_LABELS: Record<string, string> = {
        Detect "long paragraphs that open with a quote and close with a quote
        + citation" and tag them so .dialog-body p[data-quote-paragraph="true"]
        can style them like blockquotes. -->
-  <script>
-    (() => {
-      // Direct children only — skip <p> already inside a <blockquote>
-      // (those already have the blockquote's quote-box styling, and tagging
-      // them too produced a doubled nested-border visual).
-      const ps = document.querySelectorAll('.jafar-turn > p, .user-turn > p');
-      const QUOTE_OPEN = /^[\u201C\u201D"]/;
-      for (const p of ps) {
-        const t = (p.textContent || '').trim();
-        if (t.length < 80) continue;
-        if (!QUOTE_OPEN.test(t)) continue;
-        if (/[\u201C\u201D"][^"\u201C\u201D]*$/.test(t) || p.querySelector('a[href*="siftersearch.com"]')) {
-          p.setAttribute('data-quote-paragraph', 'true');
-        }
-      }
-    })();
-  </script>
-
-  <!-- TOC scrollspy: highlight the currently-visible round in the rail -->
-  <script>
-    (() => {
-      const rounds = Array.from(document.querySelectorAll('.dialog-body .user-turn[id]'));
-      if (!rounds.length) return;
-      const tocLinks = new Map();  // round-N → toc anchor element
-      for (const r of rounds) {
-        const a = document.querySelector(`.toc-rail a[href="#${r.id}"]`);
-        if (a) tocLinks.set(r.id, a);
-      }
-      let active = null;
-      const setActive = (id) => {
-        if (active === id) return;
-        if (active) tocLinks.get(active)?.classList.remove('toc-active');
-        active = id;
-        const link = tocLinks.get(id);
-        if (link) {
-          link.classList.add('toc-active');
-          // Also activate the paired h4 underneath, if present
-          const h4 = link.parentElement?.querySelector('.toc-a');
-          h4?.classList.add('toc-active');
-          // Clear the previous round's h4 highlight
-          for (const [otherId, otherA] of tocLinks) {
-            if (otherId !== id) {
-              const otherH4 = otherA.parentElement?.querySelector('.toc-a');
-              otherH4?.classList.remove('toc-active');
-            }
-          }
-        }
-      };
-      const io = new IntersectionObserver(
-        (entries) => {
-          // Pick the entry closest to the top of the viewport that is intersecting.
-          const visible = entries.filter(e => e.isIntersecting);
-          if (visible.length) {
-            visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-            setActive(visible[0].target.id);
-          }
-        },
-        { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
-      );
-      rounds.forEach(r => io.observe(r));
-    })();
-  </script>
+  <DialogQuoteMarker client:idle />
+  <DialogScrollSpy client:idle />
 </Layout>
 
 <style>
@@ -414,7 +347,7 @@ const TOPIC_LABELS: Record<string, string> = {
     z-index: 1;
   }
 
-  /* Three-column layout: TOC (260px) | body (flex) | related (320px) */
+  /* Two-column layout: TOC+related (240px) | body */
   .dialog-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -422,8 +355,8 @@ const TOPIC_LABELS: Record<string, string> = {
     align-items: start;
     margin-top: 2rem;
   }
-  .toc-rail, .related-rail { display: none; }
-  .toc-rail, .related-rail {
+  .toc-rail { display: none; }
+  .toc-rail {
     position: sticky;
     top: 5rem;
     max-height: calc(100vh - 6rem);
@@ -436,8 +369,13 @@ const TOPIC_LABELS: Record<string, string> = {
     -webkit-backdrop-filter: blur(10px);
   }
   .toc-rail { padding: 1.25rem 0.5rem; }
-  .related-rail { padding: 1.25rem 1rem; }
   .toc-rail .rail-label { padding: 0 0.5rem; }
+  .toc-related {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(140, 180, 220, 0.1);
+  }
+  .toc-related .rail-label { padding: 0 0.5rem; }
   .rail-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -567,36 +505,16 @@ const TOPIC_LABELS: Record<string, string> = {
     font-style: italic;
   }
 
-  /* Very wide (≥1200px): toc | body | related (three columns) */
-  @media (min-width: 1200px) {
-    .dialog-layout {
-      grid-template-columns: 240px minmax(0, 1fr) 280px;
-    }
-    .toc-rail   { order: 1; display: block; }
+  /* Wide (≥860px): toc+related | body (two columns) */
+  @media (min-width: 860px) {
+    .dialog-layout { grid-template-columns: 240px minmax(0, 1fr); }
+    .toc-rail { display: block; }
     .dialog-body { order: 2; }
-    .related-rail { order: 3; display: block; }
   }
 
-  /* Normal wide (860px–1199px): toc | body (two columns, related hidden) */
-  @media (min-width: 860px) and (max-width: 1199px) {
-    .dialog-layout {
-      grid-template-columns: 220px minmax(0, 1fr);
-    }
-    .toc-rail    { order: 1; display: block; }
-    .dialog-body  { order: 2; }
-    .related-rail { display: none; }
-  }
-
-  /* Below 860px: hide both rails (single column). */
+  /* Below 860px: single column, rail hidden */
   @media (max-width: 859px) {
-    .dialog-layout {
-      grid-template-columns: 1fr;
-    }
-    .toc-rail, .related-rail {
-      position: static;
-      max-height: none;
-      display: none;
-    }
+    .toc-rail { position: static; max-height: none; display: none; }
   }
 
   .dialog-header {

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:26:54.311Z",
+  "generated": "2026-05-11T00:33:14.607Z",
   "entries": [
+    {
+      "hash": "7c98d4b",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Render HTML at request time, no caching, no body_html in DB",
+      "scope": null
+    },
     {
       "hash": "c932341",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Make paragraph headings full-width to prevent side-by-side layout",
       "scope": null
-    },
-    {
-      "hash": "c67d69a",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Render paragraph headings through markdown to handle links",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "7c98d4b",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Render HTML at request time, no caching, no body_html in DB",
+        "scope": null
+      },
       {
         "hash": "c932341",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Make paragraph headings full-width to prevent side-by-side layout",
-        "scope": null
-      },
-      {
-        "hash": "c67d69a",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Render paragraph headings through markdown to handle links",
         "scope": null
       }
     ]
