@@ -79,9 +79,9 @@ const CATALOG_PATTERNS = [
 
 // Extract a tradition name from a catalog query so we can also do a targeted search
 const TRADITION_SEARCH_MAP = [
-  { pattern: /\bbah[aá]['']?[ií]\b/i, query: "Bahá'í sacred texts" },
+  { pattern: /bah[aá]['']?[ií]/i, query: "Bahá'í sacred texts" },
   { pattern: /\bisla[mn]ic?\b|\bmuslim\b|\bquran\b/i, query: 'Islamic scripture Quran' },
-  { pattern: /\bchrist(?:ian)?\b|\bgospel\b\b/i, query: 'Christian scripture Gospel' },
+  { pattern: /\bchrist(?:ian)?\b|\bgospel\b/i, query: 'Christian scripture Gospel' },
   { pattern: /\bhindu\b|\bvedic?\b|\bupanishad\b|\bgita\b/i, query: 'Hindu scripture Bhagavad Gita' },
   { pattern: /\bbuddh(?:ist)?\b|\bpali\b|\bdhamma\b/i, query: 'Buddhist Dhammapada Pali Canon' },
   { pattern: /\bjain\b/i, query: 'Jain texts Jainism' },
@@ -138,17 +138,16 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
 
       // For tradition-specific browsing questions, also search for representative
       // texts so the crafter has citable sources with URLs to ground the response.
-      const traditionQuery = extractTraditionSearchQuery(lastMsg);
-      if (traditionQuery) {
-        try {
-          if (debug) debugCalls.push({ name: 'search', args: { query: traditionQuery, limit: 5 }, forced: true });
-          const searchResults = await executeTool('search', { query: traditionQuery, limit: 5 }, { scope_config });
-          if (searchResults?.results?.length) {
-            retrieved.push(...searchResults.results);
-          }
-        } catch (se) {
-          logger.warn({ err: se.message }, 'tradition search alongside catalog failed');
+      // For general overview questions, fetch a representative sample across traditions.
+      const traditionQuery = extractTraditionSearchQuery(lastMsg) || 'sacred scripture wisdom tradition';
+      try {
+        if (debug) debugCalls.push({ name: 'search', args: { query: traditionQuery, limit: 5 }, forced: true });
+        const searchResults = await executeTool('search', { query: traditionQuery, limit: 5 }, { scope_config });
+        if (searchResults?.results?.length) {
+          retrieved.push(...searchResults.results);
         }
+      } catch (se) {
+        logger.warn({ err: se.message }, 'tradition search alongside catalog failed');
       }
 
       logger.info({ retrieved: retrieved.length, traditionQuery }, 'catalog pre-fetch complete, skipping LLM search loop');
