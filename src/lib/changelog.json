@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T12:51:15.727Z",
+  "generated": "2026-05-11T12:55:46.304Z",
   "entries": [
+    {
+      "hash": "9bafe42",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Catalog pre-fetch was in runResearchPhaseInner (unused) not deterministicResearch",
+      "scope": null
+    },
     {
       "hash": "cff08af",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Use integer rowid for Meilisearch paragraph IDs",
       "scope": null
-    },
-    {
-      "hash": "0225f67",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Add retrieveVectors option to rescue script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "9bafe42",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Catalog pre-fetch was in runResearchPhaseInner (unused) not deterministicResearch",
+        "scope": null
+      },
       {
         "hash": "cff08af",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Performance",
         "description": "Use integer rowid for Meilisearch paragraph IDs",
-        "scope": null
-      },
-      {
-        "hash": "0225f67",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Add retrieveVectors option to rescue script",
         "scope": null
       }
     ]

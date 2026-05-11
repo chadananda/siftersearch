@@ -80,17 +80,18 @@ const CATALOG_PATTERNS = [
 ];
 
 // Extract a tradition name from a catalog query so we can also do a targeted search
+// Each entry provides: regex pattern, generic query, and religion filter for targeted search
 const TRADITION_SEARCH_MAP = [
-  { pattern: /bah[aá]['']?[ií]/i, query: "Bahá'í sacred texts" },
-  { pattern: /\bisla[mn]ic?\b|\bmuslim\b|\bquran\b/i, query: 'Islamic scripture Quran' },
-  { pattern: /\bchrist(?:ian)?\b|\bgospel\b/i, query: 'Christian scripture Gospel' },
-  { pattern: /\bhindu\b|\bvedic?\b|\bupanishad\b|\bgita\b/i, query: 'Hindu scripture Bhagavad Gita' },
-  { pattern: /\bbuddh(?:ist)?\b|\bpali\b|\bdhamma\b/i, query: 'Buddhist Dhammapada Pali Canon' },
-  { pattern: /\bjain\b/i, query: 'Jain texts Jainism' },
-  { pattern: /\bsikh\b|\bgranth\b/i, query: 'Sikh scripture Guru Granth Sahib' },
-  { pattern: /\btao\b|\bconfuc\b|\bchinese\b/i, query: 'Tao Te Ching Confucius' },
-  { pattern: /\bzoroastrian\b|\bavesta\b/i, query: 'Zoroastrian Avesta' },
-  { pattern: /\bjewish\b|\bhebre[ew]\b|\btorah\b|\btalmud\b/i, query: 'Jewish Torah scripture' },
+  { pattern: /bah[aá]['']?[ií]/i, query: 'sacred text', religion: "Baha'i" },
+  { pattern: /\bisla[mn]ic?\b|\bmuslim\b|\bquran\b/i, query: 'sacred text', religion: 'Islam' },
+  { pattern: /\bchrist(?:ian)?\b|\bgospel\b/i, query: 'sacred text', religion: 'Christian' },
+  { pattern: /\bhindu\b|\bvedic?\b|\bupanishad\b|\bgita\b/i, query: 'sacred text', religion: 'Hindu' },
+  { pattern: /\bbuddh(?:ist)?\b|\bpali\b|\bdhamma\b/i, query: 'sacred text', religion: 'Buddhist' },
+  { pattern: /\bjain\b/i, query: 'sacred text', religion: 'Jain' },
+  { pattern: /\bsikh\b|\bgranth\b/i, query: 'sacred text', religion: 'Sikh' },
+  { pattern: /\btao\b|\bconfuc\b|\bchinese\b/i, query: 'sacred text', religion: 'Tao' },
+  { pattern: /\bzoroastrian\b|\bavesta\b/i, query: 'sacred text', religion: 'Zoroastrian' },
+  { pattern: /\bjewish\b|\bhebre[ew]\b|\btorah\b|\btalmud\b/i, query: 'sacred text', religion: 'Judaism' },
 ];
 
 function isCatalogQuery(messages) {
@@ -98,11 +99,17 @@ function isCatalogQuery(messages) {
   return CATALOG_PATTERNS.some(p => p.test(last));
 }
 
-function extractTraditionSearchQuery(text) {
-  for (const { pattern, query } of TRADITION_SEARCH_MAP) {
-    if (pattern.test(text)) return query;
+// Returns { query, religion } for a targeted tradition search, or null for generic
+function extractTraditionSearch(text) {
+  for (const { pattern, query, religion } of TRADITION_SEARCH_MAP) {
+    if (pattern.test(text)) return { query, religion };
   }
   return null;
+}
+
+function extractTraditionSearchQuery(text) {
+  const t = extractTraditionSearch(text);
+  return t ? t.query : null;
 }
 
 async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config }) {
@@ -497,17 +504,24 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         via: 'library_overview',
         is_catalog: true
       });
-      // Companion search: gives the crafter actual quoted passages with URLs
-      const traditionQuery = extractTraditionSearchQuery(userMessage) || 'sacred scripture wisdom tradition';
+      // Companion search: gives the crafter actual quoted passages with URLs.
+      // Use religion filter when a tradition is named so we get actual texts
+      // from that tradition rather than secondary sources that mention it.
+      const tradition = extractTraditionSearch(userMessage);
+      const companionArgs = tradition
+        ? { query: 'scripture wisdom', religion: tradition.religion, limit: 5 }
+        : { query: 'sacred scripture wisdom', limit: 5 };
       try {
-        const searchResults = await executeTool('search', { query: traditionQuery, limit: 5 }, { scope_config });
+        if (debug) debugCalls.push({ name: 'search', args: companionArgs, forced: true });
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'search', args: companionArgs, forced: true });
+        const searchResults = await executeTool('search', companionArgs, { scope_config });
         if (searchResults?.passages?.length) {
           harvestPassages(searchResults, 'catalog_companion');
         }
       } catch (se) {
         logger.warn({ err: se.message }, 'catalog companion search failed');
       }
-      logger.info({ retrieved: retrieved.length, traditionQuery }, 'catalog pre-fetch complete');
+      logger.info({ retrieved: retrieved.length, tradition: tradition?.religion }, 'catalog pre-fetch complete');
       return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
     } catch (e) {
       logger.warn({ err: e.message }, 'catalog pre-fetch failed, falling through to normal research');
