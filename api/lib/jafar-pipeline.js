@@ -320,9 +320,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // paragraphs 12-17 of Edwin Arnold's Gita ARE the opening verses).
   const subagentSyntheses = [];
 
+  const seenParagraphs = new Set();
   const harvestPassages = (result, via = 'search') => {
     if (!result?.passages) return;
     for (const p of result.passages) {
+      const key = `${p.document_id}_${p.paragraph_index}`;
+      if (seenParagraphs.has(key)) continue;
+      seenParagraphs.add(key);
       retrieved.push({
         text: p.text || '',
         source_title: p.title || '',
@@ -455,18 +459,47 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const passageQuery = userMessage.slice(0, 300);
   if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
-      // General question — search across traditions in parallel so the crafter
-      // sees balanced representation. Limit 3 per tradition, 5 traditions = 15 max.
+      // General interfaith question — parallel per-tradition searches with
+      // collection filter to prefer primary texts. Without collection filter,
+      // Bahá'í-authored commentary filed under Islam/Christian gets ranked ahead
+      // of the Qur'an, Bible, Pali Canon, etc. Each tradition's primary texts:
+      //   Islam → "Foundational Texts" (Qur'an translations, major Tafsir)
+      //   Christian → "Bible and Translations"
+      //   Buddhist → "Pali Canon"
+      //   Judaism → "Torah and Tanakh" (broadest primary-text collection)
+      //   Baha'i → no filter (all Bahá'í content is authentic)
+      // We run two searches per tradition: primary texts first (higher priority
+      // in round-robin), then a broader search to supplement when primary is thin.
+      const PRIMARY_COLLECTIONS = {
+        "Islam": "Foundational Texts",
+        "Christian": "Bible and Translations",
+        "Buddhist": "Pali Canon",
+        "Judaism": "Torah and Tanakh",
+      };
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
+        const primaryCollection = PRIMARY_COLLECTIONS[religion];
         tasks.push((async () => {
-          const search = await runTool('search', {
+          // Primary: scripture/foundational collection for non-Bahá'í traditions
+          if (primaryCollection) {
+            const primary = await runTool('search', {
+              query: passageQuery,
+              mode: 'passages',
+              religion,
+              collection: primaryCollection,
+              limit: 3
+            });
+            harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
+          }
+          // Supplemental: broader search within the tradition (catches relevant
+          // commentary, hadith, church fathers, etc. when primary is thin)
+          const broad = await runTool('search', {
             query: passageQuery,
             mode: 'passages',
             religion,
-            limit: 3
+            limit: primaryCollection ? 2 : 3
           });
-          harvestPassages(search, `traditions-${religion.toLowerCase()}`);
+          harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
       }
     } else {
@@ -539,11 +572,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     ? retrieved.filter(q => q.authority_tier <= 4)
     : retrieved;
 
-  // Trim — gpt-4o-mini's TTFT scales with prompt size. A whole tablet worth
-  // of excerpts (50+ paragraphs, ~50k chars) makes the crafter slow to first
-  // token. Cap at 12 entries with topic-keyword preference: passages-search
-  // hits (already topic-ranked) first, then work-read excerpts that contain
-  // a topic keyword, then any remaining work-read excerpts.
+  // Trim — gpt-4o-mini's TTFT scales with prompt size. Cap at 12 entries.
+  // For interfaith questions: 5 traditions × up to 5 passages each = up to 25
+  // entries; round-robin to 12 ensures every tradition gets slots.
   const MAX_QUOTES = 12;
   let trimmed = filteredForCrafter;
   if (filteredForCrafter.length > MAX_QUOTES) {

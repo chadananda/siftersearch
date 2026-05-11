@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T02:19:29.626Z",
+  "generated": "2026-05-11T02:43:27.137Z",
   "entries": [
+    {
+      "hash": "98b8cbf",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Classifier work_name — null for multi-tradition questions",
+      "scope": null
+    },
     {
       "hash": "af39eb0",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Move paper styles to global.css for reuse",
       "scope": null
-    },
-    {
-      "hash": "c4bc674",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Proper RTL styling for BilingualView preview",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "98b8cbf",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Classifier work_name — null for multi-tradition questions",
+        "scope": null
+      },
       {
         "hash": "af39eb0",
         "date": "2026-05-10",
@@ -7069,15 +7076,6 @@
         "date": "2026-01-10",
         "type": "Refactor",
         "description": "Move paper styles to global.css for reuse",
-        "scope": null
-      }
-    ],
-    "2026-01-09": [
-      {
-        "hash": "c4bc674",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Proper RTL styling for BilingualView preview",
         "scope": null
       }
     ]
