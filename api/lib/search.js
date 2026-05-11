@@ -792,8 +792,13 @@ export async function multiIndexSearch(query, options = {}) {
     aggregate.set(pid, cur);
   });
 
+  // Only count the best-ranked HyPE question per paragraph to prevent multi-question
+  // accumulation inflating scores for paragraphs with many generated questions.
+  const hypeSeenParagraphs = new Set();
   (hypeResult.hits || []).forEach((hit, rank) => {
     const pid = hit.paragraph_id;
+    if (hypeSeenParagraphs.has(pid)) return;
+    hypeSeenParagraphs.add(pid);
     const cur = aggregate.get(pid) || { paragraph: null, score: 0, matchedHype: null, mainRank: null, hypeRank: null };
     cur.score += weights.hype / (RRF_K + rank);
     cur.matchedHype = hit.question_text;
