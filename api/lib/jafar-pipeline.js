@@ -99,7 +99,7 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
     if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
     try {
       const overview = await executeTool('library_overview', {}, { scope_config });
-      // Inject as a synthetic tool exchange so the LLM sees the catalog data
+      // Inject as a synthetic tool exchange so the research LLM sees the catalog data
       const fakeCallId = 'forced_overview_0';
       aiMessages.push({
         role: 'assistant',
@@ -107,6 +107,19 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
         tool_calls: [{ id: fakeCallId, type: 'function', function: { name: 'library_overview', arguments: '{}' } }]
       });
       aiMessages.push({ role: 'tool', tool_call_id: fakeCallId, content: JSON.stringify(overview) });
+
+      // Also add a plain-text summary to retrieved so the CRAFT stage can use it.
+      // The crafter only sees retrieved_quotes, not aiMessages.
+      const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
+      const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+      retrieved.push({
+        text: `Library catalog snapshot:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy religion:\n${religionLines}\n\nCollections:\n${collectionLines}`,
+        source_title: 'Library Catalog',
+        source_author: 'Ocean Library',
+        citation_url: null,
+        via: 'library_overview',
+        is_catalog: true
+      });
     } catch (e) {
       logger.warn({ err: e.message }, 'pre-fetch library_overview failed');
     }
