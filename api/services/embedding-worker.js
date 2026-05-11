@@ -18,7 +18,7 @@ import { propagateHypeFromNormalizedHash } from '../lib/sonnet-enrichment.js';
 import { cleanForEmbedding } from '../lib/text-normalize.js';
 
 // Configuration - tuned for throughput while yielding event loop
-const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
+const EMBEDDING_INTERVAL_MS = 30000;  // Poll every 30s — reduces SQLite write contention with API
 const BATCH_SIZE = 500;               // Max texts to fetch from DB per cycle
 const MAX_CHARS_PER_REQUEST = 50000;   // Hard char cap; Arabic/Hebrew ≈ 2+ tokens/char → ~100K tokens max
 const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
