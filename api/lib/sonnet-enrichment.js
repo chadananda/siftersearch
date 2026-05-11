@@ -224,6 +224,7 @@ export async function enqueueParagraphsForBatch({ limit = 100000 } = {}) {
           AND COALESCE(is_duplicate, 0) = 0
           AND length(text) >= 100
           AND text NOT LIKE '<%'
+          AND text NOT LIKE '![%'
         ORDER BY doc_id, paragraph_index
         LIMIT ?`,
       [...chunk, remaining]
