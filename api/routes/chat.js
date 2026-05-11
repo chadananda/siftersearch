@@ -853,7 +853,15 @@ export async function executeFindDocumentForCitation({ title, religion, author, 
   return { candidates: [], error: 'Meilisearch unavailable', searched: title };
 }
 
+let _overviewCache = null;
+let _overviewCacheTime = 0;
+const OVERVIEW_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function executeLibraryOverview() {
+  const now = Date.now();
+  if (_overviewCache && now - _overviewCacheTime < OVERVIEW_CACHE_TTL_MS) {
+    return _overviewCache;
+  }
   const [docCount, paraCount, religions, collections] = await Promise.all([
     queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
     queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
@@ -864,7 +872,7 @@ export async function executeLibraryOverview() {
               ORDER BY ln.authority_default DESC, ln.name`)
   ]);
 
-  return {
+  _overviewCache = {
     totalDocuments: docCount.count,
     totalParagraphs: paraCount.count,
     religions: religions.map(r => ({ name: r.religion, documents: r.count })),
@@ -873,6 +881,8 @@ export async function executeLibraryOverview() {
       name: c.name, documents: c.doc_count, description: c.description
     }))
   };
+  _overviewCacheTime = now;
+  return _overviewCache;
 }
 
 // Read-document tool. Originally a "smart reader" sub-agent that ran a
