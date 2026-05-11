@@ -53,8 +53,10 @@ const SPECIFIC_BOOK_DOC_IDS = new Map(SPECIFIC_BOOKS.map(b => [b.doc_id, b.tier]
 const PRIMARY_DOCTRINAL_PATHS = [
   // OL Christian NT only — '/Christian/' prefix excludes the OT KJV under Judaism
   '/Christian/The Bible (KJV)/',
-  // OL Islam — Rodwell canonical English translation
+  // OL Islam — Rodwell canonical English translation (also matches Sura I sub-doc)
   '/The Quran (Rodwell)/',
+  // OL Islam — Pickthall translation
+  '/The Meaning of the Glorious Qur'án (Pickthall)',
   // OL Judaism — JPS 1917 (covers all 39 Tanakh books)
   '/The Tanakh (JPS 1917)/',
   // Local library — Pali Canon individual suttas
@@ -63,6 +65,10 @@ const PRIMARY_DOCTRINAL_PATHS = [
   '/Guru Granth Sahib/',
   // Local library — Vedas and Upanishads
   '/Vedas and Upanishads/',
+  // Local library — Bhagavad Gita (Song Celestial, Edwin Arnold)
+  '/The Bhagavad Gita (Song Celestial',
+  // OL Taoism — Tao Te Ching (Legge translation)
+  'Lao-tzu, Tao Te Ching',
   // Local library — Arabic Qur'an (the specific /Quran/ subfolder, not Tafsir)
   '/Foundational Texts/Quran/Qur',
 ];

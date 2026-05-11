@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T15:21:25.638Z",
+  "generated": "2026-05-11T15:26:25.453Z",
   "entries": [
+    {
+      "hash": "efef973",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "CANONICAL_WORKS correct doc_ids + PII sanitization + political guardrail + library_count tool",
+      "scope": null
+    },
     {
       "hash": "b4e5e4d",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Extend mark tags to cover complete words in search highlighting",
       "scope": null
-    },
-    {
-      "hash": "f030541",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Source-card collapsing in flex container causing text to be clipped",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "efef973",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "CANONICAL_WORKS correct doc_ids + PII sanitization + political guardrail + library_count tool",
+        "scope": null
+      },
       {
         "hash": "b4e5e4d",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Extend mark tags to cover complete words in search highlighting",
-        "scope": null
-      },
-      {
-        "hash": "f030541",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Source-card collapsing in flex container causing text to be clipped",
         "scope": null
       }
     ]
