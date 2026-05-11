@@ -18,12 +18,10 @@ import { propagateHypeFromNormalizedHash } from '../lib/sonnet-enrichment.js';
 import { cleanForEmbedding } from '../lib/text-normalize.js';
 
 // Configuration - tuned for throughput while yielding event loop
-const EMBEDDING_INTERVAL_MS = 30000;  // Poll every 30s — reduces SQLite write contention with API
+const EMBEDDING_INTERVAL_MS = 5000;   // Poll every 5s — bulk writes minimize SQLite contention
 const BATCH_SIZE = 500;               // Max texts to fetch from DB per cycle
 const MAX_CHARS_PER_REQUEST = 50000;   // Hard char cap; Arabic/Hebrew ≈ 2+ tokens/char → ~100K tokens max
-const MAX_CHARS = 6000;               // Safe limit for any language (Arabic can be 1 char = 4 tokens)
-                                      // Content over this MUST be re-segmented, not truncated
-const DB_WRITE_DELAY_MS = 0;          // No delay — standalone process, no event loop contention
+const MAX_CHARS = 6000;               // Safe limit for any language
 const PROPAGATE_INTERVAL_MS = 10 * 60 * 1000; // Propagate embeddings to duplicates every 10 min
 
 // Backoff: on quota/rate errors, wait longer instead of hammering OpenAI every 5s
@@ -35,8 +33,6 @@ let embeddingInterval = null;
 let propagateTimeout = null;
 let isRunning = false;
 
-// Small delay to yield event loop and prevent blocking health checks
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 let embeddingStats = {
   lastRun: null,
   lastSuccess: null,
@@ -49,33 +45,12 @@ let embeddingStats = {
 };
 
 /**
- * Store embeddings in content table via content API.
- * Also propagates to all rows with same normalized_hash.
+ * Bulk-store embeddings in a single transaction via content API.
  */
 async function storeEmbeddings(rows, embeddings) {
-  const model = config.ai.embeddings.model;
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const embedding = embeddings[i];
-
-    if (!embedding) continue;
-
-    // Convert embedding array to Buffer for SQLite BLOB storage
-    const embeddingBuffer = Buffer.from(new Float32Array(embedding).buffer);
-
-    // Use content API — validates dimensions and sets synced=0 automatically
-    const result = await content.updateEmbedding(row.id, embeddingBuffer, model);
-
-    if (result.rejected) {
-      logger.warn({ id: row.id, reason: result.reason }, 'Embedding rejected by content API');
-      continue;
-    }
-
-    // Yield event loop to allow health checks to respond
-    if (DB_WRITE_DELAY_MS > 0) {
-      await delay(DB_WRITE_DELAY_MS);
-    }
+  const result = await content.bulkUpdateEmbeddings(rows, embeddings);
+  if (result.changes < rows.length) {
+    logger.warn({ stored: result.changes, total: rows.length }, 'Some embeddings rejected (wrong dims)');
   }
 }
 
