@@ -862,14 +862,15 @@ export async function executeLibraryOverview() {
   if (_overviewCache && now - _overviewCacheTime < OVERVIEW_CACHE_TTL_MS) {
     return _overviewCache;
   }
-  const [docCount, paraCount, religions, collections] = await Promise.all([
+  const [docCount, paraCount, religions, collections, languages] = await Promise.all([
     queryOne('SELECT COUNT(*) as count FROM docs WHERE deleted_at IS NULL'),
     queryOne('SELECT COUNT(*) as count FROM content WHERE deleted_at IS NULL'),
     queryAll('SELECT religion, COUNT(*) as count FROM docs WHERE deleted_at IS NULL GROUP BY religion ORDER BY count DESC'),
     queryAll(`SELECT ln.name, ln.description, ln.authority_default,
               (SELECT COUNT(*) FROM docs d WHERE d.collection = ln.name AND d.deleted_at IS NULL) as doc_count
               FROM library_nodes ln WHERE ln.node_type = 'collection' AND ln.parent_id IS NOT NULL
-              ORDER BY ln.authority_default DESC, ln.name`)
+              ORDER BY ln.authority_default DESC, ln.name`),
+    queryAll("SELECT language, COUNT(*) as count FROM docs WHERE deleted_at IS NULL AND language IS NOT NULL GROUP BY language ORDER BY count DESC LIMIT 15")
   ]);
 
   _overviewCache = {
@@ -879,7 +880,8 @@ export async function executeLibraryOverview() {
     totalCollections: collections.length,
     collections: collections.filter(c => c.doc_count > 0).map(c => ({
       name: c.name, documents: c.doc_count, description: c.description
-    }))
+    })),
+    languages: languages.map(l => ({ name: l.language, documents: l.count }))
   };
   _overviewCacheTime = now;
   return _overviewCache;

@@ -134,10 +134,11 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
       const [overview] = await Promise.all([
         executeTool('library_overview', {}, { scope_config })
       ]);
-      const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
+      const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
       const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+      const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
       retrieved.push({
-        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}`,
+        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
         source_title: 'Library Catalog',
         source_author: 'Ocean Library',
         citation_url: null,
@@ -494,10 +495,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
     try {
       const overview = await executeTool('library_overview', {}, { scope_config });
-      const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
+      const religionLines = (overview.religions || []).filter(r => r.name).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
       const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+      const languageLines = (overview.languages || []).map(l => `  - ${l.name}`).join('\n');
       retrieved.push({
-        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}`,
+        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}${languageLines ? '\n\nLanguages available:\n' + languageLines : ''}`,
         source_title: 'Library Catalog',
         source_author: 'Ocean Library',
         citation_url: null,

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T13:41:43.267Z",
+  "generated": "2026-05-11T14:05:12.359Z",
   "entries": [
+    {
+      "hash": "b4290e5",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Cache library_overview 5min to avoid slow COUNT(*) on every browse question",
+      "scope": null
+    },
     {
       "hash": "45acdb1",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.662",
       "scope": null
-    },
-    {
-      "hash": "f8ab0f4",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Simplify quick search to always-expanded cards",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "b4290e5",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Cache library_overview 5min to avoid slow COUNT(*) on every browse question",
+        "scope": null
+      },
       {
         "hash": "45acdb1",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Chore",
         "description": "Bump version to 0.1.662",
-        "scope": null
-      },
-      {
-        "hash": "f8ab0f4",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Simplify quick search to always-expanded cards",
         "scope": null
       }
     ]
