@@ -15,6 +15,7 @@ import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
 import { content } from '../lib/content.js';
 import { propagateHypeFromNormalizedHash } from '../lib/sonnet-enrichment.js';
+import { cleanForEmbedding } from '../lib/text-normalize.js';
 
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
@@ -146,7 +147,7 @@ async function runEmbeddingCycle() {
 
     for (const batch of subBatches) {
       try {
-        const texts = batch.map(row => row.text || '');
+        const texts = batch.map(row => cleanForEmbedding(row.text || ''));
         const result = await createEmbeddings(texts, { caller: 'embedding-worker' });
         await storeEmbeddings(batch, result.embeddings);
 
