@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:47:08.796Z",
+  "generated": "2026-05-11T00:51:49.073Z",
   "entries": [
+    {
+      "hash": "d33a8cf",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
+      "scope": null
+    },
     {
       "hash": "16cf4b3",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
       "scope": null
-    },
-    {
-      "hash": "9e5db4e",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Use NetworkFirst caching for document content",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "d33a8cf",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "Jafar interfaith-first — draw from all traditions, not Bahá'í by default",
+        "scope": null
+      },
       {
         "hash": "16cf4b3",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Render blocktype correctly (h1, h2, h3, blockquote)",
-        "scope": null
-      },
-      {
-        "hash": "9e5db4e",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Use NetworkFirst caching for document content",
         "scope": null
       }
     ]
