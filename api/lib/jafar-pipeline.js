@@ -65,6 +65,20 @@ export async function runResearchPhase({ messages, sendEvent, debug, scope_confi
   }
 }
 
+// Detect overtly political questions so we can skip expensive research and
+// return a polite redirect from the crafter. Catches partisan figures and
+// electoral questions; does NOT catch spiritual/justice/governance concepts.
+const POLITICAL_PATTERNS = [
+  /\b(trump|biden|obama|clinton|harris|desantis|modi|putin|zelensky|netanyahu|macron|scholz|sunak|xi jinping)\b/i,
+  /\b(democrat|republican|labour|tory|gop|maga)\b/i,
+  /\b(who should i vote|who to vote|voting for|election results|electoral college|primary election|ballot measure)\b/i,
+  /\b(left.?wing|right.?wing|liberal vs conservative)\b/i,
+];
+
+function isPoliticalQuery(message) {
+  return POLITICAL_PATTERNS.some(p => p.test(message));
+}
+
 // Catalog questions ask about what the library *contains*, not what texts *say*.
 // The LLM reliably routes these to `search` even when told not to, so detect them
 // here and pre-fetch library_overview before the LLM loop runs.
@@ -509,6 +523,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     }
     return result;
   };
+
+  // Political guardrail: skip research entirely for overtly political questions.
+  // The crafter's POLITICAL GUARDRAIL section will compose the polite redirect.
+  if (isPoliticalQuery(userMessage)) {
+    logger.info('political query detected — skipping research, crafter will redirect');
+    return { retrieved_quotes: [], subagent_syntheses: [], tool_calls: [], is_political: true };
+  }
 
   // Catalog pre-fetch: for library overview/browsing questions, skip the
   // per-tradition search loop entirely and return authoritative count data.
@@ -1061,6 +1082,26 @@ GOOD: "The library includes 35,931 documents from bahai-library.com — essays, 
 
 EXAMPLE — "How many books by Udo Schaefer?"
 GOOD: "The library holds 12 works by Udo Schaefer, covering Bahá'í jurisprudence, theology, and comparative religion."
+
+╔══════════════════════════════════════════════════════════╗
+║  POLITICAL GUARDRAIL                                       ║
+╚══════════════════════════════════════════════════════════╝
+
+Jafar is apolitical. When the user asks about:
+- Current political figures (presidents, prime ministers, candidates, parties)
+- Electoral politics, voting, partisan debates, policy platforms
+- Which party or candidate to support
+- Current political controversies or geopolitical conflicts as political questions
+
+Decline warmly and redirect to the inner dimension. Do NOT lecture or moralize. One or two sentences, then offer what you CAN help with.
+
+The underlying conviction: real and lasting change is not primarily political — it flows from a transformation of hearts and the development of spiritual qualities. Politics is downstream from the culture, and culture is downstream from the values and inner life of individuals. Jafar lives in that upstream world.
+
+EXAMPLE — "What do you think of Trump?"
+GOOD: "I tend to stay out of the political arena — not from indifference, but because I think the deepest changes happen further upstream. If you're interested in what the traditions say about justice, leadership, or the nature of power, I'm all yours."
+
+EXAMPLE — "Which party should I vote for?"
+GOOD: "That's not really my lane — I leave electoral questions to those better suited for them. But if you're thinking about justice, the duties of citizenship, or how spiritual principles relate to public life, I'd love to explore that."
 
 OUTPUT: just the reply text. No JSON wrapping, no preamble, no meta-commentary.`;
 

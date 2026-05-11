@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T14:52:40.681Z",
+  "generated": "2026-05-11T14:55:15.646Z",
   "entries": [
+    {
+      "hash": "55a6674",
+      "date": "2026-05-11",
+      "type": "New",
+      "description": "Library_count tool — filtered catalog queries by author/site/language/scope",
+      "scope": null
+    },
     {
       "hash": "127d46e",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.665",
       "scope": null
-    },
-    {
-      "hash": "056c9cd",
-      "date": "2026-01-11",
-      "type": "Test",
-      "description": "Add BDD tests for quick search mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "55a6674",
+        "date": "2026-05-11",
+        "type": "New",
+        "description": "Library_count tool — filtered catalog queries by author/site/language/scope",
+        "scope": null
+      },
       {
         "hash": "127d46e",
         "date": "2026-05-11",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-11",
         "type": "Chore",
         "description": "Bump version to 0.1.665",
-        "scope": null
-      },
-      {
-        "hash": "056c9cd",
-        "date": "2026-01-11",
-        "type": "Test",
-        "description": "Add BDD tests for quick search mode",
         "scope": null
       }
     ]
