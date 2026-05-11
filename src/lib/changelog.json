@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T04:38:28.383Z",
+  "generated": "2026-05-11T04:42:46.718Z",
   "entries": [
+    {
+      "hash": "30825a6",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
+      "scope": null
+    },
     {
       "hash": "7ea8ac1",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use search.quick endpoint for lightning search mode",
       "scope": null
-    },
-    {
-      "hash": "bed1f8a",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Improve search input visibility and move lightning button inside",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "30825a6",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Make HyPE propagation non-fatal in enrichment-api tick — db lock during heavy watcher activity",
+        "scope": null
+      },
       {
         "hash": "7ea8ac1",
         "date": "2026-05-10",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Use search.quick endpoint for lightning search mode",
-        "scope": null
-      },
-      {
-        "hash": "bed1f8a",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Improve search input visibility and move lightning button inside",
         "scope": null
       }
     ]

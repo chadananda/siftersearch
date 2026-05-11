@@ -54,9 +54,13 @@ async function tick() {
       } catch (propErr) {
         logger.warn({ err: propErr.message }, 'enrichment-api: HyPE propagation failed (non-fatal, continuing)');
       }
-      const queued = await enqueueParagraphsForBatch({ limit: 50000 });
-      if (queued > 0) logger.info({ queued }, 'enrichment-api: enqueued new paragraphs');
-      lastEnqueue = now;
+      try {
+        const queued = await enqueueParagraphsForBatch({ limit: 50000 });
+        if (queued > 0) logger.info({ queued }, 'enrichment-api: enqueued new paragraphs');
+        lastEnqueue = now;
+      } catch (enqErr) {
+        logger.warn({ err: enqErr.message }, 'enrichment-api: enqueue failed (will retry next tick)');
+      }
     }
 
     if (now - lastSubmit > SUBMIT_INTERVAL_MS) {
