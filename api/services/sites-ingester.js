@@ -31,7 +31,8 @@ import { aiService } from '../lib/ai-services.js';
 import { content } from '../lib/content.js';
 import {
   hashNormalized as normalizedHash,
-  hashContent as fileHashOf
+  hashContent as fileHashOf,
+  cleanForEmbedding
 } from '../lib/text-normalize.js';
 
 const EMBEDDING_MODEL = config.ai.embeddings.model;
@@ -505,7 +506,7 @@ async function ingestOneFile({ adapter, siteConfig, siteRoot, basePath, absPath,
 
   let newEmbeddings = [];
   if (missIndices.length > 0) {
-    const missTexts = missIndices.map(i => paragraphs[i].text);
+    const missTexts = missIndices.map(i => cleanForEmbedding(paragraphs[i].text));
     newEmbeddings = await aiService('embedding').embed(missTexts, { caller: 'sites-ingester' });
   }
 

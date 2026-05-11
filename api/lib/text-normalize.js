@@ -11,14 +11,21 @@ const HTML_TAG_RE = /<[^>]+>/g;
 const NON_WORD_NUM_SPACE_RE = /[^\p{L}\p{N}\s]/gu;
 
 /**
- * Normalize text for embedding deduplication.
- *
- * Strips HTML tags, collapses whitespace, removes punctuation (keeping only
- * Unicode letters, numbers, and spaces), lowercases. Two paragraphs that
- * differ only in formatting/punctuation produce the same normalized form
- * and therefore the same hash — so they share an embedding in the cache.
+ * Strip HTML and collapse whitespace for embedding input. Preserves case and
+ * punctuation because embedding models are sensitive to both ("God" ≠ "god").
+ * Use this when computing the text to pass to the embedding API.
  */
-export function normalizeForEmbedding(text) {
+export function cleanForEmbedding(text) {
+  return text.replace(HTML_TAG_RE, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Aggressive normalization for hash-based dedup: strips HTML, punctuation,
+ * and lowercases so two paragraphs differing only in formatting share one
+ * embedding cache entry. Do NOT pass this output to the embedding API —
+ * stripping punctuation/case degrades embedding quality.
+ */
+export function normalizeForHash(text) {
   return text
     .replace(HTML_TAG_RE, '')
     .replace(/\s+/g, ' ')
@@ -27,13 +34,16 @@ export function normalizeForEmbedding(text) {
     .trim();
 }
 
+/** @deprecated Use normalizeForHash */
+export const normalizeForEmbedding = normalizeForHash;
+
 /**
- * MD5 hash of the embedding-normalized form. Used as the dedup key in the
- * `content.normalized_hash` column. Cross-doc match is what powers the
- * embedding cache + sidecar harvest in the ingester.
+ * MD5 hash of the hash-normalized form. Used as the dedup key in the
+ * `content.normalized_hash` column. Powers the embedding cache + sidecar
+ * harvest in the ingester.
  */
 export function hashNormalized(text) {
-  return createHash('md5').update(normalizeForEmbedding(text)).digest('hex');
+  return createHash('md5').update(normalizeForHash(text)).digest('hex');
 }
 
 /**

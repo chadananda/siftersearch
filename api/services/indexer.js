@@ -22,7 +22,8 @@ import { query, queryOne, queryAll, batchQuery, batchQueryOne, batchQueryAll } f
 import { content } from '../lib/content.js';
 import { detectLanguageFeatures } from './segmenter.js';
 import {
-  normalizeForEmbedding as sharedNormalizeForEmbedding,
+  normalizeForHash as sharedNormalizeForEmbedding,
+  cleanForEmbedding as sharedCleanForEmbedding,
   hashNormalized as sharedHashNormalized
 } from '../lib/text-normalize.js';
 import { config } from '../lib/config.js';
@@ -91,6 +92,7 @@ function computeContentHash(text, context = '') {
 // implementations. The local names are kept so internal call sites in this
 // file don't need to change.
 const normalizeForEmbedding = sharedNormalizeForEmbedding;
+const cleanForEmbedding = sharedCleanForEmbedding;
 const computeNormalizedHash = sharedHashNormalized;
 
 /**
@@ -504,7 +506,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   // Generate embeddings only for new/changed chunks
   let newEmbeddings = [];
   if (chunksToEmbed.length > 0) {
-    const textsToEmbed = chunksToEmbed.map(c => c.text);
+    const textsToEmbed = chunksToEmbed.map(c => cleanForEmbedding(c.text));
     newEmbeddings = await aiService('embedding').embed(textsToEmbed, { caller: 'indexer' });
     logger.info({ documentId: filePath, generated: newEmbeddings.length }, 'Generated new embeddings');
   }
