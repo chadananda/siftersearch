@@ -342,11 +342,9 @@ export default async function contentRoutes(fastify) {
       return reply.code(400).send({ error: 'messages array with at least 2 entries required' });
     }
 
-    // Optionally anonymize user turns before publishing
-    if (b.anonymize) {
-      try { messages = await anonymizeUserTurns(messages); }
-      catch (e) { logger.warn({ err: e.message }, 'anonymize failed, using original'); }
-    }
+    // Always sanitize before publishing — PII must not appear in public conversations
+    try { messages = await anonymizeUserTurns(messages); }
+    catch (e) { logger.warn({ err: e.message }, 'sanitize failed, using original'); }
 
     // Generate metadata if title not provided
     let meta;

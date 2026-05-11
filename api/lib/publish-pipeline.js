@@ -101,39 +101,69 @@ Output JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTLY ${r
   return Array.isArray(parsed.rounds) ? parsed.rounds : [];
 }
 
-// Anonymize user turns: scrub personal names, identifying details, location
-// markers from user-side messages only. Jafar turns are left untouched.
+// Regex pre-pass: strip mechanically-identifiable PII before the LLM sees it.
+// Catches emails, phone numbers, and "my name is X" patterns reliably without
+// needing a model call. LLM pass handles names woven into prose.
+function regexScrub(text) {
+  return text
+    .replace(/\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b/gi, '[email]')
+    .replace(/\b(\+?1[\s.-]?)?(\(?\d{3}\)?[\s.-]?)(\d{3}[\s.-]?\d{4})\b/g, '[phone]')
+    .replace(/\bmy name is\s+\w+/gi, 'I am a seeker')
+    .replace(/\bcall me\s+\w+/gi, 'call me a seeker')
+    .replace(/\bI(?:'m| am)\s+([A-Z][a-z]+)(?=\s+and\b|\s+from\b|,)/g, 'I am someone');
+}
+
+// Sanitize all messages for public publication. Runs a regex pre-pass for
+// contact info, then an LLM pass (gpt-4o-mini) to neutralise names and
+// identifying details woven into prose. Both user and assistant turns are
+// scrubbed: users may name themselves, Jafar may echo the name back.
 // Returns a new messages array; original is not mutated.
 export async function anonymizeUserTurns(messages) {
-  const userIndices = [];
-  messages.forEach((m, i) => { if (m.role === 'user') userIndices.push(i); });
-  if (userIndices.length === 0) return messages.slice();
+  if (!Array.isArray(messages) || messages.length === 0) return [];
 
-  const userTexts = userIndices.map(i => messages[i].content);
+  // Regex pre-pass on every turn
+  const preScrubbedMessages = messages.map(m => ({
+    ...m,
+    content: typeof m.content === 'string' ? regexScrub(m.content) : m.content
+  }));
 
-  const sys = `Anonymize each user message for public publication. Remove or replace:
-- Personal names (first or last)
-- Specific locations (cities, neighborhoods, workplaces, schools)
-- Identifying biographical details (age, profession titles, family relationships when specific)
-- Email addresses, phone numbers, social handles
+  // LLM pass on ALL turns (both user and assistant) — gpt-4o-mini is enough
+  // for name-neutralisation and is ~20× cheaper than gpt-4o.
+  const allTexts = preScrubbedMessages.map(m => ({ role: m.role, text: m.content }));
 
-Preserve the substance of the question and any relevant references to publicly-known figures, books, or ideas. Replace identifying details with neutral phrasing rather than removing entire sentences. If a message is already generic, return it unchanged.
+  const sys = `Sanitize each message for public publication. For EACH message:
+- Remove or replace personal names (first or last) with neutral terms ("a seeker", "someone", "they")
+- Remove specific locations (cities, neighborhoods, workplaces, schools) unless they are publicly known religious sites
+- Remove identifying biographical details (specific age, profession + employer, family member names)
+- Remove any remaining contact info ([email], [phone] markers are already stripped — catch anything the regex missed)
+- Keep: the substance of the question, references to publicly-known figures (Bahá'u'lláh, the Buddha, etc.), book titles, doctrinal terms
+- If a message has no PII, return it unchanged
 
-Output JSON: {"texts":["...","...",...]} with EXACTLY ${userTexts.length} entries in order.`;
+Output JSON: {"messages":[{"role":"...","text":"..."},...]} with EXACTLY ${allTexts.length} entries in order.`;
 
-  const resp = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(userTexts) }],
-    temperature: 0.2,
-    max_tokens: 2500,
-    response_format: { type: 'json_object' }
-  });
-  const parsed = JSON.parse(resp.choices[0].message.content);
-  const cleaned = Array.isArray(parsed.texts) && parsed.texts.length === userTexts.length ? parsed.texts : userTexts;
+  try {
+    const resp = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'system', content: sys }, { role: 'user', content: JSON.stringify(allTexts) }],
+      temperature: 0.1,
+      max_tokens: 4000,
+      response_format: { type: 'json_object' }
+    });
+    const parsed = JSON.parse(resp.choices[0].message.content);
+    const sanitized = parsed.messages;
 
-  const out = messages.slice();
-  userIndices.forEach((idx, i) => { out[idx] = { ...out[idx], content: cleaned[i] }; });
-  return out;
+    if (Array.isArray(sanitized) && sanitized.length === allTexts.length) {
+      return preScrubbedMessages.map((m, i) => ({
+        ...m,
+        content: sanitized[i]?.text ?? m.content
+      }));
+    }
+  } catch (err) {
+    // LLM pass failed — return regex-scrubbed version as fallback
+    return preScrubbedMessages;
+  }
+
+  return preScrubbedMessages;
 }
 
 // Build a hero image prompt tailored to the conversation. Returns the prompt
