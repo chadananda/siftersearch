@@ -71,6 +71,22 @@ const PRIMARY_DOCTRINAL_PATHS = [
   'Lao-tzu, Tao Te Ching',
   // Local library — Zoroastrian Avesta (all subfolders: Vendidad, Yasna, Yashts, Khordeh)
   '/Zoroastrian/Avesta',
+  // Local library — Jain Agamas (Akaranga, Sutrakritanga, Uttaradhyayana, Kalpa Sutra)
+  '/Jain/Agamas/',
+  // Local library — Jaina Sutras (SBE translations, Sacred Books of the East)
+  '/Jain/Philosophy/Jaina Sutras',
+  // OL Jainism — Akaranga, Sutrakritanga, Uttaradhyayana, Kalpa Sutra
+  '-sites/oceanlibrary.com/Jainism/',
+  // Local library — Confucian Four Books (English translations)
+  '/Confucian/Four Books/',
+  // Local library — Confucian Five Classics (English: Li Ki, Shih King, I Ching, Shu King)
+  '/Confucian/Five Classics/The',
+  // Local library — Art of War (Lionel Giles translation)
+  '/Confucian/Ethics and Governance/The Art of War',
+  // OL Confucian — Analects, Mencius, Great Learning, Doctrine of Mean, I Ching
+  '-sites/oceanlibrary.com/Confucian/',
+  // Local library — Zhuangzi (Chuang Tzu, English translation)
+  '/Tao/Foundational Classics/Chuang Tzu',
   // Local library — Arabic Qur'an (the specific /Quran/ subfolder, not Tafsir)
   '/Foundational Texts/Quran/Qur',
 ];
