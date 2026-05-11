@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T00:37:27.478Z",
+  "generated": "2026-05-11T00:47:08.796Z",
   "entries": [
+    {
+      "hash": "16cf4b3",
+      "date": "2026-05-10",
+      "type": "Other",
+      "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
+      "scope": null
+    },
     {
       "hash": "7c7b025",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use NetworkFirst caching for document content",
       "scope": null
-    },
-    {
-      "hash": "cc7b55b",
-      "date": "2026-01-09",
-      "type": "Fixed",
-      "description": "Only assign heading to immediately following paragraph",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "16cf4b3",
+        "date": "2026-05-10",
+        "type": "Other",
+        "description": "More spacing between Q/A rounds (1.2rem → 1.75rem)",
+        "scope": null
+      },
       {
         "hash": "7c7b025",
         "date": "2026-05-10",
@@ -7071,13 +7078,6 @@
         "date": "2026-01-09",
         "type": "Fixed",
         "description": "Use NetworkFirst caching for document content",
-        "scope": null
-      },
-      {
-        "hash": "cc7b55b",
-        "date": "2026-01-09",
-        "type": "Fixed",
-        "description": "Only assign heading to immediately following paragraph",
         "scope": null
       }
     ]
