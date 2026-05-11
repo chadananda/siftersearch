@@ -477,6 +477,43 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     return result;
   };
 
+  // Catalog pre-fetch: for library overview/browsing questions, skip the
+  // per-tradition search loop entirely and call library_overview directly.
+  // The LLM search loop sends the raw question to Meilisearch and gets
+  // irrelevant passage results; the catalog gives accurate counts + collections.
+  // A companion tradition search gives the crafter citable sources with URLs.
+  if (isCatalogQuery(messages)) {
+    if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
+    if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
+    try {
+      const overview = await executeTool('library_overview', {}, { scope_config });
+      const religionLines = (overview.religions || []).map(r => `  - ${r.name}: ${r.documents} documents`).join('\n');
+      const collectionLines = (overview.collections || []).filter(c => c.documents > 0).map(c => `  - ${c.name}: ${c.documents} documents${c.description ? ' — ' + c.description.slice(0, 80) : ''}`).join('\n');
+      retrieved.push({
+        text: `Library catalog:\nTotal: ${overview.totalDocuments} documents, ${overview.totalParagraphs} paragraphs\n\nBy tradition:\n${religionLines}\n\nCollections:\n${collectionLines}`,
+        source_title: 'Library Catalog',
+        source_author: 'Ocean Library',
+        citation_url: null,
+        via: 'library_overview',
+        is_catalog: true
+      });
+      // Companion search: gives the crafter actual quoted passages with URLs
+      const traditionQuery = extractTraditionSearchQuery(userMessage) || 'sacred scripture wisdom tradition';
+      try {
+        const searchResults = await executeTool('search', { query: traditionQuery, limit: 5 }, { scope_config });
+        if (searchResults?.passages?.length) {
+          harvestPassages(searchResults, 'catalog_companion');
+        }
+      } catch (se) {
+        logger.warn({ err: se.message }, 'catalog companion search failed');
+      }
+      logger.info({ retrieved: retrieved.length, traditionQuery }, 'catalog pre-fetch complete');
+      return { retrieved_quotes: retrieved, subagent_syntheses: subagentSyntheses, tool_calls: debugCalls };
+    } catch (e) {
+      logger.warn({ err: e.message }, 'catalog pre-fetch failed, falling through to normal research');
+    }
+  }
+
   const tasks = [];
 
   // Carry forward a work_name from earlier in the conversation when the
