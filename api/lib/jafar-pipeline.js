@@ -688,9 +688,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // Non-English passages (Arabic, Farsi, Hebrew) are translated inline
       // after retrieval so the crafter can quote them in English while
       // preserving the original in the citation.
-      // Two searches per tradition: primary (collection-filtered) then broad.
+      // Two searches per tradition: primary (scripture-targeted) then broad.
+      // Islam: author="Muhammad" targets OceanLibrary Quran surahs directly,
+      // avoiding "Foundational Texts" which mixes Quran with voluminous Tafsir.
+      // Christian, Buddhist, Judaism: collection filter picks the primary canon.
       const PRIMARY_SEARCHES = {
-        "Islam":    { collection: "Foundational Texts" },
+        "Islam":    { author: "Muhammad" },
         "Christian":{ collection: "Bible and Translations" },
         "Buddhist": { collection: "Pali Canon" },
         "Judaism":  { collection: "Torah and Tanakh" },

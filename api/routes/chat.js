@@ -390,7 +390,7 @@ For an unfiltered total of the whole library, use library_overview instead.`,
 
 // ─── Tool implementations ─────────────────────────────────────────────────
 
-export async function executeSearch({ query, mode = 'passages', religion, collection, language, document_id, start = 0, limit = 10, scope_config }) {
+export async function executeSearch({ query, mode = 'passages', religion, collection, author, language, document_id, start = 0, limit = 10, scope_config }) {
   const safeLimit = Math.min(limit || 10, 100);
 
   // MODE: read — fetch paragraphs from a specific document
@@ -421,6 +421,7 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     const filters = {};
     if (religion) filters.religion = religion;
     if (collection) filters.collection = collection;
+    if (author) filters.author = author;
     if (language) filters.language = language;
     if (document_id) filters.documentId = document_id;
 

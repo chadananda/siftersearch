@@ -23,7 +23,9 @@ let libraryAuthority = null;
 let lastLoadTime = 0;
 const CACHE_TTL_MS = 60000; // Reload every 60 seconds
 
-// Author-based authority overrides (Central Figures, institutions)
+// Author-based authority overrides (Central Figures, institutions, primary scripture authors).
+// Matched by exact equality — avoids false positives like "Muhammad Husayn Tabatabai"
+// matching the prophet "Muhammad".
 const AUTHOR_AUTHORITY = {
   "Bahá'u'lláh": 10,
   "Baha'u'llah": 10,
@@ -34,6 +36,8 @@ const AUTHOR_AUTHORITY = {
   "Abdul-Baha": 9,
   "Shoghi Effendi": 9,
   "Universal House of Justice": 8,
+  // OceanLibrary Quran surahs: author field = "Muhammad" (exact)
+  "Muhammad": 10,
 };
 
 const DEFAULT_AUTHORITY = 5;
@@ -139,12 +143,20 @@ export function getAuthority(doc) {
     return libAuth.collections[religion][collection];
   }
 
-  // 3. Check religion default from meta.yaml
+  // 3. Author-based authority for primary scripture authors (Central Figures, prophets).
+  // Checked BEFORE religion default so e.g. OceanLibrary Quran surahs (author="Muhammad",
+  // no collection authority) get 10 rather than the Islam religion default of 6.
+  // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
+  if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
+    return AUTHOR_AUTHORITY[doc.author];
+  }
+
+  // 4. Check religion default from meta.yaml
   if (religion && libAuth.religions[religion] !== undefined) {
     return libAuth.religions[religion];
   }
 
-  // 4. External-site authority floor from sites.yaml. Lazy-load to avoid
+  // 5. External-site authority floor from sites.yaml. Lazy-load to avoid
   // circular import (scope.js doesn't import from authority.js).
   // Supplementals like bahai-library.com (authority_default 3) get a low
   // ranking floor here; primary docs at the SAME relevance score outrank
@@ -154,15 +166,6 @@ export function getAuthority(doc) {
     const cfg = getSiteRegistryConfig(source_site);
     if (cfg && typeof cfg.authority_default === 'number') {
       return Math.min(10, Math.max(0, cfg.authority_default));
-    }
-  }
-
-  // 5. Fallback to author-based authority (Central Figures)
-  if (doc.author) {
-    for (const [authorPattern, authorityValue] of Object.entries(AUTHOR_AUTHORITY)) {
-      if (doc.author.includes(authorPattern)) {
-        return authorityValue;
-      }
     }
   }
 

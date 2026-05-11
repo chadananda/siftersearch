@@ -160,3 +160,5 @@ authors:
   "'Abdu'l-Bahá": 9
   Shoghi Effendi: 9
   Universal House of Justice: 8
+  # Quran surahs (OceanLibrary individual suras have author="Muhammad")
+  Muhammad: 10

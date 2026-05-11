@@ -58,6 +58,8 @@ export async function searchHypeQuestions({ getMeili, INDEXES }, query, options 
   const meiliFilters = [];
   if (filters.religion) meiliFilters.push(`religion = "${filters.religion.replace(/"/g, '\\"')}"`);
   if (filters.collection) meiliFilters.push(`collection = "${filters.collection.replace(/"/g, '\\"')}"`);
+  // author is not indexed in hype_questions — skip it here (applied to main paragraph index only)
+
   // Accept either camelCase (from executeSearch) or snake_case for doc_id
   const docIdFilter = typeof filters.documentId === 'number' ? filters.documentId
     : (typeof filters.doc_id === 'number' ? filters.doc_id : null);

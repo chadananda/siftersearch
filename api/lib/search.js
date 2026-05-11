@@ -305,6 +305,7 @@ export async function hybridSearch(query, options = {}) {
   const filterParts = [];
   if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
   if (filters.collection) filterParts.push(`collection = "${filters.collection}"`);
+  if (filters.author) filterParts.push(`author = "${filters.author.replace(/"/g, '\\"')}"`);
   if (filters.language) filterParts.push(`language = "${filters.language}"`);
   if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
   if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
