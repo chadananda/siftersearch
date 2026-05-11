@@ -14,6 +14,7 @@ import { logger } from '../lib/logger.js';
 import { createEmbeddings } from '../lib/ai.js';
 import { config } from '../lib/config.js';
 import { content } from '../lib/content.js';
+import { propagateHypeFromNormalizedHash } from '../lib/sonnet-enrichment.js';
 
 // Configuration - tuned for throughput while yielding event loop
 const EMBEDDING_INTERVAL_MS = 2000;   // Poll every 2 seconds
@@ -209,11 +210,14 @@ function schedulePropagation() {
     try {
       const result = await content.propagateEmbeddings();
       const affected = result?.rowsAffected || 0;
-      if (affected > 0) {
-        logger.info({ propagated: affected }, 'Embedding propagation complete');
-      }
+      if (affected > 0) logger.info({ propagated: affected }, 'Embedding propagation complete');
     } catch (err) {
       logger.warn({ err: err.message }, 'Embedding propagation failed (non-fatal)');
+    }
+    try {
+      await propagateHypeFromNormalizedHash();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'HyPE propagation failed (non-fatal)');
     }
     // Reschedule
     if (embeddingInterval) {

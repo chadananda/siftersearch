@@ -268,6 +268,7 @@ const SKIP_TITLES = new Set([
 // Tier 1-7 (Bahá'í primary doctrinal) is owned by the Sonnet API path
 // (scripts/run-enrichment-api.js + api/lib/sonnet-enrichment.js).
 const { getDocTier } = await import('../api/lib/doc-tier.js');
+const { propagateHypeFromNormalizedHash } = await import('../api/lib/sonnet-enrichment.js');
 
 function getDocumentsInOrder(db, religion, docId, maxDocs) {
   // HyPE gate: skip docs from external sites (supplemental + site-only).
@@ -642,6 +643,9 @@ async function main() {
   }
 
   saveState();
+
+  // Propagate HyPE from exact-match duplicates before processing — free cache hit
+  await propagateHypeFromNormalizedHash();
 
   // Process documents
   for (let i = startDocIndex; i < docs.length; i++) {

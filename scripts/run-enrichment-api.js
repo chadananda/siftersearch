@@ -28,6 +28,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const { logger } = await import('../api/lib/logger.js');
 const {
   enqueueParagraphsForBatch,
+  propagateHypeFromNormalizedHash,
   submitNextBatch,
   pollAndProcess,
   getStatus
@@ -48,6 +49,7 @@ async function tick() {
   const now = Date.now();
   try {
     if (now - lastEnqueue > ENQUEUE_INTERVAL_MS) {
+      await propagateHypeFromNormalizedHash();
       const queued = await enqueueParagraphsForBatch({ limit: 50000 });
       if (queued > 0) logger.info({ queued }, 'enrichment-api: enqueued new paragraphs');
       lastEnqueue = now;

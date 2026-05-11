@@ -108,6 +108,40 @@ export function parseSonnetResponse(text) {
 // ─── Queue management ────────────────────────────────────────────────────────
 
 /**
+ * Propagate HyPE results to paragraphs whose normalized text already has
+ * hyp_questions on another content row. Keyed on normalized_hash — same
+ * mechanism as the embedding cache. Free: no API calls, pure SQL.
+ *
+ * Returns count of rows updated.
+ */
+export async function propagateHypeFromNormalizedHash() {
+  const result = await query(`
+    UPDATE content
+    SET hyp_questions  = (SELECT src.hyp_questions FROM content src
+                          WHERE src.normalized_hash = content.normalized_hash
+                            AND src.hyp_questions IS NOT NULL
+                            AND src.id != content.id
+                          LIMIT 1),
+        hyp_thesis     = (SELECT src.hyp_thesis FROM content src
+                          WHERE src.normalized_hash = content.normalized_hash
+                            AND src.hyp_questions IS NOT NULL
+                            AND src.id != content.id
+                          LIMIT 1),
+        enhanced_synced = 0
+    WHERE hyp_questions IS NULL
+      AND normalized_hash IS NOT NULL
+      AND normalized_hash IN (
+        SELECT normalized_hash FROM content
+        WHERE hyp_questions IS NOT NULL
+          AND normalized_hash IS NOT NULL
+      )
+  `);
+  const propagated = result?.changes ?? 0;
+  if (propagated > 0) logger.info({ propagated }, 'propagateHypeFromNormalizedHash: copied HyPE from duplicate paragraphs');
+  return propagated;
+}
+
+/**
  * Find paragraphs in tier 1-7 docs that need enrichment and add them to
  * enrichment_pending. Idempotent — content_id is the primary key, INSERT OR IGNORE
  * means already-queued rows are untouched.
