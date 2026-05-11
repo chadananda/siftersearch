@@ -189,10 +189,11 @@ const searchConfig = {
   // Ranking rules alone don't fight through hybrid vector scores (scores are unique,
   // so authority:desc rarely tiebreaks); this boost makes canonical sources actually surface.
   // Cross-tradition problem: Bahá'í secondary sources quote Jesus/Quran extensively and
-  // score higher semantically for Bible/Quran topics than the actual scripture. Boost=1.0
-  // gives primary texts (auth 10) a 2x multiplier that overcomes this relevance gap even
-  // when the primary text has 50% lower semantic relevance than the commentary.
-  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '1.0')),
+  // score higher semantically for Bible/Quran topics than the actual scripture. HyPE weight
+  // is 1.5; Fananapazir at HyPE rank 0 scores 0.041 RRF vs Muhammad at main rank 0 at 0.017.
+  // Boost ≥ 1.44 needed for auth=10 to overcome HyPE-dominant commentary (auth=5).
+  // Boost=2.0 gives a 3× multiplier for auth=10, safely clearing the HyPE advantage.
+  authorityBoost: parseFloat(get('AUTHORITY_BOOST', '2.0')),
   // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
   // hits that were just outside the top N can move in. Increased to 20 so primary texts
   // at position 50-100 in semantic ranking can surface via authority promotion.

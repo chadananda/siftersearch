@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T20:47:00.233Z",
+  "generated": "2026-05-11T21:10:02.461Z",
   "entries": [
+    {
+      "hash": "f52afd7",
+      "date": "2026-05-11",
+      "type": "Other",
+      "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
+      "scope": null
+    },
     {
       "hash": "9bd1586",
       "date": "2026-05-11",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Show plain excerpt in search list, apply highlighting in reader view",
       "scope": null
-    },
-    {
-      "hash": "417d990",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use Levenshtein distance for fuzzy all-terms matching",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "f52afd7",
+        "date": "2026-05-11",
+        "type": "Other",
+        "description": "Tighten filtered-religion author cap to 25% in multiIndexSearch",
+        "scope": null
+      },
       {
         "hash": "9bd1586",
         "date": "2026-05-11",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-13",
         "type": "New",
         "description": "Show plain excerpt in search list, apply highlighting in reader view",
-        "scope": null
-      },
-      {
-        "hash": "417d990",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use Levenshtein distance for fuzzy all-terms matching",
         "scope": null
       }
     ]
