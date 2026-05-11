@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T04:42:46.718Z",
+  "generated": "2026-05-11T04:48:45.291Z",
   "entries": [
+    {
+      "hash": "f8b670d",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
+      "scope": null
+    },
     {
       "hash": "30825a6",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
       "scope": null
-    },
-    {
-      "hash": "bba469b",
-      "date": "2026-01-11",
-      "type": "Fixed",
-      "description": "Use search.quick endpoint for lightning search mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "f8b670d",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "Wrap enqueueParagraphsForBatch in try-catch — retry on db lock without crashing tick",
+        "scope": null
+      },
       {
         "hash": "30825a6",
         "date": "2026-05-10",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-11",
         "type": "Fixed",
         "description": "Load CLOUDFLARE_API_TOKEN in pre-commit hook",
-        "scope": null
-      },
-      {
-        "hash": "bba469b",
-        "date": "2026-01-11",
-        "type": "Fixed",
-        "description": "Use search.quick endpoint for lightning search mode",
         "scope": null
       }
     ]

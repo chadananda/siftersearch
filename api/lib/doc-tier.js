@@ -47,32 +47,30 @@ const SPECIFIC_BOOK_DOC_IDS = new Map(SPECIFIC_BOOKS.map(b => [b.doc_id, b.tier]
 // Primary doctrinal texts from other traditions — routed to Anthropic batch API
 // (same as Bahá'í tier 1-7) with CONTEXT_WINDOW=0 (model already knows these texts).
 //
-// Local (non-OL) docs: matched by {religion, collection} extracted from folder path.
-// OL docs: matched by file_path substring (stored as path relative to library root).
-const PRIMARY_DOCTRINAL_LOCAL = [
-  { religion: 'Buddhist',  collection: 'Pali Canon' },
-  { religion: 'Sikh',      collection: 'Guru Granth Sahib' },
-  { religion: 'Hindu',     collection: 'Vedas and Upanishads' },
-  // Arabic Qur'an lives under Islam/Foundational Texts/ — title disambiguates
-  { religion: 'Islam',     collection: 'Foundational Texts', titlePattern: /qur.?an/i },
-];
-
-const PRIMARY_DOCTRINAL_OL_PATHS = [
-  '/The Bible (KJV)/',
+// All matching is by file_path substring (stored relative to library root by ingester).
+// This avoids ambiguity: collection names are too broad (e.g. "Foundational Texts"
+// covers tafsir books as well as the Qur'an itself).
+const PRIMARY_DOCTRINAL_PATHS = [
+  // OL Christian NT only — '/Christian/' prefix excludes the OT KJV under Judaism
+  '/Christian/The Bible (KJV)/',
+  // OL Islam — Rodwell canonical English translation
   '/The Quran (Rodwell)/',
+  // OL Judaism — JPS 1917 (covers all 39 Tanakh books)
   '/The Tanakh (JPS 1917)/',
+  // Local library — Pali Canon individual suttas
+  '/Pali Canon/',
+  // Local library — Guru Granth Sahib sections
+  '/Guru Granth Sahib/',
+  // Local library — Vedas and Upanishads
+  '/Vedas and Upanishads/',
+  // Local library — Arabic Qur'an (the specific /Quran/ subfolder, not Tafsir)
+  '/Foundational Texts/Quran/Qur',
 ];
 
 export function isPrimaryDoctrinal(doc) {
   const fp = String(doc.file_path || '');
-  for (const sub of PRIMARY_DOCTRINAL_OL_PATHS) {
+  for (const sub of PRIMARY_DOCTRINAL_PATHS) {
     if (fp.includes(sub)) return true;
-  }
-  for (const sig of PRIMARY_DOCTRINAL_LOCAL) {
-    if (doc.religion !== sig.religion) continue;
-    if (doc.collection !== sig.collection) continue;
-    if (sig.titlePattern && !sig.titlePattern.test(doc.title || '')) continue;
-    return true;
   }
   return false;
 }
