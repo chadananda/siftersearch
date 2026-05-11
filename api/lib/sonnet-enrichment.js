@@ -137,31 +137,42 @@ export function parseSonnetResponse(text) {
  *
  * Returns count of rows updated.
  */
-export async function propagateHypeFromNormalizedHash() {
-  const result = await query(`
-    UPDATE content
-    SET hyp_questions  = (SELECT src.hyp_questions FROM content src
-                          WHERE src.normalized_hash = content.normalized_hash
-                            AND src.hyp_questions IS NOT NULL
-                            AND src.id != content.id
-                          LIMIT 1),
-        hyp_thesis     = (SELECT src.hyp_thesis FROM content src
-                          WHERE src.normalized_hash = content.normalized_hash
-                            AND src.hyp_questions IS NOT NULL
-                            AND src.id != content.id
-                          LIMIT 1),
-        enhanced_synced = 0
-    WHERE hyp_questions IS NULL
-      AND normalized_hash IS NOT NULL
-      AND normalized_hash IN (
-        SELECT normalized_hash FROM content
-        WHERE hyp_questions IS NOT NULL
-          AND normalized_hash IS NOT NULL
+export async function propagateHypeFromNormalizedHash({ batchSize = 500 } = {}) {
+  // Batched to avoid holding the write lock for minutes on large tables.
+  // Each batch updates at most batchSize rows, releases the lock, then loops.
+  let totalPropagated = 0;
+  let batch;
+  do {
+    const result = await query(`
+      UPDATE content
+      SET hyp_questions  = (SELECT src.hyp_questions FROM content src
+                            WHERE src.normalized_hash = content.normalized_hash
+                              AND src.hyp_questions IS NOT NULL
+                              AND src.id != content.id
+                            LIMIT 1),
+          hyp_thesis     = (SELECT src.hyp_thesis FROM content src
+                            WHERE src.normalized_hash = content.normalized_hash
+                              AND src.hyp_questions IS NOT NULL
+                              AND src.id != content.id
+                            LIMIT 1),
+          enhanced_synced = 0
+      WHERE rowid IN (
+        SELECT c.rowid FROM content c
+        WHERE c.hyp_questions IS NULL
+          AND c.normalized_hash IS NOT NULL
+          AND c.normalized_hash IN (
+            SELECT normalized_hash FROM content
+            WHERE hyp_questions IS NOT NULL
+              AND normalized_hash IS NOT NULL
+          )
+        LIMIT ?
       )
-  `);
-  const propagated = result?.changes ?? 0;
-  if (propagated > 0) logger.info({ propagated }, 'propagateHypeFromNormalizedHash: copied HyPE from duplicate paragraphs');
-  return propagated;
+    `, [batchSize]);
+    batch = result?.changes ?? 0;
+    totalPropagated += batch;
+  } while (batch >= batchSize);
+  if (totalPropagated > 0) logger.info({ propagated: totalPropagated }, 'propagateHypeFromNormalizedHash: copied HyPE from duplicate paragraphs');
+  return totalPropagated;
 }
 
 /**

@@ -49,17 +49,19 @@ async function tick() {
   const now = Date.now();
   try {
     if (now - lastEnqueue > ENQUEUE_INTERVAL_MS) {
-      try {
-        await propagateHypeFromNormalizedHash();
-      } catch (propErr) {
-        logger.warn({ err: propErr.message }, 'enrichment-api: HyPE propagation failed (non-fatal, continuing)');
-      }
+      // Enqueue first — propagation is optional and must not block it.
       try {
         const queued = await enqueueParagraphsForBatch({ limit: 50000 });
         if (queued > 0) logger.info({ queued }, 'enrichment-api: enqueued new paragraphs');
         lastEnqueue = now;
       } catch (enqErr) {
         logger.warn({ err: enqErr.message }, 'enrichment-api: enqueue failed (will retry next tick)');
+      }
+      // Propagation runs after enqueue; batched so it never holds lock > ~1s at a time.
+      try {
+        await propagateHypeFromNormalizedHash();
+      } catch (propErr) {
+        logger.warn({ err: propErr.message }, 'enrichment-api: HyPE propagation failed (non-fatal)');
       }
     }
 
