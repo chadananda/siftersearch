@@ -528,10 +528,10 @@ export async function hybridSearch(query, options = {}) {
   // same relevance tier. Runs unconditionally — callers don't opt in.
   const authorityRanked = rerankByAuthority(allHits);
 
-  // For filtered queries, cap any single author at 50% so commentary authors
+  // For filtered queries, cap any single author at 40% so commentary authors
   // (e.g. Bahá'u'lláh writing on Islamic topics) don't crowd out primary scripture.
   const reranked = (!isCrossTradition && offset === 0 && filters.religion)
-    ? diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.5)), 'author')
+    ? diversifyHits(authorityRanked, limit, Math.max(2, Math.ceil(limit * 0.4)), 'author')
     : authorityRanked.slice(offset, offset + limit);
 
   return {
@@ -838,7 +838,9 @@ export async function multiIndexSearch(query, options = {}) {
   let finalEntries;
   if (isCrossTraditionMIS) {
     const rrfHits = allSorted.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
-    const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.4)), 'religion');
+    // Cap at 25% per tradition (max 2 of 8) so at least 6 other tradition slots exist.
+    // Tighter than hybridSearch's 40% because multiIndexSearch is the user-facing output.
+    const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'religion');
     finalEntries = diverse.map(h => h._entry);
   } else {
     finalEntries = allSorted.slice(0, limit);
