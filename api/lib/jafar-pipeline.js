@@ -64,6 +64,25 @@ export async function runResearchPhase({ messages, sendEvent, debug, scope_confi
   }
 }
 
+// Catalog questions ask about what the library *contains*, not what texts *say*.
+// The LLM reliably routes these to `search` even when told not to, so detect them
+// here and pre-fetch library_overview before the LLM loop runs.
+const CATALOG_PATTERNS = [
+  /\bwhat (do you|does the library|have|texts?|scriptures?|books?|languages?|collections?)\b/i,
+  /\bhow many\b/i,
+  /\blist (the|all|your|available)\b/i,
+  /\bdo you (have|carry|include)\b/i,
+  /\bwhat'?s? in (the|your) library\b/i,
+  /\bwhat (languages?|traditions?|religions?) (are|do you)\b/i,
+  /\bshow me (the|all|your|available) (collections?|texts?|scriptures?|books?)\b/i,
+  /\blargest collection\b/i,
+];
+
+function isCatalogQuery(messages) {
+  const last = messages.filter(m => m.role === 'user').at(-1)?.content || '';
+  return CATALOG_PATTERNS.some(p => p.test(last));
+}
+
 async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config }) {
   const aiMessages = [
     { role: 'system', content: RESEARCH_SYSTEM },
@@ -72,6 +91,27 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
 
   const retrieved = [];
   const debugCalls = [];
+
+  // Pre-fetch library_overview for catalog questions — the LLM ignores routing
+  // instructions and always reaches for `search`, which returns passages not catalog data.
+  if (isCatalogQuery(messages)) {
+    if (debug) debugCalls.push({ name: 'library_overview', args: {}, forced: true });
+    if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'library_overview', args: {}, forced: true });
+    try {
+      const overview = await executeTool('library_overview', {}, { scope_config });
+      // Inject as a synthetic tool exchange so the LLM sees the catalog data
+      const fakeCallId = 'forced_overview_0';
+      aiMessages.push({
+        role: 'assistant',
+        content: null,
+        tool_calls: [{ id: fakeCallId, type: 'function', function: { name: 'library_overview', arguments: '{}' } }]
+      });
+      aiMessages.push({ role: 'tool', tool_call_id: fakeCallId, content: JSON.stringify(overview) });
+    } catch (e) {
+      logger.warn({ err: e.message }, 'pre-fetch library_overview failed');
+    }
+  }
+
   // Cap at 3 rounds. Pipeline budget is ~90s end-to-end vs Cloudflare's
   // ~100s timeout — research must leave room for craft + reflect + retry.
   const MAX_ROUNDS = 3;
@@ -81,8 +121,8 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
       model: 'gpt-4o',
       messages: aiMessages,
       tools: TOOLS,
-      // Force at least one tool call on the first round; auto thereafter
-      tool_choice: round === 0 ? 'required' : 'auto',
+      // First round after pre-fetch: auto (data already in context); otherwise required
+      tool_choice: round === 0 ? 'auto' : 'auto',
       stream: false,
       max_tokens: 800,
       temperature: 0.3
