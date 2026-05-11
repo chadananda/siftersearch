@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-11T02:49:10.789Z",
+  "generated": "2026-05-11T02:52:26.407Z",
   "entries": [
+    {
+      "hash": "0030476",
+      "date": "2026-05-10",
+      "type": "Fixed",
+      "description": "PrimaryOpts reference bug in interfaith search",
+      "scope": null
+    },
     {
       "hash": "c5478a3",
       "date": "2026-05-10",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add preview field to /api/library/documents endpoint",
       "scope": null
-    },
-    {
-      "hash": "29f93f3",
-      "date": "2026-01-10",
-      "type": "New",
-      "description": "Instant accordion preview for library documents",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-10": [
+      {
+        "hash": "0030476",
+        "date": "2026-05-10",
+        "type": "Fixed",
+        "description": "PrimaryOpts reference bug in interfaith search",
+        "scope": null
+      },
       {
         "hash": "c5478a3",
         "date": "2026-05-10",
@@ -7069,13 +7076,6 @@
         "date": "2026-01-10",
         "type": "Fixed",
         "description": "Add preview field to /api/library/documents endpoint",
-        "scope": null
-      },
-      {
-        "hash": "29f93f3",
-        "date": "2026-01-10",
-        "type": "New",
-        "description": "Instant accordion preview for library documents",
         "scope": null
       }
     ]

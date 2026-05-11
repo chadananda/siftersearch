@@ -890,7 +890,8 @@ export function stripUngroundedLinks(text, retrievedQuotes) {
     (retrievedQuotes || []).map(q => q.citation_url).filter(Boolean)
   );
   if (validUrls.size === 0) return text;
-  return text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (match, fragment, url) => {
+  // Allow one level of balanced parens in URLs (e.g., "/path (en)#p10")
+  return text.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
     return validUrls.has(url) ? match : fragment;
   });
 }

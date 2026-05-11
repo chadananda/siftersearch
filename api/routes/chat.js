@@ -488,7 +488,8 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           if (extParaId) result.external_para_id = extParaId;
         } else if (meta) {
           // Primary library doc — build /library/{religion}/{collection}/{slug}#p{idx}
-          const docSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
+          const rawSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
+          const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
           if (docSlug && meta.religion && meta.collection) {
             const base = `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}`;
             result.source_url = hit.paragraph_index != null ? `${base}#p${hit.paragraph_index}` : base;
