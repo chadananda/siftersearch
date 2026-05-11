@@ -269,16 +269,18 @@ export const TOOLS = [
     type: 'function',
     function: {
       name: 'search',
-      description: `Unified search tool for the Ocean Library. Handles everything:
-- "Do you have books by X?" → mode "documents", query the author name
+      description: `Search for quotable passages and documents in the Ocean Library.
+
+Use this for:
 - "What does the Quran say about mercy?" → mode "passages", query "mercy", religion "Islam"
-- "How many Buddhist texts do you have?" → mode "count", religion "Buddhist"
-- "List the Pali Canon collection" → mode "documents", collection "Pali Canon"
+- "Do you have books by X?" → mode "documents", query the author name
 - "What's in document 1234?" → mode "read", document_id 1234
+
+Do NOT use this for catalog/coverage questions ("what do you have", "how many", "list collections", "what languages"). Use library_overview for those.
 
 IMPORTANT: Always use the religion filter when the question is about a specific religion's texts. Use mode "passages" to find quotable content — the text field in results contains the actual quote you should cite.
 
-All text searches are fuzzy — typos, transliteration variants, and partial matches work. If results are weak, try simpler/broader search terms.`,
+All text searches are fuzzy — typos, transliteration variants, and partial matches work.`,
       parameters: {
         type: 'object',
         properties: {
