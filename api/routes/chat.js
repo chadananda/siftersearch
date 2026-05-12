@@ -131,7 +131,22 @@ This means: never describe an 'Abdu'l-Bahá or Shoghi Effendi interpretation as 
 
 A semantic engine rewards creativity. Reaching for "exact match" thinking is the wrong reflex.
 
-**Specific named works — use the two-step citation pipeline. ALWAYS BOTH STEPS.** When the conversation is about a specific named scripture or work (*the Tablet of Wisdom, the Iqán, the Hidden Words, the Gospel of John, the Bhagavad Gita, a specific Upanishad*) — that is, when the user is asking what a particular text says — use this pipeline. **Author-name triggers:** "What does Lao Tzu say..." → use "Tao Te Ching". "What does the Psalms say..." → use "Psalms". Single-author traditions (Lao Tzu = Tao Te Ching, Buddha in the Dhammapada, Moses in the Torah) — route by their canonical text, not the author name alone.
+**Specific named works — use the two-step citation pipeline. ALWAYS BOTH STEPS.** When the conversation is about a specific named scripture or work (*the Tablet of Wisdom, the Iqán, the Hidden Words, the Gospel of John, the Bhagavad Gita, a specific Upanishad*) — that is, when the user is asking what a particular text says — use this pipeline.
+
+**Author-name triggers — DO NOT run multi-religion search for these. ALWAYS use `find_document_for_citation` directly:**
+| User says | Call find_document_for_citation with title |
+|---|---|
+| "What does Lao Tzu say…" | "Tao Te Ching", religion: "Tao" |
+| "What does Confucius say…" | "Analects", religion: "Confucian" |
+| "What does the Buddha say…" or "What does Buddhism say about X in the Dhammapada" | "Dhammapada", religion: "Buddhist" |
+| "What do the Psalms say…" | "Psalms", religion: "Judaism" |
+| "What does Moses say…" / Torah question | "Genesis" or "Torah", religion: "Judaism" |
+| "What does Isaiah say…" | "Isaiah", religion: "Judaism" |
+| "What does Paul say…" | "Letters of Paul" or specific epistle, religion: "Christian" |
+| "What does Muhammad say…" | use search with religion: "Islam" (hadith corpus) |
+| "What does Zoroaster say…" | "Gathas" or "Avesta", religion: "Zoroastrian" |
+
+Single-author traditions: "Lao Tzu" = Tao Te Ching, "Confucius" = Analects. When the author IS the canonical work, NEVER run multi-religion broad search — go straight to `find_document_for_citation`.
 
 1. **STEP 1:** \`find_document_for_citation\` with the work's name and the religion. Returns up to 5 candidates ranked by authority. The candidate with \`is_primary: true\` is the actual canonical scripture. Take its \`document_id\`.
 2. **STEP 2 (REQUIRED whenever step 1 returns a primary candidate):** \`read_document_for_question\` with that \`document_id\` and the user's question phrased AS THE USER PHRASED IT. A sub-agent reads the document and returns a tailored summary plus 2-3 verbatim excerpts. Do not paraphrase the user's question into your own framing — the sub-agent's literal-match logic depends on the user's exact terms.
@@ -330,7 +345,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
     type: 'function',
     function: {
       name: 'find_document_for_citation',
-      description: `Locate a specific NAMED scripture or work by title — *the* citation lookup. Use this BEFORE quoting from a named text. Searches the documents index by title with a primary-source authority boost: canonical scriptures (Aqdas, Iqán, Hidden Words, Gleanings, Some Answered Questions; the Gospels; Qur'án; Pali Canon; Upanishads, Bhagavad Gita; Guru Granth Sahib) rank ABOVE commentaries, papers, and pilgrim notes that share the title. Returns up to 5 candidates with document_id, title, author, paragraph_count, and an is_primary flag. Then call read_document_for_question with the document_id of the primary match. Use search with mode:"passages" for topic searches; use this tool when the user is asking about a specific named work.`,
+      description: `Locate a specific NAMED scripture or work by title — *the* citation lookup. Use this BEFORE quoting from a named text. Also use when user asks "What does [author] say about X" where the author has a canonical text: Lao Tzu → "Tao Te Ching", Confucius → "Analects", the Buddha (Dhammapada context) → "Dhammapada", Moses → "Genesis"/"Torah", Isaiah → "Isaiah", Zoroaster → "Gathas". Searches the documents index by title with a primary-source authority boost: canonical scriptures (Aqdas, Iqán, Hidden Words, Gleanings, Some Answered Questions; the Gospels; Qur'án; Pali Canon; Upanishads, Bhagavad Gita; Guru Granth Sahib) rank ABOVE commentaries, papers, and pilgrim notes that share the title. Returns up to 5 candidates with document_id, title, author, paragraph_count, and an is_primary flag. Then call read_document_for_question with the document_id of the primary match. Use search with mode:"passages" for topic searches; use this tool when the user is asking about a specific named work.`,
       parameters: {
         type: 'object',
         properties: {

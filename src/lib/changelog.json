@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:51:26.531Z",
+  "generated": "2026-05-12T17:55:13.311Z",
   "entries": [
+    {
+      "hash": "ff0da67",
+      "date": "2026-05-12",
+      "type": "New",
+      "description": "Author-name citation hints — Lao Tzu→Tao Te Ching, single-author works",
+      "scope": null
+    },
     {
       "hash": "064c19c",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use getMovedDocumentByBodyHash to exclude current path",
       "scope": "library-watcher"
-    },
-    {
-      "hash": "3164a9c",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Add --force flag to migration script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "ff0da67",
+        "date": "2026-05-12",
+        "type": "New",
+        "description": "Author-name citation hints — Lao Tzu→Tao Te Ching, single-author works",
+        "scope": null
+      },
       {
         "hash": "064c19c",
         "date": "2026-05-12",
@@ -7068,13 +7075,6 @@
         "type": "Fixed",
         "description": "Use getMovedDocumentByBodyHash to exclude current path",
         "scope": "library-watcher"
-      },
-      {
-        "hash": "3164a9c",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Add --force flag to migration script",
-        "scope": null
       }
     ]
   }
