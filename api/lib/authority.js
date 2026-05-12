@@ -21,7 +21,8 @@ import { config } from './config.js';
 // Cache for authority values from library meta.yaml files
 let libraryAuthority = null;
 let lastLoadTime = 0;
-const CACHE_TTL_MS = 60000; // Reload every 60 seconds
+let backgroundRefreshPending = false;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes — library structure changes rarely
 
 // Author-based authority overrides (Central Figures, institutions, primary scripture authors).
 // Matched by exact equality — avoids false positives like "Muhammad Husayn Tabatabai"
@@ -85,77 +86,72 @@ const DEFAULT_AUTHORITY = 5;
 /**
  * Load authority values from library's meta.yaml files
  */
-function loadLibraryAuthority() {
-  const now = Date.now();
-  if (libraryAuthority && (now - lastLoadTime) < CACHE_TTL_MS) {
-    return libraryAuthority;
-  }
-
-  libraryAuthority = {
-    religions: {},      // religion -> authority
-    collections: {},    // religion -> { collection -> authority }
-    religionMeta: {},   // religion -> full meta object
-    collectionMeta: {}, // religion -> { collection -> full meta object }
+function scanLibraryAuthority() {
+  const fresh = {
+    religions: {},
+    collections: {},
+    religionMeta: {},
+    collectionMeta: {},
   };
 
   const basePath = config.library.basePath;
   if (!basePath) {
     console.warn('No library basePath configured');
-    return libraryAuthority;
+    return;
   }
 
   try {
-    // Scan religion directories
     const religions = readdirSync(basePath).filter(item => {
-      const fullPath = join(basePath, item);
-      try {
-        return statSync(fullPath).isDirectory() && !item.startsWith('.');
-      } catch { return false; }
+      try { return statSync(join(basePath, item)).isDirectory() && !item.startsWith('.'); }
+      catch { return false; }
     });
 
     for (const religion of religions) {
       const religionPath = join(basePath, religion);
-
-      // Check for .religion/meta.yaml
-      const religionMetaPath = join(religionPath, '.religion', 'meta.yaml');
       try {
-        const content = readFileSync(religionMetaPath, 'utf-8');
-        const meta = parseYaml(content);
-        libraryAuthority.religionMeta[religion] = meta;
-        if (meta.authority !== undefined) {
-          libraryAuthority.religions[religion] = meta.authority;
-        }
+        const meta = parseYaml(readFileSync(join(religionPath, '.religion', 'meta.yaml'), 'utf-8'));
+        fresh.religionMeta[religion] = meta;
+        if (meta.authority !== undefined) fresh.religions[religion] = meta.authority;
       } catch { /* No religion meta */ }
 
-      // Scan collection directories
-      libraryAuthority.collections[religion] = {};
-      libraryAuthority.collectionMeta[religion] = {};
+      fresh.collections[religion] = {};
+      fresh.collectionMeta[religion] = {};
 
       const collections = readdirSync(religionPath).filter(item => {
-        const fullPath = join(religionPath, item);
-        try {
-          return statSync(fullPath).isDirectory() && !item.startsWith('.');
-        } catch { return false; }
+        try { return statSync(join(religionPath, item)).isDirectory() && !item.startsWith('.'); }
+        catch { return false; }
       });
 
       for (const collection of collections) {
-        const collectionMetaPath = join(religionPath, collection, '.collection', 'meta.yaml');
         try {
-          const content = readFileSync(collectionMetaPath, 'utf-8');
-          const meta = parseYaml(content);
-          libraryAuthority.collectionMeta[religion][collection] = meta;
-          if (meta.authority !== undefined) {
-            libraryAuthority.collections[religion][collection] = meta.authority;
-          }
+          const meta = parseYaml(readFileSync(join(religionPath, collection, '.collection', 'meta.yaml'), 'utf-8'));
+          fresh.collectionMeta[religion][collection] = meta;
+          if (meta.authority !== undefined) fresh.collections[religion][collection] = meta.authority;
         } catch { /* No collection meta */ }
       }
     }
 
-    lastLoadTime = now;
+    libraryAuthority = fresh;
+    lastLoadTime = Date.now();
   } catch (err) {
     console.error('Failed to load library authority:', err.message);
   }
+}
 
+// Stale-while-revalidate: serve cached data immediately; trigger background
+// re-scan when TTL expires so synchronous FS operations never block the event loop.
+function loadLibraryAuthority() {
+  if (!libraryAuthority) {
+    // Cold start: must scan synchronously before any request can be answered
+    scanLibraryAuthority();
+  } else if (Date.now() - lastLoadTime >= CACHE_TTL_MS && !backgroundRefreshPending) {
+    // Stale: return current data and refresh in background
+    backgroundRefreshPending = true;
+    setImmediate(() => {
+      scanLibraryAuthority();
+      backgroundRefreshPending = false;
+    });
+  }
   return libraryAuthority;
 }
 
