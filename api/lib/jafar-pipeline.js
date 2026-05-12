@@ -1553,6 +1553,7 @@ export async function runJafarPipeline({ messages, sendEvent, debug, chatbot_loc
     reply: draft,
     user_intent: userIntent,
     retrieved_count: research.retrieved_quotes.length,
+    retrieval_quotes: research.retrieved_quotes,
     gate,
     retried,
     research_calls: research.tool_calls

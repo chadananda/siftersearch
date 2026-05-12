@@ -1,6 +1,34 @@
 {
-  "generated": "2026-05-12T18:58:47.837Z",
+  "generated": "2026-05-12T19:44:33.093Z",
   "entries": [
+    {
+      "hash": "f6f6db3",
+      "date": "2026-05-12",
+      "type": "New",
+      "description": "Add primary scripture authors for all traditions to AUTHOR_AUTHORITY",
+      "scope": null
+    },
+    {
+      "hash": "a36809f",
+      "date": "2026-05-12",
+      "type": "Other",
+      "description": "Increase OL source multiplier 1.4→2.0 to bridge archaic-language gap",
+      "scope": null
+    },
+    {
+      "hash": "12e40b3",
+      "date": "2026-05-12",
+      "type": "New",
+      "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
+      "scope": null
+    },
+    {
+      "hash": "ffb5916",
+      "date": "2026-05-12",
+      "type": "Performance",
+      "description": "Increase cross-tradition per-religion fetch limit 15→30",
+      "scope": null
+    },
     {
       "hash": "4e3f7d5",
       "date": "2026-05-12",
@@ -3472,38 +3500,38 @@
       "type": "New",
       "description": "Add soft-delete for 30-day embedding retention",
       "scope": null
-    },
-    {
-      "hash": "1aaa14c",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Increase Meilisearch waitForTask timeout to 60s",
-      "scope": null
-    },
-    {
-      "hash": "8aea951",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Automatic orphan cleanup for deleted files/folders",
-      "scope": null
-    },
-    {
-      "hash": "ba1b96f",
-      "date": "2026-01-15",
-      "type": "New",
-      "description": "Show document description and metadata in view mode",
-      "scope": null
-    },
-    {
-      "hash": "003cec2",
-      "date": "2026-01-15",
-      "type": "Fixed",
-      "description": "Handle null values in metadata-only update query",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "f6f6db3",
+        "date": "2026-05-12",
+        "type": "New",
+        "description": "Add primary scripture authors for all traditions to AUTHOR_AUTHORITY",
+        "scope": null
+      },
+      {
+        "hash": "a36809f",
+        "date": "2026-05-12",
+        "type": "Other",
+        "description": "Increase OL source multiplier 1.4→2.0 to bridge archaic-language gap",
+        "scope": null
+      },
+      {
+        "hash": "12e40b3",
+        "date": "2026-05-12",
+        "type": "New",
+        "description": "Supplementary OL queries guarantee OL docs reach authority ranking",
+        "scope": null
+      },
+      {
+        "hash": "ffb5916",
+        "date": "2026-05-12",
+        "type": "Performance",
+        "description": "Increase cross-tradition per-religion fetch limit 15→30",
+        "scope": null
+      },
       {
         "hash": "4e3f7d5",
         "date": "2026-05-12",
@@ -7042,36 +7070,6 @@
         "date": "2026-01-16",
         "type": "New",
         "description": "Add soft-delete for 30-day embedding retention",
-        "scope": null
-      },
-      {
-        "hash": "1aaa14c",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Increase Meilisearch waitForTask timeout to 60s",
-        "scope": null
-      },
-      {
-        "hash": "8aea951",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Automatic orphan cleanup for deleted files/folders",
-        "scope": null
-      }
-    ],
-    "2026-01-15": [
-      {
-        "hash": "ba1b96f",
-        "date": "2026-01-15",
-        "type": "New",
-        "description": "Show document description and metadata in view mode",
-        "scope": null
-      },
-      {
-        "hash": "003cec2",
-        "date": "2026-01-15",
-        "type": "Fixed",
-        "description": "Handle null values in metadata-only update query",
         "scope": null
       }
     ]

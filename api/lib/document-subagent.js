@@ -265,7 +265,7 @@ export async function answerFromDocument({
 
   // Pre-fetch metadata so the system prompt can name the doc up front
   const meta = await queryOne(
-    'SELECT id, title, author, religion, collection, year FROM docs WHERE id = ? AND deleted_at IS NULL',
+    'SELECT id, title, author, religion, collection, year, slug, filename, source_site, source_url FROM docs WHERE id = ? AND deleted_at IS NULL',
     [document_id]
   );
   if (!meta) {
@@ -373,10 +373,40 @@ export async function answerFromDocument({
     headingsByIndex = new Map(rows.map(r => [r.paragraph_index, r.heading || null]));
   }
 
+  // Look up external_para_id for OL deep links
+  const paraExtIds = new Map();
+  if (indices.length > 0) {
+    const placeholders2 = indices.map(() => '?').join(',');
+    const extRows = await queryAll(
+      `SELECT paragraph_index, external_para_id FROM content
+       WHERE doc_id = ? AND paragraph_index IN (${placeholders2}) AND deleted_at IS NULL`,
+      [document_id, ...indices]
+    );
+    for (const r of extRows) {
+      if (r.external_para_id) paraExtIds.set(r.paragraph_index, r.external_para_id);
+    }
+  }
+
+  const buildParaUrl = (paragraphIndex) => {
+    const extParaId = paraExtIds.get(paragraphIndex);
+    if (meta.source_site && meta.source_url) {
+      return extParaId
+        ? `${meta.source_url}/?paraId=${extParaId}`
+        : `${meta.source_url}#p${paragraphIndex}`;
+    }
+    const rawSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
+    const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
+    if (docSlug && meta.religion && meta.collection) {
+      return `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}#p${paragraphIndex}`;
+    }
+    return `https://siftersearch.com/document/${document_id}#p${paragraphIndex}`;
+  };
+
   let excerpts = finalExcerpts.map(e => ({
     paragraph_index: e.paragraph_index,
     text: e.text || '',
-    heading: headingsByIndex.get(e.paragraph_index) || null
+    heading: headingsByIndex.get(e.paragraph_index) || null,
+    source_url: buildParaUrl(e.paragraph_index)
   }));
 
   // Multilingual mode: when reading a non-English doc, attach a JAFAR-grounded
