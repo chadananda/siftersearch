@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:01:12.000Z",
+  "generated": "2026-05-12T17:02:56.844Z",
   "entries": [
+    {
+      "hash": "12d5c1a",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Post-enrichment OL re-sort — OL hits always surface first after docMeta enrichment",
+      "scope": null
+    },
     {
       "hash": "d3d6c1c",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use SHA-256 body_hash for file rename detection",
       "scope": null
-    },
-    {
-      "hash": "c9c4396",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Remove flaky amend detection from pre-commit hook",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "12d5c1a",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Post-enrichment OL re-sort — OL hits always surface first after docMeta enrichment",
+        "scope": null
+      },
       {
         "hash": "d3d6c1c",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Use SHA-256 body_hash for file rename detection",
-        "scope": null
-      },
-      {
-        "hash": "c9c4396",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Remove flaky amend detection from pre-commit hook",
         "scope": null
       }
     ]

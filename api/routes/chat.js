@@ -585,7 +585,9 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
           paragraph_index: hit.paragraph_index,
           ...(hit.matched_hype ? { matched_hype: hit.matched_hype } : {})
         };
-        // Deep-link priority: external source_url (OceanLibrary para) > internal para anchor
+        // Deep-link priority: OceanLibrary para deeplink > internal /library/…#p{N} > /document/{id}
+        // Every result MUST have source_url — no link-less citations.
+        const paraAnchor = hit.paragraph_index != null ? `#p${hit.paragraph_index}` : '';
         if (meta?.source_site && meta?.source_url) {
           result.source_site = meta.source_site;
           result.source_url = extParaId
@@ -593,17 +595,17 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
             : meta.source_url;
           if (extParaId) result.external_para_id = extParaId;
         } else if (meta) {
-          // Primary library doc — prefer /library/…/slug#p{idx}, fall back to /document/{id}#p{idx}
           const rawSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
           const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
-          const paraAnchor = hit.paragraph_index != null ? `#p${hit.paragraph_index}` : '';
           if (docSlug && meta.religion && meta.collection) {
             const base = `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}`;
             result.source_url = `${base}${paraAnchor}`;
           } else {
-            // No slug — fall back to /document/{id} with paragraph anchor so it's still a deeplink
             result.source_url = `https://siftersearch.com/document/${docId}${paraAnchor}`;
           }
+        } else {
+          // Fallback: no SQLite metadata — still generate a usable URL from hit fields
+          result.source_url = `https://siftersearch.com/document/${docId}${paraAnchor}`;
         }
         return result;
       })
