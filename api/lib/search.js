@@ -147,14 +147,15 @@ function rerankByAuthority(hits) {
  *   field='author'   — within-religion diversity for religion-filtered queries,
  *                      ensures primary scripture authors surface alongside commentary
  */
-function diversifyHits(hits, limit, maxPer, field = 'religion') {
+function diversifyHits(hits, limit, maxPer, field = 'religion', overrideLimits = {}) {
   const counts = new Map();
   const selected = [];
   const overflow = [];
   for (const hit of hits) {
     const key = hit[field] || '__unknown__';
     const n = counts.get(key) || 0;
-    if (n < maxPer) {
+    const cap = Object.prototype.hasOwnProperty.call(overrideLimits, key) ? overrideLimits[key] : maxPer;
+    if (n < cap) {
       selected.push(hit);
       counts.set(key, n + 1);
     } else {
@@ -886,7 +887,8 @@ export async function multiIndexSearch(query, options = {}) {
     const rrfHits = sortedDeduped.map(e => ({ ...e.paragraph, _rrfScore: e.score, _entry: e }));
     // Cap at 25% per tradition (max 2 of 8) so at least 6 other tradition slots exist.
     // Tighter than hybridSearch's 40% because multiIndexSearch is the user-facing output.
-    const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'religion');
+    // Bahá'í corpus is ~96% of all docs — cap it to 1 slot so other traditions break in.
+    const diverse = diversifyHits(rrfHits, limit, Math.max(2, Math.ceil(limit * 0.25)), 'religion', { "Baha'i": 1 });
     finalEntries = diverse.map(h => h._entry);
   } else if (filters.religion && !filters.collection && !filters.author) {
     // Religion-filtered: apply author diversity so primary-text authors (Muhammad, Matthew)
