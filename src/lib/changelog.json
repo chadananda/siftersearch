@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T15:27:13.624Z",
+  "generated": "2026-05-12T15:55:45.840Z",
   "entries": [
+    {
+      "hash": "41d76fe",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
+      "scope": null
+    },
     {
       "hash": "5a344ba",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Increase edit button icon size to 24px",
       "scope": null
-    },
-    {
-      "hash": "eb85a32",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Add edit button for admins on read more screen",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "41d76fe",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Render Jafar replies as markdown HTML; fix broken library deeplinks",
+        "scope": null
+      },
       {
         "hash": "5a344ba",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Style",
         "description": "Increase edit button icon size to 24px",
-        "scope": null
-      },
-      {
-        "hash": "eb85a32",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Add edit button for admins on read more screen",
         "scope": null
       }
     ]

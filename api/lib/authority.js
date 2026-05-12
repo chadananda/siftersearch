@@ -53,6 +53,33 @@ const AUTHOR_AUTHORITY = {
   "The Buddha": 10,
 };
 
+// Title-pattern authority overrides for primary scriptures stored under "Unknown" author.
+// OceanLibrary ingests complete Quran/Bible translation volumes without a canonical author
+// field (author="Unknown"), so they miss the AUTHOR_AUTHORITY step. These regex patterns
+// match the translation titles (not commentaries on them) and assign authority 10.
+// Each pattern must NOT match commentary titles — checked before religion default.
+const TITLE_AUTHORITY = [
+  // Quran translations: "The Qur'an (Rodwell)", "The Holy Qur-an (Yusuf Ali)",
+  // "The Meaning of the Glorious Qur'án (Pickthall)", etc.
+  // Excluded: "The Qur'an Commentary of...", "Tafsir al-Quran..."
+  {
+    pattern: /^(the\s+)?(holy\s+|meaning\s+of\s+the\s+glorious\s+|glorious\s+)?qur(?:['\u2019\u02bc-])?[a\u00e1\u00e2\u0101]n(\s*\([^)]*\)|\s*$)/i,
+    authority: 10,
+  },
+  // Koran translations: "The Koran Interpreted", "The Koran (Sale)", etc.
+  // Excluded: "Tafsir...", "Commentary..."
+  {
+    pattern: /^(the\s+)?koran(\s+interpreted|\s+\([^)]*\)|\s*$)/i,
+    authority: 10,
+  },
+  // Complete Bible translations: "The King James Bible", "American Standard Version", etc.
+  // Individual Gospels already handled by AUTHOR_AUTHORITY (author=Matthew/Mark/etc.)
+  {
+    pattern: /^(the\s+)?(holy\s+)?(bible|king\s+james\s+(bible|version)|american\s+standard\s+version|world\s+english\s+bible|douay.rheims\s+bible)(\s*$|\s*[-—(])/i,
+    authority: 10,
+  },
+];
+
 const DEFAULT_AUTHORITY = 5;
 
 /**
@@ -162,6 +189,15 @@ export function getAuthority(doc) {
   // Uses exact string equality to avoid false positives like "Muhammad Husayn Tabatabai".
   if (doc.author && AUTHOR_AUTHORITY[doc.author] !== undefined) {
     return AUTHOR_AUTHORITY[doc.author];
+  }
+
+  // 3b. Title-pattern authority for primary scripture translations stored under "Unknown"
+  // author. OceanLibrary complete Quran/Bible volumes lack a canonical author; the
+  // title is the only reliable signal.
+  if (doc.title) {
+    for (const { pattern, authority } of TITLE_AUTHORITY) {
+      if (pattern.test(doc.title)) return authority;
+    }
   }
 
   // 4. Check religion default from meta.yaml
