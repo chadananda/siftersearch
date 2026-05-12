@@ -741,13 +741,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         const primaryOpts = PRIMARY_SEARCHES[religion];
         tasks.push((async () => {
           // Primary: scripture/foundational collection for non-Bahá'í traditions
+          // semanticRatio=0.1 forces BM25 to dominate so exact keyword matches
+          // (e.g. "enemies" → Matthew 5:44) beat semantically adjacent passages
+          // (e.g. "peacemakers") that embed near the topic but don't contain it.
           if (primaryOpts) {
             const primary = await runTool('search', {
               query: passageQuery,
               mode: 'passages',
               religion,
               ...primaryOpts,
-              limit: 3
+              limit: 3,
+              semanticRatio: 0.1
             });
             harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
           }

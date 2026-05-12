@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T20:46:15.991Z",
+  "generated": "2026-05-12T20:52:54.503Z",
   "entries": [
+    {
+      "hash": "ece3e5a",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Strip question boilerplate from passage search query — surfaces Matthew 5:44 for 'love your enemies' queries",
+      "scope": null
+    },
     {
       "hash": "6ba771e",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "30-minute debounce for document re-ingestion during editing",
       "scope": null
-    },
-    {
-      "hash": "d81a0cc",
-      "date": "2026-01-16",
-      "type": "Refactor",
-      "description": "Use SQLite for library stats, Meilisearch for indexing only",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "ece3e5a",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Strip question boilerplate from passage search query — surfaces Matthew 5:44 for 'love your enemies' queries",
+        "scope": null
+      },
       {
         "hash": "6ba771e",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "New",
         "description": "30-minute debounce for document re-ingestion during editing",
-        "scope": null
-      },
-      {
-        "hash": "d81a0cc",
-        "date": "2026-01-16",
-        "type": "Refactor",
-        "description": "Use SQLite for library stats, Meilisearch for indexing only",
         "scope": null
       }
     ]

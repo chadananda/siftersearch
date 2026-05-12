@@ -926,7 +926,11 @@ export async function multiIndexSearch(query, options = {}) {
   // scripture text (e.g. Sura CXII for Al-Ikhlas) beats semantically adjacent surahs
   // that score high via embedding but are thematically different. Cross-tradition
   // queries keep 0.5 (default) for better conceptual discovery.
-  const mainSemanticRatio = (filters.religion && !filters.collection) ? 0.3 : 0.5;
+  // Callers can pass semanticRatio to override (e.g. 0.1 for author+religion
+  // primary scripture searches where BM25 keyword match must dominate).
+  const mainSemanticRatio = options.semanticRatio != null
+    ? options.semanticRatio
+    : (filters.religion && !filters.collection) ? 0.3 : 0.5;
   const [mainResult, hypeResult] = await Promise.all([
     hybridSearch(query, { limit: overFetch, filters, scope_config, semanticRatio: mainSemanticRatio }).catch(err => {
       logger.warn({ err: err.message }, 'multiIndexSearch: main hybrid failed');
