@@ -232,10 +232,13 @@ export async function initAIProcessingState() {
 // =============================================================================
 
 /**
- * Log AI usage to database for cost tracking
- * Silently fails to avoid breaking AI calls
+ * Log AI usage to database for cost tracking.
+ * Fire-and-forget: deferred via setImmediate so the caller's event-loop
+ * tick completes first, then silently drops the record if the DB is locked.
+ * better-sqlite3 is synchronous — a locked DB blocks the entire Node thread,
+ * so we must never await this on a hot request path.
  */
-export async function logAIUsage({
+export function logAIUsage({
   provider,
   model,
   serviceType,
@@ -249,28 +252,28 @@ export async function logAIUsage({
   jobId = null,
   documentId = null
 }) {
-  try {
-    const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
-    // For embeddings, all tokens are input tokens. Use totalTokens when promptTokens is 0.
-    const inputTokens = promptTokens || totalTokens;
-    const cost = (inputTokens * pricing.input + completionTokens * pricing.output) / 1000;
-
-    await query(
-      `INSERT INTO ai_usage (
-        provider, model, service_type,
-        prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,
-        caller, success, error_message, user_id, job_id, document_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        provider, model, serviceType,
-        promptTokens, completionTokens, totalTokens, cost,
-        caller, success ? 1 : 0, errorMessage, userId, jobId, documentId
-      ]
-    );
-  } catch (err) {
-    // Log but don't throw - usage tracking should never break AI calls
-    logger.warn({ err: err.message, model, serviceType }, 'Failed to log AI usage');
-  }
+  // Defer to next event-loop tick so the current request handler finishes first.
+  setImmediate(async () => {
+    try {
+      const pricing = MODEL_PRICING[model] || { input: 0, output: 0 };
+      const inputTokens = promptTokens || totalTokens;
+      const cost = (inputTokens * pricing.input + completionTokens * pricing.output) / 1000;
+      await query(
+        `INSERT INTO ai_usage (
+          provider, model, service_type,
+          prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd,
+          caller, success, error_message, user_id, job_id, document_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          provider, model, serviceType,
+          promptTokens, completionTokens, totalTokens, cost,
+          caller, success ? 1 : 0, errorMessage, userId, jobId, documentId
+        ]
+      );
+    } catch (err) {
+      logger.warn({ err: err.message, model, serviceType }, 'Failed to log AI usage');
+    }
+  });
 }
 
 // =============================================================================

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:27:33.686Z",
+  "generated": "2026-05-12T14:33:32.343Z",
   "entries": [
+    {
+      "hash": "bf61d02",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
+      "scope": null
+    },
     {
       "hash": "6069a43",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Increase changelog item size and horizontal padding",
       "scope": null
-    },
-    {
-      "hash": "8657fe7",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Improve text contrast to meet WCAG AA accessibility standards",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "bf61d02",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Retry DB publish on SQLITE_BUSY in jafar-batch-runner",
+        "scope": null
+      },
       {
         "hash": "6069a43",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Style",
         "description": "Increase changelog item size and horizontal padding",
-        "scope": null
-      },
-      {
-        "hash": "8657fe7",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Improve text contrast to meet WCAG AA accessibility standards",
         "scope": null
       }
     ]
