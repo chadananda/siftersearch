@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:02:56.844Z",
+  "generated": "2026-05-12T17:10:33.229Z",
   "entries": [
+    {
+      "hash": "bd41be3",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Every search result always has source_url — null meta fallback to /document/{id}",
+      "scope": null
+    },
     {
       "hash": "12d5c1a",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use project db module in hash migration script",
       "scope": null
-    },
-    {
-      "hash": "47d47e8",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use SHA-256 body_hash for file rename detection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "bd41be3",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Every search result always has source_url — null meta fallback to /document/{id}",
+        "scope": null
+      },
       {
         "hash": "12d5c1a",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Use project db module in hash migration script",
-        "scope": null
-      },
-      {
-        "hash": "47d47e8",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use SHA-256 body_hash for file rename detection",
         "scope": null
       }
     ]
