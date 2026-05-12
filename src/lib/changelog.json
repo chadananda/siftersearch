@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:38:02.750Z",
+  "generated": "2026-05-12T14:45:27.788Z",
   "entries": [
+    {
+      "hash": "8397d3b",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
+      "scope": null
+    },
     {
       "hash": "dc1fccd",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve home page stats display stability and contrast",
       "scope": null
-    },
-    {
-      "hash": "3775150",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Check for browser before accessing localStorage for stats cache",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "8397d3b",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Paragraph deeplinks for all docs — fallback to /document/{id}#p{idx}",
+        "scope": null
+      },
       {
         "hash": "dc1fccd",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Improve home page stats display stability and contrast",
-        "scope": null
-      },
-      {
-        "hash": "3775150",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Check for browser before accessing localStorage for stats cache",
         "scope": null
       }
     ]

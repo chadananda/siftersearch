@@ -275,11 +275,14 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
           if (result?.excerpts) {
             const doc = result.document || {};
             for (const e of result.excerpts) {
+              const citation_url = e.source_url
+                || (doc.base_url && e.paragraph_index != null ? `${doc.base_url}#p${e.paragraph_index}` : null)
+                || (doc.id ? `https://siftersearch.com/document/${doc.id}#p${e.paragraph_index}` : null);
               retrieved.push({
                 text: e.text || '',
                 source_title: doc.title || '',
                 source_author: doc.author || '',
-                citation_url: doc.id ? `https://siftersearch.com/document/${doc.id}` : null,
+                citation_url,
                 doc_id: doc.id,
                 paragraph_index: e.paragraph_index,
                 religion: doc.religion || null,
