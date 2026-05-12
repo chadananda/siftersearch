@@ -92,7 +92,7 @@ const CATALOG_PATTERNS = [
   /\blist (the|all|your|available)( \S+)? (collections?|traditions?|languages?|religions?)\b/i,
   /\bshow me (the|all|your|available)( \S+)? (collections?|texts?|scriptures?)\b/i,
   /\bwhat (collections?)\b/i,
-  /\bwhat (?:\w+ )?scriptures?\b/i,
+  /\bwhat (?:kinds?|types?|forms?|sort)?(?:\s+of)?\s*scriptures? (?:do you|are|can|exist|is)\b/i,
   /\bdo you (have|carry|include)\b/i,
 ];
 

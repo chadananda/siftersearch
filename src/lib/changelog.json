@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T22:27:02.839Z",
+  "generated": "2026-05-12T22:30:21.901Z",
   "entries": [
+    {
+      "hash": "51c0289",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
+      "scope": null
+    },
     {
       "hash": "e4e852a",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Change search logs to info level for production visibility",
       "scope": null
-    },
-    {
-      "hash": "0664aad",
-      "date": "2026-01-16",
-      "type": "Other",
-      "description": "Add detailed client-side search logging",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "51c0289",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Post-merge author filter in multiIndexSearch blocks HyPE leaking non-matching authors",
+        "scope": null
+      },
       {
         "hash": "e4e852a",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Other",
         "description": "Change search logs to info level for production visibility",
-        "scope": null
-      },
-      {
-        "hash": "0664aad",
-        "date": "2026-01-16",
-        "type": "Other",
-        "description": "Add detailed client-side search logging",
         "scope": null
       }
     ]
