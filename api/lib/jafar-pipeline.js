@@ -754,7 +754,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // "Siddhartha Buddha" = Dhammapada + Sutta Nipata (primary Pali Canon).
       // "King David" = OL Psalms; "Isaiah" = OL Book of Isaiah.
       const PRIMARY_SEARCHES = {
-        "Islam":    { author: "Muhammad", broadAuthor: "Muhammad" },
+        // Islam: semanticRatio=0.4 — Quran vocabulary is archaic ("Merciful", "Compassionate")
+        // so exact BM25 matches are weak. Semantic similarity surfaces thematic suras
+        // (e.g. Sura LV "The Merciful" for mercy queries) that BM25-only misses.
+        // Post-merge author filter handles any HyPE bleed from non-Muhammad authors.
+        // Bismillah filter prevents the formulaic sura header from dominating.
+        "Islam":    { author: "Muhammad", broadAuthor: "Muhammad", primarySemanticRatio: 0.4 },
         "Christian":{ author: "Matthew" },
         "Buddhist": { author: "Siddhartha Buddha" },
         "Judaism":  { author: "King David" },
@@ -763,10 +768,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       for (const religion of INTERFAITH_TRADITIONS) {
         const primaryOpts = PRIMARY_SEARCHES[religion];
         tasks.push((async () => {
-          // Primary: scripture/foundational collection for non-Bahá'í traditions
-          // semanticRatio=0.1 forces BM25 to dominate so exact keyword matches
-          // (e.g. "enemies" → Matthew 5:44) beat semantically adjacent passages
-          // (e.g. "peacemakers") that embed near the topic but don't contain it.
+          // Primary: scripture/foundational collection for non-Bahá'í traditions.
+          // Default semanticRatio=0.1 keeps BM25 dominant for exact keyword matches
+          // (e.g. "enemies" → Matthew 5:44). Per-tradition override via primarySemanticRatio
+          // allows Islam to use more semantic matching for archaic Quranic vocabulary.
           if (primaryOpts) {
             const primary = await runTool('search', {
               query: passageQuery,
@@ -774,22 +779,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
               religion,
               ...primaryOpts,
               limit: 3,
-              semanticRatio: 0.1
+              semanticRatio: primaryOpts.primarySemanticRatio ?? 0.1
             });
             harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
           }
           // Supplemental: broader search within the tradition (catches relevant
           // commentary, hadith, church fathers, etc. when primary is thin).
           // broadAuthor pins Islam to OL suras in both primary + broad slots.
-          // semanticRatio=0.1 on author-filtered searches keeps BM25 dominant so
-          // formulaic phrases (Bismillah, doxologies) don't win via semantic proximity.
           const broad = await runTool('search', {
             query: passageQuery,
             mode: 'passages',
             religion,
             ...(primaryOpts?.broadAuthor ? { author: primaryOpts.broadAuthor } : {}),
-            limit: primaryOpts ? 2 : 3,
-            ...(primaryOpts?.broadAuthor ? { semanticRatio: 0.1 } : {})
+            limit: primaryOpts ? 2 : 3
           });
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
