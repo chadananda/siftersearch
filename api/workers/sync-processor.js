@@ -40,8 +40,8 @@ import { loadAllSiteConfigs } from '../services/sites-ingester.js';
 let siteRegistryByDomain = {};
 
 // Configuration
-const BATCH_SIZE = 50;  // Small batches = fast Meili indexing + frequent progress updates
-const COOLDOWN_MS = 500; // 500ms between batches
+const BATCH_SIZE = 500; // Larger batches = fewer Meili round-trips = faster throughput
+const COOLDOWN_MS = 0;  // No artificial throttle — Meili handles the load fine
 const IDLE_SLEEP_MS = 10000;      // Sleep when nothing to do
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;     // 5 minutes
 const FULL_SYNC_INTERVAL_MS = 60 * 60 * 1000;  // 1 hour
@@ -546,12 +546,11 @@ async function processJob(job) {
             created_at: new Date().toISOString()
           };
         });
-        try {
-          const docTask = await documentsIndex.addDocuments(meiliDocs);
-          await waitForMeiliTask(meili, docTask.taskUid);
-        } catch (err) {
+        // Fire-and-forget: documents index is metadata-only, doesn't need
+        // to be confirmed before we submit paragraphs.
+        documentsIndex.addDocuments(meiliDocs).catch(err => {
           logger.error({ err: err.message, count: meiliDocs.length }, 'Failed to index documents');
-        }
+        });
       }
 
       // Build Meilisearch paragraph objects, grouped by destination index.
