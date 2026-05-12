@@ -533,14 +533,25 @@ async function runOne(idx, q) {
 
   const { history, judgeResult, score, elapsedSec } = best;
 
-  // Publish directly to DB — no local MD files
-  try {
-    await publishToDB(slug, q, history, score, judgeResult);
-    console.log(`  published ${slug} to DB (${score}%)`);
-  } catch (err) {
-    console.error(`  DB publish FAILED: ${err.message}`);
-    return null;
+  // Publish directly to DB — retry on DB lock (embedding worker can hold write lock)
+  let published = false;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      await publishToDB(slug, q, history, score, judgeResult);
+      console.log(`  published ${slug} to DB (${score}%)`);
+      published = true;
+      break;
+    } catch (err) {
+      if ((err.message.includes('SQLITE_BUSY') || err.message.includes('database is locked')) && attempt < 5) {
+        console.warn(`  DB publish locked (attempt ${attempt}/5), retrying in 10s...`);
+        await new Promise(r => setTimeout(r, 10000));
+      } else {
+        console.error(`  DB publish FAILED: ${err.message}`);
+        return null;
+      }
+    }
   }
+  if (!published) return null;
 
   // Generate hero image only if passing min score AND no existing image
   if (score >= MIN_SCORE && !q.heroImage) {

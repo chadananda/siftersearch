@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:25:52.566Z",
+  "generated": "2026-05-12T14:27:33.686Z",
   "entries": [
+    {
+      "hash": "6069a43",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Inline quoted phrases should be hyperlinks not trailing citations",
+      "scope": null
+    },
     {
       "hash": "00c7645",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve text contrast to meet WCAG AA accessibility standards",
       "scope": null
-    },
-    {
-      "hash": "48e3ea3",
-      "date": "2026-01-13",
-      "type": "Style",
-      "description": "Larger page titles and better contrast on changelog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "6069a43",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Inline quoted phrases should be hyperlinks not trailing citations",
+        "scope": null
+      },
       {
         "hash": "00c7645",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Improve text contrast to meet WCAG AA accessibility standards",
-        "scope": null
-      },
-      {
-        "hash": "48e3ea3",
-        "date": "2026-01-13",
-        "type": "Style",
-        "description": "Larger page titles and better contrast on changelog",
         "scope": null
       }
     ]
