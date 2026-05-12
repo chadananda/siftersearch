@@ -1164,9 +1164,12 @@ export function stripUngroundedLinks(text, retrievedQuotes) {
     (retrievedQuotes || []).map(q => q.citation_url).filter(Boolean)
   );
   if (validUrls.size === 0) return text;
+  // Also allow matching on base URL (without fragment) so the crafter can emit
+  // either the full paragraph-level URL or the document-level URL and still pass.
+  const validBaseUrls = new Set([...validUrls].map(u => u.split('#')[0]));
   // Allow one level of balanced parens in URLs (e.g., "/path (en)#p10")
   return text.replace(/\[([^\]]+)\]\((https?:\/\/(?:[^()]+|\([^()]*\))*)\)/g, (match, fragment, url) => {
-    return validUrls.has(url) ? match : fragment;
+    return validUrls.has(url) || validBaseUrls.has(url.split('#')[0]) ? match : fragment;
   });
 }
 
