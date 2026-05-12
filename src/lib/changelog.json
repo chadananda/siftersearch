@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T13:23:53.229Z",
+  "generated": "2026-05-12T13:51:40.147Z",
   "entries": [
+    {
+      "hash": "3adc81a",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Content variable shadowing module import in indexer + ingester",
+      "scope": null
+    },
     {
       "hash": "db996e1",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Update changelog",
       "scope": null
-    },
-    {
-      "hash": "7eb4e0d",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Improved release history page with collapsible months",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "3adc81a",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Content variable shadowing module import in indexer + ingester",
+        "scope": null
+      },
       {
         "hash": "db996e1",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Chore",
         "description": "Update changelog",
-        "scope": null
-      },
-      {
-        "hash": "7eb4e0d",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Improved release history page with collapsible months",
         "scope": null
       }
     ]

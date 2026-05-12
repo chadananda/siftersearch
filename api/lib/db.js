@@ -29,7 +29,9 @@ function createContentConnection() {
   const path = stripFilePrefix(url) || './data/sifter.db';
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
-  db.pragma('busy_timeout = 30000');
+  // 5s timeout: long enough for brief contention, short enough to not stall the API event loop.
+  // better-sqlite3 blocks synchronously — a 30s timeout would freeze all requests for 30s.
+  db.pragma('busy_timeout = 5000');
   // Bump page cache to ~512MB. Default 2MB is far too small for this DB —
   // the content table indexes alone are ~50MB and we hammer them with
   // sites-ingester supersession queries. With a generous cache, the
@@ -51,7 +53,7 @@ function createUserConnection() {
   const path = stripFilePrefix(url);
   const db = new Database(path);
   db.pragma('journal_mode = WAL');
-  db.pragma('busy_timeout = 30000');
+  db.pragma('busy_timeout = 5000');
   logger.info({ path }, 'User DB connected');
   return instrumentDb(db, 'user');
 }

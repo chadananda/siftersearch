@@ -649,26 +649,48 @@ async function runPeriodicTasks() {
 
 async function workerLoop() {
   logger.info('Unified worker starting');
-  // Run migrations
-  try {
-    logger.info('Running migrations...');
-    const migStart = Date.now();
-    const result = await runMigrations();
-    logger.info({ elapsedMs: Date.now() - migStart, applied: result.applied }, 'Migrations complete');
-  } catch (err) {
-    logger.error({ err: err.message }, 'Migration failed — aborting');
-    process.exit(1);
+  // Run migrations — retry on DB lock (library-watcher may hold write lock during startup scan)
+  for (let attempt = 1; ; attempt++) {
+    try {
+      logger.info('Running migrations...');
+      const migStart = Date.now();
+      const result = await runMigrations();
+      logger.info({ elapsedMs: Date.now() - migStart, applied: result.applied }, 'Migrations complete');
+      break;
+    } catch (err) {
+      if (err.message?.includes('database is locked') && attempt < 20) {
+        logger.warn({ attempt }, 'DB locked during migration, retrying in 5s');
+        await delay(5000);
+      } else {
+        logger.error({ err: err.message }, 'Migration failed — aborting');
+        process.exit(1);
+      }
+    }
   }
   // Initialize embedding cache (non-fatal if unavailable)
   await content.initEmbeddingCacheIfNeeded();
   // Skip initializeIndexes() — settings updates are idempotent but queue
   // Meilisearch tasks on every restart, backing up the queue and blocking sync.
   // The API runs initializeIndexes() on startup; the worker doesn't need to.
-  // Recover stuck sync jobs
-  const stuckSyncJobs = await queryAll(`SELECT id FROM sync_jobs WHERE status = 'running'`);
-  for (const j of stuckSyncJobs) {
-    logger.info({ jobId: j.id }, 'Found stuck sync job on startup — requeueing');
-    await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL WHERE id = ?`, [j.id]);
+  // Recover stuck sync jobs — retry on lock
+  let stuckSyncJobs = [];
+  for (let attempt = 1; attempt <= 10; attempt++) {
+    try {
+      stuckSyncJobs = await queryAll(`SELECT id FROM sync_jobs WHERE status = 'running'`);
+      for (const j of stuckSyncJobs) {
+        logger.info({ jobId: j.id }, 'Found stuck sync job on startup — requeueing');
+        await query(`UPDATE sync_jobs SET status = 'pending', started_at = NULL WHERE id = ?`, [j.id]);
+      }
+      break;
+    } catch (err) {
+      if (err.message?.includes('database is locked') && attempt < 10) {
+        logger.warn({ attempt }, 'DB locked during stuck-job recovery, retrying in 5s');
+        await delay(5000);
+      } else {
+        logger.warn({ err: err.message }, 'Could not recover stuck jobs — continuing');
+        break;
+      }
+    }
   }
   // Recover stuck translation/audio jobs
   try {
