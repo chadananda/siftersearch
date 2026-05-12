@@ -212,7 +212,13 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   const response = await meili.multiSearch({ queries: subQueries });
   const seen = new Set();
   const allHits = [];
-  for (const result of (response.results || [])) {
+  for (let ri = 0; ri < (response.results || []).length; ri++) {
+    const result = response.results[ri];
+    const religion = CROSS_TRADITION_RELIGIONS[ri];
+    // Bahá'í corpus is ~96% of all docs — cap it to 1 slot in cross-tradition
+    // so other traditions can break into the final top-N. All others get the
+    // full perReligionLimit so minority corpora aren't squeezed further.
+    const slotLimit = religion === "Baha'i" ? 1 : perReligionLimit;
     // Sort by authority-weighted score so primary texts (auth=10) get quota slots
     // over secondary books at the same semantic relevance tier. Falls back to raw
     // ranking score as tiebreaker so semantic relevance still governs within a tier.
@@ -224,7 +230,7 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
     });
     let count = 0;
     for (const hit of sorted) {
-      if (count >= perReligionLimit) break;
+      if (count >= slotLimit) break;
       if (!seen.has(hit.id)) {
         seen.add(hit.id);
         allHits.push(hit);
