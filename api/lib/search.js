@@ -220,6 +220,29 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   });
 
   const response = await meili.multiSearch({ queries: subQueries });
+
+  // Enrich all hits missing source_site from the docs table before authority sorting.
+  // OL paragraphs synced before source_site was added to the worker have null in
+  // Meilisearch — without this, computeAuthorityScore can't apply the OL 1.4x multiplier,
+  // so OL Gospels/Quran lose their quota slots to non-OL secondary texts.
+  const allResponseHits = (response.results || []).flatMap(r => r.hits || []);
+  const missingSiteDids = [...new Set(allResponseHits.filter(h => !h.source_site && h.doc_id).map(h => h.doc_id))];
+  if (missingSiteDids.length > 0) {
+    try {
+      const placeholders = missingSiteDids.map(() => '?').join(',');
+      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND source_site IS NOT NULL`, missingSiteDids);
+      const docMap = new Map(docRows.map(r => [r.id, r]));
+      for (const hit of allResponseHits) {
+        if (!hit.source_site && hit.doc_id) {
+          const doc = docMap.get(hit.doc_id);
+          if (doc) { hit.source_site = doc.source_site; hit.source_url = doc.source_url; }
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'crossTraditionSearch: doc source_site enrichment failed');
+    }
+  }
+
   const seen = new Set();
   const allHits = [];
   for (let ri = 0; ri < (response.results || []).length; ri++) {
@@ -546,6 +569,27 @@ export async function hybridSearch(query, options = {}) {
 
   // Sort by Meili ranking score before authority rerank.
   allHits.sort((a, b) => (b._rankingScore || 0) - (a._rankingScore || 0));
+
+  // Enrich hits missing source_site/source_url from the docs table.
+  // Paragraphs synced before source_site was added to the worker have null in
+  // Meilisearch. Without source_site the OL 1.4x authority multiplier never fires.
+  // Batch lookup by doc_id (docs table is tiny — <50K rows, cached by SQLite).
+  const missingSiteDids = [...new Set(allHits.filter(h => !h.source_site && h.doc_id).map(h => h.doc_id))];
+  if (missingSiteDids.length > 0) {
+    try {
+      const placeholders = missingSiteDids.map(() => '?').join(',');
+      const docRows = await queryAll(`SELECT id, source_site, source_url FROM docs WHERE id IN (${placeholders}) AND source_site IS NOT NULL`, missingSiteDids);
+      const docMap = new Map(docRows.map(r => [r.id, r]));
+      for (const hit of allHits) {
+        if (!hit.source_site && hit.doc_id) {
+          const doc = docMap.get(hit.doc_id);
+          if (doc) { hit.source_site = doc.source_site; hit.source_url = doc.source_url; }
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'hybridSearch: doc source_site enrichment failed');
+    }
+  }
 
   // Authority reranking: blend Meilisearch relevance with the per-doc authority
   // score so canonical sources surface above citing/derivative works at the

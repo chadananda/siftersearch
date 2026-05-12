@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T18:19:35.175Z",
+  "generated": "2026-05-12T18:52:08.554Z",
   "entries": [
+    {
+      "hash": "3a2b100",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Add fallback source_url to all search results",
+      "scope": null
+    },
     {
       "hash": "8b4d7ad",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to update authority values in Meilisearch",
       "scope": null
-    },
-    {
-      "hash": "898317a",
-      "date": "2026-01-15",
-      "type": "Fixed",
-      "description": "Use getAuthority from meta.yaml in sync-worker",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "3a2b100",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Add fallback source_url to all search results",
+        "scope": null
+      },
       {
         "hash": "8b4d7ad",
         "date": "2026-05-12",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-15",
         "type": "New",
         "description": "Add script to update authority values in Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "898317a",
-        "date": "2026-01-15",
-        "type": "Fixed",
-        "description": "Use getAuthority from meta.yaml in sync-worker",
         "scope": null
       }
     ]
