@@ -52,6 +52,49 @@ const AUTHOR_AUTHORITY = {
   "Siddhartha Buddha": 10,
   "Gautama Buddha": 10,
   "The Buddha": 10,
+  // Tao primary texts
+  "Lao-tzu": 10,
+  "Laozi": 10,
+  "Lao Tzu": 10,
+  "Chuang Tzu": 9,
+  "Zhuangzi": 9,
+  // Confucian primary texts
+  "Confucius": 10,
+  "Mencius": 9,
+  // Jewish scripture — OceanLibrary prophets/kings (exact author names from OL ingestion)
+  "Moses": 10,
+  "King David": 10,
+  "King Solomon": 9,
+  "Isaiah": 10,
+  "Jeremiah": 10,
+  "Daniel": 9,
+  "Joshua": 9,
+  "Samuel": 9,
+  "Ezra": 9,
+  "Nehemiah": 9,
+  "Hosea": 9,
+  "Amos": 9,
+  "Micah": 9,
+  "Joel": 9,
+  "Jonah": 9,
+  "Habakkuk": 9,
+  "Haggai": 9,
+  "Zechariah": 9,
+  "Malachi": 9,
+  "Obadiah": 9,
+  "Zephaniah": 9,
+  // Hindu primary scripture authors
+  "Vyāsa": 10,
+  "Vyasa": 10,
+  "Valmiki": 10,
+  // Zoroastrian — Gathas author
+  "Zoroaster": 10,
+  "Zarathustra": 10,
+  // Sikh — Guru Granth Sahib contributors
+  "Guru Nanak": 10,
+  "Guru Nanak Dev": 10,
+  "Kabîr": 9,
+  "Kabir": 9,
 };
 
 // Title-pattern authority overrides for primary scriptures stored under "Unknown" author.
@@ -79,6 +122,20 @@ const TITLE_AUTHORITY = [
     pattern: /^(the\s+)?(holy\s+)?(bible|king\s+james\s+(bible|version)|american\s+standard\s+version|world\s+english\s+bible|douay.rheims\s+bible)(\s*$|\s*[-—(])/i,
     authority: 10,
   },
+  // Tao Te Ching translations (when author stored as Unknown/Various)
+  { pattern: /^(the\s+)?tao\s+te\s+ching(\s*[-—(]|\s*$)/i, authority: 10 },
+  // Psalms and Torah books (when author not stored individually)
+  { pattern: /^(the\s+)?(book\s+of\s+)?(psalms|proverbs|ecclesiastes|song\s+of\s+(solomon|songs))(\s*$|\s*[-—(])/i, authority: 10 },
+  // Bhagavad Gita translations
+  { pattern: /^(the\s+)?bhagavad[\s-]?g[iī]t[aā](\s*[-—(]|\s*$)/i, authority: 10 },
+  // Analects of Confucius
+  { pattern: /^(the\s+)?analects(\s+of\s+confucius)?(\s*$|\s*[-—(])/i, authority: 10 },
+  // Upanishads / Vedas
+  { pattern: /^(the\s+)?(principal\s+)?upanishads?(\s*$|\s*[-—(])/i, authority: 10 },
+  // Gathas of Zoroaster
+  { pattern: /^(the\s+)?gathas?(\s*$|\s*[-—(])/i, authority: 10 },
+  // Guru Granth Sahib
+  { pattern: /^(the\s+)?guru\s+granth\s+sahib(\s*$|\s*[-—(])/i, authority: 10 },
 ];
 
 const DEFAULT_AUTHORITY = 5;
