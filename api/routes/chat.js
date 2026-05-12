@@ -747,7 +747,27 @@ const CANONICAL_WORKS = [
   { matchers: ['tao te ching', 'tao-te-ching', 'daodejing', 'dao de jing', 'tao te king', 'laozi', 'lao tzu', 'lao-tzu'], doc_id: 21293, religion: 'Tao' },
 
   // Sikhism — Guru Granth Sahib (lead volume)
-  { matchers: ['guru granth sahib', 'granth sahib', 'adi granth'], doc_id: 20186, religion: 'Sikh' }
+  { matchers: ['guru granth sahib', 'granth sahib', 'adi granth'], doc_id: 20186, religion: 'Sikh' },
+
+  // Judaism — Torah and scriptures (OL versions)
+  { matchers: ['psalms', 'psalm', 'tehillim'], doc_id: 21243, religion: 'Judaism' },
+  { matchers: ['genesis', 'bereshit', 'torah genesis'], doc_id: 21228, religion: 'Judaism' },
+  { matchers: ['isaiah', 'yisheyah', 'book of isaiah'], doc_id: 21283, religion: 'Judaism' },
+  { matchers: ['babylonian talmud'], doc_id: 21354, religion: 'Judaism' },
+
+  // Christianity — New Testament books (OL versions)
+  { matchers: ['acts of the apostles', 'book of acts', 'acts apostles'], doc_id: 20988, religion: 'Christian' },
+
+  // Islam — Hadith (OL Sahih al-Bukhari)
+  { matchers: ['sahih bukhari', 'sahih al-bukhari', 'bukhari', 'al-bukhari'], doc_id: 21075, religion: 'Islam' },
+
+  // Hinduism — Vedas and epics (OL versions)
+  { matchers: ['rig veda', 'rigveda'], doc_id: 21005, religion: 'Hindu' },
+  { matchers: ['ramayana', 'ramayan', 'ramayanam'], doc_id: 21331, religion: 'Hindu' },
+
+  // Buddhism — Pali Canon (OL versions)
+  { matchers: ['sutta nipata', 'suttanipata'], doc_id: 20926, religion: 'Buddhist' },
+  { matchers: ['digha nikaya', 'dīghanikāya', 'dighanikaya', 'long discourses'], doc_id: 20927, religion: 'Buddhist' }
 ];
 
 function canonicalLookup(title, religion) {

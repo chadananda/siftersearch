@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:17:43.871Z",
+  "generated": "2026-05-12T17:30:08.373Z",
   "entries": [
+    {
+      "hash": "6d7c0ed",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "External_para_id in subagent SELECT — proper OL paragraph deep links",
+      "scope": null
+    },
     {
       "hash": "fc64d39",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Batch-based file watcher with proper move detection",
       "scope": null
-    },
-    {
-      "hash": "27031e9",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Smarter delete handling - check body_hash before removing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "6d7c0ed",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "External_para_id in subagent SELECT — proper OL paragraph deep links",
+        "scope": null
+      },
       {
         "hash": "fc64d39",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Refactor",
         "description": "Batch-based file watcher with proper move detection",
-        "scope": null
-      },
-      {
-        "hash": "27031e9",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Smarter delete handling - check body_hash before removing",
         "scope": null
       }
     ]
