@@ -517,16 +517,16 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
         );
         const olByTitle = new Map(olExact.map(r => [r.title, r.source_url]));
 
-        // Pass 2: per-religion OL book map for fuzzy fallback
-        // Key terms that signal which OL book to use (pattern → OL WHERE clause)
+        // Pass 2: scripture-keyword fuzzy fallback — map local copies to their OL equivalent.
+        // Narrow by title pattern to avoid cross-assigning (e.g. Bukhari title ≠ 'Qur%').
         const SCRIPTURE_KEYWORDS = [
-          { pattern: /qur['\u2019a]|quran|koran/i, religion: 'Islam' },
-          { pattern: /\bbible\b|gospel|testament|psalm/i, religion: 'Christian' },
-          { pattern: /torah|tanakh|talmud|mishnah/i, religion: 'Judaism' },
-          { pattern: /dhammapada|nikaya|sutta|pali/i, religion: 'Buddhist' },
-          { pattern: /gita|upanishad|veda|mahabharata/i, religion: 'Hindu' },
+          { pattern: /qur['\u2019a]|quran|koran/i,       olReligion: 'Islam',     olTitleLike: '%Qur%' },
+          { pattern: /\bbible\b|gospel|testament|psalm/i, olReligion: 'Christian', olTitleLike: '%Gospel%' },
+          { pattern: /torah|tanakh|talmud|mishnah/i,      olReligion: 'Judaism',   olTitleLike: '%Torah%' },
+          { pattern: /dhammapada|nikaya|sutta|pali/i,     olReligion: 'Buddhist',  olTitleLike: '%Dhammapada%' },
+          { pattern: /gita|upanishad|veda|mahabharata/i,  olReligion: 'Hindu',     olTitleLike: null },
         ];
-        const olByReligion = new Map(); // religion → best OL source_url
+        const olByKey = new Map(); // `${olReligion}|${olTitleLike}` → best OL source_url
 
         for (const row of noUrlRows) {
           if (olByTitle.has(row.title)) {
@@ -534,21 +534,23 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
             row.source_site = 'oceanlibrary.com';
             continue;
           }
-          // Fuzzy: check if title matches a scripture keyword pattern
           const match = SCRIPTURE_KEYWORDS.find(k => k.pattern.test(row.title));
           if (!match) continue;
-          if (!olByReligion.has(match.religion)) {
-            // Lazy-load best OL book for this religion (most paragraphs = most complete)
+          const cacheKey = `${match.olReligion}|${match.olTitleLike || ''}`;
+          if (!olByKey.has(cacheKey)) {
+            const params = [match.olReligion];
+            const titleClause = match.olTitleLike ? ' AND d.title LIKE ?' : '';
+            if (match.olTitleLike) params.push(match.olTitleLike);
             const [best] = await queryAll(
               `SELECT d.source_url FROM docs d
-               WHERE d.source_site = 'oceanlibrary.com' AND d.religion = ? AND d.source_url IS NOT NULL
+               WHERE d.source_site = 'oceanlibrary.com' AND d.religion = ?${titleClause} AND d.source_url IS NOT NULL
                ORDER BY (SELECT COUNT(*) FROM content WHERE doc_id = d.id AND deleted_at IS NULL) DESC
                LIMIT 1`,
-              [match.religion]
+              params
             );
-            olByReligion.set(match.religion, best?.source_url || null);
+            olByKey.set(cacheKey, best?.source_url || null);
           }
-          const olUrl = olByReligion.get(match.religion);
+          const olUrl = olByKey.get(cacheKey);
           if (olUrl) {
             row.source_url = olUrl;
             row.source_site = 'oceanlibrary.com';

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T21:00:41.039Z",
+  "generated": "2026-05-12T21:36:46.024Z",
   "entries": [
+    {
+      "hash": "2dae06b",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Normalize gerunds in passageQuery — loving your enemies → love enemies for BM25 keyword match",
+      "scope": null
+    },
     {
       "hash": "35784c0",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Remove client-side cache to prevent freeze, keep server cache only",
       "scope": null
-    },
-    {
-      "hash": "13892ad",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Add defensive checks to prevent search crash during typing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "2dae06b",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Normalize gerunds in passageQuery — loving your enemies → love enemies for BM25 keyword match",
+        "scope": null
+      },
       {
         "hash": "35784c0",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Remove client-side cache to prevent freeze, keep server cache only",
-        "scope": null
-      },
-      {
-        "hash": "13892ad",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Add defensive checks to prevent search crash during typing",
         "scope": null
       }
     ]
