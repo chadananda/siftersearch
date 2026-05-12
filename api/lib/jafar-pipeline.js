@@ -717,12 +717,16 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // after retrieval so the crafter can quote them in English while
       // preserving the original in the citation.
       // Two searches per tradition: primary (scripture-targeted) then broad.
-      // Islam: author="Muhammad" targets OceanLibrary Quran surahs directly,
-      // avoiding "Foundational Texts" which mixes Quran with voluminous Tafsir.
-      // Christian, Buddhist, Judaism: collection filter picks the primary canon.
+      // Islam: author="Muhammad" targets OceanLibrary Quran surahs directly.
+      // Christian: author="Matthew" targets OceanLibrary Gospel of Matthew directly —
+      // OL Gospels have a hash collection ID, not "Bible and Translations", so
+      // collection filter misses them and returns only non-OL composite Bibles.
+      // Matthew is the most-quoted Gospel for interfaith questions; other Gospels
+      // appear via the supplementary OL queries in hybridSearch.
+      // Buddhist, Judaism: collection filter picks the primary canon.
       const PRIMARY_SEARCHES = {
         "Islam":    { author: "Muhammad" },
-        "Christian":{ collection: "Bible and Translations" },
+        "Christian":{ author: "Matthew" },
         "Buddhist": { collection: "Pali Canon" },
         "Judaism":  { collection: "Torah and Tanakh" },
       };

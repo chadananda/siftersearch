@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T19:57:55.507Z",
+  "generated": "2026-05-12T20:24:47.360Z",
   "entries": [
+    {
+      "hash": "97c1821",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Public API /v1/search religion filter was silently dropped — hybridSearch expects filters:{} not filter:string",
+      "scope": null
+    },
     {
       "hash": "502afda",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add admin endpoint for normalized_hash backfill",
       "scope": null
-    },
-    {
-      "hash": "de5a5f3",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Add normalized_hash for embedding deduplication",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "97c1821",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Public API /v1/search religion filter was silently dropped — hybridSearch expects filters:{} not filter:string",
+        "scope": null
+      },
       {
         "hash": "502afda",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "New",
         "description": "Add admin endpoint for normalized_hash backfill",
-        "scope": null
-      },
-      {
-        "hash": "de5a5f3",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Add normalized_hash for embedding deduplication",
         "scope": null
       }
     ]
