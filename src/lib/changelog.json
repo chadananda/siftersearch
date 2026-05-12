@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:30:08.373Z",
+  "generated": "2026-05-12T17:46:18.058Z",
   "entries": [
+    {
+      "hash": "5d95071",
+      "date": "2026-05-12",
+      "type": "New",
+      "description": "Expand CANONICAL_WORKS — OL Psalms, Genesis, Isaiah, Acts, Bukhari, Ramayana, etc.",
+      "scope": null
+    },
     {
       "hash": "6d7c0ed",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Improve move detection across batch boundaries",
       "scope": null
-    },
-    {
-      "hash": "7009d23",
-      "date": "2026-01-13",
-      "type": "Refactor",
-      "description": "Batch-based file watcher with proper move detection",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "5d95071",
+        "date": "2026-05-12",
+        "type": "New",
+        "description": "Expand CANONICAL_WORKS — OL Psalms, Genesis, Isaiah, Acts, Bukhari, Ramayana, etc.",
+        "scope": null
+      },
       {
         "hash": "6d7c0ed",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Improve move detection across batch boundaries",
-        "scope": null
-      },
-      {
-        "hash": "7009d23",
-        "date": "2026-01-13",
-        "type": "Refactor",
-        "description": "Batch-based file watcher with proper move detection",
         "scope": null
       }
     ]

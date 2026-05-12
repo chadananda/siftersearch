@@ -40,7 +40,7 @@ let siteRegistryByDomain = {};
 // ============================================================
 // Configuration
 // ============================================================
-const PARA_BATCH_SIZE = 200;    // paragraphs per Meilisearch batch (200 × 12KB ≈ 2.4MB)
+const PARA_BATCH_SIZE = 100;    // paragraphs per Meilisearch batch (100 × 12KB ≈ 1.2MB)
 const YIELD_DELAY_MS = 10;
 const DOC_DELAY_MS = 50;
 const IDLE_SLEEP_MS = 10000;
@@ -158,9 +158,11 @@ async function processSyncJob(job) {
     //     dequeue (and that's where markSynced flips, preserving the
     //     verified-sync invariant).
     //
-    // Memory bound: PIPELINE_LIMIT=4 × FLUSH_PARAS=200 × ~12KB/para ≈ 10MB.
-    const PIPELINE_LIMIT = 4;
-    const FLUSH_PARAS = 200;
+    // Memory bound: PIPELINE_LIMIT=2 × FLUSH_PARAS=100 × ~12KB/para ≈ 2.4MB.
+    // Reduced from 4×200 to prevent Meilisearch task queue buildup causing
+    // 300s timeout on tasks that wait behind 3 in-flight predecessors.
+    const PIPELINE_LIMIT = 2;
+    const FLUSH_PARAS = 100;
     const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
     const inFlight = [];         // [{task, paraIds, indexName}]
 
