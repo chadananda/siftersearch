@@ -741,13 +741,14 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // All use author= to target OceanLibrary primary texts directly.
       // OL individual books have hash collection IDs, not human-readable names,
       // so collection filters ("Pali Canon", "Torah and Tanakh") miss them entirely.
-      // Author-based targeting matches how Islam works (author="Muhammad").
+      // Islam: broadAuthor forces the broad search to stay OL-sura-only — without it,
+      // local Pickthall translations (author≠"Muhammad") leak into the Islam slot.
       // Matthew = OL Gospel of Matthew (most-quoted for interfaith); other Gospels
       // enter via supplementary OL queries in hybridSearch.
       // "Siddhartha Buddha" = Dhammapada + Sutta Nipata (primary Pali Canon).
       // "King David" = OL Psalms; "Isaiah" = OL Book of Isaiah.
       const PRIMARY_SEARCHES = {
-        "Islam":    { author: "Muhammad" },
+        "Islam":    { author: "Muhammad", broadAuthor: "Muhammad" },
         "Christian":{ author: "Matthew" },
         "Buddhist": { author: "Siddhartha Buddha" },
         "Judaism":  { author: "King David" },
@@ -772,11 +773,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
             harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
           }
           // Supplemental: broader search within the tradition (catches relevant
-          // commentary, hadith, church fathers, etc. when primary is thin)
+          // commentary, hadith, church fathers, etc. when primary is thin).
+          // broadAuthor pins Islam to OL suras in both primary + broad slots.
           const broad = await runTool('search', {
             query: passageQuery,
             mode: 'passages',
             religion,
+            ...(primaryOpts?.broadAuthor ? { author: primaryOpts.broadAuthor } : {}),
             limit: primaryOpts ? 2 : 3
           });
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);

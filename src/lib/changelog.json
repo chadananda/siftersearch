@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T21:36:46.024Z",
+  "generated": "2026-05-12T22:18:44.565Z",
   "entries": [
+    {
+      "hash": "24d8354",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "OL fallback uses title LIKE filter to prevent Bukhari URL cross-assignment to Quran passages",
+      "scope": null
+    },
     {
       "hash": "2dae06b",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add logging to trace search result count issue",
       "scope": null
-    },
-    {
-      "hash": "c7db4aa",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Remove client-side cache to prevent freeze, keep server cache only",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "24d8354",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "OL fallback uses title LIKE filter to prevent Bukhari URL cross-assignment to Quran passages",
+        "scope": null
+      },
       {
         "hash": "2dae06b",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Other",
         "description": "Add logging to trace search result count issue",
-        "scope": null
-      },
-      {
-        "hash": "c7db4aa",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Remove client-side cache to prevent freeze, keep server cache only",
         "scope": null
       }
     ]
