@@ -474,10 +474,62 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
     if (docIds.length > 0) {
       const placeholders = docIds.map(() => '?').join(',');
       const docRows = await queryAll(
-        `SELECT id, slug, filename, religion, collection, language, source_site, source_url FROM docs WHERE id IN (${placeholders})`,
+        `SELECT id, slug, filename, religion, collection, language, source_site, source_url, title FROM docs WHERE id IN (${placeholders})`,
         docIds
       );
       docMeta = new Map(docRows.map(r => [r.id, r]));
+
+      // For docs without source_url, find OceanLibrary equivalent. OL is always preferred.
+      // Two-pass: (1) exact title match, (2) keyword overlap for different translations
+      // of the same scripture (e.g. "The Koran Interpreted" → OL Quran surah collection).
+      const noUrlRows = docRows.filter(r => !r.source_site && r.title);
+      if (noUrlRows.length > 0) {
+        // Pass 1: exact title match
+        const titleList = noUrlRows.map(r => r.title);
+        const olExact = await queryAll(
+          `SELECT title, source_url FROM docs WHERE source_site = 'oceanlibrary.com' AND title IN (${titleList.map(() => '?').join(',')}) AND source_url IS NOT NULL`,
+          titleList
+        );
+        const olByTitle = new Map(olExact.map(r => [r.title, r.source_url]));
+
+        // Pass 2: per-religion OL book map for fuzzy fallback
+        // Key terms that signal which OL book to use (pattern → OL WHERE clause)
+        const SCRIPTURE_KEYWORDS = [
+          { pattern: /qur['\u2019a]|quran|koran/i, religion: 'Islam' },
+          { pattern: /\bbible\b|gospel|testament|psalm/i, religion: 'Christian' },
+          { pattern: /torah|tanakh|talmud|mishnah/i, religion: 'Judaism' },
+          { pattern: /dhammapada|nikaya|sutta|pali/i, religion: 'Buddhist' },
+          { pattern: /gita|upanishad|veda|mahabharata/i, religion: 'Hindu' },
+        ];
+        const olByReligion = new Map(); // religion → best OL source_url
+
+        for (const row of noUrlRows) {
+          if (olByTitle.has(row.title)) {
+            row.source_url = olByTitle.get(row.title);
+            row.source_site = 'oceanlibrary.com';
+            continue;
+          }
+          // Fuzzy: check if title matches a scripture keyword pattern
+          const match = SCRIPTURE_KEYWORDS.find(k => k.pattern.test(row.title));
+          if (!match) continue;
+          if (!olByReligion.has(match.religion)) {
+            // Lazy-load best OL book for this religion (most paragraphs = most complete)
+            const [best] = await queryAll(
+              `SELECT d.source_url FROM docs d
+               WHERE d.source_site = 'oceanlibrary.com' AND d.religion = ? AND d.source_url IS NOT NULL
+               ORDER BY (SELECT COUNT(*) FROM content WHERE doc_id = d.id AND deleted_at IS NULL) DESC
+               LIMIT 1`,
+              [match.religion]
+            );
+            olByReligion.set(match.religion, best?.source_url || null);
+          }
+          const olUrl = olByReligion.get(match.religion);
+          if (olUrl) {
+            row.source_url = olUrl;
+            row.source_site = 'oceanlibrary.com';
+          }
+        }
+      }
     }
     // Pull external_para_id per (doc_id, paragraph_index) for OL hits.
     const olHits = top.filter(h => {
