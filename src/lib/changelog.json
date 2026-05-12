@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T16:17:49.474Z",
+  "generated": "2026-05-12T16:18:46.274Z",
   "entries": [
+    {
+      "hash": "f0ca516",
+      "date": "2026-05-12",
+      "type": "Style",
+      "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
+      "scope": null
+    },
     {
       "hash": "eb74b94",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Check SQLite by file_path instead of Meilisearch by ID",
       "scope": "library-watcher"
-    },
-    {
-      "hash": "30d59ca",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Update indexer to use INTEGER doc ids with file_path/file_hash lookup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "f0ca516",
+        "date": "2026-05-12",
+        "type": "Style",
+        "description": "Q text margin +5px, scripture links italic, smart quotes in dialog body",
+        "scope": null
+      },
       {
         "hash": "eb74b94",
         "date": "2026-05-12",
@@ -7068,13 +7075,6 @@
         "type": "Fixed",
         "description": "Check SQLite by file_path instead of Meilisearch by ID",
         "scope": "library-watcher"
-      },
-      {
-        "hash": "30d59ca",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Update indexer to use INTEGER doc ids with file_path/file_hash lookup",
-        "scope": null
       }
     ]
   }
