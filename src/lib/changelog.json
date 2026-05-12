@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T13:02:17.367Z",
+  "generated": "2026-05-12T13:05:22.464Z",
   "entries": [
+    {
+      "hash": "db996e1",
+      "date": "2026-05-12",
+      "type": "New",
+      "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
+      "scope": null
+    },
     {
       "hash": "74552f7",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Improved release history page with collapsible months",
       "scope": null
-    },
-    {
-      "hash": "5923d3f",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Add changelog page with version pill link",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "db996e1",
+        "date": "2026-05-12",
+        "type": "New",
+        "description": "Generate + regenerate dialog admin API endpoints (SSE streaming)",
+        "scope": null
+      },
       {
         "hash": "74552f7",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "New",
         "description": "Improved release history page with collapsible months",
-        "scope": null
-      },
-      {
-        "hash": "5923d3f",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Add changelog page with version pill link",
         "scope": null
       }
     ]
