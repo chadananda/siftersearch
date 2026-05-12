@@ -1018,7 +1018,13 @@ export async function multiIndexSearch(query, options = {}) {
   // the per-author cap applied in hybridSearch.
   const needsAuthorityBlend = isCrossTraditionMIS || (filters.religion && !filters.collection && !filters.author);
   const allSorted = [...aggregate.values()]
-    .filter(e => e.paragraph && !e.paragraph._stub)
+    .filter(e => {
+      if (!e.paragraph || e.paragraph._stub) return false;
+      // HyPE doesn't index author — post-merge enforce author filter so HyPE hits
+      // from non-matching authors don't bypass it (e.g. Pickthall leaking into author="Muhammad" slot).
+      if (filters.author && e.paragraph.author && e.paragraph.author !== filters.author) return false;
+      return true;
+    })
     .sort((a, b) => {
       if (needsAuthorityBlend) {
         const authA = computeAuthorityScore({ ...a.paragraph, _rankingScore: a.score });

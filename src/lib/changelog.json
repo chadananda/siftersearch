@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T22:18:44.565Z",
+  "generated": "2026-05-12T22:27:02.839Z",
   "entries": [
+    {
+      "hash": "e4e852a",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Islam slot — broadAuthor pins both primary+broad searches to OL suras (author=Muhammad)",
+      "scope": null
+    },
     {
       "hash": "24d8354",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add detailed client-side search logging",
       "scope": null
-    },
-    {
-      "hash": "4a40fd6",
-      "date": "2026-01-16",
-      "type": "Other",
-      "description": "Add logging to trace search result count issue",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "e4e852a",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Islam slot — broadAuthor pins both primary+broad searches to OL suras (author=Muhammad)",
+        "scope": null
+      },
       {
         "hash": "24d8354",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Other",
         "description": "Add detailed client-side search logging",
-        "scope": null
-      },
-      {
-        "hash": "4a40fd6",
-        "date": "2026-01-16",
-        "type": "Other",
-        "description": "Add logging to trace search result count issue",
         "scope": null
       }
     ]
