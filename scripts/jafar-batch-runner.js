@@ -230,7 +230,7 @@ async function jafarTurn(history, attempt = 1) {
   const body = JSON.stringify({
     messages: history.map(h => ({ role: h.role, content: h.content }))
   });
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'x-debug-chat': '1' };
   if (process.env.SIFTERSEARCH_API_KEY) {
     headers['X-API-Key'] = process.env.SIFTERSEARCH_API_KEY;
   }
@@ -290,7 +290,7 @@ async function jafarTurn(history, attempt = 1) {
           } else if (evt.type === 'text' && typeof evt.content === 'string' && !gotChunk) {
             text += evt.content;
           }
-          else if (evt.type === 'tool_call' || evt.type === 'tool') toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
+          else if (evt.type === 'tool_call' || evt.type === 'tool' || evt.type === 'debug_research_call') toolCalls.push({ name: evt.name || evt.tool, args: evt.args || {} });
           else if (evt.type === 'error') throw new Error(evt.message || 'stream error');
         } catch { /* skip malformed lines */ }
       }

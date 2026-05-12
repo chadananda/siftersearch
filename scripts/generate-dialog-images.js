@@ -91,7 +91,12 @@ export async function generateAndUploadDialogImage(slug, heroPrompt) {
   return `/images/dialog/${slug}-hero.jpg`;
 }
 
-// Batch mode: process all dialog markdown files
+// Batch mode: only runs when executed directly, not when imported
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (!isMain) {
+  // Imported as a module — do not run batch logic
+} else {
+
 const files = readdirSync(DIALOG_DIR).filter(f => f.endsWith('.md'));
 console.log(`Found ${files.length} dialog files. Generating images...\n`);
 
@@ -133,5 +138,7 @@ for (const file of files) {
     console.log(`     wrote heroImage in ${file}`);
   }
 }
+
+} // end isMain
 
 console.log('\nDone.');
