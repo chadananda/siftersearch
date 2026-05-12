@@ -80,13 +80,19 @@ ${transcript.length > 18000 ? transcript.slice(0, 18000) + '\n\n[truncated]' : t
 export async function generateRoundSummaries(rounds) {
   if (!Array.isArray(rounds) || rounds.length === 0) return [];
 
-  const sys = `For each round of a conversation, write TWO tiny descriptive titles:
-- A QUESTION-form title for the user's turn (4-8 words, ending in "?", capturing the substance of the asking — not just the topic). Example: "Does Anatta Refute Personal Identity?"
-- An ANSWER-form title for Jafar's reply (4-8 words, declarative, capturing the substance of his response). Example: "Anatta Addresses Ego, Not the Soul."
+  const sys = `For each round of a conversation, write TWO short titles in STRICT formats:
 
-Avoid generic phrasings. Sentence case. Concrete and specific.
+1. "question": A real QUESTION the user is asking (4-8 words, MUST end with "?"). Capture the specific substance, not just the topic.
+   GOOD: "Does Anatta Refute Personal Identity?" / "Is Consultation a Spiritual Act?"
+   BAD: "Distinction in Bahá'í consultation practice" (topic label — NOT a question, missing "?")
 
-Output JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTLY ${rounds.length} entries in order.`;
+2. "answer": A declarative summary of Jafar's response (4-8 words, no "?"). Capture the answer's core claim.
+   GOOD: "Anatta Addresses Ego, Not the Soul." / "Consultation Transforms Disagreement Into Service."
+   BAD: "Consultation as spiritual practice" (too vague, not a complete claim)
+
+Sentence case. Concrete and specific. BOTH fields required for every round.
+
+Output ONLY JSON: {"rounds":[{"question":"...","answer":"..."},...]} with EXACTLY ${rounds.length} entries.`;
 
   const user = rounds.map((r, i) => `Round ${i + 1}:\nUSER: ${(r.user || '').slice(0, 600)}\nJAFAR: ${(r.jafar || '').slice(0, 600)}`).join('\n\n');
 

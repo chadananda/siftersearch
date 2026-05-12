@@ -308,6 +308,22 @@ export default async function contentRoutes(fastify) {
     return { ok: true, slug };
   });
 
+  // ─── Admin: update hero image only ───────────────────────────────────────
+  fastify.patch('/admin/dialogs/:slug/hero', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+    const { slug } = req.params;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
+    const { hero_image } = req.body || {};
+    if (!hero_image) return reply.code(400).send({ error: 'hero_image required' });
+    await query(
+      `UPDATE published_conversations SET hero_image=?, updated_at=CURRENT_TIMESTAMP
+       WHERE tenant_id=? AND slug=?`,
+      [hero_image, DIALOG_TENANT, slug]
+    );
+    reply.header('Cache-Control', ADMIN_NOCACHE);
+    return { ok: true, slug, hero_image };
+  });
+
   // ─── Admin: soft-delete dialog ───────────────────────────────────────────
   fastify.delete('/admin/dialogs/:slug', async (req, reply) => {
     if (!requireAdminKey(req, reply)) return;

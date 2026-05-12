@@ -450,6 +450,7 @@ async function publishToDB(slug, q, history, score, judgeResult) {
     keywords: q.keywords || [],
     excerpt: narrative.slice(0, 200),
     hero_prompt: q.heroPrompt || `A meditative scene evoking the theme: "${q.title}". Loose dreamlike imagery, no human faces, soft and contemplative.`,
+    hero_image: q.heroImage || null,
     score,
     featured: score >= 85,
     status: 'published',
@@ -541,20 +542,21 @@ async function runOne(idx, q) {
     return null;
   }
 
-  // Generate hero image for any dialog that passes min score
-  if (score >= MIN_SCORE) {
+  // Generate hero image only if passing min score AND no existing image
+  if (score >= MIN_SCORE && !q.heroImage) {
     const heroPrompt = q.heroPrompt || `A meditative scene evoking the theme: "${q.title}". Loose dreamlike imagery, no human faces, soft and contemplative.`;
     try {
       console.log(`  generating hero image for ${slug}...`);
       const heroPath = await generateAndUploadDialogImage(slug, heroPrompt);
       if (heroPath) {
-        // Update hero_image in DB via PUT
-        await fetch(`${API_BASE}/api/v1/admin/dialogs/${slug}`, {
-          method: 'PUT',
+        // PATCH hero_image only — PUT requires full payload
+        const patchRes = await fetch(`${API_BASE}/api/v1/admin/dialogs/${slug}/hero`, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
           body: JSON.stringify({ hero_image: heroPath }),
-        }).catch(() => {});
-        console.log(`  hero image → R2 (${heroPath})`);
+        }).catch(e => ({ ok: false, _err: e.message }));
+        if (patchRes.ok) console.log(`  hero image → R2+DB (${heroPath})`);
+        else console.error(`  hero image DB update FAILED`);
       }
     } catch (imgErr) {
       console.error(`  hero image FAILED: ${imgErr.message}`);

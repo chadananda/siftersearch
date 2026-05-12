@@ -1,6 +1,76 @@
 {
-  "generated": "2026-05-11T22:24:05.797Z",
+  "generated": "2026-05-12T11:58:47.698Z",
   "entries": [
+    {
+      "hash": "c09664c",
+      "date": "2026-05-11",
+      "type": "Performance",
+      "description": "Sync BATCH_SIZE 50->500, remove 500ms cooldown, fire-and-forget docs index",
+      "scope": null
+    },
+    {
+      "hash": "d10c876",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Cap Baha'i to 1 slot in multiIndexSearch cross-tradition (HyPE was restoring it to 2)",
+      "scope": null
+    },
+    {
+      "hash": "ee7583d",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Cap Baha'i to 1 slot in cross-tradition search — prevents 96% corpus from monopolizing top-N",
+      "scope": null
+    },
+    {
+      "hash": "e3cdac5",
+      "date": "2026-05-11",
+      "type": "Performance",
+      "description": "Bulk embedding writes in single SQLite transaction — 100x faster, reduces API contention",
+      "scope": null
+    },
+    {
+      "hash": "4515fec",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Embedding worker poll interval 2s→30s to reduce SQLite write contention with API",
+      "scope": null
+    },
+    {
+      "hash": "93ee804",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Embedding worker — char-based batch splitting, removes flawed token estimate",
+      "scope": null
+    },
+    {
+      "hash": "d2523a8",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Embedding worker token limit — conservative 60K/4 chars-per-token to prevent 300K overflow",
+      "scope": null
+    },
+    {
+      "hash": "2790e4e",
+      "date": "2026-05-11",
+      "type": "Other",
+      "description": "Embedding worker entry script + clean unused imports in fix-html-embeddings",
+      "scope": null
+    },
+    {
+      "hash": "d2e7299",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Embedding-worker uses cleanForEmbedding — strip HTML before embedding API call",
+      "scope": null
+    },
+    {
+      "hash": "e875783",
+      "date": "2026-05-11",
+      "type": "Fixed",
+      "description": "Embedding cache path hyphen→underscore in fix-html-embeddings script",
+      "scope": null
+    },
     {
       "hash": "f47e8d3",
       "date": "2026-05-11",
@@ -3430,80 +3500,80 @@
       "type": "Fixed",
       "description": "Cache library stats for instant home page display",
       "scope": null
-    },
-    {
-      "hash": "19447c2",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Improve copy button visibility and remove text selection",
-      "scope": null
-    },
-    {
-      "hash": "04fe007",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Improve search result cards and navigation",
-      "scope": null
-    },
-    {
-      "hash": "cdb72bf",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Increase paragraph number margin and improve attribution contrast",
-      "scope": null
-    },
-    {
-      "hash": "234b9df",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Restore text visibility in search results",
-      "scope": null
-    },
-    {
-      "hash": "93b4576",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Ensure text visibility in clickable search cards",
-      "scope": null
-    },
-    {
-      "hash": "6b7794d",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use theme-aware text color for search results",
-      "scope": null
-    },
-    {
-      "hash": "d80d5a9",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Remove duplicate clear button, keep native search input X",
-      "scope": null
-    },
-    {
-      "hash": "70db628",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Compact clickable search result cards",
-      "scope": null
-    },
-    {
-      "hash": "b5ab2cd",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Add phrase-level highlighting for search term clusters",
-      "scope": null
-    },
-    {
-      "hash": "ea23756",
-      "date": "2026-01-13",
-      "type": "New",
-      "description": "Separate suggestions for search vs chat mode",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-11": [
+      {
+        "hash": "c09664c",
+        "date": "2026-05-11",
+        "type": "Performance",
+        "description": "Sync BATCH_SIZE 50->500, remove 500ms cooldown, fire-and-forget docs index",
+        "scope": null
+      },
+      {
+        "hash": "d10c876",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Cap Baha'i to 1 slot in multiIndexSearch cross-tradition (HyPE was restoring it to 2)",
+        "scope": null
+      },
+      {
+        "hash": "ee7583d",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Cap Baha'i to 1 slot in cross-tradition search — prevents 96% corpus from monopolizing top-N",
+        "scope": null
+      },
+      {
+        "hash": "e3cdac5",
+        "date": "2026-05-11",
+        "type": "Performance",
+        "description": "Bulk embedding writes in single SQLite transaction — 100x faster, reduces API contention",
+        "scope": null
+      },
+      {
+        "hash": "4515fec",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Embedding worker poll interval 2s→30s to reduce SQLite write contention with API",
+        "scope": null
+      },
+      {
+        "hash": "93ee804",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Embedding worker — char-based batch splitting, removes flawed token estimate",
+        "scope": null
+      },
+      {
+        "hash": "d2523a8",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Embedding worker token limit — conservative 60K/4 chars-per-token to prevent 300K overflow",
+        "scope": null
+      },
+      {
+        "hash": "2790e4e",
+        "date": "2026-05-11",
+        "type": "Other",
+        "description": "Embedding worker entry script + clean unused imports in fix-html-embeddings",
+        "scope": null
+      },
+      {
+        "hash": "d2e7299",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Embedding-worker uses cleanForEmbedding — strip HTML before embedding API call",
+        "scope": null
+      },
+      {
+        "hash": "e875783",
+        "date": "2026-05-11",
+        "type": "Fixed",
+        "description": "Embedding cache path hyphen→underscore in fix-html-embeddings script",
+        "scope": null
+      },
       {
         "hash": "f47e8d3",
         "date": "2026-05-11",
@@ -7002,76 +7072,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Cache library stats for instant home page display",
-        "scope": null
-      },
-      {
-        "hash": "19447c2",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Improve copy button visibility and remove text selection",
-        "scope": null
-      },
-      {
-        "hash": "04fe007",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Improve search result cards and navigation",
-        "scope": null
-      },
-      {
-        "hash": "cdb72bf",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Increase paragraph number margin and improve attribution contrast",
-        "scope": null
-      },
-      {
-        "hash": "234b9df",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Restore text visibility in search results",
-        "scope": null
-      },
-      {
-        "hash": "93b4576",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Ensure text visibility in clickable search cards",
-        "scope": null
-      },
-      {
-        "hash": "6b7794d",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use theme-aware text color for search results",
-        "scope": null
-      },
-      {
-        "hash": "d80d5a9",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Remove duplicate clear button, keep native search input X",
-        "scope": null
-      },
-      {
-        "hash": "70db628",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Compact clickable search result cards",
-        "scope": null
-      },
-      {
-        "hash": "b5ab2cd",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Add phrase-level highlighting for search term clusters",
-        "scope": null
-      },
-      {
-        "hash": "ea23756",
-        "date": "2026-01-13",
-        "type": "New",
-        "description": "Separate suggestions for search vs chat mode",
         "scope": null
       }
     ]
