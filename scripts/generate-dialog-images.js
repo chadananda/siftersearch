@@ -139,6 +139,5 @@ for (const file of files) {
   }
 }
 
+  console.log('\nDone.');
 } // end isMain
-
-console.log('\nDone.');

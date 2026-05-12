@@ -8,10 +8,18 @@
 //
 // Mounted in server.js with prefix '/api/v1' so the routes match the URLs above.
 
+import { spawn } from 'child_process';
+import { writeFileSync, unlinkSync } from 'fs';
+import { tmpdir } from 'os';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { marked } from 'marked';
 import { query, queryAll, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
 import { generatePublishMetadata, generateRoundSummaries, anonymizeUserTurns, pairRounds } from '../lib/publish-pipeline.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const BATCH_RUNNER = join(__dirname, '../../scripts/jafar-batch-runner.js');
 
 // Edge cache headers for public reads. 5-min Cloudflare cache + 24h
 // stale-while-revalidate keeps origin load near zero on hot pages while
@@ -466,5 +474,78 @@ export default async function contentRoutes(fastify) {
       tags: meta.tags,
       rounds: rounds.length,
     };
+  });
+
+  // ─── Admin: generate a new dialog from a seed question (SSE) ──────────────
+  // POST /api/v1/admin/dialogs/generate
+  // Body: { title, question, topic?, tags?, keywords?, heroPrompt? }
+  // Streams batch-runner stdout as SSE. Final "done" event carries { slug, url }.
+  fastify.post('/admin/dialogs/generate', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+    const b = req.body || {};
+    if (!b.title || !b.question) return reply.code(400).send({ error: 'title and question required' });
+
+    const tmpFile = join(tmpdir(), `gen-dialog-${Date.now()}.json`);
+    writeFileSync(tmpFile, JSON.stringify([b]));
+
+    reply.hijack();
+    const res = reply.raw;
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+
+    const child = spawn('node', [BATCH_RUNNER, '--questions', tmpFile, '--min-score', '75', '--max-retries', '3'], {
+      env: { ...process.env, JAFAR_API_URL: 'http://localhost:7839/api/chat/stream' },
+    });
+    child.stdout.on('data', d => res.write(`data: ${String(d).replace(/\n/g, '\ndata: ')}\n\n`));
+    child.stderr.on('data', d => res.write(`data: [err] ${String(d).trim()}\n\n`));
+    child.on('close', () => {
+      try { unlinkSync(tmpFile); } catch {}
+      res.write('event: done\ndata: {}\n\n');
+      res.end();
+    });
+  });
+
+  // ─── Admin: regenerate an existing dialog (SSE) ───────────────────────────
+  // POST /api/v1/admin/dialogs/:slug/regenerate
+  // Keeps slug, title, hero_image. Re-runs Jafar from the stored question.
+  // Streams batch-runner stdout as SSE.
+  fastify.post('/admin/dialogs/:slug/regenerate', async (req, reply) => {
+    if (!requireAdminKey(req, reply)) return;
+    const { slug } = req.params;
+    if (!isValidSlug(slug)) return reply.code(400).send({ error: 'invalid_slug' });
+
+    const existing = await queryOne(
+      'SELECT title, question, topic, tags_json, keywords_json, hero_image, hero_prompt FROM published_conversations WHERE tenant_id=? AND slug=?',
+      [DIALOG_TENANT, slug]
+    );
+    if (!existing) return reply.code(404).send({ error: 'not_found' });
+
+    const q = {
+      slug,
+      title: existing.title,
+      question: existing.question,
+      topic: existing.topic,
+      tags: JSON.parse(existing.tags_json || '[]'),
+      keywords: JSON.parse(existing.keywords_json || '[]'),
+      heroImage: existing.hero_image || null,
+      heroPrompt: existing.hero_prompt || null,
+    };
+
+    const tmpFile = join(tmpdir(), `regen-dialog-${Date.now()}.json`);
+    writeFileSync(tmpFile, JSON.stringify([q]));
+
+    reply.hijack();
+    const res = reply.raw;
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+
+    const child = spawn('node', [BATCH_RUNNER, '--questions', tmpFile, '--rerun', '--min-score', '75', '--max-retries', '3'], {
+      env: { ...process.env, JAFAR_API_URL: 'http://localhost:7839/api/chat/stream' },
+    });
+    child.stdout.on('data', d => res.write(`data: ${String(d).replace(/\n/g, '\ndata: ')}\n\n`));
+    child.stderr.on('data', d => res.write(`data: [err] ${String(d).trim()}\n\n`));
+    child.on('close', () => {
+      try { unlinkSync(tmpFile); } catch {}
+      res.write(`event: done\ndata: {"slug":"${slug}","url":"https://siftersearch.com/dialogue/${slug}/"}\n\n`);
+      res.end();
+    });
   });
 }
