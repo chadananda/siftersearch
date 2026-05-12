@@ -159,8 +159,8 @@ async function processSyncJob(job) {
     //     verified-sync invariant).
     //
     // Memory bound: PIPELINE_LIMIT=2 × FLUSH_PARAS=100 × ~12KB/para ≈ 2.4MB.
-    // Reduced from 4×200 to prevent Meilisearch task queue buildup causing
-    // 300s timeout on tasks that wait behind 3 in-flight predecessors.
+    // Reduced from 4×200 to prevent Meilisearch task queue buildup.
+    // Timeout raised to 900s — observed tasks occasionally take 9+ minutes.
     const PIPELINE_LIMIT = 2;
     const FLUSH_PARAS = 100;
     const buffer = new Map();    // indexName -> { paras: [], paraIds: [] }
@@ -171,7 +171,7 @@ async function processSyncJob(job) {
       const oldest = inFlight.shift();
       let confirmed = false;
       try {
-        await waitForMeiliTask(meili, oldest.task, 300000);
+        await waitForMeiliTask(meili, oldest.task, 900000);
         confirmed = true;
       } catch (err) {
         logger.error({ err: err.message, indexName: oldest.indexName, batchSize: oldest.paraIds.length }, 'Pipelined batch failed');
@@ -549,7 +549,7 @@ async function syncOneSiteOnlyDb(meili, cfg) {
     if (inFlight.length === 0) return;
     const { task, ids } = inFlight.shift();
     try {
-      await waitForMeiliTask(meili, task, 300000);
+      await waitForMeiliTask(meili, task, 900000);
       const placeholders = ids.map(() => '?').join(',');
       siteDb.prepare(`UPDATE content SET synced = 1 WHERE id IN (${placeholders})`).run(...ids);
       total += ids.length;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:58:20.710Z",
+  "generated": "2026-05-12T18:02:18.712Z",
   "entries": [
+    {
+      "hash": "20078f2",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Author-name exception placed directly under interfaith default rule",
+      "scope": null
+    },
     {
       "hash": "eac13e4",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use pending delete queue for 60s move detection",
       "scope": "library-watcher"
-    },
-    {
-      "hash": "8bca04c",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use library-watcher service for proper move detection",
-      "scope": "index-library"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "20078f2",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Author-name exception placed directly under interfaith default rule",
+        "scope": null
+      },
       {
         "hash": "eac13e4",
         "date": "2026-05-12",
@@ -7068,13 +7075,6 @@
         "type": "Fixed",
         "description": "Use pending delete queue for 60s move detection",
         "scope": "library-watcher"
-      },
-      {
-        "hash": "8bca04c",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use library-watcher service for proper move detection",
-        "scope": "index-library"
       }
     ]
   }
