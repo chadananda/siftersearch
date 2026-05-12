@@ -515,12 +515,16 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
             : meta.source_url;
           if (extParaId) result.external_para_id = extParaId;
         } else if (meta) {
-          // Primary library doc — build /library/{religion}/{collection}/{slug}#p{idx}
+          // Primary library doc — prefer /library/…/slug#p{idx}, fall back to /document/{id}#p{idx}
           const rawSlug = meta.slug || (meta.filename ? meta.filename.replace(/\.[^.]+$/, '') : null);
           const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
+          const paraAnchor = hit.paragraph_index != null ? `#p${hit.paragraph_index}` : '';
           if (docSlug && meta.religion && meta.collection) {
             const base = `https://siftersearch.com/library/${encodeURIComponent(meta.religion)}/${encodeURIComponent(meta.collection)}/${docSlug}`;
-            result.source_url = hit.paragraph_index != null ? `${base}#p${hit.paragraph_index}` : base;
+            result.source_url = `${base}${paraAnchor}`;
+          } else {
+            // No slug — fall back to /document/{id} with paragraph anchor so it's still a deeplink
+            result.source_url = `https://siftersearch.com/document/${docId}${paraAnchor}`;
           }
         }
         return result;
@@ -957,25 +961,33 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   // Cap text per paragraph at 1000 chars so the orchestrator's context
   // stays manageable on long compilations.
   // Build base URL for paragraph deeplinks (same logic as executeSearch)
-  let docBaseUrl = null;
-  if (doc.source_site && doc.source_url) {
-    docBaseUrl = doc.source_url; // external site — paragraph links use ?paraId=
-  } else {
+  // Build per-paragraph source_url. Priority: external ?paraId > /library/…#p > /document/{id}#p
+  const buildParaUrl = (p) => {
+    if (doc.source_site && doc.source_url) {
+      return `${doc.source_url}#p${p.paragraph_index}`; // external — best we can do without external_para_id here
+    }
     const rawSlug = doc.slug || (doc.filename ? doc.filename.replace(/\.[^.]+$/, '') : null);
     const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
     if (docSlug && doc.religion && doc.collection) {
-      docBaseUrl = `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${docSlug}`;
+      return `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${docSlug}#p${p.paragraph_index}`;
     }
-  }
+    // Fallback: document route with paragraph anchor — still a paragraph-level deeplink
+    return `https://siftersearch.com/document/${doc.id}#p${p.paragraph_index}`;
+  };
+
+  const slugForBase = doc.slug || (doc.filename ? doc.filename.replace(/\.[^.]+$/, '') : null);
+  const docBase = slugForBase && doc.religion && doc.collection
+    ? `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${encodeURIComponent(slugForBase).replace(/%2F/g, '/')}`
+    : (doc.source_url || `https://siftersearch.com/document/${doc.id}`);
 
   return {
-    document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year, base_url: docBaseUrl },
+    document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year, base_url: docBase },
     paragraphs_read: paragraphs.length,
     excerpts: paragraphs.map(p => ({
       paragraph_index: p.paragraph_index,
       text: (p.text || '').slice(0, 1000),
       heading: p.heading || null,
-      source_url: docBaseUrl ? `${docBaseUrl}#p${p.paragraph_index}` : null
+      source_url: buildParaUrl(p)
     }))
   };
 }

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:33:32.343Z",
+  "generated": "2026-05-12T14:38:02.750Z",
   "entries": [
+    {
+      "hash": "dc1fccd",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
+      "scope": null
+    },
     {
       "hash": "bf61d02",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Check for browser before accessing localStorage for stats cache",
       "scope": null
-    },
-    {
-      "hash": "b999699",
-      "date": "2026-01-13",
-      "type": "Style",
-      "description": "Increase changelog item size and horizontal padding",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "dc1fccd",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Escape backticks in chat.js prompt template + non-blocking logAIUsage",
+        "scope": null
+      },
       {
         "hash": "bf61d02",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Check for browser before accessing localStorage for stats cache",
-        "scope": null
-      },
-      {
-        "hash": "b999699",
-        "date": "2026-01-13",
-        "type": "Style",
-        "description": "Increase changelog item size and horizontal padding",
         "scope": null
       }
     ]
