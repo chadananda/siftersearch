@@ -4,17 +4,10 @@
 //   USER agent: a thoughtful curious interlocutor (gpt-4o) who pushes Jafar deeper
 //   JAFAR agent: the real production Jafar (system prompt + tools + corpus)
 //
-// For each topic in the seed-question list:
-//   1. USER posts opening question
-//   2. JAFAR responds (with tool calls against the library)
-//   3. USER pushes back / probes / challenges
-//   4. Loop for 10 rounds
-//   5. Score the transcript with a JUDGE agent
-//   6. Convert to dialog markdown + commit
-//   7. Note prompt-improvement signals for the next iteration
+// Publishes directly to the DB via admin API (no local MD files).
 //
 // Usage:
-//   node scripts/jafar-batch-runner.js --questions scripts/seed-questions.json [--prompt-file ...] [--start 5] [--limit 10]
+//   node scripts/jafar-batch-runner.js [--start 5] [--limit 10] [--rerun] [--min-score 80]
 
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
@@ -426,12 +419,54 @@ function dialogMarkdown(q, history, score, judgeResult, slug) {
   return fm + parts.join('\n');
 }
 
-const out_dir = join(PROJECT_ROOT, 'src/content/dialogs');
+const API_BASE = process.env.API_BASE || 'https://api.siftersearch.com';
+const ADMIN_KEY = process.env.INTERNAL_API_KEY;
 const score_dir = join(PROJECT_ROOT, 'tmp-scores');
 mkdirSync(score_dir, { recursive: true });
 
 const overallLog = join(PROJECT_ROOT, 'PUBLISHED-DIALOGS.md');
 const promptSignalsLog = join(PROJECT_ROOT, 'tmp-scores', 'prompt-signals.md');
+
+async function slugExistsInDB(slug) {
+  const r = await fetch(`${API_BASE}/api/v1/dialogs/${slug}`);
+  return r.ok;
+}
+
+async function publishToDB(slug, q, history, score, judgeResult) {
+  const messages = history.map(m => ({ role: m.role, content: m.content }));
+  const scores = judgeResult.scores || {};
+  const flags = (judgeResult.flags || []).filter(f => typeof f === 'string');
+  const narrative = judgeResult.narrative || '';
+  const plan = judgeResult.improvement_plan || '';
+
+  const payload = {
+    messages,
+    slug,
+    title: q.title,
+    description: q.description || q.title,
+    question: q.question,
+    topic: VALID_TOPIC.has(q.topic) ? q.topic : 'theology',
+    tags: q.tags || [],
+    keywords: q.keywords || [],
+    excerpt: narrative.slice(0, 200),
+    hero_prompt: q.heroPrompt || `A meditative scene evoking the theme: "${q.title}". Loose dreamlike imagery, no human faces, soft and contemplative.`,
+    score,
+    featured: score >= 85,
+    status: 'published',
+    assessment: { scores, narrative, flags, improvement_plan: plan },
+  };
+
+  const r = await fetch(`${API_BASE}/api/v1/admin/conversations/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`DB publish failed ${r.status}: ${err}`);
+  }
+  return r.json();
+}
 
 // Run one full conversation. priorFeedback (when retrying) is appended to the
 // user-agent's prompt so it pushes Jafar on the dimensions that scored low.
@@ -467,10 +502,9 @@ const MAX_RETRIES = parseInt(arg('--max-retries', '3'));
 
 async function runOne(idx, q) {
   const slug = q.slug || `${String(idx).padStart(3, '0')}-${slugify(q.title)}`;
-  const mdPath = join(out_dir, `${slug}.md`);
 
-  if (skipExisting && existsSync(mdPath)) {
-    console.log(`[${idx}] SKIP ${slug} (exists)`);
+  if (skipExisting && await slugExistsInDB(slug)) {
+    console.log(`[${idx}] SKIP ${slug} (exists in DB)`);
     return null;
   }
 
@@ -497,26 +531,33 @@ async function runOne(idx, q) {
   }
 
   const { history, judgeResult, score, elapsedSec } = best;
-  const md = dialogMarkdown(q, history, score, judgeResult, slug);
-  writeFileSync(mdPath, md);
-  console.log(`  wrote ${mdPath} (final ${score}%)`);
 
-  // Auto-generate and upload hero image to R2 for any dialog that passes
+  // Publish directly to DB — no local MD files
+  try {
+    await publishToDB(slug, q, history, score, judgeResult);
+    console.log(`  published ${slug} to DB (${score}%)`);
+  } catch (err) {
+    console.error(`  DB publish FAILED: ${err.message}`);
+    return null;
+  }
+
+  // Generate hero image for any dialog that passes min score
   if (score >= MIN_SCORE) {
     const heroPrompt = q.heroPrompt || `A meditative scene evoking the theme: "${q.title}". Loose dreamlike imagery, no human faces, soft and contemplative.`;
     try {
       console.log(`  generating hero image for ${slug}...`);
       const heroPath = await generateAndUploadDialogImage(slug, heroPrompt);
       if (heroPath) {
-        const updated = readFileSync(mdPath, 'utf-8').replace(
-          /^(---\n[\s\S]*?)(\n---\n)/,
-          `$1\nheroImage: ${heroPath}$2`
-        );
-        writeFileSync(mdPath, updated);
+        // Update hero_image in DB via PUT
+        await fetch(`${API_BASE}/api/v1/admin/dialogs/${slug}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_KEY },
+          body: JSON.stringify({ hero_image: heroPath }),
+        }).catch(() => {});
         console.log(`  hero image → R2 (${heroPath})`);
       }
     } catch (imgErr) {
-      console.error(`  hero image FAILED: ${imgErr.message} (dialog still saved)`);
+      console.error(`  hero image FAILED: ${imgErr.message}`);
     }
   }
 

@@ -135,9 +135,8 @@ for (const file of files) {
 
   const { fm, body } = parsed;
 
-  // Respect the publish gate — don't import unpublished unless it already has a score
-  const published = fm.published === 'true' || fm.published === true;
-  const status = published ? 'published' : 'draft';
+  // Batch-runner dialogs default to published — they've been judged and are ready
+  const status = fm.status || 'published';
 
   const rawFm = text.match(/^---\n([\s\S]*?)\n---/)?.[1] || '';
   const assessment = extractAssessment(rawFm);
