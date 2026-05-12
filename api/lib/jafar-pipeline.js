@@ -698,10 +698,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // When NO work is named, run parallel per-tradition searches so that
   // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
   // traditions from retrieved_quotes. Each tradition gets its own slot.
-  // Use the full user message for passage search — topic keywords joined with
-  // spaces lose question structure and return wrong passages (e.g. "love
-  // neighbors enemies" retrieves Deuteronomy instead of Matthew 5:44).
-  const passageQuery = userMessage.slice(0, 300);
+  // Strip question boilerplate ("What do the scriptures say about X?" → "X?")
+  // so Meilisearch matches the actual topic rather than metadata noise.
+  // Without stripping, "What do the scriptures say about loving your enemies?"
+  // returns Matthew 5:9 (peacemakers) above Matthew 5:44 (love your enemies).
+  const passageQuery = userMessage
+    .slice(0, 300)
+    .replace(/^(what do|what does|what did|how do|how does|tell me|explain|describe)\s+(the\s+)?(scriptures?|bible|quran|qu['']ran|texts?|teachings?|religion|holy\s+books?|traditions?)\s+(say about|teach about|say regarding|tell us about|teach us about|say on|teach on)?\s*/i, '')
+    .replace(/^(what is|what are|how is|how are)\s+/i, '')
+    .trim() || userMessage.slice(0, 300);
   if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with

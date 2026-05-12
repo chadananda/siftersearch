@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T20:26:13.832Z",
+  "generated": "2026-05-12T20:46:15.991Z",
   "entries": [
+    {
+      "hash": "6ba771e",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Switch Buddhist+Judaism primary searches to author-based targeting — OL primary texts have hash collection IDs not readable names",
+      "scope": null
+    },
     {
       "hash": "e1151fb",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Refactor",
       "description": "Use SQLite for library stats, Meilisearch for indexing only",
       "scope": null
-    },
-    {
-      "hash": "64a1b01",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Exclude soft-deleted docs from Meilisearch cleanup check",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "6ba771e",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Switch Buddhist+Judaism primary searches to author-based targeting — OL primary texts have hash collection IDs not readable names",
+        "scope": null
+      },
       {
         "hash": "e1151fb",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Refactor",
         "description": "Use SQLite for library stats, Meilisearch for indexing only",
-        "scope": null
-      },
-      {
-        "hash": "64a1b01",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Exclude soft-deleted docs from Meilisearch cleanup check",
         "scope": null
       }
     ]
