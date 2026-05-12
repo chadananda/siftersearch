@@ -42,6 +42,19 @@ function requireAdminKey(req, reply) {
   return true;
 }
 
+function applySmartQuotes(html) {
+  // Convert straight quotes to typographic quotes in text nodes only (skip HTML tags/attrs)
+  const parts = html.split(/(<[^>]+>)/);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part; // HTML tag — leave untouched
+    // Balanced double quotes: "..." → "..."
+    part = part.replace(/"([^"]+)"/g, '\u201C$1\u201D');
+    // Balanced single quotes around multi-word phrases: '...' → '...'
+    part = part.replace(/'([^']+)'/g, (m, inner) => /\s/.test(inner) ? '\u2018' + inner + '\u2019' : m);
+    return part;
+  }).join('');
+}
+
 function renderMarkdown(md) {
   if (!md) return '';
   marked.setOptions({ gfm: true, breaks: false });
@@ -49,6 +62,7 @@ function renderMarkdown(md) {
   // Add sequential id="round-N-answer" to jafar-turn divs so TOC deep-links work
   let n = 0;
   html = html.replace(/<div class="jafar-turn">/g, () => `<div class="jafar-turn" id="round-${++n}-answer">`);
+  html = applySmartQuotes(html);
   return html;
 }
 
