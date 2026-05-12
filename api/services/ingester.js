@@ -1449,23 +1449,23 @@ export async function ingestDocument(text, metadata = {}, relativePath = null) {
   // This saves expensive GPT-4 calls on re-ingest of previously processed files
   // ───────────────────────────────────────────────────────────────────────────
   let skipAISegmentation = false;
-  let contentToProcess = content;
+  let contentToProcess = bodyContent;
 
-  if (hasMarkers(content)) {
-    const validation = validateMarkers(content);
+  if (hasMarkers(bodyContent)) {
+    const validation = validateMarkers(bodyContent);
     if (!validation.valid) {
       // Corrupted markers in source - strip them and proceed with AI segmentation
       logger.warn({
         relativePath,
         errors: validation.errors
       }, 'Corrupted markers in source file - stripping and re-segmenting');
-      contentToProcess = stripMarkers(content);
+      contentToProcess = stripMarkers(bodyContent);
     } else {
       // Valid markers exist - skip AI segmentation, use existing markers
       skipAISegmentation = true;
       logger.info({
         relativePath,
-        markerCount: (content.match(/⁅s\d+⁆/g) || []).length
+        markerCount: (bodyContent.match(/⁅s\d+⁆/g) || []).length
       }, 'Using existing markers from source file - skipping AI segmentation');
     }
   }

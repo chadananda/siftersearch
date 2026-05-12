@@ -438,12 +438,12 @@ export async function indexDocumentFromText(text, metadata = {}) {
   } = metadata;
 
   // Parse content (handle markdown frontmatter if present)
-  let content = text;
+  let bodyText = text;
   let extractedMeta = {};
 
   if (text.startsWith('---')) {
     const parsed = parseMarkdownFrontmatter(text);
-    content = parsed.content;
+    bodyText = parsed.content;
     extractedMeta = parsed.metadata;
   }
 
@@ -454,7 +454,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
 
   // Detect language from content - this is more reliable than frontmatter
   // Arabic/Farsi detection should OVERRIDE frontmatter 'en' since it's often wrong
-  const detectedLang = detectLanguageFeatures(content);
+  const detectedLang = detectLanguageFeatures(bodyText);
   const contentLanguage = detectedLang.language !== 'en' ? detectedLang.language : null;
 
   // Language priority: content detection (for RTL) > frontmatter > metadata > default
@@ -472,7 +472,7 @@ export async function indexDocumentFromText(text, metadata = {}) {
   };
 
   // Chunk into embedder-sized blocks
-  const chunks = chunkDocumentForIndexing(content);
+  const chunks = chunkDocumentForIndexing(bodyText);
 
   if (chunks.length === 0) {
     throw new Error('Document has no content to index');
