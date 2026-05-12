@@ -531,6 +531,18 @@ export async function executeSearch({ query, mode = 'passages', religion, collec
         }
       }
     }
+    // OceanLibrary docs always preferred — re-sort top so OL-sourced hits come
+    // first. source_site may not be in Meilisearch hits (synced before field was
+    // added) so we use SQLite docMeta which is always current.
+    top.sort((a, b) => {
+      const aSite = docMeta.get(a.doc_id || a.document_id)?.source_site || '';
+      const bSite = docMeta.get(b.doc_id || b.document_id)?.source_site || '';
+      const aOl = aSite === 'oceanlibrary.com' ? 1 : 0;
+      const bOl = bSite === 'oceanlibrary.com' ? 1 : 0;
+      if (bOl !== aOl) return bOl - aOl;
+      return (b._authorityScore || 0) - (a._authorityScore || 0);
+    });
+
     // Pull external_para_id per (doc_id, paragraph_index) for OL hits.
     const olHits = top.filter(h => {
       const m = docMeta.get(h.doc_id || h.document_id);
