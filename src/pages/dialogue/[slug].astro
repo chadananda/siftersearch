@@ -222,41 +222,6 @@ const TOPIC_LABELS: Record<string, string> = {
         </div>
       </div>
 
-      {data.assessment && (
-        <aside id="assessment" class="assessment-box" aria-label="Editorial assessment">
-          <header class="assess-header">
-            <span class="assess-label">Assessment</span>
-            <a class="assess-link" href="/dialogue/assessment">how this is assessed →</a>
-          </header>
-
-          <div class="assess-scores">
-            {Object.entries(data.assessment.scores).map(([dim, val]) => (
-              <div class="score-cell">
-                <span class="score-val" data-score={val}>{val}</span>
-                <span class="score-dim">{dim.replace(/_/g, ' ')}</span>
-              </div>
-            ))}
-          </div>
-
-          <div class="assess-narrative">
-            <h3>What worked, what didn't</h3>
-            <p>{sq(data.assessment.narrative)}</p>
-          </div>
-
-          {data.assessment.flags && data.assessment.flags.length > 0 && (
-            <div class="assess-flags">
-              {data.assessment.flags.map(f => (
-                <a class="flag" href={`/dialogue/assessment#failure-modes`} title="see methodology">{f}</a>
-              ))}
-            </div>
-          )}
-
-          <div class="assess-plan">
-            <h3>Forward — what should change</h3>
-            <p>{sq(data.assessment.improvement_plan)}</p>
-          </div>
-        </aside>
-      )}
 
       <footer class="dialog-footer">
         <div class="footer-watermark" aria-hidden="true">

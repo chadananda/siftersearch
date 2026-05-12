@@ -57,7 +57,14 @@ function applySmartQuotes(html) {
 
 function renderMarkdown(md) {
   if (!md) return '';
-  marked.setOptions({ gfm: true, breaks: false });
+  // Open all links in a new tab
+  const renderer = new marked.Renderer();
+  renderer.link = ({ href, title, tokens }) => {
+    const text = tokens?.map(t => t.raw ?? t.text ?? '').join('') || '';
+    const titleAttr = title ? ` title="${title}"` : '';
+    return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+  };
+  marked.setOptions({ gfm: true, breaks: false, renderer });
   let html = marked.parse(md);
   // Add sequential id="round-N-answer" to jafar-turn divs so TOC deep-links work
   let n = 0;

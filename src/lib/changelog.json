@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T16:18:46.274Z",
+  "generated": "2026-05-12T16:26:35.660Z",
   "entries": [
+    {
+      "hash": "f53a258",
+      "date": "2026-05-12",
+      "type": "Style",
+      "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
+      "scope": null
+    },
     {
       "hash": "f0ca516",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Increase search hit font size and reduce RTL line-height",
       "scope": null
-    },
-    {
-      "hash": "640a82e",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Check SQLite by file_path instead of Meilisearch by ID",
-      "scope": "library-watcher"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "f53a258",
+        "date": "2026-05-12",
+        "type": "Style",
+        "description": "TOC answer items get 0.6rem bottom padding to breathe from next question",
+        "scope": null
+      },
       {
         "hash": "f0ca516",
         "date": "2026-05-12",
@@ -7068,13 +7075,6 @@
         "type": "Style",
         "description": "Increase search hit font size and reduce RTL line-height",
         "scope": null
-      },
-      {
-        "hash": "640a82e",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Check SQLite by file_path instead of Meilisearch by ID",
-        "scope": "library-watcher"
       }
     ]
   }

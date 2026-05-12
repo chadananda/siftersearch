@@ -1703,6 +1703,10 @@ Return ONLY the description text, no quotes or formatting.`;
     const userRole = request.user?.role || request.user?.tier || null;
     const canEdit = isAuthenticated && ['admin', 'editor'].includes(userRole);
 
+    // Normalize URL path segments — slugify so "Islam" matches "islam", "Foundational Texts" matches "foundational-texts"
+    const religionSlug = slugifyPath(religion);
+    const collectionSlug = slugifyPath(collection);
+
     // Parse the slug to extract language suffix if present
     const { baseSlug: _baseSlug, language: _slugLang } = parseDocSlug(slug);
 
@@ -1718,7 +1722,7 @@ Return ONLY the description text, no quotes or formatting.`;
     if (document) {
       const docReligionSlug = slugifyPath(document.religion || '');
       const docCollectionSlug = slugifyPath(document.collection || '');
-      if (docReligionSlug !== religion || docCollectionSlug !== collection) {
+      if (docReligionSlug !== religionSlug || docCollectionSlug !== collectionSlug) {
         document = null; // Wrong collection, continue searching
       }
     }
@@ -1737,7 +1741,7 @@ Return ONLY the description text, no quotes or formatting.`;
       document = candidates.find(doc => {
         const docReligionSlug = slugifyPath(doc.religion || '');
         const docCollectionSlug = slugifyPath(doc.collection || '');
-        if (docReligionSlug !== religion || docCollectionSlug !== collection) return false;
+        if (docReligionSlug !== religionSlug || docCollectionSlug !== collectionSlug) return false;
 
         const docSlug = generateDocSlug(doc);
         // Exact match
