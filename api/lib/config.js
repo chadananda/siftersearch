@@ -194,6 +194,12 @@ const searchConfig = {
   // Boost ≥ 1.44 needed for auth=10 to overcome HyPE-dominant commentary (auth=5).
   // Boost=2.0 gives a 3× multiplier for auth=10, safely clearing the HyPE advantage.
   authorityBoost: parseFloat(get('AUTHORITY_BOOST', '2.0')),
+  // OceanLibrary source multiplier: OL single-book docs (e.g., Gospel of Matthew) often
+  // score lower in Meilisearch than large composite non-OL docs (e.g., full Bible) or
+  // non-OL modern translations — because the OL versions use classical language that
+  // matches modern queries less precisely. 2.0× ensures OL wins when it has ≥50% of the
+  // non-OL raw relevance, which covers archaic-language translation gaps.
+  olSourceMultiplier: parseFloat(get('OL_SOURCE_MULTIPLIER', '2.0')),
   // Fetch this multiple of `limit` from Meilisearch before reranking, so high-authority
   // hits that were just outside the top N can move in. Increased to 20 so primary texts
   // at position 50-100 in semantic ranking can surface via authority promotion.

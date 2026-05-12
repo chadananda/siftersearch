@@ -124,9 +124,8 @@ function computeAuthorityScore(hit) {
   const auth = typeof liveAuth === 'number' ? liveAuth : (typeof hit.authority === 'number' ? hit.authority : 5);
   const boost = config.search.authorityBoost ?? 0.3;
   // OceanLibrary docs are always preferred over non-OL duplicates of the same content.
-  // The 1.4x multiplier ensures OL individual surahs/chapters outrank consolidated
-  // non-OL versions even when BM25 relevance slightly favors the larger volume.
-  const olMultiplier = hit.source_site === 'oceanlibrary.com' ? (config.search.olSourceMultiplier ?? 1.4) : 1;
+  // See config.search.olSourceMultiplier for rationale (default 2.0).
+  const olMultiplier = hit.source_site === 'oceanlibrary.com' ? (config.search.olSourceMultiplier ?? 2.0) : 1;
   // Floor at 0 — with boost >= 1.0 and auth=1, raw result can be negative
   return Math.max(0, rel * olMultiplier * (1 + boost * ((auth - 5) / 5)));
 }
