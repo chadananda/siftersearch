@@ -925,7 +925,7 @@ export async function executeLibraryOverview() {
 // crafter sees them as retrieved_quotes and picks the right ones to use.
 async function executeReadDocumentForQuestion({ document_id, question, max_paragraphs = 250, start_paragraph, end_paragraph }) {
   const doc = await queryOne(
-    'SELECT id, title, author, religion, collection, year, description FROM docs WHERE id = ? AND deleted_at IS NULL',
+    'SELECT id, title, author, religion, collection, year, description, slug, filename, source_site, source_url FROM docs WHERE id = ? AND deleted_at IS NULL',
     [document_id]
   );
   if (!doc) return { error: 'Document not found' };
@@ -955,13 +955,26 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   // No internal OpenAI call. Each paragraph becomes one excerpt.
   // Cap text per paragraph at 1000 chars so the orchestrator's context
   // stays manageable on long compilations.
+  // Build base URL for paragraph deeplinks (same logic as executeSearch)
+  let docBaseUrl = null;
+  if (doc.source_site && doc.source_url) {
+    docBaseUrl = doc.source_url; // external site — paragraph links use ?paraId=
+  } else {
+    const rawSlug = doc.slug || (doc.filename ? doc.filename.replace(/\.[^.]+$/, '') : null);
+    const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
+    if (docSlug && doc.religion && doc.collection) {
+      docBaseUrl = `https://siftersearch.com/library/${encodeURIComponent(doc.religion)}/${encodeURIComponent(doc.collection)}/${docSlug}`;
+    }
+  }
+
   return {
-    document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year },
+    document: { id: doc.id, title: doc.title, author: doc.author, religion: doc.religion, collection: doc.collection, year: doc.year, base_url: docBaseUrl },
     paragraphs_read: paragraphs.length,
     excerpts: paragraphs.map(p => ({
       paragraph_index: p.paragraph_index,
       text: (p.text || '').slice(0, 1000),
-      heading: p.heading || null
+      heading: p.heading || null,
+      source_url: docBaseUrl ? `${docBaseUrl}#p${p.paragraph_index}` : null
     }))
   };
 }

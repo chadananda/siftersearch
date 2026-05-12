@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T13:51:40.147Z",
+  "generated": "2026-05-12T14:22:54.103Z",
   "entries": [
+    {
+      "hash": "e52efd5",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
+      "scope": null
+    },
     {
       "hash": "3adc81a",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Increase spacing and remove background from changelog",
       "scope": null
-    },
-    {
-      "hash": "43d0186",
-      "date": "2026-01-13",
-      "type": "Chore",
-      "description": "Update changelog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "e52efd5",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Reduce busy_timeout 30s→5s + retry DB lock on worker startup",
+        "scope": null
+      },
       {
         "hash": "3adc81a",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Style",
         "description": "Increase spacing and remove background from changelog",
-        "scope": null
-      },
-      {
-        "hash": "43d0186",
-        "date": "2026-01-13",
-        "type": "Chore",
-        "description": "Update changelog",
         "scope": null
       }
     ]
