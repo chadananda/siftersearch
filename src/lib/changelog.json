@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:22:54.103Z",
+  "generated": "2026-05-12T14:25:52.566Z",
   "entries": [
+    {
+      "hash": "00c7645",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Paragraph deeplinks for read_document_for_question excerpts",
+      "scope": null
+    },
     {
       "hash": "e52efd5",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Larger page titles and better contrast on changelog",
       "scope": null
-    },
-    {
-      "hash": "9518d02",
-      "date": "2026-01-13",
-      "type": "Style",
-      "description": "Increase spacing and remove background from changelog",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "00c7645",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Paragraph deeplinks for read_document_for_question excerpts",
+        "scope": null
+      },
       {
         "hash": "e52efd5",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Style",
         "description": "Larger page titles and better contrast on changelog",
-        "scope": null
-      },
-      {
-        "hash": "9518d02",
-        "date": "2026-01-13",
-        "type": "Style",
-        "description": "Increase spacing and remove background from changelog",
         "scope": null
       }
     ]
