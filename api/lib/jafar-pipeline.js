@@ -717,18 +717,19 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       // after retrieval so the crafter can quote them in English while
       // preserving the original in the citation.
       // Two searches per tradition: primary (scripture-targeted) then broad.
-      // Islam: author="Muhammad" targets OceanLibrary Quran surahs directly.
-      // Christian: author="Matthew" targets OceanLibrary Gospel of Matthew directly —
-      // OL Gospels have a hash collection ID, not "Bible and Translations", so
-      // collection filter misses them and returns only non-OL composite Bibles.
-      // Matthew is the most-quoted Gospel for interfaith questions; other Gospels
-      // appear via the supplementary OL queries in hybridSearch.
-      // Buddhist, Judaism: collection filter picks the primary canon.
+      // All use author= to target OceanLibrary primary texts directly.
+      // OL individual books have hash collection IDs, not human-readable names,
+      // so collection filters ("Pali Canon", "Torah and Tanakh") miss them entirely.
+      // Author-based targeting matches how Islam works (author="Muhammad").
+      // Matthew = OL Gospel of Matthew (most-quoted for interfaith); other Gospels
+      // enter via supplementary OL queries in hybridSearch.
+      // "Siddhartha Buddha" = Dhammapada + Sutta Nipata (primary Pali Canon).
+      // "King David" = OL Psalms; "Isaiah" = OL Book of Isaiah.
       const PRIMARY_SEARCHES = {
         "Islam":    { author: "Muhammad" },
         "Christian":{ author: "Matthew" },
-        "Buddhist": { collection: "Pali Canon" },
-        "Judaism":  { collection: "Torah and Tanakh" },
+        "Buddhist": { author: "Siddhartha Buddha" },
+        "Judaism":  { author: "King David" },
       };
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
