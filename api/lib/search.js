@@ -14,6 +14,11 @@ import { getImportProgress, getIngestionProgress, getIndexingProgress, getCached
 
 let client = null;
 
+// Quran Bismillah opens every sura — BM25 + HyPE both score it high for mercy/compassion
+// queries because the formula literally contains those words. Filter it globally so no
+// tradition (Islam especially) returns this formulaic opener as a cited passage.
+const BISMILLAH_RE = /^In the Name of (?:God|Allah).{0,10}the Compassionate.{0,10}the Merciful[.!]?\s*$/i;
+
 // In-memory cache extracted to api/lib/search/cache.js. Re-exported here so
 // existing importers (api/index.js prewarmCache call, agent-librarian.js
 // getSearchCacheStats, etc.) keep working unchanged.
@@ -1023,6 +1028,10 @@ export async function multiIndexSearch(query, options = {}) {
       // HyPE doesn't index author — post-merge enforce author filter so HyPE hits
       // from non-matching authors don't bypass it (e.g. Pickthall leaking into author="Muhammad" slot).
       if (filters.author && e.paragraph.author && e.paragraph.author !== filters.author) return false;
+      // Skip Bismillah formula paragraphs — they score 0.93+ in HyPE for mercy queries
+      // (the formula literally contains "Compassionate" and "Merciful") but Jafar can't
+      // cite them meaningfully. Filtering here ensures actual content surfaces instead.
+      if (BISMILLAH_RE.test((e.paragraph.text || '').trim())) return false;
       return true;
     })
     .sort((a, b) => {
