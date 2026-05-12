@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T22:30:21.901Z",
+  "generated": "2026-05-12T22:41:54.926Z",
   "entries": [
+    {
+      "hash": "38a97c2",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
+      "scope": null
+    },
     {
       "hash": "51c0289",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add key uniqueness logging to detect duplicate key rendering issue",
       "scope": null
-    },
-    {
-      "hash": "f8ba5b4",
-      "date": "2026-01-16",
-      "type": "Other",
-      "description": "Change search logs to info level for production visibility",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "38a97c2",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "CATALOG_PATTERNS regex was matching interfaith search queries as catalog queries",
+        "scope": null
+      },
       {
         "hash": "51c0289",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Other",
         "description": "Add key uniqueness logging to detect duplicate key rendering issue",
-        "scope": null
-      },
-      {
-        "hash": "f8ba5b4",
-        "date": "2026-01-16",
-        "type": "Other",
-        "description": "Change search logs to info level for production visibility",
         "scope": null
       }
     ]

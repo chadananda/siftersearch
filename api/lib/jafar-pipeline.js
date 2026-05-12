@@ -460,11 +460,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const subagentSyntheses = [];
 
   const seenParagraphs = new Set();
+  // Quran Bismillah opens every sura — BM25 stemming causes it to rank high for
+  // any "mercy/compassion" query, drowning out actual content. Skip it so Jafar
+  // cites thematic passages (e.g. Sura LV "The Merciful") instead of headers.
+  const BISMILLAH_RE = /^(?:In the Name of (?:God|Allah)[^a-z]{0,5}the Compassionate[^a-z]{0,5}the Merciful[.!]?\s*)$/i;
+
   const harvestPassages = (result, via = 'search') => {
     if (!result?.passages) return;
     for (const p of result.passages) {
       const key = `${p.document_id}_${p.paragraph_index}`;
       if (seenParagraphs.has(key)) continue;
+      if (BISMILLAH_RE.test((p.text || '').trim())) continue;
       seenParagraphs.add(key);
       retrieved.push({
         text: p.text || '',
@@ -775,12 +781,15 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           // Supplemental: broader search within the tradition (catches relevant
           // commentary, hadith, church fathers, etc. when primary is thin).
           // broadAuthor pins Islam to OL suras in both primary + broad slots.
+          // semanticRatio=0.1 on author-filtered searches keeps BM25 dominant so
+          // formulaic phrases (Bismillah, doxologies) don't win via semantic proximity.
           const broad = await runTool('search', {
             query: passageQuery,
             mode: 'passages',
             religion,
             ...(primaryOpts?.broadAuthor ? { author: primaryOpts.broadAuthor } : {}),
-            limit: primaryOpts ? 2 : 3
+            limit: primaryOpts ? 2 : 3,
+            ...(primaryOpts?.broadAuthor ? { semanticRatio: 0.1 } : {})
           });
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
