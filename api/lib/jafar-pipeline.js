@@ -698,15 +698,31 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // When NO work is named, run parallel per-tradition searches so that
   // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
   // traditions from retrieved_quotes. Each tradition gets its own slot.
-  // Strip question boilerplate ("What do the scriptures say about X?" → "X?")
-  // so Meilisearch matches the actual topic rather than metadata noise.
-  // Without stripping, "What do the scriptures say about loving your enemies?"
-  // returns Matthew 5:9 (peacemakers) above Matthew 5:44 (love your enemies).
-  const passageQuery = userMessage
+  // Strip question boilerplate and normalize gerunds for better BM25/semantic recall.
+  // "What do the scriptures say about loving your enemies?" → "love enemies"
+  //   Step 1: strip generic question prefix
+  //   Step 2: strip trailing "?"
+  //   Step 3: strip possessive pronouns (your/my/our/their)
+  //   Step 4: convert leading gerund to base form (loving→love, making→make)
+  // Without these transforms, Meilisearch hybrid returns "Blessed are the peacemakers"
+  // (semantically adjacent) above Matthew 5:44 which contains the EXACT words.
+  const _stripped = userMessage
     .slice(0, 300)
     .replace(/^(what do|what does|what did|how do|how does|tell me|explain|describe)\s+(the\s+)?(scriptures?|bible|quran|qu['']ran|texts?|teachings?|religion|holy\s+books?|traditions?)\s+(say about|teach about|say regarding|tell us about|teach us about|say on|teach on)?\s*/i, '')
     .replace(/^(what is|what are|how is|how are)\s+/i, '')
-    .trim() || userMessage.slice(0, 300);
+    .replace(/\?$/, '')
+    .replace(/\b(your|my|our|their|his|her)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Convert leading gerund (ending in -ing) to base verb form:
+  //   3-char stem + vowel+consonant pattern → add 'e' (loving→love, making→make)
+  //   double-vowel stem (seeking, teaching) → keep stem (seek, teach)
+  //   default → strip -ing suffix (helping→help, following→follow)
+  const passageQuery = (_stripped || userMessage.slice(0, 300)).replace(/^(\w{2,})ing\b/i, (match, stem) => {
+    if (stem.length === 3 && /[aeiou][^aeiou]$/i.test(stem)) return stem + 'e';
+    if (/[aeiou]{2}$/i.test(stem)) return stem;
+    return stem;
+  });
   if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with

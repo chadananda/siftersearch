@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T20:55:03.006Z",
+  "generated": "2026-05-12T21:00:41.039Z",
   "entries": [
+    {
+      "hash": "35784c0",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Allow multi-passage per doc for author-filtered searches — docDedup cap was blocking Matthew 5:44 behind peacemakers from same KJV doc",
+      "scope": null
+    },
     {
       "hash": "3c36db4",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add defensive checks to prevent search crash during typing",
       "scope": null
-    },
-    {
-      "hash": "9e63157",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Add search caching and pagination for faster results",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "35784c0",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Allow multi-passage per doc for author-filtered searches — docDedup cap was blocking Matthew 5:44 behind peacemakers from same KJV doc",
+        "scope": null
+      },
       {
         "hash": "3c36db4",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Add defensive checks to prevent search crash during typing",
-        "scope": null
-      },
-      {
-        "hash": "9e63157",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Add search caching and pagination for faster results",
         "scope": null
       }
     ]
