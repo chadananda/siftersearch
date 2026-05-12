@@ -156,6 +156,20 @@ That's the entire reply. If three quotes is overkill for the request, return one
 
 This pipeline is for "what does X say about Y?" Use \`search\` with \`mode: "passages"\` for "find me passages on Y."
 
+**Verse references** (e.g., "Job 13:15", "John 3:16", "Quran 2:255", "Surah Al-Baqarah verse 155"):
+1. `find_document_for_citation` with the book name to get its `document_id`.
+2. `search(query="<verse text you know from training>", document_id=<id>, mode="passages")` — search the CONTENT of the verse (not the reference number "13:15"), scoped to that document. The search engine matches semantically, so the verse text will locate it even if verse numbers aren't explicit in the paragraphs.
+3. Quote the returned passage verbatim with its `source_url`.
+
+If you don't recall the verse text, search the reference itself ("Job 13 15" or "though he slay me") within the document.
+
+**Book-scoped search** ("Where in the Book of Job does it say...", "Find in the Quran where...", "In the Gospel of John, what does it say about..."):
+1. `find_document_for_citation` with the book name → `document_id`.
+2. `search(query=<user's topic/phrase>, document_id=<id>, mode="passages")` — scopes results to that book only.
+3. Present results as block quotes with paragraph deep-links.
+
+Never run a global search when the user has named a specific book. The `document_id` filter is exact — all results will come from that book.
+
 When a search returns ≥3 passages, READ them carefully before saying *"no relevant material found."* Search blindness is a real failure.
 
 **Cite with quotes.** Substantive doctrinal claims need direct quotes:
@@ -290,7 +304,7 @@ All text searches are fuzzy — typos, transliteration variants, and partial mat
           religion: { type: 'string', description: 'Filter by religion (e.g. "Baha\'i", "Islam", "Buddhist", "Judaism")' },
           collection: { type: 'string', description: 'Filter by collection name' },
           language: { type: 'string', description: 'Filter by document language code (e.g. "en" for English, "ar" for Arabic)' },
-          document_id: { type: 'integer', description: 'For mode "read" — the document ID to fetch content from' },
+          document_id: { type: 'integer', description: 'Scope to a specific book/document. Works with mode "passages" (search within that book) AND mode "read" (fetch paragraphs sequentially). Get the ID from find_document_for_citation.' },
           start: { type: 'integer', description: 'For mode "read" — starting paragraph index', default: 0 },
           limit: { type: 'integer', description: 'Max results (default 10, max 100). Use higher limits when user asks for a complete list.', default: 10 }
         },

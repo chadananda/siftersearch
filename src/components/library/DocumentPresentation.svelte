@@ -95,6 +95,20 @@
   // Sentence anchor state
   let anchorSentence = $state(null);
 
+  // ?find=<phrase> — highlight a quoted phrase within the target paragraph
+  let findPhrase = $state('');
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      findPhrase = new URLSearchParams(window.location.search).get('find') || '';
+    }
+  });
+
+  function highlightPhrase(html) {
+    if (!findPhrase) return html;
+    const phrase = findPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return html.replace(new RegExp(`(${phrase})`, 'gi'), '<mark class="find-highlight">$1</mark>');
+  }
+
   /**
    * Parse URL hash for paragraph and sentence anchors
    * Supports: #p5, #5, #p5-10, #5-10, #p5.s2 (sentence 2 in paragraph 5)
@@ -373,7 +387,7 @@
   function renderBlockContent(text, blocktype) {
     if (!text) return '';
     const clean = cleanDisplayText(text);
-    return marked.parse(clean);
+    return highlightPhrase(marked.parse(clean));
   }
 
   function getLanguageDirection(lang) {
@@ -1415,6 +1429,13 @@
 
 
 <style>
+  :global(.find-highlight) {
+    background: #ffe082;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
   .presentation-container {
     min-height: 100vh;
     /* Fixed light background - document reading experience should always be light */

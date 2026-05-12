@@ -42,6 +42,20 @@ function requireAdminKey(req, reply) {
   return true;
 }
 
+function applyHighlightParams(html) {
+  // Add ?find=<first 8 words of link text> to internal /library/ links so DocumentPresentation highlights the phrase
+  return html.replace(
+    /<a\s+([^>]*href="(https?:\/\/siftersearch\.com\/library\/[^"#]*)(#[^"]*)"[^>]*)>([^<]{3,})<\/a>/g,
+    (match, attrs, baseUrl, fragment, linkText) => {
+      const clean = linkText.replace(/[\u201C\u201D\u2018\u2019"""'']/g, '').trim();
+      if (!clean) return match;
+      const phrase = clean.split(/\s+/).slice(0, 8).join(' ');
+      const newHref = `${baseUrl}?find=${encodeURIComponent(phrase)}${fragment}`;
+      return `<a ${attrs.replace(baseUrl + fragment, newHref)}>${linkText}</a>`;
+    }
+  );
+}
+
 function applySmartQuotes(html) {
   // Convert straight quotes to typographic quotes in text nodes only (skip HTML tags/attrs)
   const parts = html.split(/(<[^>]+>)/);
@@ -69,6 +83,7 @@ function renderMarkdown(md) {
   // Add sequential id="round-N-answer" to jafar-turn divs so TOC deep-links work
   let n = 0;
   html = html.replace(/<div class="jafar-turn">/g, () => `<div class="jafar-turn" id="round-${++n}-answer">`);
+  html = applyHighlightParams(html);
   html = applySmartQuotes(html);
   return html;
 }
