@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T20:52:54.503Z",
+  "generated": "2026-05-12T20:55:03.006Z",
   "entries": [
+    {
+      "hash": "3c36db4",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
+      "scope": null
+    },
     {
       "hash": "ece3e5a",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add search caching and pagination for faster results",
       "scope": null
-    },
-    {
-      "hash": "fe93b95",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "30-minute debounce for document re-ingestion during editing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "3c36db4",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "BM25-dominant search for primary scripture lookups — surfaces exact keyword matches over semantic drift",
+        "scope": null
+      },
       {
         "hash": "ece3e5a",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "New",
         "description": "Add search caching and pagination for faster results",
-        "scope": null
-      },
-      {
-        "hash": "fe93b95",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "30-minute debounce for document re-ingestion during editing",
         "scope": null
       }
     ]

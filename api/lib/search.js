@@ -1029,11 +1029,15 @@ export async function multiIndexSearch(query, options = {}) {
     });
   // Deduplicate: cap at 1 paragraph per source document so multiple passages from
   // the same book don't crowd out content from other works.
+  // Exception: when author filter is set we're intentionally searching within one
+  // author's works — allow up to `limit` passages so callers get the most relevant
+  // passages, not just the first-ranked one from each document.
+  const perDocCap = filters.author ? limit : 1;
   const docDedup = new Map();
   const sortedDeduped = allSorted.filter(e => {
     const docId = e.paragraph?.doc_id ?? '__nodoc__';
     const n = docDedup.get(docId) || 0;
-    if (n < 1) { docDedup.set(docId, n + 1); return true; }
+    if (n < perDocCap) { docDedup.set(docId, n + 1); return true; }
     return false;
   });
 
