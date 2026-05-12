@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T18:52:08.554Z",
+  "generated": "2026-05-12T18:58:47.837Z",
   "entries": [
+    {
+      "hash": "4e3f7d5",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Enrich missing source_site from docs table before authority scoring",
+      "scope": null
+    },
     {
       "hash": "3a2b100",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Handle null values in metadata-only update query",
       "scope": null
-    },
-    {
-      "hash": "d8252a6",
-      "date": "2026-01-15",
-      "type": "New",
-      "description": "Add script to update authority values in Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "4e3f7d5",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Enrich missing source_site from docs table before authority scoring",
+        "scope": null
+      },
       {
         "hash": "3a2b100",
         "date": "2026-05-12",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-15",
         "type": "Fixed",
         "description": "Handle null values in metadata-only update query",
-        "scope": null
-      },
-      {
-        "hash": "d8252a6",
-        "date": "2026-01-15",
-        "type": "New",
-        "description": "Add script to update authority values in Meilisearch",
         "scope": null
       }
     ]
