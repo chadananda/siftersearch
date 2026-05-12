@@ -137,7 +137,12 @@ function computeAuthorityScore(hit) {
  * sources consistently outrank derivative works at the same relevance tier.
  */
 function rerankByAuthority(hits) {
-  for (const hit of hits) hit._authorityScore = computeAuthorityScore(hit);
+  for (const hit of hits) {
+    hit._authorityScore = computeAuthorityScore(hit);
+    if (!hit.source_url && hit.doc_id) {
+      hit.source_url = `https://siftersearch.com/document/${hit.doc_id}`;
+    }
+  }
   return [...hits].sort((a, b) => (b._authorityScore || 0) - (a._authorityScore || 0));
 }
 
@@ -906,12 +911,16 @@ export async function multiIndexSearch(query, options = {}) {
     finalEntries = sortedDeduped.slice(0, limit);
   }
 
-  const hits = finalEntries.map(e => ({
-    ...e.paragraph,
-    _rrfScore: e.score,
-    ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
-    _layerRanks: { main: e.mainRank, hype: e.hypeRank }
-  }));
+  const hits = finalEntries.map(e => {
+    const h = {
+      ...e.paragraph,
+      _rrfScore: e.score,
+      ...(options.includeMatchedHype && e.matchedHype ? { matched_hype: e.matchedHype } : {}),
+      _layerRanks: { main: e.mainRank, hype: e.hypeRank }
+    };
+    if (!h.source_url && h.doc_id) h.source_url = `https://siftersearch.com/document/${h.doc_id}`;
+    return h;
+  });
 
   logger.info({
     query: query.slice(0, 80),

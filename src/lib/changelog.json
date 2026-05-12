@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T18:08:53.588Z",
+  "generated": "2026-05-12T18:19:35.175Z",
   "entries": [
+    {
+      "hash": "8b4d7ad",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "INTENT_SYSTEM maps author names to canonical works for work_name extraction",
+      "scope": null
+    },
     {
       "hash": "0ffacda",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use getAuthority from meta.yaml in sync-worker",
       "scope": null
-    },
-    {
-      "hash": "7f56f2f",
-      "date": "2026-01-15",
-      "type": "New",
-      "description": "Read authority from library meta.yaml files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "8b4d7ad",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "INTENT_SYSTEM maps author names to canonical works for work_name extraction",
+        "scope": null
+      },
       {
         "hash": "0ffacda",
         "date": "2026-05-12",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-15",
         "type": "Fixed",
         "description": "Use getAuthority from meta.yaml in sync-worker",
-        "scope": null
-      },
-      {
-        "hash": "7f56f2f",
-        "date": "2026-01-15",
-        "type": "New",
-        "description": "Read authority from library meta.yaml files",
         "scope": null
       }
     ]
