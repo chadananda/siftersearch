@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T18:02:18.712Z",
+  "generated": "2026-05-12T18:03:42.996Z",
   "entries": [
+    {
+      "hash": "2a8fae0",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Raise Meilisearch task confirmation timeout 300s→900s",
+      "scope": null
+    },
     {
       "hash": "20078f2",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Allow .religion and .collection metadata folders",
       "scope": "library-watcher"
-    },
-    {
-      "hash": "02e845e",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use pending delete queue for 60s move detection",
-      "scope": "library-watcher"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "2a8fae0",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Raise Meilisearch task confirmation timeout 300s→900s",
+        "scope": null
+      },
       {
         "hash": "20078f2",
         "date": "2026-05-12",
@@ -7065,15 +7072,6 @@
         "date": "2026-01-15",
         "type": "Fixed",
         "description": "Allow .religion and .collection metadata folders",
-        "scope": "library-watcher"
-      }
-    ],
-    "2026-01-13": [
-      {
-        "hash": "02e845e",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use pending delete queue for 60s move detection",
         "scope": "library-watcher"
       }
     ]
