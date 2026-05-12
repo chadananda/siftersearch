@@ -630,6 +630,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // Branch 1: user named a specific work (or earlier turn did) — fetch it
   // and hand the document to a focused QA subagent that can search/read
   // within it, rather than dumping 250 paragraphs into crafter context.
+  // The broad companion search is run INSIDE this task (not as a separate
+  // parallel task) so it can be filtered to the same religion as the named
+  // work. An unrestricted search lets Bahá'í texts that quote the Quran
+  // rank above actual Quran passages, producing wrong attributions.
   if (effectiveWorkName) {
     tasks.push((async () => {
       const find = await runTool('find_document_for_citation', {
@@ -672,12 +676,25 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           });
         }
       }
+      // Companion search filtered to the named work's religion — prevents
+      // texts from other traditions quoting the same scripture from ranking
+      // above the actual scripture (e.g., Bahá'í tablets quoting Bismillah
+      // rank above the Quran itself when the search is unrestricted).
+      const passageQueryLocal = userMessage.slice(0, 300);
+      if (passageQueryLocal.trim()) {
+        const religion = primary?.religion || null;
+        const companion = await runTool('search', {
+          query: passageQueryLocal,
+          mode: 'passages',
+          ...(religion ? { religion } : {}),
+          limit: religion ? 5 : 3
+        });
+        harvestPassages(companion, `named-work-companion`);
+      }
     })());
   }
 
   // Branch 2: passages search.
-  // When a specific work is named, one unrestricted search is enough —
-  // the subagent already fetched the primary work above.
   // When NO work is named, run parallel per-tradition searches so that
   // corpus imbalance (Bahá'í has 5× more docs) doesn't crowd out other
   // traditions from retrieved_quotes. Each tradition gets its own slot.
@@ -735,17 +752,9 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           harvestPassages(broad, `traditions-${religion.toLowerCase()}`);
         })());
       }
-    } else {
-      // Work named — one unrestricted search to complement the subagent
-      tasks.push((async () => {
-        const search = await runTool('search', {
-          query: passageQuery,
-          mode: 'passages',
-          limit: 8
-        });
-        harvestPassages(search);
-      })());
     }
+    // Note: when effectiveWorkName is set, the companion search runs inside
+    // Branch 1 (filtered to the named work's religion) — no separate task here.
   }
 
   await Promise.all(tasks);

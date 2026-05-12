@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:10:33.229Z",
+  "generated": "2026-05-12T17:13:39.816Z",
   "entries": [
+    {
+      "hash": "56acb28",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
+      "scope": null
+    },
     {
       "hash": "bd41be3",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add body_hash lookup for rename detection in ingester",
       "scope": null
-    },
-    {
-      "hash": "1503d8a",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Use project db module in hash migration script",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "56acb28",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Enforce book-specific citations when citation pipeline used — no cross-text leakage",
+        "scope": null
+      },
       {
         "hash": "bd41be3",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Add body_hash lookup for rename detection in ingester",
-        "scope": null
-      },
-      {
-        "hash": "1503d8a",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Use project db module in hash migration script",
         "scope": null
       }
     ]
