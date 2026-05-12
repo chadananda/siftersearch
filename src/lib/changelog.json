@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:13:39.816Z",
+  "generated": "2026-05-12T17:17:43.871Z",
   "entries": [
+    {
+      "hash": "fc64d39",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
+      "scope": null
+    },
     {
       "hash": "56acb28",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Smarter delete handling - check body_hash before removing",
       "scope": null
-    },
-    {
-      "hash": "55ec6c5",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Add body_hash lookup for rename detection in ingester",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "fc64d39",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Religion-filtered companion search when named work — prevents cross-tradition leakage",
+        "scope": null
+      },
       {
         "hash": "56acb28",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Fixed",
         "description": "Smarter delete handling - check body_hash before removing",
-        "scope": null
-      },
-      {
-        "hash": "55ec6c5",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Add body_hash lookup for rename detection in ingester",
         "scope": null
       }
     ]

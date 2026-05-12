@@ -1023,7 +1023,7 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   let paragraphs;
   if (typeof start_paragraph === 'number' && typeof end_paragraph === 'number') {
     paragraphs = await queryAll(
-      `SELECT paragraph_index, text, heading FROM content
+      `SELECT paragraph_index, text, heading, external_para_id FROM content
        WHERE doc_id = ? AND paragraph_index >= ? AND paragraph_index <= ?
          AND deleted_at IS NULL ORDER BY paragraph_index`,
       [document_id, start_paragraph, end_paragraph]
@@ -1031,7 +1031,7 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   } else {
     const cap = Math.min(Math.max(max_paragraphs || 250, 1), 1000);
     paragraphs = await queryAll(
-      `SELECT paragraph_index, text, heading FROM content
+      `SELECT paragraph_index, text, heading, external_para_id FROM content
        WHERE doc_id = ? AND deleted_at IS NULL ORDER BY paragraph_index LIMIT ?`,
       [document_id, cap]
     );
@@ -1046,7 +1046,9 @@ async function executeReadDocumentForQuestion({ document_id, question, max_parag
   // Build per-paragraph source_url. Priority: external ?paraId > /library/…#p > /document/{id}#p
   const buildParaUrl = (p) => {
     if (doc.source_site && doc.source_url) {
-      return `${doc.source_url}#p${p.paragraph_index}`; // external — best we can do without external_para_id here
+      return p.external_para_id
+        ? `${doc.source_url}/?paraId=${p.external_para_id}`
+        : `${doc.source_url}#p${p.paragraph_index}`;
     }
     const rawSlug = doc.slug || (doc.filename ? doc.filename.replace(/\.[^.]+$/, '') : null);
     const docSlug = rawSlug ? encodeURIComponent(rawSlug).replace(/%2F/g, '/') : null;
