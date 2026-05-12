@@ -336,7 +336,7 @@ intent: ONE of
 - "explain": user asks how something works, why a teaching exists, or what a tradition says about a topic.
 - "discuss": general conversation, follow-up commentary, opinion, open exploration.
 
-work_name: ONLY set when the user's question has a SINGLE scriptural work as its primary subject and they want to read from that work specifically (e.g. "What does the Iqán say about X?", "Read me the opening of Some Answered Questions", "Find the passage in the Hidden Words about Y"). Else null. Return null when: (a) the user mentions TWO OR MORE works in the same question ("the Gospels or the Qur'án", "comparing Matthew and Surah 5"), (b) the user is asking about what multiple traditions say, (c) the work is mentioned only in passing as context, not as the sole primary source to read from.
+work_name: Set when the user's question targets a SINGLE scriptural work or single-author canonical text. Translate author names to their canonical work: "Lao Tzu" → "Tao Te Ching", "Confucius" → "Analects", "Isaiah" → "Isaiah", "Moses"/"Torah" → "Genesis", "Zoroaster"/"Zarathustra" → "Gathas". Examples: "What does the Iqán say about X?" → "Kitab-i-Iqan"; "What does Lao Tzu say about X?" → "Tao Te Ching"; "What does Confucius say about virtue?" → "Analects"; "Find the passage in the Hidden Words about Y" → "Hidden Words". Else null. Return null when: (a) the user mentions TWO OR MORE works, (b) the user is asking what multiple traditions say, (c) the work is mentioned only in passing.
 
 topics: 1-3 lowercase topical keywords for passage search that capture what the user actually wants to find, combining this turn AND prior context. Period vocabulary preferred. Empty array if work_name covers it.
 

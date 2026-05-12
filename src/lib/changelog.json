@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T18:03:42.996Z",
+  "generated": "2026-05-12T18:08:53.588Z",
   "entries": [
+    {
+      "hash": "0ffacda",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Expand author-name routing exception to bullet list with all cases",
+      "scope": null
+    },
     {
       "hash": "2a8fae0",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Read authority from library meta.yaml files",
       "scope": null
-    },
-    {
-      "hash": "9993f35",
-      "date": "2026-01-15",
-      "type": "Fixed",
-      "description": "Allow .religion and .collection metadata folders",
-      "scope": "library-watcher"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "0ffacda",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Expand author-name routing exception to bullet list with all cases",
+        "scope": null
+      },
       {
         "hash": "2a8fae0",
         "date": "2026-05-12",
@@ -7066,13 +7073,6 @@
         "type": "New",
         "description": "Read authority from library meta.yaml files",
         "scope": null
-      },
-      {
-        "hash": "9993f35",
-        "date": "2026-01-15",
-        "type": "Fixed",
-        "description": "Allow .religion and .collection metadata folders",
-        "scope": "library-watcher"
       }
     ]
   }
