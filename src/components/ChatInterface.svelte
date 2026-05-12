@@ -2586,7 +2586,7 @@
           {:else}
             <!-- Regular text message -->
             <div class="bubble bubble-assistant {message.error ? 'error' : ''}">
-              <p class="message-text">{message.content}</p>
+              <div class="message-prose">{@html formatResearchText(message.content)}</div>
             </div>
           {/if}
         </div>
@@ -3634,6 +3634,32 @@
     user-select: text;
     -webkit-user-select: text;
     cursor: text;
+  }
+
+  .message-prose {
+    font-size: 1rem;
+    line-height: 1.6;
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+  }
+  .message-prose :global(p) { margin: 0 0 0.75em 0; }
+  .message-prose :global(p:last-child) { margin-bottom: 0; }
+  .message-prose :global(ul), .message-prose :global(ol) { margin: 0 0 0.75em 1.25em; }
+  .message-prose :global(li) { margin: 0.2em 0; }
+  .message-prose :global(strong) { font-weight: 600; }
+  .message-prose :global(em) { font-style: italic; }
+  .message-prose :global(a) {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    text-underline-offset: 2px;
+    transition: text-decoration-color 0.15s;
+  }
+  .message-prose :global(a:hover) {
+    text-decoration-color: var(--accent-primary);
+    background-color: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+    border-radius: 2px;
   }
 
   /* AI Analysis */

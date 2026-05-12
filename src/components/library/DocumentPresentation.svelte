@@ -246,7 +246,7 @@
 
     try {
       const res = await authenticatedFetch(
-        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=0`
+        `${API_BASE}/api/library/by-path/${encodeURIComponent(pathReligion)}/${encodeURIComponent(pathCollection)}/${encodeURIComponent(pathSlug)}?limit=${BATCH_SIZE}&offset=0`
       );
 
       if (!res.ok) {
@@ -309,7 +309,7 @@
 
     try {
       const res = await authenticatedFetch(
-        `${API_BASE}/api/library/by-path/${pathReligion}/${pathCollection}/${pathSlug}?limit=${BATCH_SIZE}&offset=${offset}`
+        `${API_BASE}/api/library/by-path/${encodeURIComponent(pathReligion)}/${encodeURIComponent(pathCollection)}/${encodeURIComponent(pathSlug)}?limit=${BATCH_SIZE}&offset=${offset}`
       );
 
       if (!res.ok) {

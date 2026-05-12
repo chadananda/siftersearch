@@ -31,7 +31,7 @@ if (segments.length === 3) {
   const API_BASE = import.meta.env.PUBLIC_API_URL || '';
   try {
     const res = await fetch(
-      `${API_BASE}/api/library/by-path/${religion}/${collection}/${slug}?limit=1`,
+      `${API_BASE}/api/library/by-path/${encodeURIComponent(religion)}/${encodeURIComponent(collection)}/${encodeURIComponent(slug)}?limit=1`,
       { redirect: 'manual' }  // Don't follow redirects automatically
     );
 
