@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T19:44:33.093Z",
+  "generated": "2026-05-12T19:57:55.507Z",
   "entries": [
+    {
+      "hash": "502afda",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "OceanLibrary deep links in Jafar citations — subagent now fetches source_site/source_url/slug and computes per-paragraph paraId URLs; pipeline returns retrieval_quotes so citations event is populated",
+      "scope": null
+    },
     {
       "hash": "f6f6db3",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add normalized_hash for embedding deduplication",
       "scope": null
-    },
-    {
-      "hash": "8a45ca3",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Add soft-delete for 30-day embedding retention",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "502afda",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "OceanLibrary deep links in Jafar citations — subagent now fetches source_site/source_url/slug and computes per-paragraph paraId URLs; pipeline returns retrieval_quotes so citations event is populated",
+        "scope": null
+      },
       {
         "hash": "f6f6db3",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "New",
         "description": "Add normalized_hash for embedding deduplication",
-        "scope": null
-      },
-      {
-        "hash": "8a45ca3",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Add soft-delete for 30-day embedding retention",
         "scope": null
       }
     ]

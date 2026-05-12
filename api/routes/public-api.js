@@ -330,23 +330,30 @@ export default async function publicApiRoutes(fastify) {
     const { query, limit = 10, filters = {} } = request.body;
     const startTime = Date.now();
 
-    // Build filter string for Meilisearch
-    const filterParts = [];
-    if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
-    if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
-    if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
-    if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
-    if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
-    const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
+    // Pass filters as structured object — hybridSearch reads filters.religion, .author, etc.
+    // (Not a raw filter string; hybridSearch builds the Meilisearch filter string internally.)
+    const searchFilters = {};
+    if (filters.religion) searchFilters.religion = filters.religion;
+    if (filters.author) searchFilters.author = filters.author;
+    if (filters.collection) searchFilters.collection = filters.collection;
+    if (filters.yearFrom) searchFilters.yearFrom = filters.yearFrom;
+    if (filters.yearTo) searchFilters.yearTo = filters.yearTo;
 
     // Execute hybrid search, fall back to keyword if hybrid returns empty
     let searchResults = await hybridSearch(query, {
       limit: Math.min(limit * 2, 30),
-      filter
+      filters: searchFilters
     }).catch(() => ({ hits: [] }));
 
     // Fallback: if hybrid search fails (no embeddings configured), use keyword search
     if (!searchResults.hits || searchResults.hits.length === 0) {
+      const filterParts = [];
+      if (filters.author) filterParts.push(`author CONTAINS "${filters.author}"`);
+      if (filters.religion) filterParts.push(`religion = "${filters.religion}"`);
+      if (filters.collection) filterParts.push(`collection CONTAINS "${filters.collection}"`);
+      if (filters.yearFrom) filterParts.push(`year >= ${filters.yearFrom}`);
+      if (filters.yearTo) filterParts.push(`year <= ${filters.yearTo}`);
+      const filter = filterParts.length > 0 ? filterParts.join(' AND ') : undefined;
       searchResults = await keywordSearch(query, {
         limit: Math.min(limit * 2, 30),
         filter
