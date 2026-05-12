@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T17:56:41.830Z",
+  "generated": "2026-05-12T17:58:20.710Z",
   "entries": [
+    {
+      "hash": "eac13e4",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Escape backticks in system prompt template literal (syntax error)",
+      "scope": null
+    },
     {
       "hash": "8dcaf29",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use library-watcher service for proper move detection",
       "scope": "index-library"
-    },
-    {
-      "hash": "f1480b5",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Force fork mode and increase batch window",
-      "scope": "library-watcher"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "eac13e4",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Escape backticks in system prompt template literal (syntax error)",
+        "scope": null
+      },
       {
         "hash": "8dcaf29",
         "date": "2026-05-12",
@@ -7068,13 +7075,6 @@
         "type": "Fixed",
         "description": "Use library-watcher service for proper move detection",
         "scope": "index-library"
-      },
-      {
-        "hash": "f1480b5",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Force fork mode and increase batch window",
-        "scope": "library-watcher"
       }
     ]
   }
