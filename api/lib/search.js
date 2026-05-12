@@ -186,6 +186,29 @@ const CROSS_TRADITION_RELIGIONS = [
   'Hindu', 'Zoroastrian', 'Tao', 'Confucian', 'Sikh', 'Jain'
 ];
 
+// Cache OL doc IDs by religion (1-hour TTL). OL single-book docs (e.g., Gospel of
+// Matthew) score lower in Meilisearch than large composite non-OL docs (e.g., full
+// Bible) for any sub-passage query. Caching OL IDs enables supplementary per-religion
+// queries that guarantee OL hits enter the authority-ranking candidate pool.
+let _olDocIdCache = null;
+let _olDocIdCacheTime = 0;
+
+async function getOlDocIdsByReligion() {
+  const now = Date.now();
+  if (_olDocIdCache && now - _olDocIdCacheTime < 3600000) return _olDocIdCache;
+  const rows = await queryAll(
+    `SELECT id, religion FROM docs WHERE source_site = 'oceanlibrary.com' AND deleted_at IS NULL`
+  );
+  const map = {};
+  for (const { id, religion } of rows) {
+    if (!map[religion]) map[religion] = [];
+    map[religion].push(id);
+  }
+  _olDocIdCache = map;
+  _olDocIdCacheTime = now;
+  return map;
+}
+
 /**
  * Federate search across all traditions when no religion filter is active.
  * Runs one Meilisearch sub-query per religion in a single multiSearch call,
@@ -220,6 +243,55 @@ async function crossTraditionSearch(meili, indexName, query, vector, params, per
   });
 
   const response = await meili.multiSearch({ queries: subQueries });
+
+  // Supplementary OL queries: large non-OL composite docs (e.g., full Bible) can crowd
+  // out OL single-book docs even at fetch-limit=30, because the composite doc has
+  // perfect keyword matches across every sub-passage. Fetching top 10 OL hits per
+  // religion and merging before authority ranking ensures the 1.4x OL boost applies.
+  try {
+    const olDocIds = await getOlDocIdsByReligion();
+    const olReligionIndices = [];
+    const olSubQueries = [];
+    for (let ri = 0; ri < CROSS_TRADITION_RELIGIONS.length; ri++) {
+      const religion = CROSS_TRADITION_RELIGIONS[ri];
+      const ids = olDocIds[religion];
+      if (!ids || ids.length === 0) continue;
+      olReligionIndices.push(ri);
+      const idFilter = `doc_id IN [${ids.join(',')}]`;
+      const religionFilter = `religion = "${religion}"`;
+      const filter = extraFilter ? `${religionFilter} AND ${idFilter} AND ${extraFilter}` : `${religionFilter} AND ${idFilter}`;
+      const q = {
+        indexUid: indexName,
+        q: query,
+        filter,
+        limit: 10,
+        offset: 0,
+        showRankingScore: true,
+        matchingStrategy: 'last',
+        attributesToRetrieve: params.attributesToRetrieve,
+        attributesToHighlight: params.attributesToHighlight,
+        highlightPreTag: params.highlightPreTag,
+        highlightPostTag: params.highlightPostTag,
+      };
+      if (vector) {
+        q.hybrid = { semanticRatio: params.semanticRatio, embedder: 'default' };
+        q.vector = vector;
+      }
+      olSubQueries.push(q);
+    }
+    if (olSubQueries.length > 0) {
+      const olResponse = await meili.multiSearch({ queries: olSubQueries });
+      for (let i = 0; i < olReligionIndices.length; i++) {
+        const ri = olReligionIndices[i];
+        const olHits = olResponse.results[i]?.hits || [];
+        if (olHits.length > 0 && response.results[ri]) {
+          response.results[ri].hits = [...(response.results[ri].hits || []), ...olHits];
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'crossTraditionSearch: OL supplementary queries failed');
+  }
 
   // Enrich all hits missing source_site from the docs table before authority sorting.
   // OL paragraphs synced before source_site was added to the worker have null in
@@ -565,6 +637,33 @@ export async function hybridSearch(query, options = {}) {
     allHits = indexResults.flatMap(r => r.hits || []);
     totalProcessingMs = indexResults.reduce((s, r) => s + (r.processingTimeMs || 0), 0);
     estimated = indexResults.reduce((s, r) => s + (r.estimatedTotalHits || 0), 0);
+
+    // Supplementary OL queries for religion-filtered searches.
+    // Same problem as in cross-tradition: a large composite non-OL doc (e.g., full
+    // Bible) can crowd out OL single-book docs in raw Meilisearch ranking.
+    if (filters.religion && !filters.documentId) {
+      try {
+        const olDocIds = await getOlDocIdsByReligion();
+        const ids = olDocIds[filters.religion];
+        if (ids && ids.length > 0) {
+          const idFilter = `doc_id IN [${ids.join(',')}]`;
+          const olFilter = filterString ? `${filterString} AND ${idFilter}` : idFilter;
+          const olParams = { ...searchParams, filter: olFilter, limit: 10, matchingStrategy: 'last' };
+          const olResults = await Promise.all(
+            targetIndexNames.map(name =>
+              meili.index(name).search(query, olParams).catch(() => ({ hits: [] }))
+            )
+          );
+          const olHits = olResults.flatMap(r => r.hits || []);
+          const existingIds = new Set(allHits.map(h => h.id));
+          for (const h of olHits) {
+            if (!existingIds.has(h.id)) allHits.push(h);
+          }
+        }
+      } catch (err) {
+        logger.warn({ err: err.message }, 'hybridSearch: OL supplementary query failed');
+      }
+    }
   }
 
   // Sort by Meili ranking score before authority rerank.
