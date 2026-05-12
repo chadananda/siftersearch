@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-12T14:57:12.617Z",
+  "generated": "2026-05-12T15:16:17.951Z",
   "entries": [
+    {
+      "hash": "2ce242b",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
+      "scope": null
+    },
     {
       "hash": "47bd4a1",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Style",
       "description": "Use Amiri font for hit card text",
       "scope": null
-    },
-    {
-      "hash": "859ee97",
-      "date": "2026-01-13",
-      "type": "Fixed",
-      "description": "Prevent PWA from caching error responses",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "2ce242b",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "StripUngroundedLinks base URL matching + judge fallback-link-only clarified",
+        "scope": null
+      },
       {
         "hash": "47bd4a1",
         "date": "2026-05-12",
@@ -7067,13 +7074,6 @@
         "date": "2026-01-13",
         "type": "Style",
         "description": "Use Amiri font for hit card text",
-        "scope": null
-      },
-      {
-        "hash": "859ee97",
-        "date": "2026-01-13",
-        "type": "Fixed",
-        "description": "Prevent PWA from caching error responses",
         "scope": null
       }
     ]

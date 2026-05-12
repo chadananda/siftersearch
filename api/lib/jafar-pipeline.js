@@ -36,9 +36,11 @@ For the user's latest question, call retrieval tools (search, find_document_for_
 Routing rules:
 - Filtered count questions ("how many books by Udo Shaefer?", "how many docs from bahai-library.com?", "how many Islamic texts in Arabic?") → call library_count with the appropriate filters (author, site, religion, language, scope). Do NOT use search.
 - Unfiltered catalog questions ("what do you have", "list the collections", "how many Buddhist texts total", "what languages") → call library_overview FIRST. Do NOT use search for these — search returns passages, not catalog data.
-- Specific named works (Tablet of Wisdom, Iqán, Hidden Words, Quran, Bhagavad Gita, Tao Te Ching, Gospel of John, Guru Granth Sahib, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate
+- Specific named works (Tablet of Wisdom, Iqán, Hidden Words, Quran, Bhagavad Gita, Tao Te Ching, Gospel of John, Guru Granth Sahib, etc.) → find_document_for_citation, then read_document_for_question on the primary candidate. If you also search, ALWAYS add the religion filter matching that work's tradition.
 - Doctrinal concepts (materialism, justice, the soul, faith, detachment, etc.) → search with mode:"passages" + religion filter
 - Specific named figures (Bahá'u'lláh, 'Abdu'l-Bahá, Plato in a tradition's text, etc.) → search with their name + the topic
+
+RELIGION FILTER RULE: When the question asks what a specific tradition says ("What does the Quran say…", "What does the Bible teach…", "What does Buddhist teaching say…"), ALL search calls MUST include the matching religion filter (religion: "Islam" / "Christian" / "Buddhist" / etc.). Unfiltered search on a tradition-specific question will pull Bahá'í texts that discuss that tradition — a secondary-substitution failure. Filter first, broaden only if filtered search returns < 3 results.
 
 Always call at least one retrieval tool before saying "done". If a search returns nothing useful, broaden your query and try again rather than giving up. The next stage cannot retrieve — only you can.`;
 
