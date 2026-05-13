@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T13:45:43.244Z",
+  "generated": "2026-05-13T13:48:43.135Z",
   "entries": [
+    {
+      "hash": "68385ee",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
+      "scope": null
+    },
     {
       "hash": "696fa93",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add background embedding worker",
       "scope": null
-    },
-    {
-      "hash": "c0319c4",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Final embedding lookup during document sync",
-      "scope": "sync"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "68385ee",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Persist assessment_json from jafar-batch-runner to published_conversations",
+        "scope": null
+      },
       {
         "hash": "696fa93",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "Add background embedding worker",
         "scope": null
-      },
-      {
-        "hash": "c0319c4",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Final embedding lookup during document sync",
-        "scope": "sync"
       }
     ]
   }

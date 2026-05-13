@@ -121,7 +121,13 @@ function renderMarkdown(md) {
   // Open all links in a new tab
   const renderer = new marked.Renderer();
   renderer.link = ({ href, title, tokens }) => {
-    const text = tokens?.map(t => t.raw ?? t.text ?? '').join('') || '';
+    const renderInline = (toks) => (toks || []).map(t => {
+      if (t.type === 'em') return `<em>${renderInline(t.tokens)}</em>`;
+      if (t.type === 'strong') return `<strong>${renderInline(t.tokens)}</strong>`;
+      if (t.type === 'codespan') return `<code>${t.text ?? ''}</code>`;
+      return t.text ?? t.raw ?? '';
+    }).join('');
+    const text = renderInline(tokens);
     const titleAttr = title ? ` title="${title}"` : '';
     return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
   };

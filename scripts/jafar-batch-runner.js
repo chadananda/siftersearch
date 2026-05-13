@@ -169,6 +169,7 @@ FLAG TRIGGERS (use only when CLEARLY present):
 - fallback-link-only: triggered ONLY when the conversation contains at least one citation link AND every single link uses the bare /document/{id} format (e.g. siftersearch.com/document/8241) — with NO paragraph-anchor links (format /document/{id}#p{N} or /library/…#p{N}). Do NOT trigger when there are zero links (that is missing-primary-citation instead). Links with #p{N} anchors ARE paragraph-level deep links and must NOT trigger this flag.
 - bahai-bias-unprompted: triggered when the question is a general interfaith or cross-tradition question (not asking specifically about Bahá'í) AND every single quote Jafar gives is from Bahá'í scripture — no quotes from the other traditions the question covers.
 - unlinked-inline-quote: triggered when inline quoted text (text in "quotation marks") is NOT itself a hyperlink — i.e. the link appears only as ([*Title*](url)) after the text instead of as "[quoted text](url)" within the sentence.
+- off-topic-citation: triggered when a cited passage does NOT actually address the concept being discussed — e.g. Jafar claims a passage is about suffering but the quoted text is about something else entirely. The cited fragment must be on-point; keyword overlap is not enough.
 
 OUTPUT JSON only:
 {
@@ -185,7 +186,7 @@ OUTPUT JSON only:
   },
   "overall": N,
   "narrative": "3-5 sentences. Specific. Cite round numbers and concrete observations (good or bad). Honest, calibrated tone — neither pessimistic nor encouraging.",
-  "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error", "unverified-quote", "fallback-link-only", "bahai-bias-unprompted", "unlinked-inline-quote"],
+  "flags": ["essay-tone", "secular-drift", "period-word-import", "missing-primary-citation", "secondary-substitution", "hedge-without-position", "stock-phrase-reflex", "sycophant-on-error", "unverified-quote", "fallback-link-only", "bahai-bias-unprompted", "unlinked-inline-quote", "off-topic-citation"],
   "improvement_plan": "2-3 sentences in CONCEPTS not code. What change in Jafar's prompt or pipeline behavior would lift this conversation.",
   "roundSummaries": [
     {"q": "5-8 word question headline for round 1", "a": "5-8 word answer headline for round 1"},
