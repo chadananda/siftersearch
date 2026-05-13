@@ -355,25 +355,25 @@ function buildOLSourceUrl(q: any): string | null {
                   const stars = q.authority ? '★'.repeat(Math.min(5, Math.round(q.authority / 2))) : '';
                   return (
                     <div class="quote-card" id={`q-${sectionIdx}-${qi}`}>
-                      <!-- Header: summary answer + tradition tag -->
-                      <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
-                        {q.contextual_note && (
-                          <p class="quote-answer">{q.contextual_note}</p>
-                        )}
-                        <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
-                      </div>
-                      <!-- Quote body -->
-                      <div class="quote-body">
-                        {showOriginal && originalText ? (
-                          <div class="bilingual">
-                            <p class="bilingual-original" dir="auto">{originalText}</p>
-                            <p class="bilingual-translation">"{excerptText}"</p>
-                          </div>
-                        ) : (
-                          <blockquote class="quote-text">"{excerptText}"</blockquote>
-                        )}
-                        <!-- Compact footer: source + stars + share -->
-                        <div class="quote-meta">
+                      <!-- Main content -->
+                      <div class="quote-main">
+                        <!-- Header: tradition tag + answer -->
+                        <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
+                          <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
+                          {q.contextual_note && (
+                            <p class="quote-answer">{q.contextual_note}</p>
+                          )}
+                        </div>
+                        <!-- Quote body -->
+                        <div class="quote-body">
+                          {showOriginal && originalText ? (
+                            <div class="bilingual">
+                              <p class="bilingual-original" dir="auto">{originalText}</p>
+                              <p class="bilingual-translation">"{excerptText}"</p>
+                            </div>
+                          ) : (
+                            <blockquote class="quote-text">"{excerptText}"</blockquote>
+                          )}
                           <div class="quote-source">
                             {olUrl ? (
                               <a href={olUrl} target="_blank" rel="noopener" class="source-link">
@@ -389,15 +389,19 @@ function buildOLSourceUrl(q: any): string | null {
                             )}
                             {stars && <span class="stars" title={`Authority ${q.authority}/10`}>{stars}</span>}
                           </div>
-                          <ShareButtons
-                            client:load
-                            url={quoteUrl}
-                            title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                            quote={excerptText.slice(0, 200)}
-                            sourceUrl={olUrl || q.source_url}
-                            compact={true}
-                          />
                         </div>
+                      </div>
+                      <!-- Share strip: vertical column, full card height -->
+                      <div class="quote-share-strip">
+                        <ShareButtons
+                          client:load
+                          url={quoteUrl}
+                          title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
+                          quote={excerptText.slice(0, 200)}
+                          sourceUrl={olUrl || q.source_url}
+                          compact={true}
+                          vertical={true}
+                        />
                       </div>
                     </div>
                   );
@@ -569,28 +573,32 @@ function buildOLSourceUrl(q: any): string | null {
   .aspect-heading { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.75rem; line-height: 1.35; }
   .aspect-summary { font-size: 0.9rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
 
-  /* Quote cards — redesigned: header (answer + tradition), body (quote), compact meta */
-  .quotes-list { display: flex; flex-direction: column; gap: 0.875rem; }
-  .quote-card { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
+  /* Quote cards — grid: main content left, share strip right */
+  .quotes-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .quote-card { display: grid; grid-template-columns: 1fr 34px; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
 
-  .quote-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.875rem; }
-  .quote-answer { font-size: 0.82rem; line-height: 1.55; color: var(--text-secondary); margin: 0; flex: 1; }
-  .quote-trad-tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid; white-space: nowrap; flex-shrink: 0; margin-top: 0.1rem; }
+  .quote-main { display: flex; flex-direction: column; min-width: 0; }
 
-  .quote-body { padding: 0.75rem 0.875rem 0.875rem; border-top: 1px solid var(--border-subtle); }
-  .quote-text { font-size: 0.92rem; line-height: 1.75; color: var(--text-primary); margin: 0 0 0.6rem; font-style: italic; }
+  .quote-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; }
+  .quote-trad-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.12rem 0.4rem; border-radius: 4px; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
+  .quote-answer { font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); margin: 0; flex: 1; }
+
+  .quote-body { padding: 0.6rem 0.75rem 0.75rem; border-top: 1px solid var(--border-subtle); }
+  .quote-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); margin: 0 0 0.5rem; font-style: italic; }
 
   /* Bilingual quotes: original script above, English translation below */
-  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
-  .bilingual-original { font-size: 0.95rem; line-height: 1.8; color: var(--text-primary); margin: 0; font-style: italic; }
-  .bilingual-translation { font-size: 0.85rem; line-height: 1.65; color: var(--text-secondary); margin: 0; padding-top: 0.4rem; border-top: 1px dashed var(--border-subtle); font-style: italic; }
+  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .bilingual-original { font-size: 0.92rem; line-height: 1.75; color: var(--text-primary); margin: 0; font-style: italic; }
+  .bilingual-translation { font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); margin: 0; padding-top: 0.35rem; border-top: 1px dashed var(--border-subtle); font-style: italic; }
 
-  .quote-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
-  .quote-source { font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .quote-source { font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
   .source-link { color: var(--accent); text-decoration: none; } .source-link:hover { text-decoration: underline; }
   .source-author { color: var(--text-muted); }
-  .ol-badge { font-size: 0.62rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.05rem 0.25rem; margin-left: 0.2rem; }
-  .stars { color: var(--accent); font-size: 0.65rem; letter-spacing: -1px; margin-left: 0.2rem; }
+  .ol-badge { font-size: 0.6rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.05rem 0.2rem; margin-left: 0.15rem; }
+  .stars { color: var(--accent); font-size: 0.6rem; letter-spacing: -1px; margin-left: 0.15rem; }
+
+  /* Share strip: full card height, right border */
+  .quote-share-strip { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--border-subtle); background: var(--surface-0); }
 
   /* Convergence */
   .convergence-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }

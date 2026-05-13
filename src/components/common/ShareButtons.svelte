@@ -16,6 +16,7 @@
     quote = '',
     sourceUrl = '',
     compact = false,
+    vertical = false,
     subreddits = ['r/religion', 'r/spirituality', 'r/philosophy', 'r/bahai', 'r/islam', 'r/Christianity', 'r/Judaism', 'r/Buddhism'],
   } = $props();
 
@@ -31,8 +32,6 @@
     twitter: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(url)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}&quote=${enc(shareText)}`,
     whatsapp: `https://wa.me/?text=${enc(shareText + ' ' + url)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`,
-    pinterest: `https://pinterest.com/pin/create/button/?url=${enc(url)}&description=${enc(shareText)}`,
     email: `mailto:?subject=${enc(title)}&body=${enc(shareText + '\n\n' + url)}`,
   };
 
@@ -55,7 +54,7 @@
   }
 </script>
 
-<div class="share-row" class:compact>
+<div class="share-row" class:compact class:vertical>
   {#if !compact}
     <span class="share-label">Share</span>
   {/if}
@@ -91,18 +90,13 @@
       {#if !compact}<span>Reddit</span>{/if}
     </button>
     {#if showReddit}
-      <div class="reddit-popover">
+      <div class="reddit-popover" class:popover-left={vertical}>
         {#each subreddits as sub}
           <a href={redditUrl(sub)} target="_blank" rel="noopener" class="reddit-sub">{sub}</a>
         {/each}
       </div>
     {/if}
   </div>
-
-  <button class="share-btn linkedin-btn" onclick={() => openShare(links.linkedin)} title="Share on LinkedIn" aria-label="Share on LinkedIn">
-    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-    {#if !compact}<span>LinkedIn</span>{/if}
-  </button>
 
   <a href={links.email} class="share-btn email-btn" title="Share via Email" aria-label="Share via Email">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -123,6 +117,22 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+  .share-row.vertical {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
+  .share-row.vertical .share-btn {
+    padding: 0.3rem;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
   }
   .share-label {
     font-size: 0.75rem;
@@ -180,5 +190,6 @@
     transition: background 0.1s;
   }
   .reddit-sub:hover { background: var(--surface-3); color: #ff4500; }
+  .popover-left { top: 0; left: auto; right: calc(100% + 6px); }
   .source-btn:hover { color: var(--accent); border-color: var(--accent); }
 </style>
