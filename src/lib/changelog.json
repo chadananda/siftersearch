@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T15:50:12.365Z",
+  "generated": "2026-05-13T15:52:24.455Z",
   "entries": [
+    {
+      "hash": "5a9773e",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Para_meta attribution — per-paragraph authorship for compilations",
+      "scope": null
+    },
     {
       "hash": "be99e22",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Throttle workers and add index for embeddings",
       "scope": null
-    },
-    {
-      "hash": "a72ca9a",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add oversized paragraphs management",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "5a9773e",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Para_meta attribution — per-paragraph authorship for compilations",
+        "scope": null
+      },
       {
         "hash": "be99e22",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "Performance",
         "description": "Throttle workers and add index for embeddings",
         "scope": null
-      },
-      {
-        "hash": "a72ca9a",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add oversized paragraphs management",
-        "scope": "admin"
       }
     ]
   }

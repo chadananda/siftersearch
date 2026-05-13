@@ -437,10 +437,10 @@ export async function initializeIndexes() {
 
   // Deep Research index — canonical questions + curated passage metadata
   const deepResearchSettings = {
-    searchableAttributes: ['canonical_question'],
-    filterableAttributes: ['topic_tags', 'question_type', 'traditions_covered', 'status', 'ask_count', 'priority'],
+    searchableAttributes: ['canonical_question', 'key_points', 'summary_text', 'convergence_text', 'section_text'],
+    filterableAttributes: ['topic_tags', 'question_type', 'traditions_covered', 'traditions_agreement', 'status', 'ask_count', 'priority'],
     sortableAttributes: ['ask_count', 'priority', 'created_at'],
-    rankingRules: ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
+    rankingRules: ['words', 'typo', 'proximity', 'attributeRank', 'sort', 'exactness'],
     pagination: { maxTotalHits: 1000 },
   };
 

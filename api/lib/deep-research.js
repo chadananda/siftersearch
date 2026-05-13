@@ -12,7 +12,7 @@
 //   checkDeepResearch(question, embedding)   → curated quotes or null
 //   recordQuestionHit(question, embedding)   → fire-and-forget hit tracking
 //   getDeepResearchQuotes(researchId)        → ordered curated passage array
-//   syncDeepResearchToMeili(ids?)            → sync records to Meili index
+//   syncDeepResearch(ids?)            → sync records to Meili index
 //   runDeepResearch(researchId)              → full LLM research pass (worker only)
 
 import crypto from 'crypto';
@@ -21,6 +21,7 @@ import { logger } from './logger.js';
 import { createEmbedding } from './ai.js';
 import { getMeili, INDEXES } from './search.js';
 import { getAuthority } from './authority.js';
+import { generateSlug } from './slug.js';
 
 // Cosine similarity threshold for considering two questions "the same"
 const SIMILARITY_THRESHOLD = 0.88;
@@ -142,10 +143,11 @@ export async function recordQuestionHit(question, embedding = null) {
       // Create new pending record
       const qEmbed = embedding || await createEmbedding(question);
       const embedBuf = embeddingToBuffer(qEmbed);
+      const slug = generateSlug(question.trim()).slice(0, 120);
       const result = await query(
-        `INSERT INTO deep_research (canonical_question, question_embedding, question_hash, status, ask_count, last_asked_at, created_at)
-         VALUES (?, ?, ?, 'pending', 1, ?, ?)`,
-        [question.trim(), embedBuf, hash, now, now]
+        `INSERT INTO deep_research (canonical_question, question_embedding, question_hash, slug, status, ask_count, last_asked_at, created_at)
+         VALUES (?, ?, ?, ?, 'pending', 1, ?, ?)`,
+        [question.trim(), embedBuf, hash, slug, now, now]
       );
       if (result.lastInsertRowid) {
         logger.debug({ researchId: result.lastInsertRowid }, 'New deep research record created');
@@ -355,22 +357,32 @@ export async function runDeepResearch(researchId, { chat, search }) {
       );
     }
 
-    // 5. Extract traditions covered + topic classification
+    // 5. Build structured content sections (JSON-indexed for search)
     const traditionsCovered = [...new Set(selected.map(q => q.tradition).filter(Boolean))].join(',');
+    const sections = buildSections(record.canonical_question, selected, angles);
+    const summary = buildSummary(sections, traditionsCovered.split(',').filter(Boolean));
+    const convergence = buildConvergence(sections);
 
     await query(
       `UPDATE deep_research SET
          status = 'complete',
          total_selected = ?,
          traditions_covered = ?,
+         sections_json = ?,
+         summary_json = ?,
+         convergence_json = ?,
          completed_at = ?,
          heartbeat_at = ?
        WHERE id = ?`,
-      [selected.length, traditionsCovered, new Date().toISOString(), new Date().toISOString(), researchId]
+      [
+        selected.length, traditionsCovered,
+        JSON.stringify(sections), JSON.stringify(summary), JSON.stringify(convergence),
+        new Date().toISOString(), new Date().toISOString(), researchId
+      ]
     );
 
     // 6. Sync to Meilisearch
-    await syncDeepResearchToMeili([researchId]);
+    await syncDeepResearch([researchId]);
 
     logger.info({ researchId, selected: selected.length, traditions: traditionsCovered }, 'Deep research complete');
   } catch (err) {
@@ -383,12 +395,92 @@ export async function runDeepResearch(researchId, { chat, search }) {
   }
 }
 
+// --- Content section builders (called after rerank; no LLM needed) ---
+
+/**
+ * Group curated quotes into per-tradition sections with relevance metadata.
+ * Each section is {type, tradition, title, quotes[], avg_relevance, avg_authority}.
+ * These sections are the JSON-indexed content units for search.
+ */
+function buildSections(question, selected, angles = []) {
+  const byTradition = new Map();
+  for (const q of selected) {
+    const key = q.tradition || 'General';
+    if (!byTradition.has(key)) byTradition.set(key, []);
+    byTradition.get(key).push(q);
+  }
+  const sections = [];
+  for (const [tradition, quotes] of byTradition.entries()) {
+    const angle = angles.find(a => a.tradition === tradition);
+    const avgRel = quotes.reduce((s, q) => s + (q.relevance_score || 0), 0) / quotes.length;
+    const avgAuth = quotes.reduce((s, q) => s + (q.authority || 5), 0) / quotes.length;
+    sections.push({
+      type: 'tradition',
+      tradition,
+      title: `${tradition} Perspective`,
+      angle: angle?.angle || '',
+      quotes: quotes.map(q => ({
+        para_id: q.para_id,
+        text: q.text,
+        source_title: q.title,
+        source_author: q.author,
+        source_site: q.source_site,
+        source_url: q.source_url,
+        external_para_id: q.external_para_id,
+        authority: q.authority,
+        relevance_score: q.relevance_score,
+        contextual_note: q.contextual_note,
+        rank: q.rank,
+      })),
+      avg_relevance: Math.round(avgRel * 10) / 10,
+      avg_authority: Math.round(avgAuth * 10) / 10,
+      // Aggregated text for Meilisearch indexing
+      searchable_text: quotes.map(q => q.contextual_note || '').join(' '),
+    });
+  }
+  // Sort sections by avg_relevance * avg_authority descending
+  return sections.sort((a, b) => (b.avg_relevance * b.avg_authority) - (a.avg_relevance * a.avg_authority));
+}
+
+/**
+ * Build executive summary object from sections.
+ */
+function buildSummary(sections, traditions) {
+  const highAuthority = sections.flatMap(s => s.quotes.filter(q => q.authority >= 9)).slice(0, 3);
+  const notes = sections.flatMap(s => s.quotes.map(q => q.contextual_note).filter(Boolean)).slice(0, 8);
+  return {
+    traditions_count: traditions.length,
+    traditions,
+    quote_count: sections.reduce((s, sec) => s + sec.quotes.length, 0),
+    top_quote: highAuthority[0]?.text?.slice(0, 280) || null,
+    key_points: notes.slice(0, 5),
+    // Full text for Meilisearch
+    searchable_text: notes.join(' '),
+  };
+}
+
+/**
+ * Build convergence/divergence analysis from sections.
+ * Simple heuristic — compares which traditions have high-relevance quotes.
+ */
+function buildConvergence(sections) {
+  const highRelevance = sections.filter(s => s.avg_relevance >= 7);
+  const lowRelevance = sections.filter(s => s.avg_relevance < 6);
+  return {
+    broadly_agreed: highRelevance.map(s => s.tradition),
+    less_coverage: lowRelevance.map(s => s.tradition),
+    agreements: highRelevance.map(s => `${s.tradition}: ${s.angle || 'addresses this question directly'}`),
+    divergences: lowRelevance.length ? [`Some traditions have less direct coverage: ${lowRelevance.map(s => s.tradition).join(', ')}`] : [],
+    searchable_text: highRelevance.map(s => s.angle).join('. '),
+  };
+}
+
 /**
  * Sync deep research records to Meilisearch.
  *
  * @param {number[]} [ids] - specific IDs to sync; omit to sync all complete records
  */
-export async function syncDeepResearchToMeili(ids = null) {
+export async function syncDeepResearch(ids = null) {
   const meili = getMeili();
   if (!meili) return;
 
@@ -398,26 +490,93 @@ export async function syncDeepResearchToMeili(ids = null) {
 
   if (!rows.length) return;
 
-  const docs = rows.map(r => ({
-    id: r.id,
-    canonical_question: r.canonical_question,
-    question_hash: r.question_hash,
-    status: r.status,
-    topic_tags: r.topic_tags ? JSON.parse(r.topic_tags) : [],
-    question_type: r.question_type,
-    traditions_covered: r.traditions_covered ? r.traditions_covered.split(',') : [],
-    ask_count: r.ask_count,
-    priority: r.priority,
-    created_at: r.created_at,
-    completed_at: r.completed_at,
-  }));
+  const docs = rows.map(r => {
+    const summary = r.summary_json ? JSON.parse(r.summary_json) : {};
+    const convergence = r.convergence_json ? JSON.parse(r.convergence_json) : {};
+    const sections = r.sections_json ? JSON.parse(r.sections_json) : [];
+    // Aggregate searchable text from all JSON sections + contextual notes
+    const sectionText = sections.map(s => s.searchable_text || '').join(' ');
+    return {
+      id: r.id,
+      canonical_question: r.canonical_question,
+      question_hash: r.question_hash,
+      slug: r.slug,
+      status: r.status,
+      topic_tags: r.topic_tags ? JSON.parse(r.topic_tags) : [],
+      question_type: r.question_type,
+      traditions_covered: r.traditions_covered ? r.traditions_covered.split(',') : [],
+      ask_count: r.ask_count,
+      priority: r.priority,
+      created_at: r.created_at,
+      completed_at: r.completed_at,
+      // Searchable content from sections + summary (pre-gauged relevancy baked in)
+      summary_text: summary.searchable_text || '',
+      section_text: sectionText,
+      convergence_text: convergence.searchable_text || '',
+      key_points: summary.key_points || [],
+      traditions_agreement: convergence.broadly_agreed || [],
+    };
+  });
 
   try {
     await meili.index(INDEXES.DEEP_RESEARCH).addDocuments(docs, { primaryKey: 'id' });
     logger.info({ count: docs.length }, 'Deep research synced to Meilisearch');
   } catch (err) {
-    logger.warn({ err: err.message }, 'syncDeepResearchToMeili failed');
+    logger.warn({ err: err.message }, 'syncDeepResearch failed');
   }
+}
+
+/**
+ * Look up a research record by slug.
+ *
+ * @param {string} slug
+ * @returns {Promise<{record, quotes}|null>}
+ */
+export async function getDeepResearchBySlug(slug) {
+  try {
+    const record = await queryOne('SELECT * FROM deep_research WHERE slug = ?', [slug]);
+    if (!record) return null;
+    const quotes = await getDeepResearchQuotes(record.id);
+    return { record, quotes };
+  } catch (err) {
+    logger.warn({ err: err.message, slug }, 'getDeepResearchBySlug error');
+    return null;
+  }
+}
+
+/**
+ * Add an email notification request for when research completes.
+ */
+export async function addNotifyEmail(researchId, email) {
+  try {
+    await query(
+      'INSERT OR IGNORE INTO deep_research_notify (research_id, email, created_at) VALUES (?, ?, ?)',
+      [researchId, email.trim().toLowerCase(), new Date().toISOString()]
+    );
+    return true;
+  } catch (err) {
+    logger.warn({ err: err.message, researchId, email }, 'addNotifyEmail error');
+    return false;
+  }
+}
+
+/**
+ * Get all pending email notifications for a research record (called by worker after completion).
+ */
+export async function getPendingNotifications(researchId) {
+  return queryAll(
+    'SELECT * FROM deep_research_notify WHERE research_id = ? AND notified_at IS NULL',
+    [researchId]
+  );
+}
+
+/**
+ * Mark notifications as sent.
+ */
+export async function markNotificationsSent(ids) {
+  if (!ids?.length) return;
+  const placeholders = ids.map(() => '?').join(',');
+  await query(`UPDATE deep_research_notify SET notified_at = ? WHERE id IN (${placeholders})`, [new Date().toISOString(), ...ids]);
 }
 
 /**
