@@ -460,12 +460,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const subagentSyntheses = [];
 
   const seenParagraphs = new Set();
-  // Text-level dedup: the same passage (e.g. Psalms) is sometimes indexed under
-  // both Christianity (KJV Bible) and Judaism (Hebrew Tehilim). Without text
-  // dedup, the crafter sees "same text, two religion tags" and skips one —
-  // typically dropping Judaism. Keep the first occurrence only (whichever
-  // tradition's search resolves first in Promise.all).
-  const seenTexts = new Set();
+  // Per-religion text dedup: the same passage (e.g. Psalms) is indexed under
+  // both Christianity (KJV) and Judaism (Tehilim). We allow cross-religion
+  // duplicates — the crafter sees both with their religion tags and uses the
+  // SHARED-TEXT RULE. Within a single religion, dedup prevents the same verse
+  // from filling multiple slots for that tradition.
+  const seenTextsByReligion = {};
   // Quran Bismillah opens every sura — BM25 stemming causes it to rank high for
   // any "mercy/compassion" query, drowning out actual content. Skip it so Jafar
   // cites thematic passages (e.g. Sura LV "The Merciful") instead of headers.
@@ -477,10 +477,12 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const key = `${p.document_id}_${p.paragraph_index}`;
       if (seenParagraphs.has(key)) continue;
       if (BISMILLAH_RE.test((p.text || '').trim())) continue;
+      const religion = p.religion || 'unknown';
       const normText = (p.text || '').toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '').trim();
-      if (normText.length > 20 && seenTexts.has(normText)) continue;
+      if (!seenTextsByReligion[religion]) seenTextsByReligion[religion] = new Set();
+      if (normText.length > 20 && seenTextsByReligion[religion].has(normText)) continue;
       seenParagraphs.add(key);
-      if (normText.length > 20) seenTexts.add(normText);
+      if (normText.length > 20) seenTextsByReligion[religion].add(normText);
       retrieved.push({
         text: p.text || '',
         source_title: p.title || '',

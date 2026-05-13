@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:56:13.519Z",
+  "generated": "2026-05-13T03:00:07.180Z",
   "entries": [
+    {
+      "hash": "b376965",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
+      "scope": null
+    },
     {
       "hash": "d164d96",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Improve library stats display & fix embedding tracking",
       "scope": null
-    },
-    {
-      "hash": "34a43ca",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add floating version pill, simplify AI ticker",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "b376965",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Buddhist queryTransform maps mercy→loving-kindness for primary search",
+        "scope": null
+      },
       {
         "hash": "d164d96",
         "date": "2026-05-12",
@@ -7062,13 +7069,6 @@
         "type": "New",
         "description": "Improve library stats display & fix embedding tracking",
         "scope": null
-      },
-      {
-        "hash": "34a43ca",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add floating version pill, simplify AI ticker",
-        "scope": "ui"
       }
     ]
   }
