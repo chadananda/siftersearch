@@ -375,11 +375,11 @@ function buildOLSourceUrl(q: any): string | null {
                             <blockquote class="quote-text">"{excerptText}"</blockquote>
                           )}
                           <div class="quote-source">
-                            {olUrl ? (
-                              <a href={olUrl} target="_blank" rel="noopener" class="source-link">
+                            {(olUrl || q.source_url) ? (
+                              <a href={olUrl || q.source_url} target="_blank" rel="noopener" class="source-link">
                                 <em>{q.source_title || 'Source'}</em>
                                 {q.source_author && <span class="source-author"> — {q.source_author}</span>}
-                                {isOL && <span class="ol-badge">OL</span>}
+                                {isOL && <span class="ol-badge">OL ↗</span>}
                               </a>
                             ) : (
                               <span>
