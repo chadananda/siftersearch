@@ -1,6 +1,7 @@
 ---
 // Individual deep research article — SEO-optimized interfaith topic page.
 // Fetches from /api/v1/deep-research/slug/:slug at request time.
+// Renders aspect-based sections from clusterAndStructure() output.
 import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
@@ -25,7 +26,24 @@ function parseJ(val: any, fallback: any) {
   try { return JSON.parse(val); } catch { return fallback; }
 }
 
-// Parse JSON fields (may be pre-parsed objects or raw JSON strings)
+function stripMd(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/⁅\/?\w+⁆/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function hasNonLatin(text: string): boolean {
+  const m = (text || '').match(/[\u0600-\u06FF\u0590-\u05FF\u0900-\u097F\u4E00-\u9FFF\u3040-\u30FF\u0E00-\u0E7F]/g);
+  return !!m && m.length > 5;
+}
+
 const topicTags: string[] = parseJ(record.topic_tags, []);
 const traditions: string[] = record.traditions_covered ? record.traditions_covered.split(',').filter(Boolean) : [];
 const sections = parseJ(record.sections_json, []);
@@ -33,9 +51,6 @@ const summary = parseJ(record.summary_json, {});
 const convergence = parseJ(record.convergence_json, {});
 const qaItems = parseJ(record.qa_json, []);
 const quotes: any[] = record.quotes || [];
-
-// If sections not yet generated (research still pending), build ad-hoc from quotes
-const displaySections = sections.length > 0 ? sections : buildAdHocSections(quotes);
 
 function buildAdHocSections(qs: any[]) {
   const byTradition = new Map<string, any[]>();
@@ -48,9 +63,12 @@ function buildAdHocSections(qs: any[]) {
   return [...byTradition.entries()].map(([tradition, tqs]) => ({
     type: 'tradition',
     tradition,
-    title: `${tradition} Perspective`,
+    label: `${tradition} perspective on this question`,
+    summary: '',
+    traditions: [tradition],
     quotes: tqs.map((q: any) => ({
-      text: q.text,
+      excerpt: q.text || q.excerpt || '',
+      tradition,
       source_title: q.title,
       source_author: q.author,
       source_site: q.source_site,
@@ -59,24 +77,27 @@ function buildAdHocSections(qs: any[]) {
       authority: q.authority,
       relevance_score: q.relevance_score,
       contextual_note: q.contextual_note,
-      rank: q.rank,
+      para_id: q.para_id,
     })),
     avg_relevance: tqs.reduce((s: number, q: any) => s + (q.relevance_score || 0), 0) / tqs.length,
-    avg_authority: tqs.reduce((s: number, q: any) => s + (q.authority || 5), 0) / tqs.length,
   }));
 }
+
+const displaySections: any[] = sections.length > 0 ? sections : buildAdHocSections(quotes);
+const isAspectBased = displaySections.length > 0 && displaySections[0]?.type === 'aspect';
 
 const isPending = record.status !== 'complete';
 const pageUrl = `${SITE}/research/${slug}`;
 const chatUrl = `${SITE}/?q=${encodeURIComponent(record.canonical_question)}`;
 
-// Build description from summary or key_points
+const overviewText: string = summary.overview || '';
 const keyPoints: string[] = summary.key_points || [];
-const description = keyPoints.length > 0
-  ? keyPoints.slice(0, 2).join(' ') + ` Explored across ${traditions.length} religious traditions.`
-  : `Interfaith research on "${record.canonical_question}" drawing from ${record.total_selected || 0} authoritative passages across ${traditions.length} traditions.`;
+const description = overviewText
+  ? overviewText.slice(0, 280)
+  : keyPoints.length > 0
+    ? keyPoints.slice(0, 2).join(' ') + ` Explored across ${traditions.length} religious traditions.`
+    : `Interfaith research on "${record.canonical_question}" drawing from ${record.total_selected || 0} authoritative passages across ${traditions.length} traditions.`;
 
-// ─── Structured data ──────────────────────────────────────────────────────
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -93,26 +114,24 @@ const articleSchema = {
     "name": record.canonical_question,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": summary.searchable_text || keyPoints.join(' ') || description
+      "text": overviewText || summary.searchable_text || keyPoints.join(' ') || description
     }
   }
 };
 
-// FAQPage schema — one entry per tradition section
 const faqSchema = displaySections.length >= 2 ? {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": displaySections.filter((s: any) => s.quotes?.length).map((s: any) => ({
     "@type": "Question",
-    "name": `What does ${s.tradition} say about: ${record.canonical_question}`,
+    "name": s.label || `What does ${s.tradition} say about: ${record.canonical_question}`,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": (s.quotes[0]?.contextual_note || s.quotes[0]?.text || '').slice(0, 600)
+      "text": (s.summary || s.quotes[0]?.excerpt || s.quotes[0]?.contextual_note || '').slice(0, 600)
     }
   }))
 } : null;
 
-// Dataset schema describing the research corpus
 const datasetSchema = {
   "@context": "https://schema.org",
   "@type": "Dataset",
@@ -125,7 +144,6 @@ const datasetSchema = {
   "variableMeasured": "Relevance and authority score",
 };
 
-// Related research by shared topic_tags
 const related = allRecords
   .filter((r: any) => r.slug !== slug && r.status === 'complete')
   .map((r: any) => {
@@ -154,11 +172,6 @@ const TOPIC_LABELS: Record<string, string> = {
   'scripture-study': 'Scripture', 'creation': 'Creation', 'sin-redemption': 'Sin & Redemption',
   'community': 'Community',
 };
-
-function buildQuoteShareUrl(q: any, sectionIdx: number, quoteIdx: number): string {
-  const anchor = `#q-${sectionIdx}-${quoteIdx}`;
-  return `${pageUrl}${anchor}`;
-}
 
 function buildOLSourceUrl(q: any): string | null {
   if (q.source_site === 'oceanlibrary.com' && q.source_url) {
@@ -225,7 +238,6 @@ function buildOLSourceUrl(q: any): string | null {
           {isPending && <span class="badge pending-badge">Research in progress</span>}
         </div>
 
-        <!-- Share buttons (hero level) -->
         <div class="hero-share">
           <ShareButtons
             client:load
@@ -241,39 +253,44 @@ function buildOLSourceUrl(q: any): string | null {
     <div class="traditions-strip">
       <div class="traditions-strip-inner">
         {traditions.map(t => (
-          <a href={`#tradition-${t.toLowerCase().replace(/[^a-z]/g, '-')}`} class="tradition-pill" style={`border-color:${TRADITION_COLORS[t] || '#888'}`}>
+          <span class="tradition-pill" style={`border-color:${TRADITION_COLORS[t] || '#888'}`}>
             <span class="tradition-dot" style={`background:${TRADITION_COLORS[t] || '#888'}`}></span>
             {t}
-          </a>
+          </span>
         ))}
       </div>
     </div>
 
     <div class="article-body">
-      <!-- Sidebar TOC -->
+      <!-- Sidebar TOC (Q&A format) -->
       <aside class="article-sidebar">
         <nav class="toc" aria-label="Table of contents">
-          <div class="toc-label">Contents</div>
-          {summary.key_points?.length > 0 && <a href="#summary" class="toc-link">Executive Summary</a>}
+          <div class="toc-main-q">
+            <span class="toc-q-label">Q</span>
+            <span class="toc-q-text">{record.canonical_question}</span>
+          </div>
+          {(overviewText || keyPoints.length > 0) && (
+            <a href="#overview" class="toc-link toc-overview">Overview</a>
+          )}
           {displaySections.map((s: any, i: number) => (
-            <a href={`#tradition-${(s.tradition || 'general').toLowerCase().replace(/[^a-z]/g, '-')}`} class="toc-link toc-tradition">
-              <span class="toc-dot" style={`background:${TRADITION_COLORS[s.tradition || ''] || '#888'}`}></span>
-              {s.title || s.tradition || 'General'}
+            <a href={`#aspect-${i}`} class="toc-link toc-aspect">
+              <span class="toc-a-marker">A{i + 1}</span>
+              <span class="toc-aspect-text">{s.label || s.tradition || `Aspect ${i + 1}`}</span>
             </a>
           ))}
-          {convergence.broadly_agreed?.length > 1 && <a href="#convergence" class="toc-link">Convergence Analysis</a>}
+          {(convergence.agreements?.length > 1 || convergence.broadly_agreed?.length > 1) && (
+            <a href="#convergence" class="toc-link">Convergence</a>
+          )}
           {qaItems.length > 0 && <a href="#faq" class="toc-link">Related Questions</a>}
           {related.length > 0 && <a href="#related" class="toc-link">Related Research</a>}
           <a href="#share" class="toc-link">Share</a>
         </nav>
 
-        <!-- Ask Jafar CTA -->
         <div class="sidebar-cta">
           <p>Explore this question with Jafar, our AI research assistant</p>
           <a href={chatUrl} class="btn-jafar">Ask Jafar →</a>
         </div>
 
-        <!-- Pending notify form -->
         {isPending && (
           <div class="notify-form" id="notify-form">
             <p class="notify-label">Research in progress</p>
@@ -287,77 +304,98 @@ function buildOLSourceUrl(q: any): string | null {
       <!-- Main content -->
       <div class="article-main">
 
-        <!-- Executive Summary -->
-        {(summary.key_points?.length > 0 || summary.top_quote) && (
-          <section class="summary-section" id="summary">
-            <h2>Executive Summary</h2>
-            <div class="summary-card">
-              {summary.top_quote && (
-                <blockquote class="summary-quote">"{summary.top_quote}"</blockquote>
-              )}
-              {summary.key_points?.length > 0 && (
+        <!-- Overview / Summary -->
+        {(overviewText || keyPoints.length > 0) && (
+          <section class="overview-section" id="overview">
+            <h2>Overview</h2>
+            <div class="overview-card">
+              {overviewText && <p class="overview-text">{overviewText}</p>}
+              {!overviewText && keyPoints.length > 0 && (
                 <ul class="key-points">
-                  {summary.key_points.map((p: string) => <li>{p}</li>)}
+                  {keyPoints.map((p: string) => <li>{p}</li>)}
                 </ul>
               )}
-              <div class="summary-meta">
-                Drawn from <strong>{summary.quote_count}</strong> passages across <strong>{summary.traditions?.join(', ')}</strong>
-              </div>
+              {summary.traditions?.length > 0 && (
+                <div class="summary-meta">
+                  Drawn from <strong>{summary.quote_count || record.total_selected}</strong> passages across <strong>{summary.traditions.join(', ')}</strong>
+                </div>
+              )}
             </div>
           </section>
         )}
 
-        <!-- Per-tradition sections -->
+        <!-- Aspect sections -->
         {displaySections.map((section: any, sectionIdx: number) => {
-          const anchorId = `tradition-${(section.tradition || 'general').toLowerCase().replace(/[^a-z]/g, '-')}`;
-          const tradColor = TRADITION_COLORS[section.tradition || ''] || '#888';
+          const anchorId = `aspect-${sectionIdx}`;
+          const sectionTraditions: string[] = section.traditions || (section.tradition ? [section.tradition] : []);
           return (
-            <section class="tradition-section" id={anchorId}>
-              <div class="section-header">
-                <div class="section-title-row">
-                  <span class="section-dot" style={`background:${tradColor}`}></span>
-                  <h2 class="section-heading">{section.title || section.tradition}</h2>
-                </div>
-                {section.angle && <p class="section-angle">{section.angle}</p>}
-                <div class="section-meta">
-                  <span>{section.quotes?.length || 0} passages</span>
-                  {section.avg_relevance > 0 && <span>Avg relevance {section.avg_relevance}/10</span>}
-                  {section.avg_authority > 0 && <span>Avg authority {section.avg_authority}/10</span>}
-                </div>
+            <section class="aspect-section" id={anchorId} scroll-margin-top="1rem">
+              <div class="aspect-header">
+                <div class="aspect-number">A{sectionIdx + 1}</div>
+                <h2 class="aspect-heading">{section.label || section.tradition || `Aspect ${sectionIdx + 1}`}</h2>
               </div>
+
+              {section.summary && (
+                <p class="aspect-summary">{section.summary}</p>
+              )}
+
+              {sectionTraditions.length > 0 && (
+                <div class="aspect-traditions">
+                  {sectionTraditions.map((t: string) => (
+                    <span class="tradition-chip" style={`background:${TRADITION_COLORS[t] || '#888'}22;border-color:${TRADITION_COLORS[t] || '#888'}66;color:${TRADITION_COLORS[t] || '#888'}`}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div class="quotes-list">
                 {(section.quotes || []).map((q: any, qi: number) => {
                   const olUrl = buildOLSourceUrl(q);
-                  const quoteUrl = buildQuoteShareUrl(q, sectionIdx, qi);
+                  const tradColor = TRADITION_COLORS[q.tradition || ''] || '#888';
+                  const excerptText = stripMd(q.excerpt || q.text || '');
+                  const isNonLatin = hasNonLatin(excerptText);
+                  const quoteUrl = `${pageUrl}#q-${sectionIdx}-${qi}`;
                   const isOL = q.source_site === 'oceanlibrary.com';
                   return (
                     <div class="quote-card" id={`q-${sectionIdx}-${qi}`}>
-                      <div class="quote-authority-bar" style={`background:${tradColor};opacity:${0.3 + (q.authority || 5) * 0.07}`}></div>
+                      <div class="quote-tradition-bar" style={`background:${tradColor}`} title={q.tradition}></div>
                       <div class="quote-body">
-                        <blockquote class="quote-text">"{q.text}"</blockquote>
+                        {isNonLatin ? (
+                          <table class="bilingual-table">
+                            <tbody>
+                              <tr>
+                                <td class="bilingual-lang">{q.tradition || 'Original'}</td>
+                                <td class="bilingual-text bilingual-original" dir="auto">{excerptText}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        ) : (
+                          <blockquote class="quote-text">"{excerptText}"</blockquote>
+                        )}
                         <div class="quote-footer">
                           <div class="quote-source">
+                            <span class="quote-tradition-tag" style={`color:${tradColor}`}>{q.tradition}</span>
                             {olUrl ? (
                               <a href={olUrl} target="_blank" rel="noopener" class="source-link">
                                 <em>{q.source_title || 'Source'}</em>
-                                {q.source_author && ` — ${q.source_author}`}
+                                {q.source_author && <span class="source-author"> — {q.source_author}</span>}
                                 {isOL && <span class="ol-badge" title="OceanLibrary">OL</span>}
                               </a>
                             ) : (
                               <span class="source-text">
                                 <em>{q.source_title || 'Source'}</em>
-                                {q.source_author && ` — ${q.source_author}`}
+                                {q.source_author && <span class="source-author"> — {q.source_author}</span>}
                               </span>
                             )}
-                            {q.authority && <span class="authority-pip" title={`Authority ${q.authority}/10`}>{"★".repeat(Math.min(5, Math.round(q.authority/2)))}</span>}
+                            {q.authority && <span class="authority-pip" title={`Authority ${q.authority}/10`}>{"★".repeat(Math.min(5, Math.round(q.authority / 2)))}</span>}
                           </div>
                           <div class="quote-actions">
                             <ShareButtons
                               client:load
                               url={quoteUrl}
                               title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                              quote={q.text?.slice(0, 200)}
+                              quote={excerptText.slice(0, 200)}
                               sourceUrl={olUrl || q.source_url}
                               compact={true}
                             />
@@ -376,7 +414,7 @@ function buildOLSourceUrl(q: any): string | null {
         })}
 
         <!-- Convergence Analysis -->
-        {convergence.agreements?.length > 1 && (
+        {(convergence.agreements?.length > 1 || convergence.broadly_agreed?.length > 1) && (
           <section class="convergence-section" id="convergence">
             <h2>Convergence & Divergence</h2>
             <div class="convergence-card">
@@ -384,7 +422,7 @@ function buildOLSourceUrl(q: any): string | null {
                 <div class="conv-group">
                   <h3 class="conv-label conv-agree">✓ Broadly shared across traditions</h3>
                   <ul class="conv-list">
-                    {convergence.agreements.map((a: string) => <li>{a}</li>)}
+                    {(convergence.agreements || convergence.broadly_agreed).map((a: string) => <li>{a}</li>)}
                   </ul>
                 </div>
               )}
@@ -522,8 +560,7 @@ function buildOLSourceUrl(q: any): string | null {
   /* Traditions strip */
   .traditions-strip { border-bottom: 1px solid var(--border-subtle); padding: 0.75rem 1.5rem; background: var(--surface-1); }
   .traditions-strip-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .tradition-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 20px; border: 1px solid; font-size: 0.78rem; color: var(--text-secondary); text-decoration: none; transition: all 0.15s; }
-  .tradition-pill:hover { background: var(--surface-2); color: var(--text-primary); }
+  .tradition-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 20px; border: 1px solid; font-size: 0.78rem; color: var(--text-secondary); }
   .tradition-dot { width: 8px; height: 8px; border-radius: 50%; }
 
   /* Layout */
@@ -532,11 +569,16 @@ function buildOLSourceUrl(q: any): string | null {
 
   /* Sidebar */
   .article-sidebar { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-  .toc { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
-  .toc-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem; }
-  .toc-link { font-size: 0.82rem; color: var(--text-secondary); text-decoration: none; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.1s; display: flex; align-items: center; gap: 0.4rem; }
+  .toc { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .toc-main-q { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.5rem; background: var(--surface-2); border-radius: 6px; margin-bottom: 0.5rem; }
+  .toc-q-label { font-size: 0.65rem; font-weight: 800; background: var(--accent); color: #fff; border-radius: 3px; padding: 0.15rem 0.35rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .toc-q-text { font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; font-weight: 500; }
+  .toc-link { font-size: 0.82rem; color: var(--text-secondary); text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 4px; transition: all 0.1s; display: flex; align-items: flex-start; gap: 0.4rem; }
   .toc-link:hover { background: var(--surface-2); color: var(--text-primary); }
-  .toc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .toc-overview { font-style: italic; }
+  .toc-aspect { align-items: flex-start; }
+  .toc-a-marker { font-size: 0.6rem; font-weight: 700; background: var(--surface-2); color: var(--text-muted); border-radius: 3px; padding: 0.1rem 0.3rem; flex-shrink: 0; margin-top: 0.15rem; }
+  .toc-aspect-text { font-size: 0.78rem; line-height: 1.35; color: var(--text-secondary); }
   .sidebar-cta { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; }
   .sidebar-cta p { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 0.75rem; line-height: 1.5; }
   .btn-jafar { display: block; text-align: center; padding: 0.5rem; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
@@ -547,38 +589,46 @@ function buildOLSourceUrl(q: any): string | null {
   .notify-input { width: 100%; padding: 0.4rem 0.6rem; border-radius: 5px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); font-size: 0.82rem; box-sizing: border-box; }
   .notify-btn { width: 100%; margin-top: 0.5rem; padding: 0.45rem; border-radius: 5px; border: none; background: var(--accent); color: #fff; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
 
-  /* Main content sections */
+  /* Main content */
   .article-main { display: flex; flex-direction: column; gap: 3rem; }
   h2 { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem; }
 
-  /* Summary */
-  .summary-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; }
-  .summary-quote { font-size: 1.05rem; font-style: italic; color: var(--text-primary); border-left: 3px solid var(--accent); padding-left: 1rem; margin: 0 0 1rem; }
+  /* Overview */
+  .overview-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; }
+  .overview-text { font-size: 0.95rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; }
   .key-points { margin: 0 0 1rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
   .key-points li { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
   .summary-meta { font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 0.75rem; margin-top: 0.75rem; }
 
-  /* Tradition sections */
-  .tradition-section { scroll-margin-top: 1rem; }
-  .section-header { margin-bottom: 1.25rem; }
-  .section-title-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
-  .section-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-  .section-heading { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin: 0; }
-  .section-angle { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 0.5rem; font-style: italic; line-height: 1.5; }
-  .section-meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted); }
+  /* Aspect sections */
+  .aspect-section { scroll-margin-top: 1.5rem; }
+  .aspect-header { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .aspect-number { font-size: 0.68rem; font-weight: 800; background: var(--surface-2); color: var(--text-muted); border-radius: 4px; padding: 0.2rem 0.45rem; flex-shrink: 0; margin-top: 0.35rem; }
+  .aspect-heading { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.35; }
+  .aspect-summary { font-size: 0.92rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
+  .aspect-traditions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .tradition-chip { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 20px; border: 1px solid; }
 
   /* Quote cards */
   .quotes-list { display: flex; flex-direction: column; gap: 1rem; }
   .quote-card { display: flex; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
-  .quote-authority-bar { width: 4px; flex-shrink: 0; }
-  .quote-body { padding: 1.25rem; flex: 1; }
-  .quote-text { font-size: 0.95rem; line-height: 1.75; color: var(--text-primary); margin: 0 0 0.75rem; font-style: italic; }
+  .quote-tradition-bar { width: 4px; flex-shrink: 0; }
+  .quote-body { padding: 1.25rem; flex: 1; min-width: 0; }
+  .quote-text { font-size: 0.95rem; line-height: 1.8; color: var(--text-primary); margin: 0 0 0.75rem; font-style: italic; }
   .quote-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .quote-source { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .quote-source { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .quote-tradition-tag { font-size: 0.7rem; font-weight: 700; }
   .source-link { color: var(--accent); text-decoration: none; } .source-link:hover { text-decoration: underline; }
+  .source-author { color: var(--text-muted); }
   .ol-badge { font-size: 0.65rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.1rem 0.3rem; margin-left: 0.25rem; vertical-align: middle; }
   .authority-pip { color: var(--accent); font-size: 0.7rem; letter-spacing: -1px; }
-  .contextual-note { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin: 0.75rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); font-style: normal; }
+  .contextual-note { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin: 0.75rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); }
+
+  /* Bilingual table for non-Latin script quotes */
+  .bilingual-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
+  .bilingual-table td { padding: 0.5rem 0.75rem; font-size: 0.9rem; line-height: 1.75; vertical-align: top; }
+  .bilingual-lang { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); width: 80px; padding-top: 0.65rem; white-space: nowrap; }
+  .bilingual-original { color: var(--text-primary); font-style: italic; border-left: 2px solid var(--border-subtle); }
 
   /* Convergence */
   .convergence-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
@@ -601,7 +651,7 @@ function buildOLSourceUrl(q: any): string | null {
   .faq-a p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 0.5rem; }
   .faq-traditions { color: var(--text-muted); font-size: 0.8rem; }
 
-  /* Pending notice */
+  /* Pending */
   .pending-notice { background: rgba(255,193,7,0.08); border: 1px solid var(--warning); border-radius: 12px; padding: 1.5rem; }
   .pending-notice h3 { font-size: 1rem; color: var(--warning); margin: 0 0 0.5rem; }
   .pending-notice p { font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 1rem; }
@@ -628,7 +678,6 @@ function buildOLSourceUrl(q: any): string | null {
   .footer-nav { margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
   .footer-link { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; }
   .footer-link:hover { color: var(--accent); }
-
   .btn-primary { display: inline-block; padding: 0.6rem 1.25rem; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transition: background 0.15s; white-space: nowrap; }
   .btn-primary:hover { background: var(--accent-hover); }
 </style>
