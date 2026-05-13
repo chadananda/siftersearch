@@ -195,10 +195,16 @@ export async function getDeepResearchQuotes(researchId) {
 export async function decomposeAngles(question, chat) {
   // Values must match the `religion` field in the Meilisearch paragraphs index exactly.
   const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh', 'General'];
-  const systemPrompt = `You are a research assistant for an interfaith library. Given a spiritual question, generate specific search queries optimized for finding relevant authoritative passages in each religious tradition. Return JSON only.`;
+  const systemPrompt = `You are a research assistant for an interfaith library. Given a spiritual question, generate search queries optimized for finding directly relevant authoritative passages. Return JSON only.`;
   const userPrompt = `Question: "${question}"
 
-For each tradition below, produce a concise search query (10-20 words) that targets how THAT tradition specifically addresses this question. Use tradition-specific vocabulary (e.g. "tests and trials" for Baha'i, "sabr" for Islam, etc).
+For each tradition below, produce a search query (10-20 words) targeting how THAT tradition addresses this specific question.
+
+Rules:
+- The query MUST include the core subject of the question (do not substitute tradition-specific euphemisms that drift from the topic)
+- Add tradition-specific vocabulary ON TOP of core keywords, not instead of them
+- Example for "What is the spiritual purpose of suffering?": Baha'i query should include "suffering" alongside any "tests trials" language, not replace it
+- Target passages that explain WHY or WHAT PURPOSE — not just passages that mention the topic
 
 Traditions: ${TRADITIONS.join(', ')}
 
@@ -370,7 +376,7 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
   const ranked = deduped
-    .filter(p => p.relevance_score >= 8)
+    .filter(p => p.relevance_score >= 7)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({

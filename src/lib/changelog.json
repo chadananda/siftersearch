@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T17:58:55.969Z",
+  "generated": "2026-05-13T18:04:41.079Z",
   "entries": [
+    {
+      "hash": "0db4593",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
+      "scope": null
+    },
     {
       "hash": "60fe930",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Update changelog and lockfile",
       "scope": null
-    },
-    {
-      "hash": "3240f79",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.800",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "0db4593",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Stricter relevance scoring in rerankPassages — raise threshold 7→8",
+        "scope": null
+      },
       {
         "hash": "60fe930",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Update changelog and lockfile",
-        "scope": null
-      },
-      {
-        "hash": "3240f79",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.800",
         "scope": null
       }
     ]
