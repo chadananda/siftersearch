@@ -547,9 +547,20 @@ export async function runDeepResearch(researchId, { chat, search }) {
       return { ...s, text: cand.text, author: cand.author, title: cand.title, source_site: cand.source_site, source_url: cand.source_url, external_para_id: cand.external_para_id };
     });
 
-    // 4. Store quotes
+    // 4. Store quotes — validate para_ids exist in content table (framework searches
+    // can return Meilisearch IDs for external/supplemental content not in local DB).
+    const validParaIds = new Set(
+      (await queryAll(
+        `SELECT id FROM content WHERE id IN (${selected.map(() => '?').join(',')})`,
+        selected.map(q => q.para_id)
+      )).map(r => r.id)
+    );
+    const validSelected = selected.filter(q => validParaIds.has(q.para_id));
+    const skipped = selected.length - validSelected.length;
+    if (skipped > 0) logger.warn({ skipped, total: selected.length }, 'Skipped quotes with para_ids not in content table');
+
     await query('DELETE FROM deep_research_quotes WHERE research_id = ?', [researchId]);
-    for (const q of selected) {
+    for (const q of validSelected) {
       await query(
         `INSERT INTO deep_research_quotes (research_id, para_id, tradition, authority, relevance_score, contextual_note, rank, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -558,8 +569,8 @@ export async function runDeepResearch(researchId, { chat, search }) {
     }
 
     // 5. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
-    const traditionsCovered = [...new Set(selected.map(q => q.tradition).filter(Boolean))].join(',');
-    const structured = await clusterAndStructure(record.canonical_question, selected, chat, recon);
+    const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
+    const structured = await clusterAndStructure(record.canonical_question, validSelected, chat, recon);
     const sections = structured?.sections || buildSectionsFallback(selected, angles);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
     const convergence = { searchable_text: sections.map(s => s.label || s.tradition || '').join(' ') };

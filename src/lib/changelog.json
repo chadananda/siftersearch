@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T19:15:15.464Z",
+  "generated": "2026-05-13T19:24:30.168Z",
   "entries": [
+    {
+      "hash": "81e93c1",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Pass 100 candidates to clustering — threshold 3 not 5",
+      "scope": null
+    },
     {
       "hash": "9d54fd9",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add pending documents view with force ingestion",
       "scope": "library"
-    },
-    {
-      "hash": "472139f",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add Recent Activity view for tracking document changes",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "81e93c1",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Pass 100 candidates to clustering — threshold 3 not 5",
+        "scope": null
+      },
       {
         "hash": "9d54fd9",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Add pending documents view with force ingestion",
-        "scope": "library"
-      },
-      {
-        "hash": "472139f",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add Recent Activity view for tracking document changes",
         "scope": "library"
       }
     ]
