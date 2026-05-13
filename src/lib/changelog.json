@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:03:02.662Z",
+  "generated": "2026-05-13T16:04:28.618Z",
   "entries": [
+    {
+      "hash": "9c2c4fd",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Add guardian and the shoghi effendi to author aliases",
+      "scope": null
+    },
     {
       "hash": "af06fd3",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.790",
       "scope": null
-    },
-    {
-      "hash": "2c5461a",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add Rejected Documents link to admin dashboard",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "9c2c4fd",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Add guardian and the shoghi effendi to author aliases",
+        "scope": null
+      },
       {
         "hash": "af06fd3",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Bump version to 0.1.790",
-        "scope": null
-      },
-      {
-        "hash": "2c5461a",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add Rejected Documents link to admin dashboard",
         "scope": null
       }
     ]
