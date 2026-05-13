@@ -775,10 +775,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Post-merge author filter handles any HyPE bleed from non-Muhammad authors.
         // Bismillah filter prevents the formulaic sura header from dominating.
         "Islam":    { author: "Muhammad", broadAuthor: "Muhammad", primarySemanticRatio: 0.4 },
-        // Christian: semanticRatio=0.35 — KJV uses archaic morphology (forgive/forgiven vs
-        // forgiveness, blessed/bless vs blessing) that BM25 misses without stemming.
-        // Semantic helps bridge these while BM25 still dominates for exact phrases.
-        "Christian":{ author: "Matthew", primarySemanticRatio: 0.35 },
+        // Christian: semanticRatio=0.1 — KJV morphology gaps (forgiveness→forgive) handled
+        // by NESS_MAP in passageQuery; matchingStrategy:'last' handles partial BM25 matching.
+        // Low semantic keeps BM25 dominant: Matthew 5:7 "merciful" beats "peacemakers".
+        "Christian":{ author: "Matthew", primarySemanticRatio: 0.1 },
         // Buddhist: semanticRatio=0.3 — Pali concepts (dukkha, nirvana, karuna) are often
         // translated indirectly; "compassion" queries need semantic to find "loving-kindness".
         "Buddhist": { author: "Siddhartha Buddha", primarySemanticRatio: 0.3 },
