@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T21:22:16.406Z",
+  "generated": "2026-05-13T21:25:30.912Z",
   "entries": [
+    {
+      "hash": "60bdbb85",
+      "date": "2026-05-13",
+      "type": "Other",
+      "description": "Bilingual quotes display in two-column layout (original",
+      "scope": null
+    },
     {
       "hash": "e073c333",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show frontmatter title on pending document cards",
       "scope": null
-    },
-    {
-      "hash": "d11773cd",
-      "date": "2026-01-17",
-      "type": "Performance",
-      "description": "Add expression indexes for content stats queries",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "60bdbb85",
+        "date": "2026-05-13",
+        "type": "Other",
+        "description": "Bilingual quotes display in two-column layout (original",
+        "scope": null
+      },
       {
         "hash": "e073c333",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Show frontmatter title on pending document cards",
-        "scope": null
-      },
-      {
-        "hash": "d11773cd",
-        "date": "2026-01-17",
-        "type": "Performance",
-        "description": "Add expression indexes for content stats queries",
         "scope": null
       }
     ]
