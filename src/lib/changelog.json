@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:44:36.335Z",
+  "generated": "2026-05-13T02:48:03.560Z",
   "entries": [
+    {
+      "hash": "106e760",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
+      "scope": null
+    },
     {
       "hash": "8a96df4",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Add app_config table migration",
       "scope": null
-    },
-    {
-      "hash": "5ddec03",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add admin AI cost ticker to home page Library status box",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "106e760",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Pure BM25 for Christian primary + extend length limit for 5-tradition replies",
+        "scope": null
+      },
       {
         "hash": "8a96df4",
         "date": "2026-05-12",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Add app_config table migration",
-        "scope": null
-      },
-      {
-        "hash": "5ddec03",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add admin AI cost ticker to home page Library status box",
         "scope": null
       }
     ]
