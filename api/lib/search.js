@@ -579,11 +579,16 @@ export async function hybridSearch(query, options = {}) {
     highlightPostTag,
     showRankingScore: true,
     showMatchesPosition: true,  // Get exact byte positions of matches for sentence extraction
-    matchingStrategy: 'all'  // Require ALL words to match (AND), not just some (OR)
+    matchingStrategy: 'all'
   };
 
   // Add hybrid search if we have a vector
   if (vector) {
+    // Switch to 'last' in hybrid mode: BM25 partial match (some words, not all) plus
+    // semantic handles full-concept precision. 'all' in hybrid mode blocks Matthew 5:7
+    // ("mercy") from "mercy and compassion" queries because Matthew has mercy but not
+    // compassion — causing semantic to surface peacemakers (wrong Beatitude) instead.
+    searchParams.matchingStrategy = 'last';
     searchParams.hybrid = {
       semanticRatio,
       embedder: 'default'

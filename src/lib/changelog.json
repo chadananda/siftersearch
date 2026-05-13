@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T01:41:57.999Z",
+  "generated": "2026-05-13T02:23:41.534Z",
   "entries": [
+    {
+      "hash": "56b375c",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Judaism primary search — drop King David author filter, raise semanticRatio",
+      "scope": null
+    },
     {
       "hash": "d527fe3",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Clarify indexing progress to show 'X of Y tasks indexed'",
       "scope": null
-    },
-    {
-      "hash": "936f4db",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Show actual Meilisearch task progress in indexing indicator",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "56b375c",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Judaism primary search — drop King David author filter, raise semanticRatio",
+        "scope": null
+      },
       {
         "hash": "d527fe3",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Clarify indexing progress to show 'X of Y tasks indexed'",
-        "scope": null
-      },
-      {
-        "hash": "936f4db",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Show actual Meilisearch task progress in indexing indicator",
         "scope": null
       }
     ]

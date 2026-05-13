@@ -720,11 +720,26 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     .replace(/\b(your|my|our|their|his|her)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
-  // Convert leading gerund (ending in -ing) to base verb form:
-  //   3-char stem + vowel+consonant pattern → add 'e' (loving→love, making→make)
-  //   double-vowel stem (seeking, teaching) → keep stem (seek, teach)
-  //   default → strip -ing suffix (helping→help, following→follow)
-  const passageQuery = (_stripped || userMessage.slice(0, 300)).replace(/^(\w{2,})ing\b/i, (match, stem) => {
+  // Morphological simplification — two passes so BM25 matches exact words in scripture:
+  //
+  // Pass 1: -ness suffix → base form (BM25 has no stemmer; "forgiveness" ≠ "forgive")
+  //   forgiveness→forgive, stillness→still, goodness→good, righteousness→righteous
+  //   Avoids stripping theological nouns that ARE their own base (darkness, holiness).
+  //
+  // Pass 2: leading gerund (-ing) → base verb form
+  //   3-char stem + VC ending → add 'e' (loving→love, making→make)
+  //   double-vowel stem → keep stem (seeking→seek, teaching→teach)
+  //   default → strip -ing (helping→help, following→follow)
+  // Theological morphological variants: map abstract nouns to the verb/adjective form
+  // that appears in KJV scripture so BM25 can find the exact words (no stemmer).
+  const NESS_MAP = {
+    forgiveness: 'forgive', goodness: 'good', righteousness: 'righteous',
+    faithfulness: 'faithful', thankfulness: 'thankful',
+  };
+  const _denessed = (_stripped || userMessage.slice(0, 300)).replace(/\b(\w+ness)\b/gi, (m) => {
+    return NESS_MAP[m.toLowerCase()] || m;
+  });
+  const passageQuery = _denessed.replace(/^(\w{2,})ing\b/i, (match, stem) => {
     if (stem.length === 3 && /[aeiou][^aeiou]$/i.test(stem)) return stem + 'e';
     if (/[aeiou]{2}$/i.test(stem)) return stem;
     return stem;
