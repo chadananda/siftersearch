@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:19:55.861Z",
+  "generated": "2026-05-13T16:23:33.127Z",
   "entries": [
+    {
+      "hash": "d595b88",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
+      "scope": null
+    },
     {
       "hash": "fe15303",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
       "scope": null
-    },
-    {
-      "hash": "d295a02",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.791",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "d595b88",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Deep research — correct tradition→religion filter names + re-attach candidate text after rerank",
+        "scope": null
+      },
       {
         "hash": "fe15303",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
-        "scope": null
-      },
-      {
-        "hash": "d295a02",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.791",
         "scope": null
       }
     ]

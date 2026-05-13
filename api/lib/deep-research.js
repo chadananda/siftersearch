@@ -264,41 +264,52 @@ export async function fanOutQueries(angles, search, perAngle = 30) {
 export async function rerankPassages(question, candidates, chat, topN = 50) {
   if (!candidates.length) return [];
 
-  // Build compact passage list for LLM
-  const passages = candidates.slice(0, 200).map((c, i) => ({
+  const BATCH_SIZE = 30; // Keep LLM prompt manageable — ~30 passages ~= 12K chars
+  const passages = candidates.slice(0, 270).map((c, i) => ({
     idx: i,
     id: c.id,
-    text: (c.text || '').slice(0, 400),
+    text: (c.text || '').slice(0, 350),
     author: c.author || '',
     religion: c.religion || c._searchTradition || '',
     authority: c.authority || getAuthority(c),
   }));
 
-  const systemPrompt = `You are an expert in comparative religion. Evaluate passages for direct relevance to a spiritual question. Score 0-10 where 10 = directly answers the question with authoritative doctrine, 0 = unrelated.`;
+  const systemPrompt = `You are an expert in comparative religion. Evaluate passages for direct relevance to a spiritual question. Score 0-10 where 10 = directly answers the question with authoritative doctrine, 0 = unrelated. Return ONLY valid JSON array.`;
 
-  const userPrompt = `Question: "${question}"
+  const allScores = [];
+  for (let start = 0; start < passages.length; start += BATCH_SIZE) {
+    const batch = passages.slice(start, start + BATCH_SIZE);
+    const userPrompt = `Question: "${question}"
 
-Rate each passage 0-10 for relevance to this question. Also write a 1-sentence contextual note explaining HOW this passage addresses the question (or why it doesn't). Return JSON only.
+Rate each passage 0-10 for relevance. Write a 1-sentence note explaining how it addresses the question. JSON only.
 
 Passages:
-${passages.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) ${p.author}: "${p.text}"`).join('\n\n')}
+${batch.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) ${p.author}: "${p.text}"`).join('\n\n')}
 
 Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
 
-  let scores = [];
-  try {
-    const response = await chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ]);
-    const text = response.content?.[0]?.text || response;
-    const json = text.match(/\[[\s\S]*\]/)?.[0];
-    if (json) scores = JSON.parse(json);
-  } catch (err) {
-    logger.warn({ err: err.message }, 'rerankPassages scoring failed');
+    try {
+      const response = await chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]);
+      const text = response.content?.[0]?.text || '';
+      const json = text.match(/\[[\s\S]*\]/)?.[0];
+      if (json) {
+        const parsed = JSON.parse(json);
+        allScores.push(...parsed);
+        logger.debug({ batch: start / BATCH_SIZE, scored: parsed.length, above6: parsed.filter(s => s.score >= 6).length }, 'Rerank batch scored');
+      } else {
+        logger.warn({ batch: start / BATCH_SIZE, textLen: text.length, preview: text.slice(0, 200) }, 'Rerank batch: no JSON array in response');
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, batch: start / BATCH_SIZE }, 'Rerank batch scoring failed');
+    }
   }
 
-  const scoreMap = new Map(scores.map(s => [s.idx, s]));
+  logger.info({ candidates: passages.length, scored: allScores.length, above6: allScores.filter(s => s.score >= 6).length }, 'Rerank complete');
+
+  const scoreMap = new Map(allScores.map(s => [s.idx, s]));
   const ranked = passages
     .map((p, i) => {
       const s = scoreMap.get(i) || { score: 0, note: '' };
