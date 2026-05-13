@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T20:01:19.771Z",
+  "generated": "2026-05-13T20:07:41.269Z",
   "entries": [
+    {
+      "hash": "b3beacf6",
+      "date": "2026-05-13",
+      "type": "Other",
+      "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
+      "scope": null
+    },
     {
       "hash": "2172796a",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "App-wide version checking + library URL routing",
       "scope": null
-    },
-    {
-      "hash": "2e596d12",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Show frontmatter title/author in pending list",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "b3beacf6",
+        "date": "2026-05-13",
+        "type": "Other",
+        "description": "Traditional compact share buttons, quote links, right-aligned source, sort by relevance",
+        "scope": null
+      },
       {
         "hash": "2172796a",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "App-wide version checking + library URL routing",
         "scope": null
-      },
-      {
-        "hash": "2e596d12",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Show frontmatter title/author in pending list",
-        "scope": "library"
       }
     ]
   }

@@ -395,7 +395,7 @@ function buildOLSourceUrl(q: any): string | null {
                             url={quoteUrl}
                             title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
                             quote={excerptText.slice(0, 200)}
-                            compact={true}
+                            dropdown={true}
                           />
                         </div>
                       </div>
@@ -569,9 +569,9 @@ function buildOLSourceUrl(q: any): string | null {
   .aspect-heading { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.75rem; line-height: 1.35; }
   .aspect-summary { font-size: 0.9rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
 
-  /* Quote cards */
+  /* Quote cards — no overflow:hidden so share dropdown can escape the card */
   .quotes-list { display: flex; flex-direction: column; gap: 0.75rem; }
-  .quote-card { border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-1); }
+  .quote-card { border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-1); position: relative; }
 
   .quote-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 9px 9px 0 0; }
   .quote-trad-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.12rem 0.4rem; border-radius: 4px; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
