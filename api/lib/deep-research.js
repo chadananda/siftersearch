@@ -307,7 +307,7 @@ Return JSON array:
  * @param {number} [perAngle=30] - candidates per angle
  * @returns {Promise<Array>} Deduplicated candidate paragraphs
  */
-export async function fanOutQueries(angles, search, perAngle = 25) {
+export async function fanOutQueries(angles, search, perAngle = 35) {
   const seen = new Set();
   const candidates = [];
   // Each angle now has conceptual + vocabulary queries — run both
@@ -402,12 +402,16 @@ Return ONLY valid JSON array.`;
     const batch = passages.slice(start, start + BATCH_SIZE);
     const userPrompt = `Question: "${question}"
 
-Score each passage 0-10 for DIRECT relevance (not thematic proximity). Write a 1-sentence note on exactly how it addresses the question — if it doesn't directly address it, say so. JSON only.
+Score each passage 0-10 for DIRECT relevance (not thematic proximity).
+
+For the "answer" field: write a SHORT phrase (under 12 words) that rephrases what THIS passage says in answer to the question. Write it as the answer itself — not a description of the passage. Example: "Suffering purifies the soul like fire refines gold." If the passage doesn't directly address the question, write "Not directly relevant."
+
+JSON only.
 
 Passages:
 ${batch.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) "${p.title}" — ${p.author}: "${p.text}"`).join('\n\n')}
 
-Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
+Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
 
     try {
       const response = await chat([
@@ -432,8 +436,8 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
 
   const scoreMap = new Map(allScores.map(s => [s.idx, s]));
   const scored = passages.map((p, i) => {
-    const s = scoreMap.get(i) || { score: 0, note: '' };
-    return { ...p, relevance_score: s.score, contextual_note: s.note };
+    const s = scoreMap.get(i) || { score: 0, answer: '' };
+    return { ...p, relevance_score: s.score, contextual_note: s.answer };
   });
 
   // Deduplicate: same quote appearing in multiple publications — keep the most
@@ -456,8 +460,10 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
   const dupeCount = scored.length - deduped.length;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
+  // Take top passages by combined score — min threshold 5 (clearly related),
+  // no hard cap that would cut genuinely relevant passages when library is thin.
   const ranked = deduped
-    .filter(p => p.relevance_score >= 7)
+    .filter(p => p.relevance_score >= 5)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({
@@ -497,8 +503,8 @@ export async function runDeepResearch(researchId, { chat, search }) {
     const angles = await decomposeAngles(record.canonical_question, recon, chat);
     await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ recon, angles }), researchId]);
 
-    // 2. Fan out queries — two queries per tradition, 25 each, min-length filter
-    const candidates = await fanOutQueries(angles, search, 25);
+    // 2. Fan out queries — two queries per tradition, 35 each, min-length filter
+    const candidates = await fanOutQueries(angles, search);
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
@@ -584,7 +590,7 @@ Critical rules:
 1. Frame each aspect as a focused sub-question (e.g. "How does suffering serve as purification?").
 2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
 3. Every assigned quote MUST directly and substantively answer the sub-question — if tangential, set aspect_idx to -1 (exclude). Be strict.
-4. Extract ONLY the most directly relevant 1-2 sentences from each passage. The excerpt must answer the sub-question. Never quote full paragraphs.
+4. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts over brevity — but never quote an entire long paragraph.
 5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
 7. The summary for each aspect synthesizes what the FOUND passages say — acknowledge if only one tradition is represented rather than over-generalizing.
@@ -646,7 +652,8 @@ Return ONLY valid JSON:
           relevance_score: q.relevance_score,
           contextual_note: q.contextual_note,
         };
-      }).filter(q => q.excerpt);
+      }).filter(q => q.excerpt)
+        .sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
 
       const avgRel = quotes.reduce((s, q) => s + (q.relevance_score || 0), 0) / (quotes.length || 1);
       const traditions = [...new Set(quotes.map(q => q.tradition).filter(Boolean))];
