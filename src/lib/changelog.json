@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T21:21:36.645Z",
+  "generated": "2026-05-13T21:22:16.406Z",
   "entries": [
+    {
+      "hash": "e073c333",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Clicking quote opens source book in new tab instead of page anchor",
+      "scope": null
+    },
     {
       "hash": "a1eba8b5",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Add expression indexes for content stats queries",
       "scope": null
-    },
-    {
-      "hash": "58bc8d8f",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.817",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "e073c333",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Clicking quote opens source book in new tab instead of page anchor",
+        "scope": null
+      },
       {
         "hash": "a1eba8b5",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Performance",
         "description": "Add expression indexes for content stats queries",
-        "scope": null
-      },
-      {
-        "hash": "58bc8d8f",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.817",
         "scope": null
       }
     ]

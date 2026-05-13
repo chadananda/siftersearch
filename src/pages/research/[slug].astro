@@ -582,10 +582,11 @@ function buildOLSourceUrl(q: any): string | null {
   .quote-link:hover .bilingual-translation { color: var(--accent); }
   .quote-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); margin: 0; font-style: italic; }
 
-  /* Bilingual quotes: original script above, English translation below */
-  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; }
+  /* Bilingual quotes: original + translation side by side */
+  .bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; align-items: start; }
   .bilingual-original { font-size: 0.92rem; line-height: 1.75; color: var(--text-primary); margin: 0; font-style: italic; }
-  .bilingual-translation { font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); margin: 0; padding-top: 0.35rem; border-top: 1px dashed var(--border-subtle); font-style: italic; }
+  .bilingual-translation { font-size: 0.85rem; line-height: 1.7; color: var(--text-secondary); margin: 0; font-style: italic; padding-left: 1rem; border-left: 2px solid var(--border-subtle); }
+  @media (max-width: 600px) { .bilingual { grid-template-columns: 1fr; } .bilingual-translation { padding-left: 0; border-left: none; border-top: 1px dashed var(--border-subtle); padding-top: 0.5rem; } }
 
   .quote-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.5rem; }
   .quote-source { font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; flex: 1; text-align: right; }
