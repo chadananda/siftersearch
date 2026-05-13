@@ -395,6 +395,8 @@ function buildOLSourceUrl(q: any): string | null {
                             url={quoteUrl}
                             title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
                             quote={excerptText.slice(0, 200)}
+                            sourceTitle={q.source_title || ''}
+                            sourceHref={sourceHref || ''}
                             dropdown={true}
                           />
                         </div>

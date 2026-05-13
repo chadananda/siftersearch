@@ -14,6 +14,8 @@
     title = 'SifterSearch Deep Research',
     description = '',
     quote = '',
+    sourceTitle = '',
+    sourceHref = '',
     compact = false,
     dropdown = false,
     subreddits = ['r/religion', 'r/spirituality', 'r/philosophy', 'r/bahai', 'r/islam', 'r/Christianity', 'r/Judaism', 'r/Buddhism'],
@@ -40,7 +42,10 @@
   }
 
   async function copyLink() {
-    const text = quote ? `${shareText}\n${url}` : url;
+    const ref = sourceTitle
+      ? (sourceHref ? `- [${sourceTitle}](${sourceHref})` : `- ${sourceTitle}`)
+      : url;
+    const text = quote ? `"${quote}"\n   ${ref}` : url;
     try {
       await navigator.clipboard.writeText(text);
       copied = true;
