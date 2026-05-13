@@ -1,26 +1,43 @@
 {
   "slug": "014-predestination-and-free-will",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 55,
-  "teaching_clarity": 70,
-  "evidence_quality": 65,
-  "conversational_naturalness": 70,
-  "believer_voice": 80,
-  "archive_worthy": 65,
-  "overall": 67,
-  "strengths": [
-    "Believer_voice is strong and consistent.",
-    "Clarity in explaining complex topics.",
-    "Conversational_naturalness maintained."
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 60,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 50
+  },
+  "overall": 69,
+  "narrative": "The conversation explores the balance between predestination and free will in Bahá'í writings, with some references to Christianity and Islam. Jafar provides a mix of interpretations and direct quotes, but the conversation lacks depth in primary citations, especially from non-Bahá'í texts. The conversational tone is mostly maintained, though some responses lean towards interpretation rather than direct quoting. Citation integrity is low due to fallback links and lack of deep linking. Overall, the conversation is informative but could benefit from more precise citations and deeper exploration of the topic.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Limited assumption questioning.",
-    "Evidence quality could be improved.",
-    "Stereotype_avoidance needs work."
+  "improvement_plan": "Jafar should focus on providing more direct quotes from primary texts, especially when discussing other religious traditions. Enhancing citation integrity with deep links and ensuring that quoted text is hyperlinked would improve the conversation's reliability and depth.",
+  "roundSummaries": [
+    {
+      "q": "Bahá'í view on predestination and free will",
+      "a": "Affirms both predestination and free will"
+    },
+    {
+      "q": "Request for specific Bahá'í quotes",
+      "a": "Explains balance with Báb's words"
+    },
+    {
+      "q": "Direct quotes from Bahá'í and others",
+      "a": "Provides Báb's quote and others"
+    },
+    {
+      "q": "More on other traditions' views",
+      "a": "Discusses Gospels and Qur'án"
+    },
+    {
+      "q": "Exact passages on free will balance",
+      "a": "Struggles to find specific Gospel quotes"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to question assumptions more deeply and provide diverse evidence.",
-  "elapsedSec": "100.4"
+  "elapsedSec": "89.1"
 }

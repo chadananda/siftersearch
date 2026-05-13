@@ -1,26 +1,43 @@
 {
   "slug": "016-the-greatest-name-metaphysics-of-bah",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 55,
-  "teaching_clarity": 70,
-  "evidence_quality": 50,
-  "conversational_naturalness": 65,
-  "believer_voice": 80,
-  "archive_worthy": 65,
-  "overall": 65,
-  "strengths": [
-    "Believer_voice is strong and consistent.",
-    "Clarity in explaining Bahá'í principles.",
-    "Engages with interfaith dialogue challenges."
+  "scores": {
+    "depth": 65,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 60,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 65,
+    "citation_integrity": 60
+  },
+  "overall": 69,
+  "narrative": "The conversation begins with a strong explanation of the metaphysical significance of the 'Greatest Name' in the Bahá'í Faith, supported by quotes from Shoghi Effendi and Bahá'u'lláh. However, the depth is limited as the conversation does not fully explore the metaphysical significance of divine names in Christianity and Islam, relying instead on commentary rather than primary texts. The conversational tone is mostly maintained, though some responses lean towards a more formal tone. Citation integrity is weakened by the use of fallback links and a lack of direct quotes from the Qur'án and the Bible. Overall, the conversation provides a decent exploration of the topic but could benefit from more direct engagement with primary texts from other traditions.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Limited primary source evidence.",
-    "Assumptions not deeply questioned.",
-    "Stereotypical responses in places."
+  "improvement_plan": "To improve, Jafar should ensure deeper engagement with primary texts from multiple traditions when discussing interfaith topics. Enhancing the retrieval process to access specific passages from the Qur'án and the Bible would strengthen the evidence quality and citation integrity. Additionally, maintaining a consistently conversational tone throughout would enhance realism.",
+  "roundSummaries": [
+    {
+      "q": "Metaphysics of the 'Greatest Name'",
+      "a": "Greatest Name has ontological significance"
+    },
+    {
+      "q": "Comparison with other religious traditions",
+      "a": "Names in Christianity and Islam"
+    },
+    {
+      "q": "Direct passages on metaphysical significance",
+      "a": "Names hold divine reality"
+    },
+    {
+      "q": "Request for primary text passages",
+      "a": "Báb offers insight, not direct quotes"
+    },
+    {
+      "q": "Further request for primary texts",
+      "a": "Báb's insight on divine names"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to provide more primary source evidence and question assumptions more deeply.",
-  "elapsedSec": "98.9"
+  "elapsedSec": "85.2"
 }

@@ -1,26 +1,43 @@
 {
   "slug": "019-how-the-bah-faith-reads-christian-symbols",
-  "depth": 70,
-  "clarity": 65,
-  "stereotype_avoidance": 60,
-  "word_definition_questioning": 55,
-  "assumption_questioning": 50,
-  "teaching_clarity": 60,
-  "evidence_quality": 55,
-  "conversational_naturalness": 60,
-  "believer_voice": 70,
-  "archive_worthy": 60,
-  "overall": 60,
-  "strengths": [
-    "Emphasizes unity and interconnectedness",
-    "Respects Christian beliefs",
-    "Focuses on shared spiritual values"
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 72.22222222222223,
+  "narrative": "The conversation provides a decent exploration of Bahá'u'lláh's interpretation of Christian symbols, with a focus on spiritual meanings over physical events. Jafar maintains doctrinal fidelity by referencing Bahá'í texts and the Qur'án, though the citations lack deep linking, affecting citation integrity. The dialogue is mostly conversational, though some responses lean towards formal explanations. The conversation could benefit from deeper engagement with the user's questions, particularly regarding the reasoning behind Bahá'u'lláh's interpretations.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Lacks specific textual references",
-    "Limited engagement with historical context",
-    "Repetitive explanations"
+  "improvement_plan": "Enhance citation integrity by ensuring all quotes are hyperlinked directly to paragraph-level sources. Encourage Jafar to engage more deeply with user questions by providing more context and reasoning behind doctrinal interpretations, rather than just stating them.",
+  "roundSummaries": [
+    {
+      "q": "Bahá'í interpretation of Christian symbols",
+      "a": "Spiritual over physical interpretation"
+    },
+    {
+      "q": "Where does Bahá'u'lláh discuss these?",
+      "a": "Suratu'l-Nus'h and Gospel comparison"
+    },
+    {
+      "q": "Why spiritual interpretation over physical?",
+      "a": "Emphasizes transformative power"
+    },
+    {
+      "q": "Qur'án's view on crucifixion?",
+      "a": "Jesus not crucified, spiritual focus"
+    },
+    {
+      "q": "Purpose of spiritual emphasis?",
+      "a": "Highlighting transformative teachings"
+    }
   ],
-  "prompt_signal": "Include more specific textual references and engage deeper with historical context.",
-  "elapsedSec": "87.7"
+  "elapsedSec": "45.0"
 }

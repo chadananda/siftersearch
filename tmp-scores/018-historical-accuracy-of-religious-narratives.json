@@ -1,26 +1,44 @@
 {
   "slug": "018-historical-accuracy-of-religious-narratives",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 55,
-  "teaching_clarity": 70,
-  "evidence_quality": 65,
-  "conversational_naturalness": 60,
-  "believer_voice": 80,
-  "archive_worthy": 65,
-  "overall": 66,
-  "strengths": [
-    "Believer_voice is strong and consistent.",
-    "Clarity in explaining Bahá'í principles.",
-    "Depth in exploring consultation and unity."
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 72,
+  "narrative": "The conversation provides a decent exploration of the Bahá'í perspective on religious narratives, emphasizing spiritual truths over literal details. Jafar maintains doctrinal fidelity by referencing Bahá'u'lláh's writings, though the conversation could benefit from deeper engagement with specific texts. The conversational tone is mostly maintained, but there are moments where responses feel slightly formal. Citation integrity is weakened by the use of fallback links and lack of inline hyperlinking for quoted text. Overall, the conversation is informative but could improve in citation depth and conversational flow.",
+  "flags": [
+    "fallback-link-only",
+    "unlinked-inline-quote"
   ],
-  "weaknesses": [
-    "Limited questioning of assumptions.",
-    "Lacks specific historical examples.",
-    "Conversational flow feels somewhat scripted."
+  "improvement_plan": "Enhance the citation process to ensure deep linking and inline hyperlinking of quoted text. Encourage Jafar to engage more deeply with specific primary texts to provide a richer exploration of the topic. Maintain a conversational tone while ensuring responses are concise and directly address the user's queries.",
+  "roundSummaries": [
+    {
+      "q": "Bahá'í view on religious narratives",
+      "a": "Spiritual truths over literal details"
+    },
+    {
+      "q": "Bahá'u'lláh on historical vs allegorical",
+      "a": "Balance between spiritual and literal"
+    },
+    {
+      "q": "Other traditions on narrative interpretation",
+      "a": "Gospels and Qur'án offer layered meanings"
+    },
+    {
+      "q": "Primary texts on historical facts",
+      "a": "Focus on lessons, not explicit facts"
+    },
+    {
+      "q": "Direct statements on literal vs metaphor",
+      "a": "No explicit statements in texts"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to provide more specific historical examples and question assumptions more deeply.",
-  "elapsedSec": "71.7"
+  "elapsedSec": "70.4"
 }

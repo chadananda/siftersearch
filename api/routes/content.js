@@ -514,7 +514,7 @@ export default async function contentRoutes(fastify) {
       b.featured ? 1 : 0,
       rounds.length,
       roundTitlesJson,
-      null, // assessment_json — not generated here
+      b.assessment ? JSON.stringify(b.assessment) : null,
       '[]', // rounds_json legacy
       body_md,
       b.status || 'published',

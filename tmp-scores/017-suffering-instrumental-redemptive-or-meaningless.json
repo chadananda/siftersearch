@@ -1,26 +1,44 @@
 {
   "slug": "017-suffering-instrumental-redemptive-or-meaningless",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 55,
-  "teaching_clarity": 70,
-  "evidence_quality": 65,
-  "conversational_naturalness": 60,
-  "believer_voice": 75,
-  "archive_worthy": 65,
-  "overall": 66,
-  "strengths": [
-    "Emphasizes virtues like patience and resilience",
-    "Provides historical context and examples",
-    "Balances spiritual and practical aspects"
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 71,
+  "narrative": "The conversation provides a decent exploration of suffering across Bahá'í, Christian, and Islamic perspectives. Jafar offers a balanced view, though some responses lack depth, particularly in rounds 2 and 3 where specific scriptural references are requested but not fully delivered. Citation integrity is weak, with fallback links and some quotes not hyperlinked. The conversation maintains a mostly conversational tone, though some responses verge on being essay-like. Overall, the exchange is informative but could benefit from more precise citations and deeper engagement with the user's questions.",
+  "flags": [
+    "fallback-link-only",
+    "unlinked-inline-quote"
   ],
-  "weaknesses": [
-    "Lacks deep questioning of assumptions",
-    "Limited exploration of word meanings",
-    "Responses sometimes feel scripted"
+  "improvement_plan": "Enhance Jafar's ability to provide paragraph-level deep links for citations and ensure inline quotes are hyperlinked. Encourage more detailed engagement with user queries, especially when specific scriptural references are requested, to improve depth and evidence quality.",
+  "roundSummaries": [
+    {
+      "q": "Bahá'í view on suffering",
+      "a": "Suffering aids soul development"
+    },
+    {
+      "q": "Christian and Islamic views on suffering",
+      "a": "Suffering as redemptive and a test"
+    },
+    {
+      "q": "Request for specific scriptural references",
+      "a": "Gospels and Qur'án on suffering"
+    },
+    {
+      "q": "Clarification on scriptural interpretations",
+      "a": "Suffering as spiritual growth"
+    },
+    {
+      "q": "Bahá'í and Christian suffering explained",
+      "a": "Reflecting attributes and unique redemption"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to question assumptions and explore word meanings more deeply.",
-  "elapsedSec": "82.4"
+  "elapsedSec": "65.6"
 }

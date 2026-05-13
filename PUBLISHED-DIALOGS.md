@@ -1,3 +1,4 @@
+008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=78% - REGENERATED 2026-05-13 with 5-tradition interfaith search + smart-quotes - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/
 001 - Warnings about the Left, but not the Right - https://siftersearch.com/dialog/001-left-right-warnings - 2026-04-28T04:20:50Z
 002 - Women, the UHJ - https://siftersearch.com/dialog/002-women-uhj - 2026-04-28T04:24:01Z
 002 - Women, the UHJ - https://siftersearch.com/dialog/002-women-uhj - 2026-04-28T04:24:22Z

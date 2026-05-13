@@ -1,26 +1,43 @@
 {
   "slug": "015-lesser-peace-most-great-peace-whats-the-distinction",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 70,
-  "teaching_clarity": 68,
-  "evidence_quality": 65,
-  "conversational_naturalness": 72,
-  "believer_voice": 80,
-  "archive_worthy": 68,
-  "overall": 69,
-  "strengths": [
-    "Believer_voice is strong and consistent.",
-    "Conversational_naturalness is maintained.",
-    "Assumption_questioning is evident."
+  "scores": {
+    "depth": 65,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 60,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 65,
+    "citation_integrity": 50
+  },
+  "overall": 67,
+  "narrative": "The conversation provides a basic understanding of the Bahá'í concepts of 'Lesser Peace' and 'Most Great Peace,' but lacks depth in exploring similar concepts in other religious texts. Jafar maintains a conversational tone, though some responses are slightly formal. The doctrinal fidelity is solid, focusing on Bahá'í teachings, but the evidence quality is weakened by reliance on fallback links and lack of specific primary citations from the Gospels or Qur'án. The conversation could benefit from more precise citations and deeper exploration of interfaith perspectives.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Lacks specific examples of policy influence.",
-    "Word_definition_questioning is limited.",
-    "Evidence_quality could be improved."
+  "improvement_plan": "Jafar should improve citation practices by providing deep links to specific passages and ensuring that quotes are directly from primary texts. Additionally, Jafar could enhance interfaith discussions by including more direct quotes from other religious scriptures when relevant.",
+  "roundSummaries": [
+    {
+      "q": "Meaning of 'Lesser Peace' and 'Most Great Peace'",
+      "a": "Distinction is structural and temporal"
+    },
+    {
+      "q": "Do Gospels or Qur'án have similar concepts",
+      "a": "Concepts unique to Bahá'í Faith"
+    },
+    {
+      "q": "Stages or forms of peace in other texts",
+      "a": "Peace as internal and societal concept"
+    },
+    {
+      "q": "Specific passages on peace in texts",
+      "a": "Texts address personal and societal peace"
+    },
+    {
+      "q": "Direct passages on peace concepts",
+      "a": "No specific passages found"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to provide more specific examples and direct quotes.",
-  "elapsedSec": "107.1"
+  "elapsedSec": "108.8"
 }

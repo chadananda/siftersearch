@@ -1,26 +1,43 @@
 {
   "slug": "009-the-infallibility-of-the-uhj-what-kind",
-  "depth": 70,
-  "clarity": 65,
-  "stereotype_avoidance": 60,
-  "word_definition_questioning": 55,
-  "assumption_questioning": 50,
-  "teaching_clarity": 60,
-  "evidence_quality": 50,
-  "conversational_naturalness": 55,
-  "believer_voice": 70,
-  "archive_worthy": 60,
-  "overall": 59,
-  "strengths": [
-    "Explains dynamic infallibility well",
-    "Emphasizes consultation process",
-    "Maintains believer's perspective"
+  "scores": {
+    "depth": 70,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 72,
+  "narrative": "The conversation provides a clear distinction between the infallibility of Bahá'u'lláh and the Universal House of Justice, with Jafar explaining the concept using references to Bahá'í texts. However, the citations are not deeply linked, and some responses rely on interpretations by 'Abdu'l-Bahá and Shoghi Effendi without direct quotes from Bahá'u'lláh's writings. The dialogue maintains a conversational tone, though it occasionally leans towards formality. The conversation is informative but could benefit from more direct primary citations and deeper exploration of the topic.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Lacks specific historical examples",
-    "Limited questioning of assumptions",
-    "Some responses are repetitive"
+  "improvement_plan": "Enhance the citation process to ensure deep linking to specific paragraphs in primary texts. Encourage Jafar to use more direct quotes from Bahá'u'lláh's writings when discussing doctrinal points, and maintain a balance between primary and interpretative sources.",
+  "roundSummaries": [
+    {
+      "q": "What is the infallibility distinction",
+      "a": "Infallibility in decision-making role"
+    },
+    {
+      "q": "Where is divine guidance mentioned",
+      "a": "Guidance affirmed by 'Abdu'l-Bahá"
+    },
+    {
+      "q": "Bahá'u'lláh's words on infallibility",
+      "a": "Bahá'u'lláh's unique infallibility"
+    },
+    {
+      "q": "Direct reference to House's infallibility",
+      "a": "Not directly in Bahá'u'lláh's texts"
+    },
+    {
+      "q": "Reconciliation of infallibility claims",
+      "a": "Unique claim and guided decisions"
+    }
   ],
-  "prompt_signal": "Incorporate specific historical examples to illustrate points more vividly.",
-  "elapsedSec": "84.1"
+  "elapsedSec": "59.9"
 }

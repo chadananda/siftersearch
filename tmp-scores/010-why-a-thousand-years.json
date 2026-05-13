@@ -1,26 +1,43 @@
 {
   "slug": "010-why-a-thousand-years",
-  "depth": 70,
-  "clarity": 65,
-  "stereotype_avoidance": 60,
-  "word_definition_questioning": 55,
-  "assumption_questioning": 50,
-  "teaching_clarity": 60,
-  "evidence_quality": 55,
-  "conversational_naturalness": 65,
-  "believer_voice": 70,
-  "archive_worthy": 60,
-  "overall": 61,
-  "strengths": [
-    "Explores balance between unity and diversity",
-    "Discusses role of Universal House of Justice",
-    "Addresses consultation process"
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 80,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 80,
+    "evidence_quality": 70,
+    "brevity_discipline": 80,
+    "correction_courage": 75,
+    "archive_worthy": 75,
+    "citation_integrity": 60
+  },
+  "overall": 74,
+  "narrative": "The conversation maintains a good level of depth, exploring the concept of the 1,000-year Bahá'í dispensation through multiple rounds. Jafar provides a mix of primary and secondary sources, though some citations lack paragraph-level depth, impacting citation integrity. The dialogue remains conversational and realistic, with Jafar effectively addressing the user's queries. Doctrinal fidelity is strong, with references to Shoghi Effendi and the Báb, though the evidence quality could be improved by more frequent use of primary quotes. Overall, the conversation is informative and archive-worthy with minor areas for improvement.",
+  "flags": [
+    "fallback-link-only"
   ],
-  "weaknesses": [
-    "Lacks specific examples of minority influence",
-    "Limited primary source references",
-    "Insufficient questioning of assumptions"
+  "improvement_plan": "Enhance citation integrity by ensuring all quotes are hyperlinked directly to paragraph-level sources. Increase the use of primary quotes to strengthen evidence quality. Maintain the conversational tone while ensuring doctrinal claims are consistently supported by primary texts.",
+  "roundSummaries": [
+    {
+      "q": "Why Bahá'í dispensation lasts 1,000 years",
+      "a": "1,000 years reflects divine plan"
+    },
+    {
+      "q": "Is 1,000 a complete cycle",
+      "a": "No direct scriptural statement found"
+    },
+    {
+      "q": "Primary sources on 1,000-year period",
+      "a": "Shoghi Effendi and Báb mention it"
+    },
+    {
+      "q": "Symbolic time periods in scriptures",
+      "a": "Qur'án and Bible use symbolic numbers"
+    },
+    {
+      "q": "Emphasis on 1,000 years' relevance",
+      "a": "Ensures enduring Bahá'í teachings"
+    }
   ],
-  "prompt_signal": "Encourage Jafar to provide more specific examples and primary sources.",
-  "elapsedSec": "92.5"
+  "elapsedSec": "47.6"
 }

@@ -1,18 +1,43 @@
 {
   "slug": "007-progressive-revelation-teleological-or-cyclical",
   "scores": {
-    "depth": 85,
-    "conversational_realism": 80,
-    "doctrinal_fidelity": 90,
-    "period_word_discipline": 80,
-    "evidence_quality": 90,
-    "brevity_discipline": 80,
-    "correction_courage": 85,
-    "archive_worthy": 85
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
   },
-  "overall": 84,
-  "narrative": "The conversation effectively explores the Bahá'í concept of progressive revelation, balancing the teleological and cyclical aspects. Jafar provides primary quotes from Bahá'u'lláh, particularly from *Gleanings* and *Kitáb-i-Íqán*, to substantiate claims, demonstrating strong doctrinal fidelity and evidence quality. The dialogue maintains a conversational tone, with Jafar addressing the user's requests for more specific quotations. The interaction is concise, with most responses being brief and to the point. Jafar also corrects the user's interpretation gracefully, enhancing the conversation's depth and correction courage.",
-  "flags": [],
-  "improvement_plan": "To enhance future interactions, Jafar could further refine the balance between providing detailed explanations and maintaining brevity. Additionally, ensuring that all responses consistently open with a primary quote could further solidify evidence quality and doctrinal fidelity.",
-  "elapsedSec": "74.2"
+  "overall": 71,
+  "narrative": "The conversation explores the Bahá'í concept of 'progressive revelation' with a focus on both teleological and cyclical elements. Jafar provides a balanced view, citing Bahá'í texts and comparing them with the Gospels and the Qur’án. However, citation integrity is weak, with most links using fallback formats and some inline quotes not hyperlinked. The conversation maintains a mostly conversational tone, though some responses are slightly formal. Depth is decent, but opportunities to delve deeper into specific examples from the Gospels and Qur’án were missed.",
+  "flags": [
+    "fallback-link-only"
+  ],
+  "improvement_plan": "Enhance citation integrity by ensuring all quotes are hyperlinked directly to the specific text locations. Encourage deeper exploration of comparative religious themes by providing more specific examples from primary texts of other traditions when asked.",
+  "roundSummaries": [
+    {
+      "q": "Is Bahá'í revelation teleological or cyclical",
+      "a": "Both teleological and cyclical elements"
+    },
+    {
+      "q": "Show Bahá'u'lláh's primary text examples",
+      "a": "Emphasizes teleological progression"
+    },
+    {
+      "q": "Clarify Bahá'u'lláh's teleological claims",
+      "a": "Both teleological and cyclical elements"
+    },
+    {
+      "q": "Examples of cyclical renewal in texts",
+      "a": "Cyclical renewal in Qur'án and Gospels"
+    },
+    {
+      "q": "Cycles as repetition or transformation",
+      "a": "Cycles as repetition and transformation"
+    }
+  ],
+  "elapsedSec": "109.4"
 }

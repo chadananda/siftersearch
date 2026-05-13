@@ -1,26 +1,44 @@
 {
   "slug": "011-backbiting-vs-honest-criticism",
-  "depth": 70,
-  "clarity": 75,
-  "stereotype_avoidance": 65,
-  "word_definition_questioning": 60,
-  "assumption_questioning": 55,
-  "teaching_clarity": 70,
-  "evidence_quality": 50,
-  "conversational_naturalness": 65,
-  "believer_voice": 80,
-  "archive_worthy": 60,
-  "overall": 65,
-  "strengths": [
-    "Believer_voice is strong and consistent.",
-    "Clarity in explaining principles and processes.",
-    "Emphasis on consultation and adaptability."
+  "scores": {
+    "depth": 75,
+    "conversational_realism": 70,
+    "doctrinal_fidelity": 80,
+    "period_word_discipline": 70,
+    "evidence_quality": 70,
+    "brevity_discipline": 70,
+    "correction_courage": 75,
+    "archive_worthy": 70,
+    "citation_integrity": 60
+  },
+  "overall": 71,
+  "narrative": "The conversation provides a balanced exploration of the topic, with Jafar addressing both Bahá'í and other religious perspectives on criticism and backbiting. The depth is decent, with Jafar building on the user's questions, though some responses remain surface-level. Citation integrity is weak due to fallback links and lack of inline hyperlinking. The conversation maintains a mostly conversational tone, though some replies verge on formal. Doctrinal fidelity is strong, with appropriate references to primary texts. Overall, the conversation is informative but could benefit from improved citation practices and more concise responses.",
+  "flags": [
+    "fallback-link-only",
+    "unlinked-inline-quote"
   ],
-  "weaknesses": [
-    "Lacks specific examples or quotes.",
-    "Limited questioning of assumptions.",
-    "Could better define key terms."
+  "improvement_plan": "Enhance citation practices by ensuring all quotes are hyperlinked directly within the text and use deep links. Encourage more concise responses to maintain conversational flow and avoid formal tones. Focus on providing more primary quotes to support claims, especially when discussing doctrinal points.",
+  "roundSummaries": [
+    {
+      "q": "Is criticism of power backbiting",
+      "a": "Criticism differs from backbiting"
+    },
+    {
+      "q": "Other scriptures on criticism",
+      "a": "Gospels and Qur'án on criticism"
+    },
+    {
+      "q": "Constructive criticism in scriptures",
+      "a": "Gentle approach advised"
+    },
+    {
+      "q": "Specific teachings on constructive criticism",
+      "a": "Private correction emphasized"
+    },
+    {
+      "q": "Public criticism of leaders",
+      "a": "Nuanced guidance for public critique"
+    }
   ],
-  "prompt_signal": "Incorporate more specific examples and quotes to enhance depth and evidence quality.",
-  "elapsedSec": "70.1"
+  "elapsedSec": "67.7"
 }
