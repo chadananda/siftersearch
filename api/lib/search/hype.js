@@ -109,7 +109,7 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
   // past its PM2 memory cap. With the hint: <200ms on 4M rows.
   const rows = await queryAll(`
     SELECT c.id AS paragraph_id, c.doc_id, c.hyp_questions, c.hyp_thesis,
-           d.religion, d.collection, d.encumbered, d.title, d.author
+           c.para_meta, d.religion, d.collection, d.encumbered, d.title, d.author
     FROM content c INDEXED BY idx_content_hype_to_sync
     JOIN docs d ON d.id = c.doc_id
     WHERE c.enhanced_synced = 0
@@ -135,9 +135,24 @@ export async function syncHypeBatch({ getMeili, INDEXES }, { queryAll, query, ge
     const questions = parseStoredHypQuestions(row.hyp_questions);
     const thesis = (row.hyp_thesis || '').trim();
     if (questions.length === 0 && !thesis) continue;
+
+    // Skip pure citation/attribution lines — they're search noise and should
+    // not generate HyPE question records in the index.
+    let paraMeta = null;
+    if (row.para_meta) {
+      try { paraMeta = JSON.parse(row.para_meta); } catch { /* ignore */ }
+    }
+    if (paraMeta?.is_attribution_line) {
+      sourceParagraphIds.push(row.paragraph_id); // mark synced so we don't re-visit
+      continue;
+    }
+
     sourceParagraphIds.push(row.paragraph_id);
+    // Use para_meta.author (compilation-level attribution) over doc-level author
+    // so authority scoring reflects the actual quoted author, not the compiler.
+    const effectiveAuthor = paraMeta?.author || row.author;
     let authority = 0;
-    try { authority = getAuthority ? getAuthority({ author: row.author, title: row.title }) : 0; }
+    try { authority = getAuthority ? getAuthority({ author: effectiveAuthor, title: row.title }) : 0; }
     catch { authority = 0; }
     if (thesis) {
       records.push({

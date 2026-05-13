@@ -25,6 +25,7 @@ import { config } from './config.js';
 import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
 import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
+import { queryAll } from './db.js';
 
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
@@ -1018,6 +1019,38 @@ export async function deterministicResearch({ entities, userMessage, messages, s
       const readMatched = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && matchesKeyword(q));
       const readRest = filteredForCrafter.filter(q => !SEARCH_VIAS.has(q.via) && !matchesKeyword(q));
       trimmed = [...otherPassages, ...readMatched, ...readRest].slice(0, MAX_QUOTES);
+    }
+  }
+
+  // Hydrate para_meta attribution for quotes that have doc_id + paragraph_index.
+  // Compilations (e.g. Lights of Guidance) have doc-level author = compiler, but
+  // para_meta.author holds the actual quoted author (Shoghi Effendi, Bahá'u'lláh, etc.).
+  // This replaces source_author for any quote where para_meta resolves a better author.
+  const quotesWithParaId = trimmed.filter(q => q.doc_id && q.paragraph_index != null);
+  if (quotesWithParaId.length > 0) {
+    try {
+      const placeholders = quotesWithParaId.map(() => '(?,?)').join(',');
+      const vals = quotesWithParaId.flatMap(q => [q.doc_id, q.paragraph_index]);
+      const metaRows = await queryAll(
+        `SELECT doc_id, paragraph_index, para_meta FROM content WHERE (doc_id, paragraph_index) IN (VALUES ${placeholders}) AND deleted_at IS NULL`,
+        vals
+      );
+      const metaByKey = new Map(metaRows.map(r => [`${r.doc_id}:${r.paragraph_index}`, r.para_meta]));
+      for (const q of trimmed) {
+        const key = `${q.doc_id}:${q.paragraph_index}`;
+        const raw = metaByKey.get(key);
+        if (!raw) continue;
+        try {
+          const meta = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (meta.is_attribution_line) continue; // skip citation-only paragraphs
+          if (meta.author) q.source_author = meta.author;
+          if (meta.source_title) q.para_source_title = meta.source_title;
+          if (meta.source_type) q.para_source_type = meta.source_type;
+          if (meta.source_date) q.para_source_date = meta.source_date;
+        } catch { /* malformed JSON — skip */ }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'para_meta hydration failed — skipping');
     }
   }
 

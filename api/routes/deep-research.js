@@ -13,12 +13,15 @@
 
 import { requireInternal } from '../lib/auth.js';
 import { queryOne, queryAll, query } from '../lib/db.js';
+import { extractDocAttribution, batchExtractAttribution, getPendingAttributionDocs } from '../lib/para-attribution.js';
 import { logger } from '../lib/logger.js';
 import {
   checkDeepResearch,
   recordQuestionHit,
   getDeepResearchQuotes,
-  syncDeepResearchToMeili,
+  getDeepResearchBySlug,
+  addNotifyEmail,
+  syncDeepResearch,
 } from '../lib/deep-research.js';
 
 export default async function deepResearchRoutes(fastify) {
@@ -32,12 +35,30 @@ export default async function deepResearchRoutes(fastify) {
     return { records: rows, count: rows.length };
   });
 
-  // Single record with quotes (public)
-  fastify.get('/deep-research/:id', async (req, reply) => {
+  // Single record by ID with quotes (public)
+  fastify.get('/deep-research/id/:id', async (req, reply) => {
     const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [req.params.id]);
     if (!record) return reply.code(404).send({ error: 'Not found' });
     const quotes = await getDeepResearchQuotes(record.id);
     return { ...record, quotes };
+  });
+
+  // Single record by slug with quotes (public — used by research pages)
+  fastify.get('/deep-research/slug/:slug', async (req, reply) => {
+    const result = await getDeepResearchBySlug(req.params.slug);
+    if (!result) return reply.code(404).send({ error: 'Not found' });
+    return { ...result.record, quotes: result.quotes };
+  });
+
+  // Email notification signup for pending research (public)
+  fastify.post('/deep-research/:id/notify', async (req, reply) => {
+    const { email } = req.body || {};
+    if (!email?.includes('@')) return reply.code(400).send({ error: 'Valid email required' });
+    const record = await queryOne('SELECT id, status FROM deep_research WHERE id = ?', [req.params.id]);
+    if (!record) return reply.code(404).send({ error: 'Not found' });
+    if (record.status === 'complete') return { already_done: true, message: 'Research is already complete.' };
+    await addNotifyEmail(record.id, email);
+    return { success: true, message: 'You\'ll be notified when research completes.' };
   });
 
   // Check if deep research exists for a question (public, used by chat UI)
@@ -84,7 +105,7 @@ export default async function deepResearchRoutes(fastify) {
       'UPDATE deep_research SET priority = COALESCE(?, priority), topic_tags = COALESCE(?, topic_tags), question_type = COALESCE(?, question_type), reviewed_by = COALESCE(?, reviewed_by), reviewed_at = ? WHERE id = ?',
       [priority, topic_tags ? JSON.stringify(topic_tags) : null, question_type, reviewed_by, reviewed_by ? new Date().toISOString() : record.reviewed_at, record.id]
     );
-    if (record.status === 'complete') await syncDeepResearchToMeili([record.id]);
+    if (record.status === 'complete') await syncDeepResearch([record.id]);
     return { success: true };
   });
 
@@ -99,17 +120,103 @@ export default async function deepResearchRoutes(fastify) {
     return { success: true };
   });
 
-  // Requeue (admin)
+  // Requeue for full regeneration (admin)
   fastify.post('/admin/deep-research/:id/requeue', { preHandler: [requireInternal] }, async (req, reply) => {
     const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [req.params.id]);
     if (!record) return reply.code(404).send({ error: 'Not found' });
     const priority = req.body?.priority || record.priority;
-    await query("UPDATE deep_research SET status = 'queued', error = NULL, worker_id = NULL WHERE id = ?", [record.id]);
-    const existing = await queryOne("SELECT id FROM deep_research_queue WHERE research_id = ? AND status = 'pending'", [record.id]);
-    if (!existing) {
-      await query('INSERT INTO deep_research_queue (research_id, job_type, status, priority, created_at) VALUES (?, ?, ?, ?, ?)',
-        [record.id, 'research', 'pending', priority, new Date().toISOString()]);
+    const clearQuotes = req.body?.clear_quotes !== false; // default: clear old quotes
+    if (clearQuotes) {
+      await query('DELETE FROM deep_research_quotes WHERE research_id = ?', [record.id]);
+      await query('UPDATE deep_research SET total_selected = 0, total_candidates = 0, sections_json = NULL, summary_json = NULL, convergence_json = NULL WHERE id = ?', [record.id]);
     }
-    return { success: true, id: record.id };
+    await query("UPDATE deep_research SET status = 'queued', error = NULL, worker_id = NULL, heartbeat_at = NULL WHERE id = ?", [record.id]);
+    await query('DELETE FROM deep_research_queue WHERE research_id = ? AND status = ?', [record.id, 'pending']);
+    await query('INSERT INTO deep_research_queue (research_id, job_type, status, priority, created_at) VALUES (?, ?, ?, ?, ?)',
+      [record.id, 'research', 'pending', priority, new Date().toISOString()]);
+    logger.info({ researchId: record.id, clearQuotes }, 'Deep research requeued for regeneration');
+    return { success: true, id: record.id, status: 'queued' };
+  });
+
+  // Patch content directly (admin — for manual editorial improvements)
+  fastify.patch('/admin/deep-research/:id/content', { preHandler: [requireInternal] }, async (req, reply) => {
+    const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [req.params.id]);
+    if (!record) return reply.code(404).send({ error: 'Not found' });
+    const { summary_json, convergence_json, sections_json, qa_json, topic_tags, question_type, canonical_question, slug } = req.body || {};
+    const updates = [];
+    const params = [];
+    if (summary_json !== undefined) { updates.push('summary_json = ?'); params.push(JSON.stringify(summary_json)); }
+    if (convergence_json !== undefined) { updates.push('convergence_json = ?'); params.push(JSON.stringify(convergence_json)); }
+    if (sections_json !== undefined) { updates.push('sections_json = ?'); params.push(JSON.stringify(sections_json)); }
+    if (qa_json !== undefined) { updates.push('qa_json = ?'); params.push(JSON.stringify(qa_json)); }
+    if (topic_tags !== undefined) { updates.push('topic_tags = ?'); params.push(JSON.stringify(topic_tags)); }
+    if (question_type !== undefined) { updates.push('question_type = ?'); params.push(question_type); }
+    if (canonical_question) { updates.push('canonical_question = ?'); params.push(canonical_question); }
+    if (slug) { updates.push('slug = ?'); params.push(slug); }
+    if (!updates.length) return reply.code(400).send({ error: 'No fields to update' });
+    updates.push('reviewed_at = ?'); params.push(new Date().toISOString());
+    params.push(record.id);
+    await query(`UPDATE deep_research SET ${updates.join(', ')} WHERE id = ?`, params);
+    if (record.status === 'complete') await syncDeepResearch([record.id]);
+    return { success: true };
+  });
+
+  // Add a single curated quote to a research record (admin editorial)
+  fastify.post('/admin/deep-research/:id/quotes', { preHandler: [requireInternal] }, async (req, reply) => {
+    const { para_id, contextual_note, rank } = req.body || {};
+    if (!para_id) return reply.code(400).send({ error: 'para_id required' });
+    const record = await queryOne('SELECT id FROM deep_research WHERE id = ?', [req.params.id]);
+    if (!record) return reply.code(404).send({ error: 'Not found' });
+    const maxRank = await queryOne('SELECT MAX(rank) as m FROM deep_research_quotes WHERE research_id = ?', [record.id]);
+    await query(
+      'INSERT OR REPLACE INTO deep_research_quotes (research_id, para_id, contextual_note, rank, created_at) VALUES (?, ?, ?, ?, ?)',
+      [record.id, para_id, contextual_note, rank ?? (maxRank?.m ?? 0) + 1, new Date().toISOString()]
+    );
+    return { success: true };
+  });
+
+  // Remove a quote from a research record (admin editorial)
+  fastify.delete('/admin/deep-research/:id/quotes/:quoteId', { preHandler: [requireInternal] }, async (req, reply) => {
+    await query('DELETE FROM deep_research_quotes WHERE id = ? AND research_id = ?', [req.params.quoteId, req.params.id]);
+    return { success: true };
+  });
+
+  // ── Para attribution admin endpoints ────────────────────────────────────────
+
+  // Extract para_meta attribution for a single doc (admin)
+  fastify.post('/admin/attribution/:docId', { preHandler: [requireInternal] }, async (req, reply) => {
+    const docId = Number(req.params.docId);
+    const { force = false } = req.body || {};
+    const result = await extractDocAttribution(docId, { force });
+    return result;
+  });
+
+  // Batch extract attribution for pending docs (admin)
+  fastify.post('/admin/attribution/batch', { preHandler: [requireInternal] }, async (req, reply) => {
+    const { limit = 20, force = false } = req.body || {};
+    const results = await batchExtractAttribution({ limit, force });
+    return { processed: results.length, results };
+  });
+
+  // List docs still needing attribution extraction (admin)
+  fastify.get('/admin/attribution/pending', { preHandler: [requireInternal] }, async (req) => {
+    const { limit = 50 } = req.query;
+    const docs = await getPendingAttributionDocs({ limit: Number(limit) });
+    return { count: docs.length, docs };
+  });
+
+  // Attribution coverage stats (admin)
+  fastify.get('/admin/attribution/stats', { preHandler: [requireInternal] }, async () => {
+    const [total, done, attributionLines] = await Promise.all([
+      queryOne('SELECT COUNT(*) as n FROM content WHERE deleted_at IS NULL'),
+      queryOne("SELECT COUNT(*) as n FROM content WHERE deleted_at IS NULL AND para_meta IS NOT NULL"),
+      queryOne("SELECT COUNT(*) as n FROM content WHERE deleted_at IS NULL AND json_extract(para_meta, '$.is_attribution_line') = 1"),
+    ]);
+    return {
+      total: total?.n || 0,
+      processed: done?.n || 0,
+      pending: (total?.n || 0) - (done?.n || 0),
+      attribution_lines_found: attributionLines?.n || 0,
+    };
   });
 }

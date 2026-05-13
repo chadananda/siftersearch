@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T14:47:06.079Z",
+  "generated": "2026-05-13T15:50:12.365Z",
   "entries": [
+    {
+      "hash": "be99e22",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Deep Research system — pre-computed authoritative passage sets per question",
+      "scope": null
+    },
     {
       "hash": "ca34200",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add oversized paragraphs management",
       "scope": "admin"
-    },
-    {
-      "hash": "a242592",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Skip oversized content, add pipeline status",
-      "scope": "embedding-worker"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "be99e22",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Deep Research system — pre-computed authoritative passage sets per question",
+        "scope": null
+      },
       {
         "hash": "ca34200",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "Add oversized paragraphs management",
         "scope": "admin"
-      },
-      {
-        "hash": "a242592",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Skip oversized content, add pipeline status",
-        "scope": "embedding-worker"
       }
     ]
   }
