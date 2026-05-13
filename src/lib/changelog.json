@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:28:03.425Z",
+  "generated": "2026-05-13T02:37:41.925Z",
   "entries": [
+    {
+      "hash": "505f1cc",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Reduce Christian primary semanticRatio 0.35→0.1 — BM25 now dominates for KJV",
+      "scope": null
+    },
     {
       "hash": "c617d57",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Only run GPT-4o sentence detection on NEW paragraphs",
       "scope": null
-    },
-    {
-      "hash": "0706630",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Track completed tasks for accurate indexing progress",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "505f1cc",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Reduce Christian primary semanticRatio 0.35→0.1 — BM25 now dominates for KJV",
+        "scope": null
+      },
       {
         "hash": "c617d57",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Only run GPT-4o sentence detection on NEW paragraphs",
-        "scope": null
-      },
-      {
-        "hash": "0706630",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Track completed tasks for accurate indexing progress",
         "scope": null
       }
     ]
