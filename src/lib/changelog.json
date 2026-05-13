@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T13:26:28.181Z",
+  "generated": "2026-05-13T13:31:53.706Z",
   "entries": [
+    {
+      "hash": "a6d08da",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
+      "scope": null
+    },
     {
       "hash": "671a1fe",
       "date": "2026-05-12",
@@ -3493,16 +3500,18 @@
       "type": "New",
       "description": "Propagate existing embeddings via normalized_hash",
       "scope": "sync"
-    },
-    {
-      "hash": "7fdf75e",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Show exact pipeline counts instead of abbreviated",
-      "scope": "ui"
     }
   ],
   "grouped": {
+    "2026-05-13": [
+      {
+        "hash": "a6d08da",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "SmartyPants smart quotes + inline quote italics in dialog rendering",
+        "scope": null
+      }
+    ],
     "2026-05-12": [
       {
         "hash": "671a1fe",
@@ -7062,13 +7071,6 @@
         "type": "New",
         "description": "Propagate existing embeddings via normalized_hash",
         "scope": "sync"
-      },
-      {
-        "hash": "7fdf75e",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Show exact pipeline counts instead of abbreviated",
-        "scope": "ui"
       }
     ]
   }

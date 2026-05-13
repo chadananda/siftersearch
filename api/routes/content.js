@@ -84,6 +84,8 @@ function applySmartQuotes(html) {
       // Closing (default)
       return '\u2019';
     });
+    // &#39; entities written by the markdown parser → right single quote (no exceptions)
+    part = part.replace(/&#39;/g, '\u2019');
     return part;
   }).join('');
 }
