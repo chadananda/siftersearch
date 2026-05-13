@@ -264,7 +264,8 @@ export async function fanOutQueries(angles, search, perAngle = 30) {
 // Text fingerprint for dedup: normalize to lowercase alphanum, take first 100 chars.
 // Catches the same quote appearing in different publications.
 function textFingerprint(text) {
-  return (text || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\u0900-\u097F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+  // eslint-disable-next-line no-misleading-character-class
+  return (text || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\u0900-\u097F]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 }
 
 // Source priority bonus (0–2) for canonical primary texts over secondary compilations.
