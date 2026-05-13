@@ -358,7 +358,7 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
   const ranked = deduped
-    .filter(p => p.relevance_score >= 6)
+    .filter(p => p.relevance_score >= 7)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({
@@ -395,8 +395,8 @@ export async function runDeepResearch(researchId, { chat, search }) {
     const angles = await decomposeAngles(record.canonical_question, chat);
     await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify(angles), researchId]);
 
-    // 2. Fan out queries
-    const candidates = await fanOutQueries(angles, search, 30);
+    // 2. Fan out queries — 40 per tradition gives more material for the LLM to filter
+    const candidates = await fanOutQueries(angles, search, 40);
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
@@ -419,11 +419,12 @@ export async function runDeepResearch(researchId, { chat, search }) {
       );
     }
 
-    // 5. Build structured content sections (JSON-indexed for search)
+    // 5. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(selected.map(q => q.tradition).filter(Boolean))].join(',');
-    const sections = buildSections(record.canonical_question, selected, angles);
-    const summary = buildSummary(sections, traditionsCovered.split(',').filter(Boolean));
-    const convergence = buildConvergence(sections);
+    const structured = await clusterAndStructure(record.canonical_question, selected, chat);
+    const sections = structured?.sections || buildSectionsFallback(selected, angles);
+    const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
+    const convergence = { searchable_text: sections.map(s => s.label || s.tradition || '').join(' ') };
 
     await query(
       `UPDATE deep_research SET
@@ -457,83 +458,156 @@ export async function runDeepResearch(researchId, { chat, search }) {
   }
 }
 
-// --- Content section builders (called after rerank; no LLM needed) ---
+// --- Aspect-based clustering (LLM-driven) ---
 
 /**
- * Group curated quotes into per-tradition sections with relevance metadata.
- * Each section is {type, tradition, title, quotes[], avg_relevance, avg_authority}.
- * These sections are the JSON-indexed content units for search.
+ * Cluster selected quotes into thematic aspects and extract clean English excerpts.
+ * Single LLM call handles: aspect identification, quote assignment, excerpt extraction,
+ * translation of non-English content, and per-aspect synthesis.
+ *
+ * Returns { sections[], summary } or null on failure (caller uses fallbacks).
  */
-function buildSections(question, selected, angles = []) {
+export async function clusterAndStructure(question, selected, chat) {
+  if (!selected.length) return null;
+
+  const systemPrompt = `You are a scholar of comparative religion creating a structured interfaith research document in Q&A format.
+The main document is an answer to a big question. Sub-sections are specific sub-questions (aspects), and each quote is a direct answer to that sub-question.
+
+Critical rules:
+1. Frame each aspect as a sub-question (e.g. "How does suffering serve as purification?").
+2. Every assigned quote MUST directly and substantively answer the sub-question — if tangential, set aspect_idx to -1 (exclude). Be strict.
+3. Extract ONLY the most directly relevant 1-2 sentences from the passage. The excerpt must answer the sub-question. Never quote full paragraphs.
+4. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt — do not include the original script.
+5. Strip all markup artifacts from excerpts: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
+6. Generate 4-6 sub-questions that cover the key dimensions of the main question.
+7. The summary for each sub-question (2-3 sentences) synthesizes how multiple traditions answer it.`;
+
+  const userPrompt = `Main question: "${question}"
+
+Passages to organize:
+${selected.map((q, i) => `[${i}] ${q.tradition} auth:${q.authority} "${q.title}" — ${q.author}:
+"${(q.text || '').slice(0, 500)}"`).join('\n\n')}
+
+Return ONLY valid JSON:
+{
+  "aspects": [
+    {"label": "Sub-question as a question? (8-12 words)", "summary": "2-3 sentence synthesis across traditions"}
+  ],
+  "assignments": [
+    {"quote_idx": 0, "aspect_idx": 0, "excerpt": "1-2 sentences in clean English that directly answer the sub-question"}
+  ],
+  "overview": "3-4 sentence overview synthesizing how all traditions collectively address the main question"
+}`;
+
+  try {
+    const response = await chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ]);
+    const text = response.content?.[0]?.text || '';
+    const json = text.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('No JSON in clustering response');
+    const result = JSON.parse(json);
+
+    // Build sections from aspects + assignments
+    const assignMap = new Map();
+    for (const a of (result.assignments || [])) {
+      if (a.aspect_idx >= 0) {
+        if (!assignMap.has(a.aspect_idx)) assignMap.set(a.aspect_idx, []);
+        assignMap.get(a.aspect_idx).push({ ...a, quote: selected[a.quote_idx] });
+      }
+    }
+
+    const sections = (result.aspects || []).map((aspect, idx) => {
+      const assigned = assignMap.get(idx) || [];
+      const quotes = assigned.map(a => {
+        const q = a.quote || {};
+        return {
+          para_id: q.para_id,
+          tradition: q.tradition,
+          excerpt: a.excerpt || (q.text || '').slice(0, 280),
+          source_title: q.title,
+          source_author: q.author,
+          source_site: q.source_site,
+          source_url: q.source_url,
+          external_para_id: q.external_para_id,
+          authority: q.authority,
+          relevance_score: q.relevance_score,
+          contextual_note: q.contextual_note,
+        };
+      }).filter(q => q.excerpt);
+
+      const avgRel = quotes.reduce((s, q) => s + (q.relevance_score || 0), 0) / (quotes.length || 1);
+      const traditions = [...new Set(quotes.map(q => q.tradition).filter(Boolean))];
+      return {
+        type: 'aspect',
+        label: aspect.label,
+        summary: aspect.summary,
+        traditions,
+        quotes,
+        avg_relevance: Math.round(avgRel * 10) / 10,
+        searchable_text: [aspect.summary, ...quotes.map(q => q.contextual_note || '')].join(' '),
+      };
+    }).filter(s => s.quotes.length > 0);
+
+    const allQuotes = sections.flatMap(s => s.quotes);
+    const summary = {
+      overview: result.overview || '',
+      traditions: [...new Set(allQuotes.map(q => q.tradition).filter(Boolean))],
+      quote_count: allQuotes.length,
+      aspect_count: sections.length,
+      searchable_text: result.overview || '',
+    };
+
+    logger.info({ aspects: sections.length, quotes: allQuotes.length }, 'Aspect clustering complete');
+    return { sections, summary };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'clusterAndStructure failed — using fallback');
+    return null;
+  }
+}
+
+// --- Fallback builders (used if LLM clustering fails) ---
+
+function buildSectionsFallback(selected, angles = []) {
   const byTradition = new Map();
   for (const q of selected) {
     const key = q.tradition || 'General';
     if (!byTradition.has(key)) byTradition.set(key, []);
     byTradition.get(key).push(q);
   }
-  const sections = [];
-  for (const [tradition, quotes] of byTradition.entries()) {
+  return [...byTradition.entries()].map(([tradition, quotes]) => {
     const angle = angles.find(a => a.tradition === tradition);
-    const avgRel = quotes.reduce((s, q) => s + (q.relevance_score || 0), 0) / quotes.length;
-    const avgAuth = quotes.reduce((s, q) => s + (q.authority || 5), 0) / quotes.length;
-    sections.push({
+    return {
       type: 'tradition',
-      tradition,
-      title: `${tradition} Perspective`,
-      angle: angle?.angle || '',
+      label: `${tradition} Perspective`,
+      summary: angle?.angle || '',
+      traditions: [tradition],
       quotes: quotes.map(q => ({
         para_id: q.para_id,
-        text: q.text,
+        tradition: q.tradition,
+        excerpt: (q.text || '').slice(0, 280),
         source_title: q.title,
         source_author: q.author,
         source_site: q.source_site,
         source_url: q.source_url,
-        external_para_id: q.external_para_id,
         authority: q.authority,
         relevance_score: q.relevance_score,
         contextual_note: q.contextual_note,
-        rank: q.rank,
       })),
-      avg_relevance: Math.round(avgRel * 10) / 10,
-      avg_authority: Math.round(avgAuth * 10) / 10,
-      // Aggregated text for Meilisearch indexing
       searchable_text: quotes.map(q => q.contextual_note || '').join(' '),
-    });
-  }
-  // Sort sections by avg_relevance * avg_authority descending
-  return sections.sort((a, b) => (b.avg_relevance * b.avg_authority) - (a.avg_relevance * a.avg_authority));
+    };
+  });
 }
 
-/**
- * Build executive summary object from sections.
- */
-function buildSummary(sections, traditions) {
-  const highAuthority = sections.flatMap(s => s.quotes.filter(q => q.authority >= 9)).slice(0, 3);
-  const notes = sections.flatMap(s => s.quotes.map(q => q.contextual_note).filter(Boolean)).slice(0, 8);
+function buildSummaryFallback(sections, traditions) {
+  const notes = sections.flatMap(s => s.quotes.map(q => q.contextual_note).filter(Boolean));
   return {
-    traditions_count: traditions.length,
+    overview: '',
     traditions,
-    quote_count: sections.reduce((s, sec) => s + sec.quotes.length, 0),
-    top_quote: highAuthority[0]?.text?.slice(0, 280) || null,
-    key_points: notes.slice(0, 5),
-    // Full text for Meilisearch
+    quote_count: sections.flatMap(s => s.quotes).length,
+    aspect_count: sections.length,
     searchable_text: notes.join(' '),
-  };
-}
-
-/**
- * Build convergence/divergence analysis from sections.
- * Simple heuristic — compares which traditions have high-relevance quotes.
- */
-function buildConvergence(sections) {
-  const highRelevance = sections.filter(s => s.avg_relevance >= 7);
-  const lowRelevance = sections.filter(s => s.avg_relevance < 6);
-  return {
-    broadly_agreed: highRelevance.map(s => s.tradition),
-    less_coverage: lowRelevance.map(s => s.tradition),
-    agreements: highRelevance.map(s => `${s.tradition}: ${s.angle || 'addresses this question directly'}`),
-    divergences: lowRelevance.length ? [`Some traditions have less direct coverage: ${lowRelevance.map(s => s.tradition).join(', ')}`] : [],
-    searchable_text: highRelevance.map(s => s.angle).join('. '),
   };
 }
 

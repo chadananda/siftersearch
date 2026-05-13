@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:40:30.186Z",
+  "generated": "2026-05-13T16:47:37.607Z",
   "entries": [
+    {
+      "hash": "b232f78",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Deduplicate cross-publication quotes, prefer primary sources",
+      "scope": null
+    },
     {
       "hash": "c426015",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add normalized_hash to ingester + backfill script",
       "scope": null
-    },
-    {
-      "hash": "374690a",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Embedding worker NULL normalized_hash causing batch size of 1",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "b232f78",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Deduplicate cross-publication quotes, prefer primary sources",
+        "scope": null
+      },
       {
         "hash": "c426015",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Add normalized_hash to ingester + backfill script",
-        "scope": null
-      },
-      {
-        "hash": "374690a",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Embedding worker NULL normalized_hash causing batch size of 1",
         "scope": null
       }
     ]
