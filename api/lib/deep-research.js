@@ -261,6 +261,26 @@ export async function fanOutQueries(angles, search, perAngle = 30) {
  * @param {number} [topN=50] - passages to keep
  * @returns {Promise<Array<{para_id, tradition, authority, relevance_score, contextual_note, rank}>>}
  */
+// Text fingerprint for dedup: normalize to lowercase alphanum, take first 100 chars.
+// Catches the same quote appearing in different publications.
+function textFingerprint(text) {
+  return (text || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\u0900-\u097F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+}
+
+// Source priority bonus (0–2) for canonical primary texts over secondary compilations.
+// Applied as tiebreaker when authority scores are equal for the same deduped quote.
+// Ensures e.g. Gleanings beats "Baha'u'llah and the New Era" for the same tablet passage.
+function sourcePriorityBonus(title) {
+  const t = (title || '').toLowerCase();
+  // Primary scripture / authoritative compilations by Central Figures or Shoghi Effendi
+  if (/gleanings|kitab-i-aqdas|kitab-i-iqan|most holy book|book of certitude|hidden words|prayers and meditations|tablets of baha|epistle to the son|seven valleys|four valleys|advent of divine justice|world order of baha/.test(t)) return 2;
+  if (/some answered questions|will and testament|selections from.*abdu|memorials of the faithful|secret of divine civilization|traveler.*narrative/.test(t)) return 2;
+  if (/lights of guidance|compilation.*compilations|baha'i education|baha'i writings/.test(t)) return 1;
+  // Secondary works (biographies, historical, commentaries)
+  if (/new era|promulgation|paris talks|divine art of living/.test(t)) return 0.5;
+  return 0;
+}
+
 export async function rerankPassages(question, candidates, chat, topN = 50) {
   if (!candidates.length) return [];
 
@@ -269,12 +289,14 @@ export async function rerankPassages(question, candidates, chat, topN = 50) {
     idx: i,
     id: c.id,
     text: (c.text || '').slice(0, 350),
+    title: c.title || '',
     author: c.author || '',
     religion: c.religion || c._searchTradition || '',
     authority: c.authority || getAuthority(c),
+    fingerprint: textFingerprint(c.text || ''),
   }));
 
-  const systemPrompt = `You are an expert in comparative religion. Evaluate passages for direct relevance to a spiritual question. Score 0-10 where 10 = directly answers the question with authoritative doctrine, 0 = unrelated. Return ONLY valid JSON array.`;
+  const systemPrompt = `You are an expert in comparative religion. Evaluate passages for direct relevance to a spiritual question. Score 0-10 where 10 = directly answers the question with authoritative doctrine, 0 = unrelated. When the same quote appears from multiple sources, favor the primary authoritative compilation. Return ONLY valid JSON array.`;
 
   const allScores = [];
   for (let start = 0; start < passages.length; start += BATCH_SIZE) {
@@ -284,7 +306,7 @@ export async function rerankPassages(question, candidates, chat, topN = 50) {
 Rate each passage 0-10 for relevance. Write a 1-sentence note explaining how it addresses the question. JSON only.
 
 Passages:
-${batch.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) ${p.author}: "${p.text}"`).join('\n\n')}
+${batch.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) "${p.title}" — ${p.author}: "${p.text}"`).join('\n\n')}
 
 Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
 
@@ -310,11 +332,32 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
   logger.info({ candidates: passages.length, scored: allScores.length, above6: allScores.filter(s => s.score >= 6).length }, 'Rerank complete');
 
   const scoreMap = new Map(allScores.map(s => [s.idx, s]));
-  const ranked = passages
-    .map((p, i) => {
-      const s = scoreMap.get(i) || { score: 0, note: '' };
-      return { ...p, relevance_score: s.score, contextual_note: s.note };
-    })
+  const scored = passages.map((p, i) => {
+    const s = scoreMap.get(i) || { score: 0, note: '' };
+    return { ...p, relevance_score: s.score, contextual_note: s.note };
+  });
+
+  // Deduplicate: same quote appearing in multiple publications — keep the most
+  // authoritative source. Rank by authority * 3 + relevance + source bonus.
+  // Source bonus (+0–2) favors canonical primary texts (Gleanings, Kitáb-i-Aqdas)
+  // over secondary compilations (B&NE, commentaries) for the same underlying quote.
+  const byFingerprint = new Map();
+  for (const p of scored) {
+    const fp = p.fingerprint;
+    if (!byFingerprint.has(fp)) {
+      byFingerprint.set(fp, p);
+    } else {
+      const existing = byFingerprint.get(fp);
+      const existingScore = existing.authority * 3 + existing.relevance_score + sourcePriorityBonus(existing.title);
+      const newScore = p.authority * 3 + p.relevance_score + sourcePriorityBonus(p.title);
+      if (newScore > existingScore) byFingerprint.set(fp, p);
+    }
+  }
+  const deduped = [...byFingerprint.values()];
+  const dupeCount = scored.length - deduped.length;
+  if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
+
+  const ranked = deduped
     .filter(p => p.relevance_score >= 6)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
