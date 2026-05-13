@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T19:08:17.265Z",
+  "generated": "2026-05-13T19:15:15.464Z",
   "entries": [
+    {
+      "hash": "9d54fd9",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Sub-question-specific answer notes replace reranker main-question notes",
+      "scope": null
+    },
     {
       "hash": "672011e",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add Recent Activity view for tracking document changes",
       "scope": "library"
-    },
-    {
-      "hash": "64d5591",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add hourly cron-based scanner for stable files",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "9d54fd9",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Sub-question-specific answer notes replace reranker main-question notes",
+        "scope": null
+      },
       {
         "hash": "672011e",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Add Recent Activity view for tracking document changes",
-        "scope": "library"
-      },
-      {
-        "hash": "64d5591",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add hourly cron-based scanner for stable files",
         "scope": "library"
       }
     ]

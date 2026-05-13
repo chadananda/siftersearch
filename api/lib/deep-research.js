@@ -489,10 +489,11 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
   const dupeCount = scored.length - deduped.length;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
-  // Take top passages by combined score — min threshold 5 (clearly related),
-  // no hard cap that would cut genuinely relevant passages when library is thin.
+  // Take top passages — threshold 3 (not too low to be noise, but low enough that
+  // per-sub-question gems aren't dropped at main-question filter stage).
+  // clusterAndStructure does the per-sub-question relevance filtering via aspect_idx=-1.
   const ranked = deduped
-    .filter(p => p.relevance_score >= 5)
+    .filter(p => p.relevance_score >= 3)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({
@@ -537,7 +538,7 @@ export async function runDeepResearch(researchId, { chat, search }) {
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
-    const reranked = await rerankPassages(record.canonical_question, candidates, chat, 50);
+    const reranked = await rerankPassages(record.canonical_question, candidates, chat, 100);
 
     // Re-attach candidate source data (text, author, title) stripped during reranking
     const candidateMap = new Map(candidates.map(c => [c.id, c]));
@@ -629,7 +630,7 @@ Critical rules:
 ${frameworkHint}
 Passages found in the library:
 ${selected.map((q, i) => `[${i}] ${q.tradition} auth:${q.authority} "${q.title}" — ${q.author}:
-"${(q.text || '').slice(0, 500)}"`).join('\n\n')}
+"${(q.text || '').slice(0, 380)}"`).join('\n\n')}
 
 Return ONLY valid JSON:
 {
@@ -646,7 +647,7 @@ Return ONLY valid JSON:
     const response = await chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ], { max_tokens: 8192 });
+    ], { max_tokens: 12000 });
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];
     if (!json) {
