@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T13:58:29.634Z",
+  "generated": "2026-05-13T14:03:37.220Z",
   "entries": [
+    {
+      "hash": "d3f899d",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
+      "scope": null
+    },
     {
       "hash": "5f487af",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Increase pipeline status size and contrast",
       "scope": "ui"
-    },
-    {
-      "hash": "4dc33d9",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Show embedding count with time estimate",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "d3f899d",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Jafar PREMISE WIDENING — reframe suffering/trial questions to show purpose, not balance",
+        "scope": null
+      },
       {
         "hash": "5f487af",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Increase pipeline status size and contrast",
-        "scope": "ui"
-      },
-      {
-        "hash": "4dc33d9",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Show embedding count with time estimate",
         "scope": "ui"
       }
     ]

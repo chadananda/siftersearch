@@ -758,11 +758,18 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   const _denessed = (_stripped || userMessage.slice(0, 300))
     .replace(/\b(\w+ness)\b/gi, (m) => NESS_MAP[m.toLowerCase()] || m)
     .replace(/\b(\w+)\b/gi, (m) => VARIANT_MAP[m.toLowerCase()] || m);
-  const passageQuery = _denessed.replace(/^(\w{2,})ing\b/i, (match, stem) => {
+  let passageQuery = _denessed.replace(/^(\w{2,})ing\b/i, (match, stem) => {
     if (stem.length === 3 && /[aeiou][^aeiou]$/i.test(stem)) return stem + 'e';
     if (/[aeiou]{2}$/i.test(stem)) return stem;
     return stem;
   });
+  // Theodicy expansion: questions about suffering / evil / why God permits harm
+  // are best answered by passages that use the vocabulary of PURPOSE (tests, trials,
+  // calamity, ordained, spiritual growth) rather than the word "suffering" alone.
+  // Expanding the query bridges the lexical gap between the question and the answer.
+  if (/\b(suffer|suffering|evil|pain|grief|tragedy|allow.*suffer|why.*god.*allow|calamity|afflict)\b/i.test(userMessage)) {
+    passageQuery = passageQuery.replace(/\bsuffer(ing)?\b/gi, 'trials').trim() + ' tests purpose ordained';
+  }
   if (passageQuery && passageQuery.trim()) {
     if (!effectiveWorkName) {
       // General interfaith question — parallel per-tradition searches with
