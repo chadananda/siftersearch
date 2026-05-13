@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T15:59:50.594Z",
+  "generated": "2026-05-13T16:01:37.079Z",
   "entries": [
+    {
+      "hash": "580f865",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "/research/ pages + ShareButtons component",
+      "scope": null
+    },
     {
       "hash": "991d3dd",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Hydration mismatch from toLocaleString",
       "scope": null
-    },
-    {
-      "hash": "d234dec",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.789",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "580f865",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "/research/ pages + ShareButtons component",
+        "scope": null
+      },
       {
         "hash": "991d3dd",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Hydration mismatch from toLocaleString",
-        "scope": null
-      },
-      {
-        "hash": "d234dec",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.789",
         "scope": null
       }
     ]
