@@ -630,7 +630,8 @@ The main document answers a big spiritual question. Sub-sections are specific as
 Critical rules:
 1. Frame each aspect as a focused question — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
 2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
-3. Every assigned quote MUST directly and substantively answer the sub-question — ask: "Does this passage actually address what this sub-question asks?" If only tangentially related, set aspect_idx to -1. A quote that belongs to a different sub-question should go there, not be forced into a nearby one. Prefer leaving a section thinner over stuffing it with mismatches.
+3. Assign each quote to the most relevant aspect. Assign generously — a quote that is broadly relevant to an aspect belongs there, even if not a perfect fit. Only use aspect_idx=-1 for quotes that genuinely address NONE of the aspects. Goal: no tradition should be missing from every section. A quote misassigned is better than a quote wasted.
+   - Every quote has SOME aspect it speaks to — find it.
 4. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
 5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
