@@ -57,16 +57,61 @@ function applyHighlightParams(html) {
 }
 
 function applySmartQuotes(html) {
-  // Convert straight quotes to typographic quotes in text nodes only (skip HTML tags/attrs)
+  // SmartyPants-style smart quotes in text nodes only (HTML tags/attrs untouched).
+  // Rules (industry standard, same as Pandoc/WordPress/Jekyll):
+  //   " after space/open-bracket/start → " (open)
+  //   " after word-char/close-punct   → " (close)
+  //   ' between word chars            → ' (apostrophe)
+  //   ' after space/open-bracket/start → ' (open)
+  //   ' after word-char/close-punct   → ' (close)
   const parts = html.split(/(<[^>]+>)/);
   return parts.map((part, i) => {
-    if (i % 2 === 1) return part; // HTML tag — leave untouched
-    // Balanced double quotes: "..." → "..."
-    part = part.replace(/"([^"]+)"/g, '\u201C$1\u201D');
-    // Balanced single quotes around multi-word phrases: '...' → '...'
-    part = part.replace(/'([^']+)'/g, (m, inner) => /\s/.test(inner) ? '\u2018' + inner + '\u2019' : m);
+    if (i % 2 === 1) return part;
+    // Double quotes
+    part = part.replace(/"/g, (m, offset, str) => {
+      const prev = str[offset - 1] ?? '';
+      return /[\s(\[{"\u201C\u2018\u2014\u2013\-]/.test(prev) || offset === 0
+        ? '\u201C' : '\u201D';
+    });
+    // Apostrophes / single quotes
+    part = part.replace(/'/g, (m, offset, str) => {
+      const prev = str[offset - 1] ?? '';
+      const next = str[offset + 1] ?? '';
+      // Contraction / possessive: letter on left AND right
+      if (/\w/.test(prev) && /\w/.test(next)) return '\u2019';
+      // Opening: after space/bracket/start
+      if (/[\s(\[{"\u201C\u2014\u2013\-]/.test(prev) || offset === 0) return '\u2018';
+      // Closing (default)
+      return '\u2019';
+    });
     return part;
   }).join('');
+}
+
+function applyInlineQuoteItalics(html) {
+  // Wrap curly-quoted text in <em> unless already inside <em> or <a>.
+  // Targets "quoted passage" spans that are direct text content of elements.
+  const parts = html.split(/(<[^>]+>)/);
+  const result = [];
+  let inEm = 0, inA = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (i % 2 === 1) {
+      const tag = part.toLowerCase();
+      if (/^<em[\s>]/.test(tag)) inEm++;
+      else if (tag === '</em>') inEm = Math.max(0, inEm - 1);
+      if (/^<a[\s>]/.test(tag)) inA++;
+      else if (tag === '</a>') inA = Math.max(0, inA - 1);
+      result.push(part);
+    } else {
+      // Italicize curly-quoted text only when not already inside <em> or <a>
+      const transformed = (inEm > 0 || inA > 0)
+        ? part
+        : part.replace(/(\u201C[^\u201D]+\u201D)/g, '<em>$1</em>');
+      result.push(transformed);
+    }
+  }
+  return result.join('');
 }
 
 function renderMarkdown(md) {
@@ -85,6 +130,7 @@ function renderMarkdown(md) {
   html = html.replace(/<div class="jafar-turn">/g, () => `<div class="jafar-turn" id="round-${++n}-answer">`);
   html = applyHighlightParams(html);
   html = applySmartQuotes(html);
+  html = applyInlineQuoteItalics(html);
   return html;
 }
 
