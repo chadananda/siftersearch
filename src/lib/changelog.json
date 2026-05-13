@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T15:55:55.740Z",
+  "generated": "2026-05-13T15:57:28.138Z",
   "entries": [
+    {
+      "hash": "2d1fe63",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Para-attribution transaction API + remove unused query import",
+      "scope": null
+    },
     {
       "hash": "677b258",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Combine embedding costs under single 'embeddings' label",
       "scope": "ui"
-    },
-    {
-      "hash": "97ec2b9",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add oversized paragraphs tab to Doc Failures page",
-      "scope": "admin"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "2d1fe63",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Para-attribution transaction API + remove unused query import",
+        "scope": null
+      },
       {
         "hash": "677b258",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "Fixed",
         "description": "Combine embedding costs under single 'embeddings' label",
         "scope": "ui"
-      },
-      {
-        "hash": "97ec2b9",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add oversized paragraphs tab to Doc Failures page",
-        "scope": "admin"
       }
     ]
   }
