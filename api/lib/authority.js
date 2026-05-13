@@ -136,6 +136,9 @@ const TITLE_AUTHORITY = [
   { pattern: /^(the\s+)?gathas?(\s*$|\s*[-—(])/i, authority: 10 },
   // Guru Granth Sahib
   { pattern: /^(the\s+)?guru\s+granth\s+sahib(\s*$|\s*[-—(])/i, authority: 10 },
+  // Lights of Guidance — authenticated Bahá'í Q&A compiled by Helen Hornby.
+  // Each entry directly answers a doctrinal question; treat as high-authority reference.
+  { pattern: /^lights\s+of\s+guidance/i, authority: 8 },
 ];
 
 const DEFAULT_AUTHORITY = 5;

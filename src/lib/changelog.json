@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T14:16:43.329Z",
+  "generated": "2026-05-13T14:28:48.758Z",
   "entries": [
+    {
+      "hash": "10f1865",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Decode &quot; entities before smart-quote processing",
+      "scope": null
+    },
     {
       "hash": "7309677",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add document failures tracking and validation",
       "scope": "ingestion"
-    },
-    {
-      "hash": "b7f1e9d",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "10f1865",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Decode &quot; entities before smart-quote processing",
+        "scope": null
+      },
       {
         "hash": "7309677",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "Add document failures tracking and validation",
         "scope": "ingestion"
-      },
-      {
-        "hash": "b7f1e9d",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
-        "scope": null
       }
     ]
   }
