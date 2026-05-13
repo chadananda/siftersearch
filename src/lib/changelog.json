@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T18:57:16.698Z",
+  "generated": "2026-05-13T19:08:17.265Z",
   "entries": [
+    {
+      "hash": "672011e",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
+      "scope": null
+    },
     {
       "hash": "11ff891",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add hourly cron-based scanner for stable files",
       "scope": "library"
-    },
-    {
-      "hash": "ee3dac1",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Add caller labels to AI calls for better cost tracking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "672011e",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Increase conceptualRecon max_tokens 4096→6000 — canonical_examples expands response size",
+        "scope": null
+      },
       {
         "hash": "11ff891",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "Add hourly cron-based scanner for stable files",
         "scope": "library"
-      },
-      {
-        "hash": "ee3dac1",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Add caller labels to AI calls for better cost tracking",
-        "scope": null
       }
     ]
   }

@@ -618,7 +618,7 @@ The main document answers a big spiritual question. Sub-sections are specific as
 Critical rules:
 1. Frame each aspect as a focused question — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
 2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
-3. Every assigned quote MUST directly and substantively answer the sub-question — if tangential, set aspect_idx to -1 (exclude). Be strict.
+3. Every assigned quote MUST directly and substantively answer the sub-question — ask: "Does this passage actually address what this sub-question asks?" If only tangentially related, set aspect_idx to -1. A quote that belongs to a different sub-question should go there, not be forced into a nearby one. Prefer leaving a section thinner over stuffing it with mismatches.
 4. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
 5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
@@ -637,7 +637,7 @@ Return ONLY valid JSON:
     {"label": "Question with varied phrasing? (6-10 words)", "summary": "1-2 plain sentences. State what passages show."}
   ],
   "assignments": [
-    {"quote_idx": 0, "aspect_idx": 0, "excerpt": "2-4 sentences in clean English that directly answer the sub-question"}
+    {"quote_idx": 0, "aspect_idx": 0, "excerpt": "2-4 sentences in clean English that directly answer the sub-question", "answer": "under 12 words: what this passage says in answer to the sub-question — NOT the main question"}
   ],
   "overview": "2-3 sentences. Plain summary of what these traditions collectively teach."
 }`;
@@ -679,7 +679,7 @@ Return ONLY valid JSON:
           external_para_id: q.external_para_id,
           authority: q.authority,
           relevance_score: q.relevance_score,
-          contextual_note: q.contextual_note,
+          contextual_note: a.answer || q.contextual_note,
         };
       }).filter(q => q.excerpt)
         .sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
