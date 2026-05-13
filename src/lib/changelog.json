@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:53:15.960Z",
+  "generated": "2026-05-13T02:56:13.519Z",
   "entries": [
+    {
+      "hash": "d164d96",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
+      "scope": null
+    },
     {
       "hash": "18320f2",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add floating version pill, simplify AI ticker",
       "scope": "ui"
-    },
-    {
-      "hash": "90e68a1",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Update AI ticker to show 24h total and top caller",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "d164d96",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Remove Siddhartha Buddha author filter from Buddhist primary search",
+        "scope": null
+      },
       {
         "hash": "18320f2",
         "date": "2026-05-12",
@@ -7062,13 +7069,6 @@
         "type": "New",
         "description": "Add floating version pill, simplify AI ticker",
         "scope": "ui"
-      },
-      {
-        "hash": "90e68a1",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Update AI ticker to show 24h total and top caller",
-        "scope": null
       }
     ]
   }

@@ -788,11 +788,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // NESS_MAP handles forgiveness→forgive; matchingStrategy:'last' allows partial match.
         // Pure BM25 ensures Matthew 5:7 "merciful" ranks above "peacemakers" for mercy queries.
         "Christian":{ author: "Matthew", primarySemanticRatio: 0 },
-        // Buddhist: no author filter — "Siddhartha Buddha" only matches Dhammapada/Sutta Nipata
-        // which don't use "mercy"/"compassion" literally (Pali: karuna/metta). Broad religion
-        // filter finds Mahayana texts + Pali translations that DO use these English words.
-        // semanticRatio=0.4 captures the semantic bridge from compassion → loving-kindness.
-        "Buddhist": { primarySemanticRatio: 0.4 },
+        // Buddhist: queryTransform maps "mercy" → "loving-kindness" (Pali: metta) so BM25
+        // finds the Metta Sutta / loving-kindness texts that explicitly discuss these qualities.
+        // No author filter — broad religion=Buddhist finds Mahayana + Pali translations.
+        // semanticRatio=0.4 bridges compassion ↔ karuna gap.
+        "Buddhist": { primarySemanticRatio: 0.4, queryTransform: q => q.replace(/\bmercy\b/gi, 'loving-kindness') },
         // Judaism: no author filter — Psalms are KJV archaic, rarely contain modern
         // concept phrases like "inner peace". Broad religion filter + semanticRatio=0.5
         // lets the engine find the best thematic match across all Jewish texts
@@ -808,13 +808,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
           // (e.g. "enemies" → Matthew 5:44). Per-tradition override via primarySemanticRatio
           // allows Islam to use more semantic matching for archaic Quranic vocabulary.
           if (primaryOpts) {
+            const primaryQuery = primaryOpts.queryTransform
+              ? primaryOpts.queryTransform(passageQuery)
+              : passageQuery;
+            const { queryTransform: _qt, ...primarySearchOpts } = primaryOpts;
             const primary = await runTool('search', {
-              query: passageQuery,
+              query: primaryQuery,
               mode: 'passages',
               religion,
-              ...primaryOpts,
+              ...primarySearchOpts,
               limit: 3,
-              semanticRatio: primaryOpts.primarySemanticRatio ?? 0.1
+              semanticRatio: primarySearchOpts.primarySemanticRatio ?? 0.1
             });
             harvestPassages(primary, `traditions-${religion.toLowerCase()}`);
           }
