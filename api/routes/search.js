@@ -325,8 +325,11 @@ export default async function searchRoutes(fastify) {
           religion: hit.religion,
           collection: hit.collection,
           language: hit.language,
-          authority: hit.authority || parseInt(hit._formatted?.authority) || null,  // Doctrinal weight (1-10)
-          score: hit._rankingScore
+          authority: hit.authority || parseInt(hit._formatted?.authority) || null,
+          score: hit._rankingScore,
+          source_site: hit.source_site || null,
+          source_url: hit.source_url || null,
+          external_para_id: hit.external_para_id || null,
         };
       }),
       query: q,
