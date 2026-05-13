@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:23:33.127Z",
+  "generated": "2026-05-13T16:25:35.600Z",
   "entries": [
+    {
+      "hash": "b9e42d2",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
+      "scope": null
+    },
     {
       "hash": "d595b88",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.792",
       "scope": null
-    },
-    {
-      "hash": "caa1393",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "b9e42d2",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Rerank passages in batches of 30 — large single-batch LLM call returned empty JSON",
+        "scope": null
+      },
       {
         "hash": "d595b88",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Bump version to 0.1.792",
-        "scope": null
-      },
-      {
-        "hash": "caa1393",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Show full numbers with commas for pipeline counts (24,856 not 24.2K)",
         "scope": null
       }
     ]

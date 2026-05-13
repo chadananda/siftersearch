@@ -28,6 +28,10 @@ const SOURCE_TITLE_RE = /:([^:()]+?)(?:,\s*(?:p\.|pp\.|vol\.|paragraph)|\s*\))/;
 const PAGE_RE = /\b(?:p\.|pp\.)\s*([\d–-]+)/i;
 const IBID_RE = /^\s*\(\s*Ibid\./i;
 
+// Detects inline quote attribution: "As Bahá'u'lláh writes:", "He revealed:", etc.
+// Matches author name immediately before a verb of utterance followed by a quote.
+const INLINE_QUOTE_RE = /\b(Bah[aá]['']?['']?u['']?['']?ll[aá]h|['']Abdu['']l-Bah[aá]|The\s+B[aá]b|Shoghi\s+Effendi|The\s+Master|The\s+Guardian)\b[^"''"]{0,60}(?:writes?|wrote|said|says?|revealed?|stat(?:ed?|es?)|declar(?:ed?|es?)|proclaim(?:ed?|s?)|utter(?:ed?|s?)|affirm(?:ed?|s?)|asserts?|observes?|explains?|recorded|narrat(?:ed?|es?))\s*[:'"'"]/gi;
+
 // Known canonical author name aliases → canonical
 const AUTHOR_ALIASES = {
   'the master': "'Abdu'l-Bahá",
@@ -48,6 +52,20 @@ function canonicalizeAuthor(raw) {
   if (!raw) return null;
   const key = raw.trim().toLowerCase().replace(/['']/g, "'");
   return AUTHOR_ALIASES[key] || raw.trim();
+}
+
+// Extract authors quoted inline within a paragraph body (not attribution lines).
+// e.g. "As Bahá'u'lláh writes: '...'" → ["Bahá'u'lláh"]
+function extractQuotedAuthors(text) {
+  if (!text) return [];
+  const found = new Set();
+  let match;
+  INLINE_QUOTE_RE.lastIndex = 0;
+  while ((match = INLINE_QUOTE_RE.exec(text)) !== null) {
+    const canonical = canonicalizeAuthor(match[1]);
+    if (canonical) found.add(canonical);
+  }
+  return [...found];
 }
 
 function parseAttributionLine(text) {
@@ -167,13 +185,19 @@ export async function extractDocAttribution(docId, { force = false, model = 'reg
     }
   }
 
-  // Second pass: paragraphs with no attribution signal inherit doc author
+  // Second pass: paragraphs with no attribution signal inherit doc author.
+  // Also detect inline quoted authors in all non-attribution paragraphs.
   for (const para of paras) {
-    if (!metaMap.has(para.id)) {
+    const existing = metaMap.get(para.id);
+    const quotedAuthors = (!existing?.is_attribution_line) ? extractQuotedAuthors(para.text) : [];
+    if (!existing) {
       metaMap.set(para.id, {
         is_attribution_line: false,
         author: docAuthor,
+        ...(quotedAuthors.length ? { quoted_authors: quotedAuthors } : {}),
       });
+    } else if (!existing.is_attribution_line && quotedAuthors.length) {
+      existing.quoted_authors = quotedAuthors;
     }
   }
 
