@@ -67,6 +67,9 @@ function applySmartQuotes(html) {
   const parts = html.split(/(<[^>]+>)/);
   return parts.map((part, i) => {
     if (i % 2 === 1) return part;
+    // marked encodes " as &quot; in text nodes — decode first so smart-quote
+    // algorithm sees literal characters and can apply context-sensitive rules.
+    part = part.replace(/&quot;/g, '"');
     // Double quotes
     part = part.replace(/"/g, (m, offset, str) => {
       const prev = str[offset - 1] ?? '';

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T14:14:16.942Z",
+  "generated": "2026-05-13T14:16:43.329Z",
   "entries": [
+    {
+      "hash": "7309677",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Render assessment section on dialog page; preserve hero image on rerun",
+      "scope": null
+    },
     {
       "hash": "a72397d",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
       "scope": null
-    },
-    {
-      "hash": "435084c",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Use conservative truncation for embedding token limit",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "7309677",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Render assessment section on dialog page; preserve hero image on rerun",
+        "scope": null
+      },
       {
         "hash": "a72397d",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Use 2 chars/token ratio for embedding truncation (~16K max)",
-        "scope": null
-      },
-      {
-        "hash": "435084c",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Use conservative truncation for embedding token limit",
         "scope": null
       }
     ]
