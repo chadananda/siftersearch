@@ -503,10 +503,13 @@ Return ONLY valid JSON:
     const response = await chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ]);
+    ], { max_tokens: 8192 });
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];
-    if (!json) throw new Error('No JSON in clustering response');
+    if (!json) {
+      logger.warn({ textSnippet: text.slice(0, 200) }, 'clusterAndStructure: no JSON found in response');
+      throw new Error('No JSON in clustering response');
+    }
     const result = JSON.parse(json);
 
     // Build sections from aspects + assignments

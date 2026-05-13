@@ -38,13 +38,13 @@ let currentResearchId = null;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function chat(messages) {
+async function chat(messages, opts = {}) {
   // Anthropic requires system prompt as top-level param, not a message role.
   const systemMsg = messages.find(m => m.role === 'system');
   const userMsgs = messages.filter(m => m.role !== 'system');
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: opts.max_tokens || 4096,
     ...(systemMsg ? { system: systemMsg.content } : {}),
     messages: userMsgs,
   });
