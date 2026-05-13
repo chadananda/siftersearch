@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:04:28.618Z",
+  "generated": "2026-05-13T16:07:43.507Z",
   "entries": [
+    {
+      "hash": "3d313b2",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Add Research tab to NavBar (links to /research index)",
+      "scope": null
+    },
     {
       "hash": "9c2c4fd",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use proper PWA update lifecycle instead of aggressive cache clearing",
       "scope": null
-    },
-    {
-      "hash": "d140cc0",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.790",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "3d313b2",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Add Research tab to NavBar (links to /research index)",
+        "scope": null
+      },
       {
         "hash": "9c2c4fd",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Use proper PWA update lifecycle instead of aggressive cache clearing",
-        "scope": null
-      },
-      {
-        "hash": "d140cc0",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.790",
         "scope": null
       }
     ]

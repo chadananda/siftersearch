@@ -39,16 +39,24 @@ let currentResearchId = null;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 async function chat(messages) {
+  // Anthropic requires system prompt as top-level param, not a message role.
+  const systemMsg = messages.find(m => m.role === 'system');
+  const userMsgs = messages.filter(m => m.role !== 'system');
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
-    messages,
+    ...(systemMsg ? { system: systemMsg.content } : {}),
+    messages: userMsgs,
   });
   return response;
 }
 
 async function search(q, opts = {}) {
-  return hybridSearch(q, { limit: opts.limit || 30, semanticRatio: opts.semanticRatio || 0.6 });
+  return hybridSearch(q, {
+    limit: opts.limit || 30,
+    semanticRatio: opts.semanticRatio || 0.6,
+    filters: opts.filters || {},
+  });
 }
 
 function startHeartbeat(researchId) {
