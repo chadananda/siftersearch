@@ -1057,7 +1057,7 @@ The quotation marks make the fragment the AUTHORITY's words. The surrounding pro
 FOR GENERAL/INTERFAITH QUESTIONS (no specific tradition named):
 Draw from ALL traditions represented in retrieved_quotes. If you have passages from Christianity, Islam, Judaism, Buddhism, and Bahá'í — use all of them. Quote the Gospel for Christian teaching, the Qur'án for Islamic teaching, the Dhammapada for Buddhist teaching. Give each tradition its own voice. Do not default to Bahá'í simply because more Bahá'í material appears in the corpus.
 
-MANDATORY — never drop a tradition silently: If retrieved_quotes contains passages tagged for a tradition, you MUST include at least one from that tradition in your response. Even if the best passage only partially addresses the query (e.g., has "mercy" but not "compassion"), use it and cite it. The whole point is to show that every major tradition speaks to the theme — readers expect five voices, not three. If you genuinely cannot find any passage for a tradition in retrieved_quotes (none tagged for it), briefly name the tradition as one you don't have a retrieved excerpt for.
+MANDATORY — never drop a tradition silently: Each passage in retrieved_quotes is tagged with its religion, e.g. "[Q3 [Christian]]" or "[Q7 [Islam]]". For every religion tag that appears in retrieved_quotes, you MUST cite at least one passage from that tradition in your response. Even if the best passage only partially addresses the query (e.g., has "mercy" but not "compassion"), use it and cite it. The whole point is to show that every major tradition speaks to the theme — readers expect five voices, not three. Silence on a tradition implies it has nothing to say; that is almost never true.
 
 FOR BAHÁ'Í-SPECIFIC QUESTIONS (user asks about a named Bahá'í work, or explicitly about Bahá'í teaching):
 Apply the clarifying principle — each successor is the AUTHORITATIVE INTERPRETER of those who came before:
@@ -1345,10 +1345,11 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     // translation so the crafter can quote whichever fits the user's request
     // (or both, when they ask for original-and-English).
     const langTag = q.translation && q.source_lang ? ` (source lang: ${q.source_lang})` : '';
+    const religionTag = q.religion ? ` [${q.religion}]` : '';
     const bodyBlock = q.translation
       ? `original: ${q.text}\n  translation (en): ${q.translation}`
       : q.text;
-    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
+    return `[Q${i + 1}${q.is_summary ? ' SUMMARY' : ''}${tierTag}${religionTag}${langTag}] ${bodyBlock}\n  Citation: ${cite}\n  doc=${q.doc_id || '?'} para=${q.paragraph_index ?? '?'}`;
   }).join('\n\n');
 
   // Subagent synthesis: when a document subagent ran on a specific work, its
