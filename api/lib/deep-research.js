@@ -193,7 +193,8 @@ export async function getDeepResearchQuotes(researchId) {
  * @returns {Promise<Array<{tradition, query, angle}>>}
  */
 export async function decomposeAngles(question, chat) {
-  const TRADITIONS = ["Baha'i", 'Islam', 'Christianity', 'Judaism', 'Buddhism', 'Hinduism', 'Taoism', 'Sikhism', 'General'];
+  // Values must match the `religion` field in the Meilisearch paragraphs index exactly.
+  const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh', 'General'];
   const systemPrompt = `You are a research assistant for an interfaith library. Given a spiritual question, generate specific search queries optimized for finding relevant authoritative passages in each religious tradition. Return JSON only.`;
   const userPrompt = `Question: "${question}"
 
@@ -345,7 +346,14 @@ export async function runDeepResearch(researchId, { chat, search }) {
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
-    const selected = await rerankPassages(record.canonical_question, candidates, chat, 50);
+    const reranked = await rerankPassages(record.canonical_question, candidates, chat, 50);
+
+    // Re-attach candidate source data (text, author, title) stripped during reranking
+    const candidateMap = new Map(candidates.map(c => [c.id, c]));
+    const selected = reranked.map(s => {
+      const cand = candidateMap.get(s.para_id) || {};
+      return { ...s, text: cand.text, author: cand.author, title: cand.title, source_site: cand.source_site, source_url: cand.source_url, external_para_id: cand.external_para_id };
+    });
 
     // 4. Store quotes
     await query('DELETE FROM deep_research_quotes WHERE research_id = ?', [researchId]);
