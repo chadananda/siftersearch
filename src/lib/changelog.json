@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:50:29.332Z",
+  "generated": "2026-05-13T02:53:15.960Z",
   "entries": [
+    {
+      "hash": "18320f2",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
+      "scope": null
+    },
     {
       "hash": "facf4ae",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Update AI ticker to show 24h total and top caller",
       "scope": null
-    },
-    {
-      "hash": "103c4ea",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Calculate embedding costs using totalTokens",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "18320f2",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Text-level dedup in harvestPassages — prevents duplicate Psalms across traditions",
+        "scope": null
+      },
       {
         "hash": "facf4ae",
         "date": "2026-05-12",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Update AI ticker to show 24h total and top caller",
-        "scope": null
-      },
-      {
-        "hash": "103c4ea",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Calculate embedding costs using totalTokens",
         "scope": null
       }
     ]

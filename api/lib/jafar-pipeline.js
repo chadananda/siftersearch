@@ -788,9 +788,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // NESS_MAP handles forgiveness→forgive; matchingStrategy:'last' allows partial match.
         // Pure BM25 ensures Matthew 5:7 "merciful" ranks above "peacemakers" for mercy queries.
         "Christian":{ author: "Matthew", primarySemanticRatio: 0 },
-        // Buddhist: semanticRatio=0.3 — Pali concepts (dukkha, nirvana, karuna) are often
-        // translated indirectly; "compassion" queries need semantic to find "loving-kindness".
-        "Buddhist": { author: "Siddhartha Buddha", primarySemanticRatio: 0.3 },
+        // Buddhist: no author filter — "Siddhartha Buddha" only matches Dhammapada/Sutta Nipata
+        // which don't use "mercy"/"compassion" literally (Pali: karuna/metta). Broad religion
+        // filter finds Mahayana texts + Pali translations that DO use these English words.
+        // semanticRatio=0.4 captures the semantic bridge from compassion → loving-kindness.
+        "Buddhist": { primarySemanticRatio: 0.4 },
         // Judaism: no author filter — Psalms are KJV archaic, rarely contain modern
         // concept phrases like "inner peace". Broad religion filter + semanticRatio=0.5
         // lets the engine find the best thematic match across all Jewish texts
