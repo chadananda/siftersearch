@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T14:28:48.758Z",
+  "generated": "2026-05-13T14:47:06.079Z",
   "entries": [
+    {
+      "hash": "ca34200",
+      "date": "2026-05-13",
+      "type": "New",
+      "description": "Bump Lights of Guidance authority to 8; add topic-relevance schema doc",
+      "scope": null
+    },
     {
       "hash": "10f1865",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip oversized content, add pipeline status",
       "scope": "embedding-worker"
-    },
-    {
-      "hash": "3f5ee32",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add document failures tracking and validation",
-      "scope": "ingestion"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "ca34200",
+        "date": "2026-05-13",
+        "type": "New",
+        "description": "Bump Lights of Guidance authority to 8; add topic-relevance schema doc",
+        "scope": null
+      },
       {
         "hash": "10f1865",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "Fixed",
         "description": "Skip oversized content, add pipeline status",
         "scope": "embedding-worker"
-      },
-      {
-        "hash": "3f5ee32",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add document failures tracking and validation",
-        "scope": "ingestion"
       }
     ]
   }

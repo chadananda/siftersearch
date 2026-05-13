@@ -24,6 +24,7 @@ import { logger } from './logger.js';
 import { config } from './config.js';
 import { executeTool, TOOLS } from '../routes/chat.js';
 import { getScopeForLocation } from './search/scope.js';
+import { checkDeepResearch, recordQuestionHit } from './deep-research.js';
 
 const openai = new OpenAI({ apiKey: config.ai.openai?.apiKey || process.env.OPENAI_API_KEY });
 
@@ -205,6 +206,37 @@ async function runResearchPhaseInner({ messages, sendEvent, debug, scope_config 
       return { retrieved_quotes: retrieved, tool_calls: debugCalls };
     } catch (e) {
       logger.warn({ err: e.message }, 'pre-fetch library_overview failed, falling through to normal search');
+    }
+  }
+
+  // Deep Research pre-fetch: check if we have curated passage sets for this question.
+  // Fire-and-forget hit tracking in parallel (never blocks or throws).
+  const userMessage = messages.filter(m => m.role === 'user').at(-1)?.content || '';
+  if (userMessage.length > 10) {
+    recordQuestionHit(userMessage).catch(() => {});
+    try {
+      const dr = await checkDeepResearch(userMessage);
+      if (dr?.quotes?.length >= 3) {
+        logger.info({ researchId: dr.id, quotes: dr.quotes.length }, 'Deep research pre-fetch hit');
+        if (sendEvent) sendEvent({ type: 'debug_research_call', name: 'deep_research', args: { researchId: dr.id, quotes: dr.quotes.length } });
+        for (const q of dr.quotes) {
+          retrieved.push({
+            text: q.text,
+            source_title: q.title,
+            source_author: q.author,
+            citation_url: q.source_url ? `${q.source_url}?paraId=${q.external_para_id}` : null,
+            doc_id: q.doc_id,
+            religion: q.religion,
+            authority: q.authority,
+            via: 'deep_research',
+            relevance_score: q.relevance_score,
+            contextual_note: q.contextual_note,
+          });
+        }
+        return { retrieved_quotes: retrieved, tool_calls: debugCalls, deep_research_id: dr.id };
+      }
+    } catch (drErr) {
+      logger.warn({ err: drErr.message }, 'Deep research pre-fetch error (non-fatal)');
     }
   }
 

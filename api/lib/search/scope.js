@@ -13,6 +13,7 @@ export const INDEXES = {
   DOCUMENTS: 'documents',
   PARAGRAPHS: 'paragraphs',
   HYPE_QUESTIONS: 'hype_questions',
+  DEEP_RESEARCH: 'deep_research',
 };
 
 let siteRegistry = null;

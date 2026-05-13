@@ -401,7 +401,8 @@ export async function initializeIndexes() {
     searchableAttributes: ['text', 'context', 'heading', 'title', 'author'],
     filterableAttributes: [
       'doc_id', 'religion', 'collection', 'language', 'year',
-      'paragraph_index', 'blocktype', 'author', 'title', 'authority', 'encumbered'
+      'paragraph_index', 'blocktype', 'author', 'title', 'authority', 'encumbered',
+      'topic_tags', 'question_types'
     ],
     sortableAttributes: ['year', 'created_at', 'paragraph_index', 'authority'],
     rankingRules: buildRankingRules(),
@@ -434,6 +435,15 @@ export async function initializeIndexes() {
     }
   };
 
+  // Deep Research index — canonical questions + curated passage metadata
+  const deepResearchSettings = {
+    searchableAttributes: ['canonical_question'],
+    filterableAttributes: ['topic_tags', 'question_type', 'traditions_covered', 'status', 'ask_count', 'priority'],
+    sortableAttributes: ['ask_count', 'priority', 'created_at'],
+    rankingRules: ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
+    pagination: { maxTotalHits: 1000 },
+  };
+
   // Ensure indexes exist and settings are applied. Non-blocking — if Meilisearch
   // is busy (processing a settings rebuild on millions of docs), we don't block startup.
   const fetchWithTimeout = (url, opts, ms = 5000) => {
@@ -442,7 +452,7 @@ export async function initializeIndexes() {
     return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
   };
 
-  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id'], [INDEXES.HYPE_QUESTIONS, 'id']]) {
+  for (const [indexUid, pk] of [[INDEXES.PARAGRAPHS, 'id'], [INDEXES.DOCUMENTS, 'id'], [INDEXES.HYPE_QUESTIONS, 'id'], [INDEXES.DEEP_RESEARCH, 'id']]) {
     try {
       await fetchWithTimeout(`${meiliUrl}/indexes`, {
         method: 'POST', headers, body: JSON.stringify({ uid: indexUid, primaryKey: pk })
@@ -451,7 +461,7 @@ export async function initializeIndexes() {
   }
 
   // Enqueue settings (5s timeout — just needs to accept the task, not process it)
-  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings]]) {
+  for (const [indexName, settings] of [[INDEXES.PARAGRAPHS, paragraphSettings], [INDEXES.DOCUMENTS, documentSettings], [INDEXES.HYPE_QUESTIONS, hypeSettings], [INDEXES.DEEP_RESEARCH, deepResearchSettings]]) {
     try {
       const res = await fetchWithTimeout(`${meiliUrl}/indexes/${indexName}/settings`, {
         method: 'PATCH', headers, body: JSON.stringify(settings)

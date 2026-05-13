@@ -582,4 +582,110 @@ export const migrations = {
     }
     logger.info('Migration 63 complete: supplemental site religion backfill done');
   },
+
+  64: async () => {
+    // Topic tagging columns + Deep Research tables.
+    //
+    // Topic tagging (content table):
+    //   topic_tags       — JSON array of primary/secondary topic labels e.g. ["theodicy","tests-trials"]
+    //   question_types   — JSON array of question-type labels e.g. ["why-god-allows-X"]
+    //   topic_tagged_at  — ISO timestamp of last AI tagging run
+    //
+    // Deep Research tables:
+    //   deep_research        — one row per canonical question with status + metadata
+    //   deep_research_quotes — curated passage set per research record
+    //   deep_research_queue  — lightweight job queue for async research tasks
+    logger.info('Starting migration 64: topic tagging columns + deep research tables');
+    const addCol = async (sql) => {
+      try { await query(sql); }
+      catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+
+    // Topic tagging on content paragraphs
+    await addCol('ALTER TABLE content ADD COLUMN topic_tags TEXT');
+    await addCol('ALTER TABLE content ADD COLUMN question_types TEXT');
+    await addCol('ALTER TABLE content ADD COLUMN topic_tagged_at TEXT');
+    try {
+      await query(`CREATE INDEX IF NOT EXISTS idx_content_topic_tags ON content(doc_id) WHERE topic_tags IS NOT NULL`);
+    } catch { /* exists */ }
+
+    // Deep research master table
+    await query(`
+      CREATE TABLE IF NOT EXISTS deep_research (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        canonical_question TEXT NOT NULL,
+        question_embedding BLOB,
+        question_hash TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        priority INTEGER NOT NULL DEFAULT 5,
+        topic_tags TEXT,
+        question_type TEXT,
+        traditions_covered TEXT,
+        angles_json TEXT,
+        total_candidates INTEGER DEFAULT 0,
+        total_selected INTEGER DEFAULT 0,
+        research_model TEXT,
+        rerank_model TEXT,
+        ask_count INTEGER DEFAULT 0,
+        last_asked_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        completed_at TEXT,
+        reviewed_at TEXT,
+        reviewed_by TEXT,
+        worker_id TEXT,
+        heartbeat_at TEXT,
+        error TEXT
+      )
+    `);
+    try { await query('CREATE INDEX IF NOT EXISTS idx_dr_status ON deep_research(status, priority DESC)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_dr_hash ON deep_research(question_hash)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_dr_ask_count ON deep_research(ask_count DESC)'); } catch { /* exists */ }
+
+    // Curated quotes for each research record
+    await query(`
+      CREATE TABLE IF NOT EXISTS deep_research_quotes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        research_id INTEGER NOT NULL REFERENCES deep_research(id) ON DELETE CASCADE,
+        para_id INTEGER NOT NULL REFERENCES content(id),
+        tradition TEXT,
+        authority INTEGER,
+        relevance_score REAL,
+        contextual_note TEXT,
+        rank INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    try { await query('CREATE INDEX IF NOT EXISTS idx_drq_research ON deep_research_quotes(research_id, rank)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_drq_para ON deep_research_quotes(para_id)'); } catch { /* exists */ }
+
+    // Async job queue for research tasks
+    await query(`
+      CREATE TABLE IF NOT EXISTS deep_research_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        research_id INTEGER NOT NULL REFERENCES deep_research(id) ON DELETE CASCADE,
+        job_type TEXT NOT NULL DEFAULT 'research',
+        status TEXT NOT NULL DEFAULT 'pending',
+        attempts INTEGER DEFAULT 0,
+        priority INTEGER NOT NULL DEFAULT 5,
+        payload TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        started_at TEXT,
+        completed_at TEXT,
+        error TEXT
+      )
+    `);
+    try { await query('CREATE INDEX IF NOT EXISTS idx_drqueue_status ON deep_research_queue(status, priority DESC)'); } catch { /* exists */ }
+
+    logger.info('Migration 64 complete: topic tagging columns + deep research tables added');
+  },
+
+  65: async () => {
+    // Marker: deep_research Meilisearch index.
+    // No SQL changes — this version signals api/lib/search.js initializeIndexes()
+    // to create the deep_research index with filterable attributes:
+    //   topic_tags, question_type, traditions_covered, status, ask_count, priority
+    // and to add topic_tags + question_types to the paragraphs index filterableAttributes.
+    // The actual Meili calls happen in initializeIndexes() keyed off CURRENT_VERSION >= 65.
+    logger.info('Migration 65 complete: deep_research Meilisearch index marker');
+  },
 };
