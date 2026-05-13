@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T15:57:28.138Z",
+  "generated": "2026-05-13T15:59:14.374Z",
   "entries": [
+    {
+      "hash": "44eaea2",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Para-attribution regex — stop author capture at recipient",
+      "scope": null
+    },
     {
       "hash": "2d1fe63",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Increase embedding/sync worker throughput",
       "scope": null
-    },
-    {
-      "hash": "fd832a2",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Combine embedding costs under single 'embeddings' label",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "44eaea2",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Para-attribution regex — stop author capture at recipient",
+        "scope": null
+      },
       {
         "hash": "2d1fe63",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "Performance",
         "description": "Increase embedding/sync worker throughput",
         "scope": null
-      },
-      {
-        "hash": "fd832a2",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Combine embedding costs under single 'embeddings' label",
-        "scope": "ui"
       }
     ]
   }

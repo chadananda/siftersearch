@@ -18,7 +18,7 @@ const ATTRIBUTION_RE = /^\s*\(\s*(From|Ibid\.|See|cf\.|Cited in|Quoted in)/i;
 // Extracts structured fields from a matched attribution line
 const SOURCE_TYPE_RE = /\ba\s+(letter|tablet|talk|message|address|cable|telegram|dispatch|circular|statement|proclamation|prayer|poem|verse|book|chapter|compilation|document|essay|treatise)\b/i;
 const ON_BEHALF_RE = /(?:written\s+)?on\s+behalf\s+of\s+([^,;:()\d]+?)(?=\s+to\s|\s+dated|\s*[,;:()\d]|$)/i;
-const BY_RE = /(?:by|of)\s+([A-Z][^,;:()\d]{2,60}?)(?=\s*[,;:()\d]|$)/;
+const BY_RE = /(?:by|of)\s+([A-Z][^,;:()\d]{2,60}?)(?=\s+to\s|\s*[,;:()\d]|$)/;
 const TO_RE = /\bto\s+(an?\s+[^,;:()\d]+|the\s+[^,;:()\d]+)/i;
 const DATE_RE = /\b(\w+ \d{1,2},?\s+\d{4}|\d{4})\b/;
 const SOURCE_TITLE_RE = /:([^:()]+?)(?:,\s*(?:p\.|pp\.|vol\.|paragraph)|\s*\))/;
