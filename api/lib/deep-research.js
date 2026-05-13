@@ -204,12 +204,13 @@ export async function conceptualRecon(question, chat) {
       role: 'user',
       content: `Question: "${question}"
 
-Using your knowledge of comparative religion, identify the 4-7 major thematic frameworks through which world religions address this question. These frameworks will become the structural sections of a research article, so they must represent genuinely distinct approaches — not just variations on the same idea.
+Using your knowledge of comparative religion, identify the 4-7 major thematic frameworks through which world religions address this question. These frameworks become the structural sections of a research article and must represent genuinely distinct approaches.
 
-For each framework:
-- Which traditions hold this view?
-- What specific vocabulary, terminology, metaphors, and images do those traditions' texts actually use? (The words that would appear in a primary text passage, not abstract labels)
-- What is the core claim or teaching?
+For each framework provide:
+1. Which traditions hold this view
+2. The specific vocabulary, terminology, metaphors, images that appear in primary texts (not abstract labels — the actual words a scholar would search for)
+3. The canonical primary examples — the specific historical events, figures, scripture passages, or stories that are THE definitive illustrations of this framework. Think: what would a comparative religion scholar immediately cite? These are crucial for library search.
+4. Direct search phrases (5-10 words each) that would find passages illustrating this framework in a library — these must be concrete enough to match actual text
 
 Traditions to consider: ${TRADITIONS.join(', ')}
 
@@ -221,11 +222,13 @@ Return JSON:
       "core_claim": "1-2 sentences: what this framework actually teaches",
       "traditions": ["list of traditions that hold this view"],
       "search_vocabulary": {
-        "TraditionName": ["specific", "words", "metaphors", "concepts", "found in texts"]
-      }
+        "TraditionName": ["specific", "words", "metaphors", "found in texts"]
+      },
+      "canonical_examples": ["e.g. 'Isaiah 53 wounded for our transgressions'", "'Husayn martyrdom at Karbala'", "'Job's trials and vindication'"],
+      "search_phrases": ["concrete 5-10 word phrase to find relevant passages", "another distinct search phrase"]
     }
   ],
-  "key_distinctions": "2-3 sentences on how traditions fundamentally differ in their approach to this question"
+  "key_distinctions": "2-3 sentences on how traditions fundamentally differ in their approach"
 }`
     }
   ], { max_tokens: 4096 });
@@ -301,40 +304,66 @@ Return JSON array:
 
 /**
  * Fan out search queries across angles and collect candidate passages.
+ * Also runs framework-level searches (no religion filter) using canonical
+ * example phrases from the recon — catches passages about e.g. the passion
+ * of Christ or Husayn's martyrdom that live in cross-traditional library texts.
  *
  * @param {Array<{tradition, query}>} angles
  * @param {Function} search - search(query, opts) function
- * @param {number} [perAngle=30] - candidates per angle
+ * @param {number} [perAngle=35] - candidates per angle
+ * @param {object} [recon=null] - conceptual recon result for framework searches
  * @returns {Promise<Array>} Deduplicated candidate paragraphs
  */
-export async function fanOutQueries(angles, search, perAngle = 35) {
+export async function fanOutQueries(angles, search, perAngle = 35, recon = null) {
   const seen = new Set();
   const candidates = [];
-  // Each angle now has conceptual + vocabulary queries — run both
+
+  const addHits = (hits, tradition) => {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) {
+        seen.add(hit.id);
+        candidates.push({ ...hit, _searchTradition: tradition });
+      }
+    }
+  };
+
+  // Per-tradition: conceptual + vocabulary queries (religion-filtered)
   for (const angle of angles) {
     const { tradition } = angle;
     const queries = [angle.conceptual || angle.query, angle.vocabulary].filter(Boolean);
     const filter = tradition !== 'General' ? { religion: tradition } : {};
     for (const q of queries) {
       try {
-        const results = await search(q, {
-          limit: perAngle,
-          filters: filter,
-          semanticRatio: 0.65,
-        });
-        for (const hit of (results.hits || [])) {
-          // Skip very short passages — likely headers, section titles, frontmatter
-          if ((hit.text || '').length < 80) continue;
-          if (!seen.has(hit.id)) {
-            seen.add(hit.id);
-            candidates.push({ ...hit, _searchTradition: tradition });
-          }
-        }
+        const r = await search(q, { limit: perAngle, filters: filter, semanticRatio: 0.65 });
+        addHits(r.hits || [], tradition);
       } catch (err) {
         logger.warn({ err: err.message, tradition, q: q.slice(0, 50) }, 'fanOutQueries angle error');
       }
     }
   }
+
+  // Per-framework: search canonical examples across ALL traditions (no religion filter).
+  // This catches cross-tradition texts — e.g. Isaiah 53 in a Baha'i comparative work,
+  // or Husayn/Karbala passages in interfaith scholarship — that religion filters would miss.
+  if (recon?.frameworks?.length) {
+    for (const fw of recon.frameworks) {
+      const phrases = [
+        ...(fw.search_phrases || []),
+        ...(fw.canonical_examples || []).map(ex => ex.slice(0, 60)),
+      ].filter(Boolean).slice(0, 4);
+      for (const q of phrases) {
+        try {
+          const r = await search(q, { limit: 15, filters: {}, semanticRatio: 0.7 });
+          addHits(r.hits || [], 'General');
+        } catch (err) {
+          logger.warn({ err: err.message, fw: fw.theme?.slice(0, 30), q: q.slice(0, 50) }, 'fanOutQueries framework search error');
+        }
+      }
+    }
+    logger.info({ frameworks: recon.frameworks.length }, 'Framework-level searches complete');
+  }
+
   return candidates;
 }
 
@@ -503,8 +532,8 @@ export async function runDeepResearch(researchId, { chat, search }) {
     const angles = await decomposeAngles(record.canonical_question, recon, chat);
     await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ recon, angles }), researchId]);
 
-    // 2. Fan out queries — two queries per tradition, 35 each, min-length filter
-    const candidates = await fanOutQueries(angles, search);
+    // 2. Fan out queries — per-tradition + per-framework canonical searches
+    const candidates = await fanOutQueries(angles, search, 35, recon);
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
