@@ -19,13 +19,19 @@ if (!res.ok) return Astro.redirect('/research');
 const record = await res.json();
 const { records: allRecords = [] } = allRes.ok ? await allRes.json() : {};
 
-// Parse JSON fields
-const topicTags: string[] = record.topic_tags ? (typeof record.topic_tags === 'string' ? JSON.parse(record.topic_tags) : record.topic_tags) : [];
+function parseJ(val: any, fallback: any) {
+  if (!val) return fallback;
+  if (typeof val !== 'string') return val;
+  try { return JSON.parse(val); } catch { return fallback; }
+}
+
+// Parse JSON fields (may be pre-parsed objects or raw JSON strings)
+const topicTags: string[] = parseJ(record.topic_tags, []);
 const traditions: string[] = record.traditions_covered ? record.traditions_covered.split(',').filter(Boolean) : [];
-const sections = record.sections_json ? JSON.parse(record.sections_json) : [];
-const summary = record.summary_json ? JSON.parse(record.summary_json) : {};
-const convergence = record.convergence_json ? JSON.parse(record.convergence_json) : {};
-const qaItems = record.qa_json ? JSON.parse(record.qa_json) : [];
+const sections = parseJ(record.sections_json, []);
+const summary = parseJ(record.summary_json, {});
+const convergence = parseJ(record.convergence_json, {});
+const qaItems = parseJ(record.qa_json, []);
 const quotes: any[] = record.quotes || [];
 
 // If sections not yet generated (research still pending), build ad-hoc from quotes

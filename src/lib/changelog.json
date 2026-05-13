@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T16:30:28.378Z",
+  "generated": "2026-05-13T16:32:37.294Z",
   "entries": [
+    {
+      "hash": "55896d6",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
+      "scope": null
+    },
     {
       "hash": "e35f34b",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Include isAdmin in stats response for immediate ticker display",
       "scope": null
-    },
-    {
-      "hash": "e4548ca",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Bump version to 0.1.793",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "55896d6",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "GetDeepResearchBySlug — exclude embedding blob, parse JSON fields",
+        "scope": null
+      },
       {
         "hash": "e35f34b",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Include isAdmin in stats response for immediate ticker display",
-        "scope": null
-      },
-      {
-        "hash": "e4548ca",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Bump version to 0.1.793",
         "scope": null
       }
     ]
