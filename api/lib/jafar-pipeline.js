@@ -767,10 +767,11 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Buddhist: semanticRatio=0.3 — Pali concepts (dukkha, nirvana, karuna) are often
         // translated indirectly; "compassion" queries need semantic to find "loving-kindness".
         "Buddhist": { author: "Siddhartha Buddha", primarySemanticRatio: 0.3 },
-        // Judaism: semanticRatio=0.35 — Psalms use poetic Hebrew-derived imagery:
-        // "beside the still waters" for inner peace, "lovingkindness" for mercy.
-        // BM25 misses these without stemming; semantic finds thematic resonance.
-        "Judaism":  { author: "King David", primarySemanticRatio: 0.35 },
+        // Judaism: no author filter — Psalms are KJV archaic, rarely contain modern
+        // concept phrases like "inner peace". Broad religion filter + semanticRatio=0.5
+        // lets the engine find the best thematic match across all Jewish texts
+        // (Psalms, Torah, Talmud, JPS Tanakh) via semantic similarity.
+        "Judaism":  { primarySemanticRatio: 0.5 },
       };
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {

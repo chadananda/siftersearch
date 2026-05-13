@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T01:39:31.276Z",
+  "generated": "2026-05-13T01:41:57.999Z",
   "entries": [
+    {
+      "hash": "d527fe3",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "PassageQuery strips up to 6 adjectives before religion/tradition noun",
+      "scope": null
+    },
     {
       "hash": "819306d",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show actual Meilisearch task progress in indexing indicator",
       "scope": null
-    },
-    {
-      "hash": "ba4462f",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "d527fe3",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "PassageQuery strips up to 6 adjectives before religion/tradition noun",
+        "scope": null
+      },
       {
         "hash": "819306d",
         "date": "2026-05-12",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Show actual Meilisearch task progress in indexing indicator",
-        "scope": null
-      },
-      {
-        "hash": "ba4462f",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
         "scope": null
       }
     ]
