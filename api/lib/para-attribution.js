@@ -5,7 +5,7 @@
 //
 // Entry points: extractDocAttribution(docId), batchExtractAttribution(docIds)
 
-import { query, queryAll, queryOne, transaction } from './db.js';
+import { queryAll, queryOne, transaction } from './db.js';
 import { logger } from './logger.js';
 
 // ── Regex patterns for standard attribution lines ────────────────────────────
@@ -168,19 +168,17 @@ export async function extractDocAttribution(docId, { force = false, model = 'reg
 
   // Batch update in a single transaction
   const now = new Date().toISOString();
-  let processed = 0;
-  await transaction(() => {
-    for (const [paraId, meta] of metaMap) {
-      // Only update paragraphs we were asked to process
-      const para = paras.find(p => p.id === paraId);
-      if (!para) continue;
-      query(
-        'UPDATE content SET para_meta = ?, para_meta_model = ?, updated_at = ? WHERE id = ?',
-        [JSON.stringify(meta), model, now, paraId]
-      );
-      processed++;
-    }
-  });
+  const paraIds = new Set(paras.map(p => p.id));
+  const statements = [];
+  for (const [paraId, meta] of metaMap) {
+    if (!paraIds.has(paraId)) continue;
+    statements.push({
+      sql: 'UPDATE content SET para_meta = ?, para_meta_model = ?, updated_at = ? WHERE id = ?',
+      args: [JSON.stringify(meta), model, now, paraId],
+    });
+  }
+  if (statements.length > 0) await transaction(statements);
+  const processed = statements.length;
 
   logger.info({ docId, processed, title: doc.title }, 'para_meta attribution extracted');
   return { docId, processed };
