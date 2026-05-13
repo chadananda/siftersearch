@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:48:03.560Z",
+  "generated": "2026-05-13T02:50:29.332Z",
   "entries": [
+    {
+      "hash": "facf4ae",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
+      "scope": null
+    },
     {
       "hash": "106e760",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Calculate embedding costs using totalTokens",
       "scope": null
-    },
-    {
-      "hash": "557b0ad",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Add app_config table migration",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "facf4ae",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "SHARED-TEXT RULE for Psalms appearing in both Christian/Judaism indexes",
+        "scope": null
+      },
       {
         "hash": "106e760",
         "date": "2026-05-12",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Calculate embedding costs using totalTokens",
-        "scope": null
-      },
-      {
-        "hash": "557b0ad",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Add app_config table migration",
         "scope": null
       }
     ]
