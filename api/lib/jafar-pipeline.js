@@ -714,7 +714,7 @@ export async function deterministicResearch({ entities, userMessage, messages, s
   // (semantically adjacent) above Matthew 5:44 which contains the EXACT words.
   const _stripped = userMessage
     .slice(0, 300)
-    .replace(/^(what do|what does|what did|how do|how does|tell me|explain|describe)\s+(?:\w+\s+){0,3}(scriptures?|bible|quran|qu['']ran|texts?|teachings?|religions?|holy\s+books?|traditions?)\s+(?:say about|teach about|say regarding|tell us about|teach us about|say on|teach on|teach(?:es)?(?:\s+about)?)\s*/i, '')
+    .replace(/^(what do|what does|what did|how do|how does|tell me|explain|describe)\s+(?:\w+\s+){0,6}(scriptures?|bible|quran|qu['']ran|texts?|teachings?|religions?|holy\s+books?|traditions?)\s+(?:say about|teach about|say regarding|tell us about|teach us about|say on|teach on|teach(?:es)?(?:\s+about)?)\s*/i, '')
     .replace(/^(what is|what are|how is|how are)\s+/i, '')
     .replace(/\?$/, '')
     .replace(/\b(your|my|our|their|his|her)\b/gi, '')

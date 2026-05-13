@@ -1,6 +1,55 @@
 {
-  "generated": "2026-05-12T22:41:54.926Z",
+  "generated": "2026-05-13T01:39:31.276Z",
   "entries": [
+    {
+      "hash": "819306d",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
+      "scope": null
+    },
+    {
+      "hash": "8e25c38",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
+      "scope": null
+    },
+    {
+      "hash": "27cfdb3",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
+      "scope": null
+    },
+    {
+      "hash": "22d8546",
+      "date": "2026-05-12",
+      "type": "Chore",
+      "description": "Bump version to 2.45.18",
+      "scope": null
+    },
+    {
+      "hash": "d7c5e99",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
+      "scope": null
+    },
+    {
+      "hash": "cc8e358",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
+      "scope": null
+    },
+    {
+      "hash": "d9f2e7b",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
+      "scope": null
+    },
     {
       "hash": "38a97c2",
       "date": "2026-05-12",
@@ -3451,59 +3500,59 @@
       "type": "Fixed",
       "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
       "scope": null
-    },
-    {
-      "hash": "f410166",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Only initialize Meilisearch indexes once per worker lifecycle",
-      "scope": null
-    },
-    {
-      "hash": "87abd0c",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Batch SQLite UPDATE to avoid 'too many SQL variables' error",
-      "scope": null
-    },
-    {
-      "hash": "e4ae4e0",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Add --doc-id filter to regenerate-embeddings",
-      "scope": "scripts"
-    },
-    {
-      "hash": "8820077",
-      "date": "2026-01-16",
-      "type": "New",
-      "description": "Add script to refresh authority values in Meilisearch",
-      "scope": null
-    },
-    {
-      "hash": "f68839d",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Collection authority takes precedence over author-based fallback",
-      "scope": null
-    },
-    {
-      "hash": "41dbb0d",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Deduplicate search results by doc_id + paragraph_index",
-      "scope": null
-    },
-    {
-      "hash": "8fb32b8",
-      "date": "2026-01-16",
-      "type": "Other",
-      "description": "Add key uniqueness logging to detect duplicate key rendering issue",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "819306d",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "SemanticRatio for Buddhism (0.3) and Judaism (0.35) primary searches",
+        "scope": null
+      },
+      {
+        "hash": "8e25c38",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Christian semanticRatio=0.35 + passageQuery plural/3rdPerson regex",
+        "scope": null
+      },
+      {
+        "hash": "27cfdb3",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "PassageQuery stripping for 'religions' (plural) and 'teaches' (3rd person)",
+        "scope": null
+      },
+      {
+        "hash": "22d8546",
+        "date": "2026-05-12",
+        "type": "Chore",
+        "description": "Bump version to 2.45.18",
+        "scope": null
+      },
+      {
+        "hash": "d7c5e99",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Filter Bismillah formula in multiIndexSearch — prevents mercy/compassion false positives",
+        "scope": null
+      },
+      {
+        "hash": "cc8e358",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Islam uses semanticRatio=0.4 to surface thematic suras via semantic matching",
+        "scope": null
+      },
+      {
+        "hash": "d9f2e7b",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Filter Bismillah boilerplate from Islam citations + BM25-dominant broad search",
+        "scope": null
+      },
       {
         "hash": "38a97c2",
         "date": "2026-05-12",
@@ -7021,55 +7070,6 @@
         "date": "2026-01-16",
         "type": "Fixed",
         "description": "Don't wait for Meilisearch settings tasks (fire-and-forget)",
-        "scope": null
-      },
-      {
-        "hash": "f410166",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Only initialize Meilisearch indexes once per worker lifecycle",
-        "scope": null
-      },
-      {
-        "hash": "87abd0c",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Batch SQLite UPDATE to avoid 'too many SQL variables' error",
-        "scope": null
-      },
-      {
-        "hash": "e4ae4e0",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Add --doc-id filter to regenerate-embeddings",
-        "scope": "scripts"
-      },
-      {
-        "hash": "8820077",
-        "date": "2026-01-16",
-        "type": "New",
-        "description": "Add script to refresh authority values in Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "f68839d",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Collection authority takes precedence over author-based fallback",
-        "scope": null
-      },
-      {
-        "hash": "41dbb0d",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Deduplicate search results by doc_id + paragraph_index",
-        "scope": null
-      },
-      {
-        "hash": "8fb32b8",
-        "date": "2026-01-16",
-        "type": "Other",
-        "description": "Add key uniqueness logging to detect duplicate key rendering issue",
         "scope": null
       }
     ]
