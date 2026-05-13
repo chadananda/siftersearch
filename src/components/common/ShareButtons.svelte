@@ -40,8 +40,9 @@
   }
 
   async function copyLink() {
+    const text = quote ? `${shareText}\n${url}` : url;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(text);
       copied = true;
       setTimeout(() => (copied = false), 2000);
     } catch {}
