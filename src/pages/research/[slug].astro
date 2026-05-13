@@ -156,7 +156,7 @@ const datasetSchema = {
 
 const TRADITION_COLORS: Record<string, string> = {
   "Baha'i": '#c8a44a', 'Islam': '#2e7d32', 'Christianity': '#1565c0',
-  'Judaism': '#6a1b9a', 'Buddhism': '#f57f17', 'Hinduism': '#bf360c',
+  'Judaism': '#ab47bc', 'Buddhism': '#f57f17', 'Hinduism': '#bf360c',
   'Taoism': '#00695c', 'Sikhism': '#ad1457', 'Zoroastrian': '#e65100',
 };
 
@@ -344,7 +344,7 @@ function buildOLSourceUrl(q: any): string | null {
               )}
 
               <div class="quotes-list">
-                {(section.quotes || []).map((q: any, qi: number) => {
+                {[...(section.quotes || [])].sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0)).map((q: any, qi: number) => {
                   const olUrl = buildOLSourceUrl(q);
                   const tradColor = TRADITION_COLORS[q.tradition || ''] || '#888';
                   const excerptText = stripMd(q.excerpt || q.text || '');
@@ -353,55 +353,51 @@ function buildOLSourceUrl(q: any): string | null {
                   const quoteUrl = `${pageUrl}#q-${sectionIdx}-${qi}`;
                   const isOL = q.source_site === 'oceanlibrary.com';
                   const stars = q.authority ? '★'.repeat(Math.min(5, Math.round(q.authority / 2))) : '';
+                  const authorText = q.source_author && q.source_author.toLowerCase() !== 'unknown' ? q.source_author : null;
+                  const sourceHref = olUrl || q.source_url || null;
                   return (
                     <div class="quote-card" id={`q-${sectionIdx}-${qi}`}>
-                      <!-- Main content -->
-                      <div class="quote-main">
-                        <!-- Header: tradition tag + answer -->
-                        <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
-                          <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
-                          {q.contextual_note && (
-                            <p class="quote-answer">{q.contextual_note}</p>
-                          )}
-                        </div>
-                        <!-- Quote body -->
-                        <div class="quote-body">
-                          {showOriginal && originalText ? (
+                      <!-- Header: tradition tag + answer -->
+                      <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
+                        <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
+                        {q.contextual_note && (
+                          <p class="quote-answer">{q.contextual_note}</p>
+                        )}
+                      </div>
+                      <!-- Quote body -->
+                      <div class="quote-body">
+                        {showOriginal && originalText ? (
+                          <a href={quoteUrl} class="quote-link">
                             <div class="bilingual">
                               <p class="bilingual-original" dir="auto">{originalText}</p>
                               <p class="bilingual-translation">"{excerptText}"</p>
                             </div>
-                          ) : (
+                          </a>
+                        ) : (
+                          <a href={quoteUrl} class="quote-link">
                             <blockquote class="quote-text">"{excerptText}"</blockquote>
-                          )}
+                          </a>
+                        )}
+                        <div class="quote-footer">
                           <div class="quote-source">
-                            {(olUrl || q.source_url) ? (
-                              <a href={olUrl || q.source_url} target="_blank" rel="noopener" class="source-link">
+                            {sourceHref ? (
+                              <a href={sourceHref} target="_blank" rel="noopener" class="source-link">
                                 <em>{q.source_title || 'Source'}</em>
-                                {q.source_author && <span class="source-author"> — {q.source_author}</span>}
-                                {isOL && <span class="ol-badge">OL ↗</span>}
                               </a>
                             ) : (
-                              <span>
-                                <em>{q.source_title || 'Source'}</em>
-                                {q.source_author && <span class="source-author"> — {q.source_author}</span>}
-                              </span>
+                              <em>{q.source_title || 'Source'}</em>
                             )}
+                            {authorText && <span class="source-author"> — {authorText}</span>}
                             {stars && <span class="stars" title={`Authority ${q.authority}/10`}>{stars}</span>}
                           </div>
+                          <ShareButtons
+                            client:load
+                            url={quoteUrl}
+                            title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
+                            quote={excerptText.slice(0, 200)}
+                            compact={true}
+                          />
                         </div>
-                      </div>
-                      <!-- Share strip: vertical column, full card height -->
-                      <div class="quote-share-strip">
-                        <ShareButtons
-                          client:load
-                          url={quoteUrl}
-                          title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                          quote={excerptText.slice(0, 200)}
-                          sourceUrl={olUrl || q.source_url}
-                          compact={true}
-                          vertical={true}
-                        />
                       </div>
                     </div>
                   );
@@ -573,32 +569,30 @@ function buildOLSourceUrl(q: any): string | null {
   .aspect-heading { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.75rem; line-height: 1.35; }
   .aspect-summary { font-size: 0.9rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
 
-  /* Quote cards — grid: main content left, share strip right */
+  /* Quote cards */
   .quotes-list { display: flex; flex-direction: column; gap: 0.75rem; }
-  .quote-card { display: grid; grid-template-columns: 1fr 34px; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
+  .quote-card { border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-1); }
 
-  .quote-main { display: flex; flex-direction: column; min-width: 0; }
-
-  .quote-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; }
+  .quote-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 9px 9px 0 0; }
   .quote-trad-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.12rem 0.4rem; border-radius: 4px; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
   .quote-answer { font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); margin: 0; flex: 1; }
 
   .quote-body { padding: 0.6rem 0.75rem 0.75rem; border-top: 1px solid var(--border-subtle); }
-  .quote-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); margin: 0 0 0.5rem; font-style: italic; }
+  .quote-link { display: block; text-decoration: none; color: inherit; margin-bottom: 0.5rem; }
+  .quote-link:hover .quote-text { color: var(--accent); }
+  .quote-link:hover .bilingual-translation { color: var(--accent); }
+  .quote-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); margin: 0; font-style: italic; }
 
   /* Bilingual quotes: original script above, English translation below */
-  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; }
   .bilingual-original { font-size: 0.92rem; line-height: 1.75; color: var(--text-primary); margin: 0; font-style: italic; }
   .bilingual-translation { font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); margin: 0; padding-top: 0.35rem; border-top: 1px dashed var(--border-subtle); font-style: italic; }
 
-  .quote-source { font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+  .quote-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.5rem; }
+  .quote-source { font-size: 0.72rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; justify-content: flex-end; flex: 1; text-align: right; }
   .source-link { color: var(--accent); text-decoration: none; } .source-link:hover { text-decoration: underline; }
   .source-author { color: var(--text-muted); }
-  .ol-badge { font-size: 0.6rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.05rem 0.2rem; margin-left: 0.15rem; }
   .stars { color: var(--accent); font-size: 0.6rem; letter-spacing: -1px; margin-left: 0.15rem; }
-
-  /* Share strip: full card height, right border */
-  .quote-share-strip { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--border-subtle); background: var(--surface-0); }
 
   /* Convergence */
   .convergence-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }

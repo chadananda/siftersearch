@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T19:47:56.367Z",
+  "generated": "2026-05-13T20:01:19.771Z",
   "entries": [
+    {
+      "hash": "2172796a",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "/api/search/quick now returns source_site, source_url, external_para_id",
+      "scope": null
+    },
     {
       "hash": "c31a4d38",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show frontmatter title/author in pending list",
       "scope": "library"
-    },
-    {
-      "hash": "d03e8301",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add expandable frontmatter preview for pending docs",
-      "scope": "library"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "2172796a",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "/api/search/quick now returns source_site, source_url, external_para_id",
+        "scope": null
+      },
       {
         "hash": "c31a4d38",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Show frontmatter title/author in pending list",
-        "scope": "library"
-      },
-      {
-        "hash": "d03e8301",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add expandable frontmatter preview for pending docs",
         "scope": "library"
       }
     ]
