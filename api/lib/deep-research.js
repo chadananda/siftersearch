@@ -297,14 +297,25 @@ export async function rerankPassages(question, candidates, chat, topN = 50) {
     fingerprint: textFingerprint(c.text || ''),
   }));
 
-  const systemPrompt = `You are an expert in comparative religion. Evaluate passages for direct relevance to a spiritual question. Score 0-10 where 10 = directly answers the question with authoritative doctrine, 0 = unrelated. When the same quote appears from multiple sources, favor the primary authoritative compilation. Return ONLY valid JSON array.`;
+  const systemPrompt = `You are an expert in comparative religion. Score passages 0-10 for direct relevance to a spiritual question.
+
+Scoring rules:
+- 9-10: Passage directly and substantively addresses the question — the core subject of the passage IS the question topic
+- 7-8: Passage clearly addresses the question topic, though it may also address other things
+- 5-6: Passage is thematically related but only touches the question topic tangentially or metaphorically
+- 3-4: Passage is from a related domain but does not address the question topic itself
+- 0-2: Passage is unrelated or only shares keywords without sharing meaning
+
+CRITICAL: A passage that uses related vocabulary (e.g. "tests", "trials", "affliction") without actually discussing the question topic scores 4 or below. The passage must directly address the question, not merely be retrievable by the same keywords.
+
+Return ONLY valid JSON array.`;
 
   const allScores = [];
   for (let start = 0; start < passages.length; start += BATCH_SIZE) {
     const batch = passages.slice(start, start + BATCH_SIZE);
     const userPrompt = `Question: "${question}"
 
-Rate each passage 0-10 for relevance. Write a 1-sentence note explaining how it addresses the question. JSON only.
+Score each passage 0-10 for DIRECT relevance (not thematic proximity). Write a 1-sentence note on exactly how it addresses the question — if it doesn't directly address it, say so. JSON only.
 
 Passages:
 ${batch.map(p => `[${p.idx}] ${p.religion} (auth:${p.authority}) "${p.title}" — ${p.author}: "${p.text}"`).join('\n\n')}
@@ -359,7 +370,7 @@ Return: [{"idx": N, "score": 0-10, "note": "..."}]`;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
   const ranked = deduped
-    .filter(p => p.relevance_score >= 7)
+    .filter(p => p.relevance_score >= 8)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({
