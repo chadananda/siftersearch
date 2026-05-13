@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:39:54.306Z",
+  "generated": "2026-05-13T02:42:45.374Z",
   "entries": [
+    {
+      "hash": "f6009bc",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Add religion tag to crafter quotes + MANDATORY 5-tradition instruction",
+      "scope": null
+    },
     {
       "hash": "eed48d8",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add AI spending limit safeguard with admin override",
       "scope": null
-    },
-    {
-      "hash": "8022934",
-      "date": "2026-01-16",
-      "type": "Fixed",
-      "description": "Add 24-hour cooldown for document re-ingestion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "f6009bc",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Add religion tag to crafter quotes + MANDATORY 5-tradition instruction",
+        "scope": null
+      },
       {
         "hash": "eed48d8",
         "date": "2026-05-12",
@@ -7061,15 +7068,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Add AI spending limit safeguard with admin override",
-        "scope": null
-      }
-    ],
-    "2026-01-16": [
-      {
-        "hash": "8022934",
-        "date": "2026-01-16",
-        "type": "Fixed",
-        "description": "Add 24-hour cooldown for document re-ingestion",
         "scope": null
       }
     ]

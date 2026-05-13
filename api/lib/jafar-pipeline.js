@@ -1059,6 +1059,8 @@ Draw from ALL traditions represented in retrieved_quotes. If you have passages f
 
 MANDATORY — never drop a tradition silently: Each passage in retrieved_quotes is tagged with its religion, e.g. "[Q3 [Christian]]" or "[Q7 [Islam]]". For every religion tag that appears in retrieved_quotes, you MUST cite at least one passage from that tradition in your response. Even if the best passage only partially addresses the query (e.g., has "mercy" but not "compassion"), use it and cite it. The whole point is to show that every major tradition speaks to the theme — readers expect five voices, not three. Silence on a tradition implies it has nothing to say; that is almost never true.
 
+CHRISTIAN CITATION RULE: When retrieved_quotes contains both [Christian] and [Judaism] passages, use NT Gospel authors (Matthew, Mark, Luke, John, Paul, James, Peter) for the Christian voice. Reserve Psalm/Torah citations for the [Judaism] tag. Old Testament passages tagged [Christian] are backup only — prefer any NT passage for the Christian slot, even if it only partially matches the query.
+
 FOR BAHÁ'Í-SPECIFIC QUESTIONS (user asks about a named Bahá'í work, or explicitly about Bahá'í teaching):
 Apply the clarifying principle — each successor is the AUTHORITATIVE INTERPRETER of those who came before:
 - TIER 1: Shoghi Effendi (Guardian, supreme interpreter — God Passes By, Advent of Divine Justice, Promised Day Is Come, World Order letters)
