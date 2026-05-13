@@ -270,7 +270,7 @@ function buildOLSourceUrl(q: any): string | null {
             <span class="toc-q-text">{record.canonical_question}</span>
           </div>
           {(overviewText || keyPoints.length > 0) && (
-            <a href="#overview" class="toc-link toc-overview">Overview</a>
+            <a href="#overview" class="toc-link toc-overview">Introduction</a>
           )}
           {displaySections.map((s: any, i: number) => (
             <a href={`#aspect-${i}`} class="toc-link toc-aspect">
@@ -307,7 +307,7 @@ function buildOLSourceUrl(q: any): string | null {
         <!-- Overview / Summary -->
         {(overviewText || keyPoints.length > 0) && (
           <section class="overview-section" id="overview">
-            <h2>Overview</h2>
+            <h2>{record.canonical_question}</h2>
             <div class="overview-card">
               {overviewText && <p class="overview-text">{overviewText}</p>}
               {!overviewText && keyPoints.length > 0 && (
