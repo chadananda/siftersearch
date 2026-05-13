@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T03:04:59.892Z",
+  "generated": "2026-05-13T05:25:28.119Z",
   "entries": [
+    {
+      "hash": "696bc07",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Dynamic REQUIRED traditions warning in crafter user payload",
+      "scope": null
+    },
     {
       "hash": "ad26751",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Fix date format for AI usage queries",
       "scope": "admin"
-    },
-    {
-      "hash": "9c80f3f",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Add pipelineStatus to /api/search/stats endpoint",
-      "scope": "stats"
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "696bc07",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Dynamic REQUIRED traditions warning in crafter user payload",
+        "scope": null
+      },
       {
         "hash": "ad26751",
         "date": "2026-05-12",
@@ -7062,13 +7069,6 @@
         "type": "Fixed",
         "description": "Fix date format for AI usage queries",
         "scope": "admin"
-      },
-      {
-        "hash": "9c80f3f",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Add pipelineStatus to /api/search/stats endpoint",
-        "scope": "stats"
       }
     ]
   }

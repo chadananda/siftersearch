@@ -747,9 +747,17 @@ export async function deterministicResearch({ entities, userMessage, messages, s
     forgiveness: 'forgive', goodness: 'good', righteousness: 'righteous',
     faithfulness: 'faithful', thankfulness: 'thankful',
   };
-  const _denessed = (_stripped || userMessage.slice(0, 300)).replace(/\b(\w+ness)\b/gi, (m) => {
-    return NESS_MAP[m.toLowerCase()] || m;
-  });
+  // Broader theological variants not caught by -ness pattern.
+  // Only for cases where KJV scripture uses the adjective/verb form but users
+  // naturally phrase queries with the abstract noun (e.g., "humility" but
+  // Matthew 18:4 says "humble himself").
+  const VARIANT_MAP = {
+    humility: 'humble',
+    purity: 'pure',
+  };
+  const _denessed = (_stripped || userMessage.slice(0, 300))
+    .replace(/\b(\w+ness)\b/gi, (m) => NESS_MAP[m.toLowerCase()] || m)
+    .replace(/\b(\w+)\b/gi, (m) => VARIANT_MAP[m.toLowerCase()] || m);
   const passageQuery = _denessed.replace(/^(\w{2,})ing\b/i, (match, stem) => {
     if (stem.length === 3 && /[aeiou][^aeiou]$/i.test(stem)) return stem + 'e';
     if (/[aeiou]{2}$/i.test(stem)) return stem;
