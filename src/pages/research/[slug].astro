@@ -172,22 +172,6 @@ const TOPIC_LABELS: Record<string, string> = {
   'community': 'Community',
 };
 
-function interleaveByTradition(quotes: any[]): any[] {
-  const sorted = [...quotes].sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
-  const byTrad = new Map<string, any[]>();
-  for (const q of sorted) {
-    const t = q.tradition || 'General';
-    if (!byTrad.has(t)) byTrad.set(t, []);
-    byTrad.get(t)!.push(q);
-  }
-  const groups = [...byTrad.values()];
-  const result: any[] = [];
-  const maxLen = Math.max(...groups.map(g => g.length));
-  for (let i = 0; i < maxLen; i++) {
-    for (const g of groups) { if (g[i]) result.push(g[i]); }
-  }
-  return result;
-}
 
 function buildOLSourceUrl(q: any): string | null {
   if (q.source_site === 'oceanlibrary.com' && q.source_url) {
@@ -361,7 +345,7 @@ function buildOLSourceUrl(q: any): string | null {
               )}
 
               <div class="quotes-list">
-                {interleaveByTradition(section.quotes || []).map((q: any, qi: number) => {
+                {[...(section.quotes || [])].sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0)).map((q: any, qi: number) => {
                   const olUrl = buildOLSourceUrl(q);
                   const tradColor = TRADITION_COLORS[q.tradition || ''] || '#888';
                   const excerptText = stripMd(q.excerpt || q.text || '');

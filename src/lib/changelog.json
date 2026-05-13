@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T21:25:30.912Z",
+  "generated": "2026-05-13T22:44:20.599Z",
   "entries": [
+    {
+      "hash": "7ffb9999",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Interleave quotes by tradition while preserving relevance order",
+      "scope": null
+    },
     {
       "hash": "60bdbb85",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Validate title field to prevent URLs from displaying as titles",
       "scope": null
-    },
-    {
-      "hash": "e18a5027",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Show frontmatter title on pending document cards",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "7ffb9999",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Interleave quotes by tradition while preserving relevance order",
+        "scope": null
+      },
       {
         "hash": "60bdbb85",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Validate title field to prevent URLs from displaying as titles",
-        "scope": null
-      },
-      {
-        "hash": "e18a5027",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Show frontmatter title on pending document cards",
         "scope": null
       }
     ]
