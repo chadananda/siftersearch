@@ -222,6 +222,56 @@ const TOPIC_LABELS: Record<string, string> = {
         </div>
       </div>
 
+      {data.assessment && (() => {
+        const a = data.assessment;
+        const s = a.scores || {};
+        const dims = [
+          ['depth', 'Depth'],
+          ['evidence_quality', 'Evidence'],
+          ['citation_integrity', 'Citations'],
+          ['doctrinal_fidelity', 'Doctrine'],
+          ['conversational_realism', 'Tone'],
+          ['brevity_discipline', 'Brevity'],
+          ['correction_courage', 'Honesty'],
+          ['period_word_discipline', 'Period Vocab'],
+          ['archive_worthy', 'Archive-Worthy'],
+        ];
+        return (
+          <section class="assessment-box" id="assessment" aria-label="Conversation assessment">
+            <div class="assess-header">
+              <span class="assess-label">Quality Assessment</span>
+              <a href="/dialogue/assessment" class="assess-link">How we assess →</a>
+            </div>
+            <div class="assess-scores">
+              {dims.map(([key, label]) => s[key] != null && (
+                <div class="score-cell">
+                  <span class="score-val" data-score={String(s[key])}>{s[key]}</span>
+                  <span class="score-dim">{label}</span>
+                </div>
+              ))}
+            </div>
+            {a.flags?.length > 0 && (
+              <div class="assess-flags">
+                {a.flags.map((f: string) => (
+                  <a href="/dialogue/assessment" class="flag">{f}</a>
+                ))}
+              </div>
+            )}
+            {a.narrative && (
+              <div class="assess-narrative">
+                <h3>Narrative</h3>
+                <p>{a.narrative}</p>
+              </div>
+            )}
+            {a.improvement_plan && (
+              <div class="assess-plan">
+                <h3>Improvement Notes</h3>
+                <p>{a.improvement_plan}</p>
+              </div>
+            )}
+          </section>
+        );
+      })()}
 
       <footer class="dialog-footer">
         <div class="footer-watermark" aria-hidden="true">

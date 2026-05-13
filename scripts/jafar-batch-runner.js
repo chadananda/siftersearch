@@ -433,6 +433,15 @@ async function slugExistsInDB(slug) {
   return r.ok;
 }
 
+async function fetchExistingHeroImage(slug) {
+  try {
+    const r = await fetch(`${API_BASE}/api/v1/dialogs/${slug}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.hero_image || null;
+  } catch { return null; }
+}
+
 async function publishToDB(slug, q, history, score, judgeResult) {
   const messages = history.map(m => ({ role: m.role, content: m.content }));
   const scores = judgeResult.scores || {};
@@ -508,6 +517,15 @@ async function runOne(idx, q) {
   if (skipExisting && await slugExistsInDB(slug)) {
     console.log(`[${idx}] SKIP ${slug} (exists in DB)`);
     return null;
+  }
+
+  // Preserve existing hero image — never regenerate during a rerun
+  if (!q.heroImage) {
+    const existing = await fetchExistingHeroImage(slug);
+    if (existing) {
+      q = { ...q, heroImage: existing };
+      console.log(`  reusing existing hero image: ${existing}`);
+    }
   }
 
   console.log(`\n[${idx}] === ${q.title} ===`);

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T14:03:37.220Z",
+  "generated": "2026-05-13T14:14:16.942Z",
   "entries": [
+    {
+      "hash": "a72397d",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
+      "scope": null
+    },
     {
       "hash": "d3f899d",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use conservative truncation for embedding token limit",
       "scope": null
-    },
-    {
-      "hash": "1ce1720",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Increase pipeline status size and contrast",
-      "scope": "ui"
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "a72397d",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Fallback-link-only judge false positive; theodicy query expansion for suffering queries",
+        "scope": null
+      },
       {
         "hash": "d3f899d",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "Fixed",
         "description": "Use conservative truncation for embedding token limit",
         "scope": null
-      },
-      {
-        "hash": "1ce1720",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Increase pipeline status size and contrast",
-        "scope": "ui"
       }
     ]
   }
