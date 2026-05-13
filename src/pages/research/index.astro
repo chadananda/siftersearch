@@ -1,0 +1,258 @@
+---
+// Deep Research index — live listing from API.
+// SEO-optimized index of all completed interfaith research topics.
+import Layout from '../../layouts/Layout.astro';
+import LiquidBackground from '../../components/LiquidBackground.svelte';
+import NavBar from '../../components/common/NavBar.svelte';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
+const res = await fetch(`${API_BASE}/api/v1/deep-research?status=complete&limit=100`);
+const { records = [] } = res.ok ? await res.json() : {};
+
+// Parse JSON fields
+const items = records.map(r => ({
+  ...r,
+  topic_tags: r.topic_tags ? (typeof r.topic_tags === 'string' ? JSON.parse(r.topic_tags) : r.topic_tags) : [],
+  traditions: r.traditions_covered ? r.traditions_covered.split(',').filter(Boolean) : [],
+}));
+
+// Group by first topic_tag
+const byTopic = new Map<string, typeof items>();
+for (const item of items) {
+  const key = item.topic_tags[0] || 'General';
+  const arr = byTopic.get(key) ?? [];
+  arr.push(item);
+  byTopic.set(key, arr);
+}
+
+const TOPIC_LABELS: Record<string, string> = {
+  'theodicy': 'Theodicy & Suffering',
+  'tests-trials': 'Tests & Trials',
+  'afterlife': 'Afterlife & Soul',
+  'prayer': 'Prayer & Worship',
+  'soul-spirit': 'Soul & Spirit',
+  'mysticism': 'Mysticism & Nearness to God',
+  'ethics': 'Ethics & Conduct',
+  'justice': 'Justice',
+  'mercy-compassion': 'Mercy & Compassion',
+  'free-will': 'Free Will & Predestination',
+  'revelation': 'Revelation & Prophecy',
+  'progressive-revelation': 'Progressive Revelation',
+  'science-reason': 'Science & Reason',
+  'unity': 'Unity of Humanity',
+  'equality': 'Equality',
+  'authority': 'Religious Authority',
+  'law-practice': 'Religious Law & Practice',
+  'eschatology': 'Eschatology & End Times',
+  'social-order': 'Social Order & World Peace',
+  'death-grief': 'Death & Grief',
+  'love': 'Love of God',
+  'scripture-study': 'Scripture & Study',
+  'creation': 'Creation & Nature',
+  'sin-redemption': 'Sin & Redemption',
+  'community': 'Community & Service',
+};
+
+const TRADITION_COLORS: Record<string, string> = {
+  "Baha'i": '#c8a44a', 'Islam': '#2e7d32', 'Christianity': '#1565c0',
+  'Judaism': '#6a1b9a', 'Buddhism': '#f57f17', 'Hinduism': '#bf360c',
+  'Taoism': '#00695c', 'Sikhism': '#ad1457', 'Zoroastrian': '#e65100',
+};
+
+const description = `Comprehensive interfaith research exploring ${items.length} spiritual questions across ${[...new Set(items.flatMap(i => i.traditions))].length} traditions. Each topic draws from authoritative primary texts — scripture, theology, and mystical writings — curated for depth and accuracy.`;
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Deep Research — SifterSearch Interfaith Library",
+  "description": description,
+  "url": "https://siftersearch.com/research",
+  "publisher": { "@type": "Organization", "name": "SifterSearch", "url": "https://siftersearch.com" },
+  "hasPart": items.slice(0, 20).map(r => ({
+    "@type": "Article",
+    "name": r.canonical_question,
+    "url": `https://siftersearch.com/research/${r.slug}`,
+  })),
+};
+---
+
+<Layout
+  title="Interfaith Deep Research — SifterSearch"
+  description={description}
+  image="/og-research.png"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+    <link rel="canonical" href="https://siftersearch.com/research" />
+  </Fragment>
+
+  <LiquidBackground client:only="svelte" />
+  <NavBar currentPage="research" client:load />
+
+  <main class="research-index">
+    <header class="research-hero">
+      <div class="hero-inner">
+        <div class="hero-badge">Interfaith Deep Research</div>
+        <h1>Questions that span traditions</h1>
+        <p class="hero-desc">{description}</p>
+        <div class="hero-stats">
+          <span class="stat"><strong>{items.length}</strong> topics researched</span>
+          <span class="stat-div">·</span>
+          <span class="stat"><strong>{[...new Set(items.flatMap(i => i.traditions))].length}</strong> traditions covered</span>
+          <span class="stat-div">·</span>
+          <span class="stat"><strong>{items.reduce((s, i) => s + (i.total_selected || 0), 0)}</strong> curated passages</span>
+        </div>
+        <div class="hero-actions">
+          <a href="/?q=" class="btn-primary">Ask a question →</a>
+          <a href="#topics" class="btn-secondary">Browse by topic ↓</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Topic navigation TOC -->
+    <nav class="topic-nav" id="topics" aria-label="Research topics">
+      <div class="topic-nav-inner">
+        {[...byTopic.keys()].map(key => (
+          <a href={`#topic-${key}`} class="topic-nav-pill">
+            {TOPIC_LABELS[key] || key}
+            <span class="pill-count">{byTopic.get(key)!.length}</span>
+          </a>
+        ))}
+      </div>
+    </nav>
+
+    <!-- Research listing by topic -->
+    <div class="research-body">
+      {[...byTopic.entries()].map(([key, group]) => (
+        <section class="topic-section" id={`topic-${key}`}>
+          <h2 class="topic-heading">
+            <span class="topic-label">{TOPIC_LABELS[key] || key}</span>
+            <span class="topic-count">{group.length} {group.length === 1 ? 'topic' : 'topics'}</span>
+          </h2>
+          <div class="research-grid">
+            {group.map(item => (
+              <a href={`/research/${item.slug}`} class="research-card">
+                <div class="card-question">{item.canonical_question}</div>
+                <div class="card-meta">
+                  <div class="traditions-row">
+                    {item.traditions.slice(0, 5).map(t => (
+                      <span class="tradition-dot" style={`background:${TRADITION_COLORS[t] || '#888'}`} title={t}></span>
+                    ))}
+                    {item.traditions.length > 5 && <span class="tradition-more">+{item.traditions.length - 5}</span>}
+                  </div>
+                  <span class="card-quotes">{item.total_selected || 0} passages</span>
+                </div>
+                {item.topic_tags.length > 1 && (
+                  <div class="card-tags">
+                    {item.topic_tags.slice(1, 4).map((t: string) => (
+                      <span class="tag">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {items.length === 0 && (
+        <div class="empty-state">
+          <p>No completed research yet. Ask Jafar a question to seed the research queue.</p>
+          <a href="/" class="btn-primary">Start a conversation →</a>
+        </div>
+      )}
+    </div>
+
+    <!-- CTA -->
+    <section class="index-cta">
+      <div class="cta-inner">
+        <h2>Don't see your question?</h2>
+        <p>Ask Jafar — if your question is substantial, deep research will be queued automatically and you can subscribe for email notification when it's ready.</p>
+        <a href="/" class="btn-primary">Ask Jafar →</a>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .research-index { min-height: 100vh; padding-bottom: 4rem; }
+
+  .research-hero {
+    padding: 5rem 1.5rem 3rem;
+    text-align: center;
+    background: linear-gradient(to bottom, rgba(10,22,42,0) 0%, rgba(10,22,42,0.6) 100%);
+  }
+  .hero-inner { max-width: 720px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-block;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 0.2rem 0.6rem; margin-bottom: 1rem;
+  }
+  h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; color: var(--text-primary); margin: 0 0 1rem; }
+  .hero-desc { font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 1.5rem; }
+  .hero-stats { display: flex; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-muted); }
+  .hero-stats strong { color: var(--text-primary); }
+  .stat-div { color: var(--border); }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  .topic-nav { border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); padding: 1rem 1.5rem; background: var(--surface-1); }
+  .topic-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .topic-nav-pill {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.7rem; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
+    border: 1px solid var(--border-subtle); background: var(--surface-0);
+    text-decoration: none; transition: all 0.15s;
+  }
+  .topic-nav-pill:hover { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb),0.08); }
+  .pill-count { font-size: 0.7rem; color: var(--text-muted); }
+
+  .research-body { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .topic-section { margin-bottom: 3rem; }
+  .topic-heading {
+    display: flex; align-items: baseline; gap: 0.75rem;
+    margin: 0 0 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .topic-label { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
+  .topic-count { font-size: 0.8rem; color: var(--text-muted); }
+
+  .research-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+  .research-card {
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border-radius: 10px;
+    border: 1px solid var(--border-subtle); background: var(--surface-1);
+    text-decoration: none; transition: all 0.2s;
+  }
+  .research-card:hover { border-color: var(--accent); background: var(--surface-2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .card-question { font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; }
+  .card-meta { display: flex; align-items: center; justify-content: space-between; }
+  .traditions-row { display: flex; align-items: center; gap: 4px; }
+  .tradition-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .tradition-more { font-size: 0.7rem; color: var(--text-muted); }
+  .card-quotes { font-size: 0.75rem; color: var(--text-muted); }
+  .card-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .tag { font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 10px; background: var(--surface-2); color: var(--text-muted); }
+
+  .empty-state { text-align: center; padding: 4rem 1.5rem; color: var(--text-muted); }
+
+  .index-cta { margin: 2rem auto 0; max-width: 600px; text-align: center; padding: 3rem 1.5rem; }
+  .index-cta h2 { font-size: 1.4rem; margin: 0 0 0.75rem; color: var(--text-primary); }
+  .index-cta p { color: var(--text-secondary); margin: 0 0 1.5rem; line-height: 1.7; }
+
+  .btn-primary {
+    display: inline-block; padding: 0.65rem 1.5rem; border-radius: 8px;
+    background: var(--accent); color: #fff; font-weight: 600; text-decoration: none;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary {
+    display: inline-block; padding: 0.65rem 1.5rem; border-radius: 8px;
+    border: 1px solid var(--border); color: var(--text-secondary);
+    font-weight: 500; text-decoration: none; transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+</style>
