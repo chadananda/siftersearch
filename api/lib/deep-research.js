@@ -231,7 +231,7 @@ Return JSON:
   "key_distinctions": "2-3 sentences on how traditions fundamentally differ in their approach"
 }`
     }
-  ], { max_tokens: 4096 });
+  ], { max_tokens: 6000 });
 
   const text = response.content?.[0]?.text || '';
   const json = text.match(/\{[\s\S]*\}/)?.[0];
