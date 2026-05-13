@@ -264,3 +264,4 @@
 017-suffering-instrumental-redemptive-or-meaningless - Suffering — Instrumental, Redemptive, or Meaningless? - score=71% - https://siftersearch.com/dialogue/017-suffering-instrumental-redemptive-or-meaningless/ - 2026-05-12T05:36:54.691Z
 018-historical-accuracy-of-religious-narratives - Historical Accuracy of Religious Narratives - score=72% - https://siftersearch.com/dialogue/018-historical-accuracy-of-religious-narratives/ - 2026-05-12T05:40:29.917Z
 019-how-the-bah-faith-reads-christian-symbols - How the Bahá'í Faith Reads Christian Symbols - score=72% - https://siftersearch.com/dialogue/019-how-the-bah-faith-reads-christian-symbols/ - 2026-05-12T05:43:33.948Z
+008-why-does-god-allow-suffering - Why Does God Allow Suffering? - score=72% - https://siftersearch.com/dialogue/008-why-does-god-allow-suffering/ - 2026-05-13T13:57:13.379Z

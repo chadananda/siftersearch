@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T13:48:43.135Z",
+  "generated": "2026-05-13T13:58:29.634Z",
   "entries": [
+    {
+      "hash": "5f487af",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
+      "scope": null
+    },
     {
       "hash": "68385ee",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Show embedding count with time estimate",
       "scope": "ui"
-    },
-    {
-      "hash": "c33afb7",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add background embedding worker",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "5f487af",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Render em/strong inside link text; add off-topic-citation assessment flag",
+        "scope": null
+      },
       {
         "hash": "68385ee",
         "date": "2026-05-13",
@@ -7064,13 +7071,6 @@
         "type": "New",
         "description": "Show embedding count with time estimate",
         "scope": "ui"
-      },
-      {
-        "hash": "c33afb7",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add background embedding worker",
-        "scope": null
       }
     ]
   }
