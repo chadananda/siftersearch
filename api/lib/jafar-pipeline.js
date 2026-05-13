@@ -1384,11 +1384,17 @@ function buildCrafterUserPayload({ user_question, retrieved_quotes, subagent_syn
     ? `\n\nsubagent_synthesis (a specialist sub-agent read the named work and produced this for the user's question — use as context for the reply, but quote verbatim only from retrieved_quotes above):\n\n${subagent_syntheses.map((s, i) => `[S${i + 1}] from "${s.source_title}"${s.source_author ? ` by ${s.source_author}` : ''}:\n${s.answer}`).join('\n\n')}`
     : '';
 
+  // Build a summary of which traditions have passages in retrieved_quotes
+  const presentTraditions = [...new Set(retrieved_quotes.filter(q => q.religion).map(q => q.religion))];
+  const traditionsWarning = presentTraditions.length >= 3
+    ? `\n⚠️ REQUIRED: This reply MUST cite passages from ALL of these traditions (each has quotes in retrieved_quotes): ${presentTraditions.join(', ')}. Silence on any listed tradition is a failure.`
+    : '';
+
   return `user_intent: ${user_intent}
 
 user_question: ${user_question}
 
-conversation_summary: ${conversation_summary || '(this is the opening turn)'}
+conversation_summary: ${conversation_summary || '(this is the opening turn)'}${traditionsWarning}
 
 retrieved_quotes (${retrieved_quotes.length} entries — use these as the substrate; entries marked SUMMARY are sub-agent context, not quotable text):
 

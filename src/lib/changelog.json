@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T03:00:07.180Z",
+  "generated": "2026-05-13T03:04:59.892Z",
   "entries": [
+    {
+      "hash": "ad26751",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Text dedup scoped per-religion — prevents cross-religion Psalms dedup regression",
+      "scope": null
+    },
     {
       "hash": "b376965",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add pipelineStatus to /api/search/stats endpoint",
       "scope": "stats"
-    },
-    {
-      "hash": "5fbef8b",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Improve library stats display & fix embedding tracking",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "ad26751",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Text dedup scoped per-religion — prevents cross-religion Psalms dedup regression",
+        "scope": null
+      },
       {
         "hash": "b376965",
         "date": "2026-05-12",
@@ -7062,13 +7069,6 @@
         "type": "Fixed",
         "description": "Add pipelineStatus to /api/search/stats endpoint",
         "scope": "stats"
-      },
-      {
-        "hash": "5fbef8b",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Improve library stats display & fix embedding tracking",
-        "scope": null
       }
     ]
   }
