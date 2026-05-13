@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T17:15:33.560Z",
+  "generated": "2026-05-13T17:38:03.819Z",
   "entries": [
+    {
+      "hash": "60fe930",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Replace generic 'Overview' h2 with canonical question for SEO",
+      "scope": null
+    },
     {
       "hash": "e32262d",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.800",
       "scope": null
-    },
-    {
-      "hash": "154c36e",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Use correct column name file_path in oversized-paragraphs query",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "60fe930",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Replace generic 'Overview' h2 with canonical question for SEO",
+        "scope": null
+      },
       {
         "hash": "e32262d",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Bump version to 0.1.800",
-        "scope": null
-      },
-      {
-        "hash": "154c36e",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Use correct column name file_path in oversized-paragraphs query",
         "scope": null
       }
     ]

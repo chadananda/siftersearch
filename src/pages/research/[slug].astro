@@ -84,7 +84,6 @@ function buildAdHocSections(qs: any[]) {
 }
 
 const displaySections: any[] = sections.length > 0 ? sections : buildAdHocSections(quotes);
-const isAspectBased = displaySections.length > 0 && displaySections[0]?.type === 'aspect';
 
 const isPending = record.status !== 'complete';
 const pageUrl = `${SITE}/research/${slug}`;
@@ -97,6 +96,24 @@ const description = overviewText
   : keyPoints.length > 0
     ? keyPoints.slice(0, 2).join(' ') + ` Explored across ${traditions.length} religious traditions.`
     : `Interfaith research on "${record.canonical_question}" drawing from ${record.total_selected || 0} authoritative passages across ${traditions.length} traditions.`;
+
+// Related: same topic tags, sorted by overlap
+const related = allRecords
+  .filter((r: any) => r.slug !== slug && r.status === 'complete')
+  .map((r: any) => {
+    const rTags: string[] = r.topic_tags ? (typeof r.topic_tags === 'string' ? JSON.parse(r.topic_tags) : r.topic_tags) : [];
+    const overlap = rTags.filter((t: string) => topicTags.includes(t)).length;
+    return { ...r, overlap };
+  })
+  .filter((r: any) => r.overlap > 0)
+  .sort((a: any, b: any) => b.overlap - a.overlap)
+  .slice(0, 5);
+
+// Top topics: most-asked questions from the index
+const topQuestions = allRecords
+  .filter((r: any) => r.slug !== slug && r.status === 'complete')
+  .sort((a: any, b: any) => (b.ask_count || 0) - (a.ask_count || 0))
+  .slice(0, 6);
 
 const articleSchema = {
   "@context": "https://schema.org",
@@ -112,10 +129,7 @@ const articleSchema = {
   "mainEntity": {
     "@type": "Question",
     "name": record.canonical_question,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": overviewText || summary.searchable_text || keyPoints.join(' ') || description
-    }
+    "acceptedAnswer": { "@type": "Answer", "text": overviewText || summary.searchable_text || keyPoints.join(' ') || description }
   }
 };
 
@@ -125,10 +139,7 @@ const faqSchema = displaySections.length >= 2 ? {
   "mainEntity": displaySections.filter((s: any) => s.quotes?.length).map((s: any) => ({
     "@type": "Question",
     "name": s.label || `What does ${s.tradition} say about: ${record.canonical_question}`,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": (s.summary || s.quotes[0]?.excerpt || s.quotes[0]?.contextual_note || '').slice(0, 600)
-    }
+    "acceptedAnswer": { "@type": "Answer", "text": (s.summary || s.quotes[0]?.excerpt || '').slice(0, 600) }
   }))
 } : null;
 
@@ -141,19 +152,7 @@ const datasetSchema = {
   "creator": { "@type": "Organization", "name": "SifterSearch" },
   "keywords": [...topicTags, ...traditions],
   "measurementTechnique": "AI-assisted semantic search and relevance reranking across interfaith primary texts",
-  "variableMeasured": "Relevance and authority score",
 };
-
-const related = allRecords
-  .filter((r: any) => r.slug !== slug && r.status === 'complete')
-  .map((r: any) => {
-    const rTags: string[] = r.topic_tags ? (typeof r.topic_tags === 'string' ? JSON.parse(r.topic_tags) : r.topic_tags) : [];
-    const overlap = rTags.filter((t: string) => topicTags.includes(t)).length;
-    return { ...r, overlap };
-  })
-  .filter((r: any) => r.overlap > 0)
-  .sort((a: any, b: any) => b.overlap - a.overlap)
-  .slice(0, 6);
 
 const TRADITION_COLORS: Record<string, string> = {
   "Baha'i": '#c8a44a', 'Islam': '#2e7d32', 'Christianity': '#1565c0',
@@ -221,24 +220,53 @@ function buildOLSourceUrl(q: any): string | null {
         <h1 itemprop="headline">{record.canonical_question}</h1>
 
         <div class="research-badges">
-          <span class="badge traditions-badge" title="Traditions covered">
+          <span class="badge" title="Traditions covered">
             <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v14M1 8h14M3 3.5c1 1.5 3 2.5 5 2.5s4-1 5-2.5M3 12.5c1-1.5 3-2.5 5-2.5s4 1 5 2.5"/></svg>
             {traditions.length} traditions
           </span>
-          <span class="badge quotes-badge">
+          <span class="badge">
             <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M3 5h10M3 8h7M3 11h5"/><rect x="1" y="2" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
             {record.total_selected || quotes.length} passages
           </span>
-          {record.ask_count > 1 && (
-            <span class="badge popular-badge">
-              <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 5v5l3 1.5"/></svg>
-              Asked {record.ask_count}×
-            </span>
-          )}
+          {record.ask_count > 1 && <span class="badge">Asked {record.ask_count}×</span>}
           {isPending && <span class="badge pending-badge">Research in progress</span>}
         </div>
+      </div>
+    </header>
 
-        <div class="hero-share">
+    <div class="article-body">
+      <!-- Sidebar -->
+      <aside class="article-sidebar">
+
+        <!-- TOC: Q&A format, sub-questions as full text links -->
+        <nav class="toc" aria-label="Table of contents">
+          <div class="toc-main-q">
+            <span class="toc-q-label">Q</span>
+            <span class="toc-q-text">{record.canonical_question}</span>
+          </div>
+          {(overviewText || keyPoints.length > 0) && (
+            <a href="#overview" class="toc-link toc-sub">
+              <span class="toc-bullet">·</span>
+              <span>Introduction</span>
+            </a>
+          )}
+          {displaySections.map((s: any, i: number) => (
+            <a href={`#aspect-${i}`} class="toc-link toc-sub">
+              <span class="toc-bullet">·</span>
+              <span>{s.label || s.tradition || `Aspect ${i + 1}`}</span>
+            </a>
+          ))}
+          {(convergence.agreements?.length > 1 || convergence.broadly_agreed?.length > 1) && (
+            <a href="#convergence" class="toc-link toc-sub"><span class="toc-bullet">·</span><span>Convergence</span></a>
+          )}
+          {qaItems.length > 0 && (
+            <a href="#faq" class="toc-link toc-sub"><span class="toc-bullet">·</span><span>Related Questions</span></a>
+          )}
+        </nav>
+
+        <!-- Share (sticky in sidebar) -->
+        <div class="sidebar-share">
+          <p class="sidebar-share-label">Share this research</p>
           <ShareButtons
             client:load
             url={pageUrl}
@@ -246,50 +274,32 @@ function buildOLSourceUrl(q: any): string | null {
             description={description}
           />
         </div>
-      </div>
-    </header>
 
-    <!-- Tradition coverage strip -->
-    <div class="traditions-strip">
-      <div class="traditions-strip-inner">
-        {traditions.map(t => (
-          <span class="tradition-pill" style={`border-color:${TRADITION_COLORS[t] || '#888'}`}>
-            <span class="tradition-dot" style={`background:${TRADITION_COLORS[t] || '#888'}`}></span>
-            {t}
-          </span>
-        ))}
-      </div>
-    </div>
-
-    <div class="article-body">
-      <!-- Sidebar TOC (Q&A format) -->
-      <aside class="article-sidebar">
-        <nav class="toc" aria-label="Table of contents">
-          <div class="toc-main-q">
-            <span class="toc-q-label">Q</span>
-            <span class="toc-q-text">{record.canonical_question}</span>
-          </div>
-          {(overviewText || keyPoints.length > 0) && (
-            <a href="#overview" class="toc-link toc-overview">Introduction</a>
-          )}
-          {displaySections.map((s: any, i: number) => (
-            <a href={`#aspect-${i}`} class="toc-link toc-aspect">
-              <span class="toc-a-marker">A{i + 1}</span>
-              <span class="toc-aspect-text">{s.label || s.tradition || `Aspect ${i + 1}`}</span>
-            </a>
-          ))}
-          {(convergence.agreements?.length > 1 || convergence.broadly_agreed?.length > 1) && (
-            <a href="#convergence" class="toc-link">Convergence</a>
-          )}
-          {qaItems.length > 0 && <a href="#faq" class="toc-link">Related Questions</a>}
-          {related.length > 0 && <a href="#related" class="toc-link">Related Research</a>}
-          <a href="#share" class="toc-link">Share</a>
-        </nav>
-
+        <!-- Ask Jafar CTA -->
         <div class="sidebar-cta">
           <p>Explore this question with Jafar, our AI research assistant</p>
           <a href={chatUrl} class="btn-jafar">Ask Jafar →</a>
         </div>
+
+        <!-- Related questions -->
+        {related.length > 0 && (
+          <div class="sidebar-related">
+            <p class="sidebar-section-label">Related Questions</p>
+            {related.map((r: any) => (
+              <a href={`/research/${r.slug}`} class="sidebar-related-link">{r.canonical_question}</a>
+            ))}
+          </div>
+        )}
+
+        <!-- Top questions -->
+        {topQuestions.length > 0 && (
+          <div class="sidebar-related">
+            <p class="sidebar-section-label">Top Questions</p>
+            {topQuestions.map((r: any) => (
+              <a href={`/research/${r.slug}`} class="sidebar-related-link">{r.canonical_question}</a>
+            ))}
+          </div>
+        )}
 
         {isPending && (
           <div class="notify-form" id="notify-form">
@@ -311,9 +321,7 @@ function buildOLSourceUrl(q: any): string | null {
             <div class="overview-card">
               {overviewText && <p class="overview-text">{overviewText}</p>}
               {!overviewText && keyPoints.length > 0 && (
-                <ul class="key-points">
-                  {keyPoints.map((p: string) => <li>{p}</li>)}
-                </ul>
+                <ul class="key-points">{keyPoints.map((p: string) => <li>{p}</li>)}</ul>
               )}
               {summary.traditions?.length > 0 && (
                 <div class="summary-meta">
@@ -326,27 +334,13 @@ function buildOLSourceUrl(q: any): string | null {
 
         <!-- Aspect sections -->
         {displaySections.map((section: any, sectionIdx: number) => {
-          const anchorId = `aspect-${sectionIdx}`;
           const sectionTraditions: string[] = section.traditions || (section.tradition ? [section.tradition] : []);
           return (
-            <section class="aspect-section" id={anchorId} scroll-margin-top="1rem">
-              <div class="aspect-header">
-                <div class="aspect-number">A{sectionIdx + 1}</div>
-                <h2 class="aspect-heading">{section.label || section.tradition || `Aspect ${sectionIdx + 1}`}</h2>
-              </div>
+            <section class="aspect-section" id={`aspect-${sectionIdx}`}>
+              <h2 class="aspect-heading">{section.label || section.tradition}</h2>
 
               {section.summary && (
                 <p class="aspect-summary">{section.summary}</p>
-              )}
-
-              {sectionTraditions.length > 0 && (
-                <div class="aspect-traditions">
-                  {sectionTraditions.map((t: string) => (
-                    <span class="tradition-chip" style={`background:${TRADITION_COLORS[t] || '#888'}22;border-color:${TRADITION_COLORS[t] || '#888'}66;color:${TRADITION_COLORS[t] || '#888'}`}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
               )}
 
               <div class="quotes-list">
@@ -354,56 +348,56 @@ function buildOLSourceUrl(q: any): string | null {
                   const olUrl = buildOLSourceUrl(q);
                   const tradColor = TRADITION_COLORS[q.tradition || ''] || '#888';
                   const excerptText = stripMd(q.excerpt || q.text || '');
-                  const isNonLatin = hasNonLatin(excerptText);
+                  const originalText = q.original ? stripMd(q.original) : null;
+                  const showOriginal = originalText || hasNonLatin(excerptText);
                   const quoteUrl = `${pageUrl}#q-${sectionIdx}-${qi}`;
                   const isOL = q.source_site === 'oceanlibrary.com';
+                  const stars = q.authority ? '★'.repeat(Math.min(5, Math.round(q.authority / 2))) : '';
                   return (
                     <div class="quote-card" id={`q-${sectionIdx}-${qi}`}>
-                      <div class="quote-tradition-bar" style={`background:${tradColor}`} title={q.tradition}></div>
+                      <!-- Header: summary answer + tradition tag -->
+                      <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
+                        {q.contextual_note && (
+                          <p class="quote-answer">{q.contextual_note}</p>
+                        )}
+                        <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
+                      </div>
+                      <!-- Quote body -->
                       <div class="quote-body">
-                        {isNonLatin ? (
-                          <table class="bilingual-table">
-                            <tbody>
-                              <tr>
-                                <td class="bilingual-lang">{q.tradition || 'Original'}</td>
-                                <td class="bilingual-text bilingual-original" dir="auto">{excerptText}</td>
-                              </tr>
-                            </tbody>
-                          </table>
+                        {showOriginal && originalText ? (
+                          <div class="bilingual">
+                            <p class="bilingual-original" dir="auto">{originalText}</p>
+                            <p class="bilingual-translation">"{excerptText}"</p>
+                          </div>
                         ) : (
                           <blockquote class="quote-text">"{excerptText}"</blockquote>
                         )}
-                        <div class="quote-footer">
+                        <!-- Compact footer: source + stars + share -->
+                        <div class="quote-meta">
                           <div class="quote-source">
-                            <span class="quote-tradition-tag" style={`color:${tradColor}`}>{q.tradition}</span>
                             {olUrl ? (
                               <a href={olUrl} target="_blank" rel="noopener" class="source-link">
                                 <em>{q.source_title || 'Source'}</em>
                                 {q.source_author && <span class="source-author"> — {q.source_author}</span>}
-                                {isOL && <span class="ol-badge" title="OceanLibrary">OL</span>}
+                                {isOL && <span class="ol-badge">OL</span>}
                               </a>
                             ) : (
-                              <span class="source-text">
+                              <span>
                                 <em>{q.source_title || 'Source'}</em>
                                 {q.source_author && <span class="source-author"> — {q.source_author}</span>}
                               </span>
                             )}
-                            {q.authority && <span class="authority-pip" title={`Authority ${q.authority}/10`}>{"★".repeat(Math.min(5, Math.round(q.authority / 2)))}</span>}
+                            {stars && <span class="stars" title={`Authority ${q.authority}/10`}>{stars}</span>}
                           </div>
-                          <div class="quote-actions">
-                            <ShareButtons
-                              client:load
-                              url={quoteUrl}
-                              title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                              quote={excerptText.slice(0, 200)}
-                              sourceUrl={olUrl || q.source_url}
-                              compact={true}
-                            />
-                          </div>
+                          <ShareButtons
+                            client:load
+                            url={quoteUrl}
+                            title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
+                            quote={excerptText.slice(0, 200)}
+                            sourceUrl={olUrl || q.source_url}
+                            compact={true}
+                          />
                         </div>
-                        {q.contextual_note && (
-                          <p class="contextual-note">{q.contextual_note}</p>
-                        )}
                       </div>
                     </div>
                   );
@@ -416,7 +410,7 @@ function buildOLSourceUrl(q: any): string | null {
         <!-- Convergence Analysis -->
         {(convergence.agreements?.length > 1 || convergence.broadly_agreed?.length > 1) && (
           <section class="convergence-section" id="convergence">
-            <h2>Convergence & Divergence</h2>
+            <h2>Points of Convergence</h2>
             <div class="convergence-card">
               {convergence.broadly_agreed?.length > 0 && (
                 <div class="conv-group">
@@ -451,9 +445,7 @@ function buildOLSourceUrl(q: any): string | null {
                   <summary class="faq-q">{qa.question}</summary>
                   <div class="faq-a">
                     <p>{qa.answer}</p>
-                    {qa.traditions_cited?.length > 0 && (
-                      <p class="faq-traditions">Traditions: {qa.traditions_cited.join(', ')}</p>
-                    )}
+                    {qa.traditions_cited?.length > 0 && <p class="faq-traditions">Traditions: {qa.traditions_cited.join(', ')}</p>}
                   </div>
                 </details>
               ))}
@@ -461,7 +453,6 @@ function buildOLSourceUrl(q: any): string | null {
           </section>
         )}
 
-        <!-- Pending research notice -->
         {isPending && (
           <div class="pending-notice">
             <h3>Research in Progress</h3>
@@ -472,33 +463,6 @@ function buildOLSourceUrl(q: any): string | null {
             </div>
           </div>
         )}
-
-        <!-- Related Research -->
-        {related.length > 0 && (
-          <section class="related-section" id="related">
-            <h2>Related Research</h2>
-            <div class="related-grid">
-              {related.map((r: any) => (
-                <a href={`/research/${r.slug}`} class="related-card">
-                  <span class="related-q">{r.canonical_question}</span>
-                  <span class="related-count">{r.total_selected || 0} passages →</span>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <!-- Share section -->
-        <section class="share-section" id="share">
-          <h2>Share this research</h2>
-          <p class="share-desc">Help others discover this interfaith perspective on an important question.</p>
-          <ShareButtons
-            client:load
-            url={pageUrl}
-            title={record.canonical_question}
-            description={description}
-          />
-        </section>
 
         <!-- Footer CTA -->
         <div class="article-footer-cta">
@@ -531,11 +495,9 @@ function buildOLSourceUrl(q: any): string | null {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (btn) btn.textContent = data.success ? 'You\'re on the list!' : (data.message || 'Done');
+      if (btn) btn.textContent = data.success ? "You're on the list!" : (data.message || 'Done');
       if (emailInput) emailInput.value = '';
-    } catch {
-      if (btn) btn.textContent = 'Try again';
-    }
+    } catch { if (btn) btn.textContent = 'Try again'; }
   }
   window.submitNotify = submitNotify;
 </script>
@@ -552,131 +514,119 @@ function buildOLSourceUrl(q: any): string | null {
   .topic-chip { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0.2rem 0.5rem; text-decoration: none; }
   .topic-chip:hover { background: rgba(var(--accent-rgb),0.1); }
   h1 { font-size: clamp(1.5rem, 4vw, 2.4rem); font-weight: 700; color: var(--text-primary); margin: 0 0 1.25rem; line-height: 1.25; }
-  .research-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .research-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .badge { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 6px; background: var(--surface-1); border: 1px solid var(--border-subtle); color: var(--text-muted); }
   .pending-badge { color: var(--warning); border-color: var(--warning); background: rgba(255,193,7,0.08); }
-  .hero-share { margin-top: 0.5rem; }
-
-  /* Traditions strip */
-  .traditions-strip { border-bottom: 1px solid var(--border-subtle); padding: 0.75rem 1.5rem; background: var(--surface-1); }
-  .traditions-strip-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .tradition-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 20px; border: 1px solid; font-size: 0.78rem; color: var(--text-secondary); }
-  .tradition-dot { width: 8px; height: 8px; border-radius: 50%; }
 
   /* Layout */
   .article-body { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
   @media (max-width: 768px) { .article-body { grid-template-columns: 1fr; } .article-sidebar { display: none; } }
 
   /* Sidebar */
-  .article-sidebar { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-  .toc { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .article-sidebar { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; max-height: calc(100vh - 3rem); overflow-y: auto; }
+
+  .toc { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; gap: 0.1rem; }
   .toc-main-q { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.5rem; background: var(--surface-2); border-radius: 6px; margin-bottom: 0.5rem; }
   .toc-q-label { font-size: 0.65rem; font-weight: 800; background: var(--accent); color: #fff; border-radius: 3px; padding: 0.15rem 0.35rem; flex-shrink: 0; margin-top: 0.1rem; }
-  .toc-q-text { font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; font-weight: 500; }
-  .toc-link { font-size: 0.82rem; color: var(--text-secondary); text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 4px; transition: all 0.1s; display: flex; align-items: flex-start; gap: 0.4rem; }
+  .toc-q-text { font-size: 0.76rem; color: var(--text-primary); line-height: 1.4; font-weight: 500; }
+  .toc-link { font-size: 0.78rem; color: var(--text-secondary); text-decoration: none; padding: 0.2rem 0.4rem; border-radius: 4px; transition: all 0.1s; display: flex; align-items: flex-start; gap: 0.35rem; }
   .toc-link:hover { background: var(--surface-2); color: var(--text-primary); }
-  .toc-overview { font-style: italic; }
-  .toc-aspect { align-items: flex-start; }
-  .toc-a-marker { font-size: 0.6rem; font-weight: 700; background: var(--surface-2); color: var(--text-muted); border-radius: 3px; padding: 0.1rem 0.3rem; flex-shrink: 0; margin-top: 0.15rem; }
-  .toc-aspect-text { font-size: 0.78rem; line-height: 1.35; color: var(--text-secondary); }
-  .sidebar-cta { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; }
-  .sidebar-cta p { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 0.75rem; line-height: 1.5; }
-  .btn-jafar { display: block; text-align: center; padding: 0.5rem; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+  .toc-sub { font-size: 0.76rem; }
+  .toc-bullet { color: var(--text-muted); flex-shrink: 0; line-height: 1.5; }
+
+  .sidebar-share { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 0.875rem; }
+  .sidebar-share-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin: 0 0 0.5rem; }
+
+  .sidebar-cta { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 0.875rem; }
+  .sidebar-cta p { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.6rem; line-height: 1.5; }
+  .btn-jafar { display: block; text-align: center; padding: 0.45rem; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.82rem; font-weight: 600; text-decoration: none; }
   .btn-jafar:hover { background: var(--accent-hover); }
-  .notify-form { background: var(--surface-1); border: 1px solid var(--warning); border-radius: 10px; padding: 1rem; }
-  .notify-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warning); font-weight: 700; margin: 0 0 0.4rem; }
-  .notify-desc { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.75rem; }
-  .notify-input { width: 100%; padding: 0.4rem 0.6rem; border-radius: 5px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); font-size: 0.82rem; box-sizing: border-box; }
-  .notify-btn { width: 100%; margin-top: 0.5rem; padding: 0.45rem; border-radius: 5px; border: none; background: var(--accent); color: #fff; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+
+  .sidebar-related { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 0.875rem; display: flex; flex-direction: column; gap: 0.25rem; }
+  .sidebar-section-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin: 0 0 0.4rem; }
+  .sidebar-related-link { font-size: 0.76rem; color: var(--text-secondary); text-decoration: none; padding: 0.2rem 0.3rem; border-radius: 4px; line-height: 1.4; transition: all 0.1s; }
+  .sidebar-related-link:hover { background: var(--surface-2); color: var(--accent); }
+
+  .notify-form { background: var(--surface-1); border: 1px solid var(--warning); border-radius: 10px; padding: 0.875rem; }
+  .notify-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--warning); font-weight: 700; margin: 0 0 0.3rem; }
+  .notify-desc { font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.6rem; }
+  .notify-input { width: 100%; padding: 0.4rem 0.6rem; border-radius: 5px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); font-size: 0.8rem; box-sizing: border-box; }
+  .notify-btn { width: 100%; margin-top: 0.4rem; padding: 0.4rem; border-radius: 5px; border: none; background: var(--accent); color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 
   /* Main content */
-  .article-main { display: flex; flex-direction: column; gap: 3rem; }
-  h2 { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem; }
+  .article-main { display: flex; flex-direction: column; gap: 2.5rem; }
+  h2 { font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.875rem; }
 
   /* Overview */
   .overview-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; }
-  .overview-text { font-size: 0.95rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; }
+  .overview-text { font-size: 0.95rem; line-height: 1.8; color: var(--text-secondary); margin: 0 0 1rem; }
   .key-points { margin: 0 0 1rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
   .key-points li { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
-  .summary-meta { font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 0.75rem; margin-top: 0.75rem; }
+  .summary-meta { font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 0.75rem; margin-top: 0.75rem; }
 
   /* Aspect sections */
   .aspect-section { scroll-margin-top: 1.5rem; }
-  .aspect-header { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem; }
-  .aspect-number { font-size: 0.68rem; font-weight: 800; background: var(--surface-2); color: var(--text-muted); border-radius: 4px; padding: 0.2rem 0.45rem; flex-shrink: 0; margin-top: 0.35rem; }
-  .aspect-heading { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.35; }
-  .aspect-summary { font-size: 0.92rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
-  .aspect-traditions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
-  .tradition-chip { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 20px; border: 1px solid; }
+  .aspect-heading { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.75rem; line-height: 1.35; }
+  .aspect-summary { font-size: 0.9rem; line-height: 1.75; color: var(--text-secondary); margin: 0 0 1rem; padding: 0.75rem 1rem; background: var(--surface-1); border-left: 3px solid var(--border); border-radius: 0 6px 6px 0; }
 
-  /* Quote cards */
-  .quotes-list { display: flex; flex-direction: column; gap: 1rem; }
-  .quote-card { display: flex; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
-  .quote-tradition-bar { width: 4px; flex-shrink: 0; }
-  .quote-body { padding: 1.25rem; flex: 1; min-width: 0; }
-  .quote-text { font-size: 0.95rem; line-height: 1.8; color: var(--text-primary); margin: 0 0 0.75rem; font-style: italic; }
-  .quote-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .quote-source { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-  .quote-tradition-tag { font-size: 0.7rem; font-weight: 700; }
+  /* Quote cards — redesigned: header (answer + tradition), body (quote), compact meta */
+  .quotes-list { display: flex; flex-direction: column; gap: 0.875rem; }
+  .quote-card { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; background: var(--surface-1); }
+
+  .quote-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.875rem; }
+  .quote-answer { font-size: 0.82rem; line-height: 1.55; color: var(--text-secondary); margin: 0; flex: 1; }
+  .quote-trad-tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid; white-space: nowrap; flex-shrink: 0; margin-top: 0.1rem; }
+
+  .quote-body { padding: 0.75rem 0.875rem 0.875rem; border-top: 1px solid var(--border-subtle); }
+  .quote-text { font-size: 0.92rem; line-height: 1.75; color: var(--text-primary); margin: 0 0 0.6rem; font-style: italic; }
+
+  /* Bilingual quotes: original script above, English translation below */
+  .bilingual { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .bilingual-original { font-size: 0.95rem; line-height: 1.8; color: var(--text-primary); margin: 0; font-style: italic; }
+  .bilingual-translation { font-size: 0.85rem; line-height: 1.65; color: var(--text-secondary); margin: 0; padding-top: 0.4rem; border-top: 1px dashed var(--border-subtle); font-style: italic; }
+
+  .quote-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .quote-source { font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
   .source-link { color: var(--accent); text-decoration: none; } .source-link:hover { text-decoration: underline; }
   .source-author { color: var(--text-muted); }
-  .ol-badge { font-size: 0.65rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.1rem 0.3rem; margin-left: 0.25rem; vertical-align: middle; }
-  .authority-pip { color: var(--accent); font-size: 0.7rem; letter-spacing: -1px; }
-  .contextual-note { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin: 0.75rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); }
-
-  /* Bilingual table for non-Latin script quotes */
-  .bilingual-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
-  .bilingual-table td { padding: 0.5rem 0.75rem; font-size: 0.9rem; line-height: 1.75; vertical-align: top; }
-  .bilingual-lang { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); width: 80px; padding-top: 0.65rem; white-space: nowrap; }
-  .bilingual-original { color: var(--text-primary); font-style: italic; border-left: 2px solid var(--border-subtle); }
+  .ol-badge { font-size: 0.62rem; background: rgba(200,164,74,0.15); color: #c8a44a; border: 1px solid #c8a44a; border-radius: 3px; padding: 0.05rem 0.25rem; margin-left: 0.2rem; }
+  .stars { color: var(--accent); font-size: 0.65rem; letter-spacing: -1px; margin-left: 0.2rem; }
 
   /* Convergence */
-  .convergence-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-  .conv-group { display: flex; flex-direction: column; gap: 0.5rem; }
-  .conv-label { font-size: 0.85rem; font-weight: 700; margin: 0 0 0.5rem; }
-  .conv-agree { color: var(--success); }
-  .conv-differ { color: var(--accent); }
-  .conv-list { margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
-  .conv-list li { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
-  .conv-note { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+  .convergence-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+  .conv-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .conv-label { font-size: 0.82rem; font-weight: 700; margin: 0 0 0.4rem; }
+  .conv-agree { color: var(--success); } .conv-differ { color: var(--accent); }
+  .conv-list { margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .conv-list li { font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6; }
+  .conv-note { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
 
   /* FAQ */
   .faq-list { display: flex; flex-direction: column; gap: 0.5rem; }
   .faq-item { border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
-  .faq-q { padding: 1rem 1.25rem; font-size: 0.95rem; font-weight: 500; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
+  .faq-q { padding: 0.875rem 1.125rem; font-size: 0.92rem; font-weight: 500; color: var(--text-primary); cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
   .faq-q::-webkit-details-marker { display: none; }
   .faq-q::after { content: '+'; color: var(--accent); }
   details[open] .faq-q::after { content: '−'; }
-  .faq-a { padding: 0 1.25rem 1rem; }
-  .faq-a p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 0.5rem; }
-  .faq-traditions { color: var(--text-muted); font-size: 0.8rem; }
+  .faq-a { padding: 0 1.125rem 0.875rem; }
+  .faq-a p { font-size: 0.86rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 0.4rem; }
+  .faq-traditions { color: var(--text-muted); font-size: 0.78rem; }
 
   /* Pending */
   .pending-notice { background: rgba(255,193,7,0.08); border: 1px solid var(--warning); border-radius: 12px; padding: 1.5rem; }
   .pending-notice h3 { font-size: 1rem; color: var(--warning); margin: 0 0 0.5rem; }
-  .pending-notice p { font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 1rem; }
+  .pending-notice p { font-size: 0.86rem; color: var(--text-secondary); margin: 0 0 1rem; }
   .notify-inline { display: flex; gap: 0.5rem; }
   .notify-inline .notify-input { flex: 1; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); }
   .notify-inline .notify-btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; }
-
-  /* Related */
-  .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
-  .related-card { display: flex; flex-direction: column; gap: 0.4rem; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--surface-1); text-decoration: none; transition: all 0.15s; }
-  .related-card:hover { border-color: var(--accent); background: var(--surface-2); }
-  .related-q { font-size: 0.88rem; color: var(--text-primary); line-height: 1.4; }
-  .related-count { font-size: 0.75rem; color: var(--accent); font-weight: 500; }
-
-  /* Share */
-  .share-section { padding: 2rem 0; border-top: 1px solid var(--border-subtle); }
-  .share-desc { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 1rem; }
 
   /* Footer CTA */
   .article-footer-cta { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; }
   .footer-cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
   .footer-cta-text h3 { font-size: 1rem; color: var(--text-primary); margin: 0 0 0.3rem; }
-  .footer-cta-text p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; }
+  .footer-cta-text p { font-size: 0.83rem; color: var(--text-secondary); margin: 0; }
   .footer-nav { margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
-  .footer-link { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; }
+  .footer-link { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; }
   .footer-link:hover { color: var(--accent); }
   .btn-primary { display: inline-block; padding: 0.6rem 1.25rem; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transition: background 0.15s; white-space: nowrap; }
   .btn-primary:hover { background: var(--accent-hover); }
