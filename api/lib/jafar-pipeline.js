@@ -775,10 +775,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Post-merge author filter handles any HyPE bleed from non-Muhammad authors.
         // Bismillah filter prevents the formulaic sura header from dominating.
         "Islam":    { author: "Muhammad", broadAuthor: "Muhammad", primarySemanticRatio: 0.4 },
-        // Christian: semanticRatio=0.1 — KJV morphology gaps (forgiveness→forgive) handled
-        // by NESS_MAP in passageQuery; matchingStrategy:'last' handles partial BM25 matching.
-        // Low semantic keeps BM25 dominant: Matthew 5:7 "merciful" beats "peacemakers".
-        "Christian":{ author: "Matthew", primarySemanticRatio: 0.1 },
+        // Christian: semanticRatio=0 — pure BM25 so KJV keyword matches dominate.
+        // NESS_MAP handles forgiveness→forgive; matchingStrategy:'last' allows partial match.
+        // Pure BM25 ensures Matthew 5:7 "merciful" ranks above "peacemakers" for mercy queries.
+        "Christian":{ author: "Matthew", primarySemanticRatio: 0 },
         // Buddhist: semanticRatio=0.3 — Pali concepts (dukkha, nirvana, karuna) are often
         // translated indirectly; "compassion" queries need semantic to find "loving-kindness".
         "Buddhist": { author: "Siddhartha Buddha", primarySemanticRatio: 0.3 },
@@ -1143,6 +1143,7 @@ Take positions. Don't hedge into both-and unless the writings genuinely teach bo
 
 Default embedded-quote reply: 50-120 words.
 With a block quote (rare, justified): up to ~150-180 words.
+For interfaith queries requiring 5 tradition voices: up to 200 words — do NOT truncate to fit under 120 if that would mean dropping a tradition entirely.
 NEVER multi-paragraph essay-style replies.
 
 ╔══════════════════════════════════════════════════════════╗

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T02:42:45.374Z",
+  "generated": "2026-05-13T02:44:36.335Z",
   "entries": [
+    {
+      "hash": "8a96df4",
+      "date": "2026-05-12",
+      "type": "Fixed",
+      "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
+      "scope": null
+    },
     {
       "hash": "f6009bc",
       "date": "2026-05-12",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add admin AI cost ticker to home page Library status box",
       "scope": null
-    },
-    {
-      "hash": "c1e3100",
-      "date": "2026-01-17",
-      "type": "New",
-      "description": "Add AI spending limit safeguard with admin override",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-12": [
+      {
+        "hash": "8a96df4",
+        "date": "2026-05-12",
+        "type": "Fixed",
+        "description": "Crafter Christian citation rule — prefer NT Gospel passages over OT Psalms",
+        "scope": null
+      },
       {
         "hash": "f6009bc",
         "date": "2026-05-12",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-17",
         "type": "New",
         "description": "Add admin AI cost ticker to home page Library status box",
-        "scope": null
-      },
-      {
-        "hash": "c1e3100",
-        "date": "2026-01-17",
-        "type": "New",
-        "description": "Add AI spending limit safeguard with admin override",
         "scope": null
       }
     ]
