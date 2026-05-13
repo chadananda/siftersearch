@@ -185,44 +185,117 @@ export async function getDeepResearchQuotes(researchId) {
 // --- Worker API (called by the deep-research worker process only) ---
 
 /**
- * Decompose a question into research angles (one per religious tradition + general).
- * Returns an array of angle objects with query variants.
+ * Step 0: Conceptual reconnaissance — use LLM general knowledge to map the theological
+ * landscape before touching the library. Returns frameworks (major thematic categories)
+ * with per-tradition vocabulary, driving both search angles and final structuring.
  *
  * @param {string} question
- * @param {Function} chat - LLM chat function
- * @returns {Promise<Array<{tradition, query, angle}>>}
+ * @param {Function} chat
+ * @returns {Promise<{frameworks: Array, key_distinctions: string}>}
  */
-export async function decomposeAngles(question, chat) {
+export async function conceptualRecon(question, chat) {
+  const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh'];
+  const response = await chat([
+    {
+      role: 'system',
+      content: `You are a comparative religion scholar with broad knowledge of how the world's major religious traditions address spiritual questions. Your task is to map the conceptual landscape of a question so that a library search can be intelligently directed. Return JSON only.`
+    },
+    {
+      role: 'user',
+      content: `Question: "${question}"
+
+Using your knowledge of comparative religion, identify the 4-7 major thematic frameworks through which world religions address this question. These frameworks will become the structural sections of a research article, so they must represent genuinely distinct approaches — not just variations on the same idea.
+
+For each framework:
+- Which traditions hold this view?
+- What specific vocabulary, terminology, metaphors, and images do those traditions' texts actually use? (The words that would appear in a primary text passage, not abstract labels)
+- What is the core claim or teaching?
+
+Traditions to consider: ${TRADITIONS.join(', ')}
+
+Return JSON:
+{
+  "frameworks": [
+    {
+      "theme": "concise theme label (5-8 words)",
+      "core_claim": "1-2 sentences: what this framework actually teaches",
+      "traditions": ["list of traditions that hold this view"],
+      "search_vocabulary": {
+        "TraditionName": ["specific", "words", "metaphors", "concepts", "found in texts"]
+      }
+    }
+  ],
+  "key_distinctions": "2-3 sentences on how traditions fundamentally differ in their approach to this question"
+}`
+    }
+  ], { max_tokens: 4096 });
+
+  const text = response.content?.[0]?.text || '';
+  const json = text.match(/\{[\s\S]*\}/)?.[0];
+  if (!json) throw new Error('conceptualRecon: no JSON in response');
+  const result = JSON.parse(json);
+  logger.info({ frameworks: result.frameworks?.length }, 'Conceptual recon complete');
+  return result;
+}
+
+/**
+ * Decompose a question into search angles guided by the conceptual recon map.
+ * Generates two queries per tradition (conceptual + vocabulary-anchored) to
+ * bridge the gap between abstract question framing and tradition-specific text idioms.
+ *
+ * @param {string} question
+ * @param {object} recon - result of conceptualRecon()
+ * @param {Function} chat
+ * @returns {Promise<Array<{tradition, conceptual, vocabulary, angle}>>}
+ */
+export async function decomposeAngles(question, recon, chat) {
   // Values must match the `religion` field in the Meilisearch paragraphs index exactly.
   const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh', 'General'];
-  const systemPrompt = `You are a research assistant for an interfaith library. Given a spiritual question, generate search queries optimized for finding directly relevant authoritative passages. Return JSON only.`;
+
+  // Build a vocabulary hint per tradition from the recon map
+  const vocabHints = {};
+  for (const fw of (recon.frameworks || [])) {
+    for (const [trad, terms] of Object.entries(fw.search_vocabulary || {})) {
+      if (!vocabHints[trad]) vocabHints[trad] = new Set();
+      terms.forEach(t => vocabHints[trad].add(t));
+    }
+  }
+  const vocabSummary = Object.entries(vocabHints)
+    .map(([t, terms]) => `${t}: ${[...terms].slice(0, 8).join(', ')}`)
+    .join('\n');
+
+  const systemPrompt = `You are a research assistant for an interfaith library. Generate targeted search queries to find primary text passages. Return JSON only.`;
   const userPrompt = `Question: "${question}"
 
-For each tradition below, produce a search query (10-20 words) targeting how THAT tradition addresses this specific question.
+Conceptual map (from prior analysis):
+${recon.frameworks?.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}
 
-Rules:
-- The query MUST include the core subject of the question (do not substitute tradition-specific euphemisms that drift from the topic)
-- Add tradition-specific vocabulary ON TOP of core keywords, not instead of them
-- Example for "What is the spiritual purpose of suffering?": Baha'i query should include "suffering" alongside any "tests trials" language, not replace it
-- Target passages that explain WHY or WHAT PURPOSE — not just passages that mention the topic
+Known text vocabulary per tradition:
+${vocabSummary}
+
+For each tradition, produce TWO distinct search queries (10-20 words each):
+1. "conceptual": abstract framing — purpose, meaning, why + tradition terms
+2. "vocabulary": the words that actually appear in texts of that tradition (from the vocabulary map above)
+
+The two queries must be genuinely different — different words, not reordering.
 
 Traditions: ${TRADITIONS.join(', ')}
 
 Return JSON array:
-[{"tradition": "...", "query": "...", "angle": "one-sentence description of the angle"}]`;
+[{"tradition": "...", "conceptual": "...", "vocabulary": "...", "angle": "one-sentence description of what this tradition teaches on this topic"}]`;
 
   try {
     const response = await chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ]);
-    const text = response.content?.[0]?.text || response;
+    const text = response.content?.[0]?.text || '';
     const json = text.match(/\[[\s\S]*\]/)?.[0];
     if (!json) throw new Error('No JSON array in response');
     return JSON.parse(json);
   } catch (err) {
     logger.warn({ err: err.message }, 'decomposeAngles fallback to defaults');
-    return TRADITIONS.map(t => ({ tradition: t, query: question, angle: `${t} perspective` }));
+    return TRADITIONS.map(t => ({ tradition: t, conceptual: question, vocabulary: question, angle: `${t} perspective` }));
   }
 }
 
@@ -234,24 +307,32 @@ Return JSON array:
  * @param {number} [perAngle=30] - candidates per angle
  * @returns {Promise<Array>} Deduplicated candidate paragraphs
  */
-export async function fanOutQueries(angles, search, perAngle = 30) {
+export async function fanOutQueries(angles, search, perAngle = 25) {
   const seen = new Set();
   const candidates = [];
-  for (const { tradition, query: q } of angles) {
-    try {
-      const results = await search(q, {
-        limit: perAngle,
-        filters: tradition !== 'General' ? { religion: tradition } : {},
-        semanticRatio: 0.6,
-      });
-      for (const hit of (results.hits || [])) {
-        if (!seen.has(hit.id)) {
-          seen.add(hit.id);
-          candidates.push({ ...hit, _searchTradition: tradition });
+  // Each angle now has conceptual + vocabulary queries — run both
+  for (const angle of angles) {
+    const { tradition } = angle;
+    const queries = [angle.conceptual || angle.query, angle.vocabulary].filter(Boolean);
+    const filter = tradition !== 'General' ? { religion: tradition } : {};
+    for (const q of queries) {
+      try {
+        const results = await search(q, {
+          limit: perAngle,
+          filters: filter,
+          semanticRatio: 0.65,
+        });
+        for (const hit of (results.hits || [])) {
+          // Skip very short passages — likely headers, section titles, frontmatter
+          if ((hit.text || '').length < 80) continue;
+          if (!seen.has(hit.id)) {
+            seen.add(hit.id);
+            candidates.push({ ...hit, _searchTradition: tradition });
+          }
         }
+      } catch (err) {
+        logger.warn({ err: err.message, tradition, q: q.slice(0, 50) }, 'fanOutQueries angle error');
       }
-    } catch (err) {
-      logger.warn({ err: err.message, tradition }, 'fanOutQueries angle error');
     }
   }
   return candidates;
@@ -409,12 +490,15 @@ export async function runDeepResearch(researchId, { chat, search }) {
   try {
     logger.info({ researchId, question: record.canonical_question }, 'Deep research started');
 
-    // 1. Decompose into angles
-    const angles = await decomposeAngles(record.canonical_question, chat);
-    await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify(angles), researchId]);
+    // 0. Conceptual reconnaissance — map the theological landscape before searching
+    const recon = await conceptualRecon(record.canonical_question, chat);
 
-    // 2. Fan out queries — 40 per tradition gives more material for the LLM to filter
-    const candidates = await fanOutQueries(angles, search, 40);
+    // 1. Decompose into angles guided by the recon map (two queries per tradition)
+    const angles = await decomposeAngles(record.canonical_question, recon, chat);
+    await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ recon, angles }), researchId]);
+
+    // 2. Fan out queries — two queries per tradition, 25 each, min-length filter
+    const candidates = await fanOutQueries(angles, search, 25);
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
 
     // 3. Rerank
@@ -439,7 +523,7 @@ export async function runDeepResearch(researchId, { chat, search }) {
 
     // 5. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(selected.map(q => q.tradition).filter(Boolean))].join(',');
-    const structured = await clusterAndStructure(record.canonical_question, selected, chat);
+    const structured = await clusterAndStructure(record.canonical_question, selected, chat, recon);
     const sections = structured?.sections || buildSectionsFallback(selected, angles);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
     const convergence = { searchable_text: sections.map(s => s.label || s.tradition || '').join(' ') };
@@ -485,36 +569,42 @@ export async function runDeepResearch(researchId, { chat, search }) {
  *
  * Returns { sections[], summary } or null on failure (caller uses fallbacks).
  */
-export async function clusterAndStructure(question, selected, chat) {
+export async function clusterAndStructure(question, selected, chat, recon = null) {
   if (!selected.length) return null;
 
+  // Use recon frameworks as the structural anchor if available
+  const frameworkHint = recon?.frameworks?.length
+    ? `\nTheological framework (from prior analysis — use these as the basis for aspects):\n${recon.frameworks.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}\n\nKey distinctions: ${recon.key_distinctions || ''}\n`
+    : '';
+
   const systemPrompt = `You are a scholar of comparative religion creating a structured interfaith research document in Q&A format.
-The main document is an answer to a big question. Sub-sections are specific sub-questions (aspects), and each quote is a direct answer to that sub-question.
+The main document answers a big spiritual question. Sub-sections are specific aspect sub-questions backed by primary source passages.
 
 Critical rules:
-1. Frame each aspect as a sub-question (e.g. "How does suffering serve as purification?").
-2. Every assigned quote MUST directly and substantively answer the sub-question — if tangential, set aspect_idx to -1 (exclude). Be strict.
-3. Extract ONLY the most directly relevant 1-2 sentences from the passage. The excerpt must answer the sub-question. Never quote full paragraphs.
-4. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt — do not include the original script.
-5. Strip all markup artifacts from excerpts: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
-6. Generate 4-6 sub-questions that cover the key dimensions of the main question.
-7. The summary for each sub-question (2-3 sentences) synthesizes how multiple traditions answer it.`;
+1. Frame each aspect as a focused sub-question (e.g. "How does suffering serve as purification?").
+2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
+3. Every assigned quote MUST directly and substantively answer the sub-question — if tangential, set aspect_idx to -1 (exclude). Be strict.
+4. Extract ONLY the most directly relevant 1-2 sentences from each passage. The excerpt must answer the sub-question. Never quote full paragraphs.
+5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
+6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
+7. The summary for each aspect synthesizes what the FOUND passages say — acknowledge if only one tradition is represented rather than over-generalizing.
+8. The overview synthesizes general knowledge AND the found passages — clearly grounded in the texts.`;
 
   const userPrompt = `Main question: "${question}"
-
-Passages to organize:
+${frameworkHint}
+Passages found in the library:
 ${selected.map((q, i) => `[${i}] ${q.tradition} auth:${q.authority} "${q.title}" — ${q.author}:
 "${(q.text || '').slice(0, 500)}"`).join('\n\n')}
 
 Return ONLY valid JSON:
 {
   "aspects": [
-    {"label": "Sub-question as a question? (8-12 words)", "summary": "2-3 sentence synthesis across traditions"}
+    {"label": "Sub-question as a question? (8-12 words)", "summary": "2-3 sentence synthesis — note if limited to one tradition"}
   ],
   "assignments": [
     {"quote_idx": 0, "aspect_idx": 0, "excerpt": "1-2 sentences in clean English that directly answer the sub-question"}
   ],
-  "overview": "3-4 sentence overview synthesizing how all traditions collectively address the main question"
+  "overview": "3-4 sentence overview — synthesize the full theological landscape across traditions, grounded in the passages found"
 }`;
 
   try {

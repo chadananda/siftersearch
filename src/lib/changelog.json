@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T18:04:41.079Z",
+  "generated": "2026-05-13T18:23:39.073Z",
   "entries": [
+    {
+      "hash": "c81a9ad",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
+      "scope": null
+    },
     {
       "hash": "0db4593",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Match API response field names to frontend expectations",
       "scope": null
-    },
-    {
-      "hash": "0a768df",
-      "date": "2026-01-17",
-      "type": "Chore",
-      "description": "Update changelog and lockfile",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "c81a9ad",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Anchor decomposeAngles queries to core topic keywords — revert threshold to 7",
+        "scope": null
+      },
       {
         "hash": "0db4593",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Match API response field names to frontend expectations",
-        "scope": null
-      },
-      {
-        "hash": "0a768df",
-        "date": "2026-01-17",
-        "type": "Chore",
-        "description": "Update changelog and lockfile",
         "scope": null
       }
     ]
