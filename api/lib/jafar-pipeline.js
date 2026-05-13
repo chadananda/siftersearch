@@ -760,7 +760,10 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // Post-merge author filter handles any HyPE bleed from non-Muhammad authors.
         // Bismillah filter prevents the formulaic sura header from dominating.
         "Islam":    { author: "Muhammad", broadAuthor: "Muhammad", primarySemanticRatio: 0.4 },
-        "Christian":{ author: "Matthew" },
+        // Christian: semanticRatio=0.35 — KJV uses archaic morphology (forgive/forgiven vs
+        // forgiveness, blessed/bless vs blessing) that BM25 misses without stemming.
+        // Semantic helps bridge these while BM25 still dominates for exact phrases.
+        "Christian":{ author: "Matthew", primarySemanticRatio: 0.35 },
         "Buddhist": { author: "Siddhartha Buddha" },
         "Judaism":  { author: "King David" },
       };
