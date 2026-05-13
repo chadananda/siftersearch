@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-13T20:12:33.936Z",
+  "generated": "2026-05-13T21:21:36.645Z",
   "entries": [
+    {
+      "hash": "a1eba8b5",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "Copy formats as quote + markdown reference link",
+      "scope": null
+    },
     {
       "hash": "4c6ec1fd",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Chore",
       "description": "Bump version to 0.1.817",
       "scope": null
-    },
-    {
-      "hash": "e611f631",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Filter out empty collections from library tree",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "a1eba8b5",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "Copy formats as quote + markdown reference link",
+        "scope": null
+      },
       {
         "hash": "4c6ec1fd",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Chore",
         "description": "Bump version to 0.1.817",
-        "scope": null
-      },
-      {
-        "hash": "e611f631",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Filter out empty collections from library tree",
         "scope": null
       }
     ]

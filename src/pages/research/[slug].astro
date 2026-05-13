@@ -367,16 +367,13 @@ function buildOLSourceUrl(q: any): string | null {
                       <!-- Quote body -->
                       <div class="quote-body">
                         {showOriginal && originalText ? (
-                          <a href={quoteUrl} class="quote-link">
-                            <div class="bilingual">
-                              <p class="bilingual-original" dir="auto">{originalText}</p>
-                              <p class="bilingual-translation">"{excerptText}"</p>
-                            </div>
-                          </a>
+                          sourceHref
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation">"{excerptText}"</p></div></a>
+                            : <div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation">"{excerptText}"</p></div>
                         ) : (
-                          <a href={quoteUrl} class="quote-link">
-                            <blockquote class="quote-text">"{excerptText}"</blockquote>
-                          </a>
+                          sourceHref
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><blockquote class="quote-text">"{excerptText}"</blockquote></a>
+                            : <blockquote class="quote-text">"{excerptText}"</blockquote>
                         )}
                         <div class="quote-footer">
                           <div class="quote-source">
