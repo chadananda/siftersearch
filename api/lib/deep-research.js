@@ -553,8 +553,18 @@ export async function syncDeepResearch(ids = null) {
  */
 export async function getDeepResearchBySlug(slug) {
   try {
-    const record = await queryOne('SELECT * FROM deep_research WHERE slug = ?', [slug]);
+    // Exclude question_embedding blob — it's large and not needed by the frontend.
+    const record = await queryOne(
+      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, total_candidates, total_selected, research_model, ask_count, last_asked_at, created_at, completed_at FROM deep_research WHERE slug = ?',
+      [slug]
+    );
     if (!record) return null;
+    // Parse stored JSON fields
+    for (const field of ['sections_json', 'summary_json', 'convergence_json', 'angles_json', 'qa_json', 'topic_tags']) {
+      if (record[field] && typeof record[field] === 'string') {
+        try { record[field] = JSON.parse(record[field]); } catch { /* leave as-is */ }
+      }
+    }
     const quotes = await getDeepResearchQuotes(record.id);
     return { record, quotes };
   } catch (err) {
