@@ -764,8 +764,13 @@ export async function deterministicResearch({ entities, userMessage, messages, s
         // forgiveness, blessed/bless vs blessing) that BM25 misses without stemming.
         // Semantic helps bridge these while BM25 still dominates for exact phrases.
         "Christian":{ author: "Matthew", primarySemanticRatio: 0.35 },
-        "Buddhist": { author: "Siddhartha Buddha" },
-        "Judaism":  { author: "King David" },
+        // Buddhist: semanticRatio=0.3 — Pali concepts (dukkha, nirvana, karuna) are often
+        // translated indirectly; "compassion" queries need semantic to find "loving-kindness".
+        "Buddhist": { author: "Siddhartha Buddha", primarySemanticRatio: 0.3 },
+        // Judaism: semanticRatio=0.35 — Psalms use poetic Hebrew-derived imagery:
+        // "beside the still waters" for inner peace, "lovingkindness" for mercy.
+        // BM25 misses these without stemming; semantic finds thematic resonance.
+        "Judaism":  { author: "King David", primarySemanticRatio: 0.35 },
       };
       const INTERFAITH_TRADITIONS = ["Christian", "Islam", "Judaism", "Buddhist", "Baha'i"];
       for (const religion of INTERFAITH_TRADITIONS) {
