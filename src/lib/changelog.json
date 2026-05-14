@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T12:32:49.849Z",
+  "generated": "2026-05-14T12:40:47.610Z",
   "entries": [
+    {
+      "hash": "ec8b6a2f",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
+      "scope": null
+    },
     {
       "hash": "1f02bb9e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use correct db interface in fix-filenames script",
       "scope": null
-    },
-    {
-      "hash": "f0ef95cc",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Populate filename column during ingestion",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "ec8b6a2f",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "KnowledgeBrief JSON truncation — increase max_tokens + trim prompt + salvage partial JSON",
+        "scope": null
+      },
       {
         "hash": "1f02bb9e",
         "date": "2026-05-14",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Use correct db interface in fix-filenames script",
-        "scope": null
-      },
-      {
-        "hash": "f0ef95cc",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Populate filename column during ingestion",
         "scope": null
       }
     ]
