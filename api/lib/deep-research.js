@@ -612,7 +612,7 @@ Return ONLY valid JSON array.`;
 
 Score each passage 0-10 for DIRECT relevance (not thematic proximity).
 
-For the "answer" field: write a SHORT phrase (under 12 words) that rephrases what THIS passage says in answer to the question. Write it as the answer itself — not a description of the passage. Example: "Suffering purifies the soul like fire refines gold." If the passage doesn't directly address the question, write "Not directly relevant."
+For the "answer" field: write a SHORT phrase (under 12 words) capturing what THIS passage says — vivid, direct, in the voice of the tradition itself. Write the insight, not a description of it. Example: "Suffering burns away what was never truly ours." If the passage doesn't directly address the question, write "Not directly relevant."
 
 JSON only.
 
@@ -1368,8 +1368,7 @@ export async function clusterAndStructure(question, selected, chat, recon = null
     ? `\nTheological framework (from prior analysis — use these as the basis for aspects):\n${angleList.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}\n`
     : '';
 
-  const systemPrompt = `You are a scholar of comparative religion creating a structured interfaith research document in Q&A format.
-The main document answers a big spiritual question. Sub-sections are specific aspect sub-questions backed by primary source passages.
+  const systemPrompt = `You are writing interfaith research with the voice of a young David Attenborough — direct wonder at deep things, respectful awe for the wisdom of every tradition, plain English that carries real weight. You treat the world's sacred teachings as a naturalist treats the natural world: each tradition is a distinct and magnificent specimen, each insight worth pausing over. No academic hedging. No pious distance. Just honest fascination.
 
 Critical rules:
 1. Frame each aspect as a focused question about a UNIVERSAL SPIRITUAL PRINCIPLE — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
@@ -1380,8 +1379,8 @@ Critical rules:
 6. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
 7. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 8. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
-9. The summary for each aspect is 1-2 SHORT sentences — state the finding directly ("Sacred rest is understood as..."). Do NOT open with "Across traditions", "Multiple traditions", "These passages show", or similar hedges. If only one tradition is represented, say so plainly.
-10. The overview is 2-3 sentences — dive straight into the subject. Start with a substantive claim about the topic itself ("Suffering is consistently treated...", "The soul's journey begins...", "Sacred rest is universally understood..."). NEVER open with domain phrases like "Across these traditions", "World religions teach", "Throughout history", or any variant — the reader already knows this is interfaith research.`;
+9. The summary for each aspect is 1-2 SHORT sentences in the Attenborough voice — an observation that makes the reader feel the weight of what these passages reveal. Direct, vivid, never hedged. Do NOT open with "Across traditions", "Multiple traditions", "These passages show", or similar. If only one tradition is represented, say so plainly.
+10. The overview is 2-3 sentences — open with wonder at the subject itself, not the research. Something that makes a thoughtful person lean forward. NEVER open with "Across these traditions", "World religions teach", "Throughout history", or any variant.`;
 
   const userPrompt = `Main question: "${question}"
 ${frameworkHint}

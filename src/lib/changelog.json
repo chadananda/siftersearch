@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T23:23:33.824Z",
+  "generated": "2026-05-14T23:25:08.793Z",
   "entries": [
+    {
+      "hash": "83c9ea69",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Overview and section summaries start with the subject, not domain hedges",
+      "scope": null
+    },
     {
       "hash": "1dcd7d11",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Don't reset hashes in reingest - preserve incremental logic",
       "scope": null
-    },
-    {
-      "hash": "9c01dbbe",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Add missing ApiError.conflict method (409 status)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "83c9ea69",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Overview and section summaries start with the subject, not domain hedges",
+        "scope": null
+      },
       {
         "hash": "1dcd7d11",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Don't reset hashes in reingest - preserve incremental logic",
-        "scope": null
-      },
-      {
-        "hash": "9c01dbbe",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Add missing ApiError.conflict method (409 status)",
         "scope": null
       }
     ]
