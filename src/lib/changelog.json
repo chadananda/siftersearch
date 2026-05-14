@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:39:22.844Z",
+  "generated": "2026-05-14T14:42:20.343Z",
   "entries": [
+    {
+      "hash": "0df9827f",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
+      "scope": null
+    },
     {
       "hash": "d564de37",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
       "scope": null
-    },
-    {
-      "hash": "ff306945",
-      "date": "2026-01-18",
-      "type": "New",
-      "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "0df9827f",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Add startup trace to deep-research-worker for PM2 crash investigation",
+        "scope": null
+      },
       {
         "hash": "d564de37",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "New",
         "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
-        "scope": null
-      },
-      {
-        "hash": "ff306945",
-        "date": "2026-01-18",
-        "type": "New",
-        "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
         "scope": null
       }
     ]
