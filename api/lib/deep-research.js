@@ -22,7 +22,7 @@ import { createEmbedding } from './ai.js';
 import { getMeili, INDEXES } from './search.js';
 import { getAuthority } from './authority.js';
 import { generateSlug } from './slug.js';
-import { initStorage, hasCloudStorage, uploadImageFromUrl, generateAssetKey } from './storage.js';
+import { initStorage, hasCloudStorage, uploadFile, uploadImageFromUrl, generateAssetKey } from './storage.js';
 
 // Cosine similarity threshold for considering two questions "the same"
 const SIMILARITY_THRESHOLD = 0.88;
@@ -947,7 +947,8 @@ function buildResearchHeroPrompt({ question, traditions, tags }) {
 }
 
 // Generate and store hero image for a deep research record.
-async function generateResearchHeroImage(researchId, { question, traditions, tags }) {
+// Exported so the admin route can trigger regeneration on demand.
+export async function generateResearchHeroImage(researchId, { question, traditions, tags }) {
   try {
     initStorage();
     if (!hasCloudStorage()) {
@@ -958,22 +959,22 @@ async function generateResearchHeroImage(researchId, { question, traditions, tag
     const prompt = buildResearchHeroPrompt({ question, traditions, tags });
     logger.info({ researchId, prompt: prompt.slice(0, 80) }, 'Generating research hero image');
 
-    // Use OpenAI directly for DALL-E 3
     const { default: OpenAI } = await import('openai');
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const resp = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt,
       n: 1,
-      size: '1792x1024',
-      quality: 'standard',
+      size: '1536x1024',
+      quality: 'medium',
     });
 
-    const imageUrl = resp.data[0]?.url;
-    if (!imageUrl) throw new Error('DALL-E returned no URL');
+    const b64 = resp.data[0]?.b64_json;
+    if (!b64) throw new Error('gpt-image-1 returned no b64_json');
+    const buffer = Buffer.from(b64, 'base64');
 
     const key = generateAssetKey('research', researchId, 'jpg');
-    const result = await uploadImageFromUrl(imageUrl, key);
+    const result = await uploadFile(key, buffer, { contentType: 'image/jpeg' });
 
     await query('UPDATE deep_research SET hero_image = ?, hero_prompt = ? WHERE id = ?', [result.url, prompt, researchId]);
     logger.info({ researchId, url: result.url }, 'Research hero image stored');

@@ -10,6 +10,7 @@
 //   PATCH /api/v1/admin/deep-research/:id      — update record (priority, topic_tags, etc.)
 //   DELETE /api/v1/admin/deep-research/:id     — delete record + quotes
 //   POST /api/v1/admin/deep-research/:id/requeue — requeue a failed/complete record
+//   POST /api/v1/admin/deep-research/:id/regenerate-hero — regenerate hero image
 
 import { requireInternal } from '../lib/auth.js';
 import { queryOne, queryAll, query } from '../lib/db.js';
@@ -22,6 +23,7 @@ import {
   getDeepResearchBySlug,
   addNotifyEmail,
   syncDeepResearch,
+  generateResearchHeroImage,
 } from '../lib/deep-research.js';
 
 export default async function deepResearchRoutes(fastify) {
@@ -159,6 +161,18 @@ export default async function deepResearchRoutes(fastify) {
     await query(`UPDATE deep_research SET ${updates.join(', ')} WHERE id = ?`, params);
     if (record.status === 'complete') await syncDeepResearch([record.id]);
     return { success: true };
+  });
+
+  // Regenerate hero image on demand (admin)
+  fastify.post('/admin/deep-research/:id/regenerate-hero', { preHandler: [requireInternal] }, async (req, reply) => {
+    const record = await queryOne('SELECT id, canonical_question, traditions_covered, topic_tags FROM deep_research WHERE id = ?', [req.params.id]);
+    if (!record) return reply.code(404).send({ error: 'Not found' });
+    const traditions = (record.traditions_covered || '').split(',').filter(Boolean);
+    let tags = [];
+    try { tags = JSON.parse(record.topic_tags || '[]'); } catch {}
+    const url = await generateResearchHeroImage(record.id, { question: record.canonical_question, traditions, tags });
+    if (!url) return reply.code(500).send({ error: 'Image generation failed — check server logs' });
+    return { success: true, hero_image: url };
   });
 
   // Add a single curated quote to a research record (admin editorial)
