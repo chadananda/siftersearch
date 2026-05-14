@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T17:55:27.972Z",
+  "generated": "2026-05-14T18:19:54.925Z",
   "entries": [
+    {
+      "hash": "427e61c2",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Deep research search quality + reassess endpoint",
+      "scope": null
+    },
     {
       "hash": "77464db0",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Clear deleted_at on upsert to restore soft-deleted docs",
       "scope": null
-    },
-    {
-      "hash": "c0854efa",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "427e61c2",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Deep research search quality + reassess endpoint",
+        "scope": null
+      },
       {
         "hash": "77464db0",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Clear deleted_at on upsert to restore soft-deleted docs",
-        "scope": null
-      },
-      {
-        "hash": "c0854efa",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
         "scope": null
       }
     ]
