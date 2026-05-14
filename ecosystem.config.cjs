@@ -68,7 +68,8 @@ module.exports = {
       max_memory_restart: '4G',
       env: {
         NODE_ENV: 'production',
-        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || '',
+        BACKUP_DIR: '/tank/backups/siftersearch'
       },
       // 30s for HyPE sidecar batches (which include OpenAI embedding calls
       // ~10-20s wall) to complete before SIGKILL. Default 1.6s would cut
