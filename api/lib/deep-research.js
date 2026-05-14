@@ -1380,8 +1380,8 @@ Critical rules:
 6. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
 7. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 8. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
-9. The summary for each aspect is 1-2 SHORT sentences — a plain statement of what the found passages show. No flourishes. If only one tradition is represented, say so plainly.
-10. The overview is 2-3 sentences — plain synthesis of the landscape, grounded in the found texts.`;
+9. The summary for each aspect is 1-2 SHORT sentences — state the finding directly ("Sacred rest is understood as..."). Do NOT open with "Across traditions", "Multiple traditions", "These passages show", or similar hedges. If only one tradition is represented, say so plainly.
+10. The overview is 2-3 sentences — dive straight into the subject. Start with a substantive claim about the topic itself ("Suffering is consistently treated...", "The soul's journey begins...", "Sacred rest is universally understood..."). NEVER open with domain phrases like "Across these traditions", "World religions teach", "Throughout history", or any variant — the reader already knows this is interfaith research.`;
 
   const userPrompt = `Main question: "${question}"
 ${frameworkHint}

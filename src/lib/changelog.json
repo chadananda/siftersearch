@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T23:06:01.996Z",
+  "generated": "2026-05-14T23:23:33.824Z",
   "entries": [
+    {
+      "hash": "1dcd7d11",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Clustering prompt — universal principle headings, no tradition-specific terminology",
+      "scope": null
+    },
     {
       "hash": "3aece293",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add missing ApiError.conflict method (409 status)",
       "scope": null
-    },
-    {
-      "hash": "8e2d2f69",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Use correct library path for document reindex endpoint",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "1dcd7d11",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Clustering prompt — universal principle headings, no tradition-specific terminology",
+        "scope": null
+      },
       {
         "hash": "3aece293",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Add missing ApiError.conflict method (409 status)",
-        "scope": null
-      },
-      {
-        "hash": "8e2d2f69",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Use correct library path for document reindex endpoint",
         "scope": null
       }
     ]
