@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T16:52:28.171Z",
+  "generated": "2026-05-14T17:04:59.597Z",
   "entries": [
+    {
+      "hash": "0780c64d",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Consistent oil-painting medium, theme-differentiated subject+palette per topic",
+      "scope": null
+    },
     {
       "hash": "38c8b19f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
       "scope": null
-    },
-    {
-      "hash": "7e87acd1",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Add deleted_at filter to progress queries for consistent stats",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "0780c64d",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Consistent oil-painting medium, theme-differentiated subject+palette per topic",
+        "scope": null
+      },
       {
         "hash": "38c8b19f",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
-        "scope": null
-      },
-      {
-        "hash": "7e87acd1",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Add deleted_at filter to progress queries for consistent stats",
         "scope": null
       }
     ]
