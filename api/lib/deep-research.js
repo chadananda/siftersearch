@@ -265,33 +265,35 @@ export async function targetedRetrieval(brief, search) {
   const seen = new Set();
   const candidates = [];
 
-  const addHits = (hits, tradition) => {
-    for (const hit of hits) {
-      if ((hit.text || '').length < 80) continue;
-      if (!seen.has(hit.id)) {
-        seen.add(hit.id);
-        candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'targeted' });
-      }
-    }
-  };
-
+  const tasks = [];
   for (const angle of (brief.angles || [])) {
     for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
-      const filter = { religion: tradition };
       for (const passage of (tradData.known_passages || [])) {
         for (const phrase of (passage.search_phrases || []).slice(0, 2)) {
-          try {
-            const r = await search(phrase, { limit: 10, filters: filter, semanticRatio: 0.25 });
-            addHits(r.hits || [], tradition);
-          } catch (err) {
-            logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'targetedRetrieval error');
-          }
+          tasks.push({ phrase, tradition });
         }
       }
     }
   }
 
-  logger.info({ found: candidates.length }, 'Targeted retrieval complete');
+  const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
+    try {
+      const r = await search(phrase, { limit: 10, filters: { religion: tradition }, semanticRatio: 0.25 });
+      return { hits: r.hits || [], tradition };
+    } catch (err) {
+      logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'targetedRetrieval error');
+      return { hits: [], tradition };
+    }
+  }));
+
+  for (const { hits, tradition } of results) {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) { seen.add(hit.id); candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'targeted' }); }
+    }
+  }
+
+  logger.info({ tasks: tasks.length, found: candidates.length }, 'Targeted retrieval complete');
   return candidates;
 }
 
@@ -307,31 +309,33 @@ export async function discoveryFanOut(brief, search) {
   const seen = new Set();
   const candidates = [];
 
-  const addHits = (hits, tradition) => {
-    for (const hit of hits) {
-      if ((hit.text || '').length < 80) continue;
-      if (!seen.has(hit.id)) {
-        seen.add(hit.id);
-        candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'discovery' });
-      }
-    }
-  };
-
+  const tasks = [];
   for (const angle of (brief.angles || [])) {
     for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
-      const filter = { religion: tradition };
       for (const phrase of (tradData.search_phrases || []).slice(0, 2)) {
-        try {
-          const r = await search(phrase, { limit: 20, filters: filter, semanticRatio: 0.65 });
-          addHits(r.hits || [], tradition);
-        } catch (err) {
-          logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'discoveryFanOut error');
-        }
+        tasks.push({ phrase, tradition });
       }
     }
   }
 
-  logger.info({ found: candidates.length }, 'Discovery fan-out complete');
+  const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
+    try {
+      const r = await search(phrase, { limit: 20, filters: { religion: tradition }, semanticRatio: 0.65 });
+      return { hits: r.hits || [], tradition };
+    } catch (err) {
+      logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'discoveryFanOut error');
+      return { hits: [], tradition };
+    }
+  }));
+
+  for (const { hits, tradition } of results) {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) { seen.add(hit.id); candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'discovery' }); }
+    }
+  }
+
+  logger.info({ tasks: tasks.length, found: candidates.length }, 'Discovery fan-out complete');
   return candidates;
 }
 
@@ -346,18 +350,21 @@ export async function generalDiscovery(brief, search) {
   const seen = new Set();
   const candidates = [];
 
-  for (const phrase of (brief.general_search_phrases || []).slice(0, 6)) {
+  const phrases = (brief.general_search_phrases || []).slice(0, 6);
+  const results = await Promise.all(phrases.map(async phrase => {
     try {
       const r = await search(phrase, { limit: 25, filters: {}, semanticRatio: 0.65 });
-      for (const hit of r.hits || []) {
-        if ((hit.text || '').length < 80) continue;
-        if (!seen.has(hit.id)) {
-          seen.add(hit.id);
-          candidates.push({ ...hit, _searchTradition: hit.religion || 'General', _searchType: 'general' });
-        }
-      }
+      return r.hits || [];
     } catch (err) {
       logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'generalDiscovery error');
+      return [];
+    }
+  }));
+
+  for (const hits of results) {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) { seen.add(hit.id); candidates.push({ ...hit, _searchTradition: hit.religion || 'General', _searchType: 'general' }); }
     }
   }
 
@@ -410,28 +417,32 @@ export async function gapCheckLoop(brief, foundCandidates, search, maxPasses = 3
 
   const remaining = [...unfound];
   for (let pass = 0; pass < maxPasses && remaining.length > 0; pass++) {
-    const stillUnfound = [];
-    for (const { passage, tradition } of remaining) {
-      let found = false;
-      for (const phrase of (passage.search_phrases || []).slice(0, 3)) {
-        try {
-          const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.15 });
-          for (const hit of r.hits || []) {
-            if ((hit.text || '').length < 80) continue;
-            if (!seen.has(hit.id)) {
-              seen.add(hit.id);
-              extra.push({ ...hit, _searchTradition: tradition, _searchType: 'gap' });
-              foundTexts.push((hit.text || '').toLowerCase());
-            }
-            if (isCovered(passage.text_fragment)) { found = true; break; }
-          }
-          if (found) break;
-        } catch (err) {
-          logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'gapCheckLoop search error');
+    // Collect all search tasks for this pass and run in parallel
+    const tasks = remaining.flatMap(({ passage, tradition }) =>
+      (passage.search_phrases || []).slice(0, 3).map(phrase => ({ phrase, tradition, passage }))
+    );
+    const taskResults = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
+      try {
+        const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.15 });
+        return { hits: r.hits || [], tradition };
+      } catch (err) {
+        logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'gapCheckLoop search error');
+        return { hits: [], tradition };
+      }
+    }));
+    // Merge all new hits from this pass
+    for (const { hits, tradition } of taskResults) {
+      for (const hit of hits) {
+        if ((hit.text || '').length < 80) continue;
+        if (!seen.has(hit.id)) {
+          seen.add(hit.id);
+          extra.push({ ...hit, _searchTradition: tradition, _searchType: 'gap' });
+          foundTexts.push((hit.text || '').toLowerCase());
         }
       }
-      if (!found) stillUnfound.push({ passage, tradition });
     }
+    // Re-check which passages remain uncovered after all new hits are merged
+    const stillUnfound = remaining.filter(({ passage }) => !isCovered(passage.text_fragment));
     remaining.length = 0;
     remaining.push(...stillUnfound);
     logger.info({ pass: pass + 1, remaining: stillUnfound.length, extra: extra.length }, 'Gap check pass complete');
@@ -447,6 +458,26 @@ export async function gapCheckLoop(brief, foundCandidates, search, maxPasses = 3
   return extra;
 }
 
+
+/**
+ * Keyword pre-filter — eliminate candidates with zero keyword overlap with the question.
+ * Runs before LLM rerank to cut ~40-50% of candidates cheaply. Only filters on exact
+ * word match, so it only removes clear misses (not false negatives on relevant passages).
+ */
+function keywordPreFilter(question, candidates) {
+  const stopwords = new Set(['that', 'this', 'with', 'from', 'have', 'will', 'been', 'they', 'their', 'into', 'your', 'when', 'which', 'shall', 'unto', 'thee', 'thou', 'hath', 'doth', 'thus', 'such', 'also', 'upon', 'must', 'more', 'than', 'were', 'there', 'what', 'even', 'only', 'does', 'about', 'some', 'very', 'just', 'like', 'then', 'them', 'these', 'those', 'over', 'after', 'before', 'both', 'each', 'here', 'most', 'other', 'through']);
+  const keyWords = question.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !stopwords.has(w));
+  if (keyWords.length < 2) return candidates;
+
+  const before = candidates.length;
+  const filtered = candidates.filter(c => {
+    const text = (c.text || '').toLowerCase();
+    return keyWords.some(w => text.includes(w));
+  });
+  const eliminated = before - filtered.length;
+  if (eliminated > 0) logger.info({ eliminated, kept: filtered.length, total: before }, 'Keyword pre-filter');
+  return filtered;
+}
 
 /**
  * Rerank candidates using LLM pairwise relevance scoring.
@@ -482,11 +513,12 @@ function sourcePriorityBonus(title) {
 export async function rerankPassages(question, candidates, chat, topN = 50) {
   if (!candidates.length) return [];
 
-  const BATCH_SIZE = 30; // Keep LLM prompt manageable — ~30 passages ~= 12K chars
+  const BATCH_SIZE = 30; // ~30 passages at 200 chars each ≈ 6K chars, comfortable prompt
+  const RERANK_CONCURRENCY = 3; // parallel LLM calls
   const passages = candidates.slice(0, 270).map((c, i) => ({
     idx: i,
     id: c.id,
-    text: (c.text || '').slice(0, 350),
+    text: (c.text || '').slice(0, 200), // 350→200: still enough signal, saves ~40% tokens
     title: c.title || '',
     author: c.author || '',
     religion: c.religion || c._searchTradition || '',
@@ -507,9 +539,7 @@ CRITICAL: A passage that uses related vocabulary (e.g. "tests", "trials", "affli
 
 Return ONLY valid JSON array.`;
 
-  const allScores = [];
-  for (let start = 0; start < passages.length; start += BATCH_SIZE) {
-    const batch = passages.slice(start, start + BATCH_SIZE);
+  const scoreBatch = async (batch, batchIdx) => {
     const userPrompt = `Question: "${question}"
 
 Score each passage 0-10 for DIRECT relevance (not thematic proximity).
@@ -532,14 +562,28 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
       const json = text.match(/\[[\s\S]*\]/)?.[0];
       if (json) {
         const parsed = JSON.parse(json);
-        allScores.push(...parsed);
-        logger.debug({ batch: start / BATCH_SIZE, scored: parsed.length, above6: parsed.filter(s => s.score >= 6).length }, 'Rerank batch scored');
-      } else {
-        logger.warn({ batch: start / BATCH_SIZE, textLen: text.length, preview: text.slice(0, 200) }, 'Rerank batch: no JSON array in response');
+        logger.debug({ batch: batchIdx, scored: parsed.length, above6: parsed.filter(s => s.score >= 6).length }, 'Rerank batch scored');
+        return parsed;
       }
+      logger.warn({ batch: batchIdx, textLen: text.length, preview: text.slice(0, 200) }, 'Rerank batch: no JSON array in response');
+      return [];
     } catch (err) {
-      logger.warn({ err: err.message, batch: start / BATCH_SIZE }, 'Rerank batch scoring failed');
+      logger.warn({ err: err.message, batch: batchIdx }, 'Rerank batch scoring failed');
+      return [];
     }
+  };
+
+  // Build batch list then run RERANK_CONCURRENCY at a time
+  const batches = [];
+  for (let start = 0; start < passages.length; start += BATCH_SIZE) {
+    batches.push({ batch: passages.slice(start, start + BATCH_SIZE), idx: batches.length });
+  }
+
+  const allScores = [];
+  for (let i = 0; i < batches.length; i += RERANK_CONCURRENCY) {
+    const group = batches.slice(i, i + RERANK_CONCURRENCY);
+    const groupResults = await Promise.all(group.map(({ batch, idx }) => scoreBatch(batch, idx)));
+    for (const scores of groupResults) allScores.push(...scores);
   }
 
   logger.info({ candidates: passages.length, scored: allScores.length, above6: allScores.filter(s => s.score >= 6).length }, 'Rerank complete');
@@ -587,6 +631,130 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
 }
 
 /**
+ * Assess coverage gaps and append missing canonical passages to sections.
+ * Single LLM call with section labels only (not full excerpts) — cheap.
+ * Identifies famous missing passages → parallel searches → appends to sections.
+ * No re-clustering: supplements existing sections in place.
+ *
+ * @param {string} question
+ * @param {Array} sections - output of clusterAndStructure
+ * @param {Function} chat
+ * @param {Function} search
+ * @returns {Promise<Array>} sections (mutated in place, also returned)
+ */
+export async function assessAndSupplement(question, sections, chat, search) {
+  if (!sections.length) return sections;
+
+  const traditionsCovered = [...new Set(sections.flatMap(s => s.traditions || []))];
+  const sectionLabels = sections.map((s, i) => ({
+    idx: i,
+    label: s.label,
+    traditions: s.traditions || [],
+    quote_count: s.quotes?.length || 0,
+  }));
+
+  let missing = [];
+  try {
+    const response = await chat([
+      {
+        role: 'system',
+        content: `You are a comparative religion scholar reviewing research coverage. Identify famous authoritative passages likely missing from a research set. Be specific and accurate — only suggest passages you are highly confident exist.`
+      },
+      {
+        role: 'user',
+        content: `Question: "${question}"
+
+Traditions covered: ${traditionsCovered.join(', ')}
+
+Research sections:
+${sectionLabels.map(s => `[${s.idx}] "${s.label}" — ${s.quote_count} quotes from: ${s.traditions.join(', ') || 'none'}`).join('\n')}
+
+What famous authoritative passages are likely missing? Focus on:
+- Canonical passages any scholar would expect to find here
+- Traditions with few or no quotes for a directly relevant section
+- Cross-tradition parallels that illuminate the question
+
+Return JSON (empty array if coverage looks complete):
+{
+  "missing": [
+    {
+      "tradition": "name",
+      "text_fragment": "4-6 exact words from passage",
+      "source": "book name",
+      "search_phrases": ["phrase1", "phrase2"],
+      "aspect_idx": 0
+    }
+  ]
+}`
+      }
+    ], { max_tokens: 2000 });
+
+    const text = response.content?.[0]?.text || '';
+    const json = text.match(/\{[\s\S]*\}/)?.[0];
+    if (json) {
+      const result = JSON.parse(json);
+      missing = result.missing || [];
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'assessAndSupplement LLM call failed — skipping');
+    return sections;
+  }
+
+  if (!missing.length) {
+    logger.info('assessAndSupplement: coverage complete — no gaps identified');
+    return sections;
+  }
+
+  logger.info({ missing: missing.length }, 'assessAndSupplement: searching for missing passages');
+
+  // Parallel searches for all missing passages
+  const searchTasks = missing.flatMap(m =>
+    (m.search_phrases || []).slice(0, 2).map(phrase => ({ phrase, m }))
+  );
+  const searchResults = await Promise.all(searchTasks.map(async ({ phrase, m }) => {
+    try {
+      const filter = m.tradition ? { religion: m.tradition } : {};
+      const r = await search(phrase, { limit: 8, filters: filter, semanticRatio: 0.25 });
+      return { hits: r.hits || [], m };
+    } catch { return { hits: [], m }; }
+  }));
+
+  const existingIds = new Set(sections.flatMap(s => (s.quotes || []).map(q => q.para_id)));
+  let appended = 0;
+
+  for (const { hits, m } of searchResults) {
+    const targetSection = sections[m.aspect_idx];
+    if (!targetSection) continue;
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (existingIds.has(hit.id)) continue;
+      existingIds.add(hit.id);
+      targetSection.quotes.push({
+        para_id: hit.id,
+        tradition: hit.religion || m.tradition,
+        excerpt: (hit.text || '').slice(0, 280),
+        source_title: hit.title || m.source,
+        source_author: hit.author || '',
+        source_site: hit.source_site,
+        source_url: hit.source_url,
+        external_para_id: hit.external_para_id,
+        authority: getAuthority(hit),
+        relevance_score: 6,
+        contextual_note: `Supplemented from ${m.source || m.tradition}`,
+      });
+      if (hit.religion && !targetSection.traditions.includes(hit.religion)) {
+        targetSection.traditions.push(hit.religion);
+      }
+      appended++;
+      break; // one hit per missing passage
+    }
+  }
+
+  logger.info({ appended }, 'assessAndSupplement complete');
+  return sections;
+}
+
+/**
  * Run full deep research for a queued record.
  * Called exclusively from the deep-research worker.
  *
@@ -610,14 +778,12 @@ export async function runDeepResearch(researchId, { chat, search }) {
     const brief = await knowledgeBrief(record.canonical_question, chat);
     await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ brief }), researchId]);
 
-    // 1. Targeted retrieval — find known canonical passages (keyword-heavy, religion-filtered)
-    const targeted = await targetedRetrieval(brief, search);
-
-    // 2. Discovery fan-out — angle × tradition searches for gems not in general knowledge
-    const discovered = await discoveryFanOut(brief, search);
-
-    // 3. General discovery — broad unfiltered queries for unexpected cross-tradition finds
-    const general = await generalDiscovery(brief, search);
+    // 1-3. Retrieval — all three strategies run in parallel
+    const [targeted, discovered, general] = await Promise.all([
+      targetedRetrieval(brief, search),
+      discoveryFanOut(brief, search),
+      generalDiscovery(brief, search),
+    ]);
 
     // Merge and deduplicate all candidates
     const seen = new Set();
@@ -635,8 +801,11 @@ export async function runDeepResearch(researchId, { chat, search }) {
 
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [allCandidates.length, researchId]);
 
-    // 5. Rerank — LLM-scored relevance, threshold 7/10 (only directly relevant passages)
-    const reranked = await rerankPassages(record.canonical_question, allCandidates, chat, 100);
+    // 4b. Keyword pre-filter — eliminate clear misses before costly LLM rerank
+    const filtered = keywordPreFilter(record.canonical_question, allCandidates);
+
+    // 5. Rerank — LLM-scored relevance in parallel batches, threshold 5/10
+    const reranked = await rerankPassages(record.canonical_question, filtered, chat, 100);
 
     // Re-attach candidate source data stripped during reranking
     const candidateMap = new Map(allCandidates.map(c => [c.id, c]));
@@ -668,8 +837,11 @@ export async function runDeepResearch(researchId, { chat, search }) {
     // 7. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
     const structured = await clusterAndStructure(record.canonical_question, validSelected, chat, brief);
-    const sections = structured?.sections || buildSectionsFallback(selected, []);
+    let sections = structured?.sections || buildSectionsFallback(selected, []);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
+
+    // 7b. Assess coverage and append obviously missing canonical passages
+    sections = await assessAndSupplement(record.canonical_question, sections, chat, search);
     const convergence = { searchable_text: sections.map(s => s.label || '').join(' ') };
 
     await query(
