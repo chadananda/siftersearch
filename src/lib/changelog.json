@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T17:04:59.597Z",
+  "generated": "2026-05-14T17:23:12.260Z",
   "entries": [
+    {
+      "hash": "d131621a",
+      "date": "2026-05-14",
+      "type": "New",
+      "description": "Fully abstract hero image themes — no figures, no icons, no calligraphy",
+      "scope": null
+    },
     {
       "hash": "0780c64d",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Skip soft-deleted docs in file lookup to prevent orphaned content",
       "scope": null
-    },
-    {
-      "hash": "fcdd73f8",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "d131621a",
+        "date": "2026-05-14",
+        "type": "New",
+        "description": "Fully abstract hero image themes — no figures, no icons, no calligraphy",
+        "scope": null
+      },
       {
         "hash": "0780c64d",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Skip soft-deleted docs in file lookup to prevent orphaned content",
-        "scope": null
-      },
-      {
-        "hash": "fcdd73f8",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Explicitly set fork mode for watchdog/updater to prevent orphaned processes",
         "scope": null
       }
     ]

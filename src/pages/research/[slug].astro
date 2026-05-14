@@ -71,6 +71,17 @@ const convergence = parseJ(record.convergence_json, {});
 const qaItems = parseJ(record.qa_json, []);
 const quotes: any[] = record.quotes || [];
 
+// Approved para_ids from the curated deep_research_quotes table.
+// sections_json stores ALL candidates; we filter to only show approved quotes.
+const approvedParaIds = new Set(quotes.map((q: any) => q.para_id).filter(Boolean));
+
+function filterSectionQuotes(sectionQuotes: any[]): any[] {
+  if (!sectionQuotes?.length) return [];
+  // If we have an approved list, only show approved quotes; otherwise show all.
+  if (approvedParaIds.size === 0) return sectionQuotes;
+  return sectionQuotes.filter((q: any) => !q.para_id || approvedParaIds.has(q.para_id));
+}
+
 function buildAdHocSections(qs: any[]) {
   const byTradition = new Map<string, any[]>();
   for (const q of qs) {
@@ -102,7 +113,13 @@ function buildAdHocSections(qs: any[]) {
   }));
 }
 
-const displaySections: any[] = sections.length > 0 ? sections : buildAdHocSections(quotes);
+// Filter sections to only show approved quotes, then drop empty sections.
+const filteredSections = sections.map((s: any) => ({
+  ...s,
+  quotes: filterSectionQuotes(s.quotes || []),
+})).filter((s: any) => s.quotes.length > 0);
+
+const displaySections: any[] = filteredSections.length > 0 ? filteredSections : buildAdHocSections(quotes);
 
 const isPending = record.status !== 'complete';
 const pageUrl = `${SITE}/research/${slug}`;
@@ -449,7 +466,7 @@ function buildOLSourceUrl(q: any): string | null {
                             client:load
                             url={quoteUrl}
                             title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                            quote={excerptText.slice(0, 200)}
+                            quote={excerptText}
                             sourceTitle={q.source_title || ''}
                             sourceHref={sourceHref || ''}
                             subreddits={quoteSubreddits(q.tradition || '')}
