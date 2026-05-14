@@ -232,6 +232,11 @@ export default async function deepResearchRoutes(fastify) {
     if (!record) return reply.code(404).send({ error: 'Not found' });
     if (record.status === 'in_progress') return reply.code(409).send({ error: 'Research is currently in progress — wait for it to finish' });
 
+    // Return 202 immediately — reassess runs AI calls that exceed Cloudflare's 100s timeout
+    reply.code(202).send({ success: true, message: 'Reassessment started', id: record.id });
+    // Run async without awaiting — Fastify is fine with this as long as reply was already sent
+    setImmediate(async () => { try {
+
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
     const { hybridSearch } = await import('../lib/search.js');
     const { getAuthority } = await import('../lib/authority.js');
@@ -362,14 +367,7 @@ export default async function deepResearchRoutes(fastify) {
     await syncDeepResearch([record.id]);
 
     logger.info({ researchId: record.id, kept: toKeep.length, removed: toRemove.length, supplemented: supplemented.length }, 'Reassessment complete');
-    return {
-      success: true,
-      kept: toKeep.length,
-      removed: toRemove.length,
-      supplemented: supplemented.length,
-      total: totalSelected,
-      traditions: traditionsCovered,
-    };
+    } catch (err) { logger.error({ researchId: record.id, err }, 'Reassessment failed'); } });
   });
 
   // ── Para attribution admin endpoints ────────────────────────────────────────

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T18:43:53.550Z",
+  "generated": "2026-05-14T18:54:16.701Z",
   "entries": [
+    {
+      "hash": "5a08bf3c",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Hero image themes — ceremony/natural-world conflicts",
+      "scope": null
+    },
     {
       "hash": "9a2c6d49",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add sync-metadata script to update docs from frontmatter",
       "scope": null
-    },
-    {
-      "hash": "f8228dbd",
-      "date": "2026-01-19",
-      "type": "New",
-      "description": "Add script to fix document descriptions from frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "5a08bf3c",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Hero image themes — ceremony/natural-world conflicts",
+        "scope": null
+      },
       {
         "hash": "9a2c6d49",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "New",
         "description": "Add sync-metadata script to update docs from frontmatter",
-        "scope": null
-      },
-      {
-        "hash": "f8228dbd",
-        "date": "2026-01-19",
-        "type": "New",
-        "description": "Add script to fix document descriptions from frontmatter",
         "scope": null
       }
     ]

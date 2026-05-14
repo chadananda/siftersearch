@@ -48,13 +48,48 @@ function stripMd(text: string): string {
     .trim();
 }
 
-// Allow only safe inline HTML (<sup>, <sub>) for verse markers; strip everything else.
+// Convert markdown tables to HTML tables before other processing.
+function convertMdTables(text: string): string {
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.includes('|') && i + 1 < lines.length && /\|[-: ]+\|/.test(lines[i + 1])) {
+      const parseRow = (l: string) => l.trim().replace(/^\||\|$/g, '').split('|').map((c: string) => c.trim());
+      const headers = parseRow(line);
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].includes('|')) { rows.push(parseRow(lines[i])); i++; }
+      let html = '<table class="md-table"><thead><tr>';
+      headers.forEach((h: string) => { html += `<th>${h}</th>`; });
+      html += '</tr></thead><tbody>';
+      rows.forEach((row: string[]) => { html += '<tr>'; row.forEach((c: string) => { html += `<td>${c}</td>`; }); html += '</tr>'; });
+      html += '</tbody></table>';
+      result.push(html);
+    } else { result.push(line); i++; }
+  }
+  return result.join('\n');
+}
+
+// Allow only safe inline HTML (<sup>, <sub>, table elements) for verse markers and translation tables.
 function safeHtml(text: string): string {
   if (!text) return '';
-  const stripped = stripMd(text);
-  // Strip all tags except sup/sub, escaping the rest
-  return stripped.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (match, tag) =>
-    /^(sup|sub)$/i.test(tag) ? match : ''
+  const withTables = convertMdTables(text);
+  const stripped = withTables
+    .replace(/⁅\/?\w+⁆/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/\[\^[^\]]+\]:[^\n]*/g, '')
+    .replace(/\[\^[^\]]+\]/g, '')
+    .replace(/^>\s*/gm, '')
+    .replace(/^[-*_]{3,}\s*$/gm, '');
+  return stripped.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (match: string, tag: string) =>
+    /^(sup|sub|table|thead|tbody|tr|th|td)$/i.test(tag) ? match : ''
   );
 }
 
@@ -595,7 +630,7 @@ function buildOLSourceUrl(q: any): string | null {
   .article-hero { position: relative; overflow: hidden; min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end; }
   .hero-image-banner { position: absolute; inset: 0; z-index: 0; }
   .hero-mandala { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
-  .hero-image-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6,14,30,0.15) 0%, rgba(6,14,30,0.55) 50%, rgba(6,14,30,0.92) 100%); pointer-events: none; }
+  .hero-image-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6,14,30,0.05) 0%, rgba(6,14,30,0.35) 50%, rgba(6,14,30,0.72) 100%); pointer-events: none; }
   /* No image: plain gradient background */
   .article-hero:not(:has(.hero-image-banner)) { background: linear-gradient(to bottom, rgba(10,22,42,0) 0%, rgba(10,22,42,0.5) 100%); min-height: 0; }
   .hero-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 4rem 1.5rem 2rem; width: 100%; }
@@ -673,6 +708,12 @@ function buildOLSourceUrl(q: any): string | null {
   .quote-link:hover .quote-text { color: var(--accent); }
   .quote-link:hover .bilingual-translation { color: var(--accent); }
   .quote-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); margin: 0; font-style: italic; }
+
+  /* Inline markdown tables (translation tables) */
+  .quote-text :global(.md-table), .bilingual-original :global(.md-table) { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.25rem 0; }
+  .quote-text :global(.md-table th), .bilingual-original :global(.md-table th) { text-align: left; font-weight: 600; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .quote-text :global(.md-table td), .bilingual-original :global(.md-table td) { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border-subtle); vertical-align: top; line-height: 1.6; }
+  .quote-text :global(.md-table tr:last-child td), .bilingual-original :global(.md-table tr:last-child td) { border-bottom: none; }
 
   /* Bilingual quotes: original + translation side by side */
   .bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; align-items: start; }
