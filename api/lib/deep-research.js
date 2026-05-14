@@ -612,7 +612,7 @@ Return ONLY valid JSON array.`;
 
 Score each passage 0-10 for DIRECT relevance (not thematic proximity).
 
-For the "answer" field: write a SHORT phrase (under 12 words) capturing what THIS passage says — vivid, direct, in the voice of the tradition itself. Write the insight, not a description of it. Example: "Suffering burns away what was never truly ours." If the passage doesn't directly address the question, write "Not directly relevant."
+For the "answer" field: write a SHORT phrase (under 12 words) capturing what THIS passage says — vivid, direct, in the voice of the tradition itself. Write the insight, not a description of it. Example: "Suffering burns away what was never truly ours." Passages that don't directly address the question should score 0-4 and will be filtered; do not write an answer for them.
 
 JSON only.
 

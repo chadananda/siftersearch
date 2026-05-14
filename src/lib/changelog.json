@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T23:25:08.793Z",
+  "generated": "2026-05-14T23:26:19.740Z",
   "entries": [
+    {
+      "hash": "cc892693",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Attenborough — wonder, awe, direct insight for research summaries",
+      "scope": null
+    },
     {
       "hash": "83c9ea69",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Normalize whitespace before hashing to prevent false mismatches",
       "scope": null
-    },
-    {
-      "hash": "e4b0639b",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Don't reset hashes in reingest - preserve incremental logic",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "cc892693",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Attenborough — wonder, awe, direct insight for research summaries",
+        "scope": null
+      },
       {
         "hash": "83c9ea69",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Normalize whitespace before hashing to prevent false mismatches",
-        "scope": null
-      },
-      {
-        "hash": "e4b0639b",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Don't reset hashes in reingest - preserve incremental logic",
         "scope": null
       }
     ]

@@ -487,7 +487,7 @@ function buildOLSourceUrl(q: any): string | null {
                       <!-- Header: tradition tag + answer -->
                       <div class="quote-header" style={`border-left: 3px solid ${tradColor}; background: color-mix(in srgb, ${tradColor} 8%, transparent)`}>
                         <span class="quote-trad-tag" style={`color:${tradColor};border-color:${tradColor}44`}>{q.tradition}</span>
-                        {q.contextual_note && (
+                        {q.contextual_note && !q.contextual_note.toLowerCase().includes('not directly relevant') && (
                           <p class="quote-answer">{q.contextual_note}</p>
                         )}
                       </div>
