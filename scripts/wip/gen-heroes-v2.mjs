@@ -199,9 +199,19 @@ const VISUAL_THEMES = [
     palette: 'individual warm amber points, collective warm white center, deep blue-grey between, gentle gold',
   },
   {
-    keys: ['time', 'calendar', 'seasons', 'holy days', 'sacred time', 'ritual', 'ceremony', 'liturgy'],
+    keys: ['time', 'calendar', 'seasons', 'holy days', 'sacred time', 'liturgy'],
     subject: 'Abstract cycle of light — a great arc of color moving from deep indigo through gold through rose and back, suggesting rotation and rhythmic return',
     palette: 'deep indigo night, dawn violet, morning gold, noon bright white, dusk rose, back to indigo',
+  },
+  {
+    keys: ['natural world', 'environment', 'ecology', 'nature and humanity', 'earth'],
+    subject: 'Abstract flowing landscape of layered living forms — warm ochre and deep forest green suffused with golden light from within, roots of luminous earth-light meeting sky-blue radiance descending from above',
+    palette: 'warm ochre earth, deep forest green, inner golden light, sky-blue luminance, soft amber at the horizon where earth and sky meet',
+  },
+  {
+    keys: ['ceremony', 'ritual', 'rite', 'sacrament', 'observance'],
+    subject: 'Abstract a central point of concentrated warm golden light surrounded by a perfect circle of smaller, softer light points at equal distances, all connected by faint luminous threads, set against deep ceremonial darkness',
+    palette: 'deep ceremonial black, concentrated golden center, pearl-white circle points, silver connecting threads, faint rose glow',
   },
   {
     keys: ['transformation', 'inner transformation', 'social change', 'social transformation'],
