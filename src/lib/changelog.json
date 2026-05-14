@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T16:05:35.381Z",
+  "generated": "2026-05-14T16:08:19.802Z",
   "entries": [
+    {
+      "hash": "7f8be4ae",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Use gpt-image-1 for research hero images + add regenerate-hero admin endpoint",
+      "scope": null
+    },
     {
       "hash": "cf2d790e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Fallback to computed relativePath if metadata is missing",
       "scope": null
-    },
-    {
-      "hash": "f9d863d7",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Use file.metadata.relativePath in index-library.js",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "7f8be4ae",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Use gpt-image-1 for research hero images + add regenerate-hero admin endpoint",
+        "scope": null
+      },
       {
         "hash": "cf2d790e",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Fallback to computed relativePath if metadata is missing",
-        "scope": null
-      },
-      {
-        "hash": "f9d863d7",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Use file.metadata.relativePath in index-library.js",
         "scope": null
       }
     ]

@@ -22,13 +22,18 @@ import { logger } from './logger.js';
 let s3Client = null;
 let bucketName = null;
 let publicBaseUrl = null;
+// Cloudflare REST API mode — used when S3 credentials are unavailable
+let cfApiToken = null;
+let cfAccountId = null;
+let cfBucketName = null;
+let cfPublicUrl = null;
 
 /**
- * Initialize S3 client based on available credentials
- * Priority: Cloudflare R2 → Scaleway → Local filesystem fallback
+ * Initialize storage based on available credentials.
+ * Priority: Cloudflare R2 (S3 keys) → Scaleway → Cloudflare REST API → none
  */
 export function initStorage() {
-  // Try Cloudflare R2 first
+  // Try Cloudflare R2 via S3-compatible credentials
   if (process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_ACCOUNT_ID) {
     s3Client = new S3Client({
       region: 'auto',
@@ -39,7 +44,7 @@ export function initStorage() {
       }
     });
     bucketName = process.env.R2_BUCKET_NAME || 'siftersearch';
-    publicBaseUrl = process.env.R2_PUBLIC_URL || `https://${bucketName}.r2.dev`;
+    publicBaseUrl = process.env.R2_PUBLIC_URL || `https://pub-e57ab96621a24ba18bcce728b4c51de2.r2.dev`;
     logger.info({ provider: 'cloudflare-r2', bucket: bucketName }, 'Storage initialized');
     return true;
   }
@@ -61,6 +66,16 @@ export function initStorage() {
     return true;
   }
 
+  // Fallback: Cloudflare REST API (uses CLOUDFLARE_API_TOKEN — no S3 creds needed)
+  if (process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID) {
+    cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
+    cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    cfBucketName = process.env.R2_BUCKET_NAME || 'siftersearch';
+    cfPublicUrl = process.env.R2_PUBLIC_URL || 'https://pub-e57ab96621a24ba18bcce728b4c51de2.r2.dev';
+    logger.info({ provider: 'cloudflare-rest-api', bucket: cfBucketName }, 'Storage initialized');
+    return true;
+  }
+
   logger.warn('No cloud storage configured, using local filesystem fallback');
   return false;
 }
@@ -69,7 +84,7 @@ export function initStorage() {
  * Check if cloud storage is available
  */
 export function hasCloudStorage() {
-  return s3Client !== null;
+  return s3Client !== null || cfApiToken !== null;
 }
 
 /**
@@ -105,15 +120,27 @@ export function generateAssetKey(type, id, extension) {
  * @returns {object} Upload result with url
  */
 export async function uploadFile(key, body, options = {}) {
-  if (!s3Client) {
-    throw new Error('Cloud storage not initialized');
+  const { contentType = 'application/octet-stream', metadata = {} } = options;
+
+  // Cloudflare REST API path (when no S3 credentials)
+  if (!s3Client && cfApiToken) {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/r2/buckets/${cfBucketName}/objects/${encodeURIComponent(key)}`;
+    const headers = {
+      'Authorization': `Bearer ${cfApiToken}`,
+      'Content-Type': contentType,
+    };
+    for (const [k, v] of Object.entries(metadata)) headers[`x-amz-meta-${k}`] = v;
+    const resp = await fetch(url, { method: 'PUT', headers, body });
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => '');
+      throw new Error(`CF R2 upload failed: ${resp.status} ${txt.slice(0, 200)}`);
+    }
+    const publicUrl = `${cfPublicUrl}/${key}`;
+    logger.info({ key, size: body.length, contentType }, 'File uploaded via CF REST API');
+    return { key, url: publicUrl, size: body.length, contentType };
   }
 
-  const {
-    contentType = 'application/octet-stream',
-    metadata = {},
-    acl = 'public-read'
-  } = options;
+  if (!s3Client) throw new Error('Cloud storage not initialized');
 
   try {
     const command = new PutObjectCommand({
@@ -122,20 +149,11 @@ export async function uploadFile(key, body, options = {}) {
       Body: body,
       ContentType: contentType,
       Metadata: metadata,
-      ACL: acl
     });
-
     await s3Client.send(command);
-
     const url = `${publicBaseUrl}/${key}`;
     logger.info({ key, size: body.length, contentType }, 'File uploaded');
-
-    return {
-      key,
-      url,
-      size: body.length,
-      contentType
-    };
+    return { key, url, size: body.length, contentType };
   } catch (err) {
     logger.error({ err, key }, 'Upload failed');
     throw err;
