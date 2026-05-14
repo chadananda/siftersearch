@@ -937,13 +937,46 @@ Return JSON:
  * @param {number} researchId
  * @param {object} deps - { chat, search }
  */
-// Build DALL-E prompt for a deep research hero image.
-// Style differs from conversation articles: bold mandala geometry + rich jewel tones vs. soft watercolor.
+// Topic-to-visual-theme map. Each entry: { subject, style, palette }
+// Matched against topic_tags[0] or keywords in the question.
+const VISUAL_THEMES = [
+  { keys: ['prayer','worship','devotion'], subject: 'hands raised in prayer, candlelight flames, golden light rays from above', style: 'Luminous oil painting with dramatic chiaroscuro, rich impasto brushwork', palette: 'deep midnight blue, amber gold, warm candlelight orange' },
+  { keys: ['afterlife','death','soul','rebirth'], subject: 'a soul ascending through layers of celestial light, aurora borealis over still water reflecting stars', style: 'Ethereal digital painting, translucent glowing layers, dreamlike depth', palette: 'deep indigo, silver, pearl white, violet' },
+  { keys: ['theodicy','suffering','tests-trials','evil'], subject: 'storm clouds parting to reveal rays of sunlight over mountainous landscape, a single flame in darkness', style: 'Dramatic romantic landscape painting, Turner-style atmospheric sky', palette: 'charcoal grey, stormy blue, golden break of light' },
+  { keys: ['grace','divine','divinity','mercy-compassion','forgiveness'], subject: 'light flooding through an arched window onto a still garden, lotus blossoms floating on water', style: 'Soft luminous watercolor, delicate washes, radiant light source', palette: 'rose gold, pale amber, soft ivory, gentle green' },
+  { keys: ['fasting','asceticism','discipline','renunciation'], subject: 'a solitary figure in meditation beneath a crescent moon, sparse desert landscape, single lamp burning', style: 'Minimalist ink wash painting, Japanese sumi-e style, elegant negative space', palette: 'ink black, paper white, faint moon silver, warm amber' },
+  { keys: ['love','compassion','mercy-compassion','service'], subject: 'interwoven hands of different colors forming a circle, surrounded by flowering branches and warm light', style: 'Vibrant folk art illustration with bold outlines, decorative floral borders', palette: 'warm red, saffron, leaf green, sky blue' },
+  { keys: ['enlightenment','mysticism','nearness-to-god','awakening'], subject: 'a lotus opening from dark water into cosmic starfield, concentric rings of light expanding outward', style: 'Sacred geometry art, precise mathematical symmetry, luminous inner glow', palette: 'deep purple, electric blue, gold, white' },
+  { keys: ['unity','interfaith','progressive-revelation','oneness'], subject: 'many rivers converging into one great shining sea at golden hour, bridges connecting distant shores', style: 'Panoramic landscape painting, sweeping cinematic vista, warm light', palette: 'amber, turquoise, emerald, golden hour orange' },
+  { keys: ['scripture','revelation','hermeneutics','prophecy'], subject: 'ancient illuminated manuscript pages open with ornate calligraphy in multiple scripts glowing with inner light', style: 'Illuminated manuscript style with Byzantine gold leaf and intricate ornamental borders', palette: 'aged parchment, ultramarine, vermillion, burnished gold' },
+  { keys: ['faith','doubt','trust','certainty'], subject: 'a path disappearing into luminous fog, footsteps leading forward toward distant light through uncertainty', style: 'Impressionist painting, soft dappled light, atmospheric perspective', palette: 'pale green, mist grey, warm cream, distant gold' },
+  { keys: ['sin','repentance','error','fall'], subject: 'dawn breaking over a landscape after rain, new green growth emerging, raindrops on leaves catching light', style: 'Realistic botanical painting with luminous morning light, Pre-Raphaelite detail', palette: 'fresh green, pale dawn pink, silver dew, deep soil brown' },
+  { keys: ['ritual','ceremony','festival','practice'], subject: 'sacred fire ceremony with spiraling incense smoke, ritual vessels and offerings arranged symmetrically', style: 'Detailed ethnographic illustration with art nouveau decorative flourishes', palette: 'deep terracotta, copper, deep red, smoke grey' },
+  { keys: ['science','reason','knowledge','inquiry'], subject: 'telescope pointed at starfield beside ancient temple columns, equations and sacred geometry overlapping in space', style: 'Surrealist composition blending scientific diagrams with sacred architecture', palette: 'deep space navy, telescope brass, star white, stone grey' },
+  { keys: ['soul-spirit','human-nature','inner-life'], subject: 'translucent human silhouette filled with constellations and flowing light, standing at the edge of an infinite cosmos', style: 'Digital art with painterly textures, luminous and cosmic', palette: 'midnight blue, bioluminescent teal, nebula purple, warm gold' },
+];
+
+const FALLBACK_THEME = {
+  subject: 'sacred symbols from multiple world religions arranged in harmonious geometric patterns, intertwined and glowing',
+  style: 'Vibrant mosaic art with Byzantine richness, tessellated patterns, metallic accents',
+  palette: 'saffron, crimson, emerald, cobalt, gold'
+};
+
+// Match topic tags and question keywords to a visual theme.
+function pickVisualTheme(tags, question) {
+  const haystack = [...(tags || []), question.toLowerCase()].join(' ');
+  for (const theme of VISUAL_THEMES) {
+    if (theme.keys.some(k => haystack.includes(k))) return theme;
+  }
+  return FALLBACK_THEME;
+}
+
+// Build a topic-differentiated image prompt.
 function buildResearchHeroPrompt({ question, traditions, tags }) {
-  const tradList = (traditions || []).slice(0, 4).join(', ') || 'world religions';
-  const tagList = (tags || []).slice(0, 4).join(', ');
-  const STYLE = ' Vibrant interfaith mandala — jewel tones (saffron, crimson, emerald, cobalt, gold), intricate geometric symmetry evoking multiple sacred traditions, glowing luminous quality, high detail. Wide 16:9 cinematic banner. No text, no letters, no labels.';
-  return `An abstract mandala representing the inquiry: "${question}". Traditions: ${tradList}. Themes: ${tagList}.` + STYLE;
+  const tradList = (traditions || []).slice(0, 3).join(', ') || 'world religions';
+  const theme = pickVisualTheme(tags, question);
+  const FRAME = ' Wide 16:9 cinematic composition, high detail, museum quality. No text, no letters, no labels, no human faces.';
+  return `${theme.subject}. Inspired by the interfaith question: "${question}". Traditions represented: ${tradList}. Color palette: ${theme.palette}. Style: ${theme.style}.` + FRAME;
 }
 
 // Generate and store hero image for a deep research record.

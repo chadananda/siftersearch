@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T16:18:57.405Z",
+  "generated": "2026-05-14T16:50:46.415Z",
   "entries": [
+    {
+      "hash": "c9ffcff7",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Research hero image overlays title text instead of sitting above it",
+      "scope": null
+    },
     {
       "hash": "b9d5ae3b",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Show full numbers with commas in progress bars instead of abbreviated K format",
       "scope": null
-    },
-    {
-      "hash": "34bf4ac0",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Call fetchPendingDocuments on page load with ?type=pending",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "c9ffcff7",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Research hero image overlays title text instead of sitting above it",
+        "scope": null
+      },
       {
         "hash": "b9d5ae3b",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Show full numbers with commas in progress bars instead of abbreviated K format",
-        "scope": null
-      },
-      {
-        "hash": "34bf4ac0",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Call fetchPendingDocuments on page load with ?type=pending",
         "scope": null
       }
     ]
