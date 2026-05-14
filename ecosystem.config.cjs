@@ -190,6 +190,30 @@ module.exports = {
       out_file: './logs/enrichment-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
     },
+    // Deep Research Worker — pre-computes authoritative passage sets per canonical question.
+    // Polls deep_research_queue; runs knowledgeBrief → targeted + discovery retrieval →
+    // gap-check loop → LLM rerank → cluster; stores results in deep_research_quotes.
+    {
+      name: 'siftersearch-deep-research',
+      script: 'api/workers/deep-research-worker.js',
+      cwd: PROJECT_ROOT,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '2G',
+      env: {
+        NODE_ENV: 'production',
+        MEILI_MASTER_KEY: process.env.MEILI_MASTER_KEY || ''
+      },
+      exp_backoff_restart_delay: 10000,
+      max_restarts: 999999,
+      min_uptime: '60s',
+      error_file: './logs/deep-research-error.log',
+      out_file: './logs/deep-research-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+    },
+
     // Sonnet API enrichment for tier 1-7 (Bahá'í primary doctrinal works).
     // Uses Anthropic Messages Batches API to generate per-paragraph
     // doctrinal thesis + 5 hypothetical questions. Runs in parallel with
