@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:00:26.809Z",
+  "generated": "2026-05-14T14:05:54.932Z",
   "entries": [
+    {
+      "hash": "5488ba7f",
+      "date": "2026-05-14",
+      "type": "New",
+      "description": "Deep research quality assessment + generation metadata footer",
+      "scope": null
+    },
     {
       "hash": "e90f8472",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Disable buggy heading extraction (was causing duplicate headings)",
       "scope": null
-    },
-    {
-      "hash": "4431a112",
-      "date": "2026-01-18",
-      "type": "Fixed",
-      "description": "Restore proper line-height (1.75) for document reading view",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "5488ba7f",
+        "date": "2026-05-14",
+        "type": "New",
+        "description": "Deep research quality assessment + generation metadata footer",
+        "scope": null
+      },
       {
         "hash": "e90f8472",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "Fixed",
         "description": "Disable buggy heading extraction (was causing duplicate headings)",
-        "scope": null
-      },
-      {
-        "hash": "4431a112",
-        "date": "2026-01-18",
-        "type": "Fixed",
-        "description": "Restore proper line-height (1.75) for document reading view",
         "scope": null
       }
     ]

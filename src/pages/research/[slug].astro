@@ -6,6 +6,7 @@ import Layout from '../../layouts/Layout.astro';
 import LiquidBackground from '../../components/LiquidBackground.svelte';
 import NavBar from '../../components/common/NavBar.svelte';
 import ShareButtons from '../../components/common/ShareButtons.svelte';
+import ResearchAdminFooter from '../../components/research/ResearchAdminFooter.svelte';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com';
 const { slug } = Astro.params;
@@ -51,13 +52,6 @@ const summary = parseJ(record.summary_json, {});
 const convergence = parseJ(record.convergence_json, {});
 const qaItems = parseJ(record.qa_json, []);
 const quotes: any[] = record.quotes || [];
-const assessment: any = parseJ(record.assessment_json, null);
-
-// Generation time in minutes
-const genMinutes: number | null = (record.started_at && record.completed_at)
-  ? Math.round((new Date(record.completed_at).getTime() - new Date(record.started_at).getTime()) / 60000)
-  : null;
-const costUsd: number | null = record.llm_cost_usd > 0 ? record.llm_cost_usd : null;
 
 function buildAdHocSections(qs: any[]) {
   const byTradition = new Map<string, any[]>();
@@ -471,47 +465,8 @@ function buildOLSourceUrl(q: any): string | null {
           </div>
         )}
 
-        <!-- Research metadata + quality assessment -->
-        {(assessment || genMinutes || costUsd) && (
-          <div class="research-meta-footer">
-            {assessment && (
-              <div class="assessment-block">
-                <div class="assessment-header">
-                  <span class="assessment-label">Research Quality</span>
-                  <span class="assessment-grade grade-{assessment.grade?.replace('+','plus') || 'C'}">{assessment.grade || '—'}</span>
-                  <span class="assessment-score">{assessment.overall || '—'}/10</span>
-                </div>
-                {assessment.assessment && (
-                  <p class="assessment-text">{assessment.assessment}</p>
-                )}
-                <div class="assessment-scores">
-                  {Object.entries(assessment.scores || {}).map(([key, val]: [string, any]) => (
-                    <div class="score-item">
-                      <span class="score-label">{key.replace(/_/g, ' ')}</span>
-                      <div class="score-bar">
-                        <div class="score-fill" style={`width: ${(val / 10) * 100}%`}></div>
-                      </div>
-                      <span class="score-val">{val}/10</span>
-                    </div>
-                  ))}
-                </div>
-                {assessment.gaps?.length > 0 && (
-                  <details class="assessment-gaps">
-                    <summary>Identified gaps ({assessment.gaps.length})</summary>
-                    <ul>{assessment.gaps.map((g: string) => <li>{g}</li>)}</ul>
-                  </details>
-                )}
-              </div>
-            )}
-            <div class="generation-meta">
-              {genMinutes !== null && <span>Generated in {genMinutes} min</span>}
-              {costUsd !== null && <span>${costUsd.toFixed(3)} LLM cost</span>}
-              {record.total_candidates > 0 && <span>{record.total_candidates} passages evaluated</span>}
-              {record.total_selected > 0 && <span>{record.total_selected} selected</span>}
-              {record.completed_at && <span>{new Date(record.completed_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>}
-            </div>
-          </div>
-        )}
+        <!-- Admin-only: quality assessment + cost metadata (client-hydrated, not in SSR HTML) -->
+        <ResearchAdminFooter researchId={record.id} client:idle />
 
         <!-- Footer CTA -->
         <div class="article-footer-cta">
@@ -671,29 +626,6 @@ function buildOLSourceUrl(q: any): string | null {
   .notify-inline { display: flex; gap: 0.5rem; }
   .notify-inline .notify-input { flex: 1; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); }
   .notify-inline .notify-btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; }
-
-  /* Research metadata footer */
-  .research-meta-footer { margin-bottom: 1.5rem; border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; background: var(--surface-1); }
-  .assessment-block { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); }
-  .assessment-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-  .assessment-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
-  .assessment-grade { font-size: 1.5rem; font-weight: 800; line-height: 1; }
-  .grade-A { color: var(--success); } .grade-Bplus { color: #4caf50; } .grade-B { color: var(--accent); }
-  .grade-Cplus { color: #ff9800; } .grade-C { color: var(--warning); } .grade-D { color: var(--error); }
-  .assessment-score { font-size: 0.9rem; color: var(--text-muted); }
-  .assessment-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin: 0 0 1rem; }
-  .assessment-scores { display: flex; flex-direction: column; gap: 0.4rem; }
-  .score-item { display: flex; align-items: center; gap: 0.5rem; }
-  .score-label { font-size: 0.72rem; color: var(--text-muted); text-transform: capitalize; width: 9rem; flex-shrink: 0; }
-  .score-bar { flex: 1; height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
-  .score-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
-  .score-val { font-size: 0.7rem; color: var(--text-muted); width: 2.5rem; text-align: right; flex-shrink: 0; }
-  .assessment-gaps { margin-top: 0.75rem; }
-  .assessment-gaps summary { font-size: 0.78rem; color: var(--text-muted); cursor: pointer; }
-  .assessment-gaps ul { margin: 0.4rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.2rem; }
-  .assessment-gaps li { font-size: 0.78rem; color: var(--text-secondary); }
-  .generation-meta { display: flex; gap: 1.25rem; padding: 0.75rem 1.5rem; flex-wrap: wrap; }
-  .generation-meta span { font-size: 0.72rem; color: var(--text-muted); }
 
   /* Footer CTA */
   .article-footer-cta { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1.5rem; }
