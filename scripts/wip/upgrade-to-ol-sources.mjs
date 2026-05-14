@@ -64,7 +64,7 @@ async function searchOLKeyword(text, religion) {
     method: 'POST', headers: meiliHeaders,
     body: JSON.stringify({
       q: text.slice(0, 200), filter, limit: 3,
-      matchingStrategy: 'all', showRankingScore: true,
+      matchingStrategy: 'last', showRankingScore: true,
       attributesToRetrieve: ['id', 'doc_id', 'text', 'title', 'author', 'source_site', 'source_url', 'external_para_id', 'authority', 'religion'],
     }),
   });
@@ -116,11 +116,17 @@ for (const article of articles) {
       let best = null;
       let method = '';
 
-      // --- Pass 1: keyword search (exact/near-exact text match) ---
+      // --- Pass 1: keyword search (matchingStrategy: 'last' — tolerates extra words) ---
       const kwHits = await searchOLKeyword(excerpt, religion);
-      if (kwHits.length > 0 && kwHits[0]._rankingScore >= 0.90) {
-        best = kwHits[0];
-        method = `kw:${kwHits[0]._rankingScore.toFixed(3)}`;
+      if (kwHits.length > 0) {
+        const kw = kwHits[0];
+        const score = kw._rankingScore || 0;
+        const sim = textOverlap(excerpt, kw.text || '');
+        // Require high score + meaningful word overlap to avoid false positives
+        if (score >= 0.85 && sim >= 0.15) {
+          best = kw;
+          method = `kw:${score.toFixed(3)}/ol:${sim.toFixed(2)}`;
+        }
       }
 
       // --- Pass 2: vector search using existing embedding ---
