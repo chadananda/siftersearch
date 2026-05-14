@@ -139,6 +139,24 @@ const TITLE_AUTHORITY = [
   // Lights of Guidance — authenticated Bahá'í Q&A compiled by Helen Hornby.
   // Each entry directly answers a doctrinal question; treat as high-authority reference.
   { pattern: /^lights\s+of\s+guidance/i, authority: 8 },
+  // Buddhist canonical texts — Pali Canon Nikayas (primary scripture)
+  // Titles like "Digha Nikaya 16 - Sutta Name", "Dīghanikāya: Long Discourses"
+  { pattern: /^d[iī]gha[\s-]?nik[aā]ya(\s+\d|\s*[-:—(]|\s*$)/i, authority: 10 },
+  { pattern: /^majjhima[\s-]?nik[aā]ya(\s+\d|\s*[-:—(]|\s*$)/i, authority: 10 },
+  { pattern: /^samyutta[\s-]?nik[aā]ya(\s+\d|\s*[-:—(]|\s*$)/i, authority: 10 },
+  { pattern: /^a[nṅ]guttara[\s-]?nik[aā]ya(\s+\d|\s*[-:—(]|\s*$)/i, authority: 10 },
+  // Dhammapada (most widely read Buddhist scripture)
+  { pattern: /^(the\s+)?(buddha'?s?\s+path\s+of\s+virtue\s*\()?(dhammapada)(\s*\(|\s*[-—]|\s*$)/i, authority: 10 },
+  // Sutta Nipata (early Pali canon discourse collection)
+  { pattern: /^(the\s+)?sutta\s+nip[aā]ta(\s*$|\s*[-—(])/i, authority: 10 },
+  // Sutra Collections (primary Mahayana sutras: Diamond, Heart, Lotus etc.)
+  { pattern: /^sutra\s+collection\s*\(/i, authority: 10 },
+  // Diamond Sutra (Vajracchedika Prajnaparamita)
+  { pattern: /^(the\s+)?diamond\s+sutra(\s*$|\s*[-—(])/i, authority: 10 },
+  // Buddhacarita (Ashvaghosha's life of the Buddha — primary canonical poem)
+  { pattern: /^buddhacarita(\s*$|\s*[-—(])/i, authority: 9 },
+  // Jataka Tales (canonical but narrative/secondary)
+  { pattern: /^(buddhist\s+birth\s+stories|jataka\s+tales?)(\s*$|\s*[-—(])/i, authority: 8 },
 ];
 
 const DEFAULT_AUTHORITY = 5;
