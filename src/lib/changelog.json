@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T16:11:34.839Z",
+  "generated": "2026-05-14T16:13:53.173Z",
   "entries": [
+    {
+      "hash": "7bbdd0f4",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Include hero_image in getDeepResearchBySlug SELECT",
+      "scope": null
+    },
     {
       "hash": "cf6df354",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Other",
       "description": "Add stats to pending endpoint to trace issue",
       "scope": null
-    },
-    {
-      "hash": "e3954ba1",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Only show modified files within cooldown window as pending",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "7bbdd0f4",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Include hero_image in getDeepResearchBySlug SELECT",
+        "scope": null
+      },
       {
         "hash": "cf6df354",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Other",
         "description": "Add stats to pending endpoint to trace issue",
-        "scope": null
-      },
-      {
-        "hash": "e3954ba1",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Only show modified files within cooldown window as pending",
         "scope": null
       }
     ]

@@ -31,7 +31,7 @@ export default async function deepResearchRoutes(fastify) {
   fastify.get('/deep-research', async (req) => {
     const { status = 'complete', limit = 50, offset = 0 } = req.query;
     const rows = await queryAll(
-      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, ask_count, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, cost_breakdown_json, created_at, completed_at FROM deep_research WHERE status = ? ORDER BY ask_count DESC LIMIT ? OFFSET ?',
+      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, ask_count, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, cost_breakdown_json, created_at, completed_at, hero_image FROM deep_research WHERE status = ? ORDER BY ask_count DESC LIMIT ? OFFSET ?',
       [status, Number(limit), Number(offset)]
     );
     return { records: rows, count: rows.length };
