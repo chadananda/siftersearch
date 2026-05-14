@@ -1372,14 +1372,16 @@ export async function clusterAndStructure(question, selected, chat, recon = null
 The main document answers a big spiritual question. Sub-sections are specific aspect sub-questions backed by primary source passages.
 
 Critical rules:
-1. Frame each aspect as a focused question — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
-2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
-3. Assign each quote only to an aspect it directly addresses. A quote must substantively answer the aspect sub-question — not merely be from the same tradition or thematic domain. Use aspect_idx=-1 for any quote that does not directly address at least one aspect. Precision matters: a weak assignment dilutes the section more than a rejected quote.
-4. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
-5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
-6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
-7. The summary for each aspect is 1-2 SHORT sentences — a plain statement of what the found passages show. No flourishes. If only one tradition is represented, say so plainly.
-8. The overview is 2-3 sentences — plain synthesis of the landscape, grounded in the found texts.`;
+1. Frame each aspect as a focused question about a UNIVERSAL SPIRITUAL PRINCIPLE — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
+2. Aspect labels must use universal language, NOT tradition-specific terminology. WRONG: "What is karma?", "What is the Tao?", "What is tzedakah?", "What is moksha?". RIGHT: "Does past action shape the soul's future?", "What cosmic order underlies existence?", "What obligations govern giving to those in need?", "What is liberation from the cycle of rebirth?". Ask what the principle IS or DOES across traditions — not what a single tradition calls it.
+3. NEVER name a section after a tradition ("Sikh Perspective", "Buddhist View", etc.) — all sections must be thematic.
+4. Base the aspects on the theological framework provided — do not invent new categories from scratch.
+5. Assign each quote only to an aspect it directly addresses. A quote must substantively answer the aspect sub-question — not merely be from the same tradition or thematic domain. Use aspect_idx=-1 for any quote that does not directly address at least one aspect. Precision matters: a weak assignment dilutes the section more than a rejected quote.
+6. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
+7. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
+8. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
+9. The summary for each aspect is 1-2 SHORT sentences — a plain statement of what the found passages show. No flourishes. If only one tradition is represented, say so plainly.
+10. The overview is 2-3 sentences — plain synthesis of the landscape, grounded in the found texts.`;
 
   const userPrompt = `Main question: "${question}"
 ${frameworkHint}

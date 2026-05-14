@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T22:42:51.557Z",
+  "generated": "2026-05-14T23:06:01.996Z",
   "entries": [
+    {
+      "hash": "3aece293",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Section diversity — cap any tradition at 3 quotes per section",
+      "scope": null
+    },
     {
       "hash": "46f2ac27",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use correct library path for document reindex endpoint",
       "scope": null
-    },
-    {
-      "hash": "d2b812db",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Move Raw YAML button inside expanded card",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "3aece293",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Section diversity — cap any tradition at 3 quotes per section",
+        "scope": null
+      },
       {
         "hash": "46f2ac27",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Use correct library path for document reindex endpoint",
-        "scope": null
-      },
-      {
-        "hash": "d2b812db",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Move Raw YAML button inside expanded card",
         "scope": null
       }
     ]
