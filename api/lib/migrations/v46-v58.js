@@ -743,4 +743,17 @@ export const migrations = {
     } catch { /* exists */ }
     logger.info('Migration 67 complete: para_meta attribution column added');
   },
+
+  68: async () => {
+    const addCol = async (sql) => {
+      try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    // LLM cost tracking for deep research runs: total tokens + estimated USD per research job.
+    // Per-step breakdown stored in cost_breakdown_json for optimization analysis.
+    await addCol('ALTER TABLE deep_research ADD COLUMN llm_input_tokens INTEGER DEFAULT 0');
+    await addCol('ALTER TABLE deep_research ADD COLUMN llm_output_tokens INTEGER DEFAULT 0');
+    await addCol('ALTER TABLE deep_research ADD COLUMN llm_cost_usd REAL DEFAULT 0');
+    await addCol('ALTER TABLE deep_research ADD COLUMN cost_breakdown_json TEXT');
+    logger.info('Migration 68 complete: deep_research cost tracking columns added');
+  },
 };

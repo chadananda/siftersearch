@@ -29,7 +29,7 @@ export default async function deepResearchRoutes(fastify) {
   fastify.get('/deep-research', async (req) => {
     const { status = 'complete', limit = 50, offset = 0 } = req.query;
     const rows = await queryAll(
-      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, ask_count, total_selected, created_at, completed_at FROM deep_research WHERE status = ? ORDER BY ask_count DESC LIMIT ? OFFSET ?',
+      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, ask_count, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, cost_breakdown_json, created_at, completed_at FROM deep_research WHERE status = ? ORDER BY ask_count DESC LIMIT ? OFFSET ?',
       [status, Number(limit), Number(offset)]
     );
     return { records: rows, count: rows.length };
@@ -179,6 +179,33 @@ export default async function deepResearchRoutes(fastify) {
   fastify.delete('/admin/deep-research/:id/quotes/:quoteId', { preHandler: [requireInternal] }, async (req, reply) => {
     await query('DELETE FROM deep_research_quotes WHERE id = ? AND research_id = ?', [req.params.quoteId, req.params.id]);
     return { success: true };
+  });
+
+  // Cost summary across all completed research (admin)
+  fastify.get('/admin/deep-research/costs', { preHandler: [requireInternal] }, async () => {
+    const rows = await queryAll(
+      `SELECT id, canonical_question, llm_input_tokens, llm_output_tokens, llm_cost_usd, cost_breakdown_json, total_selected, total_candidates, completed_at
+       FROM deep_research WHERE status = 'complete' AND llm_cost_usd > 0
+       ORDER BY completed_at DESC`
+    );
+    const total = rows.reduce((s, r) => ({ input: s.input + (r.llm_input_tokens || 0), output: s.output + (r.llm_output_tokens || 0), cost: s.cost + (r.llm_cost_usd || 0) }), { input: 0, output: 0, cost: 0 });
+    return {
+      total_runs: rows.length,
+      total_input_tokens: total.input,
+      total_output_tokens: total.output,
+      total_cost_usd: Math.round(total.cost * 10000) / 10000,
+      runs: rows.map(r => ({
+        id: r.id,
+        question: r.canonical_question?.slice(0, 80),
+        input_tokens: r.llm_input_tokens,
+        output_tokens: r.llm_output_tokens,
+        cost_usd: r.llm_cost_usd,
+        breakdown: r.cost_breakdown_json ? JSON.parse(r.cost_breakdown_json) : null,
+        total_selected: r.total_selected,
+        total_candidates: r.total_candidates,
+        completed_at: r.completed_at,
+      })),
+    };
   });
 
   // ── Para attribution admin endpoints ────────────────────────────────────────

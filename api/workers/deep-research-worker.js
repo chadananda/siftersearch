@@ -26,7 +26,11 @@ import {
   runDeepResearch,
 } from '../lib/deep-research.js';
 import { hybridSearch } from '../lib/search.js';
+import { logAIUsage } from '../lib/ai-services.js';
 import Anthropic from '@anthropic-ai/sdk';
+
+// Sonnet 4.6 pricing per 1K tokens (USD)
+const SONNET_PRICING = { input: 0.003, output: 0.015 };
 
 const POLL_INTERVAL_MS = 30_000;
 const IDLE_SLEEP_MS = 60_000;
@@ -38,17 +42,44 @@ let currentResearchId = null;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function chat(messages, opts = {}) {
-  // Anthropic requires system prompt as top-level param, not a message role.
-  const systemMsg = messages.find(m => m.role === 'system');
-  const userMsgs = messages.filter(m => m.role !== 'system');
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: opts.max_tokens || 4096,
-    ...(systemMsg ? { system: systemMsg.content } : {}),
-    messages: userMsgs,
-  });
-  return response;
+// makeChatFn returns a chat function bound to a cost accumulator object.
+// Each call logs to ai_usage and increments acc.inputTokens/outputTokens/costUsd.
+// The caller field tags which pipeline step made the call for per-step breakdown.
+export function makeChatFn(acc, researchId) {
+  return async function chat(messages, opts = {}) {
+    const caller = opts.caller || 'deep-research';
+    const systemMsg = messages.find(m => m.role === 'system');
+    const userMsgs = messages.filter(m => m.role !== 'system');
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: opts.max_tokens || 4096,
+      ...(systemMsg ? { system: systemMsg.content } : {}),
+      messages: userMsgs,
+    });
+    const inputTok = response.usage?.input_tokens || 0;
+    const outputTok = response.usage?.output_tokens || 0;
+    const cost = (inputTok * SONNET_PRICING.input + outputTok * SONNET_PRICING.output) / 1000;
+    acc.inputTokens += inputTok;
+    acc.outputTokens += outputTok;
+    acc.costUsd += cost;
+    acc.breakdown[caller] = acc.breakdown[caller] || { inputTokens: 0, outputTokens: 0, costUsd: 0, calls: 0 };
+    acc.breakdown[caller].inputTokens += inputTok;
+    acc.breakdown[caller].outputTokens += outputTok;
+    acc.breakdown[caller].costUsd += cost;
+    acc.breakdown[caller].calls += 1;
+    logAIUsage({
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      serviceType: 'chat',
+      promptTokens: inputTok,
+      completionTokens: outputTok,
+      totalTokens: inputTok + outputTok,
+      caller,
+      jobId: researchId ? String(researchId) : null,
+      success: true,
+    });
+    return response;
+  };
 }
 
 async function search(q, opts = {}) {
@@ -77,9 +108,12 @@ async function processOne(task) {
   logger.info({ taskId: task.id, researchId: task.research_id, question: task.canonical_question }, 'Processing deep research task');
   await claimQueueTask(task.id);
   startHeartbeat(task.research_id);
+  const costAcc = { inputTokens: 0, outputTokens: 0, costUsd: 0, breakdown: {} };
   try {
-    await runDeepResearch(task.research_id, { chat, search });
+    const chat = makeChatFn(costAcc, task.research_id);
+    await runDeepResearch(task.research_id, { chat, search, costAcc });
     await finishQueueTask(task.id);
+    logger.info({ taskId: task.id, researchId: task.research_id, costUsd: costAcc.costUsd.toFixed(4), inputTokens: costAcc.inputTokens, outputTokens: costAcc.outputTokens }, 'Deep research cost summary');
   } catch (err) {
     await finishQueueTask(task.id, err.message);
     logger.error({ err: err.message, taskId: task.id }, 'Deep research task failed');

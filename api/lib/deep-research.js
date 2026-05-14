@@ -761,7 +761,7 @@ Return JSON (empty array if coverage looks complete):
  * @param {number} researchId
  * @param {object} deps - { chat, search }
  */
-export async function runDeepResearch(researchId, { chat, search }) {
+export async function runDeepResearch(researchId, { chat, search, costAcc = null }) {
   const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [researchId]);
   if (!record) throw new Error(`Deep research record ${researchId} not found`);
 
@@ -774,8 +774,11 @@ export async function runDeepResearch(researchId, { chat, search }) {
   try {
     logger.info({ researchId, question: record.canonical_question }, 'Deep research started');
 
+    // Wrap chat to tag each LLM call with the pipeline step name for cost breakdown
+    const taggedChat = (step) => (messages, opts = {}) => chat(messages, { ...opts, caller: `deep-research/${step}` });
+
     // 0. Knowledge brief — map what general knowledge knows, to guide library search
-    const brief = await knowledgeBrief(record.canonical_question, chat);
+    const brief = await knowledgeBrief(record.canonical_question, taggedChat('knowledgeBrief'));
     await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ brief }), researchId]);
 
     // 1-3. Retrieval — all three strategies run in parallel
@@ -805,7 +808,7 @@ export async function runDeepResearch(researchId, { chat, search }) {
     const filtered = keywordPreFilter(record.canonical_question, allCandidates);
 
     // 5. Rerank — LLM-scored relevance in parallel batches, threshold 5/10
-    const reranked = await rerankPassages(record.canonical_question, filtered, chat, 100);
+    const reranked = await rerankPassages(record.canonical_question, filtered, taggedChat('rerank'), 100);
 
     // Re-attach candidate source data stripped during reranking
     const candidateMap = new Map(allCandidates.map(c => [c.id, c]));
@@ -836,12 +839,12 @@ export async function runDeepResearch(researchId, { chat, search }) {
 
     // 7. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
-    const structured = await clusterAndStructure(record.canonical_question, validSelected, chat, brief);
+    const structured = await clusterAndStructure(record.canonical_question, validSelected, taggedChat('cluster'), brief);
     let sections = structured?.sections || buildSectionsFallback(selected, []);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
 
     // 7b. Assess coverage and append obviously missing canonical passages
-    sections = await assessAndSupplement(record.canonical_question, sections, chat, search);
+    sections = await assessAndSupplement(record.canonical_question, sections, taggedChat('supplement'), search);
     const convergence = { searchable_text: sections.map(s => s.label || '').join(' ') };
 
     await query(
@@ -852,12 +855,18 @@ export async function runDeepResearch(researchId, { chat, search }) {
          sections_json = ?,
          summary_json = ?,
          convergence_json = ?,
+         llm_input_tokens = ?,
+         llm_output_tokens = ?,
+         llm_cost_usd = ?,
+         cost_breakdown_json = ?,
          completed_at = ?,
          heartbeat_at = ?
        WHERE id = ?`,
       [
         validSelected.length, traditionsCovered,
         JSON.stringify(sections), JSON.stringify(summary), JSON.stringify(convergence),
+        costAcc?.inputTokens || 0, costAcc?.outputTokens || 0,
+        costAcc?.costUsd || 0, costAcc ? JSON.stringify(costAcc.breakdown) : null,
         new Date().toISOString(), new Date().toISOString(), researchId
       ]
     );
