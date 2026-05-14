@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T18:54:16.701Z",
+  "generated": "2026-05-14T18:55:42.329Z",
   "entries": [
+    {
+      "hash": "b6202ab8",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Hero overlay lightened, markdown tables render, reassess async",
+      "scope": null
+    },
     {
       "hash": "5a08bf3c",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to find bad titles",
       "scope": null
-    },
-    {
-      "hash": "8064b5a1",
-      "date": "2026-01-19",
-      "type": "New",
-      "description": "Add sync-metadata script to update docs from frontmatter",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "b6202ab8",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Hero overlay lightened, markdown tables render, reassess async",
+        "scope": null
+      },
       {
         "hash": "5a08bf3c",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "New",
         "description": "Add script to find bad titles",
-        "scope": null
-      },
-      {
-        "hash": "8064b5a1",
-        "date": "2026-01-19",
-        "type": "New",
-        "description": "Add sync-metadata script to update docs from frontmatter",
         "scope": null
       }
     ]
