@@ -543,11 +543,13 @@ function textFingerprint(text) {
   return (text || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\u0900-\u097F]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 }
 
-// Source priority bonus (0–2) for canonical primary texts over secondary compilations.
+// Source priority bonus (−2 to +2) for canonical primary texts over secondary compilations.
 // Applied as tiebreaker when authority scores are equal for the same deduped quote.
 // Ensures e.g. Gleanings beats "Baha'u'llah and the New Era" for the same tablet passage.
 function sourcePriorityBonus(title) {
   const t = (title || '').toLowerCase();
+  // Parallel / bilingual compilations — same text exists in primary sources; never preferred
+  if (/parallel|bilingual|side.by.side|comparative translation/.test(t)) return -2;
   // Primary scripture / authoritative compilations by Central Figures or Shoghi Effendi
   if (/gleanings|kitab-i-aqdas|kitab-i-iqan|most holy book|book of certitude|hidden words|prayers and meditations|tablets of baha|epistle to the son|seven valleys|four valleys|advent of divine justice|world order of baha/.test(t)) return 2;
   if (/some answered questions|will and testament|selections from.*abdu|memorials of the faithful|secret of divine civilization|traveler.*narrative/.test(t)) return 2;

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T18:55:42.329Z",
+  "generated": "2026-05-14T19:00:49.718Z",
   "entries": [
+    {
+      "hash": "b64b3414",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Batch-reassess script for server-side bulk reassessment",
+      "scope": null
+    },
     {
       "hash": "b6202ab8",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to sync metadata to Meilisearch",
       "scope": null
-    },
-    {
-      "hash": "425115c4",
-      "date": "2026-01-19",
-      "type": "New",
-      "description": "Add script to find bad titles",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "b64b3414",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Batch-reassess script for server-side bulk reassessment",
+        "scope": null
+      },
       {
         "hash": "b6202ab8",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "New",
         "description": "Add script to sync metadata to Meilisearch",
-        "scope": null
-      },
-      {
-        "hash": "425115c4",
-        "date": "2026-01-19",
-        "type": "New",
-        "description": "Add script to find bad titles",
         "scope": null
       }
     ]

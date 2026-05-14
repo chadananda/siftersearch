@@ -111,16 +111,25 @@ const quotes: any[] = record.quotes || [];
 // to only approved quotes and merge in the full text from the DB.
 const approvedQuotesMap = new Map(quotes.map((q: any) => [q.para_id, q]));
 
+// Global dedup set — para_ids already shown across all sections.
+const _globalSeenParaIds = new Set<string>();
+
 function filterSectionQuotes(sectionQuotes: any[]): any[] {
   if (!sectionQuotes?.length) return [];
-  if (approvedQuotesMap.size === 0) return sectionQuotes;
+  const seenInSection = new Set<string>(); // within-section dedup
   const result = [];
   for (const q of sectionQuotes) {
     if (!q.para_id) { result.push(q); continue; }
-    const approved = approvedQuotesMap.get(q.para_id);
-    if (!approved) continue; // not in approved list — skip
-    // Merge full text from DB, keep section's contextual_note/excerpt as fallback
-    result.push({ ...q, text: approved.text || q.excerpt, source_url: approved.source_url || q.source_url, source_site: approved.source_site || q.source_site });
+    if (seenInSection.has(q.para_id) || _globalSeenParaIds.has(q.para_id)) continue;
+    if (approvedQuotesMap.size > 0) {
+      const approved = approvedQuotesMap.get(q.para_id);
+      if (!approved) continue; // not in approved list
+      result.push({ ...q, text: approved.text || q.excerpt, source_url: approved.source_url || q.source_url, source_site: approved.source_site || q.source_site });
+    } else {
+      result.push(q);
+    }
+    seenInSection.add(q.para_id);
+    _globalSeenParaIds.add(q.para_id);
   }
   return result;
 }
@@ -775,20 +784,44 @@ function buildOLSourceUrl(q: any): string | null {
 
   /* Print */
   @media print {
-    :global(nav), .article-sidebar, .article-footer-cta { display: none !important; }
-    :global(.liquid-bg), :global(.navbar) { display: none !important; }
-    .article-body { grid-template-columns: 1fr; padding: 0; }
-    .hero-image-banner { height: 200px; }
-    .hero-image-overlay { background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.6) 100%); }
-    h1 { font-size: 1.5rem; color: #000; }
-    h2 { font-size: 1.15rem; color: #000; }
-    .quote-card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 0.75rem; }
-    .quote-text, .bilingual-translation { color: #000; }
-    .overview-card, .convergence-card { border: 1px solid #ccc; background: #f9f9f9; }
+    :global(nav), :global(.navbar), :global(.liquid-bg) { display: none !important; }
+    .article-sidebar, .article-footer-cta, .sidebar-share, .sidebar-cta { display: none !important; }
+    /* Hero: hide image entirely — show question as plain heading */
+    .article-hero { min-height: 0 !important; background: none !important; overflow: visible; }
+    .hero-image-banner { display: none !important; }
+    .hero-image-overlay { display: none !important; }
+    .hero-inner { padding: 1rem 0 0.5rem; }
+    .breadcrumb { display: none; }
+    .topic-chip { border: 1px solid #888; color: #333; }
+    h1 { font-size: 1.6rem; color: #000; border-bottom: 2px solid #333; padding-bottom: 0.4rem; margin-bottom: 0.75rem; }
+
+    .article-body { grid-template-columns: 1fr; padding: 0; gap: 0; }
+    .article-main { gap: 1.5rem; }
+
+    h2 { font-size: 1.1rem; color: #000; border-bottom: 1px solid #ccc; padding-bottom: 0.2rem; }
+    .overview-card { border: 1px solid #ccc; background: #f9f9f9; padding: 0.75rem; }
+    .overview-text { color: #000; }
+
+    .aspect-section { break-before: avoid; }
+    .aspect-summary { border-left: 2px solid #999; background: #f5f5f5; color: #333; }
+    .quotes-list { gap: 0.5rem; }
+    .quote-card { break-inside: avoid; border: 1px solid #ccc; background: #fff; margin-bottom: 0.5rem; }
+    .quote-header { background: #f0f0f0 !important; }
+    .quote-trad-tag { color: #333 !important; border-color: #999 !important; }
+    .quote-answer, .quote-text, .bilingual-original, .bilingual-translation { color: #000 !important; }
+    .quote-footer { border-top: 1px solid #eee; }
     .source-link { color: #000; }
     .source-link::after { content: " (" attr(href) ")"; font-size: 0.65em; color: #555; }
     .stars { color: #888; }
-    .aspect-summary { border-left-color: #999; background: #f5f5f5; }
-    body { background: white; }
+
+    .convergence-card { border: 1px solid #ccc; background: #f9f9f9; }
+    .conv-agree { color: #2a7a2a; }
+    .conv-differ { color: #555; }
+    .conv-list li { color: #000; }
+    .faq-item { border: 1px solid #ccc; }
+    .faq-q, .faq-a p { color: #000; }
+
+    body { background: white; color: #000; }
+    @page { margin: 1.5cm; }
   }
 </style>
