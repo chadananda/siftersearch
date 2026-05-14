@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:12:15.253Z",
+  "generated": "2026-05-14T14:39:22.844Z",
   "entries": [
+    {
+      "hash": "d564de37",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Add siftersearch-deep-research to all update-server swap paths",
+      "scope": null
+    },
     {
       "hash": "bccc92aa",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
       "scope": null
-    },
-    {
-      "hash": "690a959e",
-      "date": "2026-01-18",
-      "type": "Fixed",
-      "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "d564de37",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Add siftersearch-deep-research to all update-server swap paths",
+        "scope": null
+      },
       {
         "hash": "bccc92aa",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "New",
         "description": "Reduce ingestion cooldown from 24h to 4h for faster library updates",
-        "scope": null
-      },
-      {
-        "hash": "690a959e",
-        "date": "2026-01-18",
-        "type": "Fixed",
-        "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
         "scope": null
       }
     ]

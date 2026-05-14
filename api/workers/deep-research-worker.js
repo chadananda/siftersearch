@@ -8,6 +8,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,6 +16,15 @@ const PROJECT_ROOT = join(__dirname, '..', '..');
 
 dotenv.config({ path: join(PROJECT_ROOT, '.env-secrets') });
 dotenv.config({ path: join(PROJECT_ROOT, '.env-public') });
+
+// Debug: log startup to file before any other setup
+const _debugLog = (msg) => { try { fs.appendFileSync('/tmp/drw-debug.log', `${new Date().toISOString()} ${msg}\n`); } catch {} };
+_debugLog(`START pid=${process.pid} argv=${process.argv[1]}`);
+process.on('SIGINT', () => _debugLog(`SIGINT received pid=${process.pid} stack=${new Error().stack}`));
+process.on('SIGTERM', () => _debugLog(`SIGTERM received pid=${process.pid}`));
+process.on('exit', (code) => _debugLog(`EXIT code=${code} pid=${process.pid}`));
+process.on('uncaughtException', (err) => _debugLog(`UNCAUGHT: ${err.message}\n${err.stack}`));
+process.on('unhandledRejection', (err) => _debugLog(`UNHANDLED_REJECTION: ${err}`));
 
 import { query, queryOne } from '../lib/db.js';
 import { logger } from '../lib/logger.js';
