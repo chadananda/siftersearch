@@ -801,35 +801,47 @@ Return JSON (empty array if coverage looks complete):
   const existingIds = new Set(sections.flatMap(s => (s.quotes || []).map(q => q.para_id)));
   let appended = 0;
 
+  // Collect candidates for scoring — don't add to sections until scored
+  const supplementCandidates = [];
   for (const { hits, m } of searchResults) {
     const targetSection = sections[m.aspect_idx];
     if (!targetSection) continue;
     for (const hit of hits) {
       if ((hit.text || '').length < 80) continue;
       if (existingIds.has(hit.id)) continue;
+      supplementCandidates.push({ hit, m, targetSection });
       existingIds.add(hit.id);
-      targetSection.quotes.push({
-        para_id: hit.id,
-        tradition: hit.religion || m.tradition,
-        excerpt: (hit.text || '').slice(0, 280),
-        source_title: hit.title || m.source,
-        source_author: hit.author || '',
-        source_site: hit.source_site,
-        source_url: hit.source_url,
-        external_para_id: hit.external_para_id,
-        authority: getAuthority(hit),
-        relevance_score: 6,
-        contextual_note: `Supplemented from ${m.source || m.tradition}`,
-      });
-      if (hit.religion && !targetSection.traditions.includes(hit.religion)) {
-        targetSection.traditions.push(hit.religion);
-      }
-      appended++;
       break; // one hit per missing passage
     }
   }
 
-  logger.info({ appended }, 'assessAndSupplement complete');
+  // Score supplemental candidates — only add if ≥7 (clearly addresses the question)
+  const scored = await rerankPassages(question, supplementCandidates.map(c => c.hit), chat, supplementCandidates.length);
+  const scoredMap = new Map(scored.map(s => [s.para_id, s]));
+
+  for (const { hit, m, targetSection } of supplementCandidates) {
+    const score = scoredMap.get(hit.id);
+    if (!score || score.relevance_score < 7) continue; // drop if not clearly relevant
+    targetSection.quotes.push({
+      para_id: hit.id,
+      tradition: hit.religion || m.tradition,
+      excerpt: (hit.text || '').slice(0, 280),
+      source_title: hit.title || m.source,
+      source_author: hit.author || '',
+      source_site: hit.source_site,
+      source_url: hit.source_url,
+      external_para_id: hit.external_para_id,
+      authority: getAuthority(hit),
+      relevance_score: score.relevance_score,
+      contextual_note: `Supplemented from ${m.source || m.tradition}`,
+    });
+    if (hit.religion && !targetSection.traditions.includes(hit.religion)) {
+      targetSection.traditions.push(hit.religion);
+    }
+    appended++;
+  }
+
+  logger.info({ appended, candidates: supplementCandidates.length }, 'assessAndSupplement complete');
   return sections;
 }
 
@@ -957,7 +969,10 @@ const VISUAL_THEMES = [
   { keys: ['tests','trials','tests-trials','hardship','adversity'],
     subject: 'Abstract mountainous forms emerging from swirling mist and fog, a single point of warm fire-light near the summit illuminating the surrounding darkness',
     palette: 'steel grey, mist white, charcoal, warm firelight gold, deep navy' },
-  { keys: ['soul','spirit','soul-spirit','consciousness','self'],
+  { keys: ['enlightenment','awakening','liberation','nirvana','moksha'],
+    subject: 'Abstract vast darkness pierced by a single tremendous burst of radiant white-gold light expanding outward in all directions, darkness dissolving from center to edge',
+    palette: 'pure radiant white at center, expanding gold, luminous amber, soft rose edges, dissolving darkness' },
+  { keys: ['soul-spirit','soul','spirit'],
     subject: 'Abstract luminous sphere at the center of vast dark space, radiating soft concentric rings of light outward, surrounded by deep cosmic void with distant nebula-like clouds of color',
     palette: 'luminous pearl white, soft rose, cosmic deep blue, nebula violet, warm gold core' },
   { keys: ['mysticism','nearness','nearness-to-god','unity of god','divine','transcendence'],
@@ -1043,10 +1058,12 @@ const FALLBACK_THEME = {
 };
 
 // Match topic tags and question keywords to a visual theme.
+// Uses word-boundary matching so e.g. "spiritual" doesn't match "spirit".
 function pickVisualTheme(tags, question) {
-  const haystack = [...(tags || []), question.toLowerCase()].join(' ');
+  const parts = [...(tags || []), question.toLowerCase()];
+  const haystack = parts.join(' ');
   for (const theme of VISUAL_THEMES) {
-    if (theme.keys.some(k => haystack.includes(k))) return theme;
+    if (theme.keys.some(k => new RegExp(`\\b${k.replace(/-/g, '[- ]')}\\b`).test(haystack))) return theme;
   }
   return FALLBACK_THEME;
 }

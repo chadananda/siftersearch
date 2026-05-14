@@ -71,6 +71,25 @@ const convergence = parseJ(record.convergence_json, {});
 const qaItems = parseJ(record.qa_json, []);
 const quotes: any[] = record.quotes || [];
 
+// Approved quotes map from deep_research_quotes (keyed by para_id).
+// sections_json stores ALL candidates with truncated excerpts; we filter
+// to only approved quotes and merge in the full text from the DB.
+const approvedQuotesMap = new Map(quotes.map((q: any) => [q.para_id, q]));
+
+function filterSectionQuotes(sectionQuotes: any[]): any[] {
+  if (!sectionQuotes?.length) return [];
+  if (approvedQuotesMap.size === 0) return sectionQuotes;
+  const result = [];
+  for (const q of sectionQuotes) {
+    if (!q.para_id) { result.push(q); continue; }
+    const approved = approvedQuotesMap.get(q.para_id);
+    if (!approved) continue; // not in approved list — skip
+    // Merge full text from DB, keep section's contextual_note/excerpt as fallback
+    result.push({ ...q, text: approved.text || q.excerpt, source_url: approved.source_url || q.source_url, source_site: approved.source_site || q.source_site });
+  }
+  return result;
+}
+
 function buildAdHocSections(qs: any[]) {
   const byTradition = new Map<string, any[]>();
   for (const q of qs) {
@@ -102,7 +121,13 @@ function buildAdHocSections(qs: any[]) {
   }));
 }
 
-const displaySections: any[] = sections.length > 0 ? sections : buildAdHocSections(quotes);
+// Filter sections to only show approved quotes, then drop empty sections.
+const filteredSections = sections.map((s: any) => ({
+  ...s,
+  quotes: filterSectionQuotes(s.quotes || []),
+})).filter((s: any) => s.quotes.length > 0);
+
+const displaySections: any[] = filteredSections.length > 0 ? filteredSections : buildAdHocSections(quotes);
 
 const isPending = record.status !== 'complete';
 const pageUrl = `${SITE}/research/${slug}`;
@@ -449,7 +474,7 @@ function buildOLSourceUrl(q: any): string | null {
                             client:load
                             url={quoteUrl}
                             title={`${q.source_title || 'Quote'} on: ${record.canonical_question}`}
-                            quote={excerptText.slice(0, 200)}
+                            quote={excerptText}
                             sourceTitle={q.source_title || ''}
                             sourceHref={sourceHref || ''}
                             subreddits={quoteSubreddits(q.tradition || '')}
