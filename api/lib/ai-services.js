@@ -33,6 +33,9 @@ const MODEL_PRICING = {
   'text-embedding-3-small': { input: 0.00002, output: 0 },
 
   // Anthropic
+  'claude-opus-4-7': { input: 0.015, output: 0.075 },
+  'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
+  'claude-haiku-4-5-20251001': { input: 0.00025, output: 0.00125 },
   'claude-3-opus-20240229': { input: 0.015, output: 0.075 },
   'claude-3-sonnet-20240229': { input: 0.003, output: 0.015 },
   'claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 },

@@ -756,4 +756,32 @@ export const migrations = {
     await addCol('ALTER TABLE deep_research ADD COLUMN cost_breakdown_json TEXT');
     logger.info('Migration 68 complete: deep_research cost tracking columns added');
   },
+
+  69: async () => {
+    // ai_usage table was referenced throughout ai-services.js and admin routes but
+    // never created in a migration — every logAIUsage() call silently failed.
+    await query(`
+      CREATE TABLE IF NOT EXISTS ai_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now')),
+        provider TEXT NOT NULL,
+        model TEXT NOT NULL,
+        service_type TEXT,
+        prompt_tokens INTEGER DEFAULT 0,
+        completion_tokens INTEGER DEFAULT 0,
+        total_tokens INTEGER DEFAULT 0,
+        estimated_cost_usd REAL DEFAULT 0,
+        caller TEXT,
+        success INTEGER DEFAULT 1,
+        error_message TEXT,
+        user_id TEXT,
+        job_id TEXT,
+        document_id TEXT
+      )
+    `);
+    try { await query('CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage(timestamp DESC)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_ai_usage_caller ON ai_usage(caller, timestamp DESC)'); } catch { /* exists */ }
+    try { await query('CREATE INDEX IF NOT EXISTS idx_ai_usage_model ON ai_usage(model, timestamp DESC)'); } catch { /* exists */ }
+    logger.info('Migration 69 complete: ai_usage table created');
+  },
 };
