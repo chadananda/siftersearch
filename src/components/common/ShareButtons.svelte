@@ -59,10 +59,19 @@
   }
 
   async function copyLink() {
-    const ref = sourceTitle
-      ? (sourceHref ? `- [${sourceTitle}](${sourceHref})` : `- ${sourceTitle}`)
-      : url;
-    const text = quote ? `"${quote}"\n   ${ref}` : url;
+    let text;
+    if (quote) {
+      const ref = sourceTitle
+        ? (sourceHref ? `[${sourceTitle}](${sourceHref})` : sourceTitle)
+        : shareUrl;
+      text = `"${quote}"\n   — ${ref}`;
+    } else {
+      // Page-level share: title + description snippet + URL
+      const body = description ? description.slice(0, 200) : '';
+      text = title && title !== 'SifterSearch Deep Research'
+        ? `${title}${body ? '\n' + body : ''}\n${shareUrl}`
+        : shareUrl;
+    }
     try {
       await navigator.clipboard.writeText(text);
       copied = true;

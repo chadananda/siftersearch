@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:43:20.426Z",
+  "generated": "2026-05-14T15:45:55.463Z",
   "entries": [
+    {
+      "hash": "a584e1ca",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
+      "scope": null
+    },
     {
       "hash": "48ffe7af",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Correct fetchRecent typo in LibraryBrowser",
       "scope": null
-    },
-    {
-      "hash": "c174e94b",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Auto-repair node_modules when critical dependencies are missing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "a584e1ca",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "DiscoveryFanOut searches ALL 8 traditions per angle, not just LLM-selected ones",
+        "scope": null
+      },
       {
         "hash": "48ffe7af",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Correct fetchRecent typo in LibraryBrowser",
-        "scope": null
-      },
-      {
-        "hash": "c174e94b",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Auto-repair node_modules when critical dependencies are missing",
         "scope": null
       }
     ]
