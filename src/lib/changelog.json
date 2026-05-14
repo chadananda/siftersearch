@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T21:40:39.797Z",
+  "generated": "2026-05-14T21:51:50.320Z",
   "entries": [
+    {
+      "hash": "b612c75f",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Pass title to getAuthority in computeAuthorityScore — OL Quran/Bible translations",
+      "scope": null
+    },
     {
       "hash": "b2a1b7ef",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add View Raw YAML button for admins in library browser",
       "scope": null
-    },
-    {
-      "hash": "9ac8d99d",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Update fix-corrupt-descriptions to only modify database",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "b612c75f",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Pass title to getAuthority in computeAuthorityScore — OL Quran/Bible translations",
+        "scope": null
+      },
       {
         "hash": "b2a1b7ef",
         "date": "2026-05-14",
@@ -7059,15 +7066,6 @@
         "date": "2026-01-20",
         "type": "New",
         "description": "Add View Raw YAML button for admins in library browser",
-        "scope": null
-      }
-    ],
-    "2026-01-19": [
-      {
-        "hash": "9ac8d99d",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Update fix-corrupt-descriptions to only modify database",
         "scope": null
       }
     ]
