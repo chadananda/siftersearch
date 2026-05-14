@@ -1,13 +1,6 @@
 {
-  "generated": "2026-05-14T17:24:41.281Z",
+  "generated": "2026-05-14T17:23:12.260Z",
   "entries": [
-    {
-      "hash": "10609af3",
-      "date": "2026-05-14",
-      "type": "Fixed",
-      "description": "Filter off-topic quotes, distinct visual themes, full quote copy",
-      "scope": null
-    },
     {
       "hash": "d131621a",
       "date": "2026-05-14",
@@ -3500,17 +3493,17 @@
       "type": "Fixed",
       "description": "Add deleted_at filter to ALL doc lookups to prevent orphaned content",
       "scope": null
+    },
+    {
+      "hash": "803eed99",
+      "date": "2026-01-19",
+      "type": "Fixed",
+      "description": "Skip soft-deleted docs in file lookup to prevent orphaned content",
+      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
-      {
-        "hash": "10609af3",
-        "date": "2026-05-14",
-        "type": "Fixed",
-        "description": "Filter off-topic quotes, distinct visual themes, full quote copy",
-        "scope": null
-      },
       {
         "hash": "d131621a",
         "date": "2026-05-14",
@@ -7068,6 +7061,13 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Add deleted_at filter to ALL doc lookups to prevent orphaned content",
+        "scope": null
+      },
+      {
+        "hash": "803eed99",
+        "date": "2026-01-19",
+        "type": "Fixed",
+        "description": "Skip soft-deleted docs in file lookup to prevent orphaned content",
         "scope": null
       }
     ]
