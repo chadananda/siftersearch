@@ -206,11 +206,11 @@ export async function knowledgeBrief(question, chat) {
 
 Produce a knowledge brief: a structured map of known canonical passages and search directions for each major angle, so a library search can be intelligently targeted.
 
-For each angle (5-7 distinct thematic angles), provide per-tradition:
-- "known_passages": specific passages you know exist in that tradition's primary texts that directly address this angle. Each entry: { "text_fragment": "3-8 exact or near-exact words from the passage", "source": "book/scripture name", "search_phrases": ["2-3 keyword-focused phrases to find it"] }. Be specific — vague fragments are useless for matching.
-- "search_phrases": 2-3 discovery phrases for this tradition × angle (to find passages you don't know about yet)
+For each angle (5-6 distinct thematic angles), provide per-tradition (only include traditions with real content — skip if unsure):
+- "known_passages": up to 2 specific passages you are confident exist in that tradition's primary texts. Each: { "text_fragment": "4-6 exact words from the passage", "source": "book name", "search_phrases": ["phrase1", "phrase2"] }. Only include passages you are confident about.
+- "search_phrases": 1-2 discovery phrases for this tradition × angle
 
-Also provide "general_search_phrases": 4-6 broad queries on the main question (no tradition filter) to discover unexpected gems.
+Also provide "general_search_phrases": 3-4 broad queries on the main question (no tradition filter).
 
 Traditions: ${TRADITIONS.join(', ')}
 
@@ -234,12 +234,19 @@ Return JSON:
   "general_search_phrases": ["broad query1", "broad query2", "broad query3", "broad query4"]
 }`
     }
-  ], { max_tokens: 8000 });
+  ], { max_tokens: 12000 });
 
   const text = response.content?.[0]?.text || '';
   const json = text.match(/\{[\s\S]*\}/)?.[0];
   if (!json) throw new Error('knowledgeBrief: no JSON in response');
-  const result = JSON.parse(json);
+  let result;
+  try {
+    result = JSON.parse(json);
+  } catch (parseErr) {
+    // LLM response truncated — try to salvage partial JSON
+    const truncated = json.replace(/,?\s*\{[^{}]*$/, '').replace(/,?\s*\[[^\[\]]*$/, '') + ']}]}';
+    try { result = JSON.parse(truncated); } catch { throw new Error(`knowledgeBrief: JSON parse failed — ${parseErr.message}`); }
+  }
   const totalKnown = (result.angles || []).reduce((sum, a) =>
     sum + Object.values(a.traditions || {}).reduce((s, t) => s + (t.known_passages?.length || 0), 0), 0);
   logger.info({ angles: result.angles?.length, knownPassages: totalKnown }, 'Knowledge brief complete');

@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T12:13:30.715Z",
+  "generated": "2026-05-14T12:32:49.849Z",
   "entries": [
+    {
+      "hash": "1f02bb9e",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Siftersearch-deep-research PM2 process to ecosystem config",
+      "scope": null
+    },
     {
       "hash": "3754adcc",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Populate filename column during ingestion",
       "scope": null
-    },
-    {
-      "hash": "2cc17ecd",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Use filename instead of file_path for title extraction",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "1f02bb9e",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Siftersearch-deep-research PM2 process to ecosystem config",
+        "scope": null
+      },
       {
         "hash": "3754adcc",
         "date": "2026-05-14",
@@ -7065,13 +7072,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Populate filename column during ingestion",
-        "scope": null
-      },
-      {
-        "hash": "2cc17ecd",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Use filename instead of file_path for title extraction",
         "scope": null
       }
     ]
