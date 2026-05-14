@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T21:51:50.320Z",
+  "generated": "2026-05-14T21:55:46.001Z",
   "entries": [
+    {
+      "hash": "46f2ac27",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Upgrade-to-ol-sources — replace non-OL research quotes with OL equivalents",
+      "scope": null
+    },
     {
       "hash": "b612c75f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Move Raw YAML button inside expanded card",
       "scope": null
-    },
-    {
-      "hash": "0893198d",
-      "date": "2026-01-20",
-      "type": "New",
-      "description": "Add View Raw YAML button for admins in library browser",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "46f2ac27",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Upgrade-to-ol-sources — replace non-OL research quotes with OL equivalents",
+        "scope": null
+      },
       {
         "hash": "b612c75f",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "Fixed",
         "description": "Move Raw YAML button inside expanded card",
-        "scope": null
-      },
-      {
-        "hash": "0893198d",
-        "date": "2026-01-20",
-        "type": "New",
-        "description": "Add View Raw YAML button for admins in library browser",
         "scope": null
       }
     ]
