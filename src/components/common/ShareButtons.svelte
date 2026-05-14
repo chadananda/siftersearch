@@ -24,24 +24,26 @@
   let copied = $state(false);
   let showReddit = $state(false);
   let showMenu = $state(false);
+  let dropdownEl = $state(null);
+  let redditEl = $state(null);
 
   $effect(() => {
     if (!showMenu && !showReddit) return;
     function close(e) {
-      if (!e.target.closest('.share-dropdown-wrapper') && !e.target.closest('.reddit-wrapper')) {
-        showMenu = false;
-        showReddit = false;
-      }
+      if (showMenu && !dropdownEl?.contains(e.target)) showMenu = false;
+      if (showReddit && !redditEl?.contains(e.target)) showReddit = false;
     }
-    document.addEventListener('click', close, true);
-    return () => document.removeEventListener('click', close, true);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   });
 
   const enc = encodeURIComponent;
   // When sharing a quote, link to the primary source document if available.
   const shareUrl = (quote && sourceHref) ? sourceHref : url;
+  // Quote shares: include text + attribution + source URL for full context.
+  const attribution = sourceTitle ? ` — ${sourceTitle}` : '';
   const shareText = quote
-    ? `"${quote.slice(0, 200)}" — ${sourceTitle || 'Source'}`
+    ? `"${quote.slice(0, 200)}"${attribution}\n${shareUrl}`
     : (description ? description.slice(0, 200) : title);
 
   const links = {
@@ -86,7 +88,7 @@
 
 {#if dropdown}
   <!-- Single share button → dropdown menu -->
-  <div class="share-dropdown-wrapper">
+  <div class="share-dropdown-wrapper" bind:this={dropdownEl}>
     <button class="share-toggle" onclick={() => (showMenu = !showMenu)} title="Share" aria-label="Share" aria-expanded={showMenu}>
       <!-- Classic share icon: connected dots -->
       <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
@@ -125,7 +127,7 @@
           </a>
         {/each}
         <div class="menu-divider"></div>
-        <a href={links.email} class="menu-item" onclick={() => (showMenu = false)}>
+        <a href={links.email} target="_blank" rel="noopener" class="menu-item" onclick={() => (showMenu = false)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           <span>Email</span>
         </a>
@@ -164,7 +166,7 @@
       {#if !compact}<span>WhatsApp</span>{/if}
     </button>
 
-    <div class="reddit-wrapper">
+    <div class="reddit-wrapper" bind:this={redditEl}>
       <button class="share-btn reddit-btn" onclick={() => (showReddit = !showReddit)} title="Share on Reddit" aria-label="Share on Reddit">
         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
         {#if !compact}<span>Reddit</span>{/if}
@@ -178,7 +180,7 @@
       {/if}
     </div>
 
-    <a href={links.email} class="share-btn email-btn" title="Share via Email" aria-label="Share via Email">
+    <a href={links.email} target="_blank" rel="noopener" class="share-btn email-btn" title="Share via Email" aria-label="Share via Email">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
       {#if !compact}<span>Email</span>{/if}
     </a>

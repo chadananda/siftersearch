@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:45:55.463Z",
+  "generated": "2026-05-14T15:48:39.478Z",
   "entries": [
+    {
+      "hash": "8815e2b2",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Sidebar share copy-link includes title+description+URL, not just URL",
+      "scope": null
+    },
     {
       "hash": "a584e1ca",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update frontmatter-only changes in library watcher",
       "scope": null
-    },
-    {
-      "hash": "be5656d6",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Correct fetchRecent typo in LibraryBrowser",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "8815e2b2",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Sidebar share copy-link includes title+description+URL, not just URL",
+        "scope": null
+      },
       {
         "hash": "a584e1ca",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Update frontmatter-only changes in library watcher",
-        "scope": null
-      },
-      {
-        "hash": "be5656d6",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Correct fetchRecent typo in LibraryBrowser",
         "scope": null
       }
     ]
