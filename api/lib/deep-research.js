@@ -204,29 +204,29 @@ export async function knowledgeBrief(question, chat) {
       role: 'user',
       content: `Question: "${question}"
 
-Produce a knowledge brief: a structured map of known canonical passages and search directions for each major angle, so a library search can be intelligently targeted.
+Produce a research brief that guides a library search across ALL major religious traditions. Every tradition must be searched — your job is to identify what to look for, not to decide which traditions are relevant.
 
-For each angle (5-6 distinct thematic angles), provide per-tradition (only include traditions with real content — skip if unsure):
-- "known_passages": up to 2 specific passages you are confident exist in that tradition's primary texts. Each: { "text_fragment": "4-6 exact words from the passage", "source": "book name", "search_phrases": ["phrase1", "phrase2"] }. Only include passages you are confident about.
-- "search_phrases": 1-2 discovery phrases for this tradition × angle
+For each angle (5-6 distinct thematic angles on this question):
+- "search_phrases": 2-3 broad phrases that will find relevant passages in ANY tradition (used to search all 8 traditions)
+- "traditions": for EVERY tradition in [${TRADITIONS.join(', ')}], provide:
+  - "search_phrases": 1-2 tradition-specific phrases (use that tradition's vocabulary — e.g., "dhyana" for Buddhism, "salat" for Islam, "puja" for Hinduism)
+  - "known_passages": (optional) up to 2 specific passages you are highly confident exist. Each: { "text_fragment": "4-6 exact words", "source": "book name", "search_phrases": ["phrase1"] }
 
-Also provide "general_search_phrases": 3-4 broad queries on the main question (no tradition filter).
-
-Traditions: ${TRADITIONS.join(', ')}
+Also provide "general_search_phrases": 4-6 broad queries covering the full question.
 
 Return JSON:
 {
   "angles": [
     {
       "theme": "concise angle label (5-8 words)",
-      "core_claim": "1-2 sentences: what this angle covers",
+      "core_claim": "1-2 sentences: what this angle explores",
+      "search_phrases": ["angle phrase 1", "angle phrase 2"],
       "traditions": {
         "TraditionName": {
-          "teaching": "1 sentence on what this tradition teaches on this angle",
+          "search_phrases": ["tradition-vocabulary phrase"],
           "known_passages": [
-            { "text_fragment": "exact words from text", "source": "book name", "search_phrases": ["phrase1", "phrase2"] }
-          ],
-          "search_phrases": ["discovery phrase1", "discovery phrase2"]
+            { "text_fragment": "exact words", "source": "book name", "search_phrases": ["phrase"] }
+          ]
         }
       }
     }
@@ -306,13 +306,19 @@ export async function targetedRetrieval(brief, search) {
  * @returns {Promise<Array>} Candidate paragraphs
  */
 export async function discoveryFanOut(brief, search) {
+  const ALL_TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh'];
   const seen = new Set();
   const candidates = [];
 
+  // Search ALL traditions for every angle — not just those the brief happened to mention.
+  // Use tradition-specific phrases from brief when available; fall back to angle-level phrases.
   const tasks = [];
   for (const angle of (brief.angles || [])) {
-    for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
-      for (const phrase of (tradData.search_phrases || []).slice(0, 2)) {
+    const anglePhrases = (angle.search_phrases || []).slice(0, 2);
+    for (const tradition of ALL_TRADITIONS) {
+      const tradPhrases = (angle.traditions?.[tradition]?.search_phrases || []).slice(0, 2);
+      const phrases = tradPhrases.length ? tradPhrases : anglePhrases.slice(0, 1);
+      for (const phrase of phrases) {
         tasks.push({ phrase, tradition });
       }
     }
@@ -320,7 +326,7 @@ export async function discoveryFanOut(brief, search) {
 
   const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
     try {
-      const r = await search(phrase, { limit: 20, filters: { religion: tradition }, semanticRatio: 0.65 });
+      const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.65 });
       return { hits: r.hits || [], tradition };
     } catch (err) {
       logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'discoveryFanOut error');
@@ -335,7 +341,7 @@ export async function discoveryFanOut(brief, search) {
     }
   }
 
-  logger.info({ tasks: tasks.length, found: candidates.length }, 'Discovery fan-out complete');
+  logger.info({ tasks: tasks.length, found: candidates.length }, 'Discovery fan-out complete (all traditions)');
   return candidates;
 }
 

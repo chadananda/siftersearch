@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:38:42.197Z",
+  "generated": "2026-05-14T15:43:20.426Z",
   "entries": [
+    {
+      "hash": "48ffe7af",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
+      "scope": null
+    },
     {
       "hash": "84933dce",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Auto-repair node_modules when critical dependencies are missing",
       "scope": null
-    },
-    {
-      "hash": "bec971fc",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "48ffe7af",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Diversity sweep in deep-research — ensure all 8 major traditions get candidates",
+        "scope": null
+      },
       {
         "hash": "84933dce",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Auto-repair node_modules when critical dependencies are missing",
-        "scope": null
-      },
-      {
-        "hash": "bec971fc",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
         "scope": null
       }
     ]
