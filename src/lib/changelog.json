@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:12:34.429Z",
+  "generated": "2026-05-14T15:20:02.571Z",
   "entries": [
+    {
+      "hash": "60ee1bcb",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Add TITLE_AUTHORITY patterns for Buddhist canonical texts",
+      "scope": null
+    },
     {
       "hash": "5536504e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Add browser caching for quick search (60s max-age)",
       "scope": null
-    },
-    {
-      "hash": "27ebb9e2",
-      "date": "2026-01-18",
-      "type": "New",
-      "description": "Add search cache pre-warming on server startup",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "60ee1bcb",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Add TITLE_AUTHORITY patterns for Buddhist canonical texts",
+        "scope": null
+      },
       {
         "hash": "5536504e",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "Performance",
         "description": "Add browser caching for quick search (60s max-age)",
-        "scope": null
-      },
-      {
-        "hash": "27ebb9e2",
-        "date": "2026-01-18",
-        "type": "New",
-        "description": "Add search cache pre-warming on server startup",
         "scope": null
       }
     ]

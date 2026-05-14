@@ -616,9 +616,29 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
 
   // Threshold 5: passage must clearly address the question. Old threshold 3 let in tangential
   // matches; 7 was too strict for cross-tradition research where scoring varies by tradition idiom.
-  const ranked = deduped
+  const sorted = deduped
     .filter(p => p.relevance_score >= 5)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
+
+  // Tradition diversity: Bahá'í texts are plentiful (41% of corpus, auth 9-10 for Central
+  // Figures) and address universal topics — they flood cross-tradition research otherwise.
+  // Unless the question is specifically about the Bahá'í Faith, require a higher relevance
+  // threshold (≥7) AND cap Bahá'í to 25% of topN so other traditions get fair coverage.
+  const isBahaiQuestion = /bah[aá]['i\u2019]/i.test(question) || /\bbahai\b/i.test(question);
+  const BAHAI_MIN_SCORE = isBahaiQuestion ? 5 : 7;
+  const bahaiCap = isBahaiQuestion ? topN : Math.max(3, Math.ceil(topN * 0.25));
+  let bahaiCount = 0;
+  const ranked = [];
+  for (const p of sorted) {
+    const isBahai = /bah/i.test(p.religion || '');
+    if (isBahai) {
+      if (p.relevance_score < BAHAI_MIN_SCORE) continue;
+      if (bahaiCount >= bahaiCap) continue;
+      bahaiCount++;
+    }
+    ranked.push(p);
+    if (ranked.length >= topN) break;
+  }
 
   return ranked.slice(0, topN).map((p, rank) => ({
     para_id: p.id,

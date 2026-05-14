@@ -30,14 +30,29 @@ function parseJ(val: any, fallback: any) {
 function stripMd(text: string): string {
   if (!text) return '';
   return text
-    .replace(/⁅\/?\w+⁆/g, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/__(.*?)__/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/⁅\/?\w+⁆/g, '')           // segment markers
+    .replace(/\*\*(.*?)\*\*/g, '$1')     // bold
+    .replace(/__(.*?)__/g, '$1')         // bold alt
+    .replace(/\*(.*?)\*/g, '$1')         // italic
+    .replace(/^#{1,6}\s+/gm, '')         // headings
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
+    .replace(/^\[\^[^\]]+\]:.*/gm, '')   // footnote definitions [^1]: text
+    .replace(/\[\^[^\]]+\]/g, '')        // footnote refs [^1]
+    .replace(/^>\s*/gm, '')              // blockquotes
+    .replace(/^[-*_]{3,}\s*$/gm, '')     // horizontal rules
+    .replace(/<(?!\/?(sup|sub)\b)[^>]+>/gi, '') // strip HTML except sup/sub
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Allow only safe inline HTML (<sup>, <sub>) for verse markers; strip everything else.
+function safeHtml(text: string): string {
+  if (!text) return '';
+  const stripped = stripMd(text);
+  // Strip all tags except sup/sub, escaping the rest
+  return stripped.replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (match, tag) =>
+    /^(sup|sub)$/i.test(tag) ? match : ''
+  );
 }
 
 function hasNonLatin(text: string): boolean {
@@ -350,6 +365,7 @@ function buildOLSourceUrl(q: any): string | null {
                   const olUrl = buildOLSourceUrl(q);
                   const tradColor = TRADITION_COLORS[q.tradition || ''] || '#888';
                   const excerptText = stripMd(q.excerpt || q.text || '');
+                  const excerptHtml = safeHtml(q.excerpt || q.text || '');
                   const originalText = q.original ? stripMd(q.original) : null;
                   const showOriginal = originalText || hasNonLatin(excerptText);
                   const quoteUrl = `${pageUrl}#q-${sectionIdx}-${qi}`;
@@ -370,12 +386,12 @@ function buildOLSourceUrl(q: any): string | null {
                       <div class="quote-body">
                         {showOriginal && originalText ? (
                           sourceHref
-                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation">"{excerptText}"</p></div></a>
-                            : <div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation">"{excerptText}"</p></div>
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={`"${excerptHtml}"`}></p></div></a>
+                            : <div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={`"${excerptHtml}"`}></p></div>
                         ) : (
                           sourceHref
-                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><blockquote class="quote-text">"{excerptText}"</blockquote></a>
-                            : <blockquote class="quote-text">"{excerptText}"</blockquote>
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><blockquote class="quote-text" set:html={`"${excerptHtml}"`}></blockquote></a>
+                            : <blockquote class="quote-text" set:html={`"${excerptHtml}"`}></blockquote>
                         )}
                         <div class="quote-footer">
                           <div class="quote-source">
