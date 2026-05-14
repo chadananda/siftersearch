@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:20:02.571Z",
+  "generated": "2026-05-14T15:27:17.511Z",
   "entries": [
+    {
+      "hash": "87255d10",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
+      "scope": null
+    },
     {
       "hash": "60ee1bcb",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Watchdog now monitors library-watcher and jobs processes",
       "scope": null
-    },
-    {
-      "hash": "a7dff7f9",
-      "date": "2026-01-18",
-      "type": "Performance",
-      "description": "Add browser caching for quick search (60s max-age)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "87255d10",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Search quality, Buddhist authority, Bahai suppression, inline verse markers",
+        "scope": null
+      },
       {
         "hash": "60ee1bcb",
         "date": "2026-05-14",
@@ -7061,15 +7068,6 @@
         "date": "2026-01-19",
         "type": "New",
         "description": "Watchdog now monitors library-watcher and jobs processes",
-        "scope": null
-      }
-    ],
-    "2026-01-18": [
-      {
-        "hash": "a7dff7f9",
-        "date": "2026-01-18",
-        "type": "Performance",
-        "description": "Add browser caching for quick search (60s max-age)",
         "scope": null
       }
     ]

@@ -12,14 +12,16 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com
 const { slug } = Astro.params;
 const SITE = 'https://siftersearch.com';
 
-const [res, allRes] = await Promise.all([
+const [res, allRes, dialogsRes] = await Promise.all([
   fetch(`${API_BASE}/api/v1/deep-research/slug/${slug}`),
   fetch(`${API_BASE}/api/v1/deep-research?status=complete&limit=100`),
+  fetch(`${API_BASE}/api/v1/dialogs?limit=100`),
 ]);
 
 if (!res.ok) return Astro.redirect('/research');
 const record = await res.json();
 const { records: allRecords = [] } = allRes.ok ? await allRes.json() : {};
+const { dialogs: allDialogs = [] } = dialogsRes.ok ? await dialogsRes.json() : {};
 
 function parseJ(val: any, fallback: any) {
   if (!val) return fallback;
@@ -170,11 +172,29 @@ const datasetSchema = {
   "measurementTechnique": "AI-assisted semantic search and relevance reranking across interfaith primary texts",
 };
 
+// Related published dialogs with matching tags
+const relatedDialogs = allDialogs
+  .filter((d: any) => {
+    const dTags: string[] = d.tags_json ? JSON.parse(d.tags_json) : [];
+    return dTags.some((t: string) => topicTags.includes(t));
+  })
+  .slice(0, 4);
+
 const TRADITION_COLORS: Record<string, string> = {
   "Baha'i": '#c8a44a', 'Islam': '#2e7d32', 'Christianity': '#1565c0',
   'Judaism': '#ab47bc', 'Buddhism': '#f57f17', 'Hinduism': '#bf360c',
   'Taoism': '#00695c', 'Sikhism': '#ad1457', 'Zoroastrian': '#e65100',
 };
+
+const TRADITION_SUBREDDITS: Record<string, string> = {
+  'Christianity': 'r/Christianity', 'Islam': 'r/islam', 'Buddhism': 'r/Buddhism',
+  'Judaism': 'r/Judaism', 'Hinduism': 'r/hinduism', 'Taoism': 'r/taoism',
+  'Sikhism': 'r/sikhism', "Baha'i": 'r/bahai', 'Zoroastrian': 'r/zoroastrianism',
+};
+function quoteSubreddits(tradition: string): string[] {
+  const sub = TRADITION_SUBREDDITS[tradition];
+  return sub ? [sub, 'r/religion', 'r/spirituality'] : ['r/religion', 'r/spirituality', 'r/philosophy'];
+}
 
 const TOPIC_LABELS: Record<string, string> = {
   'theodicy': 'Theodicy', 'tests-trials': 'Tests & Trials', 'afterlife': 'Afterlife',
@@ -284,12 +304,14 @@ function buildOLSourceUrl(q: any): string | null {
         <!-- Share (sticky in sidebar) -->
         <div class="sidebar-share">
           <p class="sidebar-share-label">Share this research</p>
-          <ShareButtons
-            client:load
-            url={pageUrl}
-            title={record.canonical_question}
-            description={description}
-          />
+          <div class="sidebar-share-grid">
+            <ShareButtons
+              client:load
+              url={pageUrl}
+              title={record.canonical_question}
+              description={description}
+            />
+          </div>
         </div>
 
         <!-- Ask Jafar CTA -->
@@ -304,6 +326,16 @@ function buildOLSourceUrl(q: any): string | null {
             <p class="sidebar-section-label">Related Questions</p>
             {related.map((r: any) => (
               <a href={`/research/${r.slug}`} class="sidebar-related-link">{r.canonical_question}</a>
+            ))}
+          </div>
+        )}
+
+        <!-- Related discussions (published dialogs) -->
+        {relatedDialogs.length > 0 && (
+          <div class="sidebar-related">
+            <p class="sidebar-section-label">Related Discussions</p>
+            {relatedDialogs.map((d: any) => (
+              <a href={`/dialogue/${d.slug}`} class="sidebar-related-link">{d.title || d.question}</a>
             ))}
           </div>
         )}
@@ -386,12 +418,12 @@ function buildOLSourceUrl(q: any): string | null {
                       <div class="quote-body">
                         {showOriginal && originalText ? (
                           sourceHref
-                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={`"${excerptHtml}"`}></p></div></a>
-                            : <div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={`"${excerptHtml}"`}></p></div>
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={excerptHtml}></p></div></a>
+                            : <div class="bilingual"><p class="bilingual-original" dir="auto">{originalText}</p><p class="bilingual-translation" set:html={excerptHtml}></p></div>
                         ) : (
                           sourceHref
-                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><blockquote class="quote-text" set:html={`"${excerptHtml}"`}></blockquote></a>
-                            : <blockquote class="quote-text" set:html={`"${excerptHtml}"`}></blockquote>
+                            ? <a href={sourceHref} target="_blank" rel="noopener" class="quote-link"><blockquote class="quote-text" set:html={excerptHtml}></blockquote></a>
+                            : <blockquote class="quote-text" set:html={excerptHtml}></blockquote>
                         )}
                         <div class="quote-footer">
                           <div class="quote-source">
@@ -412,6 +444,7 @@ function buildOLSourceUrl(q: any): string | null {
                             quote={excerptText.slice(0, 200)}
                             sourceTitle={q.source_title || ''}
                             sourceHref={sourceHref || ''}
+                            subreddits={quoteSubreddits(q.tradition || '')}
                             dropdown={true}
                           />
                         </div>
@@ -653,4 +686,29 @@ function buildOLSourceUrl(q: any): string | null {
   .footer-link:hover { color: var(--accent); }
   .btn-primary { display: inline-block; padding: 0.6rem 1.25rem; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; transition: background 0.15s; white-space: nowrap; }
   .btn-primary:hover { background: var(--accent-hover); }
+
+  /* Sidebar share — 2-column grid */
+  .sidebar-share-grid :global(.share-row) { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .sidebar-share-grid :global(.share-label) { display: none; }
+  .sidebar-share-grid :global(.share-btn) { justify-content: center; padding: 0.35rem 0.4rem; font-size: 0.74rem; }
+  .sidebar-share-grid :global(.reddit-wrapper) { position: static; }
+  .sidebar-share-grid :global(.reddit-popover) { position: fixed; }
+
+  /* Print */
+  @media print {
+    :global(nav), .article-sidebar, .article-footer-cta { display: none !important; }
+    :global(.liquid-bg), :global(.navbar) { display: none !important; }
+    .article-body { grid-template-columns: 1fr; padding: 0; }
+    .article-hero { padding: 1rem 0; background: none; }
+    h1 { font-size: 1.5rem; color: #000; }
+    h2 { font-size: 1.15rem; color: #000; }
+    .quote-card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 0.75rem; }
+    .quote-text, .bilingual-translation { color: #000; }
+    .overview-card, .convergence-card { border: 1px solid #ccc; background: #f9f9f9; }
+    .source-link { color: #000; }
+    .source-link::after { content: " (" attr(href) ")"; font-size: 0.65em; color: #555; }
+    .stars { color: #888; }
+    .aspect-summary { border-left-color: #999; background: #f5f5f5; }
+    body { background: white; }
+  }
 </style>

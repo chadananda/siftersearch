@@ -25,20 +25,37 @@
   let showReddit = $state(false);
   let showMenu = $state(false);
 
+  $effect(() => {
+    if (!showMenu && !showReddit) return;
+    function close(e) {
+      if (!e.target.closest('.share-dropdown-wrapper') && !e.target.closest('.reddit-wrapper')) {
+        showMenu = false;
+        showReddit = false;
+      }
+    }
+    document.addEventListener('click', close, true);
+    return () => document.removeEventListener('click', close, true);
+  });
+
   const enc = encodeURIComponent;
+  // When sharing a quote, link to the primary source document if available.
+  const shareUrl = (quote && sourceHref) ? sourceHref : url;
   const shareText = quote
-    ? `"${quote.slice(0, 200)}" — via SifterSearch`
+    ? `"${quote.slice(0, 200)}" — ${sourceTitle || 'Source'}`
     : (description ? description.slice(0, 200) : title);
 
   const links = {
-    twitter: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(url)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}&quote=${enc(shareText)}`,
-    whatsapp: `https://wa.me/?text=${enc(shareText + ' ' + url)}`,
-    email: `mailto:?subject=${enc(title)}&body=${enc(shareText + '\n\n' + url)}`,
+    twitter: `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}&quote=${enc(shareText)}`,
+    whatsapp: `https://wa.me/?text=${enc(shareText + ' ' + shareUrl)}`,
+    email: `mailto:?subject=${enc(title)}&body=${enc(shareText + '\n\n' + shareUrl)}`,
   };
 
   function redditUrl(sub) {
-    return `https://reddit.com/r/${sub.replace(/^r\//, '')}/submit?url=${enc(url)}&title=${enc(title)}`;
+    const redditTitle = quote
+      ? `"${quote.slice(0, 150)}" — ${sourceTitle || title}`
+      : title;
+    return `https://reddit.com/r/${sub.replace(/^r\//, '')}/submit?url=${enc(shareUrl)}&title=${enc(redditTitle)}`;
   }
 
   async function copyLink() {
@@ -164,7 +181,7 @@
   .share-dropdown-wrapper { position: relative; display: inline-block; }
   .share-toggle { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.55rem; border-radius: 5px; font-size: 0.72rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--surface-0); color: var(--text-muted); transition: background 0.12s, color 0.12s, border-color 0.12s; white-space: nowrap; }
   .share-toggle:hover { background: var(--surface-2); color: var(--text-primary); border-color: var(--border); }
-  .share-menu { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 200; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.35rem; display: flex; flex-direction: column; gap: 0.1rem; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  .share-menu { position: absolute; bottom: calc(100% + 6px); right: 0; z-index: 200; background: light-dark(rgb(241, 245, 249), rgb(22, 32, 52)); border: 1px solid var(--border); border-radius: 8px; padding: 0.35rem; display: flex; flex-direction: column; gap: 0.1rem; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
   .menu-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.6rem; border-radius: 4px; font-size: 0.78rem; color: var(--text-secondary); background: transparent; border: none; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background 0.1s, color 0.1s; }
   .menu-item:hover { background: var(--surface-3); color: var(--text-primary); }
   .copy-item:hover { color: var(--success); }
@@ -183,7 +200,7 @@
   .whatsapp-btn:hover { color: #25d366; border-color: #25d366; }
   .reddit-btn:hover { color: #ff4500; border-color: #ff4500; }
   .reddit-wrapper { position: relative; }
-  .reddit-popover { position: absolute; top: calc(100% + 6px); left: 0; z-index: 200; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .reddit-popover { position: absolute; top: calc(100% + 6px); left: 0; z-index: 200; background: light-dark(rgb(241, 245, 249), rgb(22, 32, 52)); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
   .reddit-sub { padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; color: var(--text-secondary); text-decoration: none; transition: background 0.1s; }
   .reddit-sub:hover { background: var(--surface-3); color: #ff4500; }
 </style>
