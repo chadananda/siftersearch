@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T13:51:13.935Z",
+  "generated": "2026-05-14T14:00:26.809Z",
   "entries": [
+    {
+      "hash": "e90f8472",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
+      "scope": null
+    },
     {
       "hash": "e3f2da11",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Restore proper line-height (1.75) for document reading view",
       "scope": null
-    },
-    {
-      "hash": "b0f7cd08",
-      "date": "2026-01-17",
-      "type": "Refactor",
-      "description": "Remove title workaround - data is now fixed in DB",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "e90f8472",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Create ai_usage table (was missing from migrations — all logAIUsage calls silently failed)",
+        "scope": null
+      },
       {
         "hash": "e3f2da11",
         "date": "2026-05-14",
@@ -7063,15 +7070,6 @@
         "date": "2026-01-18",
         "type": "Fixed",
         "description": "Restore proper line-height (1.75) for document reading view",
-        "scope": null
-      }
-    ],
-    "2026-01-17": [
-      {
-        "hash": "b0f7cd08",
-        "date": "2026-01-17",
-        "type": "Refactor",
-        "description": "Remove title workaround - data is now fixed in DB",
         "scope": null
       }
     ]

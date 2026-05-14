@@ -26,7 +26,6 @@ import {
   runDeepResearch,
 } from '../lib/deep-research.js';
 import { hybridSearch } from '../lib/search.js';
-import { logAIUsage } from '../lib/ai-services.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Sonnet 4.6 pricing per 1K tokens (USD)
@@ -67,17 +66,12 @@ export function makeChatFn(acc, researchId) {
     acc.breakdown[caller].outputTokens += outputTok;
     acc.breakdown[caller].costUsd += cost;
     acc.breakdown[caller].calls += 1;
-    logAIUsage({
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-6',
-      serviceType: 'chat',
-      promptTokens: inputTok,
-      completionTokens: outputTok,
-      totalTokens: inputTok + outputTok,
-      caller,
-      jobId: researchId ? String(researchId) : null,
-      success: true,
-    });
+    // Log to ai_usage inline — avoids importing ai-services.js (heavy module with client init)
+    query(
+      `INSERT INTO ai_usage (provider, model, service_type, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, caller, success, job_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ['anthropic', 'claude-sonnet-4-6', 'chat', inputTok, outputTok, inputTok + outputTok, cost, caller, 1, researchId ? String(researchId) : null]
+    ).catch(err => logger.warn({ err: err.message }, 'ai_usage log failed'));
     return response;
   };
 }

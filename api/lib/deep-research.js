@@ -755,6 +755,103 @@ Return JSON (empty array if coverage looks complete):
 }
 
 /**
+ * Quality assessment — objective scoring of a completed research run.
+ * Computes data-driven metrics (tradition coverage, authority, relevance, depth)
+ * plus a single LLM call for coverage completeness. Cheap: uses section labels only.
+ *
+ * Scoring dimensions (each 1-10):
+ *   tradition_coverage — breadth across major world religions
+ *   authority          — avg authority of selected passages
+ *   relevance          — avg LLM relevance score of selected passages
+ *   depth              — fraction of aspects with ≥2 quotes
+ *   completeness       — LLM assessment: are obvious canonical passages present?
+ *   overall            — weighted composite
+ *
+ * @param {string} question
+ * @param {Array} sections - clustered aspects with quotes
+ * @param {Array} selectedQuotes - flat list of all selected passages (with authority/relevance_score)
+ * @param {Function} chat
+ * @returns {Promise<{scores, overall, grade, gaps, assessment}>}
+ */
+export async function runQualityAssessment(question, sections, selectedQuotes, chat) {
+  const MAJOR_TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh'];
+
+  const traditions = [...new Set(selectedQuotes.map(q => q.tradition).filter(Boolean))];
+  const coveredMajor = traditions.filter(t => MAJOR_TRADITIONS.some(m => t.toLowerCase().includes(m.toLowerCase()))).length;
+  const traditionCoverage = Math.min(10, Math.round(coveredMajor / MAJOR_TRADITIONS.length * 10 * 1.25)); // slight boost since 8/8 is rare
+
+  const avgAuth = selectedQuotes.reduce((s, q) => s + (q.authority || 0), 0) / (selectedQuotes.length || 1);
+  const authority = Math.min(10, Math.round(avgAuth));
+
+  const avgRel = selectedQuotes.reduce((s, q) => s + (q.relevance_score || 0), 0) / (selectedQuotes.length || 1);
+  const relevance = Math.min(10, Math.round(avgRel));
+
+  const filledAspects = sections.filter(s => (s.quotes?.length || 0) >= 2).length;
+  const depth = sections.length > 0 ? Math.round((filledAspects / sections.length) * 10) : 0;
+
+  // LLM completeness check — cheap: section labels + tradition list only
+  let completeness = 6;
+  let gaps = [];
+  let assessmentText = '';
+  try {
+    const response = await chat([
+      {
+        role: 'system',
+        content: 'You are a comparative religion scholar. Assess research coverage objectively. Be specific and fair.'
+      },
+      {
+        role: 'user',
+        content: `Question: "${question}"
+
+Traditions represented: ${traditions.join(', ')}
+Aspects covered (${sections.length} sections):
+${sections.map((s, i) => `[${i}] "${s.label}" — ${s.quotes?.length || 0} quotes from: ${(s.traditions || []).join(', ')}`).join('\n')}
+
+Score coverage completeness 1-10:
+- 9-10: All major canonical passages for this topic are present; rich cross-tradition coverage
+- 7-8: Most expected passages present; minor gaps only
+- 5-6: Good but missing some well-known passages from one or two traditions
+- 3-4: Significant gaps — famous passages or whole traditions missing
+- 1-2: Major coverage failure
+
+Return JSON:
+{
+  "completeness": 7,
+  "gaps": ["specific missing passage or tradition — be concrete"],
+  "assessment": "2-3 sentences: what this research covers well and what's missing"
+}`
+      }
+    ], { max_tokens: 800, caller: 'deep-research/assessment' });
+
+    const text = response.content?.[0]?.text || '';
+    const json = text.match(/\{[\s\S]*\}/)?.[0];
+    if (json) {
+      const r = JSON.parse(json);
+      completeness = Math.max(1, Math.min(10, r.completeness || 6));
+      gaps = r.gaps || [];
+      assessmentText = r.assessment || '';
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Quality assessment LLM call failed');
+  }
+
+  const overall = Math.round((traditionCoverage * 1.5 + authority + relevance * 2 + depth + completeness * 2) / 7.5);
+  const grade = overall >= 9 ? 'A' : overall >= 8 ? 'B+' : overall >= 7 ? 'B' : overall >= 6 ? 'C+' : overall >= 5 ? 'C' : 'D';
+
+  logger.info({ overall, grade, traditions: traditions.length, aspects: sections.length }, 'Quality assessment complete');
+  return {
+    scores: { tradition_coverage: traditionCoverage, authority, relevance, depth, completeness },
+    overall,
+    grade,
+    traditions_count: traditions.length,
+    aspects_count: sections.length,
+    quotes_count: selectedQuotes.length,
+    gaps,
+    assessment: assessmentText,
+  };
+}
+
+/**
  * Run full deep research for a queued record.
  * Called exclusively from the deep-research worker.
  *
@@ -766,9 +863,10 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
   if (!record) throw new Error(`Deep research record ${researchId} not found`);
 
   const workerId = `dr-${process.pid}-${Date.now()}`;
+  const startedAt = new Date().toISOString();
   await query(
-    'UPDATE deep_research SET status = ?, worker_id = ?, heartbeat_at = ? WHERE id = ?',
-    ['in_progress', workerId, new Date().toISOString(), researchId]
+    'UPDATE deep_research SET status = ?, worker_id = ?, heartbeat_at = ?, started_at = ? WHERE id = ?',
+    ['in_progress', workerId, startedAt, startedAt, researchId]
   );
 
   try {
@@ -845,6 +943,10 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 7b. Assess coverage and append obviously missing canonical passages
     sections = await assessAndSupplement(record.canonical_question, sections, taggedChat('supplement'), search);
+
+    // 7c. Quality assessment — score the research objectively
+    const assessment = await runQualityAssessment(record.canonical_question, sections, validSelected, taggedChat('assessment'));
+
     const convergence = { searchable_text: sections.map(s => s.label || '').join(' ') };
 
     await query(
@@ -859,6 +961,7 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
          llm_output_tokens = ?,
          llm_cost_usd = ?,
          cost_breakdown_json = ?,
+         assessment_json = ?,
          completed_at = ?,
          heartbeat_at = ?
        WHERE id = ?`,
@@ -867,6 +970,7 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
         JSON.stringify(sections), JSON.stringify(summary), JSON.stringify(convergence),
         costAcc?.inputTokens || 0, costAcc?.outputTokens || 0,
         costAcc?.costUsd || 0, costAcc ? JSON.stringify(costAcc.breakdown) : null,
+        JSON.stringify(assessment),
         new Date().toISOString(), new Date().toISOString(), researchId
       ]
     );
@@ -1110,12 +1214,12 @@ export async function getDeepResearchBySlug(slug) {
   try {
     // Exclude question_embedding blob — it's large and not needed by the frontend.
     const record = await queryOne(
-      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, total_candidates, total_selected, research_model, ask_count, last_asked_at, created_at, completed_at FROM deep_research WHERE slug = ?',
+      'SELECT id, slug, canonical_question, question_hash, status, topic_tags, question_type, traditions_covered, angles_json, sections_json, summary_json, convergence_json, qa_json, assessment_json, total_candidates, total_selected, llm_input_tokens, llm_output_tokens, llm_cost_usd, started_at, research_model, ask_count, last_asked_at, created_at, completed_at FROM deep_research WHERE slug = ?',
       [slug]
     );
     if (!record) return null;
     // Parse stored JSON fields
-    for (const field of ['sections_json', 'summary_json', 'convergence_json', 'angles_json', 'qa_json', 'topic_tags']) {
+    for (const field of ['sections_json', 'summary_json', 'convergence_json', 'angles_json', 'qa_json', 'assessment_json', 'topic_tags']) {
       if (record[field] && typeof record[field] === 'string') {
         try { record[field] = JSON.parse(record[field]); } catch { /* leave as-is */ }
       }

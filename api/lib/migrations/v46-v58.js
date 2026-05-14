@@ -784,4 +784,13 @@ export const migrations = {
     try { await query('CREATE INDEX IF NOT EXISTS idx_ai_usage_model ON ai_usage(model, timestamp DESC)'); } catch { /* exists */ }
     logger.info('Migration 69 complete: ai_usage table created');
   },
+
+  70: async () => {
+    const addCol = async (sql) => {
+      try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    await addCol('ALTER TABLE deep_research ADD COLUMN started_at TEXT');
+    await addCol('ALTER TABLE deep_research ADD COLUMN assessment_json TEXT');
+    logger.info('Migration 70 complete: deep_research started_at + assessment_json added');
+  },
 };
