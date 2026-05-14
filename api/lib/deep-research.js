@@ -340,6 +340,58 @@ export async function discoveryFanOut(brief, search) {
 }
 
 /**
+ * Diversity sweep — ensures every major tradition has ≥MIN_PER_TRADITION candidates.
+ * Runs after main retrieval; fills gaps that knowledgeBrief silently omitted.
+ *
+ * @param {string} question
+ * @param {Array} allCandidates - all candidates found so far
+ * @param {object} brief
+ * @param {Function} search
+ * @returns {Promise<Array>} Additional candidates
+ */
+export async function diversitySweep(question, allCandidates, brief, search) {
+  const REQUIRED = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh'];
+  const MIN = 5;
+
+  const tradCount = {};
+  for (const c of allCandidates) {
+    const t = c.religion || '';
+    if (t) tradCount[t] = (tradCount[t] || 0) + 1;
+  }
+  const underrepresented = REQUIRED.filter(t => (tradCount[t] || 0) < MIN);
+  if (!underrepresented.length) {
+    logger.info('Diversity sweep: all traditions covered');
+    return [];
+  }
+
+  logger.info({ underrepresented }, 'Diversity sweep: filling gaps');
+  const phrases = [question, ...(brief.general_search_phrases || []).slice(0, 2)];
+  const seen = new Set(allCandidates.map(c => c.id));
+  const extra = [];
+
+  const tasks = underrepresented.flatMap(tradition =>
+    phrases.slice(0, 2).map(phrase => ({ phrase, tradition }))
+  );
+  const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
+    try {
+      const r = await search(phrase, { limit: 10, filters: { religion: tradition }, semanticRatio: 0.75 });
+      return r.hits || [];
+    } catch (err) {
+      logger.warn({ err: err.message, tradition }, 'diversitySweep error');
+      return [];
+    }
+  }));
+  for (const hits of results) {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) { seen.add(hit.id); extra.push({ ...hit, _searchType: 'diversity_sweep' }); }
+    }
+  }
+  logger.info({ added: extra.length }, 'Diversity sweep complete');
+  return extra;
+}
+
+/**
  * General discovery — broad unfiltered queries to find unexpected cross-tradition passages.
  *
  * @param {object} brief - result of knowledgeBrief()
@@ -917,6 +969,12 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
     // 4. Gap check — retry known passages not yet found in the library
     const gapExtra = await gapCheckLoop(brief, allCandidates, search, 3);
     for (const c of gapExtra) {
+      if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
+    }
+
+    // 4b. Diversity sweep — fill any traditions missing from candidacy due to brief gaps
+    const sweepExtra = await diversitySweep(record.canonical_question, allCandidates, brief, search);
+    for (const c of sweepExtra) {
       if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
     }
 

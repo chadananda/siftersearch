@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:28:54.134Z",
+  "generated": "2026-05-14T15:38:42.197Z",
   "entries": [
+    {
+      "hash": "84933dce",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
+      "scope": null
+    },
     {
       "hash": "9875408e",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
       "scope": null
-    },
-    {
-      "hash": "4eb961b3",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Handle NaN/Infinity in embeddings and foreign key cleanup error",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "84933dce",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Strip Hugo block attrs {language=\"en\"} and mid-text footnote defs from passage text",
+        "scope": null
+      },
       {
         "hash": "9875408e",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Use body_hash in /pending endpoint to match library-watcher behavior",
-        "scope": null
-      },
-      {
-        "hash": "4eb961b3",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Handle NaN/Infinity in embeddings and foreign key cleanup error",
         "scope": null
       }
     ]
