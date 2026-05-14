@@ -937,29 +937,36 @@ Return JSON:
  * @param {number} researchId
  * @param {object} deps - { chat, search }
  */
-// Topic-to-visual-theme map. Each entry: { subject, style, palette }
-// Matched against topic_tags[0] or keywords in the question.
+// Consistent artistic medium for all research hero images.
+// Subject and palette vary per theme; medium is always the same.
+const HERO_MEDIUM = 'Richly detailed digital oil painting with dramatic atmospheric lighting, painterly impasto texture, cinematic wide 16:9 composition. Museum quality. No text, no letters, no labels, no human faces.';
+
+// Topic-to-visual-theme map. Each entry: { subject, palette }
+// Matched against topic_tags or keywords in the question.
 const VISUAL_THEMES = [
-  { keys: ['prayer','worship','devotion'], subject: 'hands raised in prayer, candlelight flames, golden light rays from above', style: 'Luminous oil painting with dramatic chiaroscuro, rich impasto brushwork', palette: 'deep midnight blue, amber gold, warm candlelight orange' },
-  { keys: ['afterlife','death','soul','rebirth'], subject: 'a soul ascending through layers of celestial light, aurora borealis over still water reflecting stars', style: 'Ethereal digital painting, translucent glowing layers, dreamlike depth', palette: 'deep indigo, silver, pearl white, violet' },
-  { keys: ['theodicy','suffering','tests-trials','evil'], subject: 'storm clouds parting to reveal rays of sunlight over mountainous landscape, a single flame in darkness', style: 'Dramatic romantic landscape painting, Turner-style atmospheric sky', palette: 'charcoal grey, stormy blue, golden break of light' },
-  { keys: ['grace','divine','divinity','mercy-compassion','forgiveness'], subject: 'light flooding through an arched window onto a still garden, lotus blossoms floating on water', style: 'Soft luminous watercolor, delicate washes, radiant light source', palette: 'rose gold, pale amber, soft ivory, gentle green' },
-  { keys: ['fasting','asceticism','discipline','renunciation'], subject: 'a solitary figure in meditation beneath a crescent moon, sparse desert landscape, single lamp burning', style: 'Minimalist ink wash painting, Japanese sumi-e style, elegant negative space', palette: 'ink black, paper white, faint moon silver, warm amber' },
-  { keys: ['love','compassion','mercy-compassion','service'], subject: 'interwoven hands of different colors forming a circle, surrounded by flowering branches and warm light', style: 'Vibrant folk art illustration with bold outlines, decorative floral borders', palette: 'warm red, saffron, leaf green, sky blue' },
-  { keys: ['enlightenment','mysticism','nearness-to-god','awakening'], subject: 'a lotus opening from dark water into cosmic starfield, concentric rings of light expanding outward', style: 'Sacred geometry art, precise mathematical symmetry, luminous inner glow', palette: 'deep purple, electric blue, gold, white' },
-  { keys: ['unity','interfaith','progressive-revelation','oneness'], subject: 'many rivers converging into one great shining sea at golden hour, bridges connecting distant shores', style: 'Panoramic landscape painting, sweeping cinematic vista, warm light', palette: 'amber, turquoise, emerald, golden hour orange' },
-  { keys: ['scripture','revelation','hermeneutics','prophecy'], subject: 'ancient illuminated manuscript pages open with ornate calligraphy in multiple scripts glowing with inner light', style: 'Illuminated manuscript style with Byzantine gold leaf and intricate ornamental borders', palette: 'aged parchment, ultramarine, vermillion, burnished gold' },
-  { keys: ['faith','doubt','trust','certainty'], subject: 'a path disappearing into luminous fog, footsteps leading forward toward distant light through uncertainty', style: 'Impressionist painting, soft dappled light, atmospheric perspective', palette: 'pale green, mist grey, warm cream, distant gold' },
-  { keys: ['sin','repentance','error','fall'], subject: 'dawn breaking over a landscape after rain, new green growth emerging, raindrops on leaves catching light', style: 'Realistic botanical painting with luminous morning light, Pre-Raphaelite detail', palette: 'fresh green, pale dawn pink, silver dew, deep soil brown' },
-  { keys: ['ritual','ceremony','festival','practice'], subject: 'sacred fire ceremony with spiraling incense smoke, ritual vessels and offerings arranged symmetrically', style: 'Detailed ethnographic illustration with art nouveau decorative flourishes', palette: 'deep terracotta, copper, deep red, smoke grey' },
-  { keys: ['science','reason','knowledge','inquiry'], subject: 'telescope pointed at starfield beside ancient temple columns, equations and sacred geometry overlapping in space', style: 'Surrealist composition blending scientific diagrams with sacred architecture', palette: 'deep space navy, telescope brass, star white, stone grey' },
-  { keys: ['soul-spirit','human-nature','inner-life'], subject: 'translucent human silhouette filled with constellations and flowing light, standing at the edge of an infinite cosmos', style: 'Digital art with painterly textures, luminous and cosmic', palette: 'midnight blue, bioluminescent teal, nebula purple, warm gold' },
+  { keys: ['prayer','worship','devotion'],         subject: 'candlelight flames and hands reaching upward toward golden light rays streaming from above through darkness', palette: 'deep midnight blue, amber gold, candlelight orange, warm shadow brown' },
+  { keys: ['afterlife','death','soul','rebirth'],   subject: 'aurora borealis reflected in perfectly still dark water, stars and celestial light dissolving into translucent mist at the horizon', palette: 'deep indigo, aurora violet, silver, pearl white, soft teal' },
+  { keys: ['theodicy','suffering','tests-trials'],  subject: 'storm clouds breaking apart to reveal powerful sunbeams over a dramatic mountain range, a single lamp flame persisting in wind', palette: 'charcoal grey, stormy slate blue, gold light breaking through, ember orange' },
+  { keys: ['evil','darkness'],                      subject: 'a single candle flame casting warm light that holds back encircling darkness, shadows shaped like troubled forms dissolving at the edges', palette: 'deep shadow black, warm amber, blood crimson fading, safe golden circle' },
+  { keys: ['grace','divine','divinity'],            subject: 'radiant light flooding through stone arched windows onto still water with lotus blossoms, dust motes catching golden rays', palette: 'rose gold, pale amber, ivory, soft sage green, warm stone' },
+  { keys: ['mercy-compassion','forgiveness'],       subject: 'spring flowering branches arching over a still reflective pool, petals falling in soft morning light, gentle mist', palette: 'blossom pink, pale jade, morning mist grey, warm peach, soft gold' },
+  { keys: ['fasting','asceticism','discipline'],    subject: 'a solitary lamp burning on a simple stone ledge under a vast crescent moon, sparse desert landscape fading into distance', palette: 'ink black, pale moon silver, warm amber lamp, deep sand ochre' },
+  { keys: ['love','compassion','service'],          subject: 'flowering vines intertwining around ancient stone pillars, warm light filtering through leaves creating patterns on the ground', palette: 'deep rose, saffron, living green, terracotta, warm golden light' },
+  { keys: ['enlightenment','awakening'],            subject: 'a lotus rising from dark still water toward open sky, concentric rings of golden light expanding outward on the water surface', palette: 'deep water navy, luminous gold, lotus white, dawn rose, sky blue' },
+  { keys: ['mysticism','nearness-to-god'],          subject: 'a cosmic vista of nested spheres of light within light, geometric stars and infinite depth, like looking through a sacred lens into the universe', palette: 'deep cosmic purple, electric sapphire, gold, luminous white' },
+  { keys: ['unity','interfaith','oneness'],         subject: 'multiple rivers of different colors converging into a single great glowing sea at golden sunset, distant mountains on the horizon', palette: 'amber, turquoise, emerald, deep coral, golden hour orange' },
+  { keys: ['progressive-revelation','history'],     subject: 'a sequence of ancient temples and sacred buildings from different cultures receding into a luminous horizon, unified by the same light', palette: 'warm stone, burnished copper, sky blue, golden light, ancient ochre' },
+  { keys: ['scripture','revelation','hermeneutics'], subject: 'multiple ancient books open in overlapping layers, their pages glowing with inner light, ornate borders and calligraphy dissolving into beams', palette: 'aged parchment, ultramarine, vermillion, burnished gold, shadow brown' },
+  { keys: ['faith','doubt','trust'],                subject: 'a stone path disappearing into luminous morning fog, distant warm light at the end, dewy grass on either side catching early sun', palette: 'pale mist green, warm cream, soft grey, distant amber, silver dew' },
+  { keys: ['sin','repentance','error'],             subject: 'rain-washed landscape at first dawn light, droplets on leaves and petals catching light, fresh green growth emerging from dark soil', palette: 'deep forest green, pale dawn pink, silver dew, rich dark soil, pale gold' },
+  { keys: ['ritual','ceremony','festival'],         subject: 'sacred fire burning at the center of a ceremonial space, spiraling incense smoke, offering vessels and flowers arranged with care', palette: 'deep terracotta, burnished copper, ceremonial red, smoke grey, flame orange' },
+  { keys: ['science','reason','knowledge'],         subject: 'a great observatory dome open to a starfield above, ancient mathematical diagrams and star charts glowing on stone walls below', palette: 'deep space navy, telescope brass, chalk white, stone grey, nebula magenta' },
+  { keys: ['soul-spirit','human-nature'],           subject: 'luminous vapor rising from dark water in the shape of a human figure, dissolving into starlight above, cosmos reflected below', palette: 'midnight blue, bioluminescent teal, nebula violet, warm gold, silver' },
 ];
 
 const FALLBACK_THEME = {
-  subject: 'sacred symbols from multiple world religions arranged in harmonious geometric patterns, intertwined and glowing',
-  style: 'Vibrant mosaic art with Byzantine richness, tessellated patterns, metallic accents',
-  palette: 'saffron, crimson, emerald, cobalt, gold'
+  subject: 'sacred objects from many world traditions arranged together — lamp, incense, scroll, prayer beads, water — in warm ambient light',
+  palette: 'warm amber, deep indigo, aged gold, quiet grey, soft ivory'
 };
 
 // Match topic tags and question keywords to a visual theme.
@@ -972,11 +979,11 @@ function pickVisualTheme(tags, question) {
 }
 
 // Build a topic-differentiated image prompt.
+// Same artistic medium every time; subject and palette vary by topic.
 function buildResearchHeroPrompt({ question, traditions, tags }) {
   const tradList = (traditions || []).slice(0, 3).join(', ') || 'world religions';
   const theme = pickVisualTheme(tags, question);
-  const FRAME = ' Wide 16:9 cinematic composition, high detail, museum quality. No text, no letters, no labels, no human faces.';
-  return `${theme.subject}. Inspired by the interfaith question: "${question}". Traditions represented: ${tradList}. Color palette: ${theme.palette}. Style: ${theme.style}.` + FRAME;
+  return `${theme.subject}. Evoking the spiritual question: "${question}" across ${tradList}. Color palette: ${theme.palette}. ${HERO_MEDIUM}`;
 }
 
 // Generate and store hero image for a deep research record.
