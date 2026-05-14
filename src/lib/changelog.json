@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T21:31:38.309Z",
+  "generated": "2026-05-14T21:32:56.881Z",
   "entries": [
+    {
+      "hash": "199e71cc",
+      "date": "2026-05-14",
+      "type": "New",
+      "description": "Add source_site to Meilisearch filterableAttributes for site-scoped search",
+      "scope": null
+    },
     {
       "hash": "78fd4c62",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add library index page to handle query params",
       "scope": null
-    },
-    {
-      "hash": "b4c38429",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Skip boilerplate paragraphs when extracting description",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "199e71cc",
+        "date": "2026-05-14",
+        "type": "New",
+        "description": "Add source_site to Meilisearch filterableAttributes for site-scoped search",
+        "scope": null
+      },
       {
         "hash": "78fd4c62",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Add library index page to handle query params",
-        "scope": null
-      },
-      {
-        "hash": "b4c38429",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Skip boilerplate paragraphs when extracting description",
         "scope": null
       }
     ]

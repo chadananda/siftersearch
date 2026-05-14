@@ -20,6 +20,9 @@ for (const file of ['.env-secrets', '.env-public']) {
 
 const { hybridSearch } = await import('../../api/lib/search.js');
 
+const LIMIT = 8;
+const OL_DOMAIN = 'oceanlibrary.com';
+
 // Test cases: famous canonical quotes with known primary sources
 const TESTS = [
   // Hidden Words — Bahá'í primary text, must come from OceanLibrary
@@ -48,9 +51,6 @@ const TESTS = [
   // Buddhist — OL has Buddhist texts
   { q: 'All conditioned things are impermanent when one sees this with wisdom one turns away from suffering', tradition: 'Buddhist', expect: null, book: 'Dhammapada' },
 ];
-
-const LIMIT = 8;
-const OL_DOMAIN = 'oceanlibrary.com';
 
 let passed = 0, warned = 0, failed = 0;
 
