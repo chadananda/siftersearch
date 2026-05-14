@@ -793,4 +793,13 @@ export const migrations = {
     await addCol('ALTER TABLE deep_research ADD COLUMN assessment_json TEXT');
     logger.info('Migration 70 complete: deep_research started_at + assessment_json added');
   },
+
+  71: async () => {
+    const addCol = async (sql) => {
+      try { await query(sql); } catch (err) { if (!err.message?.includes('duplicate column')) throw err; }
+    };
+    await addCol('ALTER TABLE deep_research ADD COLUMN hero_image TEXT');
+    await addCol('ALTER TABLE deep_research ADD COLUMN hero_prompt TEXT');
+    logger.info('Migration 71 complete: deep_research hero_image + hero_prompt added');
+  },
 };

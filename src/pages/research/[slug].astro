@@ -243,6 +243,12 @@ function buildOLSourceUrl(q: any): string | null {
   <article class="research-article" itemscope itemtype="https://schema.org/Article">
     <!-- Hero -->
     <header class="article-hero">
+      {record.hero_image && (
+        <div class="hero-image-banner">
+          <img src={record.hero_image} alt={`Mandala illustration for: ${record.canonical_question}`} class="hero-mandala" loading="eager" />
+          <div class="hero-image-overlay" />
+        </div>
+      )}
       <div class="hero-inner">
         <nav class="breadcrumb" aria-label="Breadcrumb">
           <a href="/">Home</a> <span>›</span>
@@ -561,8 +567,11 @@ function buildOLSourceUrl(q: any): string | null {
   .research-article { min-height: 100vh; padding-bottom: 4rem; }
 
   /* Hero */
-  .article-hero { padding: 4rem 1.5rem 2rem; background: linear-gradient(to bottom, rgba(10,22,42,0) 0%, rgba(10,22,42,0.5) 100%); }
-  .hero-inner { max-width: 860px; margin: 0 auto; }
+  .article-hero { padding: 0; background: none; position: relative; overflow: hidden; }
+  .hero-image-banner { position: relative; width: 100%; height: 320px; overflow: hidden; }
+  .hero-mandala { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  .hero-image-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6,14,30,0.25) 0%, rgba(6,14,30,0.78) 100%); pointer-events: none; }
+  .hero-inner { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem 2rem; }
   .breadcrumb { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; gap: 0.4rem; align-items: center; }
   .breadcrumb a { color: var(--text-muted); text-decoration: none; } .breadcrumb a:hover { color: var(--accent); }
   .topic-tags-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -701,7 +710,8 @@ function buildOLSourceUrl(q: any): string | null {
     :global(nav), .article-sidebar, .article-footer-cta { display: none !important; }
     :global(.liquid-bg), :global(.navbar) { display: none !important; }
     .article-body { grid-template-columns: 1fr; padding: 0; }
-    .article-hero { padding: 1rem 0; background: none; }
+    .hero-image-banner { height: 200px; }
+    .hero-image-overlay { background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.6) 100%); }
     h1 { font-size: 1.5rem; color: #000; }
     h2 { font-size: 1.15rem; color: #000; }
     .quote-card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 0.75rem; }

@@ -22,6 +22,7 @@ import { createEmbedding } from './ai.js';
 import { getMeili, INDEXES } from './search.js';
 import { getAuthority } from './authority.js';
 import { generateSlug } from './slug.js';
+import { initStorage, hasCloudStorage, uploadImageFromUrl, generateAssetKey } from './storage.js';
 
 // Cosine similarity threshold for considering two questions "the same"
 const SIMILARITY_THRESHOLD = 0.88;
@@ -936,6 +937,53 @@ Return JSON:
  * @param {number} researchId
  * @param {object} deps - { chat, search }
  */
+// Build DALL-E prompt for a deep research hero image.
+// Style differs from conversation articles: bold mandala geometry + rich jewel tones vs. soft watercolor.
+function buildResearchHeroPrompt({ question, traditions, tags }) {
+  const tradList = (traditions || []).slice(0, 4).join(', ') || 'world religions';
+  const tagList = (tags || []).slice(0, 4).join(', ');
+  const STYLE = ' Vibrant interfaith mandala — jewel tones (saffron, crimson, emerald, cobalt, gold), intricate geometric symmetry evoking multiple sacred traditions, glowing luminous quality, high detail. Wide 16:9 cinematic banner. No text, no letters, no labels.';
+  return `An abstract mandala representing the inquiry: "${question}". Traditions: ${tradList}. Themes: ${tagList}.` + STYLE;
+}
+
+// Generate and store hero image for a deep research record.
+async function generateResearchHeroImage(researchId, { question, traditions, tags }) {
+  try {
+    initStorage();
+    if (!hasCloudStorage()) {
+      logger.warn({ researchId }, 'No cloud storage — skipping hero image');
+      return null;
+    }
+
+    const prompt = buildResearchHeroPrompt({ question, traditions, tags });
+    logger.info({ researchId, prompt: prompt.slice(0, 80) }, 'Generating research hero image');
+
+    // Use OpenAI directly for DALL-E 3
+    const { default: OpenAI } = await import('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const resp = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1792x1024',
+      quality: 'standard',
+    });
+
+    const imageUrl = resp.data[0]?.url;
+    if (!imageUrl) throw new Error('DALL-E returned no URL');
+
+    const key = generateAssetKey('research', researchId, 'jpg');
+    const result = await uploadImageFromUrl(imageUrl, key);
+
+    await query('UPDATE deep_research SET hero_image = ?, hero_prompt = ? WHERE id = ?', [result.url, prompt, researchId]);
+    logger.info({ researchId, url: result.url }, 'Research hero image stored');
+    return result.url;
+  } catch (err) {
+    logger.error({ err: err.message, researchId }, 'Hero image generation failed (non-fatal)');
+    return null;
+  }
+}
+
 export async function runDeepResearch(researchId, { chat, search, costAcc = null }) {
   const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [researchId]);
   if (!record) throw new Error(`Deep research record ${researchId} not found`);
@@ -1061,6 +1109,11 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 8. Sync to Meilisearch
     await syncDeepResearch([researchId]);
+
+    // 9. Hero image (non-blocking — failure doesn't fail the research)
+    const traditions = traditionsCovered.split(',').filter(Boolean);
+    const tags = record.topic_tags ? JSON.parse(record.topic_tags) : [];
+    await generateResearchHeroImage(researchId, { question: record.canonical_question, traditions, tags });
 
     logger.info({ researchId, selected: validSelected.length, traditions: traditionsCovered }, 'Deep research complete');
   } catch (err) {
