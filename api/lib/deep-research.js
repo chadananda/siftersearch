@@ -1290,7 +1290,9 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 7. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
-    const structured = await clusterAndStructure(record.canonical_question, validSelected, taggedChat('cluster'), brief);
+    // Cap at 60 passages to avoid LLM output-token overflow in the clustering step
+    const clusterInput = validSelected.slice(0, 60);
+    const structured = await clusterAndStructure(record.canonical_question, clusterInput, taggedChat('cluster'), brief);
     let sections = structured?.sections || buildSectionsFallback(selected, []);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
 
@@ -1403,7 +1405,7 @@ Return ONLY valid JSON:
     const response = await chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ], { max_tokens: 8000 });
+    ], { max_tokens: 16000 });
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];
     if (!json) {

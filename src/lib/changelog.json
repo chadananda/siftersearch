@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T23:26:19.740Z",
+  "generated": "2026-05-14T23:54:26.611Z",
   "entries": [
+    {
+      "hash": "9855d2f1",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Remove 'Not directly relevant' — irrelevant passages are filtered, not labeled",
+      "scope": null
+    },
     {
       "hash": "cc892693",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "New",
       "description": "Add script to sync frontmatter metadata without re-ingestion",
       "scope": null
-    },
-    {
-      "hash": "ec3ac970",
-      "date": "2026-01-20",
-      "type": "Fixed",
-      "description": "Normalize whitespace before hashing to prevent false mismatches",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "9855d2f1",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Remove 'Not directly relevant' — irrelevant passages are filtered, not labeled",
+        "scope": null
+      },
       {
         "hash": "cc892693",
         "date": "2026-05-14",
@@ -7059,13 +7066,6 @@
         "date": "2026-01-20",
         "type": "New",
         "description": "Add script to sync frontmatter metadata without re-ingestion",
-        "scope": null
-      },
-      {
-        "hash": "ec3ac970",
-        "date": "2026-01-20",
-        "type": "Fixed",
-        "description": "Normalize whitespace before hashing to prevent false mismatches",
         "scope": null
       }
     ]
