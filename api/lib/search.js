@@ -118,12 +118,15 @@ function buildRankingRules() {
  */
 function computeAuthorityScore(hit) {
   const rel = typeof hit._rankingScore === 'number' ? hit._rankingScore : 0;
-  // Live authority computation from hit metadata; fall back to stored value if available
+  // Live authority computation from hit metadata; fall back to stored value if available.
+  // title is passed so TITLE_AUTHORITY patterns (Quran/Bible translations stored under
+  // "Unknown" author) get authority 10 at query time, matching their indexed authority.
   const liveAuth = getAuthority({
     author: hit.author || null,
     religion: hit.religion || null,
     collection: hit.collection || null,
     source_site: hit.source_site || null,
+    title: hit.title || null,
     authority: null // don't pass stored authority — force live computation
   });
   const auth = typeof liveAuth === 'number' ? liveAuth : (typeof hit.authority === 'number' ? hit.authority : 5);

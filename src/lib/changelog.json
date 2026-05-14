@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T21:32:56.881Z",
+  "generated": "2026-05-14T21:40:39.797Z",
   "entries": [
+    {
+      "hash": "b2a1b7ef",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Diagnose-source-quality OL_DOMAIN hoisting + correct religion values",
+      "scope": null
+    },
     {
       "hash": "199e71cc",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Update fix-corrupt-descriptions to only modify database",
       "scope": null
-    },
-    {
-      "hash": "c165ff37",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Add library index page to handle query params",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "b2a1b7ef",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Diagnose-source-quality OL_DOMAIN hoisting + correct religion values",
+        "scope": null
+      },
       {
         "hash": "199e71cc",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Update fix-corrupt-descriptions to only modify database",
-        "scope": null
-      },
-      {
-        "hash": "c165ff37",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Add library index page to handle query params",
         "scope": null
       }
     ]
