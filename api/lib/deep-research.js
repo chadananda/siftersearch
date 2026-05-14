@@ -1177,6 +1177,30 @@ export async function generateResearchHeroImage(researchId, { question, traditio
   }
 }
 
+/**
+ * Enforce per-section tradition diversity: max 3 quotes from any single tradition per section.
+ * Keeps highest-relevance_score quotes when trimming. Recomputes section.traditions after.
+ */
+function balanceSectionDiversity(sections) {
+  const MAX_PER_TRADITION = 3;
+  for (const section of sections) {
+    const byTrad = new Map();
+    for (const q of (section.quotes || [])) {
+      const t = q.tradition || '_unknown';
+      if (!byTrad.has(t)) byTrad.set(t, []);
+      byTrad.get(t).push(q);
+    }
+    const trimmed = [];
+    for (const [, qs] of byTrad) {
+      qs.sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
+      trimmed.push(...qs.slice(0, MAX_PER_TRADITION));
+    }
+    section.quotes = trimmed.sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
+    section.traditions = [...new Set(trimmed.map(q => q.tradition).filter(Boolean))];
+  }
+  return sections;
+}
+
 export async function runDeepResearch(researchId, { chat, search, costAcc = null }) {
   const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [researchId]);
   if (!record) throw new Error(`Deep research record ${researchId} not found`);
@@ -1272,6 +1296,9 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     // 7b. Assess coverage and append obviously missing canonical passages
     sections = await assessAndSupplement(record.canonical_question, sections, taggedChat('supplement'), search);
+
+    // 7b2. Section diversity balancer — cap any tradition at 3 quotes per section
+    sections = balanceSectionDiversity(sections);
 
     // 7c. Quality assessment — score the research objectively
     const assessment = await runQualityAssessment(record.canonical_question, sections, validSelected, taggedChat('assessment'));
