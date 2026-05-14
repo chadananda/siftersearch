@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T19:10:11.830Z",
+  "generated": "2026-05-14T19:14:15.075Z",
   "entries": [
+    {
+      "hash": "133b9920",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Hero-to-bg fade, block secondary authors/compilations in supplement",
+      "scope": null
+    },
     {
       "hash": "b84d7e20",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Extract description from content when YAML has corrupt value",
       "scope": null
-    },
-    {
-      "hash": "b831dcda",
-      "date": "2026-01-19",
-      "type": "Test",
-      "description": "Add script to verify YAML frontmatter parsing",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "133b9920",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Hero-to-bg fade, block secondary authors/compilations in supplement",
+        "scope": null
+      },
       {
         "hash": "b84d7e20",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Extract description from content when YAML has corrupt value",
-        "scope": null
-      },
-      {
-        "hash": "b831dcda",
-        "date": "2026-01-19",
-        "type": "Test",
-        "description": "Add script to verify YAML frontmatter parsing",
         "scope": null
       }
     ]
