@@ -526,6 +526,19 @@ function keywordPreFilter(question, candidates) {
   return candidates;
 }
 
+// Filter out secondary compilations, study books, and commentary works that only
+// quote from primary sources. These never belong in research results — their quotes
+// should be found via the primary source document instead.
+function filterSecondaryCompilations(candidates) {
+  const SECONDARY_PATTERNS = /parallel\s+(?:hidden|text)|bilingual|side.by.side|in light of scripture|ethics in light|study companion|introduction to bah|bah[aá']+[ií] world(?:\s+\d+)?|perspectives on|thematic anthology|study guide|commentary on|notes on the|annotated edition/i;
+  const before = candidates.length;
+  const filtered = candidates.filter(c => !SECONDARY_PATTERNS.test(c.title || ''));
+  if (filtered.length < before) {
+    logger.info({ removed: before - filtered.length, kept: filtered.length }, 'Filtered secondary compilation candidates');
+  }
+  return filtered;
+}
+
 /**
  * Rerank candidates using LLM pairwise relevance scoring.
  * Returns top N passages with relevance_score and contextual_note.
@@ -1207,8 +1220,12 @@ export async function runDeepResearch(researchId, { chat, search, costAcc = null
 
     await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [allCandidates.length, researchId]);
 
-    // 4b. Keyword pre-filter — eliminate clear misses before costly LLM rerank
-    const filtered = keywordPreFilter(record.canonical_question, allCandidates);
+    // 4b. Filter secondary compilations — study books and commentary works that only
+    // quote primary sources; prefer the primary source directly.
+    const noSecondary = filterSecondaryCompilations(allCandidates);
+
+    // 4c. Keyword pre-filter — eliminate clear misses before costly LLM rerank
+    const filtered = keywordPreFilter(record.canonical_question, noSecondary);
 
     // 5. Rerank — LLM-scored relevance in parallel batches, threshold 5/10
     const reranked = await rerankPassages(record.canonical_question, filtered, taggedChat('rerank'), 100);

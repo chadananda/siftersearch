@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T19:00:49.718Z",
+  "generated": "2026-05-14T19:02:31.184Z",
   "entries": [
+    {
+      "hash": "0208f95a",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Dedup quotes, penalize secondary compilations, improve print styles",
+      "scope": null
+    },
     {
       "hash": "b64b3414",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Add script to fix corrupt YAML descriptions in source files",
       "scope": null
-    },
-    {
-      "hash": "6789ac84",
-      "date": "2026-01-19",
-      "type": "New",
-      "description": "Add script to sync metadata to Meilisearch",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "0208f95a",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Dedup quotes, penalize secondary compilations, improve print styles",
+        "scope": null
+      },
       {
         "hash": "b64b3414",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Add script to fix corrupt YAML descriptions in source files",
-        "scope": null
-      },
-      {
-        "hash": "6789ac84",
-        "date": "2026-01-19",
-        "type": "New",
-        "description": "Add script to sync metadata to Meilisearch",
         "scope": null
       }
     ]
