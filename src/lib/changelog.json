@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T01:51:20.995Z",
+  "generated": "2026-05-14T12:11:01.382Z",
   "entries": [
+    {
+      "hash": "2974b180",
+      "date": "2026-05-13",
+      "type": "Fixed",
+      "description": "BACKUP_DIR=/tank/backups/siftersearch in worker env — keep backups off root disk",
+      "scope": null
+    },
     {
       "hash": "77d7a8bb",
       "date": "2026-05-13",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Normalize diacritics when comparing title to author",
       "scope": null
-    },
-    {
-      "hash": "4df333df",
-      "date": "2026-01-17",
-      "type": "Fixed",
-      "description": "Extract proper title from filename when title equals author",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-13": [
+      {
+        "hash": "2974b180",
+        "date": "2026-05-13",
+        "type": "Fixed",
+        "description": "BACKUP_DIR=/tank/backups/siftersearch in worker env — keep backups off root disk",
+        "scope": null
+      },
       {
         "hash": "77d7a8bb",
         "date": "2026-05-13",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-17",
         "type": "Fixed",
         "description": "Normalize diacritics when comparing title to author",
-        "scope": null
-      },
-      {
-        "hash": "4df333df",
-        "date": "2026-01-17",
-        "type": "Fixed",
-        "description": "Extract proper title from filename when title equals author",
         "scope": null
       }
     ]

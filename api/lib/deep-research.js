@@ -185,136 +185,76 @@ export async function getDeepResearchQuotes(researchId) {
 // --- Worker API (called by the deep-research worker process only) ---
 
 /**
- * Step 0: Conceptual reconnaissance — use LLM general knowledge to map the theological
- * landscape before touching the library. Returns frameworks (major thematic categories)
- * with per-tradition vocabulary, driving both search angles and final structuring.
+ * Step 0: Knowledge brief — use LLM general knowledge to produce a research target map.
+ * For each angle, lists known canonical passages per tradition as search targets plus
+ * discovery phrases. General knowledge guides the search — it never provides content.
  *
  * @param {string} question
  * @param {Function} chat
- * @returns {Promise<{frameworks: Array, key_distinctions: string}>}
+ * @returns {Promise<{angles: Array, general_search_phrases: Array}>}
  */
-export async function conceptualRecon(question, chat) {
+export async function knowledgeBrief(question, chat) {
   const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh'];
   const response = await chat([
     {
       role: 'system',
-      content: `You are a comparative religion scholar with broad knowledge of how the world's major religious traditions address spiritual questions. Your task is to map the conceptual landscape of a question so that a library search can be intelligently directed. Return JSON only.`
+      content: `You are a comparative religion scholar. Your task is to produce a research brief that guides a library search — NOT to answer the question yourself. General knowledge identifies WHERE to look and WHAT to look for. All content comes from the library. Return JSON only.`
     },
     {
       role: 'user',
       content: `Question: "${question}"
 
-Using your knowledge of comparative religion, identify the 4-7 major thematic frameworks through which world religions address this question. These frameworks become the structural sections of a research article and must represent genuinely distinct approaches.
+Produce a knowledge brief: a structured map of known canonical passages and search directions for each major angle, so a library search can be intelligently targeted.
 
-For each framework provide:
-1. Which traditions hold this view
-2. The specific vocabulary, terminology, metaphors, images that appear in primary texts (not abstract labels — the actual words a scholar would search for)
-3. The canonical primary examples — the specific historical events, figures, scripture passages, or stories that are THE definitive illustrations of this framework. Think: what would a comparative religion scholar immediately cite? These are crucial for library search.
-4. Direct search phrases (5-10 words each) that would find passages illustrating this framework in a library — these must be concrete enough to match actual text
+For each angle (5-7 distinct thematic angles), provide per-tradition:
+- "known_passages": specific passages you know exist in that tradition's primary texts that directly address this angle. Each entry: { "text_fragment": "3-8 exact or near-exact words from the passage", "source": "book/scripture name", "search_phrases": ["2-3 keyword-focused phrases to find it"] }. Be specific — vague fragments are useless for matching.
+- "search_phrases": 2-3 discovery phrases for this tradition × angle (to find passages you don't know about yet)
 
-Traditions to consider: ${TRADITIONS.join(', ')}
+Also provide "general_search_phrases": 4-6 broad queries on the main question (no tradition filter) to discover unexpected gems.
+
+Traditions: ${TRADITIONS.join(', ')}
 
 Return JSON:
 {
-  "frameworks": [
+  "angles": [
     {
-      "theme": "concise theme label (5-8 words)",
-      "core_claim": "1-2 sentences: what this framework actually teaches",
-      "traditions": ["list of traditions that hold this view"],
-      "search_vocabulary": {
-        "TraditionName": ["specific", "words", "metaphors", "found in texts"]
-      },
-      "canonical_examples": ["e.g. 'Isaiah 53 wounded for our transgressions'", "'Husayn martyrdom at Karbala'", "'Job's trials and vindication'"],
-      "search_phrases": ["concrete 5-10 word phrase to find relevant passages", "another distinct search phrase"]
+      "theme": "concise angle label (5-8 words)",
+      "core_claim": "1-2 sentences: what this angle covers",
+      "traditions": {
+        "TraditionName": {
+          "teaching": "1 sentence on what this tradition teaches on this angle",
+          "known_passages": [
+            { "text_fragment": "exact words from text", "source": "book name", "search_phrases": ["phrase1", "phrase2"] }
+          ],
+          "search_phrases": ["discovery phrase1", "discovery phrase2"]
+        }
+      }
     }
   ],
-  "key_distinctions": "2-3 sentences on how traditions fundamentally differ in their approach"
+  "general_search_phrases": ["broad query1", "broad query2", "broad query3", "broad query4"]
 }`
     }
-  ], { max_tokens: 6000 });
+  ], { max_tokens: 8000 });
 
   const text = response.content?.[0]?.text || '';
   const json = text.match(/\{[\s\S]*\}/)?.[0];
-  if (!json) throw new Error('conceptualRecon: no JSON in response');
+  if (!json) throw new Error('knowledgeBrief: no JSON in response');
   const result = JSON.parse(json);
-  logger.info({ frameworks: result.frameworks?.length }, 'Conceptual recon complete');
+  const totalKnown = (result.angles || []).reduce((sum, a) =>
+    sum + Object.values(a.traditions || {}).reduce((s, t) => s + (t.known_passages?.length || 0), 0), 0);
+  logger.info({ angles: result.angles?.length, knownPassages: totalKnown }, 'Knowledge brief complete');
   return result;
 }
 
 /**
- * Decompose a question into search angles guided by the conceptual recon map.
- * Generates two queries per tradition (conceptual + vocabulary-anchored) to
- * bridge the gap between abstract question framing and tradition-specific text idioms.
+ * Targeted retrieval — search for known canonical passages from the knowledge brief.
+ * Keyword-heavy (semanticRatio: 0.25) + religion-filtered for maximum precision.
  *
- * @param {string} question
- * @param {object} recon - result of conceptualRecon()
- * @param {Function} chat
- * @returns {Promise<Array<{tradition, conceptual, vocabulary, angle}>>}
+ * @param {object} brief - result of knowledgeBrief()
+ * @param {Function} search
+ * @returns {Promise<Array>} Candidate paragraphs
  */
-export async function decomposeAngles(question, recon, chat) {
-  // Values must match the `religion` field in the Meilisearch paragraphs index exactly.
-  const TRADITIONS = ["Baha'i", 'Islam', 'Christian', 'Judaism', 'Buddhist', 'Hindu', 'Tao', 'Sikh', 'General'];
-
-  // Build a vocabulary hint per tradition from the recon map
-  const vocabHints = {};
-  for (const fw of (recon.frameworks || [])) {
-    for (const [trad, terms] of Object.entries(fw.search_vocabulary || {})) {
-      if (!vocabHints[trad]) vocabHints[trad] = new Set();
-      terms.forEach(t => vocabHints[trad].add(t));
-    }
-  }
-  const vocabSummary = Object.entries(vocabHints)
-    .map(([t, terms]) => `${t}: ${[...terms].slice(0, 8).join(', ')}`)
-    .join('\n');
-
-  const systemPrompt = `You are a research assistant for an interfaith library. Generate targeted search queries to find primary text passages. Return JSON only.`;
-  const userPrompt = `Question: "${question}"
-
-Conceptual map (from prior analysis):
-${recon.frameworks?.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}
-
-Known text vocabulary per tradition:
-${vocabSummary}
-
-For each tradition, produce TWO distinct search queries (10-20 words each):
-1. "conceptual": abstract framing — purpose, meaning, why + tradition terms
-2. "vocabulary": the words that actually appear in texts of that tradition (from the vocabulary map above)
-
-The two queries must be genuinely different — different words, not reordering.
-
-Traditions: ${TRADITIONS.join(', ')}
-
-Return JSON array:
-[{"tradition": "...", "conceptual": "...", "vocabulary": "...", "angle": "one-sentence description of what this tradition teaches on this topic"}]`;
-
-  try {
-    const response = await chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ]);
-    const text = response.content?.[0]?.text || '';
-    const json = text.match(/\[[\s\S]*\]/)?.[0];
-    if (!json) throw new Error('No JSON array in response');
-    return JSON.parse(json);
-  } catch (err) {
-    logger.warn({ err: err.message }, 'decomposeAngles fallback to defaults');
-    return TRADITIONS.map(t => ({ tradition: t, conceptual: question, vocabulary: question, angle: `${t} perspective` }));
-  }
-}
-
-/**
- * Fan out search queries across angles and collect candidate passages.
- * Also runs framework-level searches (no religion filter) using canonical
- * example phrases from the recon — catches passages about e.g. the passion
- * of Christ or Husayn's martyrdom that live in cross-traditional library texts.
- *
- * @param {Array<{tradition, query}>} angles
- * @param {Function} search - search(query, opts) function
- * @param {number} [perAngle=35] - candidates per angle
- * @param {object} [recon=null] - conceptual recon result for framework searches
- * @returns {Promise<Array>} Deduplicated candidate paragraphs
- */
-export async function fanOutQueries(angles, search, perAngle = 35, recon = null) {
+export async function targetedRetrieval(brief, search) {
   const seen = new Set();
   const candidates = [];
 
@@ -323,49 +263,183 @@ export async function fanOutQueries(angles, search, perAngle = 35, recon = null)
       if ((hit.text || '').length < 80) continue;
       if (!seen.has(hit.id)) {
         seen.add(hit.id);
-        candidates.push({ ...hit, _searchTradition: tradition });
+        candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'targeted' });
       }
     }
   };
 
-  // Per-tradition: conceptual + vocabulary queries (religion-filtered)
-  for (const angle of angles) {
-    const { tradition } = angle;
-    const queries = [angle.conceptual || angle.query, angle.vocabulary].filter(Boolean);
-    const filter = tradition !== 'General' ? { religion: tradition } : {};
-    for (const q of queries) {
-      try {
-        const r = await search(q, { limit: perAngle, filters: filter, semanticRatio: 0.65 });
-        addHits(r.hits || [], tradition);
-      } catch (err) {
-        logger.warn({ err: err.message, tradition, q: q.slice(0, 50) }, 'fanOutQueries angle error');
-      }
-    }
-  }
-
-  // Per-framework: search canonical examples across ALL traditions (no religion filter).
-  // This catches cross-tradition texts — e.g. Isaiah 53 in a Baha'i comparative work,
-  // or Husayn/Karbala passages in interfaith scholarship — that religion filters would miss.
-  if (recon?.frameworks?.length) {
-    for (const fw of recon.frameworks) {
-      const phrases = [
-        ...(fw.search_phrases || []),
-        ...(fw.canonical_examples || []).map(ex => ex.slice(0, 60)),
-      ].filter(Boolean).slice(0, 4);
-      for (const q of phrases) {
-        try {
-          const r = await search(q, { limit: 15, filters: {}, semanticRatio: 0.7 });
-          addHits(r.hits || [], 'General');
-        } catch (err) {
-          logger.warn({ err: err.message, fw: fw.theme?.slice(0, 30), q: q.slice(0, 50) }, 'fanOutQueries framework search error');
+  for (const angle of (brief.angles || [])) {
+    for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
+      const filter = { religion: tradition };
+      for (const passage of (tradData.known_passages || [])) {
+        for (const phrase of (passage.search_phrases || []).slice(0, 2)) {
+          try {
+            const r = await search(phrase, { limit: 10, filters: filter, semanticRatio: 0.25 });
+            addHits(r.hits || [], tradition);
+          } catch (err) {
+            logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'targetedRetrieval error');
+          }
         }
       }
     }
-    logger.info({ frameworks: recon.frameworks.length }, 'Framework-level searches complete');
   }
 
+  logger.info({ found: candidates.length }, 'Targeted retrieval complete');
   return candidates;
 }
+
+/**
+ * Discovery fan-out — angle × tradition searches to find passages beyond known examples.
+ * Semantic-balanced (semanticRatio: 0.65) + religion-filtered.
+ *
+ * @param {object} brief - result of knowledgeBrief()
+ * @param {Function} search
+ * @returns {Promise<Array>} Candidate paragraphs
+ */
+export async function discoveryFanOut(brief, search) {
+  const seen = new Set();
+  const candidates = [];
+
+  const addHits = (hits, tradition) => {
+    for (const hit of hits) {
+      if ((hit.text || '').length < 80) continue;
+      if (!seen.has(hit.id)) {
+        seen.add(hit.id);
+        candidates.push({ ...hit, _searchTradition: tradition, _searchType: 'discovery' });
+      }
+    }
+  };
+
+  for (const angle of (brief.angles || [])) {
+    for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
+      const filter = { religion: tradition };
+      for (const phrase of (tradData.search_phrases || []).slice(0, 2)) {
+        try {
+          const r = await search(phrase, { limit: 20, filters: filter, semanticRatio: 0.65 });
+          addHits(r.hits || [], tradition);
+        } catch (err) {
+          logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'discoveryFanOut error');
+        }
+      }
+    }
+  }
+
+  logger.info({ found: candidates.length }, 'Discovery fan-out complete');
+  return candidates;
+}
+
+/**
+ * General discovery — broad unfiltered queries to find unexpected cross-tradition passages.
+ *
+ * @param {object} brief - result of knowledgeBrief()
+ * @param {Function} search
+ * @returns {Promise<Array>} Candidate paragraphs
+ */
+export async function generalDiscovery(brief, search) {
+  const seen = new Set();
+  const candidates = [];
+
+  for (const phrase of (brief.general_search_phrases || []).slice(0, 6)) {
+    try {
+      const r = await search(phrase, { limit: 25, filters: {}, semanticRatio: 0.65 });
+      for (const hit of r.hits || []) {
+        if ((hit.text || '').length < 80) continue;
+        if (!seen.has(hit.id)) {
+          seen.add(hit.id);
+          candidates.push({ ...hit, _searchTradition: hit.religion || 'General', _searchType: 'general' });
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'generalDiscovery error');
+    }
+  }
+
+  logger.info({ found: candidates.length }, 'General discovery complete');
+  return candidates;
+}
+
+/**
+ * Gap check loop — detect known passages not yet retrieved, retry with alternative queries.
+ * Uses word-overlap on text_fragment to determine coverage. Up to maxPasses retries.
+ *
+ * @param {object} brief - result of knowledgeBrief()
+ * @param {Array} foundCandidates - all candidates found so far
+ * @param {Function} search
+ * @param {number} [maxPasses=3]
+ * @returns {Promise<Array>} Additional candidates found during gap-filling
+ */
+export async function gapCheckLoop(brief, foundCandidates, search, maxPasses = 3) {
+  const foundTexts = foundCandidates.map(c => (c.text || '').toLowerCase());
+  const seen = new Set(foundCandidates.map(c => c.id));
+  const extra = [];
+
+  const stopwords = new Set(['that', 'this', 'with', 'from', 'have', 'will', 'been', 'they', 'their', 'into', 'your', 'when', 'which', 'shall', 'unto', 'thee', 'thou', 'hath', 'doth', 'thus', 'such', 'also', 'upon', 'must', 'more', 'than', 'were', 'there', 'what', 'even', 'only']);
+  const keyWords = frag => frag.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !stopwords.has(w));
+
+  const isCovered = (fragment) => {
+    const words = keyWords(fragment);
+    if (words.length === 0) return true;
+    const needed = Math.max(2, Math.ceil(words.length * 0.6));
+    return foundTexts.some(text => words.filter(w => text.includes(w)).length >= needed);
+  };
+
+  const unfound = [];
+  for (const angle of (brief.angles || [])) {
+    for (const [tradition, tradData] of Object.entries(angle.traditions || {})) {
+      for (const passage of (tradData.known_passages || [])) {
+        if (!isCovered(passage.text_fragment)) {
+          unfound.push({ passage, tradition });
+        }
+      }
+    }
+  }
+
+  if (!unfound.length) {
+    logger.info({ passes: 0 }, 'Gap check: all known passages covered');
+    return extra;
+  }
+
+  logger.info({ unfound: unfound.length }, 'Gap check: retrying unfound passages');
+
+  const remaining = [...unfound];
+  for (let pass = 0; pass < maxPasses && remaining.length > 0; pass++) {
+    const stillUnfound = [];
+    for (const { passage, tradition } of remaining) {
+      let found = false;
+      for (const phrase of (passage.search_phrases || []).slice(0, 3)) {
+        try {
+          const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.15 });
+          for (const hit of r.hits || []) {
+            if ((hit.text || '').length < 80) continue;
+            if (!seen.has(hit.id)) {
+              seen.add(hit.id);
+              extra.push({ ...hit, _searchTradition: tradition, _searchType: 'gap' });
+              foundTexts.push((hit.text || '').toLowerCase());
+            }
+            if (isCovered(passage.text_fragment)) { found = true; break; }
+          }
+          if (found) break;
+        } catch (err) {
+          logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'gapCheckLoop search error');
+        }
+      }
+      if (!found) stillUnfound.push({ passage, tradition });
+    }
+    remaining.length = 0;
+    remaining.push(...stillUnfound);
+    logger.info({ pass: pass + 1, remaining: stillUnfound.length, extra: extra.length }, 'Gap check pass complete');
+  }
+
+  if (remaining.length > 0) {
+    logger.warn(
+      { stillMissing: remaining.map(u => `${u.tradition}: ${u.passage.text_fragment.slice(0, 40)}`).join('; ') },
+      'Gap check: some known passages not found in library'
+    );
+  }
+
+  return extra;
+}
+
 
 /**
  * Rerank candidates using LLM pairwise relevance scoring.
@@ -489,11 +563,10 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
   const dupeCount = scored.length - deduped.length;
   if (dupeCount > 0) logger.info({ dupeCount, kept: deduped.length }, 'Deduped cross-publication passages');
 
-  // Take top passages — threshold 3 (not too low to be noise, but low enough that
-  // per-sub-question gems aren't dropped at main-question filter stage).
-  // clusterAndStructure does the per-sub-question relevance filtering via aspect_idx=-1.
+  // Threshold 7: only passages that directly address the question. Tangential matches
+  // dilute clustering; the knowledge brief + gap-check loop ensure coverage.
   const ranked = deduped
-    .filter(p => p.relevance_score >= 3)
+    .filter(p => p.relevance_score >= 7)
     .sort((a, b) => (b.relevance_score * 2 + b.authority) - (a.relevance_score * 2 + a.authority));
 
   return ranked.slice(0, topN).map((p, rank) => ({
@@ -526,29 +599,46 @@ export async function runDeepResearch(researchId, { chat, search }) {
   try {
     logger.info({ researchId, question: record.canonical_question }, 'Deep research started');
 
-    // 0. Conceptual reconnaissance — map the theological landscape before searching
-    const recon = await conceptualRecon(record.canonical_question, chat);
+    // 0. Knowledge brief — map what general knowledge knows, to guide library search
+    const brief = await knowledgeBrief(record.canonical_question, chat);
+    await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ brief }), researchId]);
 
-    // 1. Decompose into angles guided by the recon map (two queries per tradition)
-    const angles = await decomposeAngles(record.canonical_question, recon, chat);
-    await query('UPDATE deep_research SET angles_json = ? WHERE id = ?', [JSON.stringify({ recon, angles }), researchId]);
+    // 1. Targeted retrieval — find known canonical passages (keyword-heavy, religion-filtered)
+    const targeted = await targetedRetrieval(brief, search);
 
-    // 2. Fan out queries — per-tradition + per-framework canonical searches
-    const candidates = await fanOutQueries(angles, search, 35, recon);
-    await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [candidates.length, researchId]);
+    // 2. Discovery fan-out — angle × tradition searches for gems not in general knowledge
+    const discovered = await discoveryFanOut(brief, search);
 
-    // 3. Rerank
-    const reranked = await rerankPassages(record.canonical_question, candidates, chat, 100);
+    // 3. General discovery — broad unfiltered queries for unexpected cross-tradition finds
+    const general = await generalDiscovery(brief, search);
 
-    // Re-attach candidate source data (text, author, title) stripped during reranking
-    const candidateMap = new Map(candidates.map(c => [c.id, c]));
+    // Merge and deduplicate all candidates
+    const seen = new Set();
+    const allCandidates = [];
+    for (const c of [...targeted, ...discovered, ...general]) {
+      if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
+    }
+    logger.info({ targeted: targeted.length, discovered: discovered.length, general: general.length, total: allCandidates.length }, 'Initial retrieval complete');
+
+    // 4. Gap check — retry known passages not yet found in the library
+    const gapExtra = await gapCheckLoop(brief, allCandidates, search, 3);
+    for (const c of gapExtra) {
+      if (!seen.has(c.id)) { seen.add(c.id); allCandidates.push(c); }
+    }
+
+    await query('UPDATE deep_research SET total_candidates = ? WHERE id = ?', [allCandidates.length, researchId]);
+
+    // 5. Rerank — LLM-scored relevance, threshold 7/10 (only directly relevant passages)
+    const reranked = await rerankPassages(record.canonical_question, allCandidates, chat, 100);
+
+    // Re-attach candidate source data stripped during reranking
+    const candidateMap = new Map(allCandidates.map(c => [c.id, c]));
     const selected = reranked.map(s => {
       const cand = candidateMap.get(s.para_id) || {};
       return { ...s, text: cand.text, author: cand.author, title: cand.title, source_site: cand.source_site, source_url: cand.source_url, external_para_id: cand.external_para_id };
     });
 
-    // 4. Store quotes — validate para_ids exist in content table (framework searches
-    // can return Meilisearch IDs for external/supplemental content not in local DB).
+    // 6. Validate para_ids exist in content table
     const validParaIds = new Set(
       (await queryAll(
         `SELECT id FROM content WHERE id IN (${selected.map(() => '?').join(',')})`,
@@ -568,12 +658,12 @@ export async function runDeepResearch(researchId, { chat, search }) {
       );
     }
 
-    // 5. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
+    // 7. Cluster by thematic aspects + extract clean excerpts (LLM-driven)
     const traditionsCovered = [...new Set(validSelected.map(q => q.tradition).filter(Boolean))].join(',');
-    const structured = await clusterAndStructure(record.canonical_question, validSelected, chat, recon);
-    const sections = structured?.sections || buildSectionsFallback(selected, angles);
+    const structured = await clusterAndStructure(record.canonical_question, validSelected, chat, brief);
+    const sections = structured?.sections || buildSectionsFallback(selected, []);
     const summary = structured?.summary || buildSummaryFallback(sections, traditionsCovered.split(',').filter(Boolean));
-    const convergence = { searchable_text: sections.map(s => s.label || s.tradition || '').join(' ') };
+    const convergence = { searchable_text: sections.map(s => s.label || '').join(' ') };
 
     await query(
       `UPDATE deep_research SET
@@ -587,16 +677,16 @@ export async function runDeepResearch(researchId, { chat, search }) {
          heartbeat_at = ?
        WHERE id = ?`,
       [
-        selected.length, traditionsCovered,
+        validSelected.length, traditionsCovered,
         JSON.stringify(sections), JSON.stringify(summary), JSON.stringify(convergence),
         new Date().toISOString(), new Date().toISOString(), researchId
       ]
     );
 
-    // 6. Sync to Meilisearch
+    // 8. Sync to Meilisearch
     await syncDeepResearch([researchId]);
 
-    logger.info({ researchId, selected: selected.length, traditions: traditionsCovered }, 'Deep research complete');
+    logger.info({ researchId, selected: validSelected.length, traditions: traditionsCovered }, 'Deep research complete');
   } catch (err) {
     await query(
       'UPDATE deep_research SET status = ?, error = ?, heartbeat_at = ? WHERE id = ?',
@@ -619,9 +709,10 @@ export async function runDeepResearch(researchId, { chat, search }) {
 export async function clusterAndStructure(question, selected, chat, recon = null) {
   if (!selected.length) return null;
 
-  // Use recon frameworks as the structural anchor if available
-  const frameworkHint = recon?.frameworks?.length
-    ? `\nTheological framework (from prior analysis — use these as the basis for aspects):\n${recon.frameworks.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}\n\nKey distinctions: ${recon.key_distinctions || ''}\n`
+  // Use research angles as the structural anchor if available (brief.angles or legacy recon.frameworks)
+  const angleList = recon?.angles || recon?.frameworks || [];
+  const frameworkHint = angleList.length
+    ? `\nTheological framework (from prior analysis — use these as the basis for aspects):\n${angleList.map(f => `- ${f.theme}: ${f.core_claim}`).join('\n')}\n`
     : '';
 
   const systemPrompt = `You are a scholar of comparative religion creating a structured interfaith research document in Q&A format.
@@ -630,8 +721,7 @@ The main document answers a big spiritual question. Sub-sections are specific as
 Critical rules:
 1. Frame each aspect as a focused question — vary the phrasing. Do NOT start every question with "How does". Use forms like "What role does X play?", "Why do traditions teach X?", "What happens when X?", "Is X a punishment or a gift?", etc.
 2. Base the aspects on the theological framework provided — do not invent new categories from scratch.
-3. Assign each quote to the most relevant aspect. Assign generously — a quote that is broadly relevant to an aspect belongs there, even if not a perfect fit. Only use aspect_idx=-1 for quotes that genuinely address NONE of the aspects. Goal: no tradition should be missing from every section. A quote misassigned is better than a quote wasted.
-   - Every quote has SOME aspect it speaks to — find it.
+3. Assign each quote only to an aspect it directly addresses. A quote must substantively answer the aspect sub-question — not merely be from the same tradition or thematic domain. Use aspect_idx=-1 for any quote that does not directly address at least one aspect. Precision matters: a weak assignment dilutes the section more than a rejected quote.
 4. Extract the most directly relevant 2-4 sentences from each passage. The excerpt must answer the sub-question. Prefer complete thoughts — never quote an entire long paragraph.
 5. For non-English text (Arabic, Persian, Sanskrit, Hebrew, Punjabi, etc.), provide ONLY a clean English translation as the excerpt.
 6. Strip all markup: ⁅s1⁆, ⁅/s1⁆, **, __, ##, [], *
