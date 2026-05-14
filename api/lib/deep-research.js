@@ -279,7 +279,7 @@ export async function targetedRetrieval(brief, search) {
 
   const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
     try {
-      const r = await search(phrase, { limit: 10, filters: { religion: tradition }, semanticRatio: 0.25 });
+      const r = await search(phrase, { limit: 20, filters: { religion: tradition }, semanticRatio: 0.5 });
       return { hits: r.hits || [], tradition };
     } catch (err) {
       logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'targetedRetrieval error');
@@ -327,7 +327,7 @@ export async function discoveryFanOut(brief, search) {
 
   const results = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
     try {
-      const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.65 });
+      const r = await search(phrase, { limit: 25, filters: { religion: tradition }, semanticRatio: 0.65 });
       return { hits: r.hits || [], tradition };
     } catch (err) {
       logger.warn({ err: err.message, tradition, phrase: phrase.slice(0, 50) }, 'discoveryFanOut error');
@@ -482,7 +482,7 @@ export async function gapCheckLoop(brief, foundCandidates, search, maxPasses = 3
     );
     const taskResults = await Promise.all(tasks.map(async ({ phrase, tradition }) => {
       try {
-        const r = await search(phrase, { limit: 15, filters: { religion: tradition }, semanticRatio: 0.15 });
+        const r = await search(phrase, { limit: 20, filters: { religion: tradition }, semanticRatio: 0.4 });
         return { hits: r.hits || [], tradition };
       } catch (err) {
         logger.warn({ err: err.message, phrase: phrase.slice(0, 50) }, 'gapCheckLoop search error');
@@ -518,24 +518,12 @@ export async function gapCheckLoop(brief, foundCandidates, search, maxPasses = 3
 }
 
 
-/**
- * Keyword pre-filter — eliminate candidates with zero keyword overlap with the question.
- * Runs before LLM rerank to cut ~40-50% of candidates cheaply. Only filters on exact
- * word match, so it only removes clear misses (not false negatives on relevant passages).
- */
+// Keyword pre-filter disabled: for spiritual/comparative-religion queries, topic keywords like
+// "faith" are severely overloaded (e.g., "faith" = "Bahá'í Faith" institution in ~40% of Bahá'í texts),
+// causing false positives for bad passages and false negatives for valid synonym-based passages
+// (e.g., "certitude", "assurance"). The LLM reranker handles disambiguation correctly at low cost.
 function keywordPreFilter(question, candidates) {
-  const stopwords = new Set(['that', 'this', 'with', 'from', 'have', 'will', 'been', 'they', 'their', 'into', 'your', 'when', 'which', 'shall', 'unto', 'thee', 'thou', 'hath', 'doth', 'thus', 'such', 'also', 'upon', 'must', 'more', 'than', 'were', 'there', 'what', 'even', 'only', 'does', 'about', 'some', 'very', 'just', 'like', 'then', 'them', 'these', 'those', 'over', 'after', 'before', 'both', 'each', 'here', 'most', 'other', 'through']);
-  const keyWords = question.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !stopwords.has(w));
-  if (keyWords.length < 2) return candidates;
-
-  const before = candidates.length;
-  const filtered = candidates.filter(c => {
-    const text = (c.text || '').toLowerCase();
-    return keyWords.some(w => text.includes(w));
-  });
-  const eliminated = before - filtered.length;
-  if (eliminated > 0) logger.info({ eliminated, kept: filtered.length, total: before }, 'Keyword pre-filter');
-  return filtered;
+  return candidates;
 }
 
 /**

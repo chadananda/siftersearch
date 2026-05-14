@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T17:41:51.061Z",
+  "generated": "2026-05-14T17:55:27.972Z",
   "entries": [
+    {
+      "hash": "77464db0",
+      "date": "2026-05-14",
+      "type": "New",
+      "description": "Unique hero images — check used subjects, more theme variety",
+      "scope": null
+    },
     {
       "hash": "df899660",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
       "scope": null
-    },
-    {
-      "hash": "64e43845",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Disable PRIORITY 4 body_hash lookup that merged duplicate files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "77464db0",
+        "date": "2026-05-14",
+        "type": "New",
+        "description": "Unique hero images — check used subjects, more theme variety",
+        "scope": null
+      },
       {
         "hash": "df899660",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Disable body_hash lookups in indexer.js that merged duplicate files",
-        "scope": null
-      },
-      {
-        "hash": "64e43845",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Disable PRIORITY 4 body_hash lookup that merged duplicate files",
         "scope": null
       }
     ]

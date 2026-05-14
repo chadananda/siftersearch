@@ -10,6 +10,7 @@
 //   PATCH /api/v1/admin/deep-research/:id      — update record (priority, topic_tags, etc.)
 //   DELETE /api/v1/admin/deep-research/:id     — delete record + quotes
 //   POST /api/v1/admin/deep-research/:id/requeue — requeue a failed/complete record
+//   POST /api/v1/admin/deep-research/:id/reassess — re-score existing quotes, prune irrelevant, supplement gaps, recluster
 //   POST /api/v1/admin/deep-research/:id/regenerate-hero — regenerate hero image
 
 import { requireInternal } from '../lib/auth.js';
@@ -24,6 +25,9 @@ import {
   addNotifyEmail,
   syncDeepResearch,
   generateResearchHeroImage,
+  rerankPassages,
+  clusterAndStructure,
+  assessAndSupplement,
 } from '../lib/deep-research.js';
 
 export default async function deepResearchRoutes(fastify) {
@@ -219,6 +223,152 @@ export default async function deepResearchRoutes(fastify) {
         total_candidates: r.total_candidates,
         completed_at: r.completed_at,
       })),
+    };
+  });
+
+  // Reassess existing research — re-score quotes, prune irrelevant ones, supplement gaps, recluster (admin)
+  fastify.post('/admin/deep-research/:id/reassess', { preHandler: [requireInternal] }, async (req, reply) => {
+    const record = await queryOne('SELECT * FROM deep_research WHERE id = ?', [req.params.id]);
+    if (!record) return reply.code(404).send({ error: 'Not found' });
+    if (record.status === 'in_progress') return reply.code(409).send({ error: 'Research is currently in progress — wait for it to finish' });
+
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const { hybridSearch } = await import('../lib/search.js');
+    const { getAuthority } = await import('../lib/authority.js');
+
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const chat = async (messages, opts = {}) => {
+      const model = opts.model || 'claude-sonnet-4-6';
+      const systemMsg = messages.find(m => m.role === 'system');
+      const userMsgs = messages.filter(m => m.role !== 'system');
+      return anthropic.messages.create({
+        model,
+        max_tokens: opts.max_tokens || 4096,
+        ...(systemMsg ? { system: systemMsg.content } : {}),
+        messages: userMsgs,
+      });
+    };
+    const search = (q, opts = {}) => hybridSearch(q, {
+      limit: opts.limit || 30,
+      semanticRatio: opts.semanticRatio ?? 0.6,
+      filters: opts.filters || {},
+    });
+
+    const question = record.canonical_question;
+    const isBahaiQuestion = /bah[aá]['i\u2019]/i.test(question) || /\bbahai\b/i.test(question);
+    const MIN_SCORE = isBahaiQuestion ? 5 : 7;
+
+    // Load existing quotes with full text from content table
+    const existingQuotes = await getDeepResearchQuotes(record.id);
+    if (!existingQuotes.length) return reply.code(400).send({ error: 'No existing quotes to reassess — run full research first' });
+
+    logger.info({ researchId: record.id, quotes: existingQuotes.length, minScore: MIN_SCORE }, 'Reassessing research artifact');
+
+    // Re-score all existing quotes
+    const candidates = existingQuotes.map(q => ({
+      id: q.para_id,
+      text: q.text,
+      title: q.title,
+      author: q.author,
+      religion: q.religion || q.tradition,
+      source_site: q.source_site,
+      source_url: q.source_url,
+      external_para_id: q.external_para_id,
+      authority: q.authority || getAuthority(q),
+    }));
+
+    const reranked = await rerankPassages(question, candidates, chat, candidates.length);
+    const scoredMap = new Map(reranked.map(r => [r.para_id, r]));
+
+    // Determine which to keep (above threshold)
+    const toKeep = [];
+    const toRemove = [];
+    for (const q of existingQuotes) {
+      const scored = scoredMap.get(q.para_id);
+      if (scored && scored.relevance_score >= MIN_SCORE) {
+        toKeep.push({ ...q, relevance_score: scored.relevance_score, contextual_note: scored.contextual_note });
+      } else {
+        toRemove.push(q.para_id);
+      }
+    }
+
+    logger.info({ kept: toKeep.length, removed: toRemove.length, threshold: MIN_SCORE }, 'Reassess: pruning irrelevant quotes');
+
+    // Update deep_research_quotes — remove pruned, update scores for kept
+    if (toRemove.length) {
+      await query(
+        `DELETE FROM deep_research_quotes WHERE research_id = ? AND para_id IN (${toRemove.map(() => '?').join(',')})`,
+        [record.id, ...toRemove]
+      );
+    }
+    for (const q of toKeep) {
+      await query(
+        'UPDATE deep_research_quotes SET relevance_score = ?, contextual_note = ? WHERE research_id = ? AND para_id = ?',
+        [q.relevance_score, q.contextual_note, record.id, q.para_id]
+      );
+    }
+
+    // Build selected array for clustering (same shape as runDeepResearch expects)
+    const selected = toKeep.map((q, rank) => ({
+      para_id: q.para_id,
+      text: q.text,
+      title: q.title,
+      author: q.author,
+      tradition: q.religion || q.tradition,
+      religion: q.religion || q.tradition,
+      source_site: q.source_site,
+      source_url: q.source_url,
+      external_para_id: q.external_para_id,
+      authority: q.authority,
+      relevance_score: q.relevance_score,
+      contextual_note: q.contextual_note,
+      rank,
+    }));
+
+    // Recluster from pruned set
+    const structured = await clusterAndStructure(question, selected, chat);
+    let sections = structured?.sections || selected.map((q, i) => ({
+      type: 'tradition',
+      label: `${q.tradition} Perspective`,
+      summary: '',
+      traditions: [q.tradition],
+      quotes: [{ para_id: q.para_id, tradition: q.tradition, excerpt: (q.text || '').slice(0, 280), source_title: q.title, source_author: q.author, source_site: q.source_site, source_url: q.source_url, authority: q.authority, relevance_score: q.relevance_score }],
+    }));
+
+    // Supplement with missing canonical passages (now properly gated at ≥7)
+    sections = await assessAndSupplement(question, sections, chat, search);
+
+    // Persist supplemented quotes (assessAndSupplement only mutates sections_json, not the DB)
+    const existingParaIds = new Set(toKeep.map(q => q.para_id));
+    const allSectionQuotes = sections.flatMap(s => s.quotes || []);
+    const supplemented = allSectionQuotes.filter(q => q.para_id && !existingParaIds.has(q.para_id));
+    let newRank = toKeep.length;
+    for (const q of supplemented) {
+      await query(
+        `INSERT OR IGNORE INTO deep_research_quotes (research_id, para_id, tradition, authority, relevance_score, contextual_note, rank, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [record.id, q.para_id, q.tradition, q.authority, q.relevance_score, q.contextual_note, newRank++, new Date().toISOString()]
+      );
+    }
+
+    const totalSelected = toKeep.length + supplemented.length;
+    const traditionsCovered = [...new Set(allSectionQuotes.map(q => q.tradition).filter(Boolean))].join(',');
+
+    await query(
+      'UPDATE deep_research SET sections_json = ?, total_selected = ?, traditions_covered = ?, reviewed_at = ? WHERE id = ?',
+      [JSON.stringify(sections), totalSelected, traditionsCovered, new Date().toISOString(), record.id]
+    );
+
+    await syncDeepResearch([record.id]);
+
+    logger.info({ researchId: record.id, kept: toKeep.length, removed: toRemove.length, supplemented: supplemented.length }, 'Reassessment complete');
+    return {
+      success: true,
+      kept: toKeep.length,
+      removed: toRemove.length,
+      supplemented: supplemented.length,
+      total: totalSelected,
+      traditions: traditionsCovered,
     };
   });
 
