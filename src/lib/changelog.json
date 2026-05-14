@@ -1,6 +1,20 @@
 {
-  "generated": "2026-05-14T19:14:15.075Z",
+  "generated": "2026-05-14T21:31:38.309Z",
   "entries": [
+    {
+      "hash": "78fd4c62",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Source quality diagnostic script",
+      "scope": null
+    },
+    {
+      "hash": "12c601cc",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Enqueue 31 new interfaith research questions (IDs 33-63)",
+      "scope": null
+    },
     {
       "hash": "133b9920",
       "date": "2026-05-14",
@@ -3486,24 +3500,24 @@
       "type": "Fixed",
       "description": "Skip boilerplate paragraphs when extracting description",
       "scope": null
-    },
-    {
-      "hash": "58f0e561",
-      "date": "2026-01-19",
-      "type": "Test",
-      "description": "Update test script to use ingester's parseMarkdownFrontmatter",
-      "scope": null
-    },
-    {
-      "hash": "48233027",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Extract description from content when YAML has corrupt value",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "78fd4c62",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Source quality diagnostic script",
+        "scope": null
+      },
+      {
+        "hash": "12c601cc",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Enqueue 31 new interfaith research questions (IDs 33-63)",
+        "scope": null
+      },
       {
         "hash": "133b9920",
         "date": "2026-05-14",
@@ -7054,20 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Skip boilerplate paragraphs when extracting description",
-        "scope": null
-      },
-      {
-        "hash": "58f0e561",
-        "date": "2026-01-19",
-        "type": "Test",
-        "description": "Update test script to use ingester's parseMarkdownFrontmatter",
-        "scope": null
-      },
-      {
-        "hash": "48233027",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Extract description from content when YAML has corrupt value",
         "scope": null
       }
     ]

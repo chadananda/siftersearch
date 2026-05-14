@@ -37,16 +37,16 @@ const TESTS = [
   // Some Answered Questions
   { q: 'The spiritual world is like unto the phenomenal world', tradition: "Baha'i", expect: 'oceanlibrary.com', book: 'Some Answered Questions' },
 
-  // Quran
-  { q: 'In the name of God the Merciful the Compassionate', tradition: 'Islam', expect: null, book: 'Quran' },
-  { q: 'Allah is the Light of the heavens and the earth', tradition: 'Islam', expect: null, book: 'Quran (Light verse)' },
+  // Quran — OL has Quran per-sura (Rodwell translation) + Yusuf Ali + Pickthall
+  { q: 'In the name of God the Merciful the Compassionate', tradition: 'Islam', expect: OL_DOMAIN, book: 'Quran (Fatiha)' },
+  { q: 'Allah is the Light of the heavens and the earth', tradition: 'Islam', expect: OL_DOMAIN, book: 'Quran (Light verse, Sura XXIV)' },
 
-  // Bible
-  { q: 'For God so loved the world that he gave his only begotten Son', tradition: 'Christianity', expect: null, book: 'John 3:16' },
-  { q: 'Blessed are the poor in spirit for theirs is the kingdom of heaven', tradition: 'Christianity', expect: null, book: 'Matthew 5:3' },
+  // Bible — OL has Bible per-book (KJV)
+  { q: 'For God so loved the world that he gave his only begotten Son', tradition: 'Christian', expect: OL_DOMAIN, book: 'John 3:16' },
+  { q: 'Blessed are the poor in spirit for theirs is the kingdom of heaven', tradition: 'Christian', expect: OL_DOMAIN, book: 'Matthew 5:3' },
 
-  // Buddhist
-  { q: 'All conditioned things are impermanent when one sees this with wisdom one turns away from suffering', tradition: 'Buddhism', expect: null, book: 'Dhammapada' },
+  // Buddhist — OL has Buddhist texts
+  { q: 'All conditioned things are impermanent when one sees this with wisdom one turns away from suffering', tradition: 'Buddhist', expect: null, book: 'Dhammapada' },
 ];
 
 const LIMIT = 8;
