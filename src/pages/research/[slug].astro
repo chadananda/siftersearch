@@ -38,7 +38,8 @@ function stripMd(text: string): string {
     .replace(/\*(.*?)\*/g, '$1')         // italic
     .replace(/^#{1,6}\s+/gm, '')         // headings
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
-    .replace(/^\[\^[^\]]+\]:.*/gm, '')   // footnote definitions [^1]: text
+    .replace(/\{[^}]*\}/g, '')            // Hugo/Pandoc block attributes {language="en"}
+    .replace(/\[\^[^\]]+\]:[^\n]*/g, '') // footnote definitions [^1]: text (anywhere)
     .replace(/\[\^[^\]]+\]/g, '')        // footnote refs [^1]
     .replace(/^>\s*/gm, '')              // blockquotes
     .replace(/^[-*_]{3,}\s*$/gm, '')     // horizontal rules

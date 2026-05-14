@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T15:27:17.511Z",
+  "generated": "2026-05-14T15:28:54.134Z",
   "entries": [
+    {
+      "hash": "9875408e",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
+      "scope": null
+    },
     {
       "hash": "87255d10",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Handle NaN/Infinity in embeddings and foreign key cleanup error",
       "scope": null
-    },
-    {
-      "hash": "4dabb614",
-      "date": "2026-01-19",
-      "type": "New",
-      "description": "Watchdog now monitors library-watcher and jobs processes",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "9875408e",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Remove quote doubling, share menus click-outside+opacity, Reddit per-tradition, print CSS, related dialogs sidebar",
+        "scope": null
+      },
       {
         "hash": "87255d10",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Handle NaN/Infinity in embeddings and foreign key cleanup error",
-        "scope": null
-      },
-      {
-        "hash": "4dabb614",
-        "date": "2026-01-19",
-        "type": "New",
-        "description": "Watchdog now monitors library-watcher and jobs processes",
         "scope": null
       }
     ]
