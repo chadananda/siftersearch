@@ -244,7 +244,7 @@ Return JSON:
     result = JSON.parse(json);
   } catch (parseErr) {
     // LLM response truncated — try to salvage partial JSON
-    const truncated = json.replace(/,?\s*\{[^{}]*$/, '').replace(/,?\s*\[[^\[\]]*$/, '') + ']}]}';
+    const truncated = json.replace(/,?\s*\{[^{}]*$/, '').replace(/,?\s*\[[^[\]]*$/, '') + ']}]}';
     try { result = JSON.parse(truncated); } catch { throw new Error(`knowledgeBrief: JSON parse failed — ${parseErr.message}`); }
   }
   const totalKnown = (result.angles || []).reduce((sum, a) =>

@@ -443,10 +443,11 @@ async function applyUpdates() {
   }
   log('info', 'Verification passed — swapping to new code');
 
-  // Swap API first (user-facing), then worker
+  // Swap API first (user-facing), then background workers
   let failed = false;
   if (!await swapPm2Process('siftersearch-api')) failed = true;
   if (!await swapPm2Process('siftersearch-worker')) failed = true;
+  if (!await swapPm2Process('siftersearch-deep-research')) failed = true;
 
   if (failed) {
     log('error', 'Some processes failed to start');
@@ -494,6 +495,7 @@ async function reloadPm2Only() {
   log('info', 'Verification passed — recreating PM2 processes...');
   if (!await swapPm2Process('siftersearch-api')) return false;
   if (!await swapPm2Process('siftersearch-worker')) return false;
+  if (!await swapPm2Process('siftersearch-deep-research')) return false;
   log('info', 'All PM2 processes recreated');
   return true;
 }
@@ -514,6 +516,7 @@ async function runOnce() {
       log('info', 'Reloading PM2 after dependency repair...');
       await swapPm2Process('siftersearch-api');
       await swapPm2Process('siftersearch-worker');
+      await swapPm2Process('siftersearch-deep-research');
     } else {
       log('error', 'Failed to repair dependencies');
       return false;

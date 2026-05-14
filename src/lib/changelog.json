@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:05:54.932Z",
+  "generated": "2026-05-14T14:12:15.253Z",
   "entries": [
+    {
+      "hash": "bccc92aa",
+      "date": "2026-05-14",
+      "type": "Refactor",
+      "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
+      "scope": null
+    },
     {
       "hash": "5488ba7f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
       "scope": null
-    },
-    {
-      "hash": "637de76e",
-      "date": "2026-01-18",
-      "type": "Fixed",
-      "description": "Disable buggy heading extraction (was causing duplicate headings)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "bccc92aa",
+        "date": "2026-05-14",
+        "type": "Refactor",
+        "description": "Research quality footer — admin-only, client-hydrated (not SSR)",
+        "scope": null
+      },
       {
         "hash": "5488ba7f",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "Fixed",
         "description": "Use stored doc.slug for URL generation (fixes Document not found errors)",
-        "scope": null
-      },
-      {
-        "hash": "637de76e",
-        "date": "2026-01-18",
-        "type": "Fixed",
-        "description": "Disable buggy heading extraction (was causing duplicate headings)",
         "scope": null
       }
     ]
