@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T19:02:31.184Z",
+  "generated": "2026-05-14T19:07:17.723Z",
   "entries": [
+    {
+      "hash": "83e24003",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "Filter secondary compilations from deep research candidates",
+      "scope": null
+    },
     {
       "hash": "0208f95a",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Fixed",
       "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
       "scope": null
-    },
-    {
-      "hash": "4a6103bd",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Add script to fix corrupt YAML descriptions in source files",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "83e24003",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "Filter secondary compilations from deep research candidates",
+        "scope": null
+      },
       {
         "hash": "0208f95a",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Fixed",
         "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
-        "scope": null
-      },
-      {
-        "hash": "4a6103bd",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Add script to fix corrupt YAML descriptions in source files",
         "scope": null
       }
     ]

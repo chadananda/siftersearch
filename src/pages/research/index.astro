@@ -9,48 +9,38 @@ const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://api.siftersearch.com
 const res = await fetch(`${API_BASE}/api/v1/deep-research?status=complete&limit=100`);
 const { records = [] } = res.ok ? await res.json() : {};
 
-// Parse JSON fields
 const items = records.map(r => ({
   ...r,
   topic_tags: r.topic_tags ? (typeof r.topic_tags === 'string' ? JSON.parse(r.topic_tags) : r.topic_tags) : [],
   traditions: r.traditions_covered ? r.traditions_covered.split(',').filter(Boolean) : [],
 }));
 
-// Group by first topic_tag
-const byTopic = new Map<string, typeof items>();
-for (const item of items) {
-  const key = item.topic_tags[0] || 'General';
-  const arr = byTopic.get(key) ?? [];
-  arr.push(item);
-  byTopic.set(key, arr);
-}
-
 const TOPIC_LABELS: Record<string, string> = {
-  'theodicy': 'Theodicy & Suffering',
+  'theodicy': 'Theodicy',
   'tests-trials': 'Tests & Trials',
-  'afterlife': 'Afterlife & Soul',
-  'prayer': 'Prayer & Worship',
+  'afterlife': 'Afterlife',
+  'prayer': 'Prayer',
   'soul-spirit': 'Soul & Spirit',
-  'mysticism': 'Mysticism & Nearness to God',
-  'ethics': 'Ethics & Conduct',
+  'mysticism': 'Mysticism',
+  'ethics': 'Ethics',
   'justice': 'Justice',
-  'mercy-compassion': 'Mercy & Compassion',
-  'free-will': 'Free Will & Predestination',
-  'revelation': 'Revelation & Prophecy',
+  'mercy-compassion': 'Mercy',
+  'free-will': 'Free Will',
+  'revelation': 'Revelation',
   'progressive-revelation': 'Progressive Revelation',
   'science-reason': 'Science & Reason',
-  'unity': 'Unity of Humanity',
+  'unity': 'Unity',
   'equality': 'Equality',
-  'authority': 'Religious Authority',
-  'law-practice': 'Religious Law & Practice',
-  'eschatology': 'Eschatology & End Times',
-  'social-order': 'Social Order & World Peace',
+  'authority': 'Authority',
+  'law-practice': 'Law & Practice',
+  'eschatology': 'Eschatology',
+  'social-order': 'Social Order',
   'death-grief': 'Death & Grief',
-  'love': 'Love of God',
-  'scripture-study': 'Scripture & Study',
-  'creation': 'Creation & Nature',
+  'love': 'Love',
+  'scripture-study': 'Scripture',
+  'creation': 'Creation',
   'sin-redemption': 'Sin & Redemption',
-  'community': 'Community & Service',
+  'community': 'Community',
 };
 
 const TRADITION_COLORS: Record<string, string> = {
@@ -59,7 +49,12 @@ const TRADITION_COLORS: Record<string, string> = {
   'Taoism': '#00695c', 'Sikhism': '#ad1457', 'Zoroastrian': '#e65100',
 };
 
-const description = `Comprehensive interfaith research exploring ${items.length} spiritual questions across ${[...new Set(items.flatMap(i => i.traditions))].length} traditions. Each topic draws from authoritative primary texts — scripture, theology, and mystical writings — curated for depth and accuracy.`;
+// Unique topics in order of first appearance
+const topicOrder = [...new Set(items.map(i => i.topic_tags[0]).filter(Boolean))];
+const totalPassages = items.reduce((s, i) => s + (i.total_selected || 0), 0);
+const totalTraditions = [...new Set(items.flatMap(i => i.traditions))].length;
+
+const description = `${items.length} deep research topics across ${totalTraditions} traditions — scripture, theology, and mystical writings curated for depth and accuracy.`;
 
 const websiteSchema = {
   "@context": "https://schema.org",
@@ -90,179 +85,256 @@ const websiteSchema = {
   <NavBar currentPage="research" client:load />
 
   <main class="research-index">
+
+    <!-- Hero -->
     <header class="research-hero">
       <div class="hero-inner">
-        <div class="hero-badge">Interfaith Deep Research</div>
+        <div class="hero-eyebrow">Interfaith Deep Research</div>
         <h1>Questions that span traditions</h1>
-        <p class="hero-desc">{description}</p>
+        <p class="hero-sub">Scripture, theology, and mystical writings from the world's great religions — curated by question, compared by tradition.</p>
         <div class="hero-stats">
-          <span class="stat"><strong>{items.length}</strong> topics researched</span>
-          <span class="stat-div">·</span>
-          <span class="stat"><strong>{[...new Set(items.flatMap(i => i.traditions))].length}</strong> traditions covered</span>
-          <span class="stat-div">·</span>
-          <span class="stat"><strong>{items.reduce((s, i) => s + (i.total_selected || 0), 0)}</strong> curated passages</span>
-        </div>
-        <div class="hero-actions">
-          <a href="/?q=" class="btn-primary">Ask a question →</a>
-          <a href="#topics" class="btn-secondary">Browse by topic ↓</a>
+          <div class="stat-item"><strong>{items.length}</strong><span>topics</span></div>
+          <div class="stat-div" />
+          <div class="stat-item"><strong>{totalTraditions}</strong><span>traditions</span></div>
+          <div class="stat-div" />
+          <div class="stat-item"><strong>{totalPassages.toLocaleString()}</strong><span>passages</span></div>
         </div>
       </div>
     </header>
 
-    <!-- Topic navigation TOC -->
-    <nav class="topic-nav" id="topics" aria-label="Research topics">
-      <div class="topic-nav-inner">
-        {[...byTopic.keys()].map(key => (
-          <a href={`#topic-${key}`} class="topic-nav-pill">
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar">
+      <div class="filter-inner">
+        <button class="filter-pill active" data-filter="all">All Topics</button>
+        {topicOrder.map(key => (
+          <button class="filter-pill" data-filter={key}>
             {TOPIC_LABELS[key] || key}
-            <span class="pill-count">{byTopic.get(key)!.length}</span>
-          </a>
+          </button>
         ))}
       </div>
-    </nav>
+    </div>
 
-    <!-- Research listing by topic -->
-    <div class="research-body">
-      {[...byTopic.entries()].map(([key, group]) => (
-        <section class="topic-section" id={`topic-${key}`}>
-          <h2 class="topic-heading">
-            <span class="topic-label">{TOPIC_LABELS[key] || key}</span>
-            <span class="topic-count">{group.length} {group.length === 1 ? 'topic' : 'topics'}</span>
-          </h2>
-          <div class="research-grid">
-            {group.map(item => (
-              <a href={`/research/${item.slug}`} class="research-card">
-                {item.hero_image && (
-                  <div class="card-thumb">
-                    <img src={item.hero_image} alt="" loading="lazy" class="card-thumb-img" />
-                  </div>
-                )}
-                <div class="card-body">
-                <div class="card-question">{item.canonical_question}</div>
-                <div class="card-meta">
+    <!-- Article grid -->
+    <div class="grid-wrap">
+      <div class="article-grid" id="article-grid">
+        {items.map(item => {
+          const topic = item.topic_tags[0] || 'general';
+          return (
+            <a
+              href={`/research/${item.slug}`}
+              class="article-card"
+              data-topic={topic}
+            >
+              {item.hero_image ? (
+                <div class="card-img-wrap">
+                  <img src={item.hero_image} alt="" loading="lazy" class="card-img" />
+                  <div class="card-img-overlay" />
+                  <span class="card-topic-chip">{TOPIC_LABELS[topic] || topic}</span>
+                </div>
+              ) : (
+                <div class="card-no-img">
+                  <span class="card-topic-chip-plain">{TOPIC_LABELS[topic] || topic}</span>
+                </div>
+              )}
+              <div class="card-body">
+                <p class="card-question">{item.canonical_question}</p>
+                <div class="card-foot">
                   <div class="traditions-row">
-                    {item.traditions.slice(0, 5).map(t => (
-                      <span class="tradition-dot" style={`background:${TRADITION_COLORS[t] || '#888'}`} title={t}></span>
+                    {item.traditions.slice(0, 6).map(t => (
+                      <span class="trad-dot" style={`background:${TRADITION_COLORS[t] || '#888'}`} title={t} />
                     ))}
-                    {item.traditions.length > 5 && <span class="tradition-more">+{item.traditions.length - 5}</span>}
+                    {item.traditions.length > 6 && <span class="trad-more">+{item.traditions.length - 6}</span>}
                   </div>
-                  <span class="card-quotes">{item.total_selected || 0} passages</span>
+                  <span class="card-count">{item.total_selected || 0} passages</span>
                 </div>
-                {item.topic_tags.length > 1 && (
-                  <div class="card-tags">
-                    {item.topic_tags.slice(1, 4).map((t: string) => (
-                      <span class="tag">{t}</span>
-                    ))}
-                  </div>
-                )}
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
-      ))}
+              </div>
+            </a>
+          );
+        })}
 
-      {items.length === 0 && (
-        <div class="empty-state">
-          <p>No completed research yet. Ask Jafar a question to seed the research queue.</p>
-          <a href="/" class="btn-primary">Start a conversation →</a>
-        </div>
-      )}
+        {items.length === 0 && (
+          <div class="empty-state">
+            <p>No completed research yet. Ask Jafar a question to begin.</p>
+            <a href="/" class="btn-primary">Start a conversation →</a>
+          </div>
+        )}
+      </div>
+
+      <!-- No results message (hidden by default) -->
+      <p class="no-results" id="no-results" style="display:none">No topics match this filter.</p>
     </div>
 
     <!-- CTA -->
     <section class="index-cta">
       <div class="cta-inner">
         <h2>Don't see your question?</h2>
-        <p>Ask Jafar — if your question is substantial, deep research will be queued automatically and you can subscribe for email notification when it's ready.</p>
+        <p>Ask Jafar — deep research is queued automatically for substantial interfaith questions.</p>
         <a href="/" class="btn-primary">Ask Jafar →</a>
       </div>
     </section>
+
   </main>
 </Layout>
+
+<script>
+  const pills = document.querySelectorAll<HTMLButtonElement>('.filter-pill');
+  const cards = document.querySelectorAll<HTMLElement>('.article-card');
+  const noResults = document.getElementById('no-results');
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const filter = pill.dataset.filter!;
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      let visible = 0;
+      cards.forEach(card => {
+        const show = filter === 'all' || card.dataset.topic === filter;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    });
+  });
+</script>
 
 <style>
   .research-index { min-height: 100vh; padding-bottom: 4rem; }
 
+  /* ── Hero ── */
   .research-hero {
-    padding: 5rem 1.5rem 3rem;
+    padding: 4.5rem 1.5rem 2.5rem;
     text-align: center;
-    background: linear-gradient(to bottom, rgba(10,22,42,0) 0%, rgba(10,22,42,0.6) 100%);
   }
-  .hero-inner { max-width: 720px; margin: 0 auto; }
-  .hero-badge {
-    display: inline-block;
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--accent); border: 1px solid var(--accent); border-radius: 4px;
-    padding: 0.2rem 0.6rem; margin-bottom: 1rem;
+  .hero-inner { max-width: 680px; margin: 0 auto; }
+  .hero-eyebrow {
+    display: inline-block; font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 4px; padding: 0.18rem 0.55rem; margin-bottom: 1rem;
   }
-  h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 700; color: var(--text-primary); margin: 0 0 1rem; }
-  .hero-desc { font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 1.5rem; }
-  .hero-stats { display: flex; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; font-size: 0.9rem; color: var(--text-muted); }
-  .hero-stats strong { color: var(--text-primary); }
-  .stat-div { color: var(--border); }
-  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-
-  .topic-nav { border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); padding: 1rem 1.5rem; background: var(--surface-1); }
-  .topic-nav-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .topic-nav-pill {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    padding: 0.3rem 0.7rem; border-radius: 20px;
-    font-size: 0.78rem; font-weight: 500; color: var(--text-secondary);
-    border: 1px solid var(--border-subtle); background: var(--surface-0);
-    text-decoration: none; transition: all 0.15s;
+  h1 {
+    font-size: clamp(1.75rem, 4.5vw, 2.75rem); font-weight: 700;
+    color: var(--text-primary); margin: 0 0 0.875rem; line-height: 1.2;
   }
-  .topic-nav-pill:hover { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb),0.08); }
-  .pill-count { font-size: 0.7rem; color: var(--text-muted); }
+  .hero-sub {
+    font-size: 1rem; color: var(--text-secondary); line-height: 1.7;
+    margin: 0 0 1.75rem;
+  }
+  .hero-stats {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1.25rem; flex-wrap: wrap;
+  }
+  .stat-item { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+  .stat-item strong { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); line-height: 1; }
+  .stat-item span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .stat-div { width: 1px; height: 2rem; background: var(--border-subtle); }
 
-  .research-body { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-  .topic-section { margin-bottom: 3rem; }
-  .topic-heading {
-    display: flex; align-items: baseline; gap: 0.75rem;
-    margin: 0 0 1rem; padding-bottom: 0.5rem;
+  /* ── Filter bar ── */
+  .filter-bar {
+    border-top: 1px solid var(--border-subtle);
     border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-1);
+    padding: 0.6rem 1.5rem;
+    position: sticky; top: 0; z-index: 10;
   }
-  .topic-label { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); }
-  .topic-count { font-size: 0.8rem; color: var(--text-muted); }
+  .filter-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;
+  }
+  .filter-pill {
+    padding: 0.28rem 0.75rem; border-radius: 20px;
+    font-size: 0.75rem; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border-subtle); background: transparent;
+    color: var(--text-secondary); transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-pill.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; font-weight: 600;
+  }
 
-  .research-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  /* ── Grid ── */
+  .grid-wrap { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .article-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem;
+  }
+  @media (max-width: 1100px) { .article-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 780px)  { .article-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px)  { .article-grid { grid-template-columns: 1fr; } }
 
-  .research-card {
-    display: flex; flex-direction: column; gap: 0;
+  /* ── Article card ── */
+  .article-card {
+    display: flex; flex-direction: column;
     border-radius: 10px; overflow: hidden;
     border: 1px solid var(--border-subtle); background: var(--surface-1);
-    text-decoration: none; transition: all 0.2s;
+    text-decoration: none; transition: all 0.18s;
   }
-  .research-card:hover { border-color: var(--accent); background: var(--surface-2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-  .card-thumb { width: 100%; height: 130px; overflow: hidden; flex-shrink: 0; }
-  .card-thumb-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-  .card-body { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.1rem; flex: 1; }
-  .card-question { font-size: 0.95rem; font-weight: 500; color: var(--text-primary); line-height: 1.4; }
-  .card-meta { display: flex; align-items: center; justify-content: space-between; }
-  .traditions-row { display: flex; align-items: center; gap: 4px; }
-  .tradition-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .tradition-more { font-size: 0.7rem; color: var(--text-muted); }
-  .card-quotes { font-size: 0.75rem; color: var(--text-muted); }
-  .card-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-  .tag { font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 10px; background: var(--surface-2); color: var(--text-muted); }
+  .article-card:hover {
+    border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+  }
 
-  .empty-state { text-align: center; padding: 4rem 1.5rem; color: var(--text-muted); }
+  /* Image variant */
+  .card-img-wrap { position: relative; width: 100%; aspect-ratio: 4/3; overflow: hidden; flex-shrink: 0; }
+  .card-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.35s; }
+  .article-card:hover .card-img { transform: scale(1.04); }
+  .card-img-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(6,14,30,0.55) 100%);
+    pointer-events: none;
+  }
+  .card-topic-chip {
+    position: absolute; bottom: 0.5rem; left: 0.6rem;
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: rgba(255,255,255,0.85);
+    background: rgba(6,14,30,0.5); backdrop-filter: blur(4px);
+    padding: 0.18rem 0.45rem; border-radius: 3px;
+  }
 
-  .index-cta { margin: 2rem auto 0; max-width: 600px; text-align: center; padding: 3rem 1.5rem; }
-  .index-cta h2 { font-size: 1.4rem; margin: 0 0 0.75rem; color: var(--text-primary); }
-  .index-cta p { color: var(--text-secondary); margin: 0 0 1.5rem; line-height: 1.7; }
+  /* No-image variant */
+  .card-no-img {
+    padding: 0.75rem 0.75rem 0;
+    flex-shrink: 0;
+  }
+  .card-topic-chip-plain {
+    display: inline-block; font-size: 0.62rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 0.15rem 0.4rem; border-radius: 3px;
+  }
+
+  /* Card body */
+  .card-body { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.85rem; flex: 1; }
+  .card-question {
+    font-size: 0.875rem; font-weight: 500; line-height: 1.45;
+    color: var(--text-primary); margin: 0; flex: 1;
+  }
+  .card-foot {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 0.4rem;
+    margin-top: auto; padding-top: 0.4rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .traditions-row { display: flex; align-items: center; gap: 3px; }
+  .trad-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .trad-more { font-size: 0.65rem; color: var(--text-muted); }
+  .card-count { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+
+  /* ── Misc ── */
+  .no-results { text-align: center; padding: 3rem; color: var(--text-muted); }
+  .empty-state { grid-column: 1/-1; text-align: center; padding: 4rem 1.5rem; color: var(--text-muted); }
+
+  .index-cta { max-width: 560px; margin: 0 auto; text-align: center; padding: 2rem 1.5rem 1rem; }
+  .index-cta h2 { font-size: 1.3rem; margin: 0 0 0.6rem; color: var(--text-primary); }
+  .index-cta p { color: var(--text-secondary); margin: 0 0 1.25rem; line-height: 1.7; font-size: 0.93rem; }
 
   .btn-primary {
-    display: inline-block; padding: 0.65rem 1.5rem; border-radius: 8px;
-    background: var(--accent); color: #fff; font-weight: 600; text-decoration: none;
-    transition: background 0.15s;
+    display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px;
+    background: var(--accent); color: #fff; font-weight: 600;
+    text-decoration: none; transition: background 0.15s;
   }
   .btn-primary:hover { background: var(--accent-hover); }
-  .btn-secondary {
-    display: inline-block; padding: 0.65rem 1.5rem; border-radius: 8px;
-    border: 1px solid var(--border); color: var(--text-secondary);
-    font-weight: 500; text-decoration: none; transition: all 0.15s;
-  }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 </style>
