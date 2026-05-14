@@ -234,7 +234,7 @@ Return JSON:
   "general_search_phrases": ["broad query1", "broad query2", "broad query3", "broad query4"]
 }`
     }
-  ], { max_tokens: 12000 });
+  ], { max_tokens: 6000 });
 
   const text = response.content?.[0]?.text || '';
   const json = text.match(/\{[\s\S]*\}/)?.[0];
@@ -557,7 +557,7 @@ Return: [{"idx": N, "score": 0-10, "answer": "..."}]`;
       const response = await chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
-      ]);
+      ], { model: 'claude-haiku-4-5-20251001', caller: 'deep-research/rerank' });
       const text = response.content?.[0]?.text || '';
       const json = text.match(/\[[\s\S]*\]/)?.[0];
       if (json) {
@@ -1024,7 +1024,7 @@ Critical rules:
 ${frameworkHint}
 Passages found in the library:
 ${selected.map((q, i) => `[${i}] ${q.tradition} auth:${q.authority} "${q.title}" — ${q.author}:
-"${(q.text || '').slice(0, 380)}"`).join('\n\n')}
+"${(q.text || '').slice(0, 220)}"`).join('\n\n')}
 
 Return ONLY valid JSON:
 {
@@ -1041,7 +1041,7 @@ Return ONLY valid JSON:
     const response = await chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ], { max_tokens: 12000 });
+    ], { max_tokens: 8000 });
     const text = response.content?.[0]?.text || '';
     const json = text.match(/\{[\s\S]*\}/)?.[0];
     if (!json) {

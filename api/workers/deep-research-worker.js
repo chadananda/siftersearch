@@ -28,8 +28,11 @@ import {
 import { hybridSearch } from '../lib/search.js';
 import Anthropic from '@anthropic-ai/sdk';
 
-// Sonnet 4.6 pricing per 1K tokens (USD)
-const SONNET_PRICING = { input: 0.003, output: 0.015 };
+const MODEL_PRICING = {
+  'claude-sonnet-4-6': { input: 0.003, output: 0.015 },
+  'claude-haiku-4-5-20251001': { input: 0.00025, output: 0.00125 },
+};
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
 
 const POLL_INTERVAL_MS = 30_000;
 const IDLE_SLEEP_MS = 60_000;
@@ -47,17 +50,19 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 export function makeChatFn(acc, researchId) {
   return async function chat(messages, opts = {}) {
     const caller = opts.caller || 'deep-research';
+    const model = opts.model || DEFAULT_MODEL;
     const systemMsg = messages.find(m => m.role === 'system');
     const userMsgs = messages.filter(m => m.role !== 'system');
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model,
       max_tokens: opts.max_tokens || 4096,
       ...(systemMsg ? { system: systemMsg.content } : {}),
       messages: userMsgs,
     });
     const inputTok = response.usage?.input_tokens || 0;
     const outputTok = response.usage?.output_tokens || 0;
-    const cost = (inputTok * SONNET_PRICING.input + outputTok * SONNET_PRICING.output) / 1000;
+    const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
+    const cost = (inputTok * pricing.input + outputTok * pricing.output) / 1000;
     acc.inputTokens += inputTok;
     acc.outputTokens += outputTok;
     acc.costUsd += cost;
@@ -70,7 +75,7 @@ export function makeChatFn(acc, researchId) {
     query(
       `INSERT INTO ai_usage (provider, model, service_type, prompt_tokens, completion_tokens, total_tokens, estimated_cost_usd, caller, success, job_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      ['anthropic', 'claude-sonnet-4-6', 'chat', inputTok, outputTok, inputTok + outputTok, cost, caller, 1, researchId ? String(researchId) : null]
+      ['anthropic', model, 'chat', inputTok, outputTok, inputTok + outputTok, cost, caller, 1, researchId ? String(researchId) : null]
     ).catch(err => logger.warn({ err: err.message }, 'ai_usage log failed'));
     return response;
   };

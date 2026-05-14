@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T14:42:20.343Z",
+  "generated": "2026-05-14T14:50:50.187Z",
   "entries": [
+    {
+      "hash": "9a8691e2",
+      "date": "2026-05-14",
+      "type": "Fixed",
+      "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
+      "scope": null
+    },
     {
       "hash": "0df9827f",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Performance",
       "description": "Increase search cache size and TTL for better hit rates",
       "scope": null
-    },
-    {
-      "hash": "93ea6848",
-      "date": "2026-01-18",
-      "type": "New",
-      "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "9a8691e2",
+        "date": "2026-05-14",
+        "type": "Fixed",
+        "description": "IsMain check for PM2 ESM fork — detect pm_exec_path or argv endsWith",
+        "scope": null
+      },
       {
         "hash": "0df9827f",
         "date": "2026-05-14",
@@ -7063,13 +7070,6 @@
         "date": "2026-01-18",
         "type": "Performance",
         "description": "Increase search cache size and TTL for better hit rates",
-        "scope": null
-      },
-      {
-        "hash": "93ea6848",
-        "date": "2026-01-18",
-        "type": "New",
-        "description": "Add comprehensive BDD tests for authority ranking, visual regression, and API coverage",
         "scope": null
       }
     ]
