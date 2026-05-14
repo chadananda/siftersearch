@@ -1,6 +1,13 @@
 {
-  "generated": "2026-05-14T19:07:17.723Z",
+  "generated": "2026-05-14T19:10:11.830Z",
   "entries": [
+    {
+      "hash": "b84d7e20",
+      "date": "2026-05-14",
+      "type": "Other",
+      "description": "Research index — 4-col grid with topic filter pills",
+      "scope": null
+    },
     {
       "hash": "83e24003",
       "date": "2026-05-14",
@@ -3493,17 +3500,17 @@
       "type": "Test",
       "description": "Add script to verify YAML frontmatter parsing",
       "scope": null
-    },
-    {
-      "hash": "d98ddffd",
-      "date": "2026-01-19",
-      "type": "Fixed",
-      "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
-      "scope": null
     }
   ],
   "grouped": {
     "2026-05-14": [
+      {
+        "hash": "b84d7e20",
+        "date": "2026-05-14",
+        "type": "Other",
+        "description": "Research index — 4-col grid with topic filter pills",
+        "scope": null
+      },
       {
         "hash": "83e24003",
         "date": "2026-05-14",
@@ -7061,13 +7068,6 @@
         "date": "2026-01-19",
         "type": "Test",
         "description": "Add script to verify YAML frontmatter parsing",
-        "scope": null
-      },
-      {
-        "hash": "d98ddffd",
-        "date": "2026-01-19",
-        "type": "Fixed",
-        "description": "Detect more corrupt description patterns (download links, PDFs, URLs)",
         "scope": null
       }
     ]

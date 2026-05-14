@@ -635,14 +635,39 @@ function buildOLSourceUrl(q: any): string | null {
 <style>
   .research-article { min-height: 100vh; padding-bottom: 4rem; }
 
-  /* Hero — image fills container, text overlaid on bottom */
-  .article-hero { position: relative; overflow: hidden; min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end; }
-  .hero-image-banner { position: absolute; inset: 0; z-index: 0; }
+  /* Hero — image fades into animated background below (no hard edge) */
+  .article-hero {
+    position: relative;
+    min-height: 440px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    /* No overflow:hidden — let the mask fade extend naturally */
+  }
+  .hero-image-banner {
+    position: absolute; inset: 0; z-index: 0;
+    /* Fade image bottom to transparent so liquid background shows through */
+    mask-image: linear-gradient(to bottom, black 30%, rgba(0,0,0,0.6) 65%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 30%, rgba(0,0,0,0.6) 65%, transparent 100%);
+  }
   .hero-mandala { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
-  .hero-image-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6,14,30,0.05) 0%, rgba(6,14,30,0.35) 50%, rgba(6,14,30,0.72) 100%); pointer-events: none; }
-  /* No image: plain gradient background */
-  .article-hero:not(:has(.hero-image-banner)) { background: linear-gradient(to bottom, rgba(10,22,42,0) 0%, rgba(10,22,42,0.5) 100%); min-height: 0; }
-  .hero-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 4rem 1.5rem 2rem; width: 100%; }
+  /* Overlay: darken middle for text legibility, transparent at both ends */
+  .hero-image-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom,
+      rgba(6,14,30,0.08) 0%,
+      rgba(6,14,30,0.48) 45%,
+      rgba(6,14,30,0.30) 75%,
+      transparent 100%
+    );
+  }
+  /* No image: minimal height, let liquid background show */
+  .article-hero:not(:has(.hero-image-banner)) { min-height: 0; }
+  .hero-inner {
+    position: relative; z-index: 1;
+    max-width: 860px; margin: 0 auto; padding: 5rem 1.5rem 2.5rem; width: 100%;
+    /* Subtle text shadow for legibility over the faded/transparent zone */
+  }
+  .hero-inner h1 { text-shadow: 0 2px 12px rgba(6,14,30,0.5); }
+  .hero-inner .breadcrumb, .hero-inner .research-badges { text-shadow: 0 1px 6px rgba(6,14,30,0.4); }
   .breadcrumb { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; gap: 0.4rem; align-items: center; }
   .breadcrumb a { color: var(--text-muted); text-decoration: none; } .breadcrumb a:hover { color: var(--accent); }
   .topic-tags-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

@@ -526,13 +526,19 @@ function keywordPreFilter(question, candidates) {
   return candidates;
 }
 
-// Filter out secondary compilations, study books, and commentary works that only
-// quote from primary sources. These never belong in research results — their quotes
-// should be found via the primary source document instead.
+// Filter out secondary compilations, commentary works, and non-authoritative sources.
+// Deep research should cite primary scriptures and authoritative writings directly.
+// Secondary works that merely quote primary sources should be filtered here.
 function filterSecondaryCompilations(candidates) {
-  const SECONDARY_PATTERNS = /parallel\s+(?:hidden|text)|bilingual|side.by.side|in light of scripture|ethics in light|study companion|introduction to bah|bah[aá']+[ií] world(?:\s+\d+)?|perspectives on|thematic anthology|study guide|commentary on|notes on the|annotated edition/i;
+  const SECONDARY_TITLE = /parallel\s+(?:hidden|text)|bilingual|side.by.side|in light of scripture|ethics in light|study companion|introduction to bah|bah[aá']+[ií] world(?:\s+\d+)?|perspectives on|thematic anthology|study guide|commentary on|notes on the|annotated edition|bahá'í scholarship|bahá'í studies|vol\.\s*\d+|lawh-i-maqsud.*study|ocean of light series/i;
+  // Known secondary commentators — their works interpret primary texts but are not scripture
+  const SECONDARY_AUTHORS = /^udo schaefer$|^moojan momen$|^william s\. hatcher$|^william hatcher$/i;
   const before = candidates.length;
-  const filtered = candidates.filter(c => !SECONDARY_PATTERNS.test(c.title || ''));
+  const filtered = candidates.filter(c => {
+    if (SECONDARY_TITLE.test(c.title || '')) return false;
+    if (SECONDARY_AUTHORS.test(c.author || '')) return false;
+    return true;
+  });
   if (filtered.length < before) {
     logger.info({ removed: before - filtered.length, kept: filtered.length }, 'Filtered secondary compilation candidates');
   }
@@ -804,12 +810,13 @@ Return JSON (empty array if coverage looks complete):
   const existingIds = new Set(sections.flatMap(s => (s.quotes || []).map(q => q.para_id)));
   let appended = 0;
 
-  // Collect candidates for scoring — don't add to sections until scored
+  // Collect candidates for scoring — exclude secondary compilations, don't add until scored
   const supplementCandidates = [];
   for (const { hits, m } of searchResults) {
     const targetSection = sections[m.aspect_idx];
     if (!targetSection) continue;
-    for (const hit of hits) {
+    const primaryHits = filterSecondaryCompilations(hits);
+    for (const hit of primaryHits) {
       if ((hit.text || '').length < 80) continue;
       if (existingIds.has(hit.id)) continue;
       supplementCandidates.push({ hit, m, targetSection });
