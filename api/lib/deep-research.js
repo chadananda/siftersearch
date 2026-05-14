@@ -960,19 +960,28 @@ const VISUAL_THEMES = [
   { keys: ['prayer','worship','devotion','dhikr','meditation'],
     subject: 'Abstract shafts of golden light streaming downward through deep indigo darkness, candlelight flames rising in curved paths, warm amber and cool violet light meeting at an unseen horizon',
     palette: 'deep midnight blue, amber gold, candlelight orange, rose violet, warm shadow brown' },
-  { keys: ['afterlife','death','grief','death-grief','mourning','resurrection'],
+  { keys: ['afterlife','what happens after death','resurrection','rebirth'],
     subject: 'Abstract aurora borealis ribbons reflected in a perfectly still obsidian lake, flowing silver-green light dissolving into soft luminous mist at the edges',
     palette: 'deep indigo, aurora teal, silver-green, pearl white, soft violet' },
-  { keys: ['theodicy','suffering','evil','pain'],
+  { keys: ['death-grief','grief','mourning','significance of death','preparing for death'],
+    subject: 'Abstract luminous threshold — a vertical band of warm golden-white light dividing two vast spaces of deep blue and deep violet, each beautiful, each infinite',
+    palette: 'warm white-gold threshold, deep royal blue on one side, rich violet on the other, soft luminous edges' },
+  { keys: ['theodicy','suffering','purpose of suffering'],
     subject: 'Stormy dark clouds breaking open with fierce shafts of golden sunlight, turbulent abstract forms of charcoal and iron giving way to blazing amber where light breaks through',
     palette: 'charcoal grey, stormy slate blue, iron black, blazing gold light, deep ember orange' },
+  { keys: ['evil','darkness','nature of evil'],
+    subject: 'Abstract vast dark space with a single unwavering point of warm light at center, concentric rings of darkness pressing inward, the small flame holding steady and immovable',
+    palette: 'near-total black, deep umber, single warm amber light-point, faint golden corona, deep violet shadow' },
   { keys: ['tests','trials','tests-trials','hardship','adversity'],
     subject: 'Abstract mountainous forms emerging from swirling mist and fog, a single point of warm fire-light near the summit illuminating the surrounding darkness',
     palette: 'steel grey, mist white, charcoal, warm firelight gold, deep navy' },
   { keys: ['enlightenment','awakening','liberation','nirvana','moksha'],
     subject: 'Abstract vast darkness pierced by a single tremendous burst of radiant white-gold light expanding outward in all directions, darkness dissolving from center to edge',
     palette: 'pure radiant white at center, expanding gold, luminous amber, soft rose edges, dissolving darkness' },
-  { keys: ['soul-spirit','soul','spirit'],
+  { keys: ['soul-spirit','human soul','nature of the soul','soul and body','what is the soul'],
+    subject: 'Abstract luminous vapor gently rising and expanding through deep space, becoming more translucent and radiant as it ascends, cosmos reflected below in still dark water',
+    palette: 'deep midnight blue, translucent silver-white vapor, soft gold luminescence, cosmic indigo, pearl mist' },
+  { keys: ['soul','consciousness','self','inner life'],
     subject: 'Abstract luminous sphere at the center of vast dark space, radiating soft concentric rings of light outward, surrounded by deep cosmic void with distant nebula-like clouds of color',
     palette: 'luminous pearl white, soft rose, cosmic deep blue, nebula violet, warm gold core' },
   { keys: ['mysticism','nearness','nearness-to-god','unity of god','divine','transcendence'],
@@ -987,6 +996,9 @@ const VISUAL_THEMES = [
   { keys: ['mercy','compassion','mercy-compassion','forgiveness','grace'],
     subject: 'Abstract warm rose and amber light pouring downward like liquid honey over dark forms below, softening edges and dissolving harshness into gentle warmth',
     palette: 'warm rose gold, soft amber, ivory white, gentle peach, tender lavender' },
+  { keys: ['faith','doubt','trust','belief','certainty','uncertainty'],
+    subject: 'Abstract path of luminous stepping-stones crossing a dark void, each stone glowing warmly, surrounded by darkness yet connected by a thread of light into the unknown distance',
+    palette: 'warm amber stepping-stones, deep void black, faint connecting thread of gold, distant luminous horizon' },
   { keys: ['free will','predestination','free-will','choice','determinism'],
     subject: 'Abstract diverging paths of light in a vast dark space, two streams of luminous color branching apart from a single glowing origin point, each following its own arc',
     palette: 'blue-white origin, golden path, silver path, deep void black, soft twilight purple' },
@@ -1059,20 +1071,47 @@ const FALLBACK_THEME = {
 
 // Match topic tags and question keywords to a visual theme.
 // Uses word-boundary matching so e.g. "spiritual" doesn't match "spirit".
-function pickVisualTheme(tags, question) {
-  const parts = [...(tags || []), question.toLowerCase()];
-  const haystack = parts.join(' ');
+// usedSubjects: Set of subject strings already in use by other records — skips those themes.
+function pickVisualTheme(tags, question, usedSubjects = new Set()) {
+  const haystack = [...(tags || []), question.toLowerCase()].join(' ');
+  const wordBound = k => new RegExp(`\\b${k.replace(/-/g, '[- ]')}\\b`).test(haystack);
+
+  // First pass: theme that matches AND hasn't been used
   for (const theme of VISUAL_THEMES) {
-    if (theme.keys.some(k => new RegExp(`\\b${k.replace(/-/g, '[- ]')}\\b`).test(haystack))) return theme;
+    if (theme.keys.some(wordBound) && !usedSubjects.has(theme.subject)) return theme;
+  }
+  // Second pass: matching theme even if reused (better than wrong theme)
+  for (const theme of VISUAL_THEMES) {
+    if (theme.keys.some(wordBound)) return theme;
+  }
+  // Third pass: any unused theme (fallback if no keyword match)
+  for (const theme of VISUAL_THEMES) {
+    if (!usedSubjects.has(theme.subject)) return theme;
   }
   return FALLBACK_THEME;
 }
 
+// Load subjects already used by other records (to avoid duplicate images).
+async function loadUsedSubjects(excludeId = null) {
+  const rows = await queryAll(
+    'SELECT hero_prompt FROM deep_research WHERE hero_prompt IS NOT NULL AND id != ?',
+    [excludeId || 0]
+  );
+  // Extract subject portion: everything before ". Evoking the spiritual question:"
+  const used = new Set();
+  for (const { hero_prompt } of rows) {
+    const cut = hero_prompt.indexOf('. Evoking the spiritual question:');
+    if (cut > 0) used.add(hero_prompt.slice(0, cut));
+  }
+  return used;
+}
+
 // Build a topic-differentiated image prompt.
 // Same artistic medium every time; subject and palette vary by topic.
-function buildResearchHeroPrompt({ question, traditions, tags }) {
+// usedSubjects prevents picking a theme already used by another record.
+function buildResearchHeroPrompt({ question, traditions, tags, usedSubjects = new Set() }) {
   const tradList = (traditions || []).slice(0, 3).join(', ') || 'world religions';
-  const theme = pickVisualTheme(tags, question);
+  const theme = pickVisualTheme(tags, question, usedSubjects);
   return `${theme.subject}. Evoking the spiritual question: "${question}" across ${tradList}. Color palette: ${theme.palette}. ${HERO_MEDIUM}`;
 }
 
@@ -1086,7 +1125,8 @@ export async function generateResearchHeroImage(researchId, { question, traditio
       return null;
     }
 
-    const prompt = buildResearchHeroPrompt({ question, traditions, tags });
+    const usedSubjects = await loadUsedSubjects(researchId);
+    const prompt = buildResearchHeroPrompt({ question, traditions, tags, usedSubjects });
     logger.info({ researchId, prompt: prompt.slice(0, 80) }, 'Generating research hero image');
 
     const { default: OpenAI } = await import('openai');
